@@ -175,6 +175,8 @@ jobs:
           echo "$resDatasetDetail"
           export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
           echo "$resTrexDB"
+          export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type = 'omop'" 2>/dev/null)
+          echo "$DATASET_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
 
       - name: Logs
         if: success() || failure()

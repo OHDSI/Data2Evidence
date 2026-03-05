@@ -45,6 +45,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
 
   before(function (done) {
     logToConsole(`process.env.BEARER_TOKEN: ${process.env.BEARER_TOKEN}`)
+    logToConsole(`process.env.DATASET_ID: ${process.env.DATASET_ID}`)
 
     pgClient = new Client(hostConfig.getPGSystemCredentials())
     var MIN_COHORT_SIZE = 0
@@ -109,9 +110,9 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         .xaxis('basicdata', 'smoker')
         .yaxis('basicdata', 'pcount')
       requestBuilder.submit(aliceHanaRequest, PATH, defaultBarChartParameters, function (err, response, body) {
-        logToConsole('>>>err:${err}')
-        logToConsole('>>>response:${response}')
-        logToConsole('>>>body:${body}')
+        logToConsole(`>>>err:${err}`)
+        logToConsole(`>>>response:${JSON.stringify(response)}`)
+        logToConsole(`>>>body:${JSON.stringify(body)}`)
         specUtils.checkAnalyticsResult(body, {
           'patient.attributes.smoker': ['no'],
           'patient.attributes.pcount': [2]

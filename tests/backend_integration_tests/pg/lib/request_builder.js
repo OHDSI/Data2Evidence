@@ -638,7 +638,7 @@ RequestBuilder.prototype.buildJson = function () {
  */
 RequestBuilder.prototype.buildIFR = function (isKMRequest) {
   var request = isKMRequest ? request2Bookmark(this.buildJson(), 'km') : request2Bookmark(this.buildJson())
-  return { ...request, datasetId: 'cd13fd3e-9f35-4812-b2a1-497b232a8771' }
+  return { ...request, datasetId: `${process.env.DATASET_ID}` }
 }
 
 /**
@@ -664,7 +664,7 @@ RequestBuilder.prototype.submit = function (hanaRequest, urlPath, parameters, cb
   }
 
   // Append datasetId as query param for trex auth
-  parameters['datasetId'] = 'cd13fd3e-9f35-4812-b2a1-497b232a8771'
+  parameters['datasetId'] = process.env.DATASET_ID
 
   var setQuery = {
     method: parameters[`httpMethod`],
