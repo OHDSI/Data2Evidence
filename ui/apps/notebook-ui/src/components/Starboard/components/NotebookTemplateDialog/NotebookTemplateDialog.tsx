@@ -1,8 +1,8 @@
 import { Button, Dialog, InputLabel, MenuItem, Select, SelectChangeEvent, TextField } from "@portal/components";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { api } from "../../../../api";
+import { i18nKeys, useFeedback, useTranslation } from "../../../../contexts";
 import { NotebookTemplateDto, StarboardNotebook } from "../../../../types/notebook";
-import { useFeedback, useTranslation, i18nKeys } from "../../../../contexts";
 import "./NotebookTemplateDialog.scss";
 
 interface NotebookTemplateDialogProps {
@@ -114,6 +114,12 @@ export const NotebookTemplateDialog: FC<NotebookTemplateDialogProps> = ({
             value={formData.name}
             onChange={(e: ChangeEvent<HTMLInputElement>) => onFormDataChange({ name: e.target.value })}
             placeholder={getText(i18nKeys.STARBOARD__NEW_NOTEBOOK_NAME_PLACEHOLDER)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleCreate();
+              }
+            }}
           />
           {showErrorMessage && (
             <div className="notebook-template-dialog__content__error">
