@@ -28,7 +28,15 @@ export function registerCohortInstructionTools(server: McpServer) {
             1. Get available phenotypes by calling **search_phenotype_library**
             2. Identify all the relevant phenotype IDs (around 3) from step 1 that closely matches the cohort description.
             3. Fetch cohort definition template with the confirmed phenotype ID from step 2 using tool **fetch_templates_for_cohort_generation**
-            4. Use the template from step 3 as a structural blueprint. START by copying the most relevant template's full JSON structure (including ALL concept sets, criteria, and expressions), then modify only what is necessary to match the cohort description. Do NOT simplify, shorten, or remove concept sets from the template — the generated definition should have the same level of detail and completeness as the template. Only use valid syntax that exists in the template. If there are multiple templates, choose the most relevant one as the main reference.
+            4. Use the template from step 3 as a structural blueprint. START by copying the most relevant template's full JSON structure, then modify only what is necessary to match the cohort description. The generated definition should have the same level of detail and completeness as the template. Only use valid syntax that exists in the template. If there are multiple templates, choose the most relevant one as the main reference.
+            **CRITICAL - Preserve ALL Critical components from the template**: :
+               • **PrimaryCriteria** (Initial Events): Domain, concept sets, observation windows (PriorDays/PostDays), criteria limits
+               • **ConceptSets**: ALL concepts with their exclude/descendants/mapped flags
+               • **InclusionRules**: ALL inclusion criteria with temporal logic, occurrence counts, and domain-specific attributes
+               • **EndStrategy**: Cohort exit criteria with persistence windows and date offsets
+               • **QualifiedLimit, ExpressionLimit**: Event qualification and expression logic
+               • **CollapseSettings, CensoringCriteria, CensorWindow**: Era handling and censoring rules
+               
             5. Validate the generated cohort definition JSON using tool **validate_atlas_cohort_definition**. If there are warnings, analyze the warnings, decide whether to fix the definition or proceed. 
             6. You MUST output:
               a): The list of matching phenotypes with IDs and names from step 1

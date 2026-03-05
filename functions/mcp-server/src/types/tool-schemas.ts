@@ -123,7 +123,6 @@ export const DeleteCohortDefinitionInput = {
 export const SearchPhenotypeLibraryInput = {
   searchTerm: z
     .string()
-    .optional()
     .describe(
       "The phenotype name or medical condition to search for (e.g., 'lung cancer', 'diabetes'). Extract the medical condition from the user's query. Leave empty only to return all phenotypes.",
     ),

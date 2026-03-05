@@ -152,7 +152,6 @@ export function createStaticMcpTools(
       z.object({
         searchTerm: z
           .string()
-          .optional()
           .describe(
             "The phenotype name or medical condition to search for (e.g., 'bronchiolitis', 'diabetes'). Leave empty only to return all phenotypes.",
           ),
