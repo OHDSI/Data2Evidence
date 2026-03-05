@@ -538,7 +538,7 @@ export const i18nDefault = {
     EDIT_DB_CREDENTIAL_DIALOG__ERROR: "An error has occurred.",
     EDIT_DB_CREDENTIAL_DIALOG__PASSWORD: "Password",
     EDIT_DB_CREDENTIAL_DIALOG__PRIVILEGE: "Privilege",
-    EDIT_DB_CREDENTIAL_DIALOG__SUCCESS: "Database {0}} credentials updated",
+    EDIT_DB_CREDENTIAL_DIALOG__SUCCESS: "Database {0} credentials updated",
     EDIT_DB_CREDENTIAL_DIALOG__TEST_CONNECTION: "Test connection",
     EDIT_DB_CREDENTIAL_DIALOG__TEST_CONNECTION_VALIDATE:
       "Please fill up the necessary information & credentials to test the connection",
@@ -889,7 +889,8 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to help@data4life.care.",
     SAVE_DB_DIALOG__ERROR: "An error has occurred.",
     SAVE_DB_DIALOG__EXTRA: "Extra",
-    SAVE_DB_DIALOG__EXTRA_INVALID_JSON: "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
+    SAVE_DB_DIALOG__EXTRA_INVALID_JSON:
+      "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
     SAVE_DB_DIALOG__HOST: "Host",
     SAVE_DB_DIALOG__PASSWORD: "Password",
     SAVE_DB_DIALOG__PORT: "Port",

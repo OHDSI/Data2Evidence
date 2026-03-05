@@ -112,7 +112,7 @@ export interface IDatabaseDetailsUpdate
   extends Omit<IDatabase, "code" | "dialect" | "extra" | "authenticationMode" | "credentials"> {
   id: string;
   vocabSchemas: string[];
-  extra: { [key: string]: Record<string, any> };
+  extra: { [key: string]: Record<string, unknown> };
 }
 
 export interface ITestConnection {

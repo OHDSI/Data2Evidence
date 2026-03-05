@@ -214,7 +214,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       if (!formData.port) errors.port = true;
       if (!formData.name.trim()) errors.name = true;
     }
-    if ((formData.sslmode === "verify-ca" || formData.sslmode === "verify-full") && !formData.ca) {
+    if ((formData.sslmode === "verify-ca" || formData.sslmode === "verify-full") && !formData.ca?.trim()) {
       errors.ca = true;
     }
 
