@@ -68,6 +68,11 @@ module.exports = (env, argv) => {
           target: "https://localhost:41100",
           secure: false,
         },
+        {
+          context: ["/trex"],
+          target: "https://localhost:41100",
+          secure: false,
+        },
       ],
     },
     entry: {
