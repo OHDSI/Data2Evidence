@@ -107,6 +107,10 @@ function initRoutes() {
       body.language = language;
       action = body.action;
     }
+    log.debug(`[pa-config] action: ${action}`)
+    log.info(`[pa-config] action: ${action}`)
+    console.log(`[pa-config] action: ${action}`)
+
     const mriConfig = new MRIConfig(
       req.dbConnections.db,
       user,
