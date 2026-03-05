@@ -334,7 +334,7 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
     } else if (body && body.errors && Array.isArray(body.errors) && body.errors.length !== 0) {
       that.log('MRI Config validation failed!')
     }
-    this.log(`success response...`)
+    that.log(`success response...`)
     cb(err)
   })
 }
