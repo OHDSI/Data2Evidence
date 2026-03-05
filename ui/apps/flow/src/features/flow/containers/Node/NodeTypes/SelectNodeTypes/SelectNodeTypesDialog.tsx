@@ -20,7 +20,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
     },
-    [onClose]
+    [onClose],
   );
 
   return (
@@ -44,7 +44,7 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
           .filter((nodeType: NodeTypeChoice) =>
             hideExperimental
               ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
-              : true
+              : true,
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection
