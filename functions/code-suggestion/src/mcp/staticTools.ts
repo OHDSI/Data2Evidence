@@ -7,52 +7,64 @@ async function callMcpTool(
   args: Record<string, any>,
   headers: Record<string, string>,
 ): Promise<string> {
-  const url = env.SERVICE_ROUTES["mcp-server"];
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json, text/event-stream",
-      ...headers,
-    },
-    body: JSON.stringify({
+  try {
+    const url = env.SERVICE_ROUTES["mcp-server"];
+    const options = {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        host: new URL(url).host, // host is added, StreamableHTTPServerTransport.handleRequest uses getRequestListener from @hono/node-server which checks host header, otherwise will return 400 bad request error.
+        ...headers,
+      },
+    };
+
+    const body = JSON.stringify({
       jsonrpc: "2.0",
       method: "tools/call",
       id: 1,
       params: { name: toolName, arguments: args },
-    }),
-  });
+    });
 
-  if (!response.ok) {
-    throw new Error(
-      `MCP server error: ${response.status} ${response.statusText}`,
+    const response = await Trex.tokioChannel("d2e-functions/mcp-server").post(
+      url,
+      body,
+      options,
     );
-  }
 
-  const data = await response.json();
-
-  if (data.error) {
-    throw new Error(
-      `MCP tool error: ${data.error.message || JSON.stringify(data.error)}`,
-    );
-  }
-
-  const result = data.result;
-  const parts: string[] = [];
-
-  // Extract text from content array
-  if (Array.isArray(result?.content)) {
-    for (const c of result.content) {
-      if (c.type === "text" && c.text) parts.push(c.text);
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(
+        `MCP server error: ${response.status} ${response.statusText}`,
+      );
     }
-  }
 
-  // Extract structuredContent (contains the actual tool data)
-  if (result?.structuredContent) {
-    parts.push(JSON.stringify(result.structuredContent));
-  }
+    const data = response.data;
 
-  return parts.length > 0 ? parts.join("\n") : JSON.stringify(result);
+    if (data.error) {
+      throw new Error(
+        `MCP tool error: ${data.error.message || JSON.stringify(data.error)}`,
+      );
+    }
+
+    const result = data.result;
+    const parts: string[] = [];
+
+    // Extract text from content array
+    if (Array.isArray(result?.content)) {
+      for (const c of result.content) {
+        if (c.type === "text" && c.text) parts.push(c.text);
+      }
+    }
+
+    // Extract structuredContent (contains the actual tool data)
+    if (result?.structuredContent) {
+      parts.push(JSON.stringify(result.structuredContent));
+    }
+
+    return parts.length > 0 ? parts.join("\n") : JSON.stringify(result);
+  } catch (error) {
+    console.error(`Error calling MCP tool ${toolName}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -148,12 +160,12 @@ export function createStaticMcpTools(
     // ==================== Phenotype Library Tools ====================
     mcpTool(
       "search_phenotype_library",
-      "Return phenotypes from OHDSI Phenotype Library with IDs, names, and logic descriptions. Use this to find phenotype IDs that are relevant to the user's cohort requirements.",
+      "Search for phenotypes by medical condition name to find their IDs and definitions. When user asks for a phenotype ID (e.g., 'phenotype ID of diabetes'), extract the condition name ('diabetes') and use it as searchTerm. Returns phenotype IDs, names, and logic descriptions from OHDSI Phenotype Library. Supports semantic search for finding conceptually similar phenotypes.",
       z.object({
         searchTerm: z
           .string()
           .describe(
-            "The phenotype name or medical condition to search for (e.g., 'bronchiolitis', 'diabetes'). Leave empty only to return all phenotypes.",
+            "The phenotype name or medical condition to search for (e.g., 'lung cancer', 'diabetes'). Extract the medical condition from the user's query. Leave empty only to return all phenotypes.",
           ),
         useSemanticSearch: z
           .boolean()

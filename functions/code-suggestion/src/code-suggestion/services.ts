@@ -58,7 +58,7 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
 export const getChatResponse = async (req: any) => {
   const uiChat: IChatSnippet = req.body;
   const token = req.headers.authorization;
-  const datasetId = req.query.datasetId;
+  const datasetId = req.query.datasetId; // datasetId is passed as a query parameter
   const model = await getModels(uiChat.model);
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
