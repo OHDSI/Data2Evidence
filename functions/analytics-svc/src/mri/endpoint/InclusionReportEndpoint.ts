@@ -285,17 +285,17 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             const cur = e.content[0];
             const name = cur.attributes.content[0].configPath.split(".").at(-1);
 
+            const baseConfigPath = `patient.interactions.basicdata${idx + 1}`;
+            const baseInstanceId = `patient.interactions.basicdata.${idx + 1}`;
             // Update content
-            cur.configPath = `patient.interactions.basicdata${idx + 1}`;
+            cur.configPath = baseConfigPath;
             cur.instanceNumber = idx + 1;
-            cur.instanceID = `patient.interactions.basicdata.${idx + 1}`;
+            cur.instanceID = baseInstanceId;
             cur.name = name;
 
             // Update content attributes
-            cur.attributes.content[0].configPath = `patient.interactions.basicdata.attributes.${name}`;
-            cur.attributes.content[0].instanceID = `patient.interactions.basicdata.${
-                idx + 1
-            }.attributes.${name}`;
+            cur.attributes.content[0].configPath = `${baseConfigPath}.attributes.${name}`;
+            cur.attributes.content[0].instanceID = `${baseInstanceId}.attributes.${name}`;
         });
 
         return basicDataInclusionReportFilters;

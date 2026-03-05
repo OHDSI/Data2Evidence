@@ -279,7 +279,7 @@ function enrichConfigWithBasicDataInteraction(
     const ifrRequestWalker = utilsLib.getJsonWalkFunction(ifrRequest);
     const attributes = ifrRequestWalker("**._attributes.content.*");
     const countOfBasicDataFilters = attributes.filter((e) =>
-        e.obj._configPath.includes("patient.interactions.basicdata")
+        /patient\.interactions\.basicdata[\d]/.test(e.obj._configPath)
     ).length;
 
     // For each basic data filter, add one `basicdata${index}` interaction to config
