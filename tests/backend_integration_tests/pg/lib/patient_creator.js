@@ -482,7 +482,11 @@ PatientCreator.prototype.createInteraction = function (requestIterator, interact
  */
 PatientCreator.prototype.executeSqlCommand = function (sqlCmd, cb) {
   this.pgClient.query(sqlCmd, function (err, result) {
-    cb(err, result.rows)
+    if (result && result.rows)
+      cb(err, result.rows)
+    else {
+      cb(err, result)
+    }
   })
 }
 
