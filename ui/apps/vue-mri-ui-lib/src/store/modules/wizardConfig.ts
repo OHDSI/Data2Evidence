@@ -32,12 +32,20 @@ const mutations = {
   },
   // Wizard config is cleared when bookmark changes
   // This is handled by subscribing to bookmark mutations
-  [types.SET_ACTIVE_BOOKMARK](modulestate) {
+  [types.SET_ACTIVE_BOOKMARK](modulestate, bookmark) {
     // Clear wizard config when any bookmark change occurs
     // The bookmark module handles the actual bookmark switch detection
+    if (bookmark?.bmkId === 'deep-link') {
+      return
+    }
     modulestate.wizardConfig = null
   },
-  [types.RESET_ALL_BOOKMARKS](modulestate) {
+  // Wizard config is cleared when dataset changes
+  [types.SET_SELECTED_DATASET](modulestate) {
+    modulestate.wizardConfig = null
+  },
+  // Wizard config is cleared when dataset release ID changes
+  [types.SET_SELECTED_DATASET_RELEASE_ID](modulestate) {
     modulestate.wizardConfig = null
   },
 }
