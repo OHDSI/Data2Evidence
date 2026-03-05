@@ -189,7 +189,7 @@ function assignUserToOrg(pgClient, schemaName, user, orgId, cb) {
  * @param {Function} finalCallback - callback
  */
 function persistPatientSet(loadedPatientBuilder, hostConfig, configName, finalCallback) {
-  var patientCreationPGClient = Client(hostConfig.getPGSystemCredentials())
+  var patientCreationPGClient = new Client(hostConfig.getPGSystemCredentials())
 
   patientCreationPGClient.on('error', function (err) {
     if (hostConfig.getLogStatus()) {
