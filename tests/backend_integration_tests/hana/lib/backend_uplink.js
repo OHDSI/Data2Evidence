@@ -223,6 +223,10 @@ BackendUplink.prototype.addCdwConfiguration = function (config, configId, config
   this.log('Storing and activating test CDW configuration')
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
+    that.log(`[backend_uplink.addCdwConfiguration]err:${err}`)
+    that.log(`[backend_uplink.addCdwConfiguration]response:${response}`)
+    that.log(`[backend_uplink.addCdwConfiguration]response.statusCode:${response.statusCode}`)
+    that.log(`[backend_uplink.addCdwConfiguration]body:${body}`)
     if (err) {
       return cb(err)
     }
@@ -308,6 +312,10 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
   this.log('Storing and activating test MRI configuration')
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
+    that.log(`[backend_uplink.addMriConfiguration]err:${err}`)
+    that.log(`[backend_uplink.addMriConfiguration]response:${response}`)
+    that.log(`[backend_uplink.addMriConfiguration]response.statusCode:${response.statusCode}`)
+    that.log(`[backend_uplink.addMriConfiguration]body:${body}`)
     if (err) {
       return cb(err)
     }

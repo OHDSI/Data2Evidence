@@ -105,6 +105,9 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         .xaxis('basicdata', 'smoker')
         .yaxis('basicdata', 'pcount')
       requestBuilder.submit(aliceHanaRequest, PATH, defaultBarChartParameters, function (err, response, body) {
+        logToConsole(`>>>err:${err}`)
+        logToConsole(`>>>response:${JSON.stringify(response)}`)
+        logToConsole(`>>>body:${JSON.stringify(body)}`)
         specUtils.checkAnalyticsResult(body, {
           'patient.attributes.smoker': ['no'],
           'patient.attributes.pcount': [2]
