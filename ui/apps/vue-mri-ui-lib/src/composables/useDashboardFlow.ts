@@ -11,12 +11,7 @@ import {
   type WizardDefinition,
   type WizardFieldDefinition,
 } from '../utils/dashboardFlowUtils'
-import {
-  getConstraintExpressions,
-  constraintContainsExpression,
-  cardMatchesFixedAttributes,
-  type Constraint,
-} from '../services/dashboardFlowService'
+import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -35,6 +30,7 @@ export interface WizardConfig {
   year?: { from: number | string | null; to: number | string | null }
   conditions?: ConditionValue[]
   dashboardType?: string
+  fromDeepLink?: boolean
   [key: string]: unknown
 }
 
@@ -287,7 +283,8 @@ export function useDashboardFlow(
           // Range format like [50-80]
           formattedValue = buildNumericRangeExpression(firstValue.and)
         } else if (isAgeField) {
-          formattedValue = (firstValue.op || '=') + String(firstValue.value)
+          formattedValue =
+            firstValue.op && firstValue.op !== '=' ? firstValue.op + String(firstValue.value) : String(firstValue.value)
         } else {
           formattedValue = String(firstValue.value)
         }
@@ -357,7 +354,6 @@ export function useDashboardFlow(
 
     // Extract condition field values from wizardConfig.conditions array
     // Condition fields are wizard-only (isWizardField: true) and stored in wizardConfig.conditions
-    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
     const localConfig = activeDashboardWizardConfig.value
     const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
     const wizardConfig = localConfig || storeConfig || null
@@ -647,9 +643,40 @@ export function useDashboardFlow(
       return
     }
     resetDashboardFlowState()
-    showDashboardSelectionModal.value = true
-    dispatch('clearWizardConfig')
+
+    // Check for existing wizardConfig from wizards/deep link
+    const storeWizardConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
+    const existingWizardConfig = storeWizardConfig as WizardConfig | null
+    const existingDashboardType = existingWizardConfig?.dashboardType
+
+    // Load metadata first (needed for both paths)
     await loadDashboardMetadata()
+
+    // Only skip modals if explicitly from deep link
+    if (existingDashboardType && existingWizardConfig?.fromDeepLink === true) {
+      // Validate that the dashboard exists
+      const matchingDashboard = dashboardCodes.value.find((d: DashboardCode) => d.name === existingDashboardType)
+
+      if (matchingDashboard) {
+        // Use existing wizardConfig directly and skip both modals
+        // Go straight to save cohort check / dashboard opening
+        activeDashboardWizardConfig.value = existingWizardConfig
+        await handleOpenDashboard()
+        return
+      }
+
+      // If no matching dashboard found, clear the config and fall through to show modal
+      console.warn(`[Dashboard] No dashboard found for type: ${existingDashboardType}`)
+      dispatch('clearWizardConfig')
+    }
+
+    // For manual flow or no flag, clear old config so user can select again
+    if (existingWizardConfig) {
+      dispatch('clearWizardConfig')
+    }
+
+    // Show selection modal
+    showDashboardSelectionModal.value = true
   }
 
   function closeDashboardSelectionModal() {
@@ -676,78 +703,6 @@ export function useDashboardFlow(
       const filterCard = filterCards[filterCardId]
       return filterCard?.props?.key === filterCardPath && !filterCard?.props?.excludeFilter
     })
-  }
-
-  function findFilterCardIdForField(field: MissingRequiredField): string | null {
-    const filterCardPath = getFieldFilterCardPathForField(field)
-    const candidateCardIds = getNonExcludedFilterCardIdsByPath(filterCardPath)
-    const fixedAttributes = field.fixedAttributes || []
-    return (
-      candidateCardIds.find(filterCardId => {
-        return cardMatchesFixedAttributes(fixedAttributes, (attrKey: string) => {
-          const getConstraintForAttribute = getters.getConstraintForAttribute
-          return getConstraintForAttribute?.({ filterCardId, key: attrKey }) as Constraint
-        })
-      }) || null
-    )
-  }
-
-  function extractFieldValueFromFilterCards(field: any): {
-    value: any
-    displayValue?: string
-    useDescendants?: boolean
-  } | null {
-    if (!field.configPath) {
-      return null
-    }
-    const filterCardPath = getFieldFilterCardPathForField(field)
-    const matchingCardIds = getNonExcludedFilterCardIdsByPath(filterCardPath)
-    for (const filterCardId of matchingCardIds) {
-      const attrKey = getFieldAttrKey(field.configPath)
-      const getConstraintForAttribute = getters.getConstraintForAttribute
-      const constraint = getConstraintForAttribute?.({ filterCardId, key: attrKey })
-      if (!constraint) {
-        continue
-      }
-      const constraintType = constraint.props?.type
-      const constraintValue = constraint.props?.value
-      if (constraintType === 'text' || constraintType === 'conceptSet') {
-        const values = Array.isArray(constraintValue) ? constraintValue : []
-        if (values.length > 0) {
-          const firstValue = values[0]
-          const value = typeof firstValue === 'object' ? firstValue.value : firstValue
-          const displayValue =
-            typeof firstValue === 'object'
-              ? firstValue.display_value || firstValue.text || firstValue.value
-              : firstValue
-          const useDescendants = values[0]?.includeDescendants
-          // Convert value to string for proper v-model binding
-          const stringValue = String(value)
-          return { value: stringValue, displayValue: String(displayValue), useDescendants }
-        }
-      } else if (constraintType === 'num') {
-        const values = Array.isArray(constraintValue) ? constraintValue : []
-        if (values.length > 0) {
-          const firstValue = values[0]
-          // For Age field, format numeric value with operator for display (e.g., ">50", "[50-80]")
-          // For other numeric fields, use the raw value
-          let formattedValue: string
-          const isAgeField = field.id.toLowerCase() === 'age'
-
-          if (isAgeField && firstValue.and) {
-            formattedValue = buildNumericRangeExpression(firstValue.and)
-          } else if (isAgeField) {
-            formattedValue = (firstValue.op || '=') + String(firstValue.value)
-          } else {
-            formattedValue = String(firstValue.value)
-          }
-
-          return { value: formattedValue }
-        }
-      }
-      break
-    }
-    return null
   }
 
   async function handleDashboardSelected(dashboard: DashboardCode) {
@@ -1042,6 +997,15 @@ export function useDashboardFlow(
     return isProcessingDashboardFlow
   }
 
+  function buildNumericRangeExpression(range: Array<{ op: string; value: number }>): string {
+    if (range.length !== 2) return ''
+
+    const lowerOp = range[0].op === '>' ? ']' : '['
+    const upperOp = range[1].op === '<' ? '[' : ']'
+
+    return `${lowerOp}${range[0].value}-${range[1].value}${upperOp}`
+  }
+
   return {
     showDashboardModal,
     showSaveCohortModal,
@@ -1072,13 +1036,4 @@ export function useDashboardFlow(
     closeDashboardModal,
     isProcessingDashboardFlow: isProcessingDashboardFlowFn,
   }
-}
-
-function buildNumericRangeExpression(range: Array<{ op: string; value: number }>): string {
-  if (range.length !== 2) return ''
-
-  const lowerOp = range[0].op === '>' ? ']' : '['
-  const upperOp = range[1].op === '<' ? '[' : ']'
-
-  return `${lowerOp}${range[0].value}-${range[1].value}${upperOp}`
 }
