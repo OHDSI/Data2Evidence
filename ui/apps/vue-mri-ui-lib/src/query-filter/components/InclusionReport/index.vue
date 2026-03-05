@@ -22,7 +22,6 @@ const props = withDefaults(
     patientCount: number | null
     generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
     showPersonEventSwitch?: boolean
-    useMockData?: boolean
     fetchInclusionReport: (
       cohortDefinitionId: string,
       sourceKey: string,
@@ -31,7 +30,6 @@ const props = withDefaults(
   }>(),
   {
     showPersonEventSwitch: true,
-    useMockData: false,
   }
 )
 
@@ -58,7 +56,6 @@ const dataComposable = useInclusionReportData(
     sourceKey: props.sourceKey,
     patientCount: props.patientCount,
     generationStatus: props.generationStatus,
-    useMockData: props.useMockData,
     fetchInclusionReport: props.fetchInclusionReport,
   },
   selectedPersonEventView

@@ -1,6 +1,6 @@
 import { ref, computed, watch, type Ref } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
-import { getInclusionReportMockResponse } from '@/mocks/inclusionReportMockResponse'
+
 import { convertTreemapData } from '../computeTreemapStats'
 
 export interface UseInclusionReportDataOptions {
@@ -8,7 +8,6 @@ export interface UseInclusionReportDataOptions {
   sourceKey: string
   patientCount: number | null
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
-  useMockData?: boolean
   fetchInclusionReport: (
     cohortDefinitionId: string,
     sourceKey: string,
@@ -52,16 +51,6 @@ export function useInclusionReportData(
 
     const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
     try {
-      if (options.useMockData) {
-        const mockResponse = getInclusionReportMockResponse(modeId)
-        if (selectedPersonEventView.value === 'PERSON') {
-          inclusionReportPersonResponse.value = mockResponse
-        } else {
-          inclusionReportEventResponse.value = mockResponse
-        }
-        return
-      }
-
       if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
         inclusionReportPersonResponse.value = await options.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
       } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {

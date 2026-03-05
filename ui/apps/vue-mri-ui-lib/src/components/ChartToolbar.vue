@@ -157,7 +157,6 @@
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
             :show-person-event-switch="false"
-            :use-mock-data="false"
           />
         </div>
       </div>
