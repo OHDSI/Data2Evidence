@@ -75,7 +75,7 @@ export class DBConnectionUtil {
         });
     }
 
-    public static getConnection(dialect: string, client: any, schemaName: string, c?: string, resultsSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
+    public static getConnection(dialect: string, client: any, schemaName: string, vocabSchemaName?: string, resultsSchemaName?: string, cb?, userObj?: User): Promise<ConnectionInterface> {
         logger.debug(`--------debug-----------`);
         logger.debug(`dialect: ${dialect}`);
         logger.debug(`schemaName: ${schemaName}`);
