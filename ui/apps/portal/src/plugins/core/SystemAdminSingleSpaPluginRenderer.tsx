@@ -1,4 +1,4 @@
-import { FC, useEffect, useMemo, useRef, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import { loadPlugin } from "./pluginLoader";
 import {
   SingleSpaAppContainer,
@@ -39,11 +39,9 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
   const [pluginType, setPluginType] = useState<PluginType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const startTimerRef = useRef<ReturnType<typeof setTimeout>>();
 
   const appId = useMemo(
-    () =>
-      basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path),
+    () => (basePath === "systemadmin" ? generateAppId("system-admin-plugin", path) : generateAppId("etl-plugin", path)),
     [basePath, path]
   );
 
@@ -71,7 +69,7 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
           setPluginType("app");
           setIsRegistered(true);
 
-          startTimerRef.current = setTimeout(() => {
+          setTimeout(() => {
             try {
               startSingleSpa({ urlRerouteOnly: true });
             } catch (e) {
@@ -84,7 +82,7 @@ export const SystemAdminSingleSpaPluginRenderer: FC<SystemAdminSingleSpaPluginRe
       };
       registerApp();
 
-      return () => clearTimeout(startTimerRef.current);
+      return;
     }
   }, [appId, path, route, configType, isRegistered, userId, system, data]);
 
