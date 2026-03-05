@@ -363,6 +363,12 @@ EOF
         setup_zx_cmd
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
+    version)
+        CLI_VERSION=$(grep -m1 '"version"' "$node_modules_path/package.json" | awk -F'"' '{print $4}')
+        echo "d2e CLI version:    $CLI_VERSION"
+        echo "Docker image tag:   $DOCKER_TAG_NAME"
+        echo "Plugins API version: $PLUGINS_API_VERSION"
+        ;;
     getnoproxy)
         setup_zx_cmd
         $ZX_CMD "$node_modules_path/scripts/get-noproxy.mjs" --script_full_path "$node_modules_path" 

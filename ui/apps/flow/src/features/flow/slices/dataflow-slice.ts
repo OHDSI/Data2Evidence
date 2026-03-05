@@ -1,6 +1,4 @@
 import { createApi } from "@reduxjs/toolkit/dist/query/react";
-import pako from "pako";
-import { Buffer } from "buffer";
 import {
   CreateFromTemplateDto,
   DataflowDto,
@@ -27,7 +25,6 @@ import {
   ScanDataDBConnectionForm,
   ScannedSchemaState,
 } from "~/features/flow/types/white-rabbit";
-import { csvToJSON } from "~/utils";
 
 export const dataflowApiSlice = createApi({
   reducerPath: "dataflowApi",
@@ -272,9 +269,13 @@ export const dataflowApiSlice = createApi({
     }),
     createDBScanReport: builder.mutation<
       any,
-      { postgresqlForm: ScanDataDBConnectionForm; tablesToScan: string[] }
+      {
+        postgresqlForm: ScanDataDBConnectionForm;
+        tablesToScan: string[];
+        nodeId: string;
+      }
     >({
-      query: ({ postgresqlForm, tablesToScan }) => {
+      query: ({ postgresqlForm, tablesToScan, nodeId }) => {
         const iniSettings = {
           ...postgresqlForm,
           server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
@@ -284,6 +285,7 @@ export const dataflowApiSlice = createApi({
         const data = {
           options: {
             data: iniSettings,
+            node_id: nodeId,
             run_type: "SCAN_REPORT_DB",
           },
         };
@@ -296,49 +298,22 @@ export const dataflowApiSlice = createApi({
     }),
     createScanReport: builder.mutation<
       any,
-      { files: File[]; delimiter: string }
+      { nodeId: string; fileNames: string[]; delimiter: string }
     >({
-      async queryFn(
-        { files, delimiter = "," },
-        _queryApi,
-        _extraOptions,
-        fetchWithBQ
-      ) {
-        const fileContents = await Promise.all(
-          files.map(async (file) => ({
-            fileName: file.name,
-            fileContent: await csvToJSON(file),
-          }))
-        );
-
-        const jsonString = JSON.stringify({
-          files: fileContents,
-          settings: {
-            delimiter,
-          },
-        });
-
-        const compressed = pako.gzip(jsonString);
-        const base64Compressed = Buffer.from(compressed).toString("base64");
-
-        const data = {
+      query: ({ nodeId, fileNames, delimiter = "," }) => ({
+        url: "white-rabbit/flow-run",
+        method: "POST",
+        body: {
           options: {
-            data: base64Compressed,
+            data: {
+              node_id: nodeId,
+              files: fileNames,
+              settings: { delimiter },
+            },
             run_type: "SCAN_REPORT_FILES",
           },
-        };
-
-        const response = await fetchWithBQ({
-          url: "white-rabbit/flow-run",
-          method: "POST",
-          body: data,
-        });
-
-        if (response.error) {
-          return { error: response.error };
-        }
-        return { data: response.data };
-      },
+        },
+      }),
     }),
     getFlowRunStatus: builder.query<
       {

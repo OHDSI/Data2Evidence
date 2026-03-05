@@ -110,6 +110,7 @@ def generate_data_json(data: dict, output_path: str) -> str:
 def generate_etl_word_document(input_file: str = "data.json", output_file: str = "report.docx") -> None:
     '''
     Generates an ETL Word document from the provided data JSON file using White Rabbit's rabbitInAHat tool.
+    rabbitInAHat writes the output relative to its CWD, so working_dir must be set to WHITERABBIT_DIR_PATH.
     '''
     logger = get_run_logger()
 
@@ -118,10 +119,11 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
     if not input_path.exists():
         raise FileNotFoundError(f"file {input_path} does not exist.")
 
-    ShellOperation(commands=[
-                   f"{WHITERABBIT_BIN_PATH}/rabbitInAHat --generateWordReport {str(input_path)} {output_file}"]).run()
+    ShellOperation(
+        commands=[f"{WHITERABBIT_BIN_PATH}/rabbitInAHat --generateWordReport {str(input_path)} {output_file}"],
+        working_dir=WHITERABBIT_DIR_PATH).run()
 
-    output_path = Path(output_file).resolve()
+    output_path = Path(f"{WHITERABBIT_DIR_PATH}/{output_file}")
 
     if not output_path.exists():
         raise FileNotFoundError(f"file {output_path} does not exist.")

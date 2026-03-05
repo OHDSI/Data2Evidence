@@ -370,6 +370,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
         return;
       }
       console.error(e);
+      setConceptsResult(null);
       setFeedback({
         type: "error",
         message: getText(i18nKeys.TERMINOLOGY_LIST__ERROR),
