@@ -31,7 +31,7 @@
         />
       </div>
       <div class="dashboardButton">
-        <VButton @click="openInclusionReportModal" variant="outlined">Inclusion Report</VButton>
+        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
