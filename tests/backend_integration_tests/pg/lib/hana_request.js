@@ -260,7 +260,6 @@ HanaRequest.prototype._makeRequestOptions = function (query) {
  */
 HanaRequest.prototype.request = function (query, cb) {
   var that = this
-logToConsole(`[hana_request]body:${JSON.stringify(body)}`)
 
   log.debug('initializing request')
   logToConsole(`[hana_request]body:${JSON.stringify(query)}`)
