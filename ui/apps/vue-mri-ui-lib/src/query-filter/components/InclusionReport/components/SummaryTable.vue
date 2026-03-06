@@ -13,20 +13,6 @@ defineProps<{
       <p>Total Persons: {{ summary.baseCount }}</p>
       <p>Matches: {{ summary.finalCount }} ({{ summary.percentMatched }})</p>
     </div>
-    <!-- <table class="summary-table">
-      <thead>
-        <tr>
-          <th>Total Persons</th>
-          <th>Matches</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>{{ summary.baseCount }}</td>
-          <td>{{ summary.finalCount }} ({{ summary.percentMatched }})</td>
-        </tr>
-      </tbody>
-    </table> -->
   </div>
 </template>
 
@@ -46,38 +32,5 @@ h4 {
 .summary-data {
   display: flex;
   gap: 2rem;
-}
-
-.summary-table {
-  align-self: flex-start;
-  min-width: 50%;
-  max-width: 100%;
-  border-collapse: collapse;
-  border: 1px solid var(--color-ui-light-border, #ddd);
-  color: var(--color-ui-medium-text);
-  text-align: left;
-  thead {
-    background-color: var(--color-ui-extra-light-bg, #ddd);
-  }
-
-  th {
-    padding: 0.5rem;
-    font-weight: 500;
-    border-bottom: 2px solid var(--color-ui-light-border, #ddd);
-    color: #333;
-  }
-
-  td {
-    padding: 0.5rem;
-    cursor: inherit;
-  }
-
-  tr {
-    border-bottom: 1px solid var(--color-ui-light-border, #ddd);
-  }
-
-  tbody tr:hover {
-    background-color: var(--color-ui-extra-light-bg, #ddd);
-  }
 }
 </style>

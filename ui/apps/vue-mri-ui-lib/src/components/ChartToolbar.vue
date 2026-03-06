@@ -305,10 +305,10 @@ export default {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
     inclusionReportCohortDefinitionId() {
-      return this.getActiveCohortMaterializedId?.toString() || 'mock-cohort-id'
+      return this.getActiveBookmark?.cohortDefinitionId?.toString()
     },
     inclusionReportSourceKey() {
-      return this.getSelectedDataset?.id || 'mock-source-key'
+      return this.getSelectedDataset?.id
     },
     inclusionReportIsReady() {
       return true
@@ -473,11 +473,7 @@ export default {
       const mriquery = JSON.stringify(this.getBookmarksData)
       const datasetId = this.getBookmarksData.datasetId
 
-      if (
-        this.inclusionReportCache &&
-        this.inclusionReportCache.mriquery === mriquery &&
-        this.inclusionReportCache.datasetId === datasetId
-      ) {
+      if (this.inclusionReportCache && this.inclusionReportCache.mriquery === mriquery) {
         return Promise.resolve(this.inclusionReportCache.result)
       }
 
@@ -485,7 +481,7 @@ export default {
         url: '/analytics-svc/api/services/population/json/inclusionreport',
         params: { mriquery, datasetId },
       }).then(result => {
-        this.inclusionReportCache = { mriquery, datasetId, result }
+        this.inclusionReportCache = { mriquery, result }
         return result
       })
     },

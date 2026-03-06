@@ -3,11 +3,6 @@
  * Colors represent different levels of rule failures, from most failures (red) to no failures (green)
  */
 export const INCLUSION_REPORT_COLORS = {
-  // allFailedOr5Plus: '#fabfb4',
-  // threeToFour: '#fcdab6',
-  // two: '#dedcab',
-  // one: '#cdd99e',
-  // allPassed: '#53bead',
   allFailedOr5Plus: '#ffe799',
   threeToFour: '#ece696',
   two: '#d8e593',
