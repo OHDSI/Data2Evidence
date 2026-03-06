@@ -19,7 +19,7 @@ export interface CohortMethodNodeData extends NodeDataState {
 export const CohortMethodNode = (node: NodeProps<CohortMethodNodeData>) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
-  const [resultVisible, openResult, closeResult] = useBooleanHelper(true);
+  const [resultVisible, openResult, closeResult] = useBooleanHelper(false);
 
   return (
     <>
