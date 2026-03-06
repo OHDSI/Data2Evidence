@@ -231,7 +231,7 @@ jobs:
             echo "Timeout waiting for d2e-ui plugin to be installed"
             exit 1
           fi
-          
+
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
