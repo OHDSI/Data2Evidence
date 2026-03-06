@@ -70,6 +70,7 @@ const initRoutes = async (app: express.Application) => {
             acc[item.credentials.code] = item.credentials;
             return acc;
         }, {});
+    log.info(`[main.ts]analyticsCredentials: ${analyticsCredentials}`);
 
     // Calls Alp-Portal for studies db metadata
     // Ignore Alp-Portal check for readiness probe check
@@ -90,20 +91,23 @@ const initRoutes = async (app: express.Application) => {
                     );
                     const portalServerAPI = new PortalServerAPI();
                     studies = await portalServerAPI.getStudies();
+                    log.debug(`[main.ts]studies: ${JSON.stringify(studies)}`);
+
                     console.timeEnd(
                         `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
                     );
                 }
-                log.debug(`[main]studies: ${JSON.stringify(studies)}`);
                 req.studiesDbMetadata = {
                     studies,
                 };
+                log.debug(`[main.ts]req.studiesDbMetadata: ${JSON.stringify(req.studiesDbMetadata)}`);
             }
 
             req.dbCredentials = {
                 ...req.dbCredentials,
                 analyticsCredentials,
             };
+            log.debug(`[main.ts]req.dbCredentials: ${JSON.stringify(req.dbCredentials)}`);
 
             next();
         } catch (err) {

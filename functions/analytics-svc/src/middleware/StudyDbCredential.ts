@@ -126,6 +126,7 @@ export default async (req: IMRIRequest, res, next) => {
     };
 
     const analyticsCredentials = req.dbCredentials.analyticsCredentials;
+    log.info(`[StudyDBCredentials]req.dbCredentials.analyticsCredentials: ${req.dbCredentials.analyticsCredentials}`);
 
     try {
         if (req.url === "/check-readiness") {
@@ -166,6 +167,9 @@ export default async (req: IMRIRequest, res, next) => {
 
             const studyMetadata: StudyDbMetadata =
                 req.studiesDbMetadata.studies.find((o) => o.id === datasetId);
+            log.info(`[StudyDBCredentials]studyMetadata: ${JSON.stringify(studyMetadata)}`);
+            log.info(`[StudyDBCredentials]req.selectedstudyDbMetadata: ${JSON.stringify(req.selectedstudyDbMetadata)}`);
+
             // Set req.selectedstudyDbMetadata if it does not already exist
             if (!req.selectedstudyDbMetadata) {
                 req.selectedstudyDbMetadata = studyMetadata;

@@ -64,7 +64,7 @@ function main() {
         const dbm = Trex.databaseManager();
         const databaseCredentials =
             dbm.getDatabaseCredentials() as IDatabaseCredential[];
-
+        console.log(`[index.ts] databaseCredentials: ${JSON.stringify(databaseCredentials)}`)
         const parsedDatabaseCredentials = databaseCredentials.map((db) => {
             const { credentials, db_extra, dialect, name, port, ...rest } = db;
             const parsedCreds = credentials.reduce<{
@@ -98,19 +98,29 @@ function main() {
                 },
             };
         });
+        console.log(`[index.ts] parsedDatabaseCredentials: ${JSON.stringify(parsedDatabaseCredentials)}`)
 
         const databaseCredentialsStr = createDbCredentialsStr(
             parsedDatabaseCredentials
         );
+        console.log(`[index.ts] databaseCredentialsStr: ${JSON.stringify(databaseCredentialsStr)}`)
+
         const serviceDatabaseCredentials = filterServiceCredentials(
             databaseCredentialsStr,
             service
         );
+
+        console.log(`[index.ts] serviceDatabaseCredentials: ${JSON.stringify(serviceDatabaseCredentials)}`)
+
         //updateEnv(service, serviceDatabaseCredentials);
         const svcDbCred = processForComposeAnalytics(
             serviceDatabaseCredentials
         );
+        console.log(`[index.ts] svcDbCred: ${JSON.stringify(svcDbCred)}`)
+
         const svcVcap = vcapSvcConverter(svcDbCred);
+        console.log(`[index.ts] svcVcap: ${JSON.stringify(svcVcap)}`)
+
         const svcHana = dbSvcConverter(serviceDatabaseCredentials).hana;
         const svcPostgres = dbSvcConverter(serviceDatabaseCredentials).postgres;
         let _env = {};
@@ -119,6 +129,7 @@ function main() {
         _env["HANA__TENANT_CONFIGS"] = svcHana;
         _env["PG__TENANT_CONFIGS"] = svcPostgres;
         _env = initEnv(_env);
+        console.log(`[index.ts] _env: ${JSON.stringify(_env)}`)
 
         import("./src/main.ts");
     } catch (err) {
