@@ -41,6 +41,9 @@ class WhiteRabbitDataType(BaseModel):
     user_name: Optional[str] = None
     server_location: Optional[str] = None
 
+    class Config:
+        extra = "allow"
+
 
 class WhiteRabbitRequestType(BaseModel):
     run_type: WhiteRabbitRunType
