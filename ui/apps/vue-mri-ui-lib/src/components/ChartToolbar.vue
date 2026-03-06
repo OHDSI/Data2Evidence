@@ -124,6 +124,7 @@
   <Teleport to="#app">
     <SaveCohortModal
       :is-open="dashboardFlow.showSaveCohortModal"
+      :mode="dashboardFlow.saveCohortModalMode"
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
