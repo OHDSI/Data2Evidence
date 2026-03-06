@@ -21,7 +21,7 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
 from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
-
+from _shared_flow_utils.dao.trexdao import TrexDao
 
 os.environ["plugin_name"] = "data_characterization_plugin"
 
@@ -233,7 +233,16 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             f"Running Achilles::achilles on thread count: {achilles_params.numThreads}"
         )
 
+        if achilles_params.use_trex_connection:
+            memory_limit = os.environ.get("D2E_MEMORY_LIMIT")
+            if memory_limit:
+                trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode)
+                trex_dao.execute_sql(f"SET memory_limit = '{memory_limit}'")
+                logger.info(f"Set DuckDB memory_limit to {memory_limit}")
+
         r_script_path = os.path.join(os.path.dirname(__file__), "execute_achilles.R")
+
+        os.makedirs(achilles_params.outputFolder, exist_ok=True)
 
         with robjects.conversion.localconverter(robjects.default_converter):
             robjects.r(f"source('{r_script_path}')")
