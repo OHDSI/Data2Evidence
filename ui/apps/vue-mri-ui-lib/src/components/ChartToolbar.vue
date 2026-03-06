@@ -465,9 +465,6 @@ export default {
     closeInclusionReportModal() {
       this.showInclusionReportModal = false
     },
-    fetchInclusionReportNoop() {
-      return Promise.resolve(null)
-    },
     fetchInclusionReport() {
       const mriquery = JSON.stringify(this.getBookmarksData)
       const datasetId = this.getBookmarksData.datasetId
