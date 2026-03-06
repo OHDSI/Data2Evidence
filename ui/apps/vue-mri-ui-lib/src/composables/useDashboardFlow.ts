@@ -12,6 +12,7 @@ import {
   type WizardFieldDefinition,
 } from '../utils/dashboardFlowUtils'
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
+import BinaryToString from '../utils/BinaryToString'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -56,6 +57,7 @@ export interface Getters {
   getFilterCards: { value: Record<string, unknown> }
   getCurrentBookmarkHasChanges: { value: boolean }
   getActiveCohortMaterializedId: { value: string | null }
+  getMaterializedCohorts: { value: IMaterializedCohort[] }
 }
 
 export interface LocalConstraint {
@@ -73,6 +75,7 @@ export interface UseDashboardFlowReturn {
   // State
   showDashboardModal: Ref<boolean>
   showSaveCohortModal: Ref<boolean>
+  saveCohortModalMode: Ref<'full' | 'bookmark-only' | 'materialize-only'>
   showDashboardSelectionModal: Ref<boolean>
   showRequiredFiltersModal: Ref<boolean>
   dashboardMetadataLoading: Ref<boolean>
@@ -117,6 +120,7 @@ export function useDashboardFlow(
   // State
   const showDashboardModal = ref(false)
   const showSaveCohortModal = ref(false)
+  const saveCohortModalMode = ref<'full' | 'bookmark-only' | 'materialize-only'>('full')
   const showDashboardSelectionModal = ref(false)
   const showRequiredFiltersModal = ref(false)
   const dashboardMetadataLoading = ref(false)
@@ -946,6 +950,55 @@ export function useDashboardFlow(
     }
   }
 
+  /**
+   * Get the active materialized cohort for the current bookmark
+   */
+  function getActiveMaterializedCohort(): IMaterializedCohort | null {
+    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+    if (!activeBookmark) return null
+
+    const cohortId = (activeBookmark as any).cohortDefinitionId
+    if (!cohortId) return null
+
+    const materializedCohorts = getters.getMaterializedCohorts?.value || []
+    return materializedCohorts.find(mc => mc.id === cohortId) || null
+  }
+
+  /**
+   * Check if current filters match the stored materialized cohort's MRI query
+   */
+  function checkCohortMatchesCurrentFilters(): boolean {
+    const cohort = getActiveMaterializedCohort()
+    if (!cohort || !cohort.syntax) return false
+
+    try {
+      // Parse the stored syntax
+      const syntaxObj = JSON.parse(cohort.syntax)
+      const storedMriQuery = syntaxObj.mriquery
+
+      if (!storedMriQuery) return false
+
+      // Decode the stored MRI query
+      const decodedStoredQuery = BinaryToString(storedMriQuery)
+      const storedFilter = JSON.parse(decodedStoredQuery)
+
+      // Get current filter state
+      const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+      if (!activeBookmark) return false
+
+      const plRequest = getters.getPLRequest?.({ bmkId: (activeBookmark as any).id })
+      const currentFilter = (plRequest as any)?.filter
+
+      if (!storedFilter || !currentFilter) return false
+
+      // Compare filter.cards arrays using deep equality
+      return JSON.stringify(storedFilter.filter?.cards) === JSON.stringify(currentFilter.cards)
+    } catch (error) {
+      console.error('Error comparing cohort filters:', error)
+      return false
+    }
+  }
+
   async function handleOpenDashboard() {
     const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
     const isNew = activeBookmark?.isNew || false
@@ -956,26 +1009,52 @@ export function useDashboardFlow(
       hasLocalChanges = false
     }
 
-    if (isNew || hasLocalChanges) {
+    // Scenario 1: New bookmark - always show full modal
+    if (isNew) {
+      saveCohortModalMode.value = 'full'
       showSaveCohortModal.value = true
       return
     }
-    const materializedId = getters.getActiveCohortMaterializedId?.value || getters.getActiveCohortMaterializedId
 
-    if (!materializedId) {
+    const materializedId = getters.getActiveCohortMaterializedId?.value || getters.getActiveCohortMaterializedId
+    const cohortExists = !!materializedId
+    const cohortMatches = cohortExists && checkCohortMatchesCurrentFilters()
+
+    // Scenario 5: Existing bookmark, no changes, cohort exists and matches - skip modal
+    if (!hasLocalChanges && cohortExists && cohortMatches) {
+      // Ensure wizardConfig is set before opening, wait for reactivity if needed
+      if (!activeDashboardWizardConfig.value) {
+        await new Promise(resolve => setTimeout(resolve, 50))
+        if (!activeDashboardWizardConfig.value) {
+          dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
+          return
+        }
+      }
+      showDashboardModal.value = true
+      isProcessingDashboardFlow = false
+      return
+    }
+
+    // Scenario 7: Existing bookmark, no changes, no cohort - materialize-only modal
+    if (!hasLocalChanges && !cohortExists) {
+      saveCohortModalMode.value = 'materialize-only'
       showSaveCohortModal.value = true
       return
     }
-    // Ensure wizardConfig is set before opening, wait for reactivity if needed
-    if (!activeDashboardWizardConfig.value) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-      if (!activeDashboardWizardConfig.value) {
-        dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
-        return
-      }
+
+    // Scenario 2: Existing bookmark, has changes, cohort exists and matches - bookmark-only modal
+    if (hasLocalChanges && cohortExists && cohortMatches) {
+      saveCohortModalMode.value = 'bookmark-only'
+      showSaveCohortModal.value = true
+      return
     }
-    showDashboardModal.value = true
-    isProcessingDashboardFlow = false
+
+    // Scenario 3, 4, 6: All other cases - full modal (save + materialize)
+    // - Scenario 3: Existing bookmark, has changes, cohort exists but doesn't match
+    // - Scenario 4: Existing bookmark, has changes, no cohort
+    // - Scenario 6: Existing bookmark, no changes, cohort exists but doesn't match
+    saveCohortModalMode.value = 'full'
+    showSaveCohortModal.value = true
   }
 
   function handleSaveCohortSuccess() {
@@ -1009,6 +1088,7 @@ export function useDashboardFlow(
   return {
     showDashboardModal,
     showSaveCohortModal,
+    saveCohortModalMode,
     showDashboardSelectionModal,
     showRequiredFiltersModal,
     dashboardMetadataLoading,
