@@ -57,7 +57,7 @@ export interface Getters {
   getFilterCards: { value: Record<string, unknown> }
   getCurrentBookmarkHasChanges: { value: boolean }
   getActiveCohortMaterializedId: { value: string | null }
-  getMaterializedCohorts: { value: IMaterializedCohort[] }
+  getMaterializedCohorts: IMaterializedCohort[]
 }
 
 export interface LocalConstraint {
@@ -960,7 +960,7 @@ export function useDashboardFlow(
     const cohortId = (activeBookmark as any).cohortDefinitionId
     if (!cohortId) return null
 
-    const materializedCohorts = getters.getMaterializedCohorts?.value || []
+    const materializedCohorts = getters.getMaterializedCohorts || []
     return materializedCohorts.find(mc => mc.id === cohortId) || null
   }
 
@@ -968,33 +968,70 @@ export function useDashboardFlow(
    * Check if current filters match the stored materialized cohort's MRI query
    */
   function checkCohortMatchesCurrentFilters(): boolean {
+    console.log('[DashboardFlow] Starting cohort-filter comparison...')
+    
     const cohort = getActiveMaterializedCohort()
-    if (!cohort || !cohort.syntax) return false
+    console.log('[DashboardFlow] Active cohort:', cohort ? { id: cohort.id, hasSyntax: !!cohort.syntax } : null)
+    
+    if (!cohort || !cohort.syntax) {
+      console.log('[DashboardFlow] No cohort or syntax found, returning false')
+      return false
+    }
 
     try {
       // Parse the stored syntax
       const syntaxObj = JSON.parse(cohort.syntax)
+      console.log('[DashboardFlow] Parsed syntax object:', syntaxObj)
+      
       const storedMriQuery = syntaxObj.mriquery
-
-      if (!storedMriQuery) return false
+      if (!storedMriQuery) {
+        console.log('[DashboardFlow] No mriquery in syntax, returning false')
+        return false
+      }
 
       // Decode the stored MRI query
+      console.log('[DashboardFlow] Decoding stored MRI query...')
       const decodedStoredQuery = BinaryToString(storedMriQuery)
+      console.log('[DashboardFlow] Decoded query length:', decodedStoredQuery.length)
+      
       const storedFilter = JSON.parse(decodedStoredQuery)
+      console.log('[DashboardFlow] Stored filter structure:', Object.keys(storedFilter))
+      
+      const storedFilterCards = storedFilter.cohortDefinition?.cards || []
+      console.log('[DashboardFlow] Stored filter cards count:', storedFilterCards.length)
 
       // Get current filter state
       const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
-      if (!activeBookmark) return false
+      if (!activeBookmark) {
+        console.log('[DashboardFlow] No active bookmark, returning false')
+        return false
+      }
 
       const plRequest = getters.getPLRequest?.({ bmkId: (activeBookmark as any).id })
-      const currentFilter = (plRequest as any)?.filter
+      console.log('[DashboardFlow] PLRequest structure:', plRequest ? Object.keys(plRequest) : null)
+      
+      const currentFilterCards = (plRequest as any)?.cohortDefinition?.cards || []
+      console.log('[DashboardFlow] Current filter cards count:', currentFilterCards.length)
 
-      if (!storedFilter || !currentFilter) return false
+      if (!storedFilterCards || !currentFilterCards) {
+        console.log('[DashboardFlow] Missing filter cards arrays, returning false')
+        return false
+      }
 
       // Compare filter.cards arrays using deep equality
-      return JSON.stringify(storedFilter.filter?.cards) === JSON.stringify(currentFilter.cards)
+      const storedJson = JSON.stringify(storedFilterCards)
+      const currentJson = JSON.stringify(currentFilterCards)
+      const matches = storedJson === currentJson
+      
+      console.log('[DashboardFlow] Comparison result:', matches)
+      if (!matches) {
+        console.log('[DashboardFlow] Stored cards sample:', storedJson.substring(0, 200))
+        console.log('[DashboardFlow] Current cards sample:', currentJson.substring(0, 200))
+      }
+      
+      return matches
     } catch (error) {
-      console.error('Error comparing cohort filters:', error)
+      console.error('[DashboardFlow] Error comparing cohort filters:', error)
       return false
     }
   }
