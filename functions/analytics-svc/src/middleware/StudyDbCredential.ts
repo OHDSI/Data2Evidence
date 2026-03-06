@@ -80,7 +80,11 @@ export default async (req: IMRIRequest, res, next) => {
         const studyVocabSchemaName: string = studyMetadata.vocabSchemaName;
         const studyResultsSchemaName: string = studyMetadata.resultsSchemaName;
 
-        log.info(`studyDatabaseName ${studyDatabaseName}`);
+        log.info(`[StudyDBCredentials]studyDatabaseName ${studyDatabaseName}`);
+        log.info(`[StudyDBCredentials]studySchemaName ${studySchemaName}`);
+        log.info(`[StudyDBCredentials]studyVocabSchemaName ${studyVocabSchemaName}`);
+        log.info(`[StudyDBCredentials]studyResultsSchemaName ${studyResultsSchemaName}`);
+        log.info(`[StudyDBCredentials]analyticsCredentials stringified ${JSON.stringify(analyticsCredentials)}`);
 
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
             ...analyticsCredentials[studyDatabaseName],
@@ -113,6 +117,7 @@ export default async (req: IMRIRequest, res, next) => {
         studyAnalyticsCredential.max = env.PG__MIN_POOL;
         studyAnalyticsCredential.min = env.PG__MAX_POOL;
         studyAnalyticsCredential.idleTimeoutMillis = env.PG__IDLE_TIMEOUT_IN_MS;
+        log.info(`[StudyDBCredentials]studyAnalyticsCredential stringified ${JSON.stringify(studyAnalyticsCredential)}`);
 
         req.dbCredentials = {
             ...req.dbCredentials,

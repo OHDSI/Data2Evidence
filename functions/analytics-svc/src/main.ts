@@ -132,6 +132,8 @@ const initRoutes = async (app: express.Application) => {
                 }
 
                 let credentials;
+                log.debug(`[main] req.dbCredentials stringified: ${JSON.stringify(req.dbCredentials)}`);
+
                 // If request starts with "/analytics-svc/api/services/alpdb/schema/exists", as this request is seeking information where a dataset might not exist yet, get database credentials directly from incoming databaseCode
                 if (
                     req.originalUrl.startsWith(
@@ -141,12 +143,16 @@ const initRoutes = async (app: express.Application) => {
                     log.info(
                         "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
+                    log.debug(`[main]req.query.databaseCode: ${req.query.databaseCode}`);
                     const databaseCode =
                         parseValueForPrototypePollutingAssignment(
                             req.query.databaseCode as string
                         );
+                    log.debug(`[main]databaseCode: ${databaseCode}`);
+                    
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
+                    log.debug(`[main] 1 credentials stringified: ${JSON.stringify(credentials)}`);
                     if (!credentials) {
                         throw new Error(
                             `Database code:${databaseCode} not found in analyticsCredentials`
@@ -154,21 +160,11 @@ const initRoutes = async (app: express.Application) => {
                     }
                 } else {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
+                    log.debug(`[main] 2 credentials stringified: ${JSON.stringify(credentials)}`);
                 }
-                log.log(`--------------log------------`);
-                log.log(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
-                log.log(`credentials.dialect: ${credentials.dialect}`);
-                log.log(`--------------------------`);
 
-                log.info(`-------------info-------------`);
-                log.info(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
-                log.info(`credentials.dialect: ${credentials.dialect}`);
-                log.info(`--------------------------`);
-
-                log.debug(`-----------debug---------------`);
-                log.debug(`env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
-                log.debug(`credentials.dialect: ${credentials.dialect}`);
-                log.debug(`--------------------------`);
+                log.debug(`[main]env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
+                log.debug(`[main]credentials.dialect: ${credentials.dialect}`);
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
@@ -182,6 +178,8 @@ const initRoutes = async (app: express.Application) => {
                         userObj,
                     });
                 }
+                log.debug(`[main] req.dbConnections stringified: ${JSON.stringify(req.dbConnections)}`);
+
             }
 
             next();
