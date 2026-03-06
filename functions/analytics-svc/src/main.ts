@@ -631,11 +631,9 @@ const getTrexDbConnection = ({
         }
         const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
 
-        log.debug(`--------------------------`);
-        log.debug(`trex_publication: ${trex_publication}`);
-        log.debug(`direct_connection_suffix: ${direct_connection_suffix}`);
-        log.debug(`trex_direct_connection_alias: ${trex_direct_connection_alias}`);
-        log.debug(`--------------------------`);
+        log.debug(`[main.ts]trex_publication: ${trex_publication}`);
+        log.debug(`[main.ts]direct_connection_suffix: ${direct_connection_suffix}`);
+        log.debug(`[main.ts]trex_direct_connection_alias: ${trex_direct_connection_alias}`);
         const parseSql = (
             temp: string,
             schemaName: string,
@@ -659,11 +657,9 @@ const getTrexDbConnection = ({
             );
         };
 
-        log.debug(`--------------------------`);
-        log.debug(`analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.debug(`parseSql: ${parseSql}`);
-        log.debug(`parseSql stringified: ${JSON.stringify(parseSql)}`);
-        log.debug(`--------------------------`);
+        log.debug(`[main.ts]analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
+        log.debug(`[main.ts]parseSql: ${parseSql}`);
+        log.debug(`[main.ts]parseSql stringified: ${JSON.stringify(parseSql)}`);
 
         const conn = dbm.getConnection(
             analyticsCredentials.code,
@@ -672,6 +668,7 @@ const getTrexDbConnection = ({
             analyticsCredentials.resultsSchemaName,
             { duckdb: parseSql }
         );
+        log.debug(`[main.ts]conn: ${JSON.stringify(conn)}`);
 
         return { analyticsConnection: conn };
     } catch (error) {
