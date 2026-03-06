@@ -337,11 +337,15 @@ export class QueryObject {
       };
 
       const shortenedQuery = this.shortenIdentifier(preparedQuery.sql);
+      logger.debug(`[QueryObject.executeQuery]preparedQuery: ${JSON.stringify(preparedQuery)}`)
+      logger.debug(`[QueryObject.executeQuery]shortenedQuery: ${JSON.stringify(shortenedQuery)}`)
 
       connection.executeQuery(
         shortenedQuery,
         preparedQuery.placeholders,
         (err, resultData) => {
+          logger.debug(`[QueryObject.executeQuery]err: ${JSON.stringify(err)}`)
+          logger.debug(`[QueryObject.executeQuery]resultData: ${JSON.stringify(resultData)}`)
           if (err) {
             internalCallback(err, null);
           } else {
