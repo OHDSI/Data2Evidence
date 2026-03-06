@@ -67,11 +67,6 @@ const getSeeds = (): { [key: string]: any }[] => {
           id: uuidv4(),
           user_id: userId,
           b2c_group_id: '72b00548-2cbf-48f6-aa68-bbf81864857b'
-        },
-        {
-          id: uuidv4(),
-          user_id: userId,
-          b2c_group_id: 'd1c8e5b7-9a0c-4c3b-9c8e-1f2a9e5d6f3a'
         }
       ])
     }
