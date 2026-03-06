@@ -283,16 +283,16 @@ export class AttributeConfig extends ConfigEntity {
     public getExpressionTable() {
         let self = this;
         if (this.__config.expression) {
-            return this.getPlaceholdersFromExpression(
+            const placeholder = this.getPlaceholdersFromExpression(
                 this.__config.expression
-            ).replace(new RegExp(this.baseEntity), (x) => {
-                let tmp = "";
-                tmp =
-                    self.placeholderMap[x] +
+            );
+            if (placeholder) {
+                return (
+                    self.placeholderMap[placeholder] +
                     getUniqueSeperatorString() +
-                    this.getExpressionHash();
-                return tmp;
-            });
+                    this.getExpressionHash()
+                );
+            }
         }
         return null;
     }
