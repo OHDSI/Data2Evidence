@@ -318,7 +318,7 @@ export class QueryObject {
   ): Promise<QueryObjectResultType<T>> {
     const run = (internalCallback: CallBackInterface) => {
       const preparedQuery = this._prepareQuery();
-
+      schemaName = "postgres__srcdb.demo_cdm";
       const _process = resultData => {
         const result: any = { data: resultData };
         if (this.sqlReturnOn) {
