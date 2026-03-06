@@ -19,11 +19,13 @@ export class DemoService {
 
   public async addDatabase(token: string, input: IDemoInput) {
     this.logger.info("Adding database");
-    this.logger.info(`2===> all env vars: \n ${env}`);
+    this.logger.info(`[DemoService]All env vars: \n ${env}`);
+    this.logger.info(`[DemoService]env.DEMO_DB_CODE: ${env.DEMO_DB_CODE}`);
 
 
     const dbCredentialsAPI = new DbCredentialsAPI(token);
     const dbList = await dbCredentialsAPI.getDbList();
+    this.logger.info(`[DemoService]dbList: \n ${JSON.stringify(dbList)}`);
 
     const exist = dbList.find((db) => db.code === env.DEMO_DB_CODE);
     if (exist) {
@@ -74,7 +76,7 @@ export class DemoService {
       vocabSchemas: [env.DEMO_DB_CDM_SCHEMA],
       credentials: credentials,
     };
-    this.logger.info(`>>>db: ${JSON.stringify(db)}`);
+    this.logger.info(`[DemoService]db: ${JSON.stringify(db)}`);
     const result = await dbCredentialsAPI.createDb(db);
     this.logger.info(`Database added: ${JSON.stringify(result)}`);
 
