@@ -1,5 +1,5 @@
 <template>
-  <v-btn v-bind="$attrs" :disabled="disabled" color="" :loading="loading" class="v-button">
+  <v-btn v-bind="$attrs" :disabled="disabled" :loading="loading" class="v-button">
     <!-- Pass through all slots -->
     <template v-for="(_, name) in $slots" #[name]="slotData">
       <slot :name="name" v-bind="slotData || {}" />
@@ -121,70 +121,6 @@ withDefaults(defineProps<Props>(), {
       background-color: var(--color-background-button-secondary-disabled);
       border-color: var(--color-border-button-secondary-disabled);
       color: var(--color-text-button-secondary-disabled);
-    }
-  }
-
-  /* === Tonal — light-tinted primary background === */
-  &.v-btn--variant-tonal {
-    background-color: var(--color-primary-extra-lightest);
-    border-color: transparent;
-    color: var(--color-text-button-secondary-default);
-
-    &:hover:not(:disabled),
-    &:focus:not(:disabled) {
-      background-color: var(--color-primary-lightest);
-      border-color: transparent;
-      color: var(--color-text-button-secondary-hover);
-    }
-
-    &:disabled,
-    &.v-btn--disabled {
-      background-color: var(--color-background-button-primary-disabled);
-      border-color: transparent;
-      color: var(--color-text-button-secondary-disabled);
-    }
-  }
-
-  /* === Text — tertiary tokens, no border === */
-  &.v-btn--variant-text {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--color-text-button-tertiary-default);
-
-    &:hover:not(:disabled),
-    &:focus:not(:disabled) {
-      background-color: var(--color-background-button-tertiary-hover);
-      border-color: transparent;
-      color: var(--color-text-button-tertiary-hover);
-    }
-
-    &:disabled,
-    &.v-btn--disabled {
-      background-color: transparent;
-      border-color: transparent;
-      color: var(--color-text-button-tertiary-disabled);
-    }
-  }
-
-  /* === Plain — like text but opacity-based === */
-  &.v-btn--variant-plain {
-    background-color: transparent;
-    border-color: transparent;
-    color: var(--color-text-button-tertiary-default);
-    opacity: 0.64;
-
-    &:hover:not(:disabled),
-    &:focus:not(:disabled) {
-      background-color: transparent;
-      opacity: 1;
-    }
-
-    &:disabled,
-    &.v-btn--disabled {
-      background-color: transparent;
-      border-color: transparent;
-      color: var(--color-text-button-tertiary-disabled);
-      opacity: 0.38;
     }
   }
 }
