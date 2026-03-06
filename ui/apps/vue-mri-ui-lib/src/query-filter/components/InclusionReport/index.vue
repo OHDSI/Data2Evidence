@@ -13,14 +13,14 @@ import VButton from '@/components/vuetify/VButton.vue'
 import bsDropdown from '@/lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '@/lib/ui/bs-dropdown-item.vue'
 import appTab from '@/lib/ui/app-tab.vue'
-import { set } from 'lodash'
 
 const props = withDefaults(
   defineProps<{
     cohortDefinitionId: string
     sourceKey: string
-    patientCount: number | null
+    isReady: boolean
     generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
+    cacheKey?: string
     showPersonEventSwitch?: boolean
     fetchInclusionReport: (
       cohortDefinitionId: string,
@@ -54,8 +54,9 @@ const dataComposable = useInclusionReportData(
   {
     cohortDefinitionId: props.cohortDefinitionId,
     sourceKey: props.sourceKey,
-    patientCount: props.patientCount,
+    isReady: props.isReady,
     generationStatus: props.generationStatus,
+    cacheKey: props.cacheKey,
     fetchInclusionReport: props.fetchInclusionReport,
   },
   selectedPersonEventView
@@ -68,7 +69,6 @@ const {
   treemapData,
   shouldFetchInclusionReport,
   fetchInclusionReportInternal,
-  resetData,
 } = dataComposable
 
 // Then get rule management which depends on inclusionReportResponse

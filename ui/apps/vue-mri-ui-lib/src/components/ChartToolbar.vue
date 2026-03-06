@@ -153,7 +153,8 @@
           <InclusionReport
             :cohort-definition-id="inclusionReportCohortDefinitionId"
             :source-key="inclusionReportSourceKey"
-            :patient-count="inclusionReportPatientCount"
+            :is-ready="inclusionReportIsReady"
+            :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
             :show-person-event-switch="false"
@@ -309,8 +310,11 @@ export default {
     inclusionReportSourceKey() {
       return this.getSelectedDataset?.id || 'mock-source-key'
     },
-    inclusionReportPatientCount() {
-      return 1000
+    inclusionReportIsReady() {
+      return true
+    },
+    inclusionReportCacheKey() {
+      return JSON.stringify(this.getBookmarksData)
     },
   },
   methods: {

@@ -6,8 +6,9 @@ import { convertTreemapData } from '../computeTreemapStats'
 export interface UseInclusionReportDataOptions {
   cohortDefinitionId: string
   sourceKey: string
-  patientCount: number | null
+  isReady: boolean
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
+  cacheKey?: string
   fetchInclusionReport: (
     cohortDefinitionId: string,
     sourceKey: string,
@@ -40,10 +41,7 @@ export function useInclusionReportData(
   })
 
   const shouldFetchInclusionReport = computed(() => {
-    return (
-      options.patientCount !== null &&
-      !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
-    )
+    return options.isReady && !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
   })
 
   const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {
@@ -67,6 +65,17 @@ export function useInclusionReportData(
     inclusionReportPersonResponse.value = null
     inclusionReportEventResponse.value = null
   }
+
+  // Watch for changes in cacheKey and reset/refetch when the underlying query changes
+  watch(
+    () => options.cacheKey,
+    () => {
+      resetData()
+      if (shouldFetchInclusionReport.value) {
+        fetchInclusionReportInternal(options.cohortDefinitionId, options.sourceKey)
+      }
+    }
+  )
 
   // Watch for changes in sourceKey and decide whether to fetch inclusion report
   watch(

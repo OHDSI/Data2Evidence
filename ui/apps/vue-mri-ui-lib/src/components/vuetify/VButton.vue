@@ -1,15 +1,11 @@
 <template>
-  <v-btn v-bind="$attrs" :disabled="disabled" :loading="loading" class="v-button">
+  <v-btn v-bind="$attrs" :disabled="disabled" color="" :loading="loading" class="v-button">
     <!-- Pass through all slots -->
     <template v-for="(_, name) in $slots" #[name]="slotData">
       <slot :name="name" v-bind="slotData || {}" />
     </template>
-
-    <!-- Default slot content -->
     <template v-if="!$slots.default">
-      <slot name="prepend"></slot>
       {{ text }}
-      <slot name="append"></slot>
     </template>
   </v-btn>
 </template>
