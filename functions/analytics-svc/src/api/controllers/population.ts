@@ -141,6 +141,7 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
  */
 export async function populationQuery(req: IMRIRequest, res, next) {
     const { analyticsConnection } = req.dbConnections;
+    console.log(`[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`)
     const user = getUser(req);
     const language = user.lang;
     let chartType: string = req.params.chartType;
