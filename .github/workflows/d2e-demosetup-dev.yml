@@ -232,6 +232,12 @@ jobs:
             exit 1
           fi
 
+      - name: Log local-resources files
+        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          echo "Files inside local-resources:"
+          docker exec d2e-trex sh -c "ls -laR /usr/src/local-resources"
+
       - name: UI Mounting build
         if: ${{ steps.file_changes.outputs.ui == 'true' }}
         run: |
