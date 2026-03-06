@@ -94,7 +94,7 @@ const initRoutes = async (app: express.Application) => {
                         `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
                     );
                 }
-
+                log.debug(`[main]studies: ${JSON.stringify(studies)}`);
                 req.studiesDbMetadata = {
                     studies,
                 };

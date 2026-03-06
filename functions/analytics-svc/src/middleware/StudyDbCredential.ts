@@ -137,13 +137,11 @@ export default async (req: IMRIRequest, res, next) => {
 
                 const portalServerAPI = new PortalServerAPI();
                 const studies = await portalServerAPI.getStudies();
-
+                log.info(`[StudyDBCredentials]studies ${JSON.stringify(studies)}`);
                 const studyMetadata: StudyDbMetadata = studies.find(
                     (o) => o.tokenStudyCode === studyTokenCode
                 );
-                log.info(
-                    `Selected studyMetadata ${JSON.stringify(studyMetadata)}`
-                );
+                log.info(`[StudyDBCredentials]Selected studyMetadata: ${JSON.stringify(studyMetadata)}`);
                 // Set req.selectedstudyDbMetadata if it does not already exist
                 if (!req.selectedstudyDbMetadata) {
                     req.selectedstudyDbMetadata = studyMetadata;
@@ -157,10 +155,15 @@ export default async (req: IMRIRequest, res, next) => {
             // TODO: throw exact error for missing db metadata later on once mri sends in selected study entity value
             // TODO: check for selected study is in user jwt token for authorisation
             let datasetId: string = getDatasetIdFromMriquery();
+            log.info(`[StudyDBCredentials]1datasetId: ${datasetId}`);
             // If datasetId is not found from mriquery, try and find datasetId from request query or body
             if (!datasetId) {
                 datasetId = getDatasetIdFromRequest();
             }
+            log.info(`[StudyDBCredentials]2datasetId: ${datasetId}`);
+            log.info(`[StudyDBCredentials]req.studiesDbMetadata: ${JSON.stringify(req.studiesDbMetadata)}`);
+            log.info(`[StudyDBCredentials]req.studiesDbMetadata.studies: ${JSON.stringify(req.studiesDbMetadata.studies)}`);
+
             const studyMetadata: StudyDbMetadata =
                 req.studiesDbMetadata.studies.find((o) => o.id === datasetId);
             // Set req.selectedstudyDbMetadata if it does not already exist
@@ -169,6 +172,7 @@ export default async (req: IMRIRequest, res, next) => {
             }
             getDbConnectionByStudyMetadata(studyMetadata);
             addPAConfigIdToReq(studyMetadata);
+            log.info(`[StudyDBCredentials]final studyMetadata: ${JSON.stringify(studyMetadata)}`);
         }
         next();
     } catch (err) {
