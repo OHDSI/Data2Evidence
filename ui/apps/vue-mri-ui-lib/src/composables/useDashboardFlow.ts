@@ -46,17 +46,33 @@ export interface DashboardContext {
   mriquery: string | null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export interface Bookmark {
+  id: string
+  bmkId: string
+  bookmarkname: string
+  bookmark: string
+  isNew?: boolean
+  cohortDefinitionId?: number
+  [key: string]: unknown
+}
+
+export interface PLRequest {
+  cohortDefinition?: {
+    cards?: unknown[]
+  }
+  [key: string]: unknown
+}
+
 export interface Getters {
-  getActiveBookmark: { value: unknown }
-  getWizardConfig: { value: WizardConfig | null }
-  getPLRequest: (_params: { bmkId: string }) => unknown
+  getActiveBookmark: Bookmark | null
+  getWizardConfig: WizardConfig | null
+  getPLRequest: (_params: { bmkId: string }) => PLRequest
   getConstraintForAttribute: (_params: { filterCardId: string; key: string }) => LocalConstraint | undefined
-  getSelectedDataset: { value: { id: string } | null }
-  getBookmarkFromIFR: { value: { cards: unknown[] } | null }
-  getFilterCards: { value: Record<string, unknown> }
-  getCurrentBookmarkHasChanges: { value: boolean }
-  getActiveCohortMaterializedId: { value: string | null }
+  getSelectedDataset: { id: string } | null
+  getBookmarkFromIFR: { cards: unknown[] } | null
+  getFilterCards: () => Record<string, unknown>
+  getCurrentBookmarkHasChanges: boolean
+  getActiveCohortMaterializedId: string | null
   getMaterializedCohorts: IMaterializedCohort[]
 }
 
@@ -151,16 +167,16 @@ export function useDashboardFlow(
 
   // Computed
   const dashboardContext = computed(() => {
-    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+    const activeBookmark = getters.getActiveBookmark
     if (!activeBookmark) {
       return { wizardConfig: null, conditions: null, mriquery: null }
     }
     const localConfig = activeDashboardWizardConfig.value
-    const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
+    const storeConfig = getters.getWizardConfig
     const wizardConfig = localConfig || storeConfig || null
     let mriquery = null
     try {
-      const plRequest = getters.getPLRequest?.({ bmkId: activeBookmark.id })
+      const plRequest = getters.getPLRequest({ bmkId: activeBookmark.id })
       mriquery = JSON.stringify(plRequest)
     } catch (e) {
       console.error('Failed to generate mriquery:', e)
@@ -359,8 +375,8 @@ export function useDashboardFlow(
     // Extract condition field values from wizardConfig.conditions array
     // Condition fields are wizard-only (isWizardField: true) and stored in wizardConfig.conditions
     const localConfig = activeDashboardWizardConfig.value
-    const storeConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
-    const wizardConfig = localConfig || storeConfig || null
+    const storeConfig = getters.getWizardConfig
+    const wizardConfig = localConfig || storeConfig
     const conditions: Array<{ value: string | object; displayName?: string; useDescendants?: boolean }> =
       wizardConfig?.conditions || []
 
@@ -379,7 +395,7 @@ export function useDashboardFlow(
           let extractedDisplayValue: string
 
           if (typeof condition.value === 'object' && condition.value !== null) {
-            const val = condition.value as any
+            const val = condition.value as WizardFieldValue
             extractedValue = String(val.value || val.text || '')
             extractedDisplayValue = val.display_value || val.text || extractedValue
           } else {
@@ -623,7 +639,7 @@ export function useDashboardFlow(
     dashboardMetadataLoading.value = true
     dashboardSelectionError.value = ''
     try {
-      const datasetId = getters.getSelectedDataset?.value?.id || getters.getSelectedDataset?.id
+      const datasetId = getters.getSelectedDataset?.id
       if (!datasetId) {
         throw new Error('No dataset selected')
       }
@@ -641,15 +657,14 @@ export function useDashboardFlow(
   }
 
   async function openDashboardModal() {
-    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+    const activeBookmark = getters.getActiveBookmark
     if (!activeBookmark) {
       dispatch('setToastMessage', { text: 'Open or create a cohort before opening dashboards.' })
       return
     }
     resetDashboardFlowState()
 
-    // Check for existing wizardConfig from wizards/deep link
-    const storeWizardConfig = getters.getWizardConfig?.value || getters.getWizardConfig || null
+    const storeWizardConfig = getters.getWizardConfig
     const existingWizardConfig = storeWizardConfig as WizardConfig | null
     const existingDashboardType = existingWizardConfig?.dashboardType
 
@@ -696,13 +711,12 @@ export function useDashboardFlow(
   }
 
   function getCurrentFilterCards() {
-    const bookmarkFromIFR = getters.getBookmarkFromIFR?.value || getters.getBookmarkFromIFR
+    const bookmarkFromIFR = getters.getBookmarkFromIFR
     return bookmarkFromIFR?.cards || null
   }
 
   function getNonExcludedFilterCardIdsByPath(filterCardPath: string): string[] {
-    const getFilterCards = getters.getFilterCards
-    const filterCards = typeof getFilterCards === 'function' ? getFilterCards() : getFilterCards?.value
+    const filterCards = getters.getFilterCards()
     return Object.keys(filterCards || {}).filter(filterCardId => {
       const filterCard = filterCards[filterCardId]
       return filterCard?.props?.key === filterCardPath && !filterCard?.props?.excludeFilter
@@ -950,23 +964,14 @@ export function useDashboardFlow(
     }
   }
 
-  /**
-   * Get the active materialized cohort for the current bookmark
-   */
   function getActiveMaterializedCohort(): IMaterializedCohort | null {
-    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
-    if (!activeBookmark) return null
-
-    const cohortId = (activeBookmark as any).cohortDefinitionId
-    if (!cohortId) return null
+    const activeBookmark = getters.getActiveBookmark
+    if (!activeBookmark || !activeBookmark.cohortDefinitionId) return null
 
     const materializedCohorts = getters.getMaterializedCohorts || []
-    return materializedCohorts.find(mc => mc.id === cohortId) || null
+    return materializedCohorts.find(mc => mc.id === activeBookmark.cohortDefinitionId) || null
   }
 
-  /**
-   * Check if current filters match the stored materialized cohort's MRI query
-   */
   function checkCohortMatchesCurrentFilters(): boolean {
     const cohort = getActiveMaterializedCohort()
     if (!cohort || !cohort.syntax) {
@@ -974,32 +979,28 @@ export function useDashboardFlow(
     }
 
     try {
-      // Parse the stored syntax
       const syntaxObj = JSON.parse(cohort.syntax)
       const storedMriQuery = syntaxObj.mriquery
       if (!storedMriQuery) {
         return false
       }
 
-      // Decode the stored MRI query
       const decodedStoredQuery = BinaryToString(storedMriQuery)
       const storedFilter = JSON.parse(decodedStoredQuery)
       const storedFilterCards = storedFilter.cohortDefinition?.cards || []
 
-      // Get current filter state
-      const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+      const activeBookmark = getters.getActiveBookmark
       if (!activeBookmark) {
         return false
       }
 
-      const plRequest = getters.getPLRequest?.({ bmkId: (activeBookmark as any).id })
-      const currentFilterCards = (plRequest as any)?.cohortDefinition?.cards || []
+      const plRequest = getters.getPLRequest({ bmkId: activeBookmark.id })
+      const currentFilterCards = plRequest?.cohortDefinition?.cards || []
 
       if (!storedFilterCards || !currentFilterCards) {
         return false
       }
 
-      // Compare filter.cards arrays using deep equality
       const storedJson = JSON.stringify(storedFilterCards)
       const currentJson = JSON.stringify(currentFilterCards)
       return storedJson === currentJson
@@ -1010,29 +1011,21 @@ export function useDashboardFlow(
   }
 
   async function handleOpenDashboard() {
-    const activeBookmark = getters.getActiveBookmark?.value || getters.getActiveBookmark
+    const activeBookmark = getters.getActiveBookmark
     const isNew = activeBookmark?.isNew || false
-    let hasLocalChanges = false
-    try {
-      hasLocalChanges = getters.getCurrentBookmarkHasChanges?.value || getters.getCurrentBookmarkHasChanges || false
-    } catch (e) {
-      hasLocalChanges = false
-    }
+    const hasLocalChanges = getters.getCurrentBookmarkHasChanges
 
-    // Scenario 1: New bookmark - always show full modal
     if (isNew) {
       saveCohortModalMode.value = 'full'
       showSaveCohortModal.value = true
       return
     }
 
-    const materializedId = getters.getActiveCohortMaterializedId?.value || getters.getActiveCohortMaterializedId
+    const materializedId = getters.getActiveCohortMaterializedId
     const cohortExists = !!materializedId
     const cohortMatches = cohortExists && checkCohortMatchesCurrentFilters()
 
-    // Scenario 5: Existing bookmark, no changes, cohort exists and matches - skip modal
     if (!hasLocalChanges && cohortExists && cohortMatches) {
-      // Ensure wizardConfig is set before opening, wait for reactivity if needed
       if (!activeDashboardWizardConfig.value) {
         await new Promise(resolve => setTimeout(resolve, 50))
         if (!activeDashboardWizardConfig.value) {
@@ -1045,24 +1038,18 @@ export function useDashboardFlow(
       return
     }
 
-    // Scenario 7: Existing bookmark, no changes, no cohort - materialize-only modal
     if (!hasLocalChanges && !cohortExists) {
       saveCohortModalMode.value = 'materialize-only'
       showSaveCohortModal.value = true
       return
     }
 
-    // Scenario 2: Existing bookmark, has changes, cohort exists and matches - bookmark-only modal
     if (hasLocalChanges && cohortExists && cohortMatches) {
       saveCohortModalMode.value = 'bookmark-only'
       showSaveCohortModal.value = true
       return
     }
 
-    // Scenario 3, 4, 6: All other cases - full modal (save + materialize)
-    // - Scenario 3: Existing bookmark, has changes, cohort exists but doesn't match
-    // - Scenario 4: Existing bookmark, has changes, no cohort
-    // - Scenario 6: Existing bookmark, no changes, cohort exists but doesn't match
     saveCohortModalMode.value = 'full'
     showSaveCohortModal.value = true
   }
