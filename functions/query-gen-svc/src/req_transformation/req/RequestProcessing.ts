@@ -23,6 +23,7 @@ export class RequestProcessing {
                 this.pluginProcessing(req);
                 break;
             case "totalpcount":
+            case "irtotalpcount":
                 this.tpcProcessing(req);
                 break;
             case "patientdetail":
@@ -324,6 +325,7 @@ export class RequestProcessing {
                     return self.measuresAndCategories;
                 case "aggquery":
                 case "totalpcount":
+                case "irtotalpcount":
                 case "attribute_validation_service":
                 case "autocomplete_service":
                 case "domain_values_service":

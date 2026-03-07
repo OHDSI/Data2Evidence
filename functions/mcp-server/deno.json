@@ -25,6 +25,7 @@
     "./src/types/tool-schemas": "./src/types/tool-schemas.ts",
     "./src/utils/request-helpers": "./src/utils/request-helpers.ts",
     "./src/utils/phenotype-helpers": "./src/utils/phenotype-helpers.ts",
+    "./src/utils/embedding-helpers": "./src/utils/embedding-helpers.ts",
     "./src/config/server.config": "./src/config/server.config.ts",
     "./src/tools/strategus.tools": "./src/tools/strategus.tools.ts",
     "./src/utils/strategus_helpers": "./src/utils/strategus_helpers.ts",

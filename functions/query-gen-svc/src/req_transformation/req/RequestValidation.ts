@@ -140,6 +140,7 @@ export function requestValidation(
             );
             break;
         case "totalpcount":
+        case "irtotalpcount":
         case "aggquery":
             checkValidAggregations(containers, config, message);
             checkInvalidOpOperator(

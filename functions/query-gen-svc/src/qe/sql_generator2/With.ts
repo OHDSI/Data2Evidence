@@ -284,6 +284,12 @@ export class With extends AstElement {
     public getTableAlias(table) {
         if (this.parent.getType() === "Query") {
             if (table in this.parent.sourceTable) {
+                // Handle Inclusion report dynamically generated patient.interactions.basicdata
+                if (this.joinElements[table].alias.includes("basicdata")) {
+                    // Dont use parent.sourceTable, instead use joinElements
+                    return this.joinElements[table];
+                }
+
                 return this.parent.sourceTable[table];
             }
         }
