@@ -34,6 +34,10 @@ export default {
   },
   watch: {
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
       if (this.getBookmarksData && Object.keys(this.getBookmarksData).length > 0) {
         this.renderChart()
       }
@@ -47,6 +51,7 @@ export default {
       'getResponse',
       'getBookmarksData',
       'getFireRequest',
+      'isFireRequestHeld',
     ]),
     frontEndConfig() {
       return this.getMriFrontendConfig
