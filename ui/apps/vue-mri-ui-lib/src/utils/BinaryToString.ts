@@ -5,7 +5,7 @@ export default (binaryString: string) => {
     const decodedData = atob(binaryString)
     const inflated = pako.inflate(decodedData, { to: 'string' })
     return inflated
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to decode binary string:', error)
     throw error
   }
