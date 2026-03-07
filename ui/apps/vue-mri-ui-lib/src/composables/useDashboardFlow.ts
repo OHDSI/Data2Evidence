@@ -10,6 +10,8 @@ import {
   type NumericFilterValue,
   type WizardDefinition,
   type WizardFieldDefinition,
+  type BookmarkBooleanContainer,
+  type BookmarkFilterCard,
 } from '../utils/dashboardFlowUtils'
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 import BinaryToString from '../utils/BinaryToString'
@@ -63,6 +65,15 @@ export interface PLRequest {
   [key: string]: unknown
 }
 
+export interface FilterCard {
+  props?: {
+    key?: string
+    excludeFilter?: boolean
+    [key: string]: unknown
+  }
+  [key: string]: unknown
+}
+
 export interface Getters {
   getActiveBookmark: Bookmark | null
   getWizardConfig: WizardConfig | null
@@ -70,7 +81,7 @@ export interface Getters {
   getConstraintForAttribute: (_params: { filterCardId: string; key: string }) => LocalConstraint | undefined
   getSelectedDataset: { id: string } | null
   getBookmarkFromIFR: { cards: unknown[] } | null
-  getFilterCards: () => Record<string, unknown>
+  getFilterCards: () => Record<string, FilterCard>
   getCurrentBookmarkHasChanges: boolean
   getActiveCohortMaterializedId: string | null
   getMaterializedCohorts: IMaterializedCohort[]
@@ -532,9 +543,9 @@ export function useDashboardFlow(
         }
       } else if (op.type === 'create') {
         // Create new card with fixedAttributes
-        const newCardId = await dispatch('addFilterCard', {
+        const newCardId = (await dispatch('addFilterCard', {
           configPath: op.filterCardPath!,
-        })
+        })) as string
 
         createdCards.value.push(newCardId)
         // Track this new card by its filterCardPath
@@ -606,10 +617,10 @@ export function useDashboardFlow(
   }
 
   async function fetchDashboardCodes(datasetId: string): Promise<DashboardCode[]> {
-    const response = await dispatch('ajaxAuth', {
+    const response = (await dispatch('ajaxAuth', {
       method: 'get',
       url: `/system-portal/dataset/dashboard-codes?datasetId=${encodeURIComponent(datasetId)}&type=cohort`,
-    })
+    })) as { data: unknown }
     return normalizeResponseArray(response.data)
   }
 
@@ -619,7 +630,9 @@ export function useDashboardFlow(
     let lastError: Error | null = null
     for (const url of urls) {
       try {
-        const response = await dispatch('ajaxAuth', { method: 'get', url })
+        const response = (await dispatch('ajaxAuth', { method: 'get', url })) as {
+          data?: { wizards?: WizardDefinition[] }
+        }
         return Array.isArray(response.data?.wizards) ? response.data.wizards : []
       } catch (error) {
         lastError = error as Error
@@ -710,9 +723,10 @@ export function useDashboardFlow(
     isProcessingDashboardFlow = false
   }
 
-  function getCurrentFilterCards() {
+  function getCurrentFilterCards(): BookmarkBooleanContainer | BookmarkFilterCard | null {
     const bookmarkFromIFR = getters.getBookmarkFromIFR
-    return bookmarkFromIFR?.cards || null
+    const cards = bookmarkFromIFR?.cards || null
+    return cards as unknown as BookmarkBooleanContainer | BookmarkFilterCard | null
   }
 
   function getNonExcludedFilterCardIdsByPath(filterCardPath: string): string[] {
