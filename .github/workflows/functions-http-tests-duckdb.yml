@@ -392,6 +392,10 @@ jobs:
           yarn --prefer-offline
           yarn inittestdb-pg
 
+      - name: Verify duckdb files
+        run: |
+          ls -l /usr/src/data/cache
+
       - name: Install dependencies in backend integration tests
         run: |
           cd ./tests/backend_integration_tests/pg
