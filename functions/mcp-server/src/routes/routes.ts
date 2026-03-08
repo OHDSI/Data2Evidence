@@ -11,6 +11,12 @@ export class mcpServerRouter {
 
   private registerRoutes() {
     this.router.post("/chat", async (req: Request, res: Response) => {
+      const reqStart = performance.now();
+      const method = req.body?.method || "unknown";
+      console.log(
+        `[MCP-TIMING] === REQUEST START === method=${method} } === body=${JSON.stringify(req.body)} `,
+      );
+
       try {
         const transport = new StreamableHTTPServerTransport({
           sessionIdGenerator: undefined,
@@ -19,6 +25,9 @@ export class mcpServerRouter {
 
         res.on("close", () => {
           transport.close();
+          console.log(
+            `[MCP-TIMING] === REQUEST END === method=${method} total=${(performance.now() - reqStart).toFixed(1)}ms`,
+          );
         });
 
         await server.connect(transport);
