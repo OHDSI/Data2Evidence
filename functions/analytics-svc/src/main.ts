@@ -645,13 +645,17 @@ const getTrexDbConnection = ({
             resultsSchemaName: string,
             parameters: any
         ): string => {
-            log.debug(`temp: ${temp}`);
+            log.debug(`[main.ts]temp: ${temp}`);
+            log.debug(`[main.ts]schemaName: ${schemaName}`);
+            log.debug(`[main.ts]vocabSchemaName: ${vocabSchemaName}`);
+            log.debug(`[main.ts]resultsSchemaName: ${resultsSchemaName}`);
+            log.debug(`[main.ts]parameters: ${JSON.stringify(parameters)}`);
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
                 `${trex_direct_connection_alias}.$$$$SCHEMA$$$$.`
             );
-            log.debug(`after temp: ${temp}`);
+            log.debug(`[main.ts]after temp: ${temp}`);
             return translateHanaToDuckdb(
                 temp,
                 schemaName,
@@ -662,8 +666,12 @@ const getTrexDbConnection = ({
         };
 
         log.debug(`[main.ts]analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.debug(`[main.ts]parseSql: ${parseSql}`);
-        log.debug(`[main.ts]parseSql stringified: ${JSON.stringify(parseSql)}`);
+        log.debug(`[main.ts]analyticsCredentials.code: ${JSON.stringify(analyticsCredentials.code)}`);
+        log.debug(`[main.ts]analyticsCredentials.schema: ${JSON.stringify(analyticsCredentials.schema)}`);
+        log.debug(`[main.ts]analyticsCredentials.vocabSchema: ${JSON.stringify(analyticsCredentials.vocabSchema)}`);
+        log.debug(`[main.ts]analyticsCredentials.resultsSchemaName: ${JSON.stringify(analyticsCredentials.resultsSchemaName)}`);
+
+        log.debug(`[main.ts]parseSql: ${JSON.stringify(parseSql)}`);
 
         const conn = dbm.getConnection(
             analyticsCredentials.code,
