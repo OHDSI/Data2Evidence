@@ -46,6 +46,9 @@ export default defineConfig(({ command, mode }): UserConfig => {
       }),
       vuetify({
         autoImport: true,
+        styles: {
+          configFile: 'src/styles/vuetify-settings.scss',
+        },
       }),
       !isBuild &&
         basicSsl({

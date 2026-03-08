@@ -10,8 +10,7 @@ import { useRuleManagement } from './composables/useRuleManagement'
 import { useFunnelChart } from './composables/useFunnelChart'
 import { useTreemapChart } from './composables/useTreemapChart'
 import VButton from '@/components/vuetify/VButton.vue'
-import bsDropdown from '@/lib/ui/bs-dropdown.vue'
-import bsDropdownItem from '@/lib/ui/bs-dropdown-item.vue'
+import VMenu from '@/components/vuetify/VMenu.vue'
 import appTab from '@/lib/ui/app-tab.vue'
 
 const props = withDefaults(
@@ -202,26 +201,30 @@ onUnmounted(() => {
           <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
             <div class="chart-header">
               <h4>Attrition plot</h4>
-              <bs-dropdown variant="link" size="sm" no-caret align="right">
-                <template v-slot:button-content>
-                  <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+              <VMenu>
+                <template #activator="{ props }">
+                  <VButton v-bind="props" rounded variant="outlined" class="download-btn" title="Export"
+                    >Export</VButton
+                  >
                 </template>
-                <bs-dropdown-item @click="downloadFunnelChartCSV">Export to CSV File</bs-dropdown-item>
-                <bs-dropdown-item @click="downloadFunnelChart">Export to PNG File</bs-dropdown-item>
-              </bs-dropdown>
+                <v-list-item @click="downloadFunnelChartCSV">Export to CSV File</v-list-item>
+                <v-list-item @click="downloadFunnelChart">Export to PNG File</v-list-item>
+              </VMenu>
             </div>
             <div ref="funnelChartRef" class="funnel-chart"></div>
           </div>
           <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
             <div class="chart-header">
               <h4>Population treemap</h4>
-              <bs-dropdown variant="link" size="sm" no-caret align="right">
-                <template v-slot:button-content>
-                  <VButton rounded variant="outlined" class="download-btn" title="Export">Export</VButton>
+              <VMenu>
+                <template #activator="{ props }">
+                  <VButton v-bind="props" rounded variant="outlined" class="download-btn" title="Export"
+                    >Export</VButton
+                  >
                 </template>
-                <bs-dropdown-item @click="downloadTreemapCSV">Export to CSV File</bs-dropdown-item>
-                <bs-dropdown-item @click="downloadTreemapImage">Export to PNG File</bs-dropdown-item>
-              </bs-dropdown>
+                <v-list-item @click="downloadTreemapCSV">Export to CSV File</v-list-item>
+                <v-list-item @click="downloadTreemapImage">Export to PNG File</v-list-item>
+              </VMenu>
             </div>
             <div ref="treemapChartRef" class="treemap-chart"></div>
           </div>
