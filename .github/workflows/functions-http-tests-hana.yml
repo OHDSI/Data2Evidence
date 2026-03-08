@@ -73,7 +73,6 @@ jobs:
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
-      # DB_DIALECT: HDB
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -107,7 +106,6 @@ jobs:
           echo "isHttpTestRun: ${isHttpTestRun}"
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
-          # echo "DB_DIALECT: ${DB_DIALECT}"
 
       - uses: actions/setup-node@v4
         with:
@@ -324,15 +322,6 @@ jobs:
           ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
       # Restart is required for alp-trex container after seeding database credentials into the db table
-      - name: Query DB
-        run: |
-          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
-          echo "$resDataset"
-          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
-          echo "$resDatasetDetail"
-          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
-          echo "$resTrexDB"
-
       - name: Restart alp-trex service
         run: |
           docker container restart alp-trex

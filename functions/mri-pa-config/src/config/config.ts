@@ -155,9 +155,6 @@ export class MRIConfig {
     }
 
     public validateConfig(config, dependentConfig, callback: connLib.CallBackInterface) {
-        logger.debug(`[pa-config] config: ${JSON.stringify(config)}`)
-        logger.info(`[pa-config] config: ${JSON.stringify(config)}`)
-        console.log(`[pa-config] config: ${JSON.stringify(config)}`)
         this.ffhConfig.getCDWConfig({
             configId: dependentConfig.configId,
             configVersion: dependentConfig.configVersion + "",
@@ -169,18 +166,6 @@ export class MRIConfig {
                 const definition = configDefinitionLib.getDefinition(cdwConfig);
                 const validator = new validatorlib.Validator(this.oConnection);
                 const validationResult = validator.validateConfiguration(config, definition);
-                logger.debug(`[pa-config] validationResult.errors: ${JSON.stringify(validationResult.errors)}`)
-                logger.info(`[pa-config] validationResult.errors: ${JSON.stringify(validationResult.errors)}`)
-                console.log(`[pa-config] validationResult.errors: ${JSON.stringify(validationResult.errors)}`)
-
-                logger.debug(`[pa-config] validationResult.warnings: ${JSON.stringify(validationResult.warnings)}`)
-                logger.info(`[pa-config] validationResult.warnings: ${JSON.stringify(validationResult.warnings)}`)
-                console.log(`[pa-config] validationResult.warnings: ${JSON.stringify(validationResult.warnings)}`)
-
-                // logger.debug(`[pa-config] config: ${JSON.stringify(config)}`)
-                // logger.info(`[pa-config] config: ${JSON.stringify(config)}`)
-                // console.log(`[pa-config] config: ${JSON.stringify(config)}`)
-
                 callback(null, {
                     errors: validationResult.errors,
                     warnings: validationResult.warnings,
