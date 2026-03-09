@@ -30,6 +30,11 @@ def dqd_plugin(options: DqdOptionsType):
         database_code=options.databaseCode,
     )
 
+    is_hana_jwt_auth = dbdao.tenant_configs.authMode == AuthMode.JWT and dbdao.dialect == SupportedDatabaseDialects.HANA
+
+    # Todo: Update implementation if Hana JWT uses trex
+    use_trex_connection = False if is_hana_jwt_auth else options.use_trex_connection
+
     # Todo: Update implementation if Hana uses trex
     use_trex_connection = (
         False
@@ -54,11 +59,7 @@ def dqd_plugin(options: DqdOptionsType):
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         dqd_parameters.vocabSchemaName = options.schemaName
 
-    if (
-        options.cohortDefinitionId
-        and dbdao.dialect == SupportedDatabaseDialects.HANA
-        and dbdao.tenant_configs.authMode == AuthMode.JWT
-    ):
+    if (options.cohortDefinitionId and is_hana_jwt_auth):
         # For Hana JWT mode, fetch the materialized cohort schema and assign to DQD parameters
         schema_from_api = get_cohort_database_schema(options.datasetId)
         if schema_from_api:

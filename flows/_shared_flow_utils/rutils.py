@@ -1,16 +1,24 @@
 from rpy2 import robjects
 
-def set_trex_env_var(use_trex_connection: bool) -> str:
+def get_trex_env_var(use_trex_connection: bool, is_trex_hana: bool) -> str:
+    """
+    Determine the trex_connection environment variable value for R.
+    """
+    print(f"is_trex_hana: {is_trex_hana}")
+    if use_trex_connection:
+        if is_trex_hana:
+            return "trex_hana"
+        else:
+            return "trex"
+    else:
+        return "false"
+
+
+def set_trex_env_var(trex_env_var: str) -> str:
     """
     Set the trex_connection environment variable for R.
     """
-    return (
-        "Sys.setenv('trex_connection' = 'true')"
-        if use_trex_connection
-        else "Sys.setenv('trex_connection' = 'false')"
-    )
-
-
+    return f"Sys.setenv('trex_connection' = '{trex_env_var}')"
 def convert_to_int_vector(str_list: list[str | int] | str | int) -> robjects.IntVector:
     """
     Convert a list of strings/integers or single string/integer to an R IntVector. 

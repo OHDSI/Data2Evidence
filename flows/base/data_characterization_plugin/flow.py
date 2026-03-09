@@ -17,10 +17,10 @@ from prefect.artifacts import create_markdown_artifact
 from .utils import *
 from .types import DCOptionsType, AchillesParams
 
-from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.dao.DBDao import DBDao, TrexDao
 from _shared_flow_utils.create_dataset_tasks import *
 from _shared_flow_utils.types import UserType, SupportedDatabaseDialects
-from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
+from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector, get_trex_env_var
 
 
 os.environ["plugin_name"] = "data_characterization_plugin"
@@ -64,6 +64,14 @@ def data_characterization_plugin(options: DCOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
+    logger.info(f"use_trex_connection is {use_trex_connection}")
+    logger.info(f"isinstance dbdao is {isinstance(dbdao, TrexDao)} and dbdao.is_hana{dbdao.is_hana}")
+
+    trex_env_var = get_trex_env_var(use_trex_connection, isinstance(dbdao, TrexDao) and dbdao.is_hana)
+
+    logger.info(f"trex_env_var is {trex_env_var}")
+
+
     # Todo: Update implementation if Hana uses trex
     # Create Achilles parameters from DCOptions
     achilles_params = AchillesParams(
@@ -73,6 +81,7 @@ def data_characterization_plugin(options: DCOptionsType):
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
+        useTrexConnectionEnv=trex_env_var
     )
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
@@ -197,7 +206,7 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
 
 
 def execute_sql_script(sql_script: str, dbdao):
-    if dbdao.dialect == SupportedDatabaseDialects.TREX:
+    if dbdao.dialect == SupportedDatabaseDialects.TREX or dbdao.is_hana:
         dbdao.execute_sql(sql_script)
     else:
         with dbdao.engine.begin() as conn:
@@ -224,7 +233,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 
     set_trex_env_string = set_trex_env_var(achilles_params.use_trex_connection)
 
-    logger.debug(f"set_trex_env_string is {set_trex_env_string}")
+    logger.info(f"set_trex_env_string is {set_trex_env_string}")
 
     failed_analysis_ids = []
 

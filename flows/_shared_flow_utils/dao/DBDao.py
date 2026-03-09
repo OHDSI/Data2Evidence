@@ -3,7 +3,7 @@ from __future__ import annotations
 from _shared_flow_utils.dao.ibisdao import IbisDao
 from _shared_flow_utils.dao.trexdao import TrexDao
 from _shared_flow_utils.dao.sqlalchemydao import SqlAlchemyDao
-from _shared_flow_utils.types import SupportedDatabaseDialects
+from _shared_flow_utils.types import SupportedDatabaseDialects, AuthMode
 
 from typing import TYPE_CHECKING
 
@@ -37,14 +37,20 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     """
     # Create a test instance to infer dialect if not provided
     test_instance = SqlAlchemyDao(**kwargs)
+    inferred_dialect = test_instance.dialect
     # Always infer dialect from test_instance if not provided
 
-    # Todo: Update implementation if Hana uses trex
-    # If flow passes TREX but test_instance infers HANA, use HANA
-    if dialect == SupportedDatabaseDialects.TREX and test_instance.dialect == SupportedDatabaseDialects.HANA:
-        selected_dialect = SupportedDatabaseDialects.HANA
-    else:
-        selected_dialect = dialect if dialect is not None else test_instance.dialect
+    is_hana_jwt_auth = test_instance.tenant_configs.authMode == AuthMode.JWT and test_instance.dialect == SupportedDatabaseDialects.HANA
+
+     # Todo: Update implementation if Hana JWT uses trex
+    # If dialect is explicitly TREX, but the test instance infers HANA, pass is_hana to TrexDao
+    if dialect == SupportedDatabaseDialects.TREX and not is_hana_jwt_auth:
+        is_hana = inferred_dialect == SupportedDatabaseDialects.HANA
+        return TrexDao(**vars(test_instance), is_hana=is_hana)
+
+    # Otherwise, select the DAO class from the registry
+    selected_dialect = dialect if dialect is not None else inferred_dialect
+    
     # Get the DAO class from registry
     dao_class = _DAO_REGISTRY.get(selected_dialect)
     if not dao_class:

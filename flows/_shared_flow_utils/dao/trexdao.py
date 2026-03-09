@@ -20,12 +20,14 @@ class TrexDao(DaoBase):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
+        is_hana: bool = False,
     ):
         super().__init__(use_cache_db, database_code, user_type)
+        self.is_hana = is_hana
 
     @property
     def dialect(self):
-        return SupportedDatabaseDialects.TREX.value
+        return SupportedDatabaseDialects.TREX.value if not self.is_hana else SupportedDatabaseDialects.HANA.value
 
     @property
     def tenant_configs(self) -> DBCredentialsType:
@@ -36,7 +38,7 @@ class TrexDao(DaoBase):
             adminPassword=SecretStr(Secret.load("trex-sql-password").get()),
             user=Variable.get("trex_sql_user"),
             password=SecretStr(Secret.load("trex-sql-password").get()),
-            dialect=SupportedDatabaseDialects.TREX.value,
+            dialect=SupportedDatabaseDialects.TREX.value if not self.is_hana else SupportedDatabaseDialects.HANA.value,
             databaseName=self.database_code,
             databaseCode=self.database_code,
             host=Variable.get("trex_sql_host"),
@@ -98,7 +100,11 @@ class TrexDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(schema)
-        sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
+        if self.is_hana:
+            sql = '''CREATE SCHEMA {}'''
+        else:
+            sql = '''CREATE SCHEMA IF NOT EXISTS {}'''
+        sql = pg_sql.SQL(sql) \
                 .format(pg_sql.Identifier(schema))
         self.execute_sql(sql)
 
@@ -121,7 +127,10 @@ class TrexDao(DaoBase):
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
-            sql = '''
+            if self.is_hana:
+                sql = '''SELECT SCHEMA_NAME FROM SYS.SCHEMAS;'''
+            else:
+                sql = '''
                 SELECT schema_name FROM information_schema.schemata
                 WHERE catalog_name = current_database();
             '''
@@ -268,14 +277,22 @@ class TrexDao(DaoBase):
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
-        sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
+        if self.is_hana:
+            drop_schema_sql = pg_sql.SQL("DROP SCHEMA {schema} {cond};")
+        else:
+            drop_schema_sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};")
+        sql = drop_schema_sql.format(
             schema=pg_sql.Identifier(schema),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
         )
         self.execute_sql(sql)
 
     def drop_table(self, schema: str, table: str, cascade: bool = False):
-        sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
+        if self.is_hana:
+            drop_table_sql = pg_sql.SQL("DROP TABLE {schema}.{table} {cond};")
+        else:
+            drop_table_sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};")
+        sql = drop_table_sql.format(
             schema=pg_sql.Identifier(schema),
             table=pg_sql.Identifier(table),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
@@ -283,7 +300,11 @@ class TrexDao(DaoBase):
         self.execute_sql(sql)
 
     def truncate_table(self, schema: str, table: str):
-        sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};").format(
+        if self.is_hana:
+            truncate_table_sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};")
+        else:
+            truncate_table_sql = pg_sql.SQL("TRUNCATE TABLE IF EXISTS {schema}.{table};")
+        sql = truncate_table_sql.format(
             schema=pg_sql.Identifier(schema), 
             table=pg_sql.Identifier(table)
             )

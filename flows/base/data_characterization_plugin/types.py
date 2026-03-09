@@ -36,3 +36,4 @@ class AchillesParams(DCOptionsType):
     createIndices: bool = True
     sqlOnly: bool = False
     verboseMode: bool = False
+    useTrexConnectionEnv: str
