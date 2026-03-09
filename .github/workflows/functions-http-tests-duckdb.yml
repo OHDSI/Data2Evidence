@@ -91,7 +91,6 @@ jobs:
         if: steps.file_changes.outputs.flow_base == 'true'
         id: build_flow_base_image
         run: |
-          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
         
       - name: Build i2b2 docker image
@@ -345,21 +344,6 @@ jobs:
           echo "USER_MGMT_ID:"
           echo $USER_MGMT_ID
 
-      ###########
-  # run-http-tests:
-  #   needs: [demosetup]
-  #   env:
-  #     PGUSER: postgres
-  #     PGPASSWORD: $(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-  #     PGHOST: localhost
-  #     PGPORT: 15432
-  #     PGDATABASE: postgres
-  #     TESTSCHEMA: HTTP_${{github.run_id}}
-  #     isTestEnv: "true"
-  #     isHttpTestRun: "true"
-  #     USE_TREX_DB_CONN: "true"
-    
-  #   steps:
       - name: Check status of docker containers
         run: |
           docker ps -a

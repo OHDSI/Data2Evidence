@@ -140,7 +140,7 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
  * @param next
  */
 export async function populationQuery(req: IMRIRequest, res, next) {
-    await _setSearchPath(res);
+    // await _setSearchPath(res);
     const { analyticsConnection } = req.dbConnections;
     console.log(
         `[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`
@@ -427,10 +427,10 @@ export async function populationQuery(req: IMRIRequest, res, next) {
 
 async function _setSearchPath(req: IMRIRequest) {
     console.log(
-        `[population.populationQuery]analyticsConnection stringify:${JSON.stringify(req.dbConnections.analyticsConnection)}`
+        `[population._setSearchPath]analyticsConnection stringify:${JSON.stringify(req.dbConnections.analyticsConnection)}`
     );
     console.log(
-        `[main.ts]setting search path to demo_database__srcdb.demo_cdm...`
+        `[population._setSearchPath]setting search path to demo_database__srcdb.demo_cdm...`
     );
 
     return new Promise((resolve, reject) => {
