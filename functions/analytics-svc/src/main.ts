@@ -72,25 +72,6 @@ const initRoutes = async (app: express.Application) => {
         }, {});
     log.info(`[main.ts]analyticsCredentials: ${analyticsCredentials}`);
 
-    app.use(async (req: IMRIRequest, res, next) => {
-        log.info(`[main.ts]setting search path to demo_database__srcdb.demo_cdm...`);
-        QueryObject.QueryObject.format(
-                `SET search_path = 'demo_database__srcdb.demo_cdm'`
-            ).executeQuery(
-                req.dbConnections.analyticsConnection,
-                (err, result) => {
-                    log.info(`[main.ts]err: ${JSON.stringify(err)}`);
-                    log.info(`[main.ts]result: ${JSON.stringify(result)}`);
-
-                    if (err) {
-                        log.error(err);
-                        return next(err);
-                    }
-                    res.status(200).json(result);
-                }
-            );
-    });
-
     // Calls Alp-Portal for studies db metadata
     // Ignore Alp-Portal check for readiness probe check
     app.use(async (req: IMRIRequest, res, next) => {

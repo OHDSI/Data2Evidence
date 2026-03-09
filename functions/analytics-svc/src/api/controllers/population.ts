@@ -2,7 +2,7 @@ import { StackedBarchartEndpoint } from "../../mri/endpoint/StackedBarchartEndpo
 import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
 import { InclusionReportEndpoint } from "../../mri/endpoint/InclusionReportEndpoint";
-import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils, QueryObject } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types";
 
 import { DBError as dbe } from "@alp/alp-base-utils";
@@ -140,8 +140,11 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
  * @param next
  */
 export async function populationQuery(req: IMRIRequest, res, next) {
+    await _setSearchPath(res);
     const { analyticsConnection } = req.dbConnections;
-    console.log(`[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`)
+    console.log(
+        `[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`
+    );
     const user = getUser(req);
     const language = user.lang;
     let chartType: string = req.params.chartType;
@@ -420,4 +423,27 @@ export async function populationQuery(req: IMRIRequest, res, next) {
     } catch (err) {
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
     }
+}
+
+async function _setSearchPath(req: IMRIRequest) {
+    console.log(
+        `[population.populationQuery]analyticsConnection stringify:${JSON.stringify(req.dbConnections.analyticsConnection)}`
+    );
+    console.log(
+        `[main.ts]setting search path to demo_database__srcdb.demo_cdm...`
+    );
+
+    return new Promise((resolve, reject) => {
+        QueryObject.QueryObject.format(
+            `SET search_path = 'demo_database__srcdb.demo_cdm'`
+        ).executeQuery(req.dbConnections.analyticsConnection, (err, result) => {
+            console.log(`[main.ts]err: ${JSON.stringify(err)}`);
+            console.log(`[main.ts]result: ${JSON.stringify(result)}`);
+            if (err) {
+                console.error(err);
+                return reject(err);
+            }
+            return resolve(result);
+        });
+    });
 }
