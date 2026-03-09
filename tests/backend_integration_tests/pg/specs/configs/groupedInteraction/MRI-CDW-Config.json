@@ -253,13 +253,13 @@
     "censor": {},
     "advancedSettings": {
       "tableMapping": {
-        "@INTERACTION": "\"legacy.cdw.db.models::DWViews.Interactions\"",
-        "@OBS": "\"legacy.cdw.db.models::DWViews.Observations\"",
-        "@CODE": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Details\"",
-        "@MEASURE": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures\"",
-        "@PATIENT": "\"legacy.cdw.db.models::DWViews.Patient\"",
-        "@TEXT": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Text\"",
-        "@REF": "\"legacy.ots::Views.ConceptTerms\"",
+        "@INTERACTION": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViews.Interactions\"",
+        "@OBS": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViews.Observations\"",
+        "@CODE": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViewsEAV.Interaction_Details\"",
+        "@MEASURE": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures\"",
+        "@PATIENT": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViews.Patient\"",
+        "@TEXT": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViewsEAV.Interaction_Text\"",
+        "@REF": "$$SCHEMA$$.\"legacy.ots::Views.ConceptTerms\"",
         "@INTERACTION.PATIENT_ID": "\"PatientID\"",
         "@INTERACTION.INTERACTION_ID": "\"InteractionID\"",
         "@INTERACTION.CONDITION_ID": "\"ConditionID\"",
@@ -317,7 +317,7 @@
         ]
       },
       "guardedTableMapping": {
-        "@PATIENT": "\"legacy.cdw.db.models::DWViews.V_GuardedPatient\""
+        "@PATIENT": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViews.V_GuardedPatient\""
       },
       "language": ["en", "de", "fr"],
       "settings": {
@@ -328,7 +328,7 @@
         "errorStackTraceReturnOn": true,
         "normalizeCsvData": false,
         "enableFreeText": true,
-        "freetextTempTable": "\"legacy.cdw.db.models::Helper.TmpTextKeys\"",
+        "freetextTempTable": "$$SCHEMA$$.\"legacy.cdw.db.models::Helper.TmpTextKeys\"",
         "genomicsEnabled": true,
         "vbEnabled": true,
         "afpEnabled": true,
@@ -338,7 +338,7 @@
         "csvDelimiter": ";",
         "cdwValidationEnabled": true,
         "otsTableMap": {
-          "@CODE": "\"legacy.cdw.db.models::DWViews.InteractionDetailsOTS\""
+          "@CODE": "$$SCHEMA$$.\"legacy.cdw.db.models::DWViews.InteractionDetailsOTS\""
         }
       },
       "others": {
