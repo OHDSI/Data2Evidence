@@ -178,7 +178,7 @@ export async function seed(knex: Knex): Promise<void> {
       },
     ])
     .onConflict(["Id", "Version"])
-    .ignore();
+    .merge();
 }
 
 export const cdwConfig = {
@@ -13363,7 +13363,8 @@ const paConfig = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false
+        "usePaAtlas": false,
+        "inclusionReport": false
     }
 };
 
@@ -26525,7 +26526,8 @@ const paConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": false
+        "usePaAtlas": false,
+        "inclusionReport": true
     }
 };
 
@@ -28150,6 +28152,7 @@ const paI2b2ConfigDuckdb = {
     calcViewAccessPoint: true,
     externalAccessPoints: true,
     cohortEntryExit: false,
+    inclusionReport: false,
   },
 };
 
@@ -33993,7 +33996,8 @@ const pajsonfhirConfigDuckdb = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
-        "usePaAtlas": false
+        "usePaAtlas": false,
+        "inclusionReport": false
     }
 };
 
@@ -37476,6 +37480,7 @@ const omopHanaLeanPAConfig = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false
+        "usePaAtlas": false,
+        "inclusionReport": false
     }
 };
