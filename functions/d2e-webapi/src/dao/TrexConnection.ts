@@ -34,6 +34,10 @@ export default class TrexConnection {
 
   // deno-lint-ignore no-explicit-any
   query(sql: string, params: any[] = []): Promise<any> {
+    console.log(`[TrexConnection] sql: ${sql}`);
+    console.log(`[TrexConnection] params: ${JSON.stringify(params)}`);
+    console.log(`[TrexConnection] this.conn: ${JSON.stringify(this.conn)}`);
+
     return new Promise((resolve, reject) => {
       this.conn.execute(
         sql,
