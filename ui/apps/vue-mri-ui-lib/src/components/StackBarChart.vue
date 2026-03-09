@@ -104,6 +104,11 @@ export default {
         })
     },
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
+
       // Check if the chart has been reset
       const chartSortProperty = this.getChartProperty(Constants.MRIChartProperties.Sort)
       if (chartSortProperty?.props?.active === false) {
@@ -210,6 +215,7 @@ export default {
       'getCsvFireDownload',
       'getText',
       'getFireRequest',
+      'isFireRequestHeld',
       'getHasAssignedConfig',
       'getBookmarksData',
       'getChartableFilterCardByInstanceId',
