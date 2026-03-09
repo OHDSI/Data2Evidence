@@ -149,6 +149,17 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 
 RUN rm -f .Renviron
 
+# Set Java options early to ensure consistent behavior
+ENV JAVA_TOOL_OPTIONS="-Xms1g -Xmx4g"
+
+# Copy rJava initialization script (before R packages are restored)
+COPY ./build/init_rjava.R /app/init_rjava.R
+RUN chmod 755 /app/init_rjava.R
+
+RUN chmod 644 /app/.Rprofile
+# Set R_PROFILE_USER to ensure .Rprofile is loaded when R starts
+ENV R_PROFILE_USER=/app/.Rprofile
+
 # Copy the Python virtual environment and uv binary from the build stage
 COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/python /app/python
 COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
