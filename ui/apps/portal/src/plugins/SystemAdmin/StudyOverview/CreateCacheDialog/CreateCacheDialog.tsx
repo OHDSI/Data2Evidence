@@ -64,6 +64,7 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
             databaseCode: sourceDataset.databaseCode,
             schemaName: sourceDataset.schemaName,
             cacheSchemaName: dataset.schemaName,
+            studyCode: sourceDataset.tokenStudyCode,
           };
 
           await api.dataflow.createFhirCacheFlowRun(fhirData);
