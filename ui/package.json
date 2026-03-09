@@ -38,7 +38,7 @@
           "target": "/resources/portal"
         },
         {
-          "source": "/flow",
+          "source": "/resources/flow",
           "target": "/resources/flow"
         },
         {
@@ -153,7 +153,7 @@
           "name": "ETL",
           "nameI18nKey": "UI_PLUGIN_ETL",
           "route": "etl",
-          "pluginPath": "/flow/lifecycles.js",
+          "pluginPath": "/resources/flow/lifecycles.js",
           "featureFlag": "etl",
           "requiredRoles": [
             "SYSTEM_ADMIN"
@@ -410,7 +410,7 @@
             "name": "ETL",
             "nameI18nKey": "UI_PLUGIN_ETL",
             "route": "etl",
-            "pluginPath": "/flow/lifecycles.js",
+            "pluginPath": "/resources/flow/lifecycles.js",
             "featureFlag": "etl",
             "requiredRoles": [
               "SYSTEM_ADMIN"
