@@ -30,6 +30,9 @@
           :disabled="!canOpenDashboard"
         />
       </div>
+      <div class="dashboardButton">
+        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
+      </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
           <chartButton
@@ -130,6 +133,36 @@
       @cancel="dashboardFlow.handleCancelSaveCohort"
     />
   </Teleport>
+
+  <Teleport to="#app">
+    <VDialog
+      :model-value="showInclusionReportModal"
+      @update:modelValue="showInclusionReportModal = $event"
+      max-width="90%"
+      persistent
+    >
+      <div class="inclusion-report-dialog">
+        <div class="inclusion-report-dialog__title">
+          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+            <span class="icon" style="font-family: app-icons">&#x2715;</span>
+          </button>
+        </div>
+
+        <div class="inclusion-report-dialog__content">
+          <InclusionReport
+            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            :source-key="inclusionReportSourceKey"
+            :is-ready="inclusionReportIsReady"
+            :cache-key="inclusionReportCacheKey"
+            generation-status="complete"
+            :fetch-inclusion-report="fetchInclusionReport"
+            :show-person-event-switch="false"
+          />
+        </div>
+      </div>
+    </VDialog>
+  </Teleport>
 </template>
 
 <script lang="ts">
@@ -164,6 +197,9 @@ function getBookmarkKey(bookmark) {
     null
   )
 }
+import VButton from './vuetify/VButton.vue'
+import VDialog from './vuetify/VDialog.vue'
+import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
 
 export default {
   name: 'chartToolbar',
@@ -182,6 +218,10 @@ export default {
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
       dashboardFlow,
+      showDashboardModal: false,
+      showSaveCohortModal: false,
+      showInclusionReportModal: false,
+      inclusionReportCache: null,
     }
   },
   watch: {
@@ -264,6 +304,18 @@ export default {
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
+    inclusionReportCohortDefinitionId() {
+      return this.getActiveBookmark?.cohortDefinitionId?.toString()
+    },
+    inclusionReportSourceKey() {
+      return this.getSelectedDataset?.id
+    },
+    inclusionReportIsReady() {
+      return true
+    },
+    inclusionReportCacheKey() {
+      return JSON.stringify(this.getBookmarksData)
+    },
   },
   methods: {
     ...mapActions([
@@ -276,6 +328,7 @@ export default {
       'loadValuesForAttributePath',
       'refreshPatientCount',
       'fireBookmarkQuery',
+      'fireQuery',
       'onAddCohortOkButtonPress',
       'setToastMessage',
       'ajaxAuth',
@@ -383,6 +436,55 @@ export default {
     drillDownClicked() {
       this.$emit('drilldown')
     },
+    async handleOpenDashboard() {
+      if (this.hasChanges) {
+        this.showSaveCohortModal = true
+        return
+      }
+      if (!this.getActiveCohortMaterializedId) {
+        this.showSaveCohortModal = true
+        return
+      }
+      this.showDashboardModal = true
+    },
+
+    handleSaveCohortSuccess({ cohortId, bookmarkId }) {
+      this.showDashboardModal = true
+    },
+
+    handleCancelSaveCohort() {
+      this.showSaveCohortModal = false
+    },
+
+    openDashboardModal() {
+      this.handleOpenDashboard()
+    },
+
+    closeDashboardModal() {
+      this.showDashboardModal = false
+    },
+    openInclusionReportModal() {
+      this.showInclusionReportModal = true
+    },
+    closeInclusionReportModal() {
+      this.showInclusionReportModal = false
+    },
+    fetchInclusionReport() {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+
+      if (this.inclusionReportCache && this.inclusionReportCache.mriquery === mriquery) {
+        return Promise.resolve(this.inclusionReportCache.result)
+      }
+
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/inclusionreport',
+        params: { mriquery, datasetId },
+      }).then(result => {
+        this.inclusionReportCache = { mriquery, result }
+        return result
+      })
+    },
   },
   components: {
     ChartButton,
@@ -396,6 +498,9 @@ export default {
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
     Button,
+    VButton,
+    VDialog,
+    InclusionReport,
   },
 }
 </script>

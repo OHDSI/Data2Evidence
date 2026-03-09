@@ -33,7 +33,7 @@
             <bookmarks
               @unloadBookmarkEv="toggleCohorts"
               @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-              :init-bookmark-id="this.querystring.bmkId"
+              :init-bookmark-id="querystring.bmkId"
               v-if="getMriFrontendConfig && displayCohorts"
             ></bookmarks>
 
@@ -58,7 +58,7 @@
               :showUnHideFilters="hideLeftPane"
               @unhideEv="togglePanel(PANEL.LEFT)"
               @drilldown="onDrilldown"
-              @open-filtersummary="toggleFilterCardSummary(...arguments)"
+              @open-filtersummary="toggleFilterCardSummary($event)"
               v-if="getMriFrontendConfig"
             ></chartToolbar>
             <!-- "ref" used in solution from similar issue: https://github.com/antoniandre/splitpanes/issues/157 -->
@@ -111,7 +111,7 @@
         <chartToolbar
           :showUnHideFilters="hideLeftPane"
           @unhideEv="togglePanel(PANEL.LEFT)"
-          @open-filtersummary="toggleFilterCardSummary(...arguments)"
+          @open-filtersummary="toggleFilterCardSummary($event)"
           @toggleChartAndListModal="toggleChartAndListModal"
           v-if="getMriFrontendConfig"
         >
