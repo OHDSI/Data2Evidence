@@ -39,6 +39,8 @@ const state = {
 
   // fire chart request
   fireRequest: false,
+  // hold fire request during batch updates (e.g., applying required filters)
+  fireRequestHeld: false,
 }
 
 // Cancel tokens
@@ -87,6 +89,7 @@ const getters = {
   getCsvFireDownload: modulestate => modulestate.csvFireDownload,
   getZipFireDownload: modulestate => modulestate.zipFireDownload,
   getFireRequest: modulestate => modulestate.fireRequest,
+  isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
 }
 
 // actions
@@ -331,8 +334,17 @@ const actions = {
     dispatch('setActiveChart', getters.getAllChartConfigs.initialChart)
     dispatch('setInitialAxisSelection')
   },
-  setFireRequest({ commit }) {
-    commit(types.CHART_SET_FIRE_REQUEST)
+  setFireRequest({ commit, state }) {
+    // Only trigger if fire is not being held (prevents intermediate requests during batch updates)
+    if (!state.fireRequestHeld) {
+      commit(types.CHART_SET_FIRE_REQUEST)
+    }
+  },
+  holdFireRequest({ commit }) {
+    commit(types.CHART_HOLD_FIRE_REQUEST)
+  },
+  releaseFireRequest({ commit }) {
+    commit(types.CHART_RELEASE_FIRE_REQUEST)
   },
   resetChart({ dispatch, getters }) {
     dispatch('resetChartProperties')
@@ -375,6 +387,12 @@ const mutations = {
   },
   [types.CHART_SET_FIRE_REQUEST](modulestate) {
     modulestate.fireRequest = !modulestate.fireRequest
+  },
+  [types.CHART_HOLD_FIRE_REQUEST](modulestate) {
+    modulestate.fireRequestHeld = true
+  },
+  [types.CHART_RELEASE_FIRE_REQUEST](modulestate) {
+    modulestate.fireRequestHeld = false
   },
   [types.CHART_COLUMNS_TO_INCLUDE](modulestate, columnsToInclude) {
     modulestate.columnsToInclude = columnsToInclude

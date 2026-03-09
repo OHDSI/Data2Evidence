@@ -53,9 +53,8 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 // Get mriquery filtercards
                 const filtercards = mriquery.filter.cards.content;
 
-                // const basicDataFilters =
-                //     this.splitBasicDataIntoDistinctFiltercards(filtercards);
-                const basicDataFilters = []; //TODO: REMOVE [ Currently ignores basicDataFilters as basic data is not supporting exclusions]
+                const basicDataFilters =
+                    this.splitBasicDataIntoDistinctFiltercards(filtercards);
 
                 const inclusionReportFiltercards = [
                     ...basicDataFilters,
@@ -102,7 +101,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                             configVersion,
                             datasetId,
                             bookmarkInputStr: bitmapMriquery,
-                            queryType: "totalpcount",
+                            queryType: "irtotalpcount",
                             language,
                         },
                     });
@@ -130,7 +129,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     ): InterfaceReportResults {
         let baseCount = 0;
         let finalCount = 0;
-        let lostCount = 0; // TODO: Check how this is calculated
+        let lostCount = 0; // lostCount is determined by exit event
 
         // Initialize treemapData
         const treemapData = {
@@ -264,19 +263,42 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
 
         const basicDataFilters =
             basicDataFiltercard.content[0].attributes.content;
+        let basicDataInclusionReportFilters;
         if (basicDataFilters.length === 1) {
-            return [basicDataFiltercard];
+            basicDataInclusionReportFilters = [
+                structuredClone(basicDataFiltercard),
+            ];
+        } else {
+            // Split Basic Data into distinct filtercards
+            basicDataInclusionReportFilters = basicDataFilters.map((e) => {
+                // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
+                const basicDataFiltercardClone =
+                    structuredClone(basicDataFiltercard);
+                basicDataFiltercardClone.content[0].attributes.content = [e];
+
+                return basicDataFiltercardClone;
+            });
         }
 
-        // Split Basic Data into distinct filtercards
-        return basicDataFilters.map((e) => {
-            // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
-            const basicDataFiltercardClone =
-                structuredClone(basicDataFiltercard);
-            basicDataFiltercardClone.content[0].attributes.content = [e];
+        // Update basic data to use dynamically generated interactions.basicdata in cdm config
+        basicDataInclusionReportFilters.forEach((e, idx) => {
+            const cur = e.content[0];
+            const name = cur.attributes.content[0].configPath.split(".").at(-1);
 
-            return basicDataFiltercardClone;
+            const baseConfigPath = `patient.interactions.basicdata${idx + 1}`;
+            const baseInstanceId = `patient.interactions.basicdata.${idx + 1}`;
+            // Update content
+            cur.configPath = baseConfigPath;
+            cur.instanceNumber = idx + 1;
+            cur.instanceID = baseInstanceId;
+            cur.name = name;
+
+            // Update content attributes
+            cur.attributes.content[0].configPath = `${baseConfigPath}.attributes.${name}`;
+            cur.attributes.content[0].instanceID = `${baseInstanceId}.attributes.${name}`;
         });
+
+        return basicDataInclusionReportFilters;
     }
 
     /**
