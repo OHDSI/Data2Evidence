@@ -331,7 +331,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             );
         });
 
-        // Check if spliced filtercard.content is empty, if yes remove element
+        // Filter filtercard.content to remove elements where content is empty
         nonBasicDataFilters = nonBasicDataFilters.filter(
             (filtercard) => filtercard.content.length !== 0
         );
