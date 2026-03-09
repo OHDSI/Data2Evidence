@@ -51,10 +51,10 @@ Add the following entries to `PREFECT_DOCKER_VOLUMES` in the `.env` file:
 > **Warning:** Insufficient RAM or disk space will cause the container to crash with an out-of-memory (OOM) error.
 
 #### Minimum Recommended Resources
-> **Set `MIMIC_DUCKDB_THREADS` and `MIMIC_DUCKDB_MEMORY_LIMIT`** in .env file
+> **Set `D2E_DUCKDB_THREADS` and `D2E_DUCKDB_MEMORY_LIMIT`** in .env file
 Benchmarked on a server with 32 GB RAM and 512 GB disk (MIMIC-IV v2.2, full dataset):
 
-- **Container memory limit:** ≥ 21 GB
+- **Container memory limit:** ≥ 20 GB
 - **DuckDB memory limit:** 15 GB
 - **DuckDB threads:** 4
 - **Peak disk usage:** ~100 GB

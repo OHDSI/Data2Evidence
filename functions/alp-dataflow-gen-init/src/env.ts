@@ -27,6 +27,7 @@ export const env = {
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
     exclude_analysis_ids: _env.EXCLUDE_ANALYSIS_IDS || "",
     duckdb_memory_limit: _env.D2E_DUCKDB_MEMORY_LIMIT || "",
+    duckdb_threads: _env.D2E_DUCKDB_THREADS || "4", // Default to 4 threads
     dc_hana_read_role: _env.DC_HANA_READ_ROLE || "",
     cohort_generator_module_settings_url:
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,
@@ -45,8 +46,6 @@ export const env = {
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
     cache_task_timeout: _env.CACHE_TASK_TIMEOUT || "10800", // Default to 3 hours
-    mimic_duckdb_threads: _env.MIMIC_DUCKDB_THREADS || "4", // Default to 4 threads
-    mimic_duckdb_memory_limit: _env.MIMIC_DUCKDB_MEMORY_LIMIT || "15GB", // Default to 15GB
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,

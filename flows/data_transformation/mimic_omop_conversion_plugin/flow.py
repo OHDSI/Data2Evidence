@@ -33,8 +33,8 @@ def mimic_to_duckdb_flow(options:MimicOMOPOptionsType):
     mimic_dir = options.mimic_dir
     vocab_dir = options.vocab_dir
     load_mimic_vocab = options.load_mimic_vocab
-    DUCKDB_MEMORY_LIMIT = Variable.get("mimic_duckdb_memory_limit")
-    DUCKDB_THREADS = int(Variable.get("mimic_duckdb_threads"))
+    DUCKDB_MEMORY_LIMIT = Variable.get("duckdb_memory_limit")
+    DUCKDB_THREADS = int(Variable.get("duckdb_threads"))
 
     # Load data to duckdb
     if load_mimic_vocab:

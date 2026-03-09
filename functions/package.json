@@ -539,6 +539,7 @@
           "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
           "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
           "D2E_DUCKDB_MEMORY_LIMIT": "${D2E_DUCKDB_MEMORY_LIMIT:-}",
+          "D2E_DUCKDB_THREADS": "${D2E_DUCKDB_THREADS:-4}",
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
@@ -572,9 +573,7 @@
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
           "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
-          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}",
-          "MIMIC_DUCKDB_THREADS": "${MIMIC_DUCKDB_THREADS:-4}",
-          "MIMIC_DUCKDB_MEMORY_LIMIT": "${MIMIC_DUCKDB_MEMORY_LIMIT:-15GB}"
+          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
         "jupyter-gateway-viewer": {},
