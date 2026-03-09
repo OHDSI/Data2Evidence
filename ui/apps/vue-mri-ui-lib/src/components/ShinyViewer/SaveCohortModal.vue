@@ -1,6 +1,6 @@
 <template>
   <MessageBox v-if="isOpen" dim="true" :busy="isSaving" messageType="custom" @close="handleCancel">
-    <template v-slot:header>{{ getText('MRI_PA_TITLE_SAVE_BOOKMARK') }}</template>
+    <template v-slot:header>{{ modalTitle }}</template>
     <template v-slot:body>
       <div class="input-container">
         <appMessageStrip
@@ -67,7 +67,20 @@
           </div>
         </div>
 
-        <div class="save-bookmark">
+        <!-- Info message for bookmark-only mode -->
+        <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
+          <div class="alert alert-info" role="alert">
+            <p class="mb-2">
+              <strong>{{ getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') || 'This filter combination has already been materialized. Saving bookmark only.' }}</strong>
+            </p>
+            <p class="mb-0">
+              <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br>
+              <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong> {{ new Date(activeCohort.createdOn).toLocaleString() }}
+            </p>
+          </div>
+        </div>
+
+        <div v-if="showDescriptionField" class="save-bookmark">
           <div class="form-group">
             <div class="row">
               <div class="form-check col-form-label">
@@ -92,8 +105,8 @@
       <div class="flex-spacer"></div>
       <appButton
         :click="handleSave"
-        :text="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
-        :tooltip="bookmarkSavedButMaterializationFailed ? getText('MRI_PA_COLL_BUT_RETRY') : getText('MRI_PA_COLL_BUT_OK')"
+        :text="saveButtonText"
+        :tooltip="saveButtonText"
         :disabled="isSaving || hasExceededLength || cohortNameValidationState !== 'valid'"
       />
       <appButton
@@ -129,6 +142,11 @@ export default {
     wizardConfig: {
       type: Object,
       default: null,
+    },
+    mode: {
+      type: String,
+      default: 'full',
+      validator: (value: string) => ['full', 'bookmark-only', 'materialize-only'].includes(value),
     },
   },
   data() {
@@ -168,6 +186,34 @@ export default {
     },
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
+    },
+    modalTitle() {
+      if (this.mode === 'bookmark-only') {
+        return this.getText('MRI_PA_TITLE_SAVE_BOOKMARK') || 'Save Current Filters'
+      }
+      if (this.mode === 'materialize-only') {
+        return this.getText('MRI_PA_TITLE_MATERIALIZE_COHORT') || 'Materialize Cohort'
+      }
+      return this.getText('MRI_PA_TITLE_SAVE_AND_MATERIALIZE') || 'Save and Materialize'
+    },
+    showDescriptionField() {
+      return this.mode !== 'bookmark-only'
+    },
+    showInfoMessage() {
+      return this.mode === 'bookmark-only'
+    },
+    saveButtonText() {
+      if (this.bookmarkSavedButMaterializationFailed) {
+        return this.getText('MRI_PA_COLL_BUT_RETRY')
+      }
+      if (this.mode === 'materialize-only') {
+        return this.getText('MRI_PA_COLL_BUT_OK') || 'OK'
+      }
+      return this.getText('MRI_PA_COLL_BUT_SAVE') || 'Save'
+    },
+    activeCohort() {
+      if (!this.getActiveBookmark?.cohortDefinitionId) return null
+      return this.getMaterializedCohorts.find(c => c.id === this.getActiveBookmark.cohortDefinitionId)
     },
   },
   watch: {
@@ -262,18 +308,26 @@ export default {
       this.resetMessageStrip()
 
       try {
-        if (!this.bookmarkSavedButMaterializationFailed) {
+        // Save bookmark for full and bookmark-only modes
+        if (this.mode !== 'materialize-only' && !this.bookmarkSavedButMaterializationFailed) {
           const savedBookmark = await this.saveBookmark()
           this.savedBookmarkId = savedBookmark
         }
 
-        await this.materializeCohort()
+        // Materialize cohort for full and materialize-only modes
+        if (this.mode !== 'bookmark-only') {
+          await this.materializeCohort()
+        }
         
         this.bookmarkSavedButMaterializationFailed = false
         
+        const successMessage = this.mode === 'bookmark-only'
+          ? this.getText('MRI_PA_BOOKMARK_SAVED') || 'Bookmark saved successfully'
+          : this.getText('MRI_PA_COHORT_SAVED')
+        
         this.messageStrip = {
           show: true,
-          message: this.getText('MRI_PA_COHORT_SAVED'),
+          message: successMessage,
           messageType: 'success',
         }
         this.$emit('success', {
