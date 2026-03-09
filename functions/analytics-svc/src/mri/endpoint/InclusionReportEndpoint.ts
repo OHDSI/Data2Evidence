@@ -308,31 +308,33 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     }
 
     private parseNonBasicDataFilters(filtercards) {
-        const nonBasicDataFilters = filtercards.filter(
+        let nonBasicDataFilters = filtercards.filter(
             (e) => e.content[0].name !== "Basic Data"
         );
 
         // Treat explicit exclusions from mriquery as inclusion filter
         nonBasicDataFilters.forEach((filtercard) => {
-            filtercard.content.forEach((content, idx) => {
-                if (content.op === "NOT") {
-                    // Remove from nested content, and push into nonBasicDataFilters
-                    const removedElement = filtercard.content.splice(idx, 1)[0];
-                    nonBasicDataFilters.push({
-                        content: removedElement.content,
-                        type: "BooleanContainer",
-                        op: "OR",
-                    });
-                }
+            const notFilters = filtercard.content.filter((content) => {
+                return content.op === "NOT";
             });
+            notFilters.forEach((e) => {
+                nonBasicDataFilters.push({
+                    content: e.content,
+                    type: "BooleanContainer",
+                    op: "OR",
+                });
+            });
+
+            // Set filtercard.content to only inclusions filters
+            filtercard.content = filtercard.content.filter(
+                (content) => content.op !== "NOT"
+            );
         });
 
         // Check if spliced filtercard.content is empty, if yes remove element
-        nonBasicDataFilters.forEach((filtercard, idx) => {
-            if (filtercard.content.length === 0) {
-                nonBasicDataFilters.splice(idx, 1);
-            }
-        });
+        nonBasicDataFilters = nonBasicDataFilters.filter(
+            (filtercard) => filtercard.content.length !== 0
+        );
 
         return nonBasicDataFilters;
     }
