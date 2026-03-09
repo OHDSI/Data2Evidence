@@ -538,6 +538,7 @@
           "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
           "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
           "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
+          "D2E_DUCKDB_MEMORY_LIMIT": "${D2E_DUCKDB_MEMORY_LIMIT:-}",
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
