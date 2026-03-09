@@ -831,7 +831,7 @@
   "TREE_MAP_CHART__CHART_LEGEND": "Boxgröße: Prävalenz, Farbe: Datensätze pro Person (Blau bis Grau = Hoch bis Niedrig)",
   "TREE_MAP_CHART__NUMBER_OF_PEOPLE": "Anzahl der Personen",
   "TREE_MAP_CHART__PREVALENCE": "Häufigkeit",
-  "TREE_MAP_CHART__RECORDS_PER_PERSON": "Datensätze pro Person",
+  "TREE_MAP_CHART__RECORDS_PER_PERSON": "Durchschnittliche Datensätze pro Person",
   "TREE_MAP_CHART_TABLE__LABEL_TABLE": "Tabelle",
   "TREE_MAP_CHART_TABLE__LABEL_TREEMAP": "Baumkarte",
   "TREE_MAP_CHART_TABLE__NO_DATA": "Keine Daten",
