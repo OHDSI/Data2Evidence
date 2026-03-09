@@ -1,4 +1,3 @@
-import { MCPManager } from "../mcp/mcpManager";
 import { env } from "../env";
 
 export const getModels = async (llm) => {
@@ -25,14 +24,4 @@ export const getModels = async (llm) => {
   };
   const key = Object.keys(pattern).find((k) => llm.startsWith(k));
   return key ? await pattern[key]() : null; // `Selected LLM model name '${llm}' is not supported`
-};
-
-export const initMcpManager = async (token?: string, datasetId?: string) => {
-  const mcpManager = MCPManager.getInstance();
-  if (!mcpManager.isReady()) {
-    console.log("Initializing MCP Manager...");
-    await mcpManager.initialize(token, datasetId);
-  }
-  const mcpClient = mcpManager.getClient();
-  return mcpClient;
 };

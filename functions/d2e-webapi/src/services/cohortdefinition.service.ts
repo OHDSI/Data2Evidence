@@ -247,7 +247,7 @@ export const getCohortDefinitionList = async (
 
   // Parse and filter materialized cohorts
   const formattedMaterializedCohorts = baseMaterializedCohorts.map((cohort) =>
-    _formatMaterializedCohort(cohort)
+    _formatMaterializedCohort(cohort, !isAtlas)
   );
   // Filter out materialized cohorts which do not belong to a bookmark or atlas cohort definition
   const filteredMaterializedCohorts = _filterUntaggedMaterializedCohorts(
@@ -443,13 +443,15 @@ export const checkV2 = async (
 };
 
 const _formatMaterializedCohort = (
-  cohortDefinition: IBaseMaterializedCohort
+  cohortDefinition: IBaseMaterializedCohort,
+  includeSyntax: boolean = false
 ): IMaterializedCohort => ({
   id: cohortDefinition.id,
   patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
   createdOn: cohortDefinition.creationTimestamp.toString(),
   description: cohortDefinition.description,
+  ...(includeSyntax && { syntax: cohortDefinition.syntax }),
 });
 
 const _getBookmarkMaterializedCohortDefinitionId = (

@@ -129,6 +129,12 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
               label="Results schema name (optional)"
               value={formData.resultsSchema}
               onChange={(event) => handleFormDataChange({ resultsSchema: event.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
             />
           </div>
         )}
@@ -140,6 +146,12 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
             label="Comment"
             value={formData.comment}
             onChange={(event) => handleFormDataChange({ comment: event.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
           />
         </div>
       </div>

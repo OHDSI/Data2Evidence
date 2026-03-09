@@ -17,6 +17,7 @@ export class Aggregation extends AstElement {
         } else {
             switch (this.node.actionType) {
                 case "totalpcount":
+                case "irtotalpcount":
                     this.getTPCSQL(queryObjects);
                     break;
                 case "kmquery":
