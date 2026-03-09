@@ -405,19 +405,18 @@
             "route": "jobs"
           },
           {
-            "enabled": true,
             "type": "app",
             "name": "ETL",
             "nameI18nKey": "UI_PLUGIN_ETL",
+            "enabled": true,
             "route": "etl",
             "pluginPath": "/flow/lifecycles.js",
-            "featureFlag": "etl",
             "requiredRoles": [
               "SYSTEM_ADMIN"
             ],
             "data": {
               "dnBaseUrl": "https://$$FQDN$$/",
-              "mappingSuggestion": true
+              "mappingSuggestion": false
             }
           },
           {
