@@ -9,6 +9,7 @@ import { useDisclaimer, useTranslation } from "../../../contexts";
 import { config } from "../../../config";
 import { i18nKeys } from "../../../contexts/app-context/states";
 import { LogResponseType } from "../../../constant";
+import { setDisclaimerAccepted as saveDisclaimerToStorage } from "../../../utils/disclaimerStorage";
 import env from "../../../env";
 import "./DisclaimerDialog.scss";
 
@@ -32,6 +33,8 @@ export const DisclaimerDialog: FC = () => {
   const handleAccept = useCallback(async () => {
     setFeedback({});
     setIsDisclaimerAccepted(true);
+    // Persist acceptance to localStorage (only store when accepted)
+    saveDisclaimerToStorage(true);
     await logUserResponse(LogResponseType.ACCEPTED);
   }, [setIsDisclaimerAccepted]);
 

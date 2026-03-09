@@ -141,7 +141,11 @@ const getters = {
     if (modulestate.activeBookmark == null) {
       return false
     }
-    const bookmark = JSON.parse(modulestate.activeBookmark?.bookmark)
+    // For new bookmarks or bookmarks without saved data, there are no changes to compare
+    if (!modulestate.activeBookmark.bookmark) {
+      return false
+    }
+    const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection

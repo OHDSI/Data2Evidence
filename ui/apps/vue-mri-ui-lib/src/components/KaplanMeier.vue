@@ -306,6 +306,7 @@ export default {
       'getKMDisplayInfo',
       'getKMFirstLoad',
       'getFireRequest',
+      'isFireRequestHeld',
       'getBookmarksData',
       'translate',
     ]),
@@ -406,6 +407,10 @@ export default {
         })
     },
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
       const callback = chartData => {
         this.showSubComponents = false
         this.chartData = this.processResponse(chartData)

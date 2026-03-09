@@ -104,6 +104,7 @@ export default {
       'getText',
       'getCsvFireDownload',
       'getFireRequest',
+      'isFireRequestHeld',
       'getActiveAxes',
       'getBookmarksData',
       'processResponse',
@@ -136,6 +137,10 @@ export default {
       })
     },
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
       this.reset()
 
       const callback = chartData => {

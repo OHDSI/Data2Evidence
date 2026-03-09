@@ -1,9 +1,10 @@
 import { Button } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import ReactFlow, { Controls, EdgeChange, PanOnScrollMode } from "reactflow";
 import { nodeTypes } from "../Nodes";
 import { api } from "../axios/api";
 import { useApp, useCdmSchema, useActiveFieldMap, useField, useTable } from "../contexts";
+import { AppContext } from "../contexts/AppContext";
 import { transformEtlModel } from "../utils/etl-transformer";
 import { saveBlobAs } from "../utils/utils";
 import { TableToTable } from "./TableToTable";
@@ -18,6 +19,7 @@ export const FieldMapLayout = () => {
 
   const { edges: tableEdges, sourceHandles: sourceTables, targetHandles: targetTables } = useTable();
   const { cdmVersion } = useCdmSchema();
+  const { nodeId } = useContext(AppContext);
 
   useEffect(() => {
     pluginMetadata?.data?.onChange(state);
@@ -59,7 +61,7 @@ export const FieldMapLayout = () => {
         fieldMap
       );
       console.debug("ETL Model:", model);
-      const response = await api.whiteRabbit.createEtlReport(model);
+      const response = await api.whiteRabbit.createEtlReport(model, nodeId);
       const flowRunId = response.flowRunId;
 
       const intervalId = setInterval(async () => {

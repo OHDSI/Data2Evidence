@@ -111,6 +111,7 @@
     "./src/utils/Logger": "./src/utils/Logger.ts",
     "./src/utils/formatter/BookmarkFormatter": "./src/utils/formatter/BookmarkFormatter.ts",
     "./src/utils/formatter/ConceptSetToConceptConverter": "./src/utils/formatter/ConceptSetToConceptConverter.ts",
+    "./src/utils/inclusionReport": "./src/utils/inclusionReport.ts",
     "./src/svc/DomainValuesSvc": "./src/svc/DomainValuesSvc.ts",
     "./src/svc/QueryGenSvc": "./src/svc/QueryGenSvc.ts",
     "./src/svc/cohortCompare/StackedBarchartCohortSvc": "./src/svc/cohortCompare/StackedBarchartCohortSvc.ts",

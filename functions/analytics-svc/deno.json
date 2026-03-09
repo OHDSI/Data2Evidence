@@ -123,6 +123,7 @@
         "./src/api/controllers/cohortSurvival": "./src/api/controllers/cohortSurvival.ts",
         "./src/mri/endpoint/PatientListEndpoint": "./src/mri/endpoint/PatientListEndpoint.ts",
         "./src/mri/endpoint/PatientCountEndpoint": "./src/mri/endpoint/PatientCountEndpoint.ts",
+        "./src/mri/endpoint/InclusionReportEndpoint": "./src/mri/endpoint/InclusionReportEndpoint.ts",
         "./src/mri/endpoint/DataCharacterizationEndpoint": "./src/mri/endpoint/DataCharacterizationEndpoint.ts",
         "./src/mri/endpoint/analytics": "./src/mri/endpoint/analytics.ts",
         "./src/mri/endpoint/CreatePluginEndpoint": "./src/mri/endpoint/CreatePluginEndpoint.ts",
