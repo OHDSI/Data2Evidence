@@ -32,7 +32,7 @@ const mapUserGroupToUser = (idpUserId: string, userGroupMetadata: UserGroupMetad
   const canAccessSystemAdminPortal =
     Boolean(userGroupMetadata.alp_role_system_admin) || Boolean(userGroupMetadata.alp_role_user_admin);
   const canAccessResearcherPortal = isResearcher || isTenantViewer;
-  const canAccessEtlPortal = isEtlMappingContributor || isSystemAdmin;
+  const canAccessEtlPortal = isEtlMappingContributor || canAccessSystemAdminPortal;
 
   return {
     userId: userGroupMetadata.userId,
