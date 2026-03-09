@@ -234,7 +234,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         )
 
         if achilles_params.use_trex_connection:
-            memory_limit = os.environ.get("D2E_MEMORY_LIMIT")
+            memory_limit = Variable.get("duckdb_memory_limit", "")
             if memory_limit:
                 trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode)
                 trex_dao.execute_sql(f"SET memory_limit = '{memory_limit}'")
