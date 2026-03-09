@@ -246,13 +246,13 @@ export default {
         // return ['#F56455FF', '#000080', '#87C785FF', '#572F30FF'] // r color palette
         // return ['#6BBAE5FF', '#E3EEF4FF', '#000080', '#F9F5EAFF', '#81974CFF', '#553F31FF'] // r color palette 2
         // return ['#000080', '#6DAABDFF', '#CAECB3FF', '#F3CB04FF', '#E28027FF']
-        // return ['#000080', '#3e92e0', '#c0ced1', '#fcd34b', '#f79409'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
-        // return ['#000080', '#f79409', '#3e92e0', '#FB9F9D', '#fcd34b'] // most recommended by leandro and Karthik
+        return ['#000080', '#3e92e0', '#c0ced1', '#fcd34b', '#f79409'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
+        // return ['#000080', '#3e92e0', '#FB9F9D', '#fcd34b', '#f79409'] // most recommended by leandro and Karthik
         // return ['#56B4E9', '#0072B2', '#CC79A7', '#009E73', '#E69F00'] // not colorblind safe
         // return ['#56B4E9', '#009E73', '#D55E00', '#CC79A7', '#E69F00']
-        return ['#1170aa', '#fc7d0b', '#a3acb9', '#57606c', '#5fa2ce', '#c85200']
-        // return ['#0072B2', '#F0E442', '#009E73', '#56B4E9', '#E69F00'] // okabe-ito
-        // return ['#E69F00', '#56B4E9', '#009E73', '#0072B2', '#D55E00', '#CC79A7'] // okabe-ito 2
+        // return ['#1170aa', '#fc7d0b', '#a3acb9', '#57606c', '#5fa2ce', '#c85200']
+        // return ['#000080', '#F0E442', '#009E73', '#56B4E9', '#E69F00'] // okabe-ito
+        // return ['#000080', '#D55E00', '#E69F00', '#56B4E9', '#009E73'] // okabe-ito 2
         // return [
         //   '#212E52FF',
         //   '#444E7EFF',
