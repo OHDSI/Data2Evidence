@@ -19,7 +19,6 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [error, setError] = useState<string>("");
   const [dashboardUrl, setDashboardUrl] = useState<string>("");
   const [dashboards, setDashboards] = useState<ShinyLiveDashboard[]>([]);
-  // studyId = tokenStudyCode = container name (e.g. "study_1")
   const [studyId, setStudyId] = useState<string | null>(null);
   const [isStrategusStudy, setIsStrategusStudy] = useState<boolean>(false);
   const [viewerRunning, setViewerRunning] = useState<boolean>(false);
@@ -44,7 +43,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         };
         const fetchOpts = { headers, credentials: "include" as RequestCredentials };
 
-        // Parallel: R/Python dashboard list + dataset type/studyCode info
+        // Fetch both study dashboard and strategus viewer
         const [dashboardResp, infoResp] = await Promise.allSettled([
           fetch(
             `${window.location.origin}/d2e/gateway/api/dataset/dashboard/list?datasetId=${metadata.studyId}`,
@@ -56,7 +55,6 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
           ),
         ]);
 
-        // R/Python dashboards (exclude shiny_server — that's the result viewer)
         if (dashboardResp.status === "fulfilled" && dashboardResp.value.ok) {
           const list = await dashboardResp.value.json();
           setDashboards(
@@ -66,7 +64,6 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
           );
         }
 
-        // Dataset info → determine if this is a strategus study and get the container name
         if (infoResp.status === "fulfilled" && infoResp.value.ok) {
           const info = await infoResp.value.json();
           if (info?.type === "strategus_analysis" && info?.tokenStudyCode) {
@@ -76,15 +73,18 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
             // Check if the R Shiny Server viewer is currently running
             try {
               const statusResp = await fetch(
-                `${window.location.origin}/d2e/gateway/api/strategus-results/${info.tokenStudyCode}/status`,
+                `${window.location.origin}/strategus-results/${info.tokenStudyCode}/status`,
                 fetchOpts
               );
               if (statusResp.ok) {
                 const status = await statusResp.json();
                 setViewerRunning(status.running === true);
+              } else {
+                setViewerRunning(false);
               }
-            } catch {
-              // viewer not running — not an error
+            } catch (err) {
+              console.error("[ShinyLive] Error checking viewer status:", err);
+              setViewerRunning(false);
             }
           }
         }
@@ -128,18 +128,25 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     }
   }, [options, selectedDashboard]);
 
-  // Build iframe URL when selection changes
   useEffect(() => {
     if (!selectedDashboard || !metadata?.studyId) return;
 
     if (selectedDashboard === RESULT_VIEWER_KEY && studyId) {
-      setDashboardUrl(`${window.location.origin}/d2e/gateway/api/strategus-results/${studyId}/`);
+      if (token) {
+        try {
+          document.cookie = `authtoken=${token}; path=/strategus-results; secure; SameSite=Strict;`;
+          console.log("[ShinyLive] Set authtoken cookie for strategus-results");
+        } catch (err) {
+          console.error("[ShinyLive] Error setting cookie:", err);
+        }
+      }
+      setDashboardUrl(`${window.location.origin}/strategus-results/${studyId}/`);
     } else {
       setDashboardUrl(
         `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`
       );
     }
-  }, [selectedDashboard, studyId, metadata?.studyId]);
+  }, [selectedDashboard, studyId, metadata?.studyId, token]);
 
   const handleDashboardChange = (event: SelectChangeEvent<string>) => {
     setSelectedDashboard(event.target.value);

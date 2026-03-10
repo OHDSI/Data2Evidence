@@ -2793,6 +2793,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/dataset/info$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/gateway/api/db/database-creds/list",
           "scopes": [
             "gateway.db.datbase.credentials.list"
@@ -2971,6 +2980,7 @@
           ],
           "httpMethods": [
             "GET",
+            "HEAD",
             "POST",
             "DELETE"
           ]

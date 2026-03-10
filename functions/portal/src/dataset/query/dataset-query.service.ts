@@ -204,6 +204,7 @@ export class DatasetQueryService {
       "dataset.plugin",
       "dataset.paConfigId",
       "dataset.type",
+      "dataset.tokenDatasetCode",
       "datasetDetail.name",
       "datasetDetail.description",
       "datasetDetail.summary",
