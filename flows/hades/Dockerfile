@@ -123,7 +123,6 @@ RUN java -version && R CMD javareconf
 
 ARG POSIT_DATE=2025-09-22
 ARG CODENAME=noble
-ENV JAVA_TOOL_OPTIONS="-Xms1g -Xmx4g"
 
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -146,16 +145,17 @@ COPY ./build/init_rjava.R /app/init_rjava.R
 RUN chmod 755 /app/init_rjava.R
 RUN chmod 644 /app/.Rprofile
 
-# Set R_PROFILE_USER to ensure .Rprofile is loaded when R starts
-ENV R_PROFILE_USER=/app/.Rprofile
-
 # Install R depdendencies in global library
 ARG REQUIRED_R_PACKAGES="Hades CohortGenerator CohortIncidence Strategus Characterization CirceR CohortDiagnostics CohortIncidence CohortMethod FeatureExtraction PatientLevelPrediction SelfControlledCaseSeries DatabaseConnector TreatmentPatterns Cyclops Andromeda BrokenAdaptiveRidge"
 RUN chmod +x /app/install_and_verify_r_packages.R && \
     /app/install_and_verify_r_packages.R "$REQUIRED_R_PACKAGES" && \
     R CMD javareconf && \
-    rm -f /app/renv.lock /app/.Rprofile /app/install_and_verify_r_packages.R
+    rm -f /app/renv.lock /app/install_and_verify_r_packages.R
 
+# Setting JAVA_TOOL_OPTIONS here to not conflict with install and verification of R packages which do not require more memory
+ENV JAVA_TOOL_OPTIONS="-Xms1g -Xmx4g"
+# Set R_PROFILE_USER to ensure .Rprofile is loaded when R starts
+ENV R_PROFILE_USER=/app/.Rprofile
 RUN rm -f .Renviron
 
 # Copy the Python virtual environment and uv binary from the build stage
