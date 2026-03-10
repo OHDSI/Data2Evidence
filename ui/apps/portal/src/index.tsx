@@ -8,6 +8,7 @@ import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLi
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
 import "import-map-overrides";
+import "./plugins/core/systemjsSetup";
 
 // Save deep link params BEFORE any redirects happen
 // This must run synchronously before React initializes

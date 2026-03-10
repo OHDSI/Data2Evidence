@@ -3,6 +3,7 @@ export interface UserState {
   idpUserId: string | null;
   canAccessSystemAdminPortal: boolean;
   canAccessResearcherPortal: boolean;
+  canAccessEtlPortal: boolean;
   isResearcher: boolean;
   isUserAdmin: boolean;
   isSystemAdmin: boolean;
@@ -20,6 +21,7 @@ type RoleTypeOf<T, Boolean> = {
   ALP_DASHBOARD_VIEWER: Boolean;
   STUDY_WRITE_DQD_RESEARCHER: Boolean;
   STUDY_RESULTS_READ_RESEARCHER: Boolean;
+  ETL_MAPPING_CONTRIBUTOR: Boolean;
   TENANT_VIEWER: T;
   STUDY_MANAGER: T;
   STUDY_RESEARCHER: T;
@@ -38,4 +40,5 @@ export interface UserGroupMetadata {
   alp_role_user_admin: boolean; // alp user admin
   alp_role_system_admin: boolean; // alp system admin
   alp_role_dashboard_viewer: boolean; // dashboard viewer
+  alp_role_etl_mapping_contributor: boolean; // etl mapping contributor
 }
