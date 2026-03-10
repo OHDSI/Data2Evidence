@@ -585,6 +585,7 @@
           "PG_PORT": "${PG_PORT:-5432}",
           "PG_DATABASE": "${PG_DB_NAME:-alp}",
           "PG_SCHEMA": "strategus",
+          "PG_PORTAL_SCHEMA": "portal",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
           "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
