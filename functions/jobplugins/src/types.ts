@@ -174,6 +174,7 @@ export interface ICreateFhirCacheFlowRunDto {
   schemaName: string;
   cacheSchemaName: string;
   studyCode: string;
+  fhirProjectId?: string;
 }
 
 export interface IGetVersionInfoFlowRunDto {

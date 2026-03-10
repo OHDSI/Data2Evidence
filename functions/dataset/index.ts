@@ -5,6 +5,7 @@ import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
+import { FhirGatewayAPI } from "./api/FhirGatewayAPI.ts";
 import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
 import { PortalAPI } from "./api/PortalAPI.ts";
 import {
@@ -270,16 +271,41 @@ export class DatasetRouter {
             type === SourceDatasetType.FHIR &&
             cacheDatasetType === CacheDatasetType.NON_OMOP
           ) {
+            // Create FHIR project synchronously so fhir_project_id is available before triggering cache flow
+            let resolvedFhirProjectId = fhirProjectId;
+            if (!resolvedFhirProjectId) {
+              try {
+                this.logger.info(
+                  `Creating FHIR project for dataset '${tokenStudyCode}'..`,
+                );
+                const fhirGatewayAPI = new FhirGatewayAPI(token);
+                resolvedFhirProjectId = await fhirGatewayAPI.createProject(
+                  id,
+                  detail?.name || tokenStudyCode,
+                );
+                this.logger.info(
+                  `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
+                );
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
+                );
+                return res
+                  .status(500)
+                  .send("Error while creating FHIR project");
+              }
+            }
+
             try {
               this.logger.info(
                 `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
               );
-
               const fhirCacheFlowRunDto = {
                 databaseCode: databaseCode,
                 schemaName: schemaName,
                 cacheSchemaName: parsedNewCacheSchemaName,
                 studyCode: tokenStudyCode,
+                fhirProjectId: resolvedFhirProjectId,
               };
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
