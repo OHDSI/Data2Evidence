@@ -46,7 +46,7 @@ export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts"
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
   source: ["info", "metadata", "version", "delete"],
   fhir: ["info", "metadata", "version", "delete"],
-  non_omop: ["metadata", "permissions", "resources", "delete"],
+  non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
     "metadata",
     "permissions",

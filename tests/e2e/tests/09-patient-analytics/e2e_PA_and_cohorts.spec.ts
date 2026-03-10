@@ -1,150 +1,245 @@
 import { test, expect } from '@playwright/test'
 
 const TEST_NAME = 'e2e PA and Cohorts'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
-  await page.goto('/d2e/portal')
-  await page.getByTestId('button').nth(1).click()
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('test_researcher_1')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
+const PASSWORD = 'Updatepassword12345'
+const RUN_ID = Date.now().toString(36)
+const RESEARCHER_1 = `researcher1_${RUN_ID}`
+const RESEARCHER_2 = `researcher2_${RUN_ID}`
+const COHORT_1 = `Cohort 1 ${RUN_ID}`
+const COHORT_2 = `Cohort 2 ${RUN_ID}`
+const COHORT_1_RENAMED = `Cohort 1 renamed ${RUN_ID}`
+
+async function loginAs(page, username) {
+  await page.locator('input[name="identifier"]').fill(username)
+  await page.locator('input[name="password"]').fill(PASSWORD)
   await page.getByRole('button', { name: 'Sign in' }).click()
+}
+
+async function logout(page) {
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Logout' }).click()
+}
+
+async function createUser(page, username) {
+  await page.getByRole('button', { name: 'Add user' }).click()
+  await page.getByRole('textbox', { name: 'Username' }).fill(username)
+  await page.getByRole('textbox', { name: 'Password' }).fill(PASSWORD)
+  await page.getByRole('button', { name: 'Add' }).click()
+  await page.waitForTimeout(2000)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: username })).toBeVisible()
+}
+
+async function grantDatasetAccess(page, username) {
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
+  await demoRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Permissions' }).click()
+  await page.getByRole('tab', { name: 'Access' }).click()
+  const addButton = page.getByTestId('dialog').getByTestId('button')
+  await expect(addButton).toBeVisible()
+  await addButton.click()
+  await expect(page.getByRole('menu')).toBeVisible()
+  await page.waitForTimeout(5000)
+  await expect(page.getByRole('menuitem', { name: username })).toBeVisible()
+  await page.getByRole('menuitem', { name: username }).click()
+  await expect(page.getByRole('cell', { name: username })).toBeVisible()
+  await page.getByTestId('dialog-close').click()
+}
+
+async function deleteUser(page, username) {
+  // Navigate to Users page
+  await page.getByRole('link', { name: 'Users' }).click()
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  const userRow = page.getByRole('row', { name: new RegExp(username) })
+  await userRow.getByRole('button', { name: 'Delete' }).click()
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  await expect(userRow).not.toBeVisible()
+}
+
+async function navigateToCohorts(page) {
+  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await expect(page.getByText('Create Cohort:')).toBeVisible()
+}
+
+async function dismissDiscardDialog(page) {
+  try {
+    await page.getByRole('button', { name: 'Discard' }).click({ timeout: 3000 })
+  } catch {
+    // Dialog not present, continue
+  }
+}
+
+async function navigateBackToCohortList(page) {
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await dismissDiscardDialog(page)
+  await page.waitForTimeout(500)
+}
+
+test(TEST_NAME, async ({ page }) => {
+  // === SETUP: Create two researcher users with Demo dataset access ===
+  await page.goto('/d2e/portal')
+  await loginAs(page, 'admin')
+
+  // Wait for the portal to fully load after OIDC redirect
+  await expect(page.getByText('Demo dataset').first()).toBeVisible()
+
+  // Switch to admin portal (use nth(1) - first Account button is behind the banner overlay)
+  await page.getByRole('button', { name: 'Account' }).nth(1).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+
+  // Create researcher users
+  await createUser(page, RESEARCHER_1)
+  await createUser(page, RESEARCHER_2)
+
+  // Grant both users access to Demo dataset
+  await grantDatasetAccess(page, RESEARCHER_1)
+  // Re-open permissions dialog for second user
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  await grantDatasetAccess(page, RESEARCHER_2)
+
+  // Logout admin
+  await page.getByRole('link', { name: 'Account' }).click()
+  await page.getByRole('button', { name: 'Logout' }).click()
+
+  // === TEST: Researcher 1 creates cohorts ===
+  await loginAs(page, RESEARCHER_1)
+
+  // Select dataset
   await page.getByText('Demo dataset').first().click()
   await expect(page.getByTestId('card-content')).toContainText('Demo dataset')
-  await expect(page.getByTestId('card')).toMatchAriaSnapshot(`
-    - tablist:
-      - tab "Dataset Info" [selected]
-      - tab "Data Quality"
-      - tab "Data Characterization"
-    `)
-  await page.getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: "Create Cohort:"
-    - button "D2E"
-    - button "Atlas"
-    - button "Import"
-    - button "Compare" [disabled]
-    - text: Shared
-    - checkbox
-    `)
+  await expect(page.getByRole('tab', { name: 'Dataset Info' })).toBeVisible()
+
+  // Navigate to Cohorts
+  await navigateToCohorts(page)
+  await expect(page.getByRole('button', { name: 'D2E' })).toBeVisible()
+
+  // Create first cohort with MALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
-  await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`
-    - text: MALE
-    - textbox "Enter search term"
-    `)
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - button "↺"
-    - button "Add Filters":
-      - button "Add Filters"
-    - button "Save"
-    `)
+  await expect(page.getByRole('combobox').filter({ hasText: 'MALE' }).first()).toBeVisible()
+
+  // Save cohort 1
+  await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByRole('textbox', { name: 'Enter name' }).click()
-  await page.getByRole('textbox', { name: 'Enter name' }).fill('Test cohort 1')
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text:  Save Current Filters`)
+  await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
+  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
+  await expect(page.locator('#pane-left')).toContainText('Enter a new name')
   await page.locator('.app-checkbox-container').click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: Enter a new name if you would like to overwrite the current name (New cohort).
-    - textbox "Enter name": Test cohort 1
-    - text:  Allow sharing
-    `)
-  await expect(page.locator('footer')).toMatchAriaSnapshot(`
-    - button "Save"
-    - button "Cancel"
-    `)
+  await expect(page.locator('footer').getByRole('button', { name: 'Save' })).toBeVisible()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: `)
-  await page.getByRole('button', { name: '' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.locator('#pane-left')).toContainText('Test cohort 1')
+
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(500)
+
+  // Navigate back to cohorts
+  await navigateBackToCohortList(page)
+  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
+
+  // Create second cohort with FEMALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByText('All').click()
+  await dismissDiscardDialog(page)
+
+  await page.waitForTimeout(500)
+  await page.getByText('All').first().click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
-  await page.getByText('FEMALE').click()
-  await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`- text: Gender  Clear All FEMALE`)
-  await expect(page.getByRole('tabpanel')).toMatchAriaSnapshot(`
-    - text: FEMALE
-    - textbox "Enter search term"
-    `)
+  await page.getByRole('option').filter({ hasText: 'FEMALE' }).first().click()
+  await expect(page.getByRole('combobox').filter({ hasText: 'FEMALE' }).first()).toBeVisible()
+
+  // Save cohort 2
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByRole('textbox', { name: 'Enter name' }).click()
-  await page.getByRole('textbox', { name: 'Enter name' }).fill('Test cohort 2')
+  await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
+  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
   await page.locator('.app-checkbox-container').click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Save Current Filters`)
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: Enter a new name if you would like to overwrite the current name (New cohort).
-    - textbox "Enter name": Test cohort 2
-    - text:  Allow sharing
-    `)
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: `)
-  await page.getByRole('button', { name: '' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: Test cohort 2
-    - img
-    `)
+
+  await page.keyboard.press('Escape')
+  await page.waitForTimeout(500)
+
+  // Navigate back to cohorts
+  await navigateBackToCohortList(page)
+  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
+
+  // Select both cohorts and verify Compare
   await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
   await page.getByRole('img').nth(4).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: "Create Cohort:"
-    - button "D2E"
-    - button "Atlas"
-    - button "Import"
-    - button "Compare"
-    - text: Shared
-    - checkbox
-    `)
+
+  await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Group Comparison`)
+  await expect(page.getByText('Group Comparison')).toBeVisible()
   await page.getByRole('button', { name: 'Close' }).click()
-  await page.getByRole('link', { name: 'Account' }).click()
-  await page.getByRole('button', { name: 'Logout' }).click()
-  await page.getByTestId('button').nth(1).click()
-  await page.locator('input[name="identifier"]').click()
-  await page.locator('input[name="identifier"]').fill('test_researcher_2')
-  await page.locator('input[name="password"]').click()
-  await page.locator('input[name="password"]').fill('Updatepassword12345')
-  await page.getByRole('button', { name: 'Sign in' }).click()
+
+  // === TEST: Researcher 2 can see shared cohorts ===
+  await logout(page)
+  await loginAs(page, RESEARCHER_2)
+
   await page.getByText('Demo dataset').first().click()
-  await page.getByRole('link', { name: 'Cohorts' }).click()
+  await navigateToCohorts(page)
   await page.locator('.slider').click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`
-    - text: Shared
-    - checkbox [checked]
-    `)
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Test cohort 2`)
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Test cohort 1`)
+
+  await expect(page.locator('#pane-left')).toContainText('Shared')
+  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
+  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
+
+  // Verify rename and delete are disabled on shared cohorts not owned by researcher_2
+  const cohort1Card = page.locator('div:nth-child(2) > .footer')
+  const renameButton = cohort1Card.locator('div:nth-child(2)')
+  const deleteButton = cohort1Card.locator('div:last-child')
+  await expect(renameButton).toHaveClass(/icon-button-disabled/)
+  await expect(deleteButton).toHaveClass(/icon-button-disabled/)
+
+  // === TEST: Materialize cohort (add patients) ===
   await page.locator('div:nth-child(2) > .footer > div:nth-child(3) > svg').click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Add Patients to Cohort (Test cohort 1)`)
+  await expect(page.locator('#pane-left')).toContainText('Add Patients to Cohort')
   await page
     .locator('div')
     .filter({ hasText: /^Cohort Description:$/ })
     .first()
     .click()
-  await page.getByRole('textbox', { name: 'Enter description' }).click()
-  await page.getByRole('textbox', { name: 'Enter description' }).fill('Test cohort 1')
+  await page.getByRole('textbox', { name: 'Enter description' }).fill(COHORT_1)
   await page.getByRole('button', { name: 'OK' }).click()
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
+  await expect(page.getByText('Patients added to cohort.').first()).toBeVisible()
+  // Wait for the success dialog to auto-close
+  await expect(page.getByText('Patients added to cohort.').first()).not.toBeVisible({ timeout: 10000 })
+
+  // === TEST: Researcher 1 renames and deletes own cohort ===
+  // (Only the owner can modify cohorts, so switch back to researcher_1)
+  await logout(page)
+  await loginAs(page, RESEARCHER_1)
+  await page.getByText('Demo dataset').first().click()
+  await navigateToCohorts(page)
+
+  // Rename cohort
+  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click({ force: true })
   await expect(page.locator('#pane-left')).toContainText('Rename Saved Filter')
-  await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark.')
-  await page.getByRole('textbox').click()
-  await page.getByRole('textbox').fill('Test cohort 1 renamed')
+  await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark')
+  await page.getByRole('textbox').fill(COHORT_1_RENAMED)
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(`- text: Test cohort 1 renamed`)
-  await page.locator('div:nth-child(5) > svg > path').first().click()
-  await page.locator('div:nth-child(5) > svg').first().click()
+  await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
+
+  // Navigate back to cohort list
+  await navigateBackToCohortList(page)
+
+  // Delete cohort
+  await page.locator('.footer > div:last-child > svg').first().click({ force: true })
   await expect(page.locator('#pane-left')).toContainText('Delete Saved Filter')
-  await expect(page.locator('#pane-left')).toMatchAriaSnapshot(
-    `- text: Deleting this saved filter will delete any access points that you generated for it. Are you sure you want to delete?`
-  )
+  await expect(page.locator('#pane-left')).toContainText('Are you sure you want to delete?')
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.locator('#app')).toMatchAriaSnapshot(`- text: Saved filter deleted.`)
+  await expect(page.locator('#app')).toContainText('Saved filter deleted')
+
+  // Cleanup: delete users as admin
+  await logout(page)
+  await loginAs(page, 'admin')
+  await expect(page.getByText('Demo dataset').first()).toBeVisible()
+  await page.getByRole('button', { name: 'Account' }).nth(1).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+  await deleteUser(page, RESEARCHER_1)
+  await deleteUser(page, RESEARCHER_2)
 })

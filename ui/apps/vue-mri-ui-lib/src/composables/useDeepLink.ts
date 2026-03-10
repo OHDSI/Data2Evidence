@@ -59,7 +59,7 @@ export function useDeepLink(dispatch: any) {
         const wizardsResult = CohortUrlCodec.safeDecompress(wizardsParam)
         if (wizardsResult.success) {
           wizardConfigData = wizardsResult.data as Record<string, any>
-          dispatch('setWizardConfig', wizardConfigData)
+          dispatch('setWizardConfig', { ...wizardConfigData, fromDeepLink: true })
         } else {
           console.warn('[DeepLink] Failed to decompress wizards param:', (wizardsResult as any).error)
         }

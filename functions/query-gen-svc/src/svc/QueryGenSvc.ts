@@ -298,6 +298,7 @@ export class QueryGenSvc {
             case "patientdetail":
                 return this.appendPatientListSpecificQueries(nql);
             case "totalpcount":
+            case "irtotalpcount":
                 return this.appendTotalPCountSpecificQueries(nql);
             case "plugin":
                 return this.appendPluginSpecificQueries(nql, confHelper);

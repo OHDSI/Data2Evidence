@@ -11,6 +11,7 @@ const log = utilsLib.Logger.CreateLogger("query-gen-log");
 const utils = utilsLib.utils;
 import { bookmarkToIFRBackend } from "../../utils/formatter/BookmarkFormatter";
 import { updateIfrWithConcepts } from "../../utils/formatter/ConceptSetToConceptConverter";
+import { inclusionReportbasicDataConfig } from "../../utils/inclusionReport";
 
 /**
  * Retrieves list of cohort definitions
@@ -27,7 +28,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         categories: [],
         totalPatientCount: 0,
     };
-    const timestamp = (new Date()).valueOf();
+    const timestamp = new Date().valueOf();
     let result: MRIEndpointResultType;
     try {
         const body =
@@ -77,7 +78,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                 ifrRequest = await bookmarkToIFRBackend(bookmarkInputStr);
             }
         } else if (queryType === "plugin") {
-
             // For PluginEndpoint flow, IFRRequest is of type CohortDefinitionType
             if (ifrRequest.cards && ifrRequest.configData) {
                 const convertedFilter = await bookmarkToIFRBackend({
@@ -96,6 +96,10 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             } else {
                 throw new Error(`Invalid IFRRequest from PluginEndpoint!`);
             }
+        }
+
+        if (queryType === "irtotalpcount") {
+            enrichConfigWithBasicDataInteraction(config, ifrRequest);
         }
 
         validateChartEnabled(res, queryType, result, emptyResult, config);
@@ -128,7 +132,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             pluginOptionalParams,
             censoringThreshold
         ).generateQuery();
-
 
         // set cdm config metadata
         queryResponse.cdmConfigMetaData.id =
@@ -263,4 +266,44 @@ function getCensoringThreshold(config: any): string {
         !Number.isNaN(Number(config.chartOptions.minCohortSize))
         ? config.chartOptions.minCohortSize
         : "10";
+}
+
+function enrichConfigWithBasicDataInteraction(
+    config: any,
+    ifrRequest: any
+): void {
+    // Update inclusionReportbasicDataConfig.attributes with patient attributes from config
+    inclusionReportbasicDataConfig.attributes = config.patient.attributes;
+
+    // Count number of patient.interactions.basicdata filters
+    const ifrRequestWalker = utilsLib.getJsonWalkFunction(ifrRequest);
+    const attributes = ifrRequestWalker("**._attributes.content.*");
+    const countOfBasicDataFilters = attributes.filter((e) =>
+        /patient\.interactions\.basicdata[\d]/.test(e.obj._configPath)
+    ).length;
+
+    // For each basic data filter, add one `basicdata${index}` interaction to config
+    // NOTE: Separate patient.interaction.basicdata configs are required for each basicdata filter.
+    // This is because query-gen-svc adds a `ON {filter_1_alias} != {filter_2_alias}` on the JOIN for filters that have the same configPath
+    let additionalBasicDataInteractionConfig = {};
+    for (let i = 1; i < countOfBasicDataFilters + 1; i++) {
+        additionalBasicDataInteractionConfig[`basicdata${i}`] =
+            inclusionReportbasicDataConfig;
+    }
+    config.patient.interactions = {
+        ...config.patient.interactions,
+        ...additionalBasicDataInteractionConfig,
+    };
+
+    // Add configuration such that @PATIENT is compatible to be a generic filtercard
+    config.advancedSettings.tableTypePlaceholderMap.dimTables.push({
+        placeholder: "@PATIENT",
+        attributeTables: [],
+        hierarchy: false,
+        time: true,
+        oneToN: false,
+        condition: false,
+    });
+    config.advancedSettings.tableMapping["@PATIENT.INTERACTION_ID"] =
+        '"person_id"';
 }
