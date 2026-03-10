@@ -20,7 +20,8 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     )
 
     # ── Step 1: Resolve the medplum fhir_project_id for this dataset ────────
-    fhir_project_id = get_fhir_project_id_task(study_code=options.studyCode)
+    # Use fhirProjectId from options if provided, otherwise look it up from the portal.
+    fhir_project_id = options.fhirProjectId or get_fhir_project_id_task(study_code=options.studyCode)
 
     # ── Step 2: Copy FHIR resource tables directly from medplum postgres ─────
     dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)

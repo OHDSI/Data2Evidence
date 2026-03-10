@@ -98,6 +98,7 @@ export interface CreateFhirCacheFlowRun {
   schemaName: string;
   cacheSchemaName: string;
   studyCode: string;
+  fhirProjectId?: string;
 }
 
 export interface CreateSemanticSearchFlowRun {

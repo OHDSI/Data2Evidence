@@ -34,8 +34,8 @@ export class FhirRouter {
         const token = req.headers.authorization;
         const { id, description } = req.body;
         try {
-          const status = await createProject(token, id, description);
-          return res.status(200).json(status);
+          const projectId = await createProject(token, id, description);
+          return res.status(200).json({ projectId });
         } catch (error) {
           let log_msg = `Failed to create project in fhir server - ${error.message}`;
           this.logger.error(log_msg);
