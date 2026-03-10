@@ -64,11 +64,11 @@ def dqd_plugin(options: DqdOptionsType):
         if schema_from_api:
             dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
 
-    execute_dqd(dqd_parameters, flow_run_id)
+    execute_dqd(dqd_parameters, flow_run_id, dbdao.dialect)
 
 
 @task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")
-def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
+def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatabaseDialects):
     logger = get_run_logger()
 
     logger.info("Running DQD with input parameters:")
@@ -80,14 +80,24 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str):
     with robjects.conversion.localconverter(robjects.default_converter):
         robjects.r(f"source('{r_script_path}')")
         r_execute_dqd = robjects.r['execute_dqd']
+        # For HANA the Database/Schemas are represented differently and do not use a dotted database.schema form
+        if dialect == SupportedDatabaseDialects.HANA:
+            cdm_database_schema = dqd_params.schemaName
+            vocab_database_schema = dqd_params.vocabSchemaName
+            cdm_source_name = dqd_params.schemaName
+        else:
+            cdm_database_schema = f"{dqd_params.databaseCode}.{dqd_params.schemaName}"
+            vocab_database_schema = f"{dqd_params.databaseCode}.{dqd_params.vocabSchemaName}"
+            cdm_source_name = f"{dqd_params.databaseCode}.{dqd_params.schemaName}"
+
         r_execute_dqd(
             set_trex_env_string=set_trex_env_string,
             setDBDriverEnv=dqd_params.setDBDriverEnv,
             connectionDetailsString=dqd_params.connectionDetails,
-            cdmDatabaseSchema = dqd_params.schemaName,
-            vocabDatabaseSchema = dqd_params.vocabSchemaName,
+            cdmDatabaseSchema = cdm_database_schema,
+            vocabDatabaseSchema = vocab_database_schema,
             resultsDatabaseSchema = dqd_params.resultsSchemaName,
-            cdmSourceName = dqd_params.schemaName,
+            cdmSourceName = cdm_source_name,
             numThreads = dqd_params.numThreads,
             sqlOnly = dqd_params.sqlOnly,
             outputFolder = dqd_params.outputFolder,

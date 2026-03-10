@@ -23,6 +23,7 @@ const state = {
   activeBookmark: null,
   addNewCohort: false,
   loading: false,
+  canDatasetMaterializeCohorts: false,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -32,6 +33,7 @@ const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
 const getters = {
   getBookmarksLoading: modulestate => modulestate.loading,
   getBookmarks: modulestate => modulestate.bookmarks,
+  getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
   getAddNewCohort: modulestate => modulestate.addNewCohort,
@@ -139,7 +141,11 @@ const getters = {
     if (modulestate.activeBookmark == null) {
       return false
     }
-    const bookmark = JSON.parse(modulestate.activeBookmark?.bookmark)
+    // For new bookmarks or bookmarks without saved data, there are no changes to compare
+    if (!modulestate.activeBookmark.bookmark) {
+      return false
+    }
+    const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection
@@ -476,6 +482,23 @@ const actions = {
         })
     })
   },
+  fireCheckIfDatasetCanMaterializeCohorts({ commit, dispatch, rootGetters }) {
+    return dispatch('ajaxAuth', {
+      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${rootGetters.getSelectedDataset.id}`,
+      method: 'GET',
+    })
+      .then(response => {
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: response.data })
+      })
+      .catch(error => {
+        console.error(error)
+        dispatch('setAlertMessage', {
+          message: rootGetters.getText('MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR'),
+        })
+        // Upon error on api request, disable materialize cohort for dataset
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: false })
+      })
+  },
 }
 
 // mutations
@@ -485,6 +508,9 @@ const mutations = {
   },
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
+  },
+  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts }) {
+    modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
     modulestate.materializedCohorts = materializedCohorts ?? []

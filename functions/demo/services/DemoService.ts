@@ -288,26 +288,20 @@ export class DemoService {
     this.logger.info("Running Phenotype");
 
     const jobPluginsAPI = new JobPluginsAPI(token);
-    let dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
-    )?.result;
-
-    if (!dataset) {
-      // For standalone phenotype flow, get the first available dataset from portal
-      const portalAPI = new PortalAPI(token);
-      const datasets = await portalAPI.getDatasets();
-      if (datasets.length === 0) {
-        throw new Error("No datasets available");
-      }
-      dataset = datasets[0];
-      this.logger.info(
-        `Using first available dataset: ${JSON.stringify(dataset)}`
-      );
-    }
-
-    const { id: datasetId } = dataset;
     const userMgmtAPI = new UserMgmtAPI(token);
     const user = await userMgmtAPI.getMe();
+    const roles = await userMgmtAPI.getMyRoles();
+    const accessibleDatasetIds = new Set(
+      roles.datasetRoles
+        .filter((r) => r.role === "RESEARCHER")
+        .map((r) => r.datasetId),
+    );
+    // For standalone phenotype flow, get the first dataset the user has access to
+    const datasetId = Array.from(accessibleDatasetIds)[0];
+    if (!datasetId) {
+      throw new Error("No accessible datasets available for the current user");
+    }
+
     const result = await jobPluginsAPI.createPhenotypeFlowRun({
       options: {
         materialize: false,

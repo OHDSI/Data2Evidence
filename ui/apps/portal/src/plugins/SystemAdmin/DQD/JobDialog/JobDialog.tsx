@@ -108,6 +108,13 @@ const JobDialog: FC<JobDialogProps> = ({
             handleInput: (event: UsefulEvent) => {
               setComment(event.target.value);
             },
+            handleKeyDown: (event: UsefulEvent) => {
+              const keyEvent = event as unknown as KeyboardEvent;
+              if (keyEvent.key === "Enter") {
+                event.preventDefault();
+                runJob();
+              }
+            },
           })}
         />
 

@@ -7,7 +7,6 @@ import { Button, Dialog, InputLabel, MenuItem, Select, TextField, Tooltip } from
 import {
   AUTHENTICATION_MODES,
   AuthenticationMode,
-  CREDENTIAL_SERVICE_SCOPES,
   CREDENTIAL_USER_SCOPES,
   CloseDialogType,
   DB_DIALECTS,
@@ -139,6 +138,7 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
       }
 
       const testResult: ITestingResult = {};
+      const errorMessages: string[] = [];
       for (const cred of credentials) {
         try {
           const params: ITestConnection = {
@@ -153,9 +153,16 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
 
           testResult[cred.username] = result.success;
           setTestingResult((x) => ({ ...x, [cred.username]: result.success }));
+          if (!result.success && result.error) {
+            errorMessages.push(result.error);
+          }
         } catch (err: any) {
           testResult[cred.username] = false;
           setTestingResult((x) => ({ ...x, [cred.username]: false }));
+          const errMsg = err?.data?.error || err?.data?.message;
+          if (errMsg) {
+            errorMessages.push(errMsg);
+          }
         }
       }
 
@@ -169,8 +176,10 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
         } else {
           setFeedback({
             type: "error",
-            message: getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_FAILED),
-            autoClose: 5000,
+            message:
+              errorMessages.length > 0
+                ? [...new Set(errorMessages)].join("; ")
+                : getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__CONNECTION_FAILED),
           });
         }
       }
@@ -346,48 +355,6 @@ export const EditDbCredentialsDialog: FC<EditDbCredentialDialogProps> = ({ open,
                     })
                   }
                 />
-              </div>
-              <div style={{ width: "130px" }}>
-                <FormControl fullWidth variant="standard">
-                  <InputLabel id="service-scope-label">
-                    {getText(i18nKeys.EDIT_DB_CREDENTIAL_DIALOG__SERVICE)}
-                  </InputLabel>
-                  <Select
-                    labelId="service-scope-label"
-                    id="service-scope"
-                    readOnly
-                    inputProps={{
-                      tabIndex: -1,
-                    }}
-                    sx={{
-                      "::before, ::after": {
-                        borderBottom: "0 !important",
-                      },
-                      ".MuiSvgIcon-root": {
-                        display: "none",
-                      },
-                    }}
-                    value={cred.serviceScope}
-                    onChange={(event) =>
-                      handleFormDataChange({
-                        credentials: [
-                          ...formData.credentials.slice(0, index),
-                          {
-                            ...formData.credentials[index],
-                            serviceScope: event.target?.value,
-                          } as IDbCredential,
-                          ...formData.credentials.slice(index + 1, formData.credentials.length),
-                        ],
-                      })
-                    }
-                  >
-                    {CREDENTIAL_SERVICE_SCOPES.map((scope) => (
-                      <MenuItem value={scope} key={scope}>
-                        {scope}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
               </div>
               <div style={{ width: "50px", alignSelf: "flex-end" }}>
                 {Object.keys(testingResult).includes(cred.username) && (
