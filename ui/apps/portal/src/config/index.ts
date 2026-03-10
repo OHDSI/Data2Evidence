@@ -2,6 +2,7 @@ interface Config {
   ROUTES: {
     systemadmin: string;
     researcher: string;
+    etl: string;
     public: string;
     login: string;
     logout: string;
@@ -12,11 +13,13 @@ interface Config {
 const RESEARCHER_PATH = "/researcher";
 const PUBLIC_PATH = "/public";
 const SYSTEM_ADMIN_PATH = "/systemadmin";
+const ETL_PATH = "/etl";
 
 export const config: Config = {
   ROUTES: {
     systemadmin: SYSTEM_ADMIN_PATH,
     researcher: RESEARCHER_PATH,
+    etl: ETL_PATH,
     public: PUBLIC_PATH,
     login: "/login",
     logout: "/logout",
@@ -39,14 +42,16 @@ export const TENANT_ROLES: { [key: string]: string } = {
 
 export const ALP_USER_ADMIN = "ALP_USER_ADMIN";
 export const ALP_DASHBOARD_VIEWER = "ALP_DASHBOARD_VIEWER";
-export const STUDY_WRITE_DQD_RESEARCHER = "STUDY_WRITE_DQD_RESEARCHER"
-export const STUDY_RESULTS_READ_RESEARCHER = "STUDY_RESULTS_READ_RESEARCHER"
+export const STUDY_WRITE_DQD_RESEARCHER = "STUDY_WRITE_DQD_RESEARCHER";
+export const STUDY_RESULTS_READ_RESEARCHER = "STUDY_RESULTS_READ_RESEARCHER";
+export const ETL_MAPPING_CONTRIBUTOR = "ETL_MAPPING_CONTRIBUTOR";
 
 export const ALP_ROLES: { [key: string]: string } = {
   [ALP_USER_ADMIN]: "User Admin",
   [ALP_DASHBOARD_VIEWER]: "Dashboard Viewer",
   [STUDY_WRITE_DQD_RESEARCHER]: "Job Runner",
   [STUDY_RESULTS_READ_RESEARCHER]: "View Study Results",
+  [ETL_MAPPING_CONTRIBUTOR]: "ETL Mapping Contributor",
 };
 
 export const ALP_SYSTEM_ADMIN = "ALP_SYSTEM_ADMIN";
