@@ -1,5 +1,6 @@
 import ibis
 import pandas as pd
+import urllib.parse
 from typing import Any
 from datetime import datetime
 from contextlib import contextmanager
@@ -225,7 +226,7 @@ class IbisDao(SqlAlchemyDao):
             connection_string = self.create_ibis_connection_url(
                 dialect=configs.dialect,
                 user=configs.adminUser,
-                password=configs.adminPassword.get_secret_value(),
+                password=urllib.parse.quote(configs.adminPassword.get_secret_value(), safe=""),
                 host=configs.host,
                 port=configs.port,
                 database_name=configs.databaseName,
@@ -235,6 +236,7 @@ class IbisDao(SqlAlchemyDao):
                 connection_string = (
                     connection_string + "?preferQueryMode=simple&autocommit=true"
                 )
+
 
             con = ibis.connect(connection_string, autocommit=autocommit)
             yield con

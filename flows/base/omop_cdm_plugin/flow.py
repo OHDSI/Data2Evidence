@@ -26,7 +26,7 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
-            create_omop_cdm_dataset_flow(options)
+            create_omop_cdm_dataset_flow(options, create_results_cache=True)
         case FlowActionType.GET_VERSION_INFO:
             update_dataset_metadata_flow(options)
         case FlowActionType.UPDATE_DATA_MODEL:
@@ -39,7 +39,7 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
             raise ValueError(error_msg)
 
 
-def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
+def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_cache: bool):
     logger = get_run_logger()
     database_code = options.database_code
     schema_name = options.schema_name
@@ -63,8 +63,8 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
                         cdm_schema=schema_name,
                         vocab_schema=options.vocab_schema)
 
-    
-    if schema_name != options.vocab_schema:
+    if create_results_cache:
+
         # Create results schema
         logger.info(f"Creating results schema '{results_schema}' in source database '{database_code}'..")
         create_schema_task(dbdao, results_schema)
@@ -101,20 +101,23 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
 
 
 def create_seed_schemas_flow(options: OmopCDMPluginOptions):
-    create_vocab_schema(options)
-    create_dataset_schema(options)
+    if options.schema_name != options.vocab_schema:
+        create_vocab_schema(options)
+        create_dataset_schema(options)
+    else:
+        create_dataset_schema(options)
 
 
 def create_vocab_schema(options: OmopCDMPluginOptions):
     new_options = update_parameters(
         options, "schema_name", options.vocab_schema)
-    create_omop_cdm_dataset_flow(options=new_options)
+    create_omop_cdm_dataset_flow(options=new_options, create_results_cache=False)
 
 
 def create_dataset_schema(options: OmopCDMPluginOptions):
     new_options = update_parameters(
         options, "schema_name", options.schema_name)
-    create_omop_cdm_dataset_flow(options=new_options)
+    create_omop_cdm_dataset_flow(options=new_options, create_results_cache=True)
 
 
 def update_parameters(options: OmopCDMPluginOptions,

@@ -15,8 +15,10 @@
     "baseUrl": "./",
     "paths": {
       "~/*": ["src/*"]
-    }
+    },
+    "declarationDir": "dist"
   },
+  "files": ["src/lifecycles.tsx"],
   "include": ["src"],
   "exclude": ["node_modules", "dist"]
 }

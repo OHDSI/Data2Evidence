@@ -2,7 +2,13 @@ import express, { NextFunction, Response } from 'express'
 import { Service } from 'typedi'
 import { ROLES } from '../const'
 import { IAppRequest, IUserWithRoles } from '../types'
-import { UserAdminService, DashboardViewerService, JobRunnerService, StudyResultService } from '../services'
+import {
+  UserAdminService,
+  DashboardViewerService,
+  JobRunnerService,
+  StudyResultService,
+  ETLMappingContributorService
+} from '../services'
 import { createLogger } from '../Logger'
 import { User } from '../entities'
 
@@ -15,7 +21,8 @@ export class AlpUserRouter {
     private readonly userAdminService: UserAdminService,
     private readonly dashboardViewerService: DashboardViewerService,
     private readonly jobRunnerService: JobRunnerService,
-    private readonly studyResultService: StudyResultService
+    private readonly studyResultService: StudyResultService,
+    private readonly etlMappingContributorService: ETLMappingContributorService
   ) {
     this.registerRoutes()
   }
@@ -57,6 +64,9 @@ export class AlpUserRouter {
         if (roles.includes(ROLES.STUDY_RESULTS_READ_RESEARCHER)) {
           await this.studyResultService.registerUser(userId)
         }
+        if (roles.includes(ROLES.ETL_MAPPING_CONTRIBUTOR)) {
+          await this.etlMappingContributorService.registerUser(userId)
+        }
 
         return res.status(200).json({ userId })
       } catch (err) {
@@ -85,6 +95,9 @@ export class AlpUserRouter {
         }
         if (roles.includes(ROLES.STUDY_RESULTS_READ_RESEARCHER)) {
           await this.studyResultService.withdrawUser(userId)
+        }
+        if (roles.includes(ROLES.ETL_MAPPING_CONTRIBUTOR)) {
+          await this.etlMappingContributorService.withdrawUser(userId)
         }
 
         return res.status(200).json({ userId })

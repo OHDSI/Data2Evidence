@@ -48,6 +48,7 @@ export const initialState: AppState = {
     idpUserId: null,
     canAccessSystemAdminPortal: false,
     canAccessResearcherPortal: false,
+    canAccessEtlPortal: false,
     isResearcher: false,
     isUserAdmin: false,
     isSystemAdmin: false,

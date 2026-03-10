@@ -316,6 +316,7 @@ interface IMaterializedCohort {
   cohortDefinitionName: string
   createdOn: string
   description: string
+  syntax?: string
 }
 
 type ICombinedCohortDefnitionListItem = IBookmark | ICohortDefinition | IMaterializedCohort
