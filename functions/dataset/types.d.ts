@@ -97,4 +97,5 @@ export interface Dataset {
   resultsSchemaName: string
   dashboards: DatasetDashboard[]
   vocabSchemaName: string
+  tokenStudyCode: string
 }

@@ -2,7 +2,7 @@
   <div class="shiny-iframe-wrapper">
     <div v-if="loading" class="iframe-loading">
       <div class="spinner"></div>
-      <p>Loading dashboard...</p>
+      <p>{{ getText('MRI_PA_LOADING_DASHBOARD') }}</p>
     </div>
 
     <div v-if="error" class="iframe-error">
@@ -13,6 +13,7 @@
     <iframe
       v-show="!loading && !error"
       ref="iframeRef"
+      :key="iframeUrl"
       :src="iframeUrl"
       class="shiny-iframe"
       frameborder="0"
@@ -23,6 +24,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useStore } from 'vuex'
 import { getPortalAPI } from '@/utils/PortalUtils'
 
 const props = defineProps<{
@@ -31,6 +33,9 @@ const props = defineProps<{
   wizardConfig?: Record<string, any>
   mriquery?: string
 }>()
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 const CURRENT_ORIGIN = window.location.origin
 const iframeRef = ref<HTMLIFrameElement | null>(null)
@@ -43,25 +48,39 @@ const error = ref<string | null>(null)
 const portalAPI = getPortalAPI()
 
 const iframeUrl = computed(() => {
-  if (!props.wizardConfig) return ''
+  if (!props.wizardConfig?.dashboardType) {
+    return ''
+  }
 
   const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
-
-  return `/gateway/api/dataset/shiny-live/${resourceId}/`
+  const url = `/gateway/api/dataset/shiny-live/${resourceId}/`
+  return url
 })
+
+// Watch for wizardConfig changes and reset state when it changes
+watch(
+  () => props.wizardConfig,
+  (newConfig, oldConfig) => {
+    if (newConfig !== oldConfig) {
+      // Reset state for new dashboard
+      isIframeReady.value = false
+      tokenSent.value = false
+      loading.value = true
+      error.value = null
+    }
+  },
+  { deep: true }
+)
 
 window.addEventListener('message', handleIframeMessage)
 
 onMounted(async () => {
-  console.log('[Parent] Component mounted, fetching token')
   await fetchAuthToken()
-  console.log('[Parent] Token fetched, ready to authenticate iframe')
 })
 
 onUnmounted(() => {
   window.removeEventListener('message', handleIframeMessage)
 })
-
 
 async function fetchAuthToken() {
   try {
@@ -78,16 +97,7 @@ async function fetchAuthToken() {
 }
 
 function handleIframeMessage(event: MessageEvent) {
-  console.log('[Parent] Raw message received:', {
-    origin: event.origin,
-    type: event.data?.type,
-    timestamp: new Date().toISOString(),
-    hasData: !!event.data,
-    source: event.source === iframeRef.value?.contentWindow ? 'our-iframe' : 'unknown',
-  })
-
   const iframeOrigin = getIframeOrigin()
-  console.log('[Parent] Origin check:', { received: event.origin, expected: iframeOrigin })
 
   if (event.origin !== iframeOrigin) {
     console.warn('[Parent] ⚠️ REJECTED - Origin mismatch:', event.origin, 'Expected:', iframeOrigin)
@@ -95,27 +105,19 @@ function handleIframeMessage(event: MessageEvent) {
   }
 
   const data = event.data
-  console.log('[Parent] ✓ ACCEPTED message type:', data.type)
 
   if (data.type === 'SHINYLIVE_READY') {
-    console.log('[Parent] ShinyLive iframe is ready')
-
     if (!tokenSent.value && bearerToken.value) {
-      console.log('[Parent] Sending AUTH_TOKEN immediately')
       isIframeReady.value = true
       loading.value = false
       sendTokenToIframe(event.source)
     } else if (!bearerToken.value) {
-      console.log('[Parent] Token not ready yet, waiting...')
       isIframeReady.value = true
       loading.value = false
-    } else {
-      console.log('[Parent] Token already sent, ignoring duplicate READY')
     }
   }
 
   if (data.type === 'AUTH_READY') {
-    console.log('[Parent] Iframe confirmed authentication')
     tokenSent.value = true
   }
 
@@ -156,7 +158,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
     }
   }
 
-
   const message = {
     type: 'AUTH_TOKEN',
     token: bearerToken.value,
@@ -173,7 +174,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
 
   try {
     source?.postMessage(message)
-    console.log('[Parent] Token and context sent successfully')
   } catch (err) {
     console.error('[Parent] Error sending message to iframe:', err)
     error.value = 'Failed to authenticate with dashboard'
@@ -181,7 +181,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
 }
 
 function handleIframeLoad() {
-  console.log('ShinyLive iframe loaded')
   setTimeout(() => {
     if (!isIframeReady.value) {
       console.warn('ShinyLive app did not send ready signal, proceeding anyway')

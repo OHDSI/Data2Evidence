@@ -19,12 +19,19 @@
       </button>
     </div>
     <div class="actionButtonGroup">
-      <div class="dashboardButton" v-if="getWizardConfig">
+      <div
+        class="dashboardButton"
+        v-if="getActiveBookmark && canOpenDashboard"
+        :title="canOpenDashboard ? '' : getText('MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED')"
+      >
         <Button
           :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
-          :onClick="openDashboardModal"
-        >
-        </Button>
+          :onClick="dashboardFlow.openDashboardModal"
+          :disabled="!canOpenDashboard"
+        />
+      </div>
+      <div class="dashboardButton">
+        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
@@ -73,32 +80,88 @@
         @click="openSettingsConfig"
         :title="getText('MRI_PA_SELECT_CONFIGURATION')"
       >
-        <span class="icon" style="font-family: app-icons"></span>
+        <span class="icon" style="font-family: app-icons"></span>
       </button> -->
       </div>
     </div>
   </div>
 
   <Teleport to="#app">
+    <DashboardSelectionModal
+      :is-open="dashboardFlow.showDashboardSelectionModal"
+      :dashboards="dashboardFlow.dashboardCodes"
+      :wizard-definitions="dashboardFlow.wizardDefinitions"
+      :loading="dashboardFlow.dashboardMetadataLoading"
+      :error="dashboardFlow.dashboardSelectionError"
+      @close="dashboardFlow.closeDashboardSelectionModal"
+      @select="dashboardFlow.handleDashboardSelected"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
+    <CompleteRequiredFiltersModal
+      :is-open="dashboardFlow.showRequiredFiltersModal"
+      :all-fields="dashboardFlow.allWizardFields"
+      :initial-values="dashboardFlow.initialFormValues"
+      :initial-display-values="dashboardFlow.initialDisplayValues"
+      :loading="dashboardFlow.applyingRequiredFilters"
+      :error="dashboardFlow.requiredFiltersError"
+      @cancel="dashboardFlow.handleRequiredFiltersCancel"
+      @submit="dashboardFlow.handleRequiredFiltersSubmit"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
     <ShinyDashboardModal
-      v-if="showDashboardModal"
-      :is-open="showDashboardModal"
+      v-if="dashboardFlow.showDashboardModal"
+      :is-open="dashboardFlow.showDashboardModal"
       :dataset-id="getSelectedDataset.id"
       :cohort-id="getActiveCohortMaterializedId?.toString() || ''"
-      :wizard-config="dashboardContext.wizardConfig"
-      :conditions="dashboardContext.conditions"
-      :mriquery="dashboardContext.mriquery"
-      @close="closeDashboardModal"
+      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
+      :conditions="dashboardFlow.dashboardContext.conditions"
+      :mriquery="dashboardFlow.dashboardContext.mriquery"
+      @close="dashboardFlow.closeDashboardModal"
     />
   </Teleport>
 
   <Teleport to="#app">
     <SaveCohortModal
-      :is-open="showSaveCohortModal"
-      :wizard-config="getWizardConfig"
-      @success="handleSaveCohortSuccess"
-      @cancel="handleCancelSaveCohort"
+      :is-open="dashboardFlow.showSaveCohortModal"
+      :mode="dashboardFlow.saveCohortModalMode"
+      :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
+      @success="dashboardFlow.handleSaveCohortSuccess"
+      @cancel="dashboardFlow.handleCancelSaveCohort"
     />
+  </Teleport>
+
+  <Teleport to="#app">
+    <VDialog
+      :model-value="showInclusionReportModal"
+      @update:modelValue="showInclusionReportModal = $event"
+      max-width="90%"
+      persistent
+    >
+      <div class="inclusion-report-dialog">
+        <div class="inclusion-report-dialog__title">
+          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+            <span class="icon" style="font-family: app-icons">&#x2715;</span>
+          </button>
+        </div>
+
+        <div class="inclusion-report-dialog__content">
+          <InclusionReport
+            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            :source-key="inclusionReportSourceKey"
+            :is-ready="inclusionReportIsReady"
+            :cache-key="inclusionReportCacheKey"
+            generation-status="complete"
+            :fetch-inclusion-report="fetchInclusionReport"
+            :show-person-event-switch="false"
+          />
+        </div>
+      </div>
+    </VDialog>
   </Teleport>
 </template>
 
@@ -113,12 +176,39 @@ import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
 import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
 import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
+import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
+import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import Button from './Button.vue'
+import { useDashboardFlow } from '../composables/useDashboardFlow'
+import { getPortalAPI } from '../utils/PortalUtils'
+
+function getBookmarkKey(bookmark) {
+  if (!bookmark) {
+    return null
+  }
+
+  return (
+    bookmark.bmkId ||
+    bookmark.id ||
+    bookmark.cohortDefinitionId ||
+    bookmark.atlasCohortDefinitionId ||
+    bookmark.bookmarkname ||
+    bookmark.name ||
+    null
+  )
+}
+import VButton from './vuetify/VButton.vue'
+import VDialog from './vuetify/VDialog.vue'
+import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
 
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
   data() {
+    // Initialize dashboard flow composable with dispatch and getters
+    const store = (this as any).$store
+    const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
+
     return {
       chartConfig: [],
       disableCensoring: true,
@@ -127,8 +217,11 @@ export default {
       hideIconToolTip: '',
       toggleFilterCardSummary: false,
       patientCountPopoverPosition: {},
+      dashboardFlow,
       showDashboardModal: false,
       showSaveCohortModal: false,
+      showInclusionReportModal: false,
+      inclusionReportCache: null,
     }
   },
   watch: {
@@ -138,8 +231,16 @@ export default {
         this.refreshPatientCount()
       }
     },
-    getActiveChart(val) {
+    getActiveChart() {
       this.refreshPatientCount()
+    },
+    getActiveBookmark(newBookmark, oldBookmark) {
+      if (getBookmarkKey(newBookmark) !== getBookmarkKey(oldBookmark)) {
+        // Don't reset if we're in the middle of a dashboard flow
+        if (!this.dashboardFlow.isProcessingDashboardFlow()) {
+          this.dashboardFlow.resetDashboardFlowState()
+        }
+      }
     },
   },
   mounted() {
@@ -147,7 +248,6 @@ export default {
       this.$nextTick(() => {
         window.addEventListener('click', this.closeSubMenu)
       })
-      // The config is available when component mounts already to check if interactive mode is used
       this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
       this.refreshPatientCount()
       this.loadValuesForAttributePath({
@@ -171,7 +271,6 @@ export default {
       'getMriFrontendConfig',
       'getText',
       'getSelectedDataset',
-      'getMriFrontendConfig',
       'getActiveCohortMaterializedId',
       'getActiveBookmark',
       'getBookmarksData',
@@ -180,58 +279,42 @@ export default {
       'getCurrentBookmarkHasChanges',
       'getPLRequest',
       'getWizardConfig',
-      'getActiveCohortMaterializedId',
+      'getFilterCards',
+      'getConstraintForAttribute',
+      'getBookmarkFromIFR',
+      'getConstraint',
+      'getCanDatasetMaterializeCohorts',
     ]),
     chartSelection() {
       return this.getChartSelection()
     },
     drilldownEnabled() {
-      if (
-        // this.getActiveChart !== "vb" &&
-        this.chartSelection &&
-        this.chartSelection.length > 0
-      ) {
-        return true
-      }
-      return false
+      return !!(this.chartSelection && this.chartSelection.length > 0)
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
-    isBookmarkSaved() {
-      return this.getActiveBookmark && !this.getActiveBookmark.isNew
-    },
-    needsMaterialization() {
-      return !this.getActiveCohortMaterializedId
-    },
-    dashboardContext() {
-      const activeBookmark = this.$store.getters.getActiveBookmark
-
-      if (!activeBookmark) {
-        return {
-          wizardConfig: null,
-          conditions: null,
-          mriquery: null,
-        }
+    isWizardFeatureEnabled() {
+      const portalAPI = getPortalAPI()
+      if (!portalAPI?.features) {
+        return false
       }
-
-      const wizardConfig = this.getWizardConfig || null
-
-      let mriquery = null
-      try {
-        const plRequest = this.$store.getters.getPLRequest({ bmkId: activeBookmark.id })
-        mriquery = JSON.stringify(plRequest)
-      } catch (e) {
-        console.error('Failed to generate mriquery:', e)
-      }
-
-      return {
-        wizardConfig,
-        mriquery,
-      }
+      return portalAPI.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
     },
-    getSelectedDatasetText() {
-      return this.getSelectedDataset.name == '' ? 'Untitled' : this.getSelectedDataset.name
+    canOpenDashboard() {
+      return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
+    },
+    inclusionReportCohortDefinitionId() {
+      return this.getActiveBookmark?.cohortDefinitionId?.toString()
+    },
+    inclusionReportSourceKey() {
+      return this.getSelectedDataset?.id
+    },
+    inclusionReportIsReady() {
+      return true
+    },
+    inclusionReportCacheKey() {
+      return JSON.stringify(this.getBookmarksData)
     },
   },
   methods: {
@@ -245,8 +328,18 @@ export default {
       'loadValuesForAttributePath',
       'refreshPatientCount',
       'fireBookmarkQuery',
+      'fireQuery',
       'onAddCohortOkButtonPress',
       'setToastMessage',
+      'ajaxAuth',
+      'addFilterCard',
+      'addFilterCardConstraint',
+      'updateConstraintValue',
+      'updateDateConstraintValue',
+      'setWizardConfig',
+      'clearWizardConfig',
+      'holdFireRequest',
+      'releaseFireRequest',
     ]),
     openSettingsConfig() {
       this.toggleConfigSelectionDialog()
@@ -354,21 +447,43 @@ export default {
       }
       this.showDashboardModal = true
     },
-    
+
     handleSaveCohortSuccess({ cohortId, bookmarkId }) {
       this.showDashboardModal = true
     },
-    
+
     handleCancelSaveCohort() {
       this.showSaveCohortModal = false
     },
-    
+
     openDashboardModal() {
       this.handleOpenDashboard()
     },
-    
+
     closeDashboardModal() {
       this.showDashboardModal = false
+    },
+    openInclusionReportModal() {
+      this.showInclusionReportModal = true
+    },
+    closeInclusionReportModal() {
+      this.showInclusionReportModal = false
+    },
+    fetchInclusionReport() {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+
+      if (this.inclusionReportCache && this.inclusionReportCache.mriquery === mriquery) {
+        return Promise.resolve(this.inclusionReportCache.result)
+      }
+
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/inclusionreport',
+        params: { mriquery, datasetId },
+      }).then(result => {
+        this.inclusionReportCache = { mriquery, result }
+        return result
+      })
     },
   },
   components: {
@@ -380,7 +495,12 @@ export default {
     DownloadMenu,
     ShinyDashboardModal,
     SaveCohortModal,
+    DashboardSelectionModal,
+    CompleteRequiredFiltersModal,
     Button,
+    VButton,
+    VDialog,
+    InclusionReport,
   },
 }
 </script>

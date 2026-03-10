@@ -2,7 +2,6 @@ import { AstElement } from "./AstElement";
 import { Def } from "./Def";
 import { Query } from "./Query";
 import { EntityConfig } from "../qe_config_interface/EntityConfig";
-import { Utils } from "./Utils";
 import { isPropExists, getUniqueSeperatorString } from "@alp/alp-base-utils";
 import { QueryObject as qo } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
@@ -284,6 +283,12 @@ export class With extends AstElement {
     public getTableAlias(table) {
         if (this.parent.getType() === "Query") {
             if (table in this.parent.sourceTable) {
+                // Handle Inclusion report dynamically generated patient.interactions.basicdata
+                if (this.joinElements[table].alias.includes("basicdata")) {
+                    // Dont use parent.sourceTable, instead use joinElements
+                    return this.joinElements[table];
+                }
+
                 return this.parent.sourceTable[table];
             }
         }
@@ -344,13 +349,26 @@ export class With extends AstElement {
                         );
 
                     if (filteredOn.length > 0) {
+
+                        let joinType;
+                        if (that.getType() === "With") {
+                            joinType = that.getTableAlias(joins).joinType;
+                        } else {
+                            // For WITHOUT Types
+                            if (/basicdata[\d]/.test(that.node.alias)) {
+                                // Handle nested JOIN within a patient.interaction.basicdata
+                                // This is required for the Age filter for inclusion report filtering
+                                joinType = "LEFT JOIN";
+                            } else {
+                                joinType =
+                                    that.getType() === "LeftJoin"
+                                        ? "LEFT JOIN"
+                                        : "JOIN";
+                            }
+                        }
                         return QueryObject.format(
                             " %UNSAFE %UNSAFE %UNSAFE ON (%Q)",
-                            that.getType() === "With"
-                                ? that.getTableAlias(joins).joinType
-                                : that.getType() === "LeftJoin"
-                                ? "LEFT JOIN"
-                                : "JOIN",
+                            joinType,
                             joins.split(getUniqueSeperatorString())[0],
                             that.getTableAlias(joins).alias,
                             QueryObject.format(" AND ").join(filteredOn)

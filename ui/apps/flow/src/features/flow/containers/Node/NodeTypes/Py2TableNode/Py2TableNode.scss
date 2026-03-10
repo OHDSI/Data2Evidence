@@ -1,4 +1,4 @@
-@import "../../../../../../theme/variables.scss";
+@use "../../../../../../theme/variables.scss" as *;
 
 .py2table-node {
   background-color: white;

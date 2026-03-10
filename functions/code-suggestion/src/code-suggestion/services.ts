@@ -1,6 +1,7 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { getModels, initMcpManager } from "../utils/utils";
+import { getModels } from "../utils/utils";
+import { createStaticMcpTools } from "../mcp/staticTools";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting } from "./prompts";
@@ -15,7 +16,7 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
           4. Ensure the completion is syntactically correct and logically coherent.
           5. Provide a complete and useful code snippet, not just the given code.
           6. Do not include any explanations, comments, or labels in your response.
-          
+
           Complete the code (your response MUST start with and be longer than the given code)
   `;
 
@@ -57,22 +58,22 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
 export const getChatResponse = async (req: any) => {
   const uiChat: IChatSnippet = req.body;
   const token = req.headers.authorization;
-  const datasetId = req.query.datasetId;
+  const datasetId = req.query.datasetId; // datasetId is passed as a query parameter
   const model = await getModels(uiChat.model);
   if (model === null) {
     throw Error(`LLM Model - ${uiChat.model} not found.`);
   }
 
-  // Initialize MCP if requested and available
   try {
-    const mcpInstance = await initMcpManager(token, datasetId);
-    const client = mcpInstance.getUnderlyingClient();
-    const tools = await client.getTools();
+    const chatStart = performance.now();
+    const tools = createStaticMcpTools(token, datasetId);
     const agent = createAgent({
       model: model,
       tools: tools,
     });
-
+    console.log(
+      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
+    );
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [
       new SystemMessage(getRolePrompting(uiChat.userInput, uiChat.context)),
@@ -81,9 +82,13 @@ export const getChatResponse = async (req: any) => {
 
     // Use agent to handle the conversation with tools
     if (agent) {
+      const streamStart = performance.now();
       const stream = await agent.stream(
         { messages: messages },
-        { streamMode: "messages" }
+        { streamMode: "messages" },
+      );
+      console.log(
+        `[MCP-TIMING] [code-suggestion] agent.stream() initiated in ${(performance.now() - streamStart).toFixed(1)}ms`,
       );
       return stream;
     } else {

@@ -10,6 +10,11 @@ import {
   PHENOTYPE_LIBRARY_COHORTS,
 } from "../env";
 import type { PhenotypeData } from "../types/tool-schemas";
+import {
+  loadEmbeddingCache,
+  semanticSearch,
+  type PhenotypeWithEmbedding,
+} from "./embedding-helpers";
 
 /**
  * Fetch all phenotypes from OHDSI Phenotype Library
@@ -31,17 +36,47 @@ export async function fetchPhenotypeData(): Promise<PhenotypeData[]> {
 }
 
 /**
- * Fetch cohort definition template by phenotype ID
+ * Fetch cohort definition template by phenotype ID from local submodule
  */
-export async function fetchCohortDefinitionTemplate(
+export function fetchCohortDefinitionTemplate(
   phenotypeId: number
-): Promise<any> {
-  const url = `${PHENOTYPE_LIBRARY_COHORT_TEMPLATE}/${phenotypeId}.json`;
-  const response = await fetch(url);
+): any {
+  const filePath = `${PHENOTYPE_LIBRARY_COHORT_TEMPLATE}/${phenotypeId}.json`;
+  const file = readFileSync(filePath, "utf-8");
+  return JSON.parse(file);
+}
 
-  try {
-    return await response.json();
-  } catch (e) {
-    return await response.text();
+export async function searchPhenotypes(
+  searchTerm?: string,
+  useSemanticSearch: boolean = false,
+  topK: number = 10,
+): Promise<PhenotypeData[]> {
+  // If no search term, return all phenotypes
+  if (!searchTerm) {
+    return fetchPhenotypeData();
   }
+
+  // Semantic search using embeddings
+  if (useSemanticSearch) {
+    const cache = loadEmbeddingCache();
+    if (!cache) {
+      console.warn(
+        "Embedding cache not available, falling back to substring search",
+      );
+      // Fallback to substring search
+      const allPhenotypes = await fetchPhenotypeData();
+      const lowerSearch = searchTerm.toLowerCase();
+      return allPhenotypes.filter((p) =>
+        p.cohortName.toLowerCase().includes(lowerSearch),
+      );
+    }
+    return semanticSearch(searchTerm, cache, topK);
+  }
+
+  // Fallback: Simple substring search
+  const allPhenotypes = await fetchPhenotypeData();
+  const lowerSearch = searchTerm.toLowerCase();
+  return allPhenotypes.filter((p) =>
+    p.cohortName.toLowerCase().includes(lowerSearch),
+  );
 }
