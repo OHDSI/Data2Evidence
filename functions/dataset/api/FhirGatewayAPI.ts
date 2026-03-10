@@ -14,7 +14,7 @@ export class FhirGatewayAPI {
     }
     if (services.fhirGateway) {
       this.baseURL = services.fhirGateway;
-      this.channel = Trex.tokioChannel("d2e-functions/fhir-gateway");
+      this.channel = Trex.tokioChannel("fhir/alp-fhir-gateway");
     } else {
       throw new Error("No url is set for FhirGatewayAPI");
     }
