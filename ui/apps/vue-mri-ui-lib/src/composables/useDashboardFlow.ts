@@ -692,6 +692,7 @@ export function useDashboardFlow(
         // Use existing wizardConfig directly and skip both modals
         // Go straight to save cohort check / dashboard opening
         activeDashboardWizardConfig.value = existingWizardConfig
+        isProcessingDashboardFlow = true
         await handleOpenDashboard()
         return
       }

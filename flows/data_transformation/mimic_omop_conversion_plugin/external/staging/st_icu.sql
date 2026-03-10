@@ -17,6 +17,7 @@ FROM (SELECT hadm_id                                                            
              (SELECT  main.sha1(subject_id::text || hadm_id::text || starttime::text)) AS trace_id
       FROM mimiciv_icu.procedureevents) t
 ;
+DROP TABLE mimiciv_icu.procedureevents;
 
 -- -------------------------------------------------------------------
 -- src_d_items
@@ -39,6 +40,7 @@ FROM (SELECT itemid                                       AS itemid,
              (SELECT  main.sha1(itemid::text || linksto::text)) AS trace_id
       FROM mimiciv_icu.d_items) t
 ;
+DROP TABLE mimiciv_icu.d_items;
 
 -- -------------------------------------------------------------------
 -- src_datetimeevents
@@ -58,7 +60,13 @@ FROM (SELECT subject_id                                                         
              (SELECT  main.sha1(subject_id::text || hadm_id::text || stay_id::text || charttime::text)) AS trace_id
       FROM mimiciv_icu.datetimeevents) t
 ;
+DROP TABLE mimiciv_icu.datetimeevents;
+-- Flush earlier staged tables to disk before the largest operation.
+CHECKPOINT;
 
+-- -------------------------------------------------------------------
+-- src_chartevents  (largest ICU table)
+-- -------------------------------------------------------------------
 
 DROP TABLE IF EXISTS mimic_etl.src_chartevents;
 CREATE TABLE mimic_etl.src_chartevents AS
@@ -76,6 +84,14 @@ FROM (SELECT subject_id                                                         
              (SELECT  main.sha1(subject_id::text || hadm_id::text || stay_id::text || charttime::text)) AS trace_id
       FROM mimiciv_icu.chartevents) t
 ;
+DROP TABLE mimiciv_icu.chartevents;
+
+-- Flush src_chartevents to disk to reclaim buffer pool memory before continuing.
+CHECKPOINT;
+
+-- -------------------------------------------------------------------
+-- src_outputevents
+-- -------------------------------------------------------------------
 
 DROP TABLE IF EXISTS mimic_etl.src_outputevents;
 CREATE TABLE mimic_etl.src_outputevents AS
@@ -93,3 +109,4 @@ FROM (SELECT subject_id                                                         
              (SELECT  main.sha1(subject_id::text || hadm_id::text || stay_id::text || charttime::text)) AS trace_id
       FROM mimiciv_icu.outputevents) t
 ;
+DROP TABLE mimiciv_icu.outputevents;
