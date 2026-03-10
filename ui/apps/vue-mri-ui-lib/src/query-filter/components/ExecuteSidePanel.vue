@@ -12,6 +12,7 @@ import appTab from '@/lib/ui/app-tab.vue'
 import { ref, computed } from 'vue'
 import InclusionReport from './InclusionReport/index.vue'
 import Samples from './Samples.vue'
+import { d2eWebapiService } from '@/query-filter/services/D2eWebapiService'
 
 const props = defineProps<{
   cohortDefinitionId: string
@@ -90,6 +91,10 @@ const isGeneratingForSource = (sourceKey: string) => {
 const hasCohortGenerated = computed(() => {
   return props.patientCounts?.[activeDataset.value] !== null && props.patientCounts?.[activeDataset.value] !== undefined
 })
+
+const fetchInclusionReport = (cohortDefinitionId: string, sourceKey: string, modeId: number) => {
+  return d2eWebapiService.getInclusionReport(cohortDefinitionId, sourceKey, modeId)
+}
 </script>
 
 <template>
@@ -161,6 +166,7 @@ const hasCohortGenerated = computed(() => {
             :source-key="activeDataset"
             :generation-status="generationStatus[activeDataset]"
             :patient-count="patientCounts?.[activeDataset]"
+            :fetch-inclusion-report="fetchInclusionReport"
           />
           <h3 v-if="selectedView === 'analysis'">Analysis</h3>
           <Samples

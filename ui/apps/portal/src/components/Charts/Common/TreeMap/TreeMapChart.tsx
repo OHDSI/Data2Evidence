@@ -83,7 +83,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         const tooltipLines = [
           `<div class="tooltip-title">${parsedConceptPath}</div>`,
           `${getText(i18nKeys.TREE_MAP_CHART__PREVALENCE)}: ${formattedPrevalence}<br>`,
-          `${getText(i18nKeys.TREE_MAP_CHART__NUMBER_OF_PEOPLE)}: ${numPersons}<br>`,
+          `${getText(i18nKeys.TREE_MAP_CHART__NUMBER_OF_PEOPLE)}: ${Number(numPersons).toLocaleString()}<br>`,
         ];
 
         // Only show records per person if the data has meaningful values

@@ -279,6 +279,7 @@ export class DatasetRouter {
                 databaseCode: databaseCode,
                 schemaName: schemaName,
                 cacheSchemaName: parsedNewCacheSchemaName,
+                studyCode: tokenStudyCode,
               };
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
@@ -370,6 +371,7 @@ export class DatasetRouter {
         schemaName,
         vocabSchemaName,
         resultsSchemaName,
+        tokenStudyCode
       } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
@@ -417,6 +419,7 @@ export class DatasetRouter {
                 databaseCode: databaseCode,
                 schemaName: schemaName,
                 cacheSchemaName: parsedNewSchemaName,
+                studyCode: tokenStudyCode,
               };
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
