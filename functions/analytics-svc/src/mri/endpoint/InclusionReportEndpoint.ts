@@ -262,13 +262,19 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         const basicDataFiltercard = filtercards.find(
             (e) => e.content[0].name === "Basic Data"
         );
-
         if (!basicDataFiltercard) {
             return [];
         }
 
+        // Get basic data filters and remove those that have no chips
         const basicDataFilters =
-            basicDataFiltercard.content[0].attributes.content;
+            basicDataFiltercard.content[0].attributes.content.filter(
+                (e) => e.constraints.content.length !== 0
+            );
+        if (basicDataFilters.length === 0) {
+            return [];
+        }
+
         let basicDataInclusionReportFilters;
         if (basicDataFilters.length === 1) {
             basicDataInclusionReportFilters = [

@@ -14,14 +14,14 @@ from _shared_flow_utils.types import SupportedDatabaseDialects
 @task(log_prints=True)
 def staging_mimic_data(conn):
     create_schema(conn, 'mimic_etl')
-    execute_raw_sql_from_file(conn, StagDir, StagSql)
+    execute_raw_sql_from_file(conn, StagDir, StagSql, StagLogs)
 
 
 @task(log_prints=True)
 def ETL_transformation(conn):
     logger = get_run_logger()
     try:
-        execute_raw_sql_from_file(conn, ETLDir, ETLSqls)
+        execute_raw_sql_from_file(conn, ETLDir, ETLSqls, ETLLogs)
     except Exception as e:
         logger.error(f"Error tranforming mimic: {str(e)}")
         raise Exception()
@@ -32,7 +32,7 @@ def final_cdm_tables(conn):
     logger = get_run_logger()
     try:
         create_schema(conn, 'cdm')
-        execute_raw_sql_from_file(conn, CdmDir, CdmSqls)
+        execute_raw_sql_from_file(conn, CdmDir, CdmSqls, CdmLogs)
     except Exception as e:
         logger.error(f"Error creating final cdm data: {str(e)}")
         raise Exception()
@@ -64,6 +64,7 @@ def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk
                 tables = conn.execute(f"SELECT table_name FROM duckdb_tables() WHERE (database_name = 'pg')").fetchall()
                 tables = [x[0] for x in tables]
                 for table in tables:
+                    logger.info(f"Inserting into {schema_name}.{table}")
                     conn.execute(f"""
                     INSERT INTO pg.{schema_name}.{table}
                     SELECT * FROM cdm.{table};    
@@ -78,6 +79,7 @@ def export_data(duckdb_file_name, schema_name, to_dbdao, overwrite_schema, chunk
                     hana_conn.commit()
             tables = to_dbdao.get_table_names(schema=schema_name)
             for table in tables:
+                logger.info(f"Inserting into {schema_name}.{table}")
                 tmp = 0
                 for chunk, percent in read_table_chunks(duckdb_file_name, table, chunk_size=chunk_size):   
                     if percent != tmp: 

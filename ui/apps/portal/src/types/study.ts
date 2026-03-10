@@ -1,8 +1,10 @@
 import { Tenant } from "./tenant";
+import { NetworkStrategusStudy } from "./strategusStudy";
 
 export enum SourceDatasetType {
   SOURCE = "source",
   FHIR = "fhir",
+  STRATEGUS_ANALYSIS = "strategus_analysis",
 }
 
 export enum CacheDatasetType {
@@ -59,6 +61,7 @@ export interface Study {
   fhir_project_id?: string;
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
+  strategusAnalysis?: NetworkStrategusStudy | null;
 }
 
 export interface NewStudyInput {
