@@ -87,7 +87,7 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #' This function creates options for a flow run in Prefect in D2E.
 #' So far, the only option is to upload_results.
 #'
-#' @param study_id string value indicating the study ID to be used in the flow run
+#' @param study_id string value indicating the study ID to be used in the flow run (maintained for backward compatibility, but study_name should be used going forward)
 #' @param upload_results boolean value indicating whether to upload results after the flow run
 #'   (default is FALSE)
 #' @param update_results_schema boolean value indicating whether to update results schema
@@ -95,16 +95,18 @@ get_deployment <- function(deployment_name = "strategus_plugin", flow_name = "st
 #'  dropped before uploading new results. 
 #' @param run_table1 boolean value indicating whether to run Table 1 generation
 #' as part of the flow run (default is FALSE).
+#' @param study_name string value indicating the study name to be used in the flow run 
+#'    (default is an empty string). If provided, this will override the study_id parameter.
 #' @return Response object with options for the flow run
 #' @export
-create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE, run_table1 = FALSE) {
+create_options <- function(study_id = '', upload_results = FALSE, update_results_schema = TRUE, run_table1 = FALSE, study_name = '') {
   dataset_id <- Sys.getenv("TREX__DATASET_ID")
   return(list(
       mode = 'kernel',
       datasetId = dataset_id,
       uploadResults = upload_results,
       updateResultsSchema = update_results_schema,
-      studyId = study_id,
+      studyId = ifelse(study_name != '', study_name, study_id),
       runTable1 = run_table1
   ))
 }
