@@ -54,7 +54,10 @@ RUN useradd docker -u 1001 \
     && adduser docker staff \
     && adduser docker alp
 
-RUN apt-get update && \
+# Clean apt lists and update to avoid stale package errors
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
     ca-certificates \
     cmake \
@@ -86,13 +89,13 @@ RUN apt-get update && \
     locales \
     openssh-client \
     protobuf-compiler \
-    python3-pip \
     software-properties-common \
     sqlite3 \
     vim-tiny \
     wget \
     libglpk40 \
-    && apt-get clean
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # GitHub setup & test
 RUN mkdir -p -m 700 ~/.ssh/ && ssh-keyscan github.com | tee -a ~/.ssh/known_hosts
@@ -120,7 +123,7 @@ RUN java -version && R CMD javareconf
 
 ARG POSIT_DATE=2025-09-22
 ARG CODENAME=noble
-
+ENV JAVA_TOOL_OPTIONS="-Xms1g -Xmx4g"
 
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
@@ -149,14 +152,11 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 
 RUN rm -f .Renviron
 
-# Set Java options early to ensure consistent behavior
-ENV JAVA_TOOL_OPTIONS="-Xms1g -Xmx4g"
-
-# Copy rJava initialization script (before R packages are restored)
+# Copy rJava initialization script
 COPY ./build/init_rjava.R /app/init_rjava.R
 RUN chmod 755 /app/init_rjava.R
-
 RUN chmod 644 /app/.Rprofile
+
 # Set R_PROFILE_USER to ensure .Rprofile is loaded when R starts
 ENV R_PROFILE_USER=/app/.Rprofile
 
