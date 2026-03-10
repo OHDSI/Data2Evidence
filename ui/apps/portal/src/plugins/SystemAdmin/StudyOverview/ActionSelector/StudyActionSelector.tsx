@@ -13,6 +13,7 @@ interface ActionSelectorProps {
   handleManageStrategusResultViewer: (study: NetworkStrategusStudy) => void;
   handleUploadStrategusResults: (study: NetworkStrategusStudy) => void;
   handleDownloadStrategusResults: (study: NetworkStrategusStudy) => void;
+  handleStudyPermissions: (study: NetworkStrategusStudy) => void;
 }
 
 interface Action {
@@ -49,6 +50,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
   handleManageStrategusResultViewer,
   handleUploadStrategusResults,
   handleDownloadStrategusResults,
+  handleStudyPermissions,
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
@@ -57,6 +59,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
       { name: "Run Study", value: "run" },
       { name: "Cleanup Study", value: "cleanup" },
       { name: "Manage Result Viewer", value: "manage" },
+      { name: "Permissions", value: "permissions" },
       { name: "Upload Strategus Results", value: "upload" },
       { name: "Download Strategus Results", value: "download" },
     ],
@@ -75,6 +78,9 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
         case "manage":
           handleManageStrategusResultViewer(study);
           break;
+        case "permissions":
+          handleStudyPermissions(study);
+          break;
         case "upload":
           handleUploadStrategusResults(study);
           break;
@@ -92,6 +98,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
       handleManageStrategusResultViewer,
       handleUploadStrategusResults,
       handleDownloadStrategusResults,
+      handleStudyPermissions,
     ]
   );
 

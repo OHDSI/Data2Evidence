@@ -223,6 +223,16 @@ const StudyOverview: FC = () => {
     [openManageViewerDialog]
   );
 
+  const handleStrategusStudyPermissions = useCallback(
+    (study: NetworkStrategusStudy) => {
+      // study.datasetId is the strategus_analysis dataset's ID — find it from the full datasets list
+      const dataset = datasets?.find((d: Study) => d.id === study.datasetId);
+      setActiveDataset(dataset);
+      openPermissionsDialog();
+    },
+    [datasets, openPermissionsDialog]
+  );
+
   const handleUploadStrategusResults = useCallback(
     (study: NetworkStrategusStudy) => {
       setActiveStrategusStudy(study);
@@ -863,6 +873,7 @@ const StudyOverview: FC = () => {
                               handleManageStrategusResultViewer={handleManageStrategusResultViewer}
                               handleUploadStrategusResults={handleUploadStrategusResults}
                               handleDownloadStrategusResults={handleDownloadStrategusResults}
+                              handleStudyPermissions={handleStrategusStudyPermissions}
                             />
                           )}
                         </TableCell>
@@ -976,6 +987,7 @@ const StudyOverview: FC = () => {
               config={{
                 type: viewerDialogType,
                 id: viewerDialogType === "dashboard" ? activeDataset?.id! : activeStrategusStudy?.studyId!,
+                datasetId: viewerDialogType === "strategus" ? activeStrategusStudy?.datasetId : undefined,
               }}
               open={showManageViewerDialog}
               onClose={closeManageViewerDialog}
@@ -1008,6 +1020,7 @@ const StudyOverview: FC = () => {
               onClose={closeUploadStrategusResultsDialog}
             />
           )}
+
         </div>
       </div>
     </div>

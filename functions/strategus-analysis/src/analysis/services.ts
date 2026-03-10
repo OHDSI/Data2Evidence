@@ -22,8 +22,12 @@ export default class StrategusAnalysisService {
         const analysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
-        
+
         return analysis;
+    }
+
+    async getAnalysisByDatasetId(datasetId: string) {
+        return this.strategusAnalysisRepository.findOne({ where: { datasetId } });
     }
 
     async createAnalysisSpec(

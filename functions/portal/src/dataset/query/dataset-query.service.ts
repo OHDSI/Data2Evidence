@@ -348,10 +348,7 @@ export class DatasetQueryService {
     );
 
     if (!datasetCodes.length) {
-      throw new HttpException(
-        404,
-        `Dataset codes of type ${type} for dataset id ${datasetId} not found`,
-      );
+      return [];
     }
 
     const codeQueries =

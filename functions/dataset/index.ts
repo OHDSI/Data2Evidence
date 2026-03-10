@@ -462,6 +462,27 @@ export class DatasetRouter {
       }
     });
 
+    this.router.get("/info", async (req: Request, res: Response) => {
+      const { datasetId } = req.query || {};
+
+      if (!datasetId || typeof datasetId !== "string") {
+        return res.status(400).send("datasetId is required");
+      }
+
+      try {
+        const token = req.headers.authorization!;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDataset(datasetId);
+        return res.status(200).json({
+          type: dataset.type,
+          tokenStudyCode: dataset.tokenStudyCode,
+        });
+      } catch (error) {
+        this.logger.error(`Error when getting dataset info: ${JSON.stringify(error)}`);
+        res.status(500).send("Error when getting dataset info");
+      }
+    });
+
     this.router.get("/dashboard/list", async (req: Request, res: Response) => {
       const { datasetId } = req.query || {};
 
