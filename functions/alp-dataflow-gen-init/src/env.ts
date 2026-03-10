@@ -26,6 +26,7 @@ export const env = {
     alp_system_id: _env.ALP__SYSTEM_ID,
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
     exclude_analysis_ids: _env.EXCLUDE_ANALYSIS_IDS || "",
+    duckdb_memory_limit: _env.D2E_DUCKDB_MEMORY_LIMIT || "",
     dc_hana_read_role: _env.DC_HANA_READ_ROLE || "",
     cohort_generator_module_settings_url:
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,

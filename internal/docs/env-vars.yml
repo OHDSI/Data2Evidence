@@ -30,6 +30,10 @@ D2E_MEMORY_LIMIT:
   comment: Dynamically Calculated Limit
   publish: true
   type: string
+D2E_DUCKDB_MEMORY_LIMIT:
+  comment: DuckDB in-process memory limit for heavy queries (e.g. Data Characterization). If unset, DuckDB uses its default. Example: 64G
+  publish: true
+  type: string
 D2E_SWAP_LIMIT:
   comment: Docker Swap Limit
   publish: true

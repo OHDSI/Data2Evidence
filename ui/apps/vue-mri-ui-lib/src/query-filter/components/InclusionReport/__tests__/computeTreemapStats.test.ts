@@ -50,7 +50,7 @@ describe('Treemap Stats Computation', () => {
       expect(result?.tooltip.summary).toBe('2 criteria passed, 0 criteria failed')
       expect(result?.tooltip.passed).toHaveLength(2)
       expect(result?.tooltip.failed).toHaveLength(0)
-      expect(result?.itemStyle?.color).toBe('#53bead') // All passed
+      expect(result?.itemStyle?.color).toBe('#aee28d') // All passed
     })
 
     it('should convert node with children', () => {
@@ -75,9 +75,9 @@ describe('Treemap Stats Computation', () => {
 
     it('should assign correct colors based on failure count', () => {
       const testCases = [
-        { name: '11', failCount: 0, expectedColor: '#53bead' }, // All passed
-        { name: '01', failCount: 1, expectedColor: '#cdd99e' }, // One failed
-        { name: '00', failCount: 2, expectedColor: '#dedcab' }, // Two failed
+        { name: '11', failCount: 0, expectedColor: '#aee28d' }, // All passed
+        { name: '01', failCount: 1, expectedColor: '#c3e490' }, // One failed
+        { name: '00', failCount: 2, expectedColor: '#d8e593' }, // Two failed
       ]
 
       testCases.forEach(({ name, expectedColor }) => {
@@ -189,4 +189,3 @@ describe('Treemap Stats Computation', () => {
     })
   })
 })
-
