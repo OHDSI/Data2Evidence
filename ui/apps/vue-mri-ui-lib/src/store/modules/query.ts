@@ -1182,7 +1182,18 @@ const actions = {
     const filterContainerIndex = boolContainer.props.boolfiltercontainers.indexOf(filterContainerId)
 
     if (filterContainerIndex > -1 && filterContainerIndex - 1 < boolFilterConainterModels.length) {
-      const prevBoolFilterContainerModel = boolFilterConainterModels[filterContainerIndex - 1]
+      // Find the previous container with the same inclusion/exclusion type
+      const isExclusionContainer = filterCardModels.some((fc: any) => fc.props?.excludeFilter)
+      let prevIndex = filterContainerIndex - 1
+      while (prevIndex >= 0) {
+        const candidateIsExclusion = boolFilterConainterModels[prevIndex].props.filterCards.some(
+          (fc: any) => fc.props?.excludeFilter
+        )
+        if (candidateIsExclusion === isExclusionContainer) break
+        prevIndex--
+      }
+
+      const prevBoolFilterContainerModel = boolFilterConainterModels[prevIndex]
       prevBoolFilterContainerModel.props.filterCards = [
         ...prevBoolFilterContainerModel.props.filterCards,
         ...filterCardModels,
