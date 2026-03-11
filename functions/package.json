@@ -878,7 +878,8 @@
           "strategus.analysis.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete"
+          "strategus.results.delete",
+          "gateway.dataset.dashboards.read"
         ]
       },
       "scopes": [
