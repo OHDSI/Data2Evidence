@@ -2,14 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
 import type { InclusionRuleStat } from '@/query-filter/types/InclusionReportTypes'
-
-export interface AttritionStat {
-  id: number
-  name: string
-  countSatisfying: number
-  percentSatisfying: string
-  pctDiff: string
-}
+import type { AttritionStat } from '../computeAttritionStats'
 
 const props = defineProps<{
   selectedVisualization: 'ATTRITION' | 'INTERSECT'
@@ -105,6 +98,7 @@ function handleMoveRowDown(statId: number) {
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
+            <span>{{ stat.isExclude ? '−' : '+' }}&nbsp;</span>
             <!-- bold 'OR' -->
             <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
               <b v-if="part === 'OR'">OR</b>
@@ -123,9 +117,7 @@ function handleMoveRowDown(statId: number) {
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
-          <td class="rule-name">
-            {{ stat.name }}
-          </td>
+          <td class="rule-name">{{ stat.isExclude ? '−' : '+' }} {{ stat.name }}</td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.percentExcluded }}</td> -->

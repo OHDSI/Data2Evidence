@@ -17,6 +17,7 @@ describe('Treemap Stats Computation', () => {
           percentExcluded: '10.00%',
           percentSatisfying: '90.00%',
           countSatisfying: 900,
+          isExclude: false,
         },
         {
           id: 1,
@@ -24,9 +25,10 @@ describe('Treemap Stats Computation', () => {
           percentExcluded: '30.00%',
           percentSatisfying: '60.00%',
           countSatisfying: 600,
+          isExclude: false,
         },
       ],
-      treemapData: '{}',
+      treemapData: { name: 'Everyone', children: [] },
     }
 
     it('should return null for null/undefined data', () => {

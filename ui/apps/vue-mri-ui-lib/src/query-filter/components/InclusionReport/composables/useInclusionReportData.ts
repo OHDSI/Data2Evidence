@@ -36,7 +36,7 @@ export function useInclusionReportData(
 
   const treemapData = computed(() => {
     if (!inclusionReportResponse.value) return null
-    const data = JSON.parse(inclusionReportResponse.value.treemapData)
+    const data = inclusionReportResponse.value.treemapData
     return convertTreemapData(data, inclusionReportResponse.value)
   })
 

@@ -15,6 +15,7 @@ interface BaseInclusionRuleStat {
     countExcluded: number;
     name: string;
     id: number;
+    isExclude: boolean;
 }
 interface InclusionRuleStat {
     countSatisfying: number;
@@ -22,9 +23,16 @@ interface InclusionRuleStat {
     percentExcluded: string;
     name: string;
     id: number;
+    isExclude: boolean;
 }
+interface TreemapNode {
+    name: string;
+    size?: number;
+    children?: TreemapNode[];
+}
+
 interface InterfaceReportResults {
-    treemapData: string;
+    treemapData: TreemapNode;
     inclusionRuleStats: InclusionRuleStat[];
     summary: {
         percentMatched: string;
@@ -196,6 +204,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 return {
                     id: e.id,
                     name: e.name,
+                    isExclude: e.isExclude,
                     percentExcluded: this.calcPercentageString(
                         e.countExcluded,
                         baseCount
@@ -219,7 +228,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 ),
             },
             inclusionRuleStats,
-            treemapData: JSON.stringify(treemapData),
+            treemapData: treemapData,
         };
 
         return inclusionReportData;
@@ -383,16 +392,29 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         return bitmapMasks;
     }
 
+    /**
+     * Gets the name of a filter card entry, unwrapping NOT if present.
+     * For inclusion: entry is a FilterCard with a `name` property.
+     * For exclusion: entry is a NOT BooleanContainer wrapping the FilterCard.
+     */
+    private getFilterCardName(entry): string {
+        return entry.op === "NOT" ? entry.content[0].name : entry.name;
+    }
+
     private getBaseInclusionRuleStats(
         inclusionReportFiltercards
     ): BaseInclusionRuleStat[] {
         let inclusionRuleStats = [];
         for (const [idx, { content }] of inclusionReportFiltercards.entries()) {
+            const isExclude = content.some((e) => e.op === "NOT");
             inclusionRuleStats.push({
                 id: idx,
-                name: content.map((e) => e.name).join(" OR "),
+                name: content
+                    .map((e) => this.getFilterCardName(e))
+                    .join(" OR "),
                 countSatisfying: 0,
                 countExcluded: 0,
+                isExclude,
             });
         }
         return inclusionRuleStats;

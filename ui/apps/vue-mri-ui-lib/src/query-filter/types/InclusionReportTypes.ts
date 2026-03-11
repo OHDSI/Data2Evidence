@@ -8,13 +8,20 @@ export interface Summary {
 export interface InclusionRuleStat {
   id: number
   name: string
+  isExclude: boolean
   percentExcluded: string
   percentSatisfying: string
   countSatisfying: number
 }
 
+export interface TreemapNode {
+  name: string
+  size?: number
+  children?: TreemapNode[]
+}
+
 export interface InclusionReportResponse {
   summary: Summary
   inclusionRuleStats: InclusionRuleStat[]
-  treemapData: string // JSON string
+  treemapData: TreemapNode
 }
