@@ -3,6 +3,7 @@ import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@m
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { FC, useEffect, useMemo, useState } from "react";
 import { DashboardIframe } from "../../../components/Dashboard";
+import { useTranslation } from "../../../contexts";
 import "./ShinyLive.scss";
 
 interface ShinyLiveDashboard {
@@ -15,6 +16,7 @@ const RESULT_VIEWER_KEY = "__result_viewer__";
 interface ShinyLiveProps extends PageProps<ResearcherStudyMetadata> {}
 
 export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
+  const { getText, i18nKeys } = useTranslation();
   const [token, setToken] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [dashboardUrl, setDashboardUrl] = useState<string>("");
@@ -180,7 +182,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
       <div className="shinylive-plugin">
         <div className="shinylive-plugin__error">
           <InfoOutlined style={{ fontSize: 64, color: "#9e9e9e", marginBottom: "1rem" }} />
-          <p>You don't have permission to view strategus analysis results. Please contact your administrator.</p>
+          <p>{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED)}</p>
         </div>
       </div>
     );
@@ -189,7 +191,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   if (isLoading) {
     return (
       <div className="shinylive-plugin">
-        <div className="shinylive-plugin__loading">Loading available dashboards...</div>
+        <div className="shinylive-plugin__loading">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING)}</div>
       </div>
     );
   }
@@ -198,7 +200,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     return (
       <div className="shinylive-plugin">
         <div className="shinylive-plugin__empty">
-          <p>No dashboards available for this dataset</p>
+          <p>{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__NO_DASHBOARDS)}</p>
         </div>
       </div>
     );
@@ -212,12 +214,12 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     <div className="shinylive-plugin">
       <div className="shinylive-plugin__selector">
         <FormControl fullWidth size="small">
-          <InputLabel id="dashboard-select-label">Select Dashboard</InputLabel>
+          <InputLabel id="dashboard-select-label">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__SELECT_DASHBOARD)}</InputLabel>
           <Select
             labelId="dashboard-select-label"
             id="dashboard-select"
             value={selectedDashboard}
-            label="Select Dashboard"
+            label={getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__SELECT_DASHBOARD)}
             onChange={handleDashboardChange}
           >
             {options.map((opt) => (
@@ -241,13 +243,13 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
           <p>
             {selectedDashboard === RESULT_VIEWER_KEY
               ? viewerUnauthorized
-                ? "You don't have permission to view strategus analysis results. Please contact your administrator."
-                : "The result viewer is not running. Start it from the admin portal."
-              : "No dashboard available for this selection."}
+                ? getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED)
+                : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__VIEWER_NOT_RUNNING)
+              : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__NO_DASHBOARD_FOR_SELECTION)}
           </p>
         </div>
       ) : (
-        <div className="shinylive-plugin__loading">Loading...</div>
+        <div className="shinylive-plugin__loading">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING_DOTS)}</div>
       )}
     </div>
   );

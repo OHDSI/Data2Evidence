@@ -1,7 +1,7 @@
-import { v4 as uuidv4 } from "uuid";
 import { decode, JwtPayload } from "jsonwebtoken";
-import dataSource from "../db/datasource.ts";
+import { v4 as uuidv4 } from "uuid";
 import { PortalAPI } from "../api/PortalAPI.ts";
+import dataSource from "../db/datasource.ts";
 
 export default class StrategusAnalysisService {
 
@@ -27,7 +27,11 @@ export default class StrategusAnalysisService {
     }
 
     async getAnalysisByDatasetId(datasetId: string) {
-        return this.strategusAnalysisRepository.findOne({ where: { datasetId } });
+        const analysis = await this.strategusAnalysisRepository.findOne({ 
+            where: { datasetId }
+        });
+
+        return analysis;
     }
 
     async createAnalysisSpec(
