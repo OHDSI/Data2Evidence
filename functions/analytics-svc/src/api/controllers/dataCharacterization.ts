@@ -1,15 +1,10 @@
 import { IMRIRequest, DcReplacementConfig } from "../../types";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
-import {
-    Logger,
-    DBConnectionUtil as dbConnectionUtil,
-    Connection,
-} from "@alp/alp-base-utils";
+import { Logger, Connection } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
 import { DataCharacterizationEndpoint } from "../../mri/endpoint/DataCharacterizationEndpoint";
 import * as DC_RESULTS_CONFIG from "../../const/dcResultsSqlConfig";
 import * as DC_RESULTS_DRILLDOWN_CONFIG from "../../const/dcResultsDrilldownSqlConfig";
-import { env } from "../../env";
 
 let logger = CreateLogger("analytics-log");
 const language = "en";
@@ -133,46 +128,42 @@ const mapDcResultKeysToUppercase = (data: unknown[]) => {
     });
 };
 
-const resolveDcConnection = async (
-    req: IMRIRequest,
-    vocabSchema: string
-): Promise<Connection.ConnectionInterface> => {
-    if (env.USE_TREX_DB_CONN === "false") {
-        const { studyAnalyticsCredential } = req.dbCredentials;
-        const analyticsConnection =
-            await dbConnectionUtil.DBConnectionUtil.getDBConnection({
-                credentials: studyAnalyticsCredential,
-                schemaName: studyAnalyticsCredential.schema, // getDBConnection schemaName has to be from studyAnalyticsCredential as resultsSchema duckdb file does not exist
-                vocabSchemaName: vocabSchema,
-            });
-        return analyticsConnection;
+/**
+ * Append databaseName infront of schemaName if connection is a TrexConnection
+ * This is required as TrexConnection holds multiple connections to different databases
+ */
+const resolveSchemaValue = (
+    connection: Connection.ConnectionInterface,
+    databaseName: string,
+    schemaName: string
+): string => {
+    if (connection.constructor.name === "TrexConnection") {
+        return `${databaseName}.${schemaName}`;
     } else {
-        const { analyticsConnection } = req.dbConnections;
-        return analyticsConnection;
+        return schemaName;
     }
 };
 
-export async function getDataCharacterizationResult(
-    req: IMRIRequest,
-    res,
-    next
-) {
+export async function getDataCharacterizationResult(req: IMRIRequest, res) {
     try {
         const databaseName = req.params.databaseName;
         const resultsSchema = req.params.resultsSchema;
         const vocabSchema = req.params.vocabSchema;
         const sourceKey = req.params.sourceKey;
 
-        const analyticsConnection = await resolveDcConnection(req, vocabSchema);
+        const { analyticsConnection } = req.dbConnections;
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
             analyticsConnection
         );
 
-        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
             results_database_schema: resultsSchema,
-            vocab_database_schema: vocabDatabaseSchemaValue,
+            vocab_database_schema: resolveSchemaValue(
+                analyticsConnection,
+                databaseName,
+                vocabSchema
+            ),
         };
         logger.info(
             `Getting Data Characterization Results for schema ${resultsSchema} with sourceKey: ${sourceKey}`
@@ -218,8 +209,7 @@ export async function getDataCharacterizationResult(
 
 export async function getDataCharacterizationDrilldownResult(
     req: IMRIRequest,
-    res,
-    next
+    res
 ) {
     try {
         const databaseName = req.params.databaseName;
@@ -228,16 +218,19 @@ export async function getDataCharacterizationDrilldownResult(
         const sourceKey = req.params.sourceKey;
         const conceptId = req.params.conceptId;
 
-        const analyticsConnection = await resolveDcConnection(req, vocabSchema);
+        const { analyticsConnection } = req.dbConnections;
 
         let dataCharacterizationEndpoint = new DataCharacterizationEndpoint(
             analyticsConnection
         );
 
-        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
             results_database_schema: resultsSchema,
-            vocab_database_schema: vocabDatabaseSchemaValue,
+            vocab_database_schema: resolveSchemaValue(
+                analyticsConnection,
+                databaseName,
+                vocabSchema
+            ),
             conceptId: conceptId,
         };
         logger.info(

@@ -349,7 +349,6 @@
           "ANALYTICS_SVC__PORT": 41102,
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "LOCAL_DEBUG": "false",
-          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
