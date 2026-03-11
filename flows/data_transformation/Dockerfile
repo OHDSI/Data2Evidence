@@ -64,7 +64,9 @@ RUN useradd -m -d /home/${USER} -s /bin/bash -g ${USER} -u ${UID} ${USER} \
     && groupadd alp \
     && adduser docker alp
 
-RUN apt-get update && \
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         git \
         curl \
@@ -73,7 +75,6 @@ RUN apt-get update && \
         nodejs \
         npm \
         libpq5 \
-        python3-pip \
         openjdk-17-jdk \
         # installing R dependencies
         libglpk40 \
