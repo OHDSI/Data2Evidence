@@ -19,6 +19,14 @@ export default class StrategusAnalysisRouter {
 
   private async getAllStrategusAnalysis(req: Request, res: Response) {
     try {
+      const { datasetId } = req.query;
+      if (datasetId && typeof datasetId === "string") {
+        const analysis = await this.strategusAnalysisService.getAnalysisByDatasetId(datasetId);
+        if (!analysis) {
+          return res.status(404).json({ message: "Analysis not found for this dataset" });
+        }
+        return res.status(200).json(analysis);
+      }
       const analysisList = await this.strategusAnalysisService.getAllAnalysis();
       res.status(200).json(analysisList);
     } catch (error) {
