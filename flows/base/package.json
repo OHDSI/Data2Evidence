@@ -830,12 +830,30 @@
                   "cacheSchemaName": {
                     "title": "Cacheschemaname",
                     "type": "string"
+                  },
+                  "studyCode": {
+                    "title": "Studycode",
+                    "type": "string"
+                  },
+                  "fhirProjectId": {
+                    "title": "Fhirprojectid",
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "null" }
+                    ],
+                    "default": null
+                  },
+                  "use_cache_db": {
+                    "title": "Use Cache Db",
+                    "type": "boolean",
+                    "default": false
                   }
                 },
                 "required": [
                   "databaseCode",
                   "schemaName",
-                  "cacheSchemaName"
+                  "cacheSchemaName",
+                  "studyCode"
                 ],
                 "title": "CreateDuckdbDatabaseFileType",
                 "type": "object"

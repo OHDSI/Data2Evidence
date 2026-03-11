@@ -44,3 +44,4 @@
 /ui/apps/portal/src/plugins/Researcher/ConceptSets   @data2evidence/analyze
 /ui/apps/portal/src/plugins/Researcher/Terminology   @data2evidence/analyze
 /ui/apps/concept-sets                                @data2evidence/analyze
+/ui/apps/wizards                                     @data2evidence/analyze
