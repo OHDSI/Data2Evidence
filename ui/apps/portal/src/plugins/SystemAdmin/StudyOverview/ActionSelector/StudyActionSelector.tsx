@@ -56,12 +56,12 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
 
   const actionsList: Action[] = useMemo(
     () => [
-      { name: "Run Study", value: "run" },
-      { name: "Cleanup Study", value: "cleanup" },
-      { name: "Manage Result Viewer", value: "manage" },
-      { name: "Permissions", value: "permissions" },
-      { name: "Upload Strategus Results", value: "upload" },
-      { name: "Download Strategus Results", value: "download" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_STUDY), value: "run" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CLEANUP_STUDY), value: "cleanup" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_RESULT_VIEWER), value: "manage" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPLOAD_STRATEGUS_RESULTS), value: "upload" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__DOWNLOAD_STRATEGUS_RESULTS), value: "download" },
     ],
     [getText, i18nKeys]
   );

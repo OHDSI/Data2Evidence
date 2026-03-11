@@ -236,7 +236,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
           url={dashboardUrl}
           token={token}
           title={`Dashboard - ${selectedDashboard}`}
-          loadingMessage="Loading Dashboard..."
+          loadingMessage="Loading dashboard..."
         />
       ) : selectedDashboard && !showResultViewer && !showIframe ? (
         <div className="shinylive-plugin__empty">
