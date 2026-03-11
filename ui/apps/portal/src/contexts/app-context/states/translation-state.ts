@@ -24,6 +24,7 @@ export const i18nDefault = {
     ACCOUNT__NAME: "Name",
     ACCOUNT__PRIVACY_POLICY: "Privacy policy",
     ACCOUNT__SWITCH_TO_ADMIN_PORTAL: "Switch to Admin portal",
+    ACCOUNT__SWITCH_TO_ETL_PORTAL: "Switch to ETL portal",
     ACCOUNT__SWITCH_TO_RESEARCHER_PORTAL: "Switch to Researcher portal",
     ACCOUNT__TERMS_OF_USE: "Terms of use",
     ACCOUNT_BUTTON__ACCOUNT: "Account",

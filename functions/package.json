@@ -880,6 +880,13 @@
           "strategus.results.write",
           "strategus.results.delete",
           "gateway.dataset.dashboards.read"
+        ],
+        "ETL_MAPPING_CONTRIBUTOR": [
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.dataflow.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write"
         ]
       },
       "scopes": [
