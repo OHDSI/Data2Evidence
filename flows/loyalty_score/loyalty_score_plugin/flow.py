@@ -182,22 +182,16 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
     visit_filter = (
         visit_occurrence
         .filter((visit_occurrence.visit_start_date < index_ed) & (visit_occurrence.visit_end_date > index_st))
-        .group_by(visit_occurrence.person_id)
-        .aggregate(count=visit_occurrence.person_id.count())
-        .filter(lambda t: t['count'] >= 1)
+        .select(visit_occurrence.person_id)
+        .distinct()
     )
     visit_filter_count = visit_filter.count().execute()
     logger.info(f"Persons with visits in period [{index_st} to {index_ed}]: {visit_filter_count}")
     
-    final_expr = (
-        age_filter
-        .inner_join(visit_filter, age_filter.person_id == visit_filter.person_id)
-        .select(age_filter.person_id)
-        .distinct()
-    )
-    result = final_expr.execute()
-    final_count = len(result)
-    logger.info(f"Final eligible persons (age filter + visit filter): {final_count}")
+    age_df = age_filter.execute()
+    visit_df = visit_filter.execute()
+    result = age_df.merge(visit_df, on='person_id').drop_duplicates(subset='person_id')
+    logger.info(f"Final eligible persons (age filter + visit filter): {len(result)}")
     
     return result
 
