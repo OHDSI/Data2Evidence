@@ -2,9 +2,7 @@
   "workspace": [],
   "nodeModulesDir": "auto",
   "compilerOptions": {
-    "lib": [
-      "deno.window"
-    ],
+    "lib": ["deno.window"],
     "strict": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
@@ -29,14 +27,12 @@
     "jsonwebtoken": "npm:jsonwebtoken@^9.0.0",
     "node-fetch": "npm:node-fetch@^2.6",
     "base64": "jsr:@std/encoding/base64",
-    "../_shared/alp-base-utils/src/PostgresConnection": "../_shared/alp-base-utils/src/PostgresConnection.ts",
     "../_shared/alp-base-utils/src/EnvVarUtils": "../_shared/alp-base-utils/src/EnvVarUtils.ts",
     "../_shared/alp-base-utils/src/DBConnectionUtil": "../_shared/alp-base-utils/src/DBConnectionUtil.ts",
     "../_shared/alp-base-utils/src/NodeHDBConnection": "../_shared/alp-base-utils/src/NodeHDBConnection.ts",
     "../_shared/alp-base-utils/src/HealthCheckMiddleware": "../_shared/alp-base-utils/src/HealthCheckMiddleware.ts",
     "../_shared/alp-base-utils/src/security-scopes": "../_shared/alp-base-utils/src/security-scopes.ts",
     "../_shared/alp-base-utils/src/DBError": "../_shared/alp-base-utils/src/DBError.ts",
-    "../_shared/alp-base-utils/src/NodeCleanup": "../_shared/alp-base-utils/src/NodeCleanup.ts",
     "../_shared/alp-base-utils/src/utils": "../_shared/alp-base-utils/src/utils.ts",
     "../_shared/alp-base-utils/src/GetUser": "../_shared/alp-base-utils/src/GetUser.ts",
     "../_shared/alp-base-utils/src/Connection": "../_shared/alp-base-utils/src/Connection.ts",
