@@ -143,7 +143,7 @@
     >
       <div class="inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
           <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
