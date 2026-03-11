@@ -17,7 +17,6 @@ const props = withDefaults(
   defineProps<{
     cohortDefinitionId: string
     sourceKey: string
-    isReady: boolean
     generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
     cacheKey?: string
     showPersonEventSwitch?: boolean
@@ -53,7 +52,6 @@ const dataComposable = useInclusionReportData(
   {
     cohortDefinitionId: props.cohortDefinitionId,
     sourceKey: props.sourceKey,
-    isReady: props.isReady,
     generationStatus: props.generationStatus,
     cacheKey: props.cacheKey,
     fetchInclusionReport: props.fetchInclusionReport,
@@ -191,7 +189,7 @@ onUnmounted(() => {
             @move-row-down="moveRowDown"
             @update:draggable-attrition-stats="draggableAttritionStats = $event"
           />
-
+          <p class="footnote"><sup>1</sup> "+" indicates inclusion criteria, and "-" indicates exclusion criteria.</p>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
             <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
@@ -372,5 +370,9 @@ h4 {
 
 .tab-fading {
   opacity: 0.1;
+}
+
+.footnote {
+  max-width: 80ch;
 }
 </style>

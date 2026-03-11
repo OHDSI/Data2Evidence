@@ -6,7 +6,6 @@ import { convertTreemapData } from '../computeTreemapStats'
 export interface UseInclusionReportDataOptions {
   cohortDefinitionId: string
   sourceKey: string
-  isReady: boolean
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
   cacheKey?: string
   fetchInclusionReport: (
@@ -41,7 +40,7 @@ export function useInclusionReportData(
   })
 
   const shouldFetchInclusionReport = computed(() => {
-    return options.isReady && !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
+    return !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
   })
 
   const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {

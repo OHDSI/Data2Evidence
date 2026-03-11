@@ -68,7 +68,7 @@ function handleMoveRowDown(statId: number) {
           <th class="drag-icon-header" v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <!-- <th class="rule-id">ID</th> -->
-          <th class="rule-name">Filter</th>
+          <th class="rule-name">Filter<sup>1</sup></th>
           <!-- count satisfying -->
           <th>No. of Persons</th>
           <!-- percent satisfying -->

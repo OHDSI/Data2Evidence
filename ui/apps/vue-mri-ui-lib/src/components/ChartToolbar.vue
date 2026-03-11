@@ -151,9 +151,8 @@
 
         <div class="inclusion-report-dialog__content">
           <InclusionReport
-            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            cohort-definition-id=""
             :source-key="inclusionReportSourceKey"
-            :is-ready="inclusionReportIsReady"
             :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
@@ -305,14 +304,8 @@ export default {
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
-    inclusionReportCohortDefinitionId() {
-      return this.getActiveBookmark?.cohortDefinitionId?.toString()
-    },
     inclusionReportSourceKey() {
       return this.getSelectedDataset?.id
-    },
-    inclusionReportIsReady() {
-      return true
     },
     inclusionReportCacheKey() {
       return JSON.stringify(this.getBookmarksData)
