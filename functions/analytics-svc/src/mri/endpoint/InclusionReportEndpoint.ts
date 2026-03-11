@@ -50,18 +50,8 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         log.addRequestCorrelationID(req);
         return new Promise(async (resolve, reject) => {
             try {
-                // Get mriquery filtercards
-                const filtercards = mriquery.filter.cards.content;
-
-                const basicDataFilters =
-                    this.splitBasicDataIntoDistinctFiltercards(filtercards);
-
-                const inclusionReportFiltercards = [
-                    ...basicDataFilters,
-                    ...filtercards.filter(
-                        (e) => e.content[0].name !== "Basic Data"
-                    ),
-                ];
+                const inclusionReportFiltercards =
+                    this.getInclusionReportFiltercards(mriquery);
 
                 // Construct base inclusionRuleStats based on filtercard names
                 const baseInclusionRuleStats = this.getBaseInclusionRuleStats(
@@ -270,6 +260,22 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         });
     }
 
+    private getInclusionReportFiltercards(mriquery) {
+        // Get mriquery filtercards
+        const filtercards = mriquery.filter.cards.content;
+
+        const basicDataFilters =
+            this.splitBasicDataIntoDistinctFiltercards(filtercards);
+        const nonBasicDataFilters = this.parseNonBasicDataFilters(filtercards);
+
+        const inclusionReportFiltercards = [
+            ...basicDataFilters,
+            ...nonBasicDataFilters,
+        ];
+
+        return inclusionReportFiltercards;
+    }
+
     private splitBasicDataIntoDistinctFiltercards(filtercards) {
         const basicDataFiltercard = filtercards.find(
             (e) => e.content[0].name === "Basic Data"
@@ -323,6 +329,38 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         });
 
         return basicDataInclusionReportFilters;
+    }
+
+    private parseNonBasicDataFilters(filtercards) {
+        let nonBasicDataFilters = filtercards.filter(
+            (e) => e.content[0].name !== "Basic Data"
+        );
+
+        // Treat explicit exclusions from mriquery as inclusion filter
+        nonBasicDataFilters.forEach((filtercard) => {
+            const notFilters = filtercard.content.filter((content) => {
+                return content.op === "NOT";
+            });
+            notFilters.forEach((e) => {
+                nonBasicDataFilters.push({
+                    content: e.content,
+                    type: "BooleanContainer",
+                    op: "OR",
+                });
+            });
+
+            // Set filtercard.content to only inclusions filters
+            filtercard.content = filtercard.content.filter(
+                (content) => content.op !== "NOT"
+            );
+        });
+
+        // Filter filtercard.content to remove elements where content is empty
+        nonBasicDataFilters = nonBasicDataFilters.filter(
+            (filtercard) => filtercard.content.length !== 0
+        );
+
+        return nonBasicDataFilters;
     }
 
     /**
