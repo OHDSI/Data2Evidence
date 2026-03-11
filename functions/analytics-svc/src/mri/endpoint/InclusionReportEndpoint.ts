@@ -82,12 +82,30 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                         );
                         // Set filter to an exclusion filtercard if op is 0
                         if (op === "0") {
-                            bitmaskContent["op"] = "NOT";
-                            bitmapMriquery.filter.cards.content.push({
-                                content: [bitmaskContent],
-                                type: "BooleanContainer",
-                                op: "OR",
-                            });
+                            // If filtercard is nested, split them up into individual exclusions
+                            if (bitmaskContent.content.length > 1) {
+                                bitmaskContent.content.forEach((e) => {
+                                    bitmapMriquery.filter.cards.content.push({
+                                        content: [
+                                            {
+                                                content: [e],
+                                                type: "BooleanContainer",
+                                                op: "NOT",
+                                            },
+                                        ],
+                                        type: "BooleanContainer",
+                                        op: "OR",
+                                    });
+                                });
+                            } else {
+                                // Else Push filtercard as an exclusion
+                                bitmaskContent["op"] = "NOT";
+                                bitmapMriquery.filter.cards.content.push({
+                                    content: [bitmaskContent],
+                                    type: "BooleanContainer",
+                                    op: "OR",
+                                });
+                            }
                         } else {
                             bitmapMriquery.filter.cards.content.push(
                                 bitmaskContent
