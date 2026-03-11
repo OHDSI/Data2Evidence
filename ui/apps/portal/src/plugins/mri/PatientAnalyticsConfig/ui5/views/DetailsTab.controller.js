@@ -490,6 +490,9 @@ sap.ui.define([
             if (oldConfig.panelOptions.hasOwnProperty("externalAccessPoints")) {
                 newConfig.panelOptions.externalAccessPoints = oldConfig.panelOptions.externalAccessPoints;
             }
+            if (oldConfig.panelOptions.hasOwnProperty("inclusionReport")) {
+                newConfig.panelOptions.inclusionReport = oldConfig.panelOptions.inclusionReport;
+            }
         }
 
         return aRemovedElements;

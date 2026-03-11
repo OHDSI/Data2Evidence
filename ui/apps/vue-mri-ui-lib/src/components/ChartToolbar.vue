@@ -30,7 +30,7 @@
           :disabled="!canOpenDashboard"
         />
       </div>
-      <div class="dashboardButton">
+      <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
         <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
       </div>
       <div class="d-flex">
@@ -315,6 +315,9 @@ export default {
     },
     inclusionReportCacheKey() {
       return JSON.stringify(this.getBookmarksData)
+    },
+    enableInclusionReport() {
+      return this.getMriFrontendConfig?._internalConfig?.panelOptions?.inclusionReport
     },
   },
   methods: {
