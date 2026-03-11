@@ -54,17 +54,21 @@ def create_schema_tasks(
     try:
         schema_dao = DBDao(database_code=database_code, use_cache_db=False)
 
-        create_db_schema_wo = create_schema_task.with_options(
-            on_completion=[
-                partial(create_dataset_schema_hook, **dict(schema_dao=schema_dao))
-            ],
-            on_failure=[
-                partial(create_dataset_schema_hook, **dict(schema_dao=schema_dao))
-            ],
-        )
+        schema_exists = schema_dao.check_schema_exists(schema_name)
 
-        # create schema if not exists
-        create_db_schema_wo(schema_dao, schema_name)
+        if not schema_exists:
+            create_db_schema_wo = create_schema_task.with_options(
+                on_completion=[
+                    partial(create_dataset_schema_hook, **dict(schema_dao=schema_dao))
+                ],
+                on_failure=[
+                    partial(create_dataset_schema_hook, **dict(schema_dao=schema_dao))
+                ],
+            )
+
+            # create schema if not exists
+            create_db_schema_wo(schema_dao, schema_name)
+
         if count == 0 or count is None:
             action = LiquibaseAction.UPDATE
         elif count > 0:
