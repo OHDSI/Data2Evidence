@@ -22,6 +22,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [studyId, setStudyId] = useState<string | null>(null);
   const [isStrategusStudy, setIsStrategusStudy] = useState<boolean>(false);
   const [viewerRunning, setViewerRunning] = useState<boolean>(false);
+  const [viewerUnauthorized, setViewerUnauthorized] = useState<boolean>(false);
   const [selectedDashboard, setSelectedDashboard] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -79,12 +80,18 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
               if (statusResp.ok) {
                 const status = await statusResp.json();
                 setViewerRunning(status.running === true);
+                setViewerUnauthorized(false);
+              } else if (statusResp.status === 401) {
+                setViewerRunning(false);
+                setViewerUnauthorized(true);
               } else {
                 setViewerRunning(false);
+                setViewerUnauthorized(false);
               }
             } catch (err) {
               console.error("[ShinyLive] Error checking viewer status:", err);
               setViewerRunning(false);
+              setViewerUnauthorized(false);
             }
           }
         }
@@ -102,10 +109,15 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const options = useMemo(() => {
     const opts: { key: string; label: string; disabled?: boolean }[] = [];
 
-    if (isStrategusStudy) {
+    if (isStrategusStudy && !viewerUnauthorized) {
+      let label = "Result Viewer (R Shiny Server)";
+      if (!viewerRunning) {
+        label = "Result Viewer (R Shiny Server — not running)";
+      }
+      
       opts.push({
         key: RESULT_VIEWER_KEY,
-        label: viewerRunning ? "Result Viewer (R Shiny Server)" : "Result Viewer (R Shiny Server — not running)",
+        label,
         disabled: !viewerRunning,
       });
     }
@@ -118,7 +130,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
     });
 
     return opts;
-  }, [isStrategusStudy, viewerRunning, dashboards]);
+  }, [isStrategusStudy, viewerRunning, viewerUnauthorized, dashboards]);
 
   // Auto-select first enabled option
   useEffect(() => {
@@ -158,6 +170,17 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         <div className="shinylive-plugin__error">
           <InfoOutlined style={{ fontSize: 64, color: "#9e9e9e", marginBottom: "1rem" }} />
           <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewerUnauthorized && dashboards.length === 0) {
+    return (
+      <div className="shinylive-plugin">
+        <div className="shinylive-plugin__error">
+          <InfoOutlined style={{ fontSize: 64, color: "#9e9e9e", marginBottom: "1rem" }} />
+          <p>You don't have permission to view strategus analysis results. Please contact your administrator.</p>
         </div>
       </div>
     );
@@ -217,7 +240,9 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         <div className="shinylive-plugin__empty">
           <p>
             {selectedDashboard === RESULT_VIEWER_KEY
-              ? "The result viewer is not running. Start it from the admin portal."
+              ? viewerUnauthorized
+                ? "You don't have permission to view strategus analysis results. Please contact your administrator."
+                : "The result viewer is not running. Start it from the admin portal."
               : "No dashboard available for this selection."}
           </p>
         </div>
