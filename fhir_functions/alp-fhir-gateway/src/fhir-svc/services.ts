@@ -75,7 +75,7 @@ const getProjectCredentials = async (
   }
 };
 
-export const createProject = async (token: string, id: string, description: string) => {
+export const createProject = async (token: string, id: string, description: string): Promise<string> => {
   try{
     console.info(`Creating a fhir project for the dataset '${id}'..`);
       let fhirApi = new FhirAPI(token);
@@ -154,7 +154,8 @@ export const createProject = async (token: string, id: string, description: stri
       if(updateDatasetResult === undefined)
         throw new Error("Error updating dataset with fhir project id!");
       console.log(`Updated dataset '${id}' with fhir project id '${projectId}'`);
-      return true
+
+      return projectId;
   }
   catch(error){
     console.error(`Error creating fhir project for dataset '${id}': ${error.message}`);
