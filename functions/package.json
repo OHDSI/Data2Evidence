@@ -770,7 +770,11 @@
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
-          "gateway.external.dashboards.read"
+          "gateway.external.dashboards.read",
+          "strategus.analysis.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete"
         ],
         "TENANT_VIEWER": [
           "PA.DatasetOverview.svc",
@@ -873,12 +877,6 @@
           "jobplugins.cohortDqd.researcher.execute",
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read"
-        ],
-        "STUDY_RESULTS_READ_RESEARCHER": [
-          "strategus.analysis.read",
-          "strategus.results.read",
-          "strategus.results.write",
-          "strategus.results.delete"
         ]
       },
       "scopes": [

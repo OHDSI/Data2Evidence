@@ -10,7 +10,7 @@ import { IRoleService } from './IRoleService'
 
 @Service()
 export class StudyResultService implements IRoleService {
-  private static ROLE = ROLES.STUDY_RESULTS_READ_RESEARCHER
+  private static ROLE = ROLES.ALP_DASHBOARD_VIEWER
 
   private readonly logger = createLogger(this.constructor.name)
 

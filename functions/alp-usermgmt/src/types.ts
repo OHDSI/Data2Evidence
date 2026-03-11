@@ -13,7 +13,6 @@ type RoleTypeOf<T> = {
   ALP_SYSTEM_ADMIN: boolean
   ALP_DASHBOARD_VIEWER: boolean
   STUDY_WRITE_DQD_RESEARCHER: boolean
-  STUDY_RESULTS_READ_RESEARCHER: boolean
   TENANT_ADMIN: T
   TENANT_VIEWER: T
   STUDY_MANAGER: T
@@ -40,7 +39,7 @@ export interface RoleMap {
   alp_role_tenant_admin: string[] // list of tenant ids
   alp_role_tenant_viewer: string[] // list of tenant ids
   alp_role_study_write_dqd_researcher: boolean // alp job runner
-  alp_role_study_results_read_researcher: boolean // view study results
+  alp_role_study_results_read_researcher: boolean // view study results (deprecated, use alp_role_dashboard_viewer)
   alp_role_user_admin: boolean // alp user admin
   alp_role_system_admin: boolean // alp system admin
   alp_role_dashboard_viewer: boolean // dashboard viewer
