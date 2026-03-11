@@ -176,8 +176,6 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
             )
             .select(person.person_id)
         )
-    age_filter_count = age_filter.count().execute()
-    logger.info(f"Persons after age filter (>=18 years old & alive): {age_filter_count}")
     
     visit_filter = (
         visit_occurrence
@@ -185,11 +183,11 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
         .select(visit_occurrence.person_id)
         .distinct()
     )
-    visit_filter_count = visit_filter.count().execute()
-    logger.info(f"Persons with visits in period [{index_st} to {index_ed}]: {visit_filter_count}")
     
     age_df = age_filter.execute()
+    logger.info(f"Persons after age filter (>=18 years old & alive): {len(age_df)}")
     visit_df = visit_filter.execute()
+    logger.info(f"Persons with visits in period [{index_st} to {index_ed}]: {len(visit_df)}")
     result = age_df.merge(visit_df, on='person_id').drop_duplicates(subset='person_id')
     logger.info(f"Final eligible persons (age filter + visit filter): {len(result)}")
     
