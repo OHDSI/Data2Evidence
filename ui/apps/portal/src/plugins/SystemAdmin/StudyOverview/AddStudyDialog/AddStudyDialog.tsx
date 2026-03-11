@@ -18,7 +18,6 @@ import {
   CloseDialogType,
   Feedback,
   IDatabase,
-  NewFhirProjectInput,
   NewStudyInput,
   SourceDatasetType,
   Study,
@@ -500,8 +499,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cacheDatasetName,
       cacheDatasetType,
     } = formData;
-    const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
-
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
@@ -539,23 +536,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      const dataset = await api.gateway.createDataset(input);
-      if (createFhirProject) {
-        try {
-          const fhirProjectInput: NewFhirProjectInput = {
-            id: dataset.id,
-            description: description,
-          };
-          await api.fhirGateway.createFhirStaging(fhirProjectInput);
-        } catch (err: any) {
-          setFeedback({
-            type: "error",
-            message: `[FHIR Project] ${err.data?.message || err.data}`,
-          });
-          console.error(err);
-          //return;
-        }
-      }
+      await api.gateway.createDataset(input);
 
       handleClose("success");
     } catch (err: any) {

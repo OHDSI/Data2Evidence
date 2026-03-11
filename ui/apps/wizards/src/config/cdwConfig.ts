@@ -141,7 +141,7 @@ export async function fetchAttributeValues(
   });
 
   const items: Array<{ value: string; text: string }> = response.data?.data || [];
-  return items.map((item) => ({ label: item.text, value: item.value }));
+  return items.map((item) => ({ label: item.text || item.value, value: item.value }));
 }
 
 export function getAttributeByPath(config: CdwConfig, path: string): CdwAttributeConfig | undefined {
