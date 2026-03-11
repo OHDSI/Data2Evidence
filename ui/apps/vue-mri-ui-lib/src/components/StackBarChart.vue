@@ -229,9 +229,9 @@ export default {
 
       if (numTraces === 2) {
         // High contrast palette for binary comparisons
-        return ['#000080', '#F79409FF']
+        return ['#000080', '#f79409']
       } else if (numTraces === 3) {
-        return ['#000080', '#3E92E0FF', '#F79409FF']
+        return ['#000080', '#fcd34b', '#f79409']
       } else if (numTraces === 4) {
         return ['#000080', '#3E92E0FF', '#FCD34BFF', '#F79409FF']
       } else {
