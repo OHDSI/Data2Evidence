@@ -204,6 +204,7 @@ import InclusionReport from '../query-filter/components/InclusionReport/index.vu
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
+  emits: ['unhideEv', 'drilldown', 'open-filtersummary'],
   data() {
     // Initialize dashboard flow composable with dispatch and getters
     const store = (this as any).$store
