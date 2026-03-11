@@ -20,6 +20,9 @@ export class Config {
     }
 
     public getSettings(): Settings {
+        console.log(`[Config.getSettings(): ${this}]`);
+        console.log(`[Config.getSettings(): ${this.settings}]`);
+
         return this.settings;
     } 
 

@@ -65,6 +65,11 @@ export class QueryGenSvc {
                     resolve(emptyResult);
                 }
                 this.enrichConfig();
+                logger.debug(`[QueryGenSvc]this.queryType: ${this.queryType}`);
+                logger.debug(`[QueryGenSvc]this.ifrRequest: ${this.ifrRequest}`);
+                logger.debug(`[QueryGenSvc]this.config: ${this.config}`);
+                logger.debug(`[QueryGenSvc]this.placeholderTableMap: ${JSON.stringify(this.placeholderTableMap)}`);
+                logger.debug(`[QueryGenSvc]this.censoringThreshold: ${JSON.stringify(this.censoringThreshold)}`);
 
                 let fast = new Fast(
                     this.queryType,
@@ -74,6 +79,7 @@ export class QueryGenSvc {
                     this.censoringThreshold
                 );
 
+                logger.debug(`[QueryGenSvc]fast: ${JSON.stringify(fast)}`);
                 if (fast.message.noDataReason) {
                     result = emptyResult;
                     result.fast = JSON.parse(JSON.stringify(fast));
