@@ -49,11 +49,11 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
         // Fetch both study dashboard and strategus viewer
         const [dashboardResp, infoResp] = await Promise.allSettled([
           fetch(
-            `${window.location.origin}/d2e/gateway/api/dataset/dashboard/list?datasetId=${metadata.studyId}`,
+            `/d2e/gateway/api/dataset/dashboard/list?datasetId=${metadata.studyId}`,
             fetchOpts
           ),
           fetch(
-            `${window.location.origin}/d2e/gateway/api/dataset/info?datasetId=${metadata.studyId}`,
+            `/d2e/gateway/api/dataset/info?datasetId=${metadata.studyId}`,
             fetchOpts
           ),
         ]);
@@ -76,7 +76,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
             // Check if the R Shiny Server viewer is currently running
             try {
               const statusResp = await fetch(
-                `${window.location.origin}/strategus-results/${info.tokenStudyCode}/status`,
+                `/strategus-results/${info.tokenStudyCode}/status`,
                 fetchOpts
               );
               if (statusResp.ok) {
@@ -154,10 +154,10 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
           console.error("[ShinyLive] Error setting cookie:", err);
         }
       }
-      setDashboardUrl(`${window.location.origin}/strategus-results/${studyId}/`);
+      setDashboardUrl(`/strategus-results/${studyId}/`);
     } else {
       setDashboardUrl(
-        `${window.location.origin}/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`
+        `/d2e/gateway/api/dataset/shiny-live/${metadata.studyId}_dashboard_${selectedDashboard}/`
       );
     }
   }, [selectedDashboard, studyId, metadata?.studyId, token]);
