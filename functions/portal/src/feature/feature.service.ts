@@ -11,23 +11,33 @@ export class FeatureService {
   private readonly NON_PLUGIN_FEATURES = [
     {
       featureFlag: 'datasetFilter',
-      enabled: false
+      name: 'Dataset filter',
+      nameI18nKey: 'FEATURE__DATASET_FILTER',
+      defaultEnabled: false
     },
     {
       featureFlag: 'datasetSearch',
-      enabled: false
+      name: 'Dataset search',
+      nameI18nKey: 'FEATURE__DATASET_SEARCH',
+      defaultEnabled: false
     },
     {
       featureFlag: 'fhirServer',
-      enabled: false
+      name: 'Fhir server',
+      nameI18nKey: 'FEATURE__FHIR_SERVER',
+      defaultEnabled: false
     },
     {
       featureFlag: 'mappingSuggestion',
-      enabled: false
+      name: 'Data mapping AI suggestion',
+      nameI18nKey: 'FEATURE__DATA_MAPPING_SUGGESTION',
+      defaultEnabled: false
     },
     {
       featureFlag: 'adminOnlySharing',
-      enabled: false
+      name: 'Admin-only sharing',
+      nameI18nKey: 'FEATURE__ADMIN_ONLY_SHARING',
+      defaultEnabled: false
     }
   ]
 
@@ -35,6 +45,7 @@ export class FeatureService {
   private readonly userId: string | undefined
   private featurePlugins: IPortalPlugin[] = []
   private validFeatures: string[] = []
+  private featureMetaMap: Map<string, { name: string; nameI18nKey?: string; defaultEnabled: boolean }> = new Map()
 
   constructor(
     private readonly transactionRunner: TransactionRunner,
@@ -69,13 +80,26 @@ export class FeatureService {
       ];
 
       const pluginFeatureFlags: string[] = [];
+      this.featureMetaMap = new Map();
       this.featurePlugins.forEach(f => {
-        if (f.enabled && f.featureFlag) {
+        const isVisible = f.visible ?? f.enabled;
+        if (isVisible && f.featureFlag) {
           pluginFeatureFlags.push(f.featureFlag);
+          this.featureMetaMap.set(f.featureFlag, {
+            name: f.name,
+            nameI18nKey: f.nameI18nKey,
+            defaultEnabled: f.defaultEnabled ?? true
+          });
         }
-        f.children?.forEach(childPlugin => {
-          if (childPlugin.enabled && childPlugin.featureFlag) {
-            pluginFeatureFlags.push(childPlugin.featureFlag);
+        f.children?.forEach(child => {
+          const isChildVisible = child.visible ?? child.enabled;
+          if (isChildVisible && child.featureFlag) {
+            pluginFeatureFlags.push(child.featureFlag);
+            this.featureMetaMap.set(child.featureFlag, {
+              name: child.name,
+              nameI18nKey: child.nameI18nKey,
+              defaultEnabled: child.defaultEnabled ?? true
+            });
           }
         });
       });
@@ -105,18 +129,20 @@ export class FeatureService {
     )
 
     return [
-      ...savedFeatures.map(f => ({
-        feature: f.feature,
-        isEnabled: f.isEnabled
-      })),
+      ...savedFeatures.map(f => {
+        const meta = this.getFeatureMeta(f.feature)
+        return { feature: f.feature, name: meta.name, nameI18nKey: meta.nameI18nKey, isEnabled: f.isEnabled }
+      }),
       ...defaultNonPlugins.map(f => ({
         feature: f.featureFlag,
-        isEnabled: f.enabled
+        name: f.name,
+        nameI18nKey: f.nameI18nKey,
+        isEnabled: f.defaultEnabled
       })),
-      ...defaultEnabledPluginFlags.map(featureFlag => ({
-        feature: featureFlag,
-        isEnabled: true
-      }))
+      ...defaultEnabledPluginFlags.map(featureFlag => {
+        const meta = this.getFeatureMeta(featureFlag)
+        return { feature: featureFlag, name: meta.name, nameI18nKey: meta.nameI18nKey, isEnabled: meta.defaultEnabled }
+      })
     ]
   }
 
@@ -143,6 +169,12 @@ export class FeatureService {
       return { result }
     }
     return this.transactionRunner.run(setFeatureFn, featureUpdateDto)
+  }
+
+  private getFeatureMeta(featureFlag: string) {
+    const nonPlugin = this.NON_PLUGIN_FEATURES.find(f => f.featureFlag === featureFlag)
+    if (nonPlugin) return nonPlugin
+    return this.featureMetaMap.get(featureFlag) ?? { name: featureFlag, defaultEnabled: true }
   }
 
   private addOwner<T>(object: T, isNewEntity = false) {
