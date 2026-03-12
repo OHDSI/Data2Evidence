@@ -332,6 +332,8 @@ describe("TerminologyList", () => {
   // (QueryFilterModern.vue dispatches with domainId filter)
   // ==========================================
   describe("PA-Atlas CONCEPT_MULTI_SELECT (isAtlas=true, defaultFilters)", () => {
+    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
+    // the first fetch should already include the defaultFilters instead of being empty.
     it("makes an initial fetch WITHOUT filters (the bug)", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasMultiSelectProps} />);
@@ -374,6 +376,8 @@ describe("TerminologyList", () => {
   // (app-tag-input.vue dispatches with domainId filter)
   // ==========================================
   describe("PA-Atlas CONCEPT_SET (isAtlas=true, defaultFilters)", () => {
+    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
+    // the first fetch should already include the defaultFilters instead of being empty.
     it("makes an initial fetch WITHOUT filters (the bug)", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasConceptSetProps} />);
@@ -511,6 +515,8 @@ describe("TerminologyList", () => {
       expect(getDomainIdFilter(callsWithFilter[0])).toEqual(["Condition"]);
     });
 
+    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
+    // setConceptsResult should only be called once, not multiple times.
     it("the first fetch is wasted — unfiltered data gets replaced", async () => {
       const setConceptsResult = vi.fn();
       const defaultFilters = [{ id: "domainId", value: ["Condition"] }];
