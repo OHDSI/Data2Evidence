@@ -16,6 +16,16 @@
 /functions/demo                                      @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/files-manager                             @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/jobplugins                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/strategus-analysis                        @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/perseus                                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/jobplugins-init                           @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/supabase-storage-init                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/white-rabbit-init                         @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/portal-init                               @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/alp-usermgmt-init                         @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/strategus-analysis-init                   @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/perseus-init                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/functions/files-manager-init                        @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /functions/mri-pa-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/mri-pg-config                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /functions/portal                                    @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
