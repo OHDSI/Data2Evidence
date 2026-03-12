@@ -51,7 +51,8 @@ export const cdwFHIRConfigDuckdb = {
             name: [
               {
                 lang: "",
-                value: "In which areas would you like to focus your rehabilitation?",
+                value:
+                  "In which areas would you like to focus your rehabilitation?",
               },
             ],
             disabledLangName: [
@@ -83,12 +84,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[0].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+            expression:
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[0].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
             order: 1,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question2: {
             name: [
@@ -126,12 +128,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( @QUESTIONNAIRERESPONSE.content.item[1].answer[0].valueString, '\"', '' )",
+            expression:
+              "replace( @QUESTIONNAIRERESPONSE.content.item[1].answer[0].valueString, '\"', '' )",
             order: 2,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question3: {
             name: [
@@ -169,12 +172,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[2].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+            expression:
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[2].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
             order: 3,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question4: {
             name: [
@@ -212,12 +216,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[3].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+            expression:
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[3].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
             order: 4,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question5: {
             name: [
@@ -255,18 +260,20 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[4].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+            expression:
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[4].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
             order: 5,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question6: {
             name: [
               {
                 lang: "",
-                value: "Do you think achieving your goal will have a positive impact on your rehabilitation?",
+                value:
+                  "Do you think achieving your goal will have a positive impact on your rehabilitation?",
               },
             ],
             disabledLangName: [
@@ -298,12 +305,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[5].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
+            expression:
+              "replace( list_reduce( CAST(list_transform( @QUESTIONNAIRERESPONSE.content.item[5].answer::json[], e -> e.valueCoding.display) AS varchar[]), (acc, e) -> concat(acc, ', ', e) ), '\"', '' )",
             order: 6,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
           question7: {
             name: [
@@ -341,12 +349,13 @@ export const cdwFHIRConfigDuckdb = {
               },
             ],
             type: "text",
-            expression: "replace( @QUESTIONNAIRERESPONSE.content.item[6].answer[0].valueString, '\"', '' )",
+            expression:
+              "replace( @QUESTIONNAIRERESPONSE.content.item[6].answer[0].valueString, '\"', '' )",
             order: 7,
             domainFilter: "",
             standardConceptCodeFilter: "",
             cohortDefinitionKey: "",
-            conceptIdentifierType: ""
+            conceptIdentifierType: "",
           },
         },
       },
@@ -677,7 +686,8 @@ export const cdwFHIRConfigDuckdb = {
           },
         ],
         type: "text",
-        expression: "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+        expression:
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
         order: 7,
         domainFilter: "",
         standardConceptCodeFilter: "",
@@ -721,7 +731,8 @@ export const cdwFHIRConfigDuckdb = {
           },
         ],
         type: "text",
-        expression: "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+        expression:
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].family' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
         order: 7,
         domainFilter: "",
         standardConceptCodeFilter: "",
@@ -765,7 +776,8 @@ export const cdwFHIRConfigDuckdb = {
           },
         ],
         type: "text",
-        expression: "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].given[*]' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
+        expression:
+          "replace(list_reduce(CAST(@PATIENT.content->'$.name[*].given[*]' AS varchar[]), (acc, e) -> concat(acc, ' ', e)), '\"',  '')",
         order: 8,
         domainFilter: "",
         standardConceptCodeFilter: "",
@@ -793,13 +805,13 @@ export const cdwFHIRConfigDuckdb = {
     tableMapping: {
       "@QUESTIONNAIRERESPONSE": "$$SCHEMA$$.QuestionnaireResponse",
       "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
-      "@PATIENT": "$$SCHEMA$$.\"Patient\"",
+      "@PATIENT": '$$SCHEMA$$."Patient"',
       "@PATIENT.PATIENT_ID": "id",
       "@PATIENT.DOD": "deathDate",
       "@PATIENT.DOB": "birthDate",
     },
     guardedTableMapping: {
-      "@PATIENT": "$$SCHEMA$$.\"Patient\"",
+      "@PATIENT": '$$SCHEMA$$."Patient"',
     },
     language: ["en", "de", "fr", "es", "pt", "zh"],
     others: {},
@@ -1041,7 +1053,8 @@ export const paFHIRConfigDuckdb = {
       initial: true,
       attributes: [
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question1",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question1",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1058,10 +1071,12 @@ export const paFHIRConfigDuckdb = {
             visible: true,
             linkColumn: false,
           },
-          modelName: "In which areas would you like to focus your rehabilitation?",
+          modelName:
+            "In which areas would you like to focus your rehabilitation?",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question2",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question2",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1081,7 +1096,8 @@ export const paFHIRConfigDuckdb = {
           modelName: "Describe your goal in a short sentence:",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question3",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question3",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1101,7 +1117,8 @@ export const paFHIRConfigDuckdb = {
           modelName: "Do you think your goal is clearly defined?",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question4",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question4",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1121,7 +1138,8 @@ export const paFHIRConfigDuckdb = {
           modelName: "Is your goal clearly measurable?",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question5",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question5",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1141,7 +1159,8 @@ export const paFHIRConfigDuckdb = {
           modelName: "Do you think you can achieve your goal?",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question6",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question6",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1158,10 +1177,12 @@ export const paFHIRConfigDuckdb = {
             visible: true,
             linkColumn: false,
           },
-          modelName: "Do you think achieving your goal will have a positive impact on your rehabilitation?",
+          modelName:
+            "Do you think achieving your goal will have a positive impact on your rehabilitation?",
         },
         {
-          source: "patient.interactions.questionnaireresponse.attributes.question7",
+          source:
+            "patient.interactions.questionnaireresponse.attributes.question7",
           ordered: false,
           cached: true,
           useRefText: false,
@@ -1259,5 +1280,6 @@ export const paFHIRConfigDuckdb = {
     calcViewAccessPoint: true,
     externalAccessPoints: true,
     cohortEntryExit: false,
+    inclusionReport: false,
   },
 };

@@ -204,6 +204,7 @@ export class DatasetQueryService {
       "dataset.plugin",
       "dataset.paConfigId",
       "dataset.type",
+      "dataset.tokenDatasetCode",
       "datasetDetail.name",
       "datasetDetail.description",
       "datasetDetail.summary",
@@ -348,10 +349,7 @@ export class DatasetQueryService {
     );
 
     if (!datasetCodes.length) {
-      throw new HttpException(
-        404,
-        `Dataset codes of type ${type} for dataset id ${datasetId} not found`,
-      );
+      return [];
     }
 
     const codeQueries =

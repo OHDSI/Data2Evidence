@@ -87,7 +87,7 @@ def copy_fhir_resources_task(
     logger = get_run_logger()
     fhir_schema = options.schemaName
 
-    # Discover and categorize tables via DBDao — no manual src_conn needed
+    # Discover and categorize tables via DBDao
     all_tables = src_con.get_table_names(fhir_schema)
     history_tables = {t for t in all_tables if t.endswith('_History')}
     references_tables = {t for t in all_tables if t.endswith('_References')}
