@@ -6,7 +6,13 @@
       v-if="messageStrip.show"
       @closeEv="resetMessageStrip"
     />
-    <messageBox dim="true" dialogWidth="400px" v-if="showRenameDialog" @close="closeRenameBookmark">
+    <messageBox
+      dim="true"
+      dialogWidth="400px"
+      :busy="isRenamingBookmark"
+      v-if="showRenameDialog"
+      @close="closeRenameBookmark"
+    >
       <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TITLE') }}</template>
       <template v-slot:body>
         <div>
@@ -40,9 +46,13 @@
         <appButton
           :click="confirmRenameBookmark"
           :text="getText('MRI_PA_BUTTON_SAVE')"
-          :disabled="this.hasExceededLength"
+          :disabled="this.hasExceededLength || isRenamingBookmark"
         ></appButton>
-        <appButton :click="closeRenameBookmark" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
+        <appButton
+          :click="closeRenameBookmark"
+          :text="getText('MRI_PA_BUTTON_CANCEL')"
+          :disabled="isRenamingBookmark"
+        ></appButton>
       </template>
     </messageBox>
     <messageBox
@@ -245,6 +255,7 @@ export default {
       showRenameDialog: false,
       showDeleteDialog: false,
       isDeletingBookmark: false,
+      isRenamingBookmark: false,
       showSharedBookmarks: false,
       showCopyExtensionDialog: false,
       aSelBookmarkList: [],
@@ -297,7 +308,7 @@ export default {
       return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
     },
     canDatasetMaterializeCohorts() {
-      return this.getCanDatasetMaterializeCohorts;
+      return this.getCanDatasetMaterializeCohorts
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
@@ -396,6 +407,7 @@ export default {
       }
     },
     closeRenameBookmark() {
+      if (this.isRenamingBookmark) return
       this.cohortNameValidationState = 'valid'
       this.showRenameDialog = false
     },
@@ -404,11 +416,12 @@ export default {
         this.selectedBookmark = bookmarkDisplay
         this.renamedBookmark = bookmarkDisplay.displayName
         this.cohortNameValidationState = 'valid'
+        this.isRenamingBookmark = false
         this.showRenameDialog = true
       }
     },
-    confirmRenameBookmark() {
-      if (this.hasExceededLength) return
+    async confirmRenameBookmark() {
+      if (this.hasExceededLength || this.isRenamingBookmark) return
       const bookmarkDisplay = this.selectedBookmark
 
       this.renamedBookmark = this.renamedBookmark.trim()
@@ -432,30 +445,38 @@ export default {
         }
       }
 
-      if (this.isMScohort(bookmarkDisplay)) {
-        this.fireRenameMaterializedCohortQuery({
-          cohortDefinitionId: bookmarkDisplay.cohortDefinition.id,
-          newName: this.renamedBookmark,
-        }).then(() => {
-          this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-          this.closeRenameBookmark()
-          return
-        })
-      }
-      const request = {
-        cmd: 'rename',
-        newName: this.renamedBookmark,
-      }
+      this.isRenamingBookmark = true
 
-      this.fireBookmarkQuery({
-        method: 'put',
-        params: request,
-        bookmarkId: bookmarkDisplay.bookmark.id,
-      }).then(() => {
+      try {
+        if (this.isMScohort(bookmarkDisplay)) {
+          await this.fireRenameMaterializedCohortQuery({
+            cohortDefinitionId: bookmarkDisplay.cohortDefinition.id,
+            newName: this.renamedBookmark,
+          })
+          await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          this.showRenameDialog = false
+          this.cohortNameValidationState = 'valid'
+          return
+        }
+        const request = {
+          cmd: 'rename',
+          newName: this.renamedBookmark,
+        }
+
+        await this.fireBookmarkQuery({
+          method: 'put',
+          params: request,
+          bookmarkId: bookmarkDisplay.bookmark.id,
+        })
         this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
-        this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-        this.closeRenameBookmark()
-      })
+        await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+        this.showRenameDialog = false
+        this.cohortNameValidationState = 'valid'
+      } catch (error) {
+        console.error('Error renaming bookmark:', error)
+      } finally {
+        this.isRenamingBookmark = false
+      }
     },
     addCohort(bookmarkDisplay) {
       if (bookmarkDisplay?.bookmark) {
