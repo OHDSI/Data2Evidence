@@ -165,8 +165,14 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         bitmapMasks.forEach((bitmapMask, idx) => {
             const pcount =
                 queryResults[idx]["data"][0]["patient.attributes.pcount"];
-            // Count number of ones occuring in the bitmapMask
-            const countOfOnes = (bitmapMask.match(/1/g) || []).length;
+
+            // Normalize so '1' = rule satisfied for both inclusion and exclusion rules
+            const normalizedMask = this.normalizeBitmask(
+                bitmapMask,
+                inclusionReportFiltercards
+            );
+            // Count number of ones occuring in the normalizedMask
+            const countOfOnes = (normalizedMask.match(/1/g) || []).length;
 
             // summary
             baseCount += pcount;
@@ -175,7 +181,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             }
 
             // baseInclusionRuleStats
-            for (const [bmIdx, bmEle] of bitmapMask.split("").entries()) {
+            for (const [bmIdx, bmEle] of normalizedMask.split("").entries()) {
                 if (bmEle === "1") {
                     baseInclusionRuleStats[bmIdx].countSatisfying += pcount;
                 }
@@ -193,7 +199,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             // Treemap
             // Push count accordingly into group's children based on countOfOnes
             treemapData.children[countOfOnes].children.push({
-                name: bitmapMask,
+                name: normalizedMask,
                 size: pcount,
             });
         });
@@ -391,6 +397,26 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             bitmapMasks.push(i.toString(2).padStart(n, "0"));
         }
         return bitmapMasks;
+    }
+
+    /**
+     * Normalize bitmask so that '1' always means "rule satisfied".
+     * For exclusion rules, the raw bit is inverted (0 = exclusion applied = satisfied),
+     * so we flip those bits.
+     */
+    private normalizeBitmask(
+        bitmask: string,
+        inclusionReportFiltercards: any[]
+    ): string {
+        return bitmask
+            .split("")
+            .map((bit, idx) => {
+                if (inclusionReportFiltercards[idx].isExclude) {
+                    return bit === "0" ? "1" : "0";
+                }
+                return bit;
+            })
+            .join("");
     }
 
     /**
