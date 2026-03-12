@@ -98,7 +98,7 @@ function handleMoveRowDown(statId: number) {
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
-            <span>{{ stat.isExclude ? '−' : '+' }}&nbsp;</span>
+            <span>{{ stat.isExclude ? '-' : '+' }}&nbsp;</span>
             <!-- bold 'OR' -->
             <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
               <b v-if="part === 'OR'">OR</b>
@@ -117,7 +117,7 @@ function handleMoveRowDown(statId: number) {
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
-          <td class="rule-name">{{ stat.isExclude ? '−' : '+' }} {{ stat.name }}</td>
+          <td class="rule-name">{{ stat.isExclude ? '-' : '+' }} {{ stat.name }}</td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.percentExcluded }}</td> -->

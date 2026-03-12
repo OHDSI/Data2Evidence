@@ -172,7 +172,10 @@ export function useFunnelChart(
     const headers = ['Rule', 'Count', 'Percent of Total', 'Percent Difference']
     const rows = [
       ['Total', summary.baseCount.toString(), '100.00%', ''],
-      ...stats.map(stat => [stat.name, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]),
+      ...stats.map(stat => {
+        const prefix = stat.isExclude ? '- ' : '+ '
+        return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]
+      }),
     ]
 
     const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')

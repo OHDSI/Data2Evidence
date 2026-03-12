@@ -1,5 +1,5 @@
 import { ref, computed, watch, type Ref } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import { type InclusionReportResponse, parseTreemapData } from '@/query-filter/types/InclusionReportTypes'
 
 import { convertTreemapData } from '../computeTreemapStats'
 
@@ -35,7 +35,7 @@ export function useInclusionReportData(
 
   const treemapData = computed(() => {
     if (!inclusionReportResponse.value) return null
-    const data = inclusionReportResponse.value.treemapData
+    const data = parseTreemapData(inclusionReportResponse.value.treemapData)
     return convertTreemapData(data, inclusionReportResponse.value)
   })
 

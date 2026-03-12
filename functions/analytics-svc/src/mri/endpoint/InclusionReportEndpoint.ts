@@ -25,14 +25,23 @@ interface InclusionRuleStat {
     id: number;
     isExclude: boolean;
 }
-interface TreemapNode {
+interface TreemapData {
     name: string;
-    size?: number;
-    children?: TreemapNode[];
+    children: TreemapDataChildren[];
+}
+
+interface TreemapDataChildren {
+    name: string;
+    children: TreemapNodeChildren[];
+}
+
+interface TreemapNodeChildren {
+    name: string;
+    size: number;
 }
 
 interface InterfaceReportResults {
-    treemapData: TreemapNode;
+    treemapData: TreemapData;
     inclusionRuleStats: InclusionRuleStat[];
     summary: {
         percentMatched: string;
@@ -151,7 +160,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         let lostCount = 0; // lostCount is determined by exit event
 
         // Initialize treemapData
-        const treemapData = {
+        const treemapData: TreemapData = {
             name: "Everyone",
             children: [],
         };
