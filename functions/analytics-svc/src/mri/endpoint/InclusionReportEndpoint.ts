@@ -358,6 +358,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                     content: e.content,
                     type: "BooleanContainer",
                     op: "OR",
+                    isExclude: true,
                 });
             });
 
@@ -405,8 +406,9 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         inclusionReportFiltercards
     ): BaseInclusionRuleStat[] {
         let inclusionRuleStats = [];
-        for (const [idx, { content }] of inclusionReportFiltercards.entries()) {
-            const isExclude = content.some((e) => e.op === "NOT");
+        for (const [idx, filtercard] of inclusionReportFiltercards.entries()) {
+            const { content } = filtercard;
+            const isExclude = filtercard.isExclude === true;
             inclusionRuleStats.push({
                 id: idx,
                 name: content
