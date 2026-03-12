@@ -27,9 +27,9 @@ def loyalty_score_plugin(options:LoyaltyPluginType):
                 raise ValueError(error_msg)
             
 
-def load_coef_table(conn, coeff_table_name, schema_name):
+def load_coef_table(conn, coeff_table_name, result_schema_name):
     if coeff_table_name:
-        coef = conn.table(coeff_table_name, database=schema_name)
+        coef = conn.table(coeff_table_name, database=result_schema_name)
         coef = coef.select(coef).to_pandas()
         coef.set_index('Feature',inplace=True)
     else:         
@@ -46,24 +46,28 @@ def calculate_loyalty_score(options:CalculateConfig):
     lookback_years =  options.lookback_years
     database_code = options.database_code
     schema_name = options.schema_name
+    result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
     index_datetime = datetime.fromisoformat(index_date)
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
+    if not dbdao.check_schema_exists(result_schema_name):
+        logger.info(f"Schema {result_schema_name} does not exist, created")
+        dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, cal_st, cal_ed, database_code, schema_name, use_cache_db)
-        coef, feature = load_coef_table(conn, coeff_table_name, schema_name)
+        coef, feature = load_coef_table(conn, coeff_table_name, result_schema_name)
         data['loyalty_score'] = data[feature].dot(coef.loc[feature]) + coef.loc['Intercept']
         logger.info(f'Loyalty score calculation completed')
-        logger.info(f'The loyalty cohort is stored {schema_name}.{loyalty_cohort_table}')
+        logger.info(f'The loyalty cohort is stored {result_schema_name}.{loyalty_cohort_table}')
 
     with dbdao.engine.connect() as conn:
         data.to_sql(
                 name = loyalty_cohort_table,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
@@ -77,6 +81,7 @@ def retrain_algo(options:RetrainConfig):
     return_years = options.return_years
     database_code = options.database_code
     schema_name = options.schema_name
+    result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
     test_ratio = options.test_ratio
     index_datetime = datetime.fromisoformat(index_date)
@@ -84,6 +89,9 @@ def retrain_algo(options:RetrainConfig):
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
+    if not dbdao.check_schema_exists(result_schema_name):
+        logger.info(f"Schema {result_schema_name} does not exist, created")
+        dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, train_st, train_ed, database_code, schema_name, use_cache_db)
         feature = list(set(data.columns) - set(['person_id']))
@@ -117,21 +125,21 @@ def retrain_algo(options:RetrainConfig):
         coef_retrain.to_sql(
                 name = retrain_coeff_table_name,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
         )
-        logger.info(f'Retrain coefficients are stored at {schema_name}.{retrain_coeff_table_name}')
+        logger.info(f'Retrain coefficients are stored at {result_schema_name}.{retrain_coeff_table_name}')
         summary_table.to_sql(
                 name = summary_table_name,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
         )
-        logger.info(f'Retrain auc roc is stored at {schema_name}.{retrain_coeff_table_name}_summary_table')
+        logger.info(f'Retrain auc roc is stored at {result_schema_name}.{retrain_coeff_table_name}_summary_table')
 
 @task(log_prints=True)
 def data_prep(conn, index_st, index_ed, database_code, schema_name, use_cache_db):
