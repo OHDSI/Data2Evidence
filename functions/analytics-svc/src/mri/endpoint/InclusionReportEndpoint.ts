@@ -103,6 +103,9 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                         }
                     }
 
+                    // Strip all axis selection as is not needed by inclusionreport
+                    bitmapMriquery["axisSelection"] = [];
+
                     return this.formulateQuery(req, {
                         queryParams: {
                             configId,
