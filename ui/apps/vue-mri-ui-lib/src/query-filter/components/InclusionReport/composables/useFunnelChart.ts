@@ -12,6 +12,7 @@ export interface FunnelChartData {
 export interface AttritionStat {
   id: number
   name: string
+  isExclude: boolean
   countSatisfying: number
   percentSatisfying: string
   pctDiff: string
@@ -36,11 +37,12 @@ export function useFunnelChart(
 
     // Add each inclusion rule with calculated statistics
     stats.forEach(stat => {
+      const prefix = stat.isExclude ? '- ' : '+ '
       const name = stat.name.length > 35 ? stat.name.slice(0, 35) + '...' : stat.name
-      labels.push(`${name}`)
+      labels.push(`${prefix}${name}`)
       values.push(stat.countSatisfying)
       hoverTexts.push(
-        `${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
+        `${prefix}${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
       )
     })
 

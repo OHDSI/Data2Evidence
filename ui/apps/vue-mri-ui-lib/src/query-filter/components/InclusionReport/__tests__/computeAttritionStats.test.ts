@@ -16,6 +16,7 @@ describe('Attrition Stats Computation', () => {
         percentExcluded: '19.13%',
         percentSatisfying: '54.35%',
         countSatisfying: 125,
+        isExclude: false,
       },
       {
         id: 1,
@@ -23,6 +24,7 @@ describe('Attrition Stats Computation', () => {
         percentExcluded: '0.87%',
         percentSatisfying: '98.70%',
         countSatisfying: 227,
+        isExclude: false,
       },
       {
         id: 2,
@@ -30,9 +32,10 @@ describe('Attrition Stats Computation', () => {
         percentExcluded: '34.35%',
         percentSatisfying: '39.57%',
         countSatisfying: 91,
+        isExclude: true,
       },
     ],
-    treemapData: JSON.stringify({
+    treemapData: {
       name: 'Everyone',
       children: [
         {
@@ -75,7 +78,7 @@ describe('Attrition Stats Computation', () => {
           ],
         },
       ],
-    }),
+    },
   }
 
   describe('basic functionality', () => {
@@ -99,15 +102,16 @@ describe('Attrition Stats Computation', () => {
             percentExcluded: '20.00%',
             percentSatisfying: '80.00%',
             countSatisfying: 80,
+            isExclude: false,
           },
         ],
-        treemapData: JSON.stringify({
+        treemapData: {
           name: '',
           children: [
             { name: '0', size: 20 },
             { name: '1', size: 80 },
           ],
-        }),
+        },
       }
 
       const stats = computeAttritionStats(report)
@@ -116,6 +120,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[0]).toEqual({
         id: 0,
         name: 'Has Diabetes',
+        isExclude: false,
         countSatisfying: 80,
         percentSatisfying: '80.00%',
         pctDiff: '20.00%',
@@ -130,6 +135,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[0]).toEqual({
         id: 0,
         name: 'Gender female and gender diverse',
+        isExclude: false,
         countSatisfying: 125,
         percentSatisfying: '54.35%',
         pctDiff: '45.65%',
@@ -138,6 +144,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[1]).toEqual({
         id: 1,
         name: 'Age>30',
+        isExclude: false,
         countSatisfying: 123,
         percentSatisfying: '53.48%',
         pctDiff: '0.87%',
@@ -146,6 +153,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[2]).toEqual({
         id: 2,
         name: 'Age<70',
+        isExclude: true,
         countSatisfying: 44,
         percentSatisfying: '19.13%',
         pctDiff: '34.35%',
@@ -169,12 +177,13 @@ describe('Attrition Stats Computation', () => {
             percentExcluded: '0.00%',
             percentSatisfying: '0.00%',
             countSatisfying: 0,
+            isExclude: false,
           },
         ],
-        treemapData: JSON.stringify({
+        treemapData: {
           name: '',
           children: [],
-        }),
+        },
       }
 
       const stats = computeAttritionStats(report)
@@ -193,10 +202,10 @@ describe('Attrition Stats Computation', () => {
           percentMatched: '100.00%',
         },
         inclusionRuleStats: [],
-        treemapData: JSON.stringify({
+        treemapData: {
           name: '',
           children: [],
-        }),
+        },
       }
 
       const stats = computeAttritionStats(report)
@@ -216,6 +225,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[0]).toEqual({
         id: 2,
         name: 'Age<70',
+        isExclude: true,
         countSatisfying: 91,
         percentSatisfying: '39.57%',
         pctDiff: '60.43%',
@@ -225,6 +235,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[1]).toEqual({
         id: 0,
         name: 'Gender female and gender diverse',
+        isExclude: false,
         countSatisfying: 46,
         percentSatisfying: '20.00%',
         pctDiff: '19.57%',
@@ -234,6 +245,7 @@ describe('Attrition Stats Computation', () => {
       expect(stats[2]).toEqual({
         id: 1,
         name: 'Age>30',
+        isExclude: false,
         countSatisfying: 44,
         percentSatisfying: '19.13%',
         pctDiff: '0.87%',
@@ -241,4 +253,3 @@ describe('Attrition Stats Computation', () => {
     })
   })
 })
-

@@ -114,8 +114,8 @@ describe('Treemap Stats Computation', () => {
       expect(result?.tooltip).toBeDefined()
       expect(result?.tooltip.count).toBe('400 people (40.00%)')
       expect(result?.tooltip.summary).toBe('1 criteria passed, 1 criteria failed')
-      expect(result?.tooltip.passed).toEqual(['1. Age >= 18'])
-      expect(result?.tooltip.failed).toEqual(['2. Has Condition'])
+      expect(result?.tooltip.passed).toEqual(['+ Age >= 18'])
+      expect(result?.tooltip.failed).toEqual(['+ Has Condition'])
     })
   })
 
