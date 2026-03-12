@@ -91,6 +91,7 @@ export interface DatasetDashboard {
 }
 
 export interface Dataset {
+  type?: string
   dialect: string
   databaseCode: string
   schemaName: string

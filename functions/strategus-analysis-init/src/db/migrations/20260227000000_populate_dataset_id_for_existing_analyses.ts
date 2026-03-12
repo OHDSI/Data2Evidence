@@ -79,15 +79,28 @@ export async function up(knex: Knex): Promise<void> {
     }
   }
 
+  // Set dataset_id column to NOT NULL after populating all records
+  await knex.raw(`
+    ALTER TABLE ${env.PG_SCHEMA}.strategus_analysis
+    ALTER COLUMN dataset_id SET NOT NULL
+  `);
+
   console.log("Migration completed successfully");
 }
 
 export async function down(knex: Knex): Promise<void> {
   // To rollback, we would need to:
-  // 1. Find all datasets of type 'strategus_analysis'
-  // 2. Delete them and their related records
-  // 3. Set dataset_id to null in strategus_analysis
+  // 1. Remove NOT NULL constraint from dataset_id
+  // 2. Find all datasets of type 'strategus_analysis'
+  // 3. Delete them and their related records
+  // 4. Set dataset_id to null in strategus_analysis
   
+  // Remove NOT NULL constraint from dataset_id
+  await knex.raw(`
+    ALTER TABLE ${env.PG_SCHEMA}.strategus_analysis
+    ALTER COLUMN dataset_id DROP NOT NULL
+  `);
+
   const strategusDatasets = await knex
     .withSchema(env.PG_PORTAL_SCHEMA)
     .select("id")

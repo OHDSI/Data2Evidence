@@ -1,7 +1,7 @@
 import { Knex } from "knex";
 const env = Deno.env.toObject();
 
-const rawUp = `ALTER TABLE ${env.PG_SCHEMA}."strategus_analysis" ADD COLUMN "dataset_id" VARCHAR NOT NULL;`;
+const rawUp = `ALTER TABLE ${env.PG_SCHEMA}."strategus_analysis" ADD COLUMN "dataset_id" VARCHAR;`;
 
 const rawDown = `ALTER TABLE ${env.PG_SCHEMA}."strategus_analysis" DROP COLUMN "dataset_id";`;
 
