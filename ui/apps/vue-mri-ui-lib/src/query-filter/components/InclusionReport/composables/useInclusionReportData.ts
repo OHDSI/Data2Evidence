@@ -1,12 +1,11 @@
 import { ref, computed, watch, type Ref } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import { type InclusionReportResponse, parseTreemapData } from '@/query-filter/types/InclusionReportTypes'
 
 import { convertTreemapData } from '../computeTreemapStats'
 
 export interface UseInclusionReportDataOptions {
   cohortDefinitionId: string
   sourceKey: string
-  isReady: boolean
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
   cacheKey?: string
   fetchInclusionReport: (
@@ -36,12 +35,12 @@ export function useInclusionReportData(
 
   const treemapData = computed(() => {
     if (!inclusionReportResponse.value) return null
-    const data = JSON.parse(inclusionReportResponse.value.treemapData)
+    const data = parseTreemapData(inclusionReportResponse.value.treemapData)
     return convertTreemapData(data, inclusionReportResponse.value)
   })
 
   const shouldFetchInclusionReport = computed(() => {
-    return options.isReady && !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
+    return !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
   })
 
   const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {

@@ -1,15 +1,7 @@
 import { ref, watch, computed, type Ref } from 'vue'
 import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
-import { computeAttritionStats } from '../computeAttritionStats'
+import { computeAttritionStats, type AttritionStat } from '../computeAttritionStats'
 import { calculateFilteredSummary } from '../ruleSelectionFilter'
-
-export interface AttritionStat {
-  id: number
-  name: string
-  countSatisfying: number
-  percentSatisfying: string
-  pctDiff: string
-}
 
 export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportResponse | null>, treemapData: Ref<any>) {
   const checkedRulesIds = ref<number[]>([])
