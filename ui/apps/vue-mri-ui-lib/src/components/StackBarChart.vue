@@ -1,11 +1,7 @@
 <template>
   <div class="stackbar-wrapper">
     <div class="stackbar-container" id="stacked-chart"></div>
-    <StackBarChartLegend
-      v-if="chartData.traces && chartData.traces.length > 1"
-      :traces="chartData.traces"
-      :colorway="chartColorway"
-    />
+    <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
   </div>
 </template>
 
@@ -16,8 +12,6 @@ import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
-import { init } from 'echarts'
-import { initial } from 'underscore'
 
 let stackBarChart
 
@@ -238,6 +232,21 @@ export default {
         return [NAVY, ORANGE, BLUE, PINK, YELLOW] // passes WCAG AA contrast requirement with outline #595757, mostly colorblind safe except for tritanopia
         // return [NAVY, BLUE, '#c0ced1', YELLOW, ORANGE] // colorblind safe, passes WCAG AA contrast requirement with outline #595757
       }
+    },
+    legendTraces() {
+      if (this.chartData?.colorLegend?.length > 0) {
+        return this.chartData.colorLegend.map(item => ({
+          name: item.name,
+          meta: { fullName: item.name },
+        }))
+      }
+      return this.chartData?.traces || []
+    },
+    legendColorway() {
+      if (this.chartData?.colorLegend?.length > 0) {
+        return this.chartData.colorLegend.map(item => item.color)
+      }
+      return this.chartColorway
     },
   },
   beforeUnmount() {

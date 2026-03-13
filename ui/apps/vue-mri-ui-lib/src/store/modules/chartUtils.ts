@@ -146,6 +146,47 @@ const getters = {
           },
         }
       })
+
+      // When no stacking criterion is selected, assign per-bar colors based on
+      // the x-axis with fewer unique categories
+      if (yAxis.length === 0 && chartData.traces.length === 1 && xAxes.length > 0) {
+        const trace = chartData.traces[0]
+        const colorwayValues = [
+          Constants.ChartColorway.NAVY,
+          Constants.ChartColorway.ORANGE,
+          Constants.ChartColorway.BLUE,
+          Constants.ChartColorway.PINK,
+          Constants.ChartColorway.YELLOW,
+        ]
+
+        // Find the x-axis with the fewest unique categories
+        let minAxis = xAxes[0]
+        let minUniqueCount = new Set(chartData.data.map(d => d[xAxes[0].id])).size
+        for (let i = 1; i < xAxes.length; i++) {
+          const uniqueCount = new Set(chartData.data.map(d => d[xAxes[i].id])).size
+          if (uniqueCount < minUniqueCount) {
+            minUniqueCount = uniqueCount
+            minAxis = xAxes[i]
+          }
+        }
+
+        // Build a color map: each unique value on the chosen axis gets a color
+        const uniqueValues = [...new Set(chartData.data.map(d => d[minAxis.id]))]
+        const colorMap: Record<string, string> = {}
+        uniqueValues.forEach((val, i) => {
+          colorMap[String(val)] = colorwayValues[i % colorwayValues.length]
+        })
+
+        // Assign per-bar colors
+        trace.marker.color = chartData.data.map(d => colorMap[String(d[minAxis.id])])
+
+        // Store color legend data for the component to render
+        chartData.colorLegend = uniqueValues.map((val, i) => ({
+          name: String(val),
+          color: colorwayValues[i % colorwayValues.length],
+        }))
+      }
+
       return chartData
     },
   processResponse:
