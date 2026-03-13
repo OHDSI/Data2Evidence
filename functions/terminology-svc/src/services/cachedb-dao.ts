@@ -7,7 +7,6 @@ import {
   IConcept,
   IConceptHierarchy,
 } from "../types.ts";
-import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
 
@@ -31,9 +30,7 @@ export class CachedbDAO {
     this.databaseCode = databaseCode;
     this.schemaName = schemaName;
     this.resultsSchemaName = resultsSchemaName;
-    this.fts_concept_identifier = env.USE_TREX_DB_CONN
-      ? `fts_${vocabSchemaName}_concept`
-      : `${vocabSchemaName}.fts_main_concept`;
+    this.fts_concept_identifier = `fts_${vocabSchemaName}_concept`;
   }
 
   async getConcepts(
