@@ -332,9 +332,7 @@ describe("TerminologyList", () => {
   // (QueryFilterModern.vue dispatches with domainId filter)
   // ==========================================
   describe("PA-Atlas CONCEPT_MULTI_SELECT (isAtlas=true, defaultFilters)", () => {
-    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
-    // the first fetch should already include the defaultFilters instead of being empty.
-    it("makes an initial fetch WITHOUT filters (the bug)", async () => {
+    it("makes the initial fetch WITH defaultFilters applied", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasMultiSelectProps} />);
       });
@@ -344,21 +342,20 @@ describe("TerminologyList", () => {
       });
 
       const firstCall = mockGetTerminologies.mock.calls[0];
-      expect(getDomainIdFilter(firstCall)).toEqual([]);
+      expect(getDomainIdFilter(firstCall)).toEqual(["Condition"]);
     });
 
-    it("eventually applies validated defaultFilters after filterOptions load", async () => {
+    it("does not re-fetch after filterOptions load when casing matches", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasMultiSelectProps} />);
       });
 
       await flushEffects(500);
 
-      const callsWithFilter = mockGetTerminologies.mock.calls.filter(
-        (call) => getDomainIdFilter(call).length > 0,
-      );
-      expect(callsWithFilter.length).toBeGreaterThanOrEqual(1);
-      expect(getDomainIdFilter(callsWithFilter[0])).toEqual(["Condition"]);
+      // All calls should have the Condition filter — no wasted unfiltered fetch
+      for (const call of mockGetTerminologies.mock.calls) {
+        expect(getDomainIdFilter(call)).toEqual(["Condition"]);
+      }
     });
 
     it("does NOT fetch concept record counts (Atlas mode)", async () => {
@@ -376,9 +373,7 @@ describe("TerminologyList", () => {
   // (app-tag-input.vue dispatches with domainId filter)
   // ==========================================
   describe("PA-Atlas CONCEPT_SET (isAtlas=true, defaultFilters)", () => {
-    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
-    // the first fetch should already include the defaultFilters instead of being empty.
-    it("makes an initial fetch WITHOUT filters (the bug)", async () => {
+    it("makes the initial fetch WITH defaultFilters applied", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasConceptSetProps} />);
       });
@@ -388,21 +383,19 @@ describe("TerminologyList", () => {
       });
 
       const firstCall = mockGetTerminologies.mock.calls[0];
-      expect(getDomainIdFilter(firstCall)).toEqual([]);
+      expect(getDomainIdFilter(firstCall)).toEqual(["Condition"]);
     });
 
-    it("eventually applies defaultFilters after filterOptions load", async () => {
+    it("does not re-fetch after filterOptions load when casing matches", async () => {
       await act(async () => {
         render(<TerminologyList {...paAtlasConceptSetProps} />);
       });
 
       await flushEffects(500);
 
-      const callsWithFilter = mockGetTerminologies.mock.calls.filter(
-        (call) => getDomainIdFilter(call).length > 0,
-      );
-      expect(callsWithFilter.length).toBeGreaterThanOrEqual(1);
-      expect(getDomainIdFilter(callsWithFilter[0])).toEqual(["Condition"]);
+      for (const call of mockGetTerminologies.mock.calls) {
+        expect(getDomainIdFilter(call)).toEqual(["Condition"]);
+      }
     });
   });
 
@@ -458,7 +451,7 @@ describe("TerminologyList", () => {
   // defaultFilters validation logic
   // ==========================================
   describe("defaultFilters validation", () => {
-    it("validates values case-insensitively against filterOptions", async () => {
+    it("corrects casing via validation against filterOptions", async () => {
       const defaultFilters = [{ id: "domainId", value: ["condition"] }];
 
       await act(async () => {
@@ -469,14 +462,19 @@ describe("TerminologyList", () => {
 
       await flushEffects(500);
 
-      const callsWithFilter = mockGetTerminologies.mock.calls.filter(
-        (call) => getDomainIdFilter(call).length > 0,
-      );
-      expect(callsWithFilter.length).toBeGreaterThanOrEqual(1);
-      expect(getDomainIdFilter(callsWithFilter[0])).toEqual(["Condition"]);
+      // First fetch uses raw defaultFilters (lowercase "condition")
+      const firstCall = mockGetTerminologies.mock.calls[0];
+      expect(getDomainIdFilter(firstCall)).toEqual(["condition"]);
+
+      // After validation, a second fetch uses the corrected casing
+      const lastCall =
+        mockGetTerminologies.mock.calls[
+          mockGetTerminologies.mock.calls.length - 1
+        ];
+      expect(getDomainIdFilter(lastCall)).toEqual(["Condition"]);
     });
 
-    it("filters out values that don't exist in filterOptions", async () => {
+    it("removes invalid values after validation against filterOptions", async () => {
       const defaultFilters = [
         { id: "domainId", value: ["NonExistentDomain"] },
       ];
@@ -489,12 +487,19 @@ describe("TerminologyList", () => {
 
       await flushEffects(500);
 
-      for (const call of mockGetTerminologies.mock.calls) {
-        expect(getDomainIdFilter(call)).toEqual([]);
-      }
+      // First fetch uses raw defaultFilters
+      const firstCall = mockGetTerminologies.mock.calls[0];
+      expect(getDomainIdFilter(firstCall)).toEqual(["NonExistentDomain"]);
+
+      // After validation, invalid value is removed — last fetch has empty filter
+      const lastCall =
+        mockGetTerminologies.mock.calls[
+          mockGetTerminologies.mock.calls.length - 1
+        ];
+      expect(getDomainIdFilter(lastCall)).toEqual([]);
     });
 
-    it("keeps valid values and drops invalid ones from the same filter", async () => {
+    it("keeps valid values and drops invalid ones after validation", async () => {
       const defaultFilters = [
         { id: "domainId", value: ["Condition", "FakeDomain"] },
       ];
@@ -507,34 +512,36 @@ describe("TerminologyList", () => {
 
       await flushEffects(500);
 
-      const callsWithFilter = mockGetTerminologies.mock.calls.filter(
-        (call) => getDomainIdFilter(call).length > 0,
-      );
-      expect(callsWithFilter.length).toBeGreaterThanOrEqual(1);
-      // Only "Condition" kept, "FakeDomain" dropped
-      expect(getDomainIdFilter(callsWithFilter[0])).toEqual(["Condition"]);
+      // First fetch uses raw defaultFilters (both values)
+      const firstCall = mockGetTerminologies.mock.calls[0];
+      expect(getDomainIdFilter(firstCall)).toEqual([
+        "Condition",
+        "FakeDomain",
+      ]);
+
+      // After validation, only "Condition" remains
+      const lastCall =
+        mockGetTerminologies.mock.calls[
+          mockGetTerminologies.mock.calls.length - 1
+        ];
+      expect(getDomainIdFilter(lastCall)).toEqual(["Condition"]);
     });
 
-    // TODO: This test documents the current buggy behavior. Expected to fail after the fix —
-    // setConceptsResult should only be called once, not multiple times.
-    it("the first fetch is wasted — unfiltered data gets replaced", async () => {
-      const setConceptsResult = vi.fn();
+    it("does not re-fetch when defaultFilters match filterOptions exactly", async () => {
       const defaultFilters = [{ id: "domainId", value: ["Condition"] }];
 
       await act(async () => {
         render(
-          <TerminologyList
-            {...baseProps}
-            defaultFilters={defaultFilters}
-            setConceptsResult={setConceptsResult}
-          />,
+          <TerminologyList {...baseProps} defaultFilters={defaultFilters} />,
         );
       });
 
       await flushEffects(500);
 
-      // setConceptsResult called multiple times proves data is fetched more than once
-      expect(setConceptsResult.mock.calls.length).toBeGreaterThanOrEqual(2);
+      // Every fetch should include the Condition filter — no wasted unfiltered fetch
+      for (const call of mockGetTerminologies.mock.calls) {
+        expect(getDomainIdFilter(call)).toEqual(["Condition"]);
+      }
     });
   });
 
