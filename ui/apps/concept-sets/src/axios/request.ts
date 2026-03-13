@@ -72,8 +72,23 @@ const resultCache = new Map<string, CacheEntry>();
 const inflightRequests = new Map<string, Promise<any>>();
 
 function getCacheKey(options: AxiosRequestConfig): string {
-  const { method, baseURL, url, params, data } = options;
-  return JSON.stringify({ method, baseURL, url, params, data });
+  const { method, baseURL, url, params, data, headers } = options;
+  // Include headers that affect response (e.g. datasetid), exclude volatile ones
+  const relevantHeaders = headers
+    ? Object.fromEntries(
+        Object.entries(headers).filter(
+          ([k]) => !["Authorization", "authorization"].includes(k),
+        ),
+      )
+    : undefined;
+  return JSON.stringify({
+    method,
+    baseURL,
+    url,
+    params,
+    data,
+    headers: relevantHeaders,
+  });
 }
 
 function isDedupEligible(options: AxiosRequestConfig): boolean {
@@ -183,5 +198,8 @@ export const request = <T = any>(options: AxiosRequestConfig): Promise<T> => {
   if (isDedupEligible(options)) {
     return requestWithDedup<T>(options);
   }
+  // Write operations (POST/PUT/DELETE) invalidate the cache so subsequent
+  // reads fetch fresh data instead of returning stale cached results.
+  resultCache.clear();
   return requestNoCache<T>(options);
 };
