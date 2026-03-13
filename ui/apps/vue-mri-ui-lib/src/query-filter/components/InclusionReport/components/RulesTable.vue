@@ -2,14 +2,7 @@
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
 import type { InclusionRuleStat } from '@/query-filter/types/InclusionReportTypes'
-
-export interface AttritionStat {
-  id: number
-  name: string
-  countSatisfying: number
-  percentSatisfying: string
-  pctDiff: string
-}
+import type { AttritionStat } from '../computeAttritionStats'
 
 const props = defineProps<{
   selectedVisualization: 'ATTRITION' | 'INTERSECT'
@@ -75,12 +68,12 @@ function handleMoveRowDown(statId: number) {
           <th class="drag-icon-header" v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <!-- <th class="rule-id">ID</th> -->
-          <th class="rule-name">Inclusion rule</th>
+          <th class="rule-name">Filter<sup>1</sup></th>
           <!-- count satisfying -->
           <th>No. of Persons</th>
           <!-- percent satisfying -->
-          <th v-if="selectedVisualization === 'ATTRITION'">%</th>
-          <th v-else>% satisfied</th>
+          <th v-if="selectedVisualization === 'ATTRITION'">Percentage of Total</th>
+          <th v-else>Percentage satisfied</th>
           <!-- percent excluded -->
           <!-- <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
           <th v-else>% to-gain</th> -->
@@ -105,6 +98,7 @@ function handleMoveRowDown(statId: number) {
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
+            <span>{{ stat.isExclude ? '-' : '+' }}&nbsp;</span>
             <!-- bold 'OR' -->
             <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
               <b v-if="part === 'OR'">OR</b>
@@ -123,9 +117,7 @@ function handleMoveRowDown(statId: number) {
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
-          <td class="rule-name">
-            {{ stat.name }}
-          </td>
+          <td class="rule-name">{{ stat.isExclude ? '-' : '+' }} {{ stat.name }}</td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.percentExcluded }}</td> -->

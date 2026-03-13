@@ -15,6 +15,7 @@ interface BaseInclusionRuleStat {
     countExcluded: number;
     name: string;
     id: number;
+    isExclude: boolean;
 }
 interface InclusionRuleStat {
     countSatisfying: number;
@@ -22,9 +23,25 @@ interface InclusionRuleStat {
     percentExcluded: string;
     name: string;
     id: number;
+    isExclude: boolean;
 }
+interface TreemapData {
+    name: string;
+    children: TreemapDataChildren[];
+}
+
+interface TreemapDataChildren {
+    name: string;
+    children: TreemapNodeChildren[];
+}
+
+interface TreemapNodeChildren {
+    name: string;
+    size: number;
+}
+
 interface InterfaceReportResults {
-    treemapData: string;
+    treemapData: TreemapData;
     inclusionRuleStats: InclusionRuleStat[];
     summary: {
         percentMatched: string;
@@ -143,7 +160,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         let lostCount = 0; // lostCount is determined by exit event
 
         // Initialize treemapData
-        const treemapData = {
+        const treemapData: TreemapData = {
             name: "Everyone",
             children: [],
         };
@@ -157,8 +174,14 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         bitmapMasks.forEach((bitmapMask, idx) => {
             const pcount =
                 queryResults[idx]["data"][0]["patient.attributes.pcount"];
-            // Count number of ones occuring in the bitmapMask
-            const countOfOnes = (bitmapMask.match(/1/g) || []).length;
+
+            // Normalize so '1' = rule satisfied for both inclusion and exclusion rules
+            const normalizedMask = this.normalizeBitmask(
+                bitmapMask,
+                inclusionReportFiltercards
+            );
+            // Count number of ones occuring in the normalizedMask
+            const countOfOnes = (normalizedMask.match(/1/g) || []).length;
 
             // summary
             baseCount += pcount;
@@ -167,7 +190,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             }
 
             // baseInclusionRuleStats
-            for (const [bmIdx, bmEle] of bitmapMask.split("").entries()) {
+            for (const [bmIdx, bmEle] of normalizedMask.split("").entries()) {
                 if (bmEle === "1") {
                     baseInclusionRuleStats[bmIdx].countSatisfying += pcount;
                 }
@@ -185,7 +208,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             // Treemap
             // Push count accordingly into group's children based on countOfOnes
             treemapData.children[countOfOnes].children.push({
-                name: bitmapMask,
+                name: normalizedMask,
                 size: pcount,
             });
         });
@@ -196,6 +219,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 return {
                     id: e.id,
                     name: e.name,
+                    isExclude: e.isExclude,
                     percentExcluded: this.calcPercentageString(
                         e.countExcluded,
                         baseCount
@@ -219,7 +243,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                 ),
             },
             inclusionRuleStats,
-            treemapData: JSON.stringify(treemapData),
+            treemapData: treemapData,
         };
 
         return inclusionReportData;
@@ -349,6 +373,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                     content: e.content,
                     type: "BooleanContainer",
                     op: "OR",
+                    isExclude: true,
                 });
             });
 
@@ -383,16 +408,50 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         return bitmapMasks;
     }
 
+    /**
+     * Normalize bitmask so that '1' always means "rule satisfied".
+     * For exclusion rules, the raw bit is inverted (0 = exclusion applied = satisfied),
+     * so we flip those bits.
+     */
+    private normalizeBitmask(
+        bitmask: string,
+        inclusionReportFiltercards: any[]
+    ): string {
+        return bitmask
+            .split("")
+            .map((bit, idx) => {
+                if (inclusionReportFiltercards[idx].isExclude) {
+                    return bit === "0" ? "1" : "0";
+                }
+                return bit;
+            })
+            .join("");
+    }
+
+    /**
+     * Gets the name of a filter card entry, unwrapping NOT if present.
+     * For inclusion: entry is a FilterCard with a `name` property.
+     * For exclusion: entry is a NOT BooleanContainer wrapping the FilterCard.
+     */
+    private getFilterCardName(entry): string {
+        return entry.op === "NOT" ? entry.content[0].name : entry.name;
+    }
+
     private getBaseInclusionRuleStats(
         inclusionReportFiltercards
     ): BaseInclusionRuleStat[] {
         let inclusionRuleStats = [];
-        for (const [idx, { content }] of inclusionReportFiltercards.entries()) {
+        for (const [idx, filtercard] of inclusionReportFiltercards.entries()) {
+            const { content } = filtercard;
+            const isExclude = filtercard.isExclude === true;
             inclusionRuleStats.push({
                 id: idx,
-                name: content.map((e) => e.name).join(" OR "),
+                name: content
+                    .map((e) => this.getFilterCardName(e))
+                    .join(" OR "),
                 countSatisfying: 0,
                 countExcluded: 0,
+                isExclude,
             });
         }
         return inclusionRuleStats;

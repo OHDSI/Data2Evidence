@@ -143,7 +143,7 @@
     >
       <div class="inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
           <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
@@ -151,9 +151,8 @@
 
         <div class="inclusion-report-dialog__content">
           <InclusionReport
-            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            cohort-definition-id=""
             :source-key="inclusionReportSourceKey"
-            :is-ready="inclusionReportIsReady"
             :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
@@ -204,6 +203,7 @@ import InclusionReport from '../query-filter/components/InclusionReport/index.vu
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
+  emits: ['unhideEv', 'drilldown', 'open-filtersummary'],
   data() {
     // Initialize dashboard flow composable with dispatch and getters
     const store = (this as any).$store
@@ -304,14 +304,8 @@ export default {
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
-    inclusionReportCohortDefinitionId() {
-      return this.getActiveBookmark?.cohortDefinitionId?.toString()
-    },
     inclusionReportSourceKey() {
       return this.getSelectedDataset?.id
-    },
-    inclusionReportIsReady() {
-      return true
     },
     inclusionReportCacheKey() {
       return JSON.stringify(this.getBookmarksData)

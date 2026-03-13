@@ -1,8 +1,9 @@
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import { type InclusionReportResponse, parseTreemapData } from '@/query-filter/types/InclusionReportTypes'
 
 export type AttritionStat = {
   id: number
   name: string
+  isExclude: boolean
   countSatisfying: number
   percentSatisfying: string
   pctDiff: string
@@ -42,7 +43,7 @@ const countMatch = (node: any, ruleIds: number[], totalRuleCount: number): numbe
 export function computeAttritionStats(report: InclusionReportResponse, order?: number[]): AttritionStat[] {
   if (!report) return []
 
-  const treemapData = JSON.parse(report.treemapData)
+  const treemapData = parseTreemapData(report.treemapData)
   const baseCount = report.summary.baseCount
   const ruleOrder: number[] = order || report.inclusionRuleStats.map(rule => rule.id)
 
@@ -61,6 +62,7 @@ export function computeAttritionStats(report: InclusionReportResponse, order?: n
     return {
       id: rule.id,
       name: rule.name,
+      isExclude: rule.isExclude,
       countSatisfying,
       percentSatisfying: (percentSatisfying * 100).toFixed(2) + '%',
       pctDiff: (pctDiff * 100).toFixed(2) + '%',

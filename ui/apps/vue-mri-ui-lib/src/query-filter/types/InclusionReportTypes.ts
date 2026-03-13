@@ -8,13 +8,45 @@ export interface Summary {
 export interface InclusionRuleStat {
   id: number
   name: string
+  isExclude: boolean
   percentExcluded: string
   percentSatisfying: string
   countSatisfying: number
 }
 
+export interface TreemapData {
+  name: string
+  children: TreemapDataChildren[]
+}
+
+export interface TreemapDataChildren {
+  name: string
+  children: TreemapNodeChildren[]
+}
+
+export interface TreemapNodeChildren {
+  name: string
+  size: number
+}
+
 export interface InclusionReportResponse {
   summary: Summary
   inclusionRuleStats: InclusionRuleStat[]
-  treemapData: string // JSON string
+  treemapData: TreemapData | string
+}
+
+/**
+ * Parse treemapData which may be a JSON string (from legacy backends) or an already-parsed object.
+ * Returns null if the input is falsy or cannot be parsed.
+ */
+export function parseTreemapData(raw: TreemapData | string | null | undefined): TreemapData | null {
+  if (!raw) return null
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as TreemapData
+    } catch {
+      return null
+    }
+  }
+  return raw
 }
