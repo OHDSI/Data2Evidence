@@ -226,61 +226,17 @@ export default {
     // Dynamically select colorway based on number of traces
     chartColorway() {
       const numTraces = this.chartData?.traces?.length || 0
+      const { NAVY, ORANGE, BLUE, PINK, YELLOW } = Constants.ChartColorway
 
       if (numTraces === 2) {
-        // High contrast palette for binary comparisons
-        return ['#000080', '#f79409']
+        return [NAVY, ORANGE]
       } else if (numTraces === 3) {
-        return ['#000080', '#fcd34b', '#f79409']
+        return [NAVY, YELLOW, ORANGE]
       } else if (numTraces === 4) {
-        return ['#000080', '#3E92E0FF', '#FCD34BFF', '#F79409FF']
+        return [NAVY, BLUE, YELLOW, ORANGE]
       } else {
-        // Full palette for 5+ traces
-        // return ['#000080', '#144187', '#23718c', '#529f70', '#8bcb48', '#fee727'] // ggplot color in stackoverflow
-        // return ['#000080', '#5d2085', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
-        // return ['#000080', '#9e3688', '#de4b8b', '#EC6E41', '#f5c747'] // option 1
-        // return ['#000080', '#540982', '#821d80', '#ab3478', '#d04d64', '#eb7100'] // option 2
-        // return ['#000080', '#FB9F9D', '#196D76', '#FFD9A5'] // option 3
-        // return ['#000080', '#FB9F9D', '#196D76', '#D4820A'] // option 3 with amber
-        // return ['#007FFFFF', '#4CC3FFFF', '#99EDFFFF', '#CCFFFFFF', '#FFFFCCFF', '#FFEE99FF', '#FFC34CFF', '#FF7F00FF']
-        // return ['#F56455FF', '#000080', '#87C785FF', '#572F30FF'] // r color palette
-        // return ['#6BBAE5FF', '#E3EEF4FF', '#000080', '#F9F5EAFF', '#81974CFF', '#553F31FF'] // r color palette 2
-        // return ['#000080', '#6DAABDFF', '#CAECB3FF', '#F3CB04FF', '#E28027FF']
-        return ['#000080', '#3e92e0', '#c0ced1', '#fcd34b', '#f79409'] // colorblind safe, passes WCAG AA contrast requirement, with outline #595757
-        // return ['#000080', '#3e92e0', '#FB9F9D', '#fcd34b', '#f79409'] // most recommended by leandro and Karthik
-        // return ['#56B4E9', '#0072B2', '#CC79A7', '#009E73', '#E69F00'] // not colorblind safe
-        // return ['#56B4E9', '#009E73', '#D55E00', '#CC79A7', '#E69F00']
-        // return ['#1170aa', '#fc7d0b', '#a3acb9', '#57606c', '#5fa2ce', '#c85200']
-        // return ['#000080', '#F0E442', '#009E73', '#56B4E9', '#E69F00'] // okabe-ito
-        // return ['#000080', '#D55E00', '#E69F00', '#56B4E9', '#009E73'] // okabe-ito 2
-        // return [
-        //   '#212E52FF',
-        //   '#444E7EFF',
-        //   '#8087AAFF',
-        //   '#B7ABBCFF',
-        //   '#F9ECE8FF',
-        //   '#FCC893FF',
-        //   '#FEB424FF',
-        //   '#FD8700FF',
-        //   '#D8511DFF',
-        // ]
-        // return [
-        //   '#FDA2A2',
-        //   '#000E7E',
-        //   '#A2FDCD',
-        //   '#FF5E59',
-        //   '#CCDEF1',
-        //   '#2599A7',
-        //   '#FFC4AD',
-        //   '#999FCB',
-        //   '#EBF0C8',
-        //   '#CE7AEB',
-        //   '#69BBF6',
-        //   '#FDEEA2',
-        //   '#9215BC',
-        //   '#9FC5E8',
-        //   '#FFD9A5',
-        // ] // original
+        return [NAVY, ORANGE, BLUE, PINK, YELLOW] // passes WCAG AA contrast requirement with outline #595757, mostly colorblind safe except for tritanopia
+        // return [NAVY, BLUE, '#c0ced1', YELLOW, ORANGE] // colorblind safe, passes WCAG AA contrast requirement with outline #595757
       }
     },
   },

@@ -326,6 +326,14 @@ const CohortEntryExit = {
   EXIT_KEY: 'isExit',
 }
 
+const ChartColorway = {
+  NAVY: '#000080',
+  ORANGE: '#f79409',
+  BLUE: '#3e92e0',
+  PINK: '#FB9F9D',
+  YELLOW: '#fcd34b',
+}
+
 const XAxisLabelMaxLength = 30
 
 export default {
@@ -343,6 +351,7 @@ export default {
   PlotlyConsts,
   AxisIcons,
   AxisId,
+  ChartColorway,
   CohortEntryExit,
   XAxisLabelMaxLength,
 }
