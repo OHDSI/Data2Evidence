@@ -79,7 +79,7 @@ export default class StrategusAnalysisService {
                 visibilityStatus: "DEFAULT",
                 detail: {
                     name: studyId,
-                    summary: "strategus analysis",
+                    summary: "Strategus analysis dataset",
                     description: "",
                     showRequestAccess: false,
                 },

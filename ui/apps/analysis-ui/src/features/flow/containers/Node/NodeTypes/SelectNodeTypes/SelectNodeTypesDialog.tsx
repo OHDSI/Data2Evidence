@@ -22,13 +22,13 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
   handleNodeType,
   ...props
 }) => {
-  const [hideExperimental, setHideExperimental] = useState(true);
+  const [showExperimental, setShowExperimental] = useState(false);
 
   const handleClose = useCallback(
     (nodeType?: NodeTypeChoice) => {
       typeof onClose === "function" && onClose(nodeType);
     },
-    [onClose]
+    [onClose],
   );
 
   const nodesToSelect: string[] = useMemo(() => {
@@ -57,9 +57,9 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       <Box className="select-node-type-dialog__content">
         {nodesToSelect
           .filter((nodeType: NodeTypeChoice) =>
-            hideExperimental
-              ? NodeChoiceMap[nodeType].tag !== NodeTag.Experimental
-              : true
+            showExperimental
+              ? true
+              : NodeChoiceMap[nodeType].tag !== NodeTag.Experimental,
           )
           .map((nodeType: NodeTypeChoice) => (
             <NodeTypeSelection
@@ -71,10 +71,10 @@ export const SelectNodeTypesDialog: FC<SelectNodeTypesDialogProps> = ({
       </Box>
       <Box className="select-node-type-dialog__footer">
         <Checkbox
-          label="Hide experimental"
-          checked={hideExperimental}
+          label="Show experimental"
+          checked={showExperimental}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            setHideExperimental(e.target.checked)
+            setShowExperimental(e.target.checked)
           }
         />
       </Box>

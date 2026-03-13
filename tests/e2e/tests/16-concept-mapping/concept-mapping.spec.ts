@@ -29,9 +29,9 @@ test('concept-mapping', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
   await page.getByRole('button', { name: 'Create' }).click()
 
-  // Uncheck "Hide experimental" to show concept mapping node
-  await expect(page.getByText('Hide experimental')).toBeVisible()
-  await page.getByText('Hide experimental').click()
+  // Check "Show experimental" to show concept mapping node
+  await expect(page.getByText('Show experimental')).toBeVisible()
+  await page.getByText('Show experimental').click()
 
   // This timeout is necessary as clicking the concept mapping button too quickly seems to have an issue which causes the node not to be added. Remove this wait to see if the issue persists.
   await page.waitForTimeout(1500)

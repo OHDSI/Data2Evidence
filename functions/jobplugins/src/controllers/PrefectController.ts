@@ -100,11 +100,11 @@ export class PrefectController {
       return res
         .status(200)
         .send({ flowrunId, status: "Successfully created a flow run" });
-    } catch (error) {
+    } catch (error: Error | any) {
       console.log(error);
       return res
         .status(500)
-        .send({ message: "Failed to start network analaysis flow run" });
+        .send({ message: `Failed to start network analaysis flow run with message: ${error.message}` });
     }
   }
 
