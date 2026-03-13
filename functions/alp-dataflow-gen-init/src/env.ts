@@ -26,13 +26,13 @@ export const env = {
     alp_system_id: _env.ALP__SYSTEM_ID,
     achilles_thread_count: _env.ACHILLES_THREAD_COUNT,
     exclude_analysis_ids: _env.EXCLUDE_ANALYSIS_IDS || "",
+    duckdb_memory_limit: _env.D2E_DUCKDB_MEMORY_LIMIT || "",
+    duckdb_threads: _env.D2E_DUCKDB_THREADS || "4", // Default to 4 threads
     dc_hana_read_role: _env.DC_HANA_READ_ROLE || "",
     cohort_generator_module_settings_url:
       _env.OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL,
     cohort_diagnostics_module_settings_url:
       _env.OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL,
-    cachedb_host: _env.CACHEDB__HOST,
-    cachedb_port: _env.CACHEDB__PORT,
     pg_db_name: _env.PG__DB_NAME,
     pg_db_host: _env.PG__HOST,
     pg_db_port: _env.PG__PORT,
@@ -45,11 +45,13 @@ export const env = {
     is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
+    cache_task_timeout: _env.CACHE_TASK_TIMEOUT || "10800", // Default to 3 hours
 
     // For integration tests which are currently disabled
     liquibase_path: _env.LIQUIBASE_PATH,
     hana_driver_class_path: _env.HANA__DRIVER_CLASS_PATH,
     postgres_driver_class_path: _env.POSTGRES__DRIVER_CLASS_PATH,
+    is_self_managed_roles: _env.IS_SELF_MANAGED_ROLES,
   },
   SECRETS: {
     // Prefect Secrets

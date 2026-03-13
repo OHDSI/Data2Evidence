@@ -11,18 +11,28 @@ import { createLogger } from "../logger";
 
 const logger = createLogger();
 
+// Module-level caches to avoid redundant lookups on every request.
+const _datasetIdCache = new Map<string, string>();
+const _projectCredentialsCache = new Map<string, ClientCredentials>();
+
 const getDatasetId = async (
   token: string,
   studyCode: string
 ): Promise<string|null> => {
-  // Get datasets from portal
+  const cached = _datasetIdCache.get(studyCode);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const portalAPI = new PortalAPI(token);
   const datasets: Dataset[] = await portalAPI.getDatasets();
 
   const dataset = datasets.find((item) => item.tokenStudyCode === studyCode);
-
   const datasetId = dataset ? dataset.id : null;
 
+  if (datasetId) {
+    _datasetIdCache.set(studyCode, datasetId);
+  }
   return datasetId;
 };
 
@@ -65,7 +75,7 @@ const getProjectCredentials = async (
   }
 };
 
-export const createProject = async (token: string, id: string, description: string) => {
+export const createProject = async (token: string, id: string, description: string): Promise<string> => {
   try{
     console.info(`Creating a fhir project for the dataset '${id}'..`);
       let fhirApi = new FhirAPI(token);
@@ -144,7 +154,8 @@ export const createProject = async (token: string, id: string, description: stri
       if(updateDatasetResult === undefined)
         throw new Error("Error updating dataset with fhir project id!");
       console.log(`Updated dataset '${id}' with fhir project id '${projectId}'`);
-      return true
+
+      return projectId;
   }
   catch(error){
     console.error(`Error creating fhir project for dataset '${id}': ${error.message}`);
@@ -178,51 +189,64 @@ export const forwardRequest = async (
   resourcePath: string,
   queryParams: any,
   body: any,
-  fhirHeaders: Headers
+  fhirHeaders: Headers,
+  isAdminRequest: boolean = false
 ) => {
-  // await fhirApi.clientCredentialsLogin();
-
-  //Get datasetId for incoming token study code
-  const datasetId = await getDatasetId(token, projectName);
-  if(datasetId === null){
-    throw new Error(`No dataset id found for project '${projectName}'`);
-  }
-  //DatasetId is the Fhir project name
-  projectName = datasetId;
-  
   //Authenticate with superadmin credentials
   let fhirApi = new FhirAPI(token);
   let adminCredentials = fhirApi.getAdminCredentials();
-
-  //Check fhir project exists which has unique name
-  const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
-  if (projectExists !== undefined && projectExists === false) {
-    throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
-  }
-
-  //Get client ID and secret for project
-  const projClientCredentials = await getProjectCredentials(
-    fhirApi,
-    projectName,
-    adminCredentials
-  );
-
-  //Add dataset metadata to req body
   let resourceDetails = body;
-  const metaInfo = {
-    author: {
-      reference: `ClientApplication/${projClientCredentials.clientId}`,
-    },
-    id: datasetId,
-  };
-  resourceDetails.meta = metaInfo;
+  if (isAdminRequest === false) {
+    //Get datasetId for incoming token study code
+    const datasetId = await getDatasetId(token, projectName);
+    if(datasetId === null){
+      throw new Error(`No dataset id found for project '${projectName}'`);
+    }
+    //DatasetId is the Fhir project name
+    projectName = datasetId;
 
-  return await fhirApi.forwardRequest(
-    resourcePath,
-    projClientCredentials,
-    httpMethod,
-    queryParams,
-    resourceDetails,
-    fhirHeaders
-  );
-};
+    //Get client ID and secret for project (cached after first lookup)
+    let projClientCredentials = _projectCredentialsCache.get(projectName);
+    if (!projClientCredentials) {
+      //Check fhir project exists which has unique name
+      const projectExists = await checkProjectNameExists(fhirApi, projectName, adminCredentials);
+      if (projectExists !== undefined && projectExists === false) {
+        throw new Error(`FHIR Project for dataset '${projectName}' does not exist in fhir server!`);
+      }
+      projClientCredentials = await getProjectCredentials(
+        fhirApi,
+        projectName,
+        adminCredentials
+      );
+      _projectCredentialsCache.set(projectName, projClientCredentials);
+    }
+
+    //Add dataset metadata to req body if resourceDetails is present
+    if (resourceDetails) {
+      const metaInfo = {
+        author: {
+          reference: `ClientApplication/${projClientCredentials.clientId}`,
+        },
+        id: datasetId,
+      };
+      resourceDetails.meta = metaInfo;
+      return await fhirApi.forwardRequest(
+        resourcePath,
+        projClientCredentials,
+        httpMethod,
+        queryParams,
+        resourceDetails,
+        fhirHeaders
+      );
+    }
+  } else {
+    return await fhirApi.forwardRequest(
+      resourcePath,
+      adminCredentials,
+      httpMethod,
+      queryParams,
+      resourceDetails,
+      fhirHeaders
+    );
+  }
+}

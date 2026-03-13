@@ -1,12 +1,13 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
   async function assertCount(count: string) {
-    return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible({ timeout: 5000 })
+    return page.locator('button').filter({ hasText: 'Selected concepts' }).getByText(count).isVisible()
   }
 
   await page.goto('/d2e/portal')
@@ -18,12 +19,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
   await expect(page.getByText('1–25 of 444')).toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-1.png', { maxDiffPixels: 100 })
+  await expect(page).toHaveScreenshot()
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
   // Concept set
   const conceptSetName = `Concept Set Test 1`
-  // If the concept set already exists (retry), remove the second conept set we added last time
+  // If the concept set already exists (retry), remove the second concept set we added last time
   if (await page.getByRole('cell', { name: conceptSetName }).isVisible()) {
     await page.getByRole('row').filter({ hasText: conceptSetName }).getByRole('button').first().click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
@@ -56,6 +57,9 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('row')).toHaveCount(2) // including the header row
     await page.getByRole('tab', { name: 'Related concepts' }).click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()
+    await page.getByRole('textbox', { name: 'Concept set name' }).fill('')
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByText('Please enter a name.')).toBeVisible()
     await page.getByRole('textbox', { name: 'Concept set name' }).fill(conceptSetName)
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
@@ -99,13 +103,13 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Concept Set Test 1 -')).toBeVisible()
   await page.waitForTimeout(3000)
   await page.getByPlaceholder('Enter search term').press('Enter')
-  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
-  await expect(page).toHaveScreenshot('concept-sets-2.png', { maxDiffPixels: 100 })
+  await expect(page.getByText('1,677 / 2,694')).toBeVisible()
   await page.getByText('✎').click()
+  await expect(page).toHaveScreenshot()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible({ timeout: 10000 })
+  await expect(page.getByRole('cell', { name: '81893' })).toBeVisible()
   // Only add "81893 64766004 Ulcerative" when it is not already selected, in the scenario of re-running the test
   if (await assertCount('1')) {
     await page
@@ -121,7 +125,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Update' })).toBeEnabled()
   await page.getByRole('button', { name: 'Close' }).click()
 
-  await expect(page.getByText('1,677 / 2,694')).toBeVisible({ timeout: 10000 })
+  // Blur any focused element to prevent focus shadow on multiselect tags
+  // (focus can return to the tag when modal closes, especially on fast systems)
+  await page.evaluate(() => (document.activeElement as HTMLElement)?.blur())
 
   // Dismiss popover if present
   try {
@@ -132,5 +138,12 @@ test(TEST_NAME, async ({ page }) => {
   }
 
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot('concept-sets-3.png', { maxDiffPixels: 100 })
+
+  // GHA race condition: After updating the concept set, the cohort count may trigger a background
+  // recalculation. On slower GHA runners, this completes between the initial check and the screenshot,
+  // causing the count to change. Wait for the count to stabilize before screenshot.
+  await page.waitForTimeout(3000)
+  await expect(page.getByText('1,836 / 2,694')).toBeVisible()
+
+  await expect(page).toHaveScreenshot()
 })

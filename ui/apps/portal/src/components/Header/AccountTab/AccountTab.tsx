@@ -15,6 +15,8 @@ export const AccountTab: FC<AccountTabProps> = ({ portalType }) => {
   const getLink = useCallback(() => {
     if (portalType === "researcher") {
       return `${config.ROUTES.researcher}/account`;
+    } else if (portalType === "etl") {
+      return `${config.ROUTES.etl}/account`;
     } else {
       return `${config.ROUTES.systemadmin}/account`;
     }

@@ -31,7 +31,7 @@ export class StrategusAnalysisApi {
       mode: "kernel",
     });
 
-    const response = await this.channel.post(
+    const response = await this.channel.put(
       `${this.baseUrl}/strategus/analysis`,
       body,
       { headers }
@@ -40,6 +40,26 @@ export class StrategusAnalysisApi {
     if (response.status !== 200) {
       throw new Error(
         `Failed to save analysis: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.data;
+  }
+
+  public async getStudy(studyId: string): Promise<any> {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: this.token,
+    };
+
+    const response = await this.channel.get(
+      `${this.baseUrl}/strategus/analysis/${studyId}`,
+      { headers }
+    );
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to get analysis for study ${studyId}: ${response.status} ${response.statusText}`
       );
     }
 

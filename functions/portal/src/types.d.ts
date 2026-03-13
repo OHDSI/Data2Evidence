@@ -61,7 +61,7 @@ export interface IDatasetDto {
   databaseCode: string;
   schemaName: string;
   vocabSchemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
   dataModel: string;
   paConfigId: string;
   detail: IDatasetDetailBaseDto;
@@ -76,6 +76,8 @@ export interface IDatasetSnapshotDto {
   sourceDatasetId: string;
   newDatasetName: string;
   schemaName: string;
+  vocabSchemaName?: string;
+  resultsSchemaName?: string;
   timestamp: Date;
   type: string;
   flowParameters?: DatasetFlowParameters | null;
@@ -131,7 +133,7 @@ export interface IDatasetDetailMetadataUpdateDto {
   paConfigId: string;
   fhir_project_id?: string;
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
 }
 
 export interface IDatasetMetadataUpdateDto {

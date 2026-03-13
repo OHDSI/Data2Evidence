@@ -43,7 +43,6 @@ export interface Plugins {
   requiredRoles?: string[];
   featureFlag?: string;
   menus?: string[];
-  datasetTypes?: string[];
 }
 
 export interface PluginDropdown {
@@ -76,12 +75,12 @@ export interface IPluginItem {
   notes?: string;
   notesI18nKey?: keyof LanguageMappings;
   children?: IPluginItem[];
-  datasetTypes?: string[];
 }
 
 export interface IPlugin {
   researcher: IPluginItem[];
   systemadmin: IPluginItem[];
+  etl: IPluginItem[];
   setup: IPluginItem[];
 }
 
@@ -154,6 +153,7 @@ export interface ConfigItem {
 export enum PORTAL_TYPE {
   RESEARCHER = "researcher",
   SYSTEM_ADMIN = "system_admin",
+  ETL = "etl",
 }
 
 export type PortalType = `${PORTAL_TYPE}`;

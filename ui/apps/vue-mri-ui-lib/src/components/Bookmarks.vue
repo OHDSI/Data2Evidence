@@ -13,11 +13,12 @@
           <div class="div-bookmark-dialog">
             <span>{{ getText('MRI_PA_BOOKMARK_RENAME_DIALOG_TEXT') }}</span>
             <div class="input-container">
+              <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
               <input
                 class="form-control"
                 v-focus
                 required
-                maxlength="255"
+                :maxlength="this.maxLength + 1"
                 v-model="renamedBookmark"
                 @keydown.enter="confirmRenameBookmark"
               />
@@ -48,6 +49,7 @@
       messageType="warning"
       dim="true"
       dialogWidth="400px"
+      :busy="isDeletingBookmark"
       v-if="showDeleteDialog"
       @close="closeDeleteBookmark"
     >
@@ -62,8 +64,17 @@
       </template>
       <template v-slot:footer>
         <div class="flex-spacer"></div>
-        <appButton :click="confirmDeleteBookmark" :text="getText('MRI_PA_BUTTON_DELETE')" v-focus></appButton>
-        <appButton :click="closeDeleteBookmark" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
+        <appButton
+          :click="confirmDeleteBookmark"
+          :text="getText('MRI_PA_BUTTON_DELETE')"
+          :disabled="isDeletingBookmark"
+          v-focus
+        ></appButton>
+        <appButton
+          :click="closeDeleteBookmark"
+          :text="getText('MRI_PA_BUTTON_CANCEL')"
+          :disabled="isDeletingBookmark"
+        ></appButton>
       </template>
     </messageBox>
 
@@ -145,6 +156,7 @@
             :bookmarksDisplay="bookmarksDisplay"
             :compareCohortsSelectionList="aSelBookmarkList"
             :useQueryFilterForAtlas="usePaAtlas"
+            :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
             @onSelectBookmark="onSelectBookmark"
             @renameBookmark="renameBookmark"
             @deleteBookmark="deleteBookmark"
@@ -232,10 +244,10 @@ export default {
       viewName: '',
       showRenameDialog: false,
       showDeleteDialog: false,
+      isDeletingBookmark: false,
       showSharedBookmarks: false,
       showCopyExtensionDialog: false,
       aSelBookmarkList: [],
-      initBookmarkId: this.initBookmarkId,
       showCohortCompareDialog: false,
       showCohortListDialog: false,
       showAddCohortDialog: false,
@@ -273,6 +285,7 @@ export default {
       'getDisplayBookmarks',
       'getSelectedDataset',
       'getBookmarksLoading',
+      'getCanDatasetMaterializeCohorts',
     ]),
     enableAtlasCohortDefinition() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.atlasCohortDefinition
@@ -282,6 +295,9 @@ export default {
     },
     usePaAtlas() {
       return this.enableAtlasCohortDefinition && this.getMriFrontendConfig?._internalConfig?.panelOptions?.usePaAtlas
+    },
+    canDatasetMaterializeCohorts() {
+      return this.getCanDatasetMaterializeCohorts;
     },
     bookmarksDisplay() {
       return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
@@ -296,7 +312,7 @@ export default {
       return this.aSelBookmarkList.length > 1
     },
     hasExceededLength() {
-      return this.renamedBookmark.length == this.maxLength
+      return this.renamedBookmark.length > this.maxLength
     },
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
@@ -453,15 +469,19 @@ export default {
       this.showAddCohortDialog = true
     },
     closeDeleteBookmark() {
+      if (this.isDeletingBookmark) return
       this.showDeleteDialog = false
     },
     deleteBookmark(bookmarkDisplay) {
       if (bookmarkDisplay) {
+        this.isDeletingBookmark = false
         this.selectedBookmark = bookmarkDisplay
         this.showDeleteDialog = true
       }
     },
     async confirmDeleteBookmark() {
+      if (this.isDeletingBookmark) return
+      this.isDeletingBookmark = true
       const activeBookmark = this.getActiveBookmark
       const bookmarkDisplay = this.selectedBookmark
       const isMaterializedCohort = getBookmarkType(bookmarkDisplay) === 'M'
@@ -486,13 +506,15 @@ export default {
         }
 
         await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-        this.closeDeleteBookmark()
+        this.showDeleteDialog = false
         if (!isMaterializedCohort && activeBookmark && activeBookmark.bookmarkname === bookmarkDisplay.bookmark.name) {
           this[types.SET_ACTIVE_BOOKMARK](null)
           this.reset()
         }
       } catch (error) {
         console.error('Error deleting bookmark:', error)
+      } finally {
+        this.isDeletingBookmark = false
       }
     },
     onChangeShared({ target }: { target: HTMLInputElement }) {

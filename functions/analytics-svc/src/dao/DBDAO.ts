@@ -6,8 +6,17 @@ import {
     SnapshotColumnMetadata,
     SnapshotSchemaMetadata,
 } from "../utils/DBSvcTypes";
+import { ANALYTICS_DB_DIALECTS } from "../types";
 
 const logger = CreateLogger("analytics-log");
+
+type MetadataColumnResult = {
+    COLUMN_NAME: string;
+    TABLE_NAME: string;
+    IS_NULLABLE: string;
+    IS_PRIMARY_KEY: string;
+    IS_FOREIGN_KEY: string;
+};
 
 export class DBDAO {
     public connection: ConnectionInterface;
@@ -16,10 +25,15 @@ export class DBDAO {
         this.connection = conn;
     }
 
-    public getCDMVersion = async (schemaName: string): Promise<string> => {
+    public getCDMVersion = async (databaseCode: string, schemaName: string, dialect: string): Promise<string> => {
+        let sqlQuery;
+        if (dialect === ANALYTICS_DB_DIALECTS.HANA)
+            sqlQuery = `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`;
+        else
+            sqlQuery = `SELECT CDM_VERSION FROM ${databaseCode}.${schemaName}.CDM_SOURCE`;
         return new Promise((resolve, reject) => {
             this.connection.executeQuery(
-                `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`,
+                sqlQuery,
                 [],
                 (err: any, result: string) => {
                     if (err) {
@@ -33,10 +47,25 @@ export class DBDAO {
         });
     };
 
-    private _clearTrexPgCache = async (): Promise<boolean> => {
+    private _clearTrexSchemaCache = async (
+        dialect: string
+    ): Promise<boolean> => {
         return new Promise((resolve, reject) => {
             if (this.connection.constructor.name === "TrexConnection") {
-                const sql = "CALL pg_clear_cache();";
+                let sql;
+                switch (dialect) {
+                    case ANALYTICS_DB_DIALECTS.POSTGRES:
+                    case "postgres":
+                        sql = "CALL pg_clear_cache();";
+                        break;
+                    case ANALYTICS_DB_DIALECTS.BIGQUERY:
+                        sql = "CALL bigquery_clear_cache();";
+                        break;
+                    default:
+                        // do nothing
+                        resolve(true);
+                }
+
                 this.connection.executeQuery(
                     sql,
                     [],
@@ -45,28 +74,24 @@ export class DBDAO {
                             logger.info(err);
                             return reject(err);
                         } else {
-                            if (result.length > 0) {
-                                resolve(true);
-                            } else {
-                                resolve(true);
-                            }
+                            resolve(true);
                         }
                     }
                 );
             } else {
                 // do nothing
+                resolve(true);
             }
         });
     };
 
     public checkIfSchemaExists = async (
         databaseName: string,
-        schemaName: string
+        schemaName: string,
+        dialect: string
     ): Promise<boolean> => {
-        // TODO: Remove this._clearTrexPgCache(). Currently this hotfix works for postgres but not bigquery
-        // https://github.com/OHDSI/Data2Evidence/issues/1149
         // This is currently required as __srcdb connections in trex sql is not aware of schemas created after its ATTACH
-        await this._clearTrexPgCache();
+        await this._clearTrexSchemaCache(dialect);
         return new Promise((resolve, reject) => {
             let sql, sqlParams;
             if (this.connection.constructor.name === "TrexConnection") {
@@ -117,24 +142,13 @@ export class DBDAO {
                     databaseName,
                     schemaName
                 );
-                let snapshotSchemaMetadata = <SnapshotSchemaMetadata>{
-                    schemaName,
-                    schemaTablesMetadata: [],
-                };
 
-                await Promise.all(
-                    tables.map(async (table) => {
-                        let tableMetadata =
-                            await this.getSnapshotSchemaTableMetadata(
-                                databaseName,
-                                schemaName,
-                                table
-                            );
-                        snapshotSchemaMetadata.schemaTablesMetadata.push(
-                            tableMetadata
-                        );
-                    })
-                );
+                const snapshotSchemaMetadata =
+                    await this.getSnapshotSchemaTableMetadata(
+                        databaseName,
+                        schemaName,
+                        tables
+                    );
                 resolve(snapshotSchemaMetadata);
             } catch (err) {
                 reject(err);
@@ -190,11 +204,24 @@ export class DBDAO {
     private getSnapshotSchemaTableMetadata = (
         databaseName: string,
         schemaName: string,
-        table: string
+        tables: string[]
     ) => {
-        return new Promise<SnapshotTableMetadata>((resolve, reject) => {
+        return new Promise<SnapshotSchemaMetadata>((resolve, reject) => {
+            let snapshotSchemaMetadata = <SnapshotSchemaMetadata>{
+                schemaName,
+                schemaTablesMetadata: [],
+            };
+
+            // Return early
+            if (tables.length === 0) {
+                resolve(snapshotSchemaMetadata);
+            }
+
             let sql, sqlParams;
             if (this.connection.constructor.name === "TrexConnection") {
+                const placeholders = tables
+                    .map((_, index) => `$${index + 3}`)
+                    .join(", ");
                 sql = `
                     SELECT
                         c.table_schema as "SCHEMA_NAME",
@@ -234,67 +261,82 @@ export class DBDAO {
                     where
                         c.table_catalog = $1
                         and c.table_schema = $2
-                        and c.table_name = $3
+                        and c.table_name IN (${placeholders})
                 `;
                 // Use direct_connection_suffix instead of databaseName as snapshot metadata like NOT NULL, PKEY, FKEY is missing in cache.
                 // Therefore querying the direct database for this information is required
                 sqlParams = [
                     { value: `${databaseName}__srcdb` },
                     { value: schemaName },
-                    { value: table },
+                    ...tables.map((table) => ({ value: table })),
                 ];
             } else {
-                sql = `SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON (tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON (tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME) WHERE tc.SCHEMA_NAME = ? AND tc.TABLE_NAME = ?;`;
-                sqlParams = [{ value: schemaName }, { value: table }];
+                const placeholders = tables
+                    .map((_, index) => `$${index + 2}`)
+                    .join(", ");
+                sql = `SELECT tc.SCHEMA_NAME, tc.TABLE_NAME, tc.COLUMN_NAME, tc.IS_NULLABLE, c.IS_PRIMARY_KEY, rc.COLUMN_NAME AS IS_FOREIGN_KEY FROM SYS.TABLE_COLUMNS AS tc LEFT JOIN SYS."CONSTRAINTS" AS c ON (tc.TABLE_NAME=c.TABLE_NAME AND tc.SCHEMA_NAME=c.SCHEMA_NAME AND tc.COLUMN_NAME=c.COLUMN_NAME) LEFT JOIN SYS."REFERENTIAL_CONSTRAINTS" AS rc ON (tc.TABLE_NAME=rc.TABLE_NAME AND tc.SCHEMA_NAME=rc.SCHEMA_NAME AND tc.COLUMN_NAME=rc.COLUMN_NAME) WHERE tc.SCHEMA_NAME = ? AND tc.TABLE_NAME IN (${placeholders});`;
+                sqlParams = [
+                    { value: schemaName },
+                    ...tables.map((table) => ({ value: table })),
+                ];
             }
             this.connection.executeQuery(
                 sql,
                 sqlParams,
-                (err: any, result: any) => {
+                (err: any, result: MetadataColumnResult[]) => {
                     if (err) {
                         reject(err);
                     } else {
                         logger.info(
-                            `Retrieved schema snapshot table metadata for Table: ${table} in Schema: ${schemaName}`
+                            `Retrieved schema snapshot table metadata for Tables: ${tables} in Schema: ${schemaName}`
                         );
-                        let tableMetadata = <SnapshotTableMetadata>{
-                            tableName: table,
-                            tableColumnsMetadata: [],
-                        };
-                        result.forEach(
-                            (elem: {
-                                TABLE_NAME: string;
-                                IS_NULLABLE: string;
-                                IS_PRIMARY_KEY: string;
-                                IS_FOREIGN_KEY: string;
-                            }) => {
-                                // Construct column metadata type object
-                                let columnMetaData = <SnapshotColumnMetadata>{};
-                                columnMetaData.columnName = elem["COLUMN_NAME"];
-                                columnMetaData.isNullable =
-                                    elem["IS_NULLABLE"] === "TRUE"
-                                        ? true
-                                        : false;
-                                // If there is a value in primary key, column is a primary key
-                                columnMetaData.isPrimaryKey =
-                                    elem["IS_PRIMARY_KEY"] === "NoValue"
-                                        ? false
-                                        : true;
-                                // If there is a value in foreign key, column is a foreign key
-                                columnMetaData.isForeignKey =
-                                    elem["IS_FOREIGN_KEY"] === "NoValue"
-                                        ? false
-                                        : true;
+                        const groupedResult = Object.groupBy(
+                            result,
+                            ({ TABLE_NAME }) => TABLE_NAME
+                        );
+                        Object.entries(groupedResult).forEach(
+                            ([tableName, columnMetadatas]: [
+                                string,
+                                MetadataColumnResult[]
+                            ]) => {
+                                const snapshotTableMetadata: SnapshotTableMetadata =
+                                    {
+                                        tableName,
+                                        tableColumnsMetadata:
+                                            columnMetadatas.map((e) =>
+                                                this.parseSnapshotColumnMetadata(
+                                                    e
+                                                )
+                                            ),
+                                    };
 
-                                tableMetadata.tableColumnsMetadata.push(
-                                    columnMetaData
+                                snapshotSchemaMetadata.schemaTablesMetadata.push(
+                                    snapshotTableMetadata
                                 );
                             }
                         );
-                        resolve(tableMetadata);
+                        resolve(snapshotSchemaMetadata);
                     }
                 }
             );
         });
+    };
+
+    private parseSnapshotColumnMetadata = (
+        elem: MetadataColumnResult
+    ): SnapshotColumnMetadata => {
+        // Construct column metadata type object
+        let columnMetaData = <SnapshotColumnMetadata>{};
+        columnMetaData.columnName = elem["COLUMN_NAME"];
+        columnMetaData.isNullable =
+            elem["IS_NULLABLE"] === "TRUE" ? true : false;
+        // If there is a value in primary key, column is a primary key
+        columnMetaData.isPrimaryKey =
+            elem["IS_PRIMARY_KEY"] === "NoValue" ? false : true;
+        // If there is a value in foreign key, column is a foreign key
+        columnMetaData.isForeignKey =
+            elem["IS_FOREIGN_KEY"] === "NoValue" ? false : true;
+
+        return columnMetaData;
     };
 }

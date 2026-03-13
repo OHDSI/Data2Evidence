@@ -133,25 +133,11 @@ const mapDcResultKeysToUppercase = (data: unknown[]) => {
     });
 };
 
-// Resolve schema for data characterization depending on USE_CACHEDB and USE_TREX_DB_CONN database flags
-const resolveDcSchemaName = (schemaName: string) => {
-    // USE_TREX_DB_CONN takes precedence over USE_CACHEDB
-    if (env.USE_TREX_DB_CONN === "true") {
-        return schemaName;
-    } else if (env.USE_CACHEDB === "true") {
-        // If using cachedb for connection, database connection has to point to direct_db_conn to access dc results
-        return `direct_db_conn.${schemaName}`;
-    } else {
-        // Else no change to results schema
-        return schemaName;
-    }
-};
-
 const resolveDcConnection = async (
     req: IMRIRequest,
     vocabSchema: string
 ): Promise<Connection.ConnectionInterface> => {
-    if (env.USE_TREX_DB_CONN === "false" && env.USE_CACHEDB === "true") {
+    if (env.USE_TREX_DB_CONN === "false") {
         const { studyAnalyticsCredential } = req.dbCredentials;
         const analyticsConnection =
             await dbConnectionUtil.DBConnectionUtil.getDBConnection({
@@ -183,9 +169,10 @@ export async function getDataCharacterizationResult(
             analyticsConnection
         );
 
+        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resolveDcSchemaName(resultsSchema),
-            vocab_database_schema: vocabSchema,
+            results_database_schema: resultsSchema,
+            vocab_database_schema: vocabDatabaseSchemaValue,
         };
         logger.info(
             `Getting Data Characterization Results for schema ${resultsSchema} with sourceKey: ${sourceKey}`
@@ -247,9 +234,10 @@ export async function getDataCharacterizationDrilldownResult(
             analyticsConnection
         );
 
+        const vocabDatabaseSchemaValue = env.USE_TREX_DB_CONN === "false" ? vocabSchema : `${databaseName}.${vocabSchema}`;
         const dcReplacementConfig: DcReplacementConfig = {
-            results_database_schema: resolveDcSchemaName(resultsSchema),
-            vocab_database_schema: vocabSchema,
+            results_database_schema: resultsSchema,
+            vocab_database_schema: vocabDatabaseSchemaValue,
             conceptId: conceptId,
         };
         logger.info(

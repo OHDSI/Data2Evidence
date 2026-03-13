@@ -122,7 +122,7 @@ paths:
       parameters:
         - name: chartType
           in: path
-          description: Can be barchart, boxplot, kaplanmeier, genometable or patientcount
+          description: Can be barchart, boxplot, kaplanmeier, genometable, patientcount or inclusionreport
           required: true
           type: string
         - name: dataFormat
@@ -628,6 +628,28 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
+  /cohort/can-materialize-cohort:
+      x-swagger-router-controller: cohort
+      get:
+        description: Checks if the resultsSchema based on the datasetId is compatible for cohorts to be materialized
+        operationId: checkIfSchemaCanMaterializeCohort
+        produces:
+          - application/json
+        parameters:
+          - name: datasetId
+            in: query
+            description: Id of dataset
+            required: true
+            type: string
+        responses:
+          "200":
+            description: success
+            schema: 
+              type: boolean
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/Error"
   /cohort/{filterColumn}/{filterValue}:
     x-swagger-router-controller: cohort
     get:

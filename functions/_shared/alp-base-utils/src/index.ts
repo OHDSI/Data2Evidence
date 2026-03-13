@@ -5,8 +5,6 @@ import * as Connection from "./Connection";
 import * as NodeHDBConnection from "./NodeHDBConnection";
 import * as PostgresConnection from "./PostgresConnection";
 import * as DBConnectionUtil from "./DBConnectionUtil";
-import * as CachedbDBConnectionUtil from "./cachedb/CachedbDBConnectionUtil";
-import * as CachedbNodeHDBConnection from "./cachedb/CachedbNodeHDBConnection";
 import * as DBError from "./DBError";
 import * as SecurityUtils from "./SecurityUtils";
 import { Constants } from "./Constants";
@@ -25,8 +23,6 @@ export {
   NodeHDBConnection,
   PostgresConnection,
   DBConnectionUtil,
-  CachedbDBConnectionUtil,
-  CachedbNodeHDBConnection,
   DBError,
   SecurityUtils,
   User,
@@ -64,8 +60,6 @@ import {
   deleteObjectByPath,
   replaceObjectByPath,
   arrayBufferEquals,
-  getCachedbDatabaseFormatProtocolA,
-  getCachedbDatabaseFormatProtocolB,
   validateIdentifierForSchemaOrTableName
 } from "./utils";
 
@@ -94,7 +88,5 @@ export {
   deleteObjectByPath,
   replaceObjectByPath,
   arrayBufferEquals,
-  getCachedbDatabaseFormatProtocolA,
-  getCachedbDatabaseFormatProtocolB,
   validateIdentifierForSchemaOrTableName
 };

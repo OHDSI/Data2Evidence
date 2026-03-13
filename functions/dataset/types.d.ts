@@ -1,7 +1,6 @@
 type RoleTypeOf<T, ADMIN_ROLE_TYPE> = {
   ALP_USER_ADMIN: ADMIN_ROLE_TYPE
   ALP_SYSTEM_ADMIN: ADMIN_ROLE_TYPE
-  ALP_NIFI_ADMIN: ADMIN_ROLE_TYPE
   ALP_DASHBOARD_VIEWER: ADMIN_ROLE_TYPE
   ALP_ADMIN: ADMIN_ROLE_TYPE
   ALP_OWNER: ADMIN_ROLE_TYPE
@@ -30,7 +29,6 @@ export interface RoleMap {
   alp_role_tenant_viewer: string[] // list of tenant ids
   alp_role_user_admin: boolean // alp user admin
   alp_role_system_admin: boolean // alp system admin
-  alp_role_nifi_admin: boolean // alp nifi admin
   alp_role_alp_dashboard_viewer: boolean // alp dashboard viewer
 }
 
@@ -93,10 +91,12 @@ export interface DatasetDashboard {
 }
 
 export interface Dataset {
+  type?: string
   dialect: string
   databaseCode: string
   schemaName: string
-  resultSchemaName: string
+  resultsSchemaName: string
   dashboards: DatasetDashboard[]
   vocabSchemaName: string
+  tokenStudyCode: string
 }

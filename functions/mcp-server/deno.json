@@ -10,6 +10,7 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
+    "./setup.ts": "./setup.ts",
     "express": "npm:express@^4.19.2",
     "axios": "npm:axios@^1.7.9",
     "./src/routes/routes": "./src/routes/routes.ts",
@@ -24,9 +25,11 @@
     "./src/types/tool-schemas": "./src/types/tool-schemas.ts",
     "./src/utils/request-helpers": "./src/utils/request-helpers.ts",
     "./src/utils/phenotype-helpers": "./src/utils/phenotype-helpers.ts",
+    "./src/utils/embedding-helpers": "./src/utils/embedding-helpers.ts",
     "./src/config/server.config": "./src/config/server.config.ts",
     "./src/tools/strategus.tools": "./src/tools/strategus.tools.ts",
     "./src/utils/strategus_helpers": "./src/utils/strategus_helpers.ts",
+    "./src/resources/cohort.resources": "./src/resources/cohort.resources.ts",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk",
     "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
     "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",

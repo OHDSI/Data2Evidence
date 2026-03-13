@@ -36,9 +36,9 @@ export interface D2ECohortDefinition {
 export interface PhenotypeData {
   cohortId: string;
   cohortName: string;
-  cohortNameFormatted: string;
-  cohortNameLong: string;
-  logicDescription: string;
+  // cohortNameFormatted: string;  // Removed but can be added back if needed
+  // cohortNameLong: string;
+  // logicDescription: string;
 }
 
 /**
@@ -47,7 +47,6 @@ export interface PhenotypeData {
 export interface CreateCohortDefinitionRequest {
   expression: any;
   cohortInfo: string;
-  userName: string;
 }
 
 /**
@@ -60,7 +59,6 @@ export interface UpdateCohortDefinitionRequest {
   createdBy: string | null;
   createdDate: number | null;
   expression: any;
-  userName: string;
 }
 
 /**
@@ -91,14 +89,13 @@ export const CreateCohortDefinitionInput = {
   cohortDefinitionExpression: z
     .any()
     .describe(
-      "The validated ATLAS cohort definition JSON including concept sets and expression"
+      "The validated ATLAS cohort definition JSON including concept sets and expression",
     ),
   cohortInfo: z.string().describe("The cohort description"),
-  userName: z.string().describe("User name creating the cohort"),
   isValidCohortDefinition: z
     .boolean()
     .describe(
-      "Must be true. Set after validating with validate_atlas_cohort_definition tool"
+      "Must be true. Set after validating with validate_atlas_cohort_definition tool",
     )
     .default(false),
 };
@@ -107,9 +104,8 @@ export const UpdateCohortDefinitionInput = {
   cohortDefinitionExpression: z
     .any()
     .describe(
-      "The validated ATLAS cohort definition JSON including concept sets and expression"
+      "The validated ATLAS cohort definition JSON including concept sets and expression",
     ),
-  userName: z.string().describe("User name updating the cohort"),
   isValidCohortDefinition: z
     .boolean()
     .describe("Set after validating with validate_atlas_cohort_definition tool")
@@ -124,7 +120,27 @@ export const DeleteCohortDefinitionInput = {
 
 // ==================== Phenotype Library Tool Schemas ====================
 
-export const SearchPhenotypeLibraryInput = {};
+export const SearchPhenotypeLibraryInput = {
+  searchTerm: z
+    .string()
+    .describe(
+      "The phenotype name or medical condition to search for (e.g., 'lung cancer', 'diabetes'). Extract the medical condition from the user's query. Leave empty only to return all phenotypes.",
+    ),
+  useSemanticSearch: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe(
+      "If true, use embedding-based semantic search (finds conceptually similar phenotypes). If false, use simple substring matching. Default: true.",
+    ),
+  topK: z
+    .number()
+    .optional()
+    .default(5)
+    .describe(
+      "Number of top results to return for semantic search. Default: 5.",
+    ),
+};
 
 export const FetchTemplatesInput = {
   phenotypeId: z
@@ -141,7 +157,7 @@ export const ValidateCohortDefinitionInput = {
   cohortDefinitionExpression: z
     .any()
     .describe(
-      "Atlas cohort definition in json to be validated, include concept sets and expression"
+      "Atlas cohort definition in json to be validated, include concept sets and expression",
     ),
   userName: z.string().describe("User name creating/updating the cohort"),
 };

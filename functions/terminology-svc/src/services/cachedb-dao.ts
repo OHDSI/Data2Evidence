@@ -7,7 +7,6 @@ import {
   IConceptRecommended,
   IConceptAncestor,
   IConcept,
-  DatasetDialects,
   IConceptHierarchy,
 } from "../types.ts";
 import { env } from "../env.ts";
@@ -15,37 +14,28 @@ import { getGTEEmbedding } from "../utils/helperUtil.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
 
 export class CachedbDAO {
-  private readonly jwt: string;
-  private readonly datasetId: string;
   private readonly vocabSchemaName: string;
   private readonly semanticRatio: number;
   private readonly databaseCode: string;
   private readonly schemaName: string;
-  private readonly resultSchemaName: string;
+  private readonly resultsSchemaName: string;
   private readonly fts_concept_identifier: string;
 
   constructor(
-    jwt: string,
-    datasetId: string,
     vocabSchemaName: string,
     semanticRatio: number,
     databaseCode: string,
     schemaName: string,
-    resultSchemaName: string
+    resultsSchemaName: string
   ) {
-    this.jwt = jwt;
-    this.datasetId = datasetId;
     this.vocabSchemaName = vocabSchemaName;
     this.semanticRatio = semanticRatio;
     this.databaseCode = databaseCode;
     this.schemaName = schemaName;
-    this.resultSchemaName = resultSchemaName;
+    this.resultsSchemaName = resultsSchemaName;
     this.fts_concept_identifier = env.USE_TREX_DB_CONN
       ? `fts_${vocabSchemaName}_concept`
       : `${vocabSchemaName}.fts_main_concept`;
-    if (!jwt) {
-      throw new Error("No token passed for CachedbDAO!");
-    }
   }
 
   async getConcepts(
@@ -54,7 +44,7 @@ export class CachedbDAO {
     searchText = "",
     filters: Filters
   ) {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const textEmbedding =
         this.semanticRatio > 0
@@ -98,7 +88,7 @@ export class CachedbDAO {
   }
 
   async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const textEmbedding =
         this.semanticRatio > 0
@@ -133,7 +123,7 @@ export class CachedbDAO {
         totalHits: 0,
       };
     }
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const searchTextWhereClause =
         searchTexts.reduce((accumulator, _searchText, index: number) => {
@@ -174,7 +164,7 @@ export class CachedbDAO {
     searchText: string,
     filters: Filters
   ): Promise<any> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       // Get the base query with filters applied once
       const textEmbedding =
@@ -540,7 +530,7 @@ export class CachedbDAO {
     }[];
     totalHits: number;
   }> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const sql = `
       select *
@@ -579,7 +569,7 @@ export class CachedbDAO {
         totalHits: 0,
       };
     }
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const placeholders = relationshipIds
         .map((_, index) => `$${index + 1}`)
@@ -607,7 +597,7 @@ export class CachedbDAO {
     conceptName: string | number,
     conceptColumnName: "concept_name" | "concept_id" | "concept_code"
   ): Promise<any> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const sql = `
         select concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason from ${this.vocabSchemaName}.concept WHERE ${conceptColumnName}=? AND standard_concept='S';
@@ -624,10 +614,10 @@ export class CachedbDAO {
   async getExactConceptRecommended(
     searchConceptIds: number[]
   ): Promise<IConceptRecommended[]> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id from ${
@@ -649,9 +639,9 @@ export class CachedbDAO {
   async getExactConceptDescendants(
     searchConceptIds: number[]
   ): Promise<IConceptAncestor[]> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-    // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+    // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
     // https://github.com/OHDSI/Data2Evidence/issues/1057
     try {
       const sql = `
@@ -675,10 +665,10 @@ export class CachedbDAO {
     searchConceptIds: number[],
     conceptRelationshipType: "Maps to"
   ): Promise<IConceptRelationship[]> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/OHDSI/Data2Evidence/issues/1057
       const sql = `
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
@@ -700,7 +690,7 @@ export class CachedbDAO {
   async getHierarchyDescendants(
     searchConceptId: number
   ): Promise<IConceptHierarchy[]> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       const sql = `
         select
@@ -733,7 +723,7 @@ export class CachedbDAO {
     searchConceptId: number,
     maxDepth: number
   ): Promise<IConceptHierarchy[]> {
-    const client = this.getDuckdbConnection();
+    const client = this.getTrexConnection();
     try {
       // Recursive SQL statement taken with reference from OHDSI Athena
       // src/main/java/com/odysseusinc/athena/repositories/v5/ConceptAncestorRelationV5Repository.java
@@ -782,49 +772,24 @@ export class CachedbDAO {
     }
   }
 
-  private getDuckdbConnection = () => {
-    if (env.USE_TREX_DB_CONN) {
-      return this.getTrexDuckdbConnection();
-    } else {
-      return this.getCachedbConnection();
-    }
-  };
-
-  private getCachedbConnection = () => {
-    try {
-      const client = new pg.Client({
-        host: env.CACHEDB__HOST,
-        port: env.CACHEDB__PORT,
-        user: this.jwt,
-        database: `A|${DatasetDialects.DUCKDB}|read|${this.datasetId}`,
-        connectionTimeoutMillis: 30000,
-      });
-      client.connect();
-      return client;
-    } catch (err) {
-      console.error("Error getting cachedb connection, ", err);
-      throw err;
-    }
-  };
-
-  private getTrexDuckdbConnection = () => {
-    return new TrexDuckdbConnection(
+  private getTrexConnection = () => {
+    return new TrexConnection(
       this.databaseCode,
       this.schemaName,
       this.vocabSchemaName,
-      this.resultSchemaName
+      this.resultsSchemaName
     );
   };
 }
 
-class TrexDuckdbConnection {
+class TrexConnection {
   private readonly conn: any;
 
   constructor(
     databaseCode: string,
     schemaName: string,
     vocabSchemaName: string,
-    resultSchemaName: string
+    resultsSchemaName: string
   ) {
     try {
       const dbm = Trex.databaseManager();
@@ -832,7 +797,7 @@ class TrexDuckdbConnection {
         databaseCode,
         schemaName,
         vocabSchemaName,
-        resultSchemaName,
+        resultsSchemaName,
         {
           duckdb: (e: unknown) => e,
         } // Dummy function which returns itself, originally used for translation function
@@ -845,7 +810,10 @@ class TrexDuckdbConnection {
     }
   }
 
-  async query(sql: string, params: any[] = []): Promise<any> {
+  async query<R extends any = any, I = any>(
+    sql: string,
+    params: any[] = []
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       this.conn.execute(
         sql,

@@ -42,14 +42,14 @@ interface TerminologyListProps {
   onConceptClick: (conceptId: number | null) => void;
   selectedConceptId: number | null;
   onSelectConceptId?: (
-    conceptData: FhirValueSetExpansionContainsWithExt
+    conceptData: FhirValueSetExpansionContainsWithExt,
   ) => void;
   initialInput: string;
   selectedConcepts: FhirValueSetExpansionContainsWithExt[];
   tab: TabName;
   toggleDescendantsAndMapped?: (
     conceptId: number,
-    type: "DESCENDANTS" | "MAPPED" | "EXCLUDE"
+    type: "DESCENDANTS" | "MAPPED" | "EXCLUDE",
   ) => void;
   showAddIcon: boolean;
   conceptsResult: TerminologyResult | null;
@@ -82,7 +82,6 @@ const mapFilterOptions = (options: {
   });
 };
 
-let apiCounter = 0;
 const TerminologyList: FC<TerminologyListProps> = ({
   userId,
   onConceptClick,
@@ -108,7 +107,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const [terminologiesCount, setTerminologiesCount] = useState(0);
   const [searchText, setSearchText] = useState(initialInput);
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(
-    null
+    null,
   );
   const [allFilterOptionsZeroed, setAllFilterOptionsZeroed] =
     useState<FilterOptions>({
@@ -126,6 +125,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
   const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
+  const fetchDataAbortControllerRef = useRef<AbortController | null>(null);
+  const selectedConceptsRef = useRef(selectedConcepts);
+  selectedConceptsRef.current = selectedConcepts;
 
   const listData = useMemo(() => {
     const fullListData =
@@ -185,192 +187,226 @@ const TerminologyList: FC<TerminologyListProps> = ({
     setPage(0);
   }, []);
 
-  const fetchData = useCallback(
-    async (counter: number) => {
-      if (userId && datasetId) {
-        try {
-          setIsLoading(true);
-          const terminologyAPI = new Terminology();
-          const conceptClassIdFilters = (columnFilters.find(
-            (filter) => filter.id === "conceptClassId"
-          )?.value || []) as string[];
-          const domainIdFilters = (columnFilters.find(
-            (filter) => filter.id === "domainId"
-          )?.value || []) as string[];
-          const vocabularyIdFilters = (columnFilters.find(
-            (filter) => filter.id === "vocabularyId"
-          )?.value || []) as string[];
-          const conceptFilters = (columnFilters.find(
-            (filter) => filter.id === "concept"
-          )?.value || []) as string[];
-          const standardConceptFilters = conceptFilters.map((concept) =>
-            concept === "Standard" ? "S" : "Non-standard"
-          );
-          const validityFilters = (columnFilters.find(
-            (filter) => filter.id === "validity"
-          )?.value || []) as string[];
-          if (
-            tab === "SEARCH" &&
-            Array.isArray(conceptClassIdFilters) &&
-            Array.isArray(domainIdFilters) &&
-            Array.isArray(vocabularyIdFilters) &&
-            Array.isArray(standardConceptFilters)
-          ) {
-            let concepts, conceptsCount;
-            if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
-              [concepts, conceptsCount] =
-                await api.publicWebapiProxyAPI.getTerminologies(
-                  page,
-                  rowsPerPage,
-                  getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE as string,
-                  searchText.toLowerCase(),
-                  conceptClassIdFilters,
-                  domainIdFilters,
-                  vocabularyIdFilters,
-                  standardConceptFilters,
-                  validityFilters
-                );
-            } else {
-              [concepts, conceptsCount] = await Promise.all([
-                api.d2eWebapi.getTerminologies(
-                  page,
-                  rowsPerPage,
-                  datasetId,
-                  searchText.toLowerCase(),
-                  conceptClassIdFilters,
-                  domainIdFilters,
-                  vocabularyIdFilters,
-                  standardConceptFilters,
-                  validityFilters
-                ),
-                api.terminology.getConceptsCount(
-                  datasetId,
-                  searchText.toLowerCase(),
-                  conceptClassIdFilters,
-                  domainIdFilters,
-                  vocabularyIdFilters,
-                  standardConceptFilters,
-                  validityFilters
-                ),
-              ]);
-            }
-            // Get concept record counts (only for non-Atlas mode)
-            let mappedConcepts;
-            if (!isAtlas) {
-              const conceptRecordCounts =
-                await api.d2eWebapi.getConceptRecordCounts(
-                  datasetId,
-                  concepts.map((e) => e.CONCEPT_ID)
-                );
-              mappedConcepts = combinedConceptAndConceptRecordCounts(
-                concepts.map(mapd2eWebapiConcept),
-                conceptRecordCounts
-              );
-            } else {
-              mappedConcepts = concepts.map(mapd2eWebapiConcept);
-            }
+  const fetchData = useCallback(async () => {
+    // Abort any in-flight request and set up new abort controller
+    if (fetchDataAbortControllerRef.current) {
+      fetchDataAbortControllerRef.current.abort();
+    }
 
-            const response = {
-              count: conceptsCount,
-              data: mappedConcepts,
-            };
-            response.data.map((data: any) => {
-              data["conceptCode"] = data["code"] as string;
-              data["conceptName"] = data["display"] as string;
-              data["vocabularyId"] = data["system"] as string;
-            });
-            if (counter === apiCounter) {
-              setConceptsResult(response);
-            }
-            // Used to initialize the filter options for the first time
-            if (!filterOptions) {
-              // Using .then so that the filter options which take longer to load are not blocking the data update
-              // Also placed after the concept search as putting it concurrent seems to make the concept search slow
-              terminologyAPI
-                .getFilterOptions(
-                  datasetId,
-                  searchText.toLowerCase(),
-                  conceptClassIdFilters,
-                  domainIdFilters,
-                  vocabularyIdFilters,
-                  standardConceptFilters
-                )
-                .then((filterOptions) => {
-                  const combinedFilterOptions: FilterOptions = {
-                    conceptClassId: {
-                      ...allFilterOptionsZeroed.conceptClassId,
-                      ...filterOptions.conceptClassId,
-                    },
-                    domainId: {
-                      ...allFilterOptionsZeroed.domainId,
-                      ...filterOptions.domainId,
-                    },
-                    vocabularyId: {
-                      ...allFilterOptionsZeroed.vocabularyId,
-                      ...filterOptions.vocabularyId,
-                    },
-                    standardConcept: {
-                      ...allFilterOptionsZeroed.standardConcept,
-                      ...filterOptions.standardConcept,
-                    },
-                    concept: {
-                      ...allFilterOptionsZeroed.concept,
-                      ...filterOptions.concept,
-                    },
-                    validity: {
-                      ...allFilterOptionsZeroed.validity,
-                      ...filterOptions.validity,
-                    },
-                  };
-                  setFilterOptions(combinedFilterOptions);
-                });
-            }
-          } else {
-            const response = await terminologyAPI.getRecommendedConcepts(
-              selectedConcepts.map(
-                (selectedConcept) => selectedConcept.conceptId
-              ),
-              datasetId
+    const controller = new AbortController();
+    fetchDataAbortControllerRef.current = controller;
+
+    if (!userId || !datasetId) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const terminologyAPI = new Terminology();
+
+      // Extract filter values from column filters
+      const conceptClassIdFilters = (columnFilters.find(
+        (filter) => filter.id === "conceptClassId",
+      )?.value || []) as string[];
+      const domainIdFilters = (columnFilters.find(
+        (filter) => filter.id === "domainId",
+      )?.value || []) as string[];
+      const vocabularyIdFilters = (columnFilters.find(
+        (filter) => filter.id === "vocabularyId",
+      )?.value || []) as string[];
+      const conceptFilters = (columnFilters.find(
+        (filter) => filter.id === "concept",
+      )?.value || []) as string[];
+      const standardConceptFilters = conceptFilters.map((concept) =>
+        concept === "Standard" ? "S" : "Non-standard",
+      );
+      const validityFilters = (columnFilters.find(
+        (filter) => filter.id === "validity",
+      )?.value || []) as string[];
+
+      // Fetch data based on current tab
+      if (
+        tab === "SEARCH" &&
+        Array.isArray(conceptClassIdFilters) &&
+        Array.isArray(domainIdFilters) &&
+        Array.isArray(vocabularyIdFilters) &&
+        Array.isArray(standardConceptFilters)
+      ) {
+        // SEARCH tab - fetch terminologies from API
+        let concepts, conceptsCount;
+        if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
+          [concepts, conceptsCount] =
+            await api.publicWebapiProxyAPI.getTerminologies(
+              page,
+              rowsPerPage,
+              getPortalAPI()?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE as string,
+              searchText.toLowerCase(),
+              conceptClassIdFilters,
+              domainIdFilters,
+              vocabularyIdFilters,
+              standardConceptFilters,
+              validityFilters,
+              controller.signal,
             );
-            if (counter === apiCounter) {
-              setConceptsResult({ count: response.length, data: response });
-            }
-          }
-        } catch (e) {
-          console.error(e);
-          setFeedback({
-            type: "error",
-            message: getText(i18nKeys.TERMINOLOGY_LIST__ERROR),
-            description: getText(i18nKeys.TERMINOLOGY_LIST__ERROR_DESCRIPTION),
-          });
-        } finally {
-          if (counter === apiCounter) {
-            setIsLoading(false);
-          }
+        } else {
+          [concepts, conceptsCount] = await Promise.all([
+            api.d2eWebapi.getTerminologies(
+              page,
+              rowsPerPage,
+              datasetId,
+              searchText.toLowerCase(),
+              conceptClassIdFilters,
+              domainIdFilters,
+              vocabularyIdFilters,
+              standardConceptFilters,
+              validityFilters,
+              controller.signal,
+            ),
+            api.terminology.getConceptsCount(
+              datasetId,
+              searchText.toLowerCase(),
+              conceptClassIdFilters,
+              domainIdFilters,
+              vocabularyIdFilters,
+              standardConceptFilters,
+              validityFilters,
+              controller.signal,
+            ),
+          ]);
         }
+
+        // Transform concepts and fetch record counts (non-Atlas only)
+        let mappedConcepts;
+        if (!isAtlas) {
+          const conceptRecordCounts =
+            await api.d2eWebapi.getConceptRecordCounts(
+              datasetId,
+              concepts.map((e) => e.CONCEPT_ID),
+              controller.signal,
+            );
+          mappedConcepts = combinedConceptAndConceptRecordCounts(
+            concepts.map(mapd2eWebapiConcept),
+            conceptRecordCounts,
+          );
+        } else {
+          mappedConcepts = concepts.map(mapd2eWebapiConcept);
+        }
+
+        // Build response and normalize field names
+        const response = {
+          count: conceptsCount,
+          data: mappedConcepts,
+        };
+        response.data.map((data: any) => {
+          data["conceptCode"] = data["code"] as string;
+          data["conceptName"] = data["display"] as string;
+          data["vocabularyId"] = data["system"] as string;
+        });
+
+        setConceptsResult(response);
+
+        // Initialize filter options on first load (non-blocking)
+        if (!filterOptions) {
+          terminologyAPI
+            .getFilterOptions(
+              datasetId,
+              searchText.toLowerCase(),
+              conceptClassIdFilters,
+              domainIdFilters,
+              vocabularyIdFilters,
+              standardConceptFilters,
+              controller.signal,
+            )
+            .then((filterOptions) => {
+              const combinedFilterOptions: FilterOptions = {
+                conceptClassId: {
+                  ...allFilterOptionsZeroed.conceptClassId,
+                  ...filterOptions.conceptClassId,
+                },
+                domainId: {
+                  ...allFilterOptionsZeroed.domainId,
+                  ...filterOptions.domainId,
+                },
+                vocabularyId: {
+                  ...allFilterOptionsZeroed.vocabularyId,
+                  ...filterOptions.vocabularyId,
+                },
+                standardConcept: {
+                  ...allFilterOptionsZeroed.standardConcept,
+                  ...filterOptions.standardConcept,
+                },
+                concept: {
+                  ...allFilterOptionsZeroed.concept,
+                  ...filterOptions.concept,
+                },
+                validity: {
+                  ...allFilterOptionsZeroed.validity,
+                  ...filterOptions.validity,
+                },
+              };
+              setFilterOptions(combinedFilterOptions);
+            })
+            .catch((e) => {
+              if (e?.message === "canceled" || e === "canceled") {
+                return;
+              }
+              console.error("Failed to fetch filter options", e);
+            });
+        }
+      } else {
+        // RECOMMENDED tab - fetch recommended concepts
+        const response = await terminologyAPI.getRecommendedConcepts(
+          selectedConceptsRef.current.map(
+            (selectedConcept) => selectedConcept.conceptId,
+          ),
+          datasetId,
+          controller.signal,
+        );
+
+        setConceptsResult({ count: response.length, data: response });
       }
-    },
-    [
-      searchText,
-      page,
-      rowsPerPage,
-      setFeedback,
-      userId,
-      tab,
-      datasetId,
-      selectedConcepts,
-      JSON.stringify(columnFilters),
-      allFilterOptionsZeroed,
-      getText,
-      isAtlas,
-    ]
-  );
+    } catch (e) {
+      if (e?.message === "canceled" || e === "canceled") {
+        return;
+      }
+      console.error(e);
+      setConceptsResult(null);
+      setFeedback({
+        type: "error",
+        message: getText(i18nKeys.TERMINOLOGY_LIST__ERROR),
+        description: getText(i18nKeys.TERMINOLOGY_LIST__ERROR_DESCRIPTION),
+      });
+    } finally {
+      if (fetchDataAbortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
+    }
+  }, [
+    searchText,
+    page,
+    rowsPerPage,
+    setFeedback,
+    userId,
+    tab,
+    datasetId,
+    JSON.stringify(columnFilters),
+    allFilterOptionsZeroed,
+    getText,
+    isAtlas,
+  ]);
+
+  // clean up abort controller on unmount
+  useEffect(() => {
+    return () => {
+      fetchDataAbortControllerRef.current?.abort();
+    };
+  }, []);
 
   const onClickAddRemoveButton = useCallback(
     (terminology: FhirValueSetExpansionContainsWithExt) => {
       onSelectConceptId?.(terminology);
     },
-    [onSelectConceptId]
+    [onSelectConceptId],
   );
 
   useEffect(() => {
@@ -380,27 +416,68 @@ const TerminologyList: FC<TerminologyListProps> = ({
   }, [columnFilters.length, defaultFilters]);
 
   useEffect(() => {
-    if (useDefaultFilters && defaultFilters) {
+    if (useDefaultFilters && defaultFilters && filterOptions) {
       // Trust defaultFilters from parent component (PA-Atlas)
       // Apply them immediately without waiting for filterOptions to load
+      // Validate default filters against loaded filter options to prevent empty pills
       const filters = JSON.parse(
-        JSON.stringify(defaultFilters)
+        JSON.stringify(defaultFilters),
       ) as typeof defaultFilters;
 
-      // Only keep filters with non-empty values
-      const validFilters = filters.filter((f) => f.value.length > 0);
+      // Filter out values that don't exist in filterOptions
+      const validFilters = filters
+        .map((filter) => {
+          const availableOptions =
+            filterOptions[filter.id as keyof FilterOptions];
+          if (!availableOptions) return filter;
 
+          // Only keep values that exist in the filter options (case-insensitive match)
+          const validValues = filter.value
+            .map((val) => {
+              // Find matching key in availableOptions (case-insensitive)
+              const matchingKey = Object.keys(availableOptions).find(
+                (key) => key.toLowerCase() === val.toLowerCase(),
+              );
+              // Return the properly capitalized value from availableOptions
+              return matchingKey;
+            })
+            .filter((val): val is string => val !== undefined);
+
+          return { ...filter, value: validValues };
+        })
+        .filter((f) => f.value.length > 0);
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, useDefaultFilters]);
+  }, [defaultFilters, useDefaultFilters, filterOptions]);
 
+  // Reset page to 0 when search criteria change
+  useEffect(() => {
+    if (tab !== tabNames.SELECTED) {
+      setPage(0);
+    }
+  }, [searchText, tab, JSON.stringify(columnFilters), userId]);
+
+  // Fetch data when search criteria change
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
       return;
     }
-    setPage(0);
-    fetchData(++apiCounter);
-  }, [setFeedback, userId, searchText, tab, JSON.stringify(columnFilters)]);
+    fetchData();
+  }, [
+    fetchData,
+    userId,
+    searchText,
+    tab,
+    JSON.stringify(columnFilters),
+    isAtlas,
+  ]);
+
+  // Fetch data when pagination changes (only for non-Atlas SEARCH tab)
+  useEffect(() => {
+    if (tab === "SEARCH" && !isAtlas) {
+      fetchData();
+    }
+  }, [page, rowsPerPage, isAtlas, tab, fetchData]);
 
   useEffect(() => {
     if (conceptsResult) {
@@ -416,15 +493,6 @@ const TerminologyList: FC<TerminologyListProps> = ({
       setTerminologiesCount(0);
     }
   }, [conceptsResult, isAtlas, tab]);
-
-  useEffect(() => {
-    // For PA-Atlas, don't fetch on page/rowsPerPage changes (client-side pagination)
-    // For regular app, fetch new data when pagination changes in SEARCH tab
-    if (tab === "SEARCH" && !isAtlas) {
-      fetchData(++apiCounter);
-      return;
-    }
-  }, [page, rowsPerPage, isAtlas, tab, fetchData]);
 
   useEffect(() => {
     if (tab === tabNames.SELECTED) {
@@ -452,7 +520,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
         [],
         [],
         [],
-        []
+        [],
       );
       const filterOptionsZeroed = JSON.parse(JSON.stringify(filterOptions));
       for (const filterKey of [
@@ -475,7 +543,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     (_: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
       setPage(page);
     },
-    []
+    [],
   );
 
   const handleChangeRowsPerPage = useCallback(
@@ -483,7 +551,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
       setRowsPerPage(Number(event.target.value) || 25);
       setPage(0);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -622,7 +690,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "descendantRecordCount",
                 header: getText(
-                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT
+                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT,
                 ),
                 grow: true,
                 size: 50,
@@ -644,7 +712,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "descendantPersonCount",
                 header: getText(
-                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT
+                  i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT,
                 ),
                 grow: true,
                 size: 50,
@@ -662,7 +730,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
           const terminology =
             row.original as FhirValueSetExpansionContainsWithExt;
           const isSelected = selectedConcepts.find(
-            (concept) => concept.conceptId === terminology.conceptId
+            (concept) => concept.conceptId === terminology.conceptId,
           );
           return (
             <div
@@ -715,7 +783,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
                       onClick={() =>
                         toggleDescendantsAndMapped?.(
                           terminology.conceptId,
-                          "DESCENDANTS"
+                          "DESCENDANTS",
                         )
                       }
                       sx={{ padding: 0 }}
@@ -748,7 +816,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
                       onClick={() =>
                         toggleDescendantsAndMapped?.(
                           terminology.conceptId,
-                          "MAPPED"
+                          "MAPPED",
                         )
                       }
                       sx={{ padding: 0 }}
@@ -781,7 +849,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
                       onClick={() =>
                         toggleDescendantsAndMapped?.(
                           terminology.conceptId,
-                          "EXCLUDE"
+                          "EXCLUDE",
                         )
                       }
                       sx={{ padding: 0 }}
@@ -922,11 +990,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
           page={page}
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-            onConceptClick(null);
             handleChangeRowsPerPage(event);
           }}
           onPageChange={(event, page) => {
-            onConceptClick(null);
             handleChangePage(event, page);
           }}
           ActionsComponent={TablePaginationActions}

@@ -46,7 +46,8 @@ export const publicURLs = [
     '^/callback$',
     '^/prefect/docs$',
     '^/openapi.json$',
-    '^/fhir-server/healthcheck$'
+    '^/fhir-server/healthcheck$',
+    '^/gateway/api/dataset/shiny-live/.*$'
   ]
 
   export const authz_publicURLs = publicURLs.concat([
@@ -64,6 +65,7 @@ export const env = {
     LOGTO_SCOPE: _env.LOGTO__SCOPE,
     APP_LOCALE: _env.APP_LOCALE,
     IDP_RELYING_PARTY: _env.IDP__RELYING_PARTY,
+    IDP_REQUIRED_CLAIM: _env.IDP__REQUIRED_CLAIM,
     DB_CREDENTIALS_PUBLIC_KEYS: _env.DB_CREDENTIALS__PUBLIC_KEYS,
     GATEWAY_IDP_AUTH_TYPE: _env.GATEWAY__IDP_AUTH_TYPE,
     LOGTO_ISSUER: _env.LOGTO__ISSUER,
@@ -87,7 +89,7 @@ export const env = {
     PREFECT_POOL: "docker-pool",
     PROJECT_NAME: _env.PROJECT_NAME,
     SERVICE_ENV: _env.SERVICE_ENV ? JSON.parse(_env.SERVICE_ENV) : {},
-    CADDY__ALP__PUBLIC_FQDN: _env.CADDY__ALP__PUBLIC_FQDN || 'localhost',
+    CADDY__ALP__PUBLIC_FQDN: _env.CADDY__D2E__PUBLIC_FQDN || 'localhost',
     PREFECT_HEALTH_CHECK: `${_env.PREFECT_API_URL}/health`,
   
     PG__DB_NAME: _env.PG__DB_NAME,
@@ -122,4 +124,7 @@ export const env = {
     INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
     D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
     D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
+
+    CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1',
+    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1'
 }

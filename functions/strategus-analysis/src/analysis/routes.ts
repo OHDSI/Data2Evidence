@@ -11,7 +11,7 @@ export default class StrategusAnalysisRouter {
 
   private registerRoutes() {
     this.router.post("/", this.createStrategusAnalysis.bind(this));
-    this.router.put("/", this.createStrategusAnalysis.bind(this));
+    this.router.put("/", this.updateStrategusAnalysis.bind(this));
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
     this.router.get("/", this.getAllStrategusAnalysis.bind(this));
     this.router.post("/code", this.saveStudyAnalysisViewerCode.bind(this));
@@ -19,6 +19,14 @@ export default class StrategusAnalysisRouter {
 
   private async getAllStrategusAnalysis(req: Request, res: Response) {
     try {
+      const { datasetId } = req.query;
+      if (datasetId && typeof datasetId === "string") {
+        const analysis = await this.strategusAnalysisService.getAnalysisByDatasetId(datasetId);
+        if (!analysis) {
+          return res.status(404).json({ message: "Analysis not found for this dataset" });
+        }
+        return res.status(200).json(analysis);
+      }
       const analysisList = await this.strategusAnalysisService.getAllAnalysis();
       res.status(200).json(analysisList);
     } catch (error) {
@@ -54,19 +62,54 @@ export default class StrategusAnalysisRouter {
     }
   }
 
-  private async createStrategusAnalysis(req: Request, res: Response) {
+  // endpoint is used by JobPlugins whenever user runs/executes a strategus analysis from the portal; it creates/updates the analysis specification in the database
+  private async updateStrategusAnalysis(req: Request, res: Response) {
     try {
-      const { studyId, analysisSpec, mode, notebookName } = req.body;
+      const { studyId, analysisSpec } = req.body;
       const token = req.headers["authorization"];
       if (!studyId || !analysisSpec) {
         return res.status(400).json({
-          message: "Missing required fields: studyId, or analysisSpec",
+          message: "Missing required fields: studyId or analysisSpec",
         });
       }
 
       const result = await this.strategusAnalysisService.createAnalysisSpec(
         token,
         studyId,
+        "", // tokenStudyCode is not needed for update
+        "", // tenantId is not needed for update
+        "", // notebookName is not needed for update
+        analysisSpec,
+        "" // mode is not needed for update
+      );
+
+      res.status(200).json({
+        message: result.message,
+        analysisId: result.analysisId,
+      });
+    } catch (error) {
+      console.error("Error updating strategus analysis specification:", error);
+      res.status(500).json({
+        message: `An error occurred while updating the analysis specification: ${error.message}`,
+      });
+    }
+  }
+
+  private async createStrategusAnalysis(req: Request, res: Response) {
+    try {
+      const { studyId, tokenStudyCode, tenantId, analysisSpec, mode, notebookName } = req.body;
+      const token = req.headers["authorization"];
+      if (!studyId || !tokenStudyCode || !tenantId || !analysisSpec) {
+        return res.status(400).json({
+          message: "Missing required fields: studyId, tokenStudyCode, tenantId, or analysisSpec",
+        });
+      }
+
+      const result = await this.strategusAnalysisService.createAnalysisSpec(
+        token,
+        studyId,
+        tokenStudyCode,
+        tenantId,
         notebookName,
         analysisSpec,
         mode

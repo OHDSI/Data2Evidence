@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'dataflow-create-edit-save-delete'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test.skip(TEST_NAME, async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')

@@ -215,6 +215,7 @@ export const MaterializedCohortSchema = z.object({
   cohortDefinitionName: z.string(),
   createdOn: z.union([z.number(), z.string()]),
   description: z.string(),
+  syntax: z.string().optional(),
 });
 export type IMaterializedCohort = z.infer<typeof MaterializedCohortSchema>;
 
@@ -246,7 +247,7 @@ export interface IDataset {
   id: string;
   dialect: string;
   schemaName: string;
-  resultSchemaName: string;
+  resultsSchemaName: string;
   vocabSchemaName: string;
   dataModel: string;
   plugin: string;

@@ -50,6 +50,7 @@ const OidcAppInternal: FC = () => {
 };
 
 const idpRelyingParty = env.REACT_APP_IDP_RELYING_PARTY;
+const idpRequiredClaim = env.REACT_APP_IDP_REQUIRED_CLAIM;
 const TOKEN_EVENTS = ["token_aquired", "token_renewed"];
 
 export const OidcApp: FC = () => {
@@ -58,10 +59,10 @@ export const OidcApp: FC = () => {
 
   const handleOidcEvent = useCallback(
     async (_configuration: string, name: string, _data: any) => {
-      if (TOKEN_EVENTS.includes(name) && idpRelyingParty === "azure") {
+      if (TOKEN_EVENTS.includes(name) && idpRelyingParty === "azure" && idpRequiredClaim) {
         try {
           const decoded = await getOidcTokenPayload();
-          if (decoded && !("thirdPartyToken" in decoded)) {
+          if (decoded && !(idpRequiredClaim in decoded)) {
             setFeedback({
               type: "error",
               message: getText(i18nKeys.OIDC_TOKEN__THIRD_PARTY_TOKEN_MISSING),

@@ -1,0 +1,87 @@
+.manage-viewer-dialog {
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 25px;
+
+    &__content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    &__selection {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+    }
+  }
+
+  &__loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+
+  &__content {
+    min-height: 200px;
+    margin: 10px 25px;
+    overflow: auto;
+    scrollbar-color: #c7c7c7 transparent;
+
+    .u-padding-vertical--small {
+      padding-right: 20px;
+    }
+  }
+
+  &__action-icon {
+    font-size: 20px;
+  }
+
+  &__loading-icon {
+    color: inherit;
+  }
+
+  &__queries {
+    margin: 10px 25px;
+    max-height: 200px;
+    overflow: auto;
+
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    &__entry {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+    }
+  }
+
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}
+
+.manage-dashboard-dialog {
+  @extend .manage-viewer-dialog;
+}
+
+.manage-strategus-result-viewer-dialog {
+  @extend .manage-viewer-dialog;
+}

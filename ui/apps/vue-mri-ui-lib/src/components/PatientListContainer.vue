@@ -5,17 +5,17 @@
     </template>
     <template v-else>
       <menuButton
-        :parentContainer="this.$refs.patientlistContainer"
-        :placeholder="this.getText('MRI_PA_PATIENT_LIST_EDIT_COLUMNS')"
-        :menuData="this.getColumnSelectionMenu"
-        @clickItem="this.addColumn"
+        :parentContainer="$refs.patientlistContainer"
+        :placeholder="getText('MRI_PA_PATIENT_LIST_EDIT_COLUMNS')"
+        :menuData="getColumnSelectionMenu"
+        @clickItem="addColumn"
       ></menuButton>
       <div style="height: 14px"></div>
       <div class="patientlist-control-wrapper" style="height: 90%; overflow: auto">
         <patientListControl
-          :columns="this.getSelectedAttributes"
-          :rows="this.chartData.data"
-          :rowCount="this.chartData.totalPatientCount"
+          :columns="getSelectedAttributes"
+          :rows="chartData.data"
+          :rowCount="chartData.totalPatientCount"
           :currentPage="currentPage"
           @addColumn="addColumn"
           @removeColumn="removeColumn"
@@ -23,15 +23,15 @@
           @refreshColumnMenu="populateColumnMenu"
           @fireRequest="setFireRequest"
           @goPage="goPage"
-          :pageSize="this.pageSize"
+          :pageSize="pageSize"
           :showLeftPane="showLeftPane"
         ></patientListControl>
       </div>
       <div>
         <pager
           :currentPage="currentPage"
-          :rowCount="this.chartData.totalPatientCount"
-          :pageSize="this.pageSize"
+          :rowCount="chartData.totalPatientCount"
+          :pageSize="pageSize"
           @goPage="goPage"
         ></pager>
       </div>
@@ -57,6 +57,7 @@ export default {
       errorMessage: '',
       chartData: {
         data: [],
+        totalPatientCount: 0,
       },
     }
   },
@@ -65,6 +66,10 @@ export default {
       this.setFireRequest()
     },
     getFireRequest() {
+      // Skip if fire requests are being held (during batch updates like applying required filters)
+      if (this.isFireRequestHeld) {
+        return
+      }
       if (Object.keys(this.getSelectedAttributes).length === 0) {
         return (this.errorMessage = this.getText('MRI_PA_PATIENT_LIT_NO_COLUMNS_SELECTED_MESSAGE'))
       }
@@ -142,6 +147,7 @@ export default {
       'getZipFireDownload',
       'getText',
       'getFireRequest',
+      'isFireRequestHeld',
       'getPLRequest',
       'getPLRequestZIP',
       'getPLModel',

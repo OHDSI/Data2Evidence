@@ -1,0 +1,11 @@
+.etl__container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  overflow-y: auto;
+
+  main {
+    flex: auto;
+  }
+}

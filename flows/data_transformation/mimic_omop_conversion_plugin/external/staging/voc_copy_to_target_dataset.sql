@@ -10,43 +10,43 @@
 -- affected by custom mapping
 
 DROP TABLE IF EXISTS mimic_etl.voc_concept;
-CREATE TABLE mimic_etl.voc_concept AS
-SELECT * FROM mimic_staging.concept
-;
+CREATE TABLE mimic_etl.voc_concept AS SELECT * FROM mimic_staging.concept;
+DROP TABLE mimic_staging.concept;
 
 DROP TABLE IF EXISTS mimic_etl.voc_concept_relationship;
-CREATE TABLE mimic_etl.voc_concept_relationship AS
-SELECT * FROM mimic_staging.concept_relationship
-;
+CREATE TABLE mimic_etl.voc_concept_relationship AS SELECT * FROM mimic_staging.concept_relationship;
+DROP TABLE mimic_staging.concept_relationship;
 
 DROP TABLE IF EXISTS mimic_etl.voc_vocabulary;
-CREATE TABLE mimic_etl.voc_vocabulary AS
-SELECT * FROM mimic_staging.vocabulary
-;
+CREATE TABLE mimic_etl.voc_vocabulary AS SELECT * FROM mimic_staging.vocabulary;
+DROP TABLE mimic_staging.vocabulary;
 
 -- not affected by custom mapping
 
 DROP TABLE IF EXISTS mimic_etl.voc_domain;
-CREATE TABLE mimic_etl.voc_domain AS
-SELECT * FROM mimic_staging.domain
-;
+CREATE TABLE mimic_etl.voc_domain AS SELECT * FROM mimic_staging.domain;
+DROP TABLE mimic_staging.domain;
+
 DROP TABLE IF EXISTS mimic_etl.voc_concept_class;
-CREATE TABLE mimic_etl.voc_concept_class AS
-SELECT * FROM mimic_staging.concept_class
-;
+CREATE TABLE mimic_etl.voc_concept_class AS SELECT * FROM mimic_staging.concept_class;
+DROP TABLE mimic_staging.concept_class;
+
 DROP TABLE IF EXISTS mimic_etl.voc_relationship;
-CREATE TABLE mimic_etl.voc_relationship AS
-SELECT * FROM mimic_staging.relationship
-;
+CREATE TABLE mimic_etl.voc_relationship AS SELECT * FROM mimic_staging.relationship;
+DROP TABLE mimic_staging.relationship;
+
+-- concept_synonym is ~3M rows; flush to disk after copying to limit memory pressure.
 DROP TABLE IF EXISTS mimic_etl.voc_concept_synonym;
-CREATE TABLE mimic_etl.voc_concept_synonym AS
-SELECT * FROM mimic_staging.concept_synonym
-;
+CREATE TABLE mimic_etl.voc_concept_synonym AS SELECT * FROM mimic_staging.concept_synonym;
+DROP TABLE mimic_staging.concept_synonym;
+CHECKPOINT;
+
+-- concept_ancestor is ~50M rows; flush to disk after copying.
 DROP TABLE IF EXISTS mimic_etl.voc_concept_ancestor;
-CREATE TABLE mimic_etl.voc_concept_ancestor AS
-SELECT * FROM mimic_staging.concept_ancestor
-;
+CREATE TABLE mimic_etl.voc_concept_ancestor AS SELECT * FROM mimic_staging.concept_ancestor;
+DROP TABLE mimic_staging.concept_ancestor;
+CHECKPOINT;
+
 DROP TABLE IF EXISTS mimic_etl.voc_drug_strength;
-CREATE TABLE mimic_etl.voc_drug_strength AS
-SELECT * FROM mimic_staging.drug_strength
-;
+CREATE TABLE mimic_etl.voc_drug_strength AS SELECT * FROM mimic_staging.drug_strength;
+DROP TABLE mimic_staging.drug_strength;

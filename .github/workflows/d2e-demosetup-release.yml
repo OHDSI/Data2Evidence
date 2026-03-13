@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        default: 0.10.0
+        default: 0.13.0
         description: Enter version to use
         required: true
         type: string
@@ -44,7 +44,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          d2e init 
+          init_choice=y d2e init 
 
       - name: Pull docker images
         if: success() || failure()

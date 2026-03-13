@@ -1,5 +1,5 @@
 import type { Knex } from '../types'
-import { Container ,  Service } from 'typedi'
+import { Container, Service } from 'typedi'
 import { v4 as uuidv4 } from 'uuid'
 import { CONTAINER_KEY, ROLES } from '../const'
 import { UserGroup } from '../entities'
@@ -34,14 +34,14 @@ export class UserGroupService {
       alpRoleMap: {
         ALP_USER_ADMIN: alpInfo.alp_role_user_admin,
         ALP_SYSTEM_ADMIN: alpInfo.alp_role_system_admin,
-        ALP_NIFI_ADMIN: alpInfo.alp_role_nifi_admin,
         ALP_DASHBOARD_VIEWER: alpInfo.alp_role_dashboard_viewer,
         TENANT_ADMIN: alpInfo.alp_role_tenant_admin,
         TENANT_VIEWER: alpInfo.alp_role_tenant_viewer,
         STUDY_MANAGER: alpInfo.alp_role_study_mgr,
         STUDY_RESEARCHER: alpInfo.alp_role_study_researcher,
         STUDY_WRITE_DQD_RESEARCHER: alpInfo.alp_role_study_write_dqd_researcher,
-        STUDY_RESULTS_READ_RESEARCHER: alpInfo.alp_role_study_results_read_researcher
+        STUDY_RESULTS_READ_RESEARCHER: alpInfo.alp_role_study_results_read_researcher,
+        ETL_MAPPING_CONTRIBUTOR: alpInfo.alp_role_etl_mapping_contributor
       },
       ...alpInfo
     }
@@ -191,15 +191,15 @@ export class UserGroupService {
       alp_tenant_id: tenantIds,
       alp_role_user_admin: groups.some(group => group.role === ROLES.ALP_USER_ADMIN),
       alp_role_system_admin: groups.some(group => group.role === ROLES.ALP_SYSTEM_ADMIN),
-      alp_role_nifi_admin: groups.some(group => group.role === ROLES.ALP_NIFI_ADMIN),
       alp_role_dashboard_viewer: groups.some(group => group.role === ROLES.ALP_DASHBOARD_VIEWER),
       alp_role_study_write_dqd_researcher: groups.some(group => group.role === ROLES.STUDY_WRITE_DQD_RESEARCHER),
       alp_role_study_results_read_researcher: groups.some(group => group.role === ROLES.STUDY_RESULTS_READ_RESEARCHER),
+      alp_role_etl_mapping_contributor: groups.some(group => group.role === ROLES.ETL_MAPPING_CONTRIBUTOR),
       alp_role_tenant_admin: fn(ROLES.TENANT_ADMIN, 'tenantId'),
       alp_role_tenant_viewer: fn(ROLES.TENANT_VIEWER, 'tenantId'),
       alp_role_study_admin: fn(ROLES.STUDY_ADMIN, 'studyId'),
       alp_role_study_mgr: fn(ROLES.STUDY_MANAGER, 'studyId'),
-      alp_role_study_researcher: fn(ROLES.STUDY_RESEARCHER, 'studyId'),
+      alp_role_study_researcher: fn(ROLES.STUDY_RESEARCHER, 'studyId')
     }
 
     return roleMap

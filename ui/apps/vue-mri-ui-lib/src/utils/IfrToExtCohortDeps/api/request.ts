@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from 'axios'
 import { getPortalAPI } from '@/utils/PortalUtils'
 
 const portalAPI = getPortalAPI()
-const BASE_URL = portalAPI?.qeSvcUrl || process.env.VUE_APP_API_BASE_URL || 'http://localhost:3000'
+const BASE_URL = portalAPI?.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 const client = axios.create({ baseURL: BASE_URL })
 
@@ -15,6 +15,29 @@ client.interceptors.request.use(
     return config
   },
   error => {
+    return Promise.reject(error)
+  }
+)
+
+// Retry logic for ERR_NETWORK_CHANGED errors (Docker container restarts during e2e tests)
+client.interceptors.response.use(
+  response => response,
+  async error => {
+    const config = error.config
+    if (!config) return Promise.reject(error)
+
+    const isNetworkChanged = error.code === 'ERR_NETWORK' || error.message?.includes('ERR_NETWORK_CHANGED')
+
+    if (isNetworkChanged) {
+      config.__retryCount = config.__retryCount || 0
+      if (config.__retryCount < 3) {
+        config.__retryCount += 1
+        console.warn(`[MRI Cohort API] ERR_NETWORK_CHANGED, retrying in 10s (attempt ${config.__retryCount}/3)...`)
+        await new Promise(resolve => setTimeout(resolve, 10000))
+        return client.request(config)
+      }
+    }
+
     return Promise.reject(error)
   }
 )
@@ -45,4 +68,3 @@ const request = <T = any>(options: AxiosRequestConfig): Promise<T> => {
 }
 
 export default request
-

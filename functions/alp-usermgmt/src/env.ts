@@ -20,7 +20,6 @@ export const env = {
   PG_MAX_POOL: Number(Deno.env.get("PG__MAX_POOL")) || 10,
   PG_DEBUG: Boolean(Number(Deno.env.get("PG_DEBUG"))) || false,
   PG__IDLE_TIMEOUT_IN_MS: Number(Deno.env.get("PG__IDLE_TIMEOUT_IN_MS")) || 30000,
-  NIFI_MGMT_BASE_URL: Deno.env.get("NIFI_MGMT__BASE_URL"),
   ALP_SYSTEM_NAME: Deno.env.get("ALP__SYSTEM_NAME"),
   APP_TENANT_ID: Deno.env.get("APP__TENANT_ID"),
   IDP_BASE_URL: Deno.env.get("IDP__BASE_URL"),

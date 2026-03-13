@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
 } from "@danet/core";
@@ -69,6 +70,8 @@ export class SupabaseStorageClient {
       this.initializeDb();
       this.createBucket(this.DEFAULT_BUCKET);
       this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
+      this.createBucket("strategus-results");
+      this.createBucket("portal-datasets-graphs", true);
     }
   }
 
@@ -93,7 +96,7 @@ export class SupabaseStorageClient {
     }
   }
 
-  private async createBucket(bucketName: string) {
+  private async createBucket(bucketName: string, isPublic = false) {
     try {
       console.info(`Creating bucket ${bucketName}...`);
 
@@ -108,7 +111,7 @@ export class SupabaseStorageClient {
         },
         body: JSON.stringify({
           name: bucketName,
-          public: false,
+          public: isPublic,
         }),
       });
 
@@ -407,5 +410,276 @@ export class SupabaseStorageClient {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+  }
+
+  async uploadDirect(bucket: string, path: string, file: UploadFile) {
+    try {
+      console.log(`Uploading file directly: ${path} to bucket: ${bucket}`);
+
+      const url = `${this.baseUrl}/object/${bucket}/${path}`;
+      console.log(`Making request to: ${url}`);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": file.mimetype || "application/octet-stream",
+          "Cache-Control": "3600",
+          "x-upsert": "true",
+        },
+        body: file.buffer,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `Error uploading file: ${response.status} - ${errorText}`
+        );
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
+      }
+
+      console.info(`File successfully uploaded to ${path}`);
+      return {
+        status: "success",
+        filePath: path,
+        bucket: bucket,
+      };
+    } catch (e) {
+      console.error(
+        `Error in uploadDirect method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      console.error(`Failed to upload to path: ${path}`);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async downloadDirect(bucket: string, path: string) {
+    try {
+      console.log(`Downloading file directly: ${path} from bucket: ${bucket}`);
+
+      const url = `${this.baseUrl}/object/${bucket}/${path}`;
+      console.log(`Making request to: ${url}`);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `Error downloading file: ${response.status} - ${errorText}`
+        );
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
+      }
+
+      const body = response.body;
+      if (!body) {
+        throw new Error("Response body is null");
+      }
+
+      console.info(`File successfully downloaded from ${path}`);
+      return {
+        readStream: body,
+        contentType:
+          response.headers.get("content-type") || "application/octet-stream",
+        contentDisposition: response.headers.get("content-disposition") || "",
+      };
+    } catch (e) {
+      console.error(
+        `Error in downloadDirect method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      console.error(`Failed to download from path: ${path}`);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async deleteDirect(bucket: string, path: string) {
+    try {
+      console.log(`Deleting file directly: ${path} from bucket: ${bucket}`);
+
+      const url = `${this.baseUrl}/object/${bucket}/${path}`;
+      console.log(`Making request to: ${url}`);
+
+      const response = await fetch(url, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error deleting file: ${response.status} - ${errorText}`);
+
+        if (
+          response.status === 404 ||
+          errorText.includes("not_found") ||
+          errorText.includes("Object not found")
+        ) {
+          throw new HttpException(404, `File not found: ${path}`);
+        }
+
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
+      }
+
+      console.info(`File successfully deleted from ${path}`);
+      return {
+        status: "success",
+        message: `File ${path} deleted successfully`,
+      };
+    } catch (e) {
+      console.error(
+        `Error in deleteDirect method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      console.error(`Failed to delete from path: ${path}`);
+
+      if (e instanceof HttpException) {
+        throw e;
+      }
+
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async listByPrefix(bucket: string, prefix: string) {
+    let client;
+    try {
+      console.log(`Listing files in bucket: ${bucket} with prefix: ${prefix}`);
+
+      client = await SupabaseStorageClient.pgPool.connect();
+
+      const query = `
+        SELECT
+          name,
+          id,
+          metadata,
+          created_at,
+          updated_at
+        FROM storage.objects
+        WHERE bucket_id = $1 AND name LIKE $2
+        ORDER BY created_at DESC
+      `;
+
+      const result = await client.query(query, [bucket, `${prefix}%`]);
+
+      const files = result.rows.map((row: any) => ({
+        name: row.name,
+        id: row.id,
+        updated_at: row.updated_at,
+        created_at: row.created_at,
+        last_accessed_at: row.last_accessed_at,
+        metadata: row.metadata,
+      }));
+
+      console.info(`Found ${files.length} files with prefix ${prefix}`);
+      return files;
+    } catch (e) {
+      console.error(
+        `Error in listByPrefix method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      console.error(`Failed to list files with prefix: ${prefix}`);
+      throw new InternalServerErrorException();
+    } finally {
+      if (client) {
+        client.release();
+      }
+    }
+  }
+
+  async uploadFolder(
+    bucket: string,
+    basePath: string,
+    files: Array<{ relativePath: string; buffer: ArrayBuffer; mimetype: string }>,
+    parallel: boolean = true,
+    concurrencyLimit: number = 5
+  ): Promise<{ status: string; uploadedFiles: string[]; bucket: string }> {
+    const uploadedFiles: string[] = [];
+
+    const uploadSingleFile = async (file: {
+      relativePath: string;
+      buffer: ArrayBuffer;
+      mimetype: string;
+    }) => {
+      const fullPath = `${basePath}/${file.relativePath}`;
+      console.log(`Uploading file: ${fullPath} to bucket: ${bucket}`);
+
+      const url = `${this.baseUrl}/object/${bucket}/${fullPath}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": file.mimetype || "application/octet-stream",
+          "Cache-Control": "3600",
+          "x-upsert": "true",
+        },
+        body: file.buffer,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error uploading file: ${response.status} - ${errorText}`);
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
+      }
+
+      console.info(`File successfully uploaded to ${fullPath}`);
+      return fullPath;
+    };
+
+    try {
+      if (parallel) {
+        // Parallel uploads with concurrency limit
+        const results: string[] = [];
+        for (let i = 0; i < files.length; i += concurrencyLimit) {
+          const batch = files.slice(i, i + concurrencyLimit);
+          const batchResults = await Promise.all(batch.map(uploadSingleFile));
+          results.push(...batchResults);
+        }
+        uploadedFiles.push(...results);
+      } else {
+        // Sequential uploads
+        for (const file of files) {
+          const result = await uploadSingleFile(file);
+          uploadedFiles.push(result);
+        }
+      }
+
+      console.info(
+        `Successfully uploaded ${uploadedFiles.length} files to ${bucket}/${basePath}`
+      );
+      return {
+        status: "success",
+        uploadedFiles,
+        bucket,
+      };
+    } catch (e) {
+      console.error(
+        `Error in uploadFolder method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      throw new InternalServerErrorException(
+        `Error occurred uploading folder to ${bucket}/${basePath}`
+      );
+    }
   }
 }

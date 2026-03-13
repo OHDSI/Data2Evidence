@@ -122,6 +122,7 @@ def install_r_packages_from_lockfile(lockfile_path):
     with ro.default_converter.context():
         try:
             renv = importr('renv')
+            # install_packages = ro.r['install.packages']
             # R_ENV_LIBRARY_PATH = Variable.get("R_ENV_LIBRARY_PATH")
             R_ENV_LIBRARY_PATH = "/usr/local/lib/R/site-library"
             renv.restore(lockfile=lockfile_path, library = R_ENV_LIBRARY_PATH, prompt=False)
@@ -139,8 +140,8 @@ def is_strategus_execution_successful(logFilePath: str) -> tuple[bool, str]:
     summary_idx = None
     for idx, line in enumerate(lines):
         pattern = re.compile(r"─* execution summary ─*", re.IGNORECASE)
-        if pattern.search(line.lower()):
-            print("Found execution summary line:", line)
+        if pattern.search(line):
+            logger.debug(f"Found execution summary line: {line}")
             summary_idx = idx
             break
     msg = "Strategus execution failed, check log for details."
@@ -153,7 +154,31 @@ def is_strategus_execution_successful(logFilePath: str) -> tuple[bool, str]:
         if pattern.search(line):
             error_found = True
             errorMsg += line.strip() + "\n"
-    return (not error_found, msg if error_found else "")
+    return (not error_found, errorMsg if error_found else "")
+
+def is_strategus_upload_successful(logs: str) -> tuple[bool, str]:
+    logger = Logger()
+    logger.info('Checking strategus upload log for errors...')
+
+    lines = logs.splitlines()
+    summary_idx = None
+    for idx, line in enumerate(lines):
+        pattern = re.compile(r"─* upload summary ─*", re.IGNORECASE)
+        if pattern.search(line):
+            logger.debug(f"Found upload summary line: {line}")
+            summary_idx = idx
+            break
+    msg = "Strategus upload failed, check log for details."
+    if summary_idx is None:
+        return False, msg
+    error_found = False
+    errorMsg = ""
+    pattern = re.compile(r"✖ .*Module", re.UNICODE)
+    for line in lines[summary_idx+1:]:
+        if pattern.search(line):
+            error_found = True
+            errorMsg += line.strip() + "\n"
+    return (not error_found, errorMsg if error_found else "")
 
 def save_strategus_log_file(log_file_path: str):
     logger = Logger()

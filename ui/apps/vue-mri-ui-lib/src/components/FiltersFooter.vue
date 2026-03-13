@@ -88,6 +88,7 @@
                 </div>
                 <div class="row">
                   <div class="col">
+                    <!-- maxLength for input is this.maxLength+1 to allow invalid-feedback to be shown -->
                     <input
                       class="form-control"
                       :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
@@ -96,7 +97,7 @@
                       tabindex="0"
                       v-focus
                       required
-                      maxlength="255"
+                      :maxlength="this.maxLength+1"
                       @keydown.enter="saveBookmark"
                     />
                     <div
@@ -239,7 +240,7 @@ export default {
       return this.getActiveBookmark?.isNew
     },
     hasExceededLength() {
-      return this.cohortName.length == this.maxLength
+      return this.cohortName.length > this.maxLength
     },
     hasExceededMaxFilterCount() {
       const filtercardCount = this.getFilterCardCount({
@@ -287,6 +288,8 @@ export default {
     },
     async saveBookmark() {
       if (this.hasChanges) {
+        if (this.hasExceededLength) return
+
         this.cohortName = this.cohortName.trim()
         const bookmark = this.getBookmarksData
         const activeBookmark = this.getActiveBookmark
@@ -313,31 +316,36 @@ export default {
           }
         }
 
-        if (isNewBookmark || this.isNotUserSharedBookmark) {
-          const params = {
-            cmd: 'insert',
-            bookmarkname: bookmarkName,
-            shareBookmark: this.shareBookmark,
-            bookmark: JSON.stringify(bookmark),
+        try {
+          if (isNewBookmark || this.isNotUserSharedBookmark) {
+            const params = {
+              cmd: 'insert',
+              bookmarkname: bookmarkName,
+              shareBookmark: this.shareBookmark,
+              bookmark: JSON.stringify(bookmark),
+            }
+            await this.fireBookmarkQuery({ params, method: 'post' })
+          } else {
+            const request = {
+              cmd: 'update',
+              bookmark: JSON.stringify(bookmark),
+              shareBookmark: this.shareBookmark,
+            }
+            await this.fireBookmarkQuery({
+              method: 'put',
+              params: request,
+              bookmarkId: activeBookmark.bmkId,
+            })
           }
-          await this.fireBookmarkQuery({ params, method: 'post' })
-        } else {
-          const request = {
-            cmd: 'update',
-            bookmark: JSON.stringify(bookmark),
-            shareBookmark: this.shareBookmark,
-          }
-          await this.fireBookmarkQuery({
-            method: 'put',
-            params: request,
-            bookmarkId: activeBookmark.bmkId,
-          })
+          await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+          const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
+          this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+        } catch (error) {
+          console.error('Error during bookmark save or reload:', error)
+        } finally {
+          this.cohortName = ''
+          this.closeSaveBookmark()
         }
-        await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
-        const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
-        this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
-        this.cohortName = ''
-        this.closeSaveBookmark()
       }
     },
     reset() {

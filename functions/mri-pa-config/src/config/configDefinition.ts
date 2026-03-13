@@ -760,6 +760,11 @@ function _getValidDefinition(cdwConfig) {
           strict: false,
         },
         {
+          name: "inclusionReport",
+          type: "boolean",
+          strict: false,
+        },
+        {
           name: "usePaAtlas",
           type: "boolean",
           strict: false,

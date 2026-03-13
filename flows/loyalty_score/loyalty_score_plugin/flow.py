@@ -27,9 +27,9 @@ def loyalty_score_plugin(options:LoyaltyPluginType):
                 raise ValueError(error_msg)
             
 
-def load_coef_table(conn, coeff_table_name, schema_name):
+def load_coef_table(conn, coeff_table_name, result_schema_name):
     if coeff_table_name:
-        coef = conn.table(database=schema_name, name=coeff_table_name)
+        coef = conn.table(coeff_table_name, database=result_schema_name)
         coef = coef.select(coef).to_pandas()
         coef.set_index('Feature',inplace=True)
     else:         
@@ -46,24 +46,28 @@ def calculate_loyalty_score(options:CalculateConfig):
     lookback_years =  options.lookback_years
     database_code = options.database_code
     schema_name = options.schema_name
+    result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
     index_datetime = datetime.fromisoformat(index_date)
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
+    if not dbdao.check_schema_exists(result_schema_name):
+        logger.info(f"Schema {result_schema_name} does not exist, created")
+        dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, cal_st, cal_ed, database_code, schema_name, use_cache_db)
-        coef, feature = load_coef_table(conn, coeff_table_name, schema_name)
+        coef, feature = load_coef_table(conn, coeff_table_name, result_schema_name)
         data['loyalty_score'] = data[feature].dot(coef.loc[feature]) + coef.loc['Intercept']
         logger.info(f'Loyalty score calculation completed')
-        logger.info(f'The loyalty cohort is stored {schema_name}.{loyalty_cohort_table}')
+        logger.info(f'The loyalty cohort is stored {result_schema_name}.{loyalty_cohort_table}')
 
     with dbdao.engine.connect() as conn:
         data.to_sql(
                 name = loyalty_cohort_table,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
@@ -77,6 +81,7 @@ def retrain_algo(options:RetrainConfig):
     return_years = options.return_years
     database_code = options.database_code
     schema_name = options.schema_name
+    result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
     test_ratio = options.test_ratio
     index_datetime = datetime.fromisoformat(index_date)
@@ -84,6 +89,9 @@ def retrain_algo(options:RetrainConfig):
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=database_code)
+    if not dbdao.check_schema_exists(result_schema_name):
+        logger.info(f"Schema {result_schema_name} does not exist, created")
+        dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
         data = data_prep(conn, train_st, train_ed, database_code, schema_name, use_cache_db)
         feature = list(set(data.columns) - set(['person_id']))
@@ -98,29 +106,40 @@ def retrain_algo(options:RetrainConfig):
         logger.info(f'Algorithm retrain completed')
         coef_retrain['coeff'] = coef_retrain['coeff'].round(3)
         y_pred = lasso.predict(X_test)
-        auc_roc = round(roc_auc_score(y_test, y_pred),3)
-        summary_table = pd.DataFrame({'Metric':['auc_roc_retrain'], 'value': [auc_roc]})
+        
+        # Check test set class distribution before calculating ROC AUC
+        y_test_unique = y_test.unique()
+        logger.info(f'Test set - Return=0: {(y_test==0).sum()}, Return=1: {(y_test==1).sum()}')
+        
+        if len(y_test_unique) < 2:
+            logger.warning(f"Only one class in test set. Cannot calculate ROC AUC. Skipping AUC calculation.")
+            summary_table = pd.DataFrame({'Metric':['auc_roc_retrain', 'warning'], 'value': [None, 'Single class in test set']})
+        else:
+            auc_roc = round(roc_auc_score(y_test, y_pred), 3)
+            logger.info(f'Test set AUC ROC: {auc_roc}')
+            summary_table = pd.DataFrame({'Metric':['auc_roc_retrain'], 'value': [auc_roc]})
+        
         summary_table_name = f'{retrain_coeff_table_name}_summary_table'
 
     with dbdao.engine.connect() as conn:
         coef_retrain.to_sql(
                 name = retrain_coeff_table_name,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
         )
-        logger.info(f'Retrain coefficients are stored at {schema_name}.{retrain_coeff_table_name}')
+        logger.info(f'Retrain coefficients are stored at {result_schema_name}.{retrain_coeff_table_name}')
         summary_table.to_sql(
                 name = summary_table_name,
                 con = conn,
-                schema = schema_name,
+                schema = result_schema_name,
                 if_exists = 'replace',
                 chunksize = 32,
                 index = False
         )
-        logger.info(f'Retrain auc roc is stored at {schema_name}.{retrain_coeff_table_name}_summary_table')
+        logger.info(f'Retrain auc roc is stored at {result_schema_name}.{retrain_coeff_table_name}_summary_table')
 
 @task(log_prints=True)
 def data_prep(conn, index_st, index_ed, database_code, schema_name, use_cache_db):
@@ -143,9 +162,15 @@ def data_prep(conn, index_st, index_ed, database_code, schema_name, use_cache_db
 
 @task(log_prints=True)
 def eligible_person(conn, schema_name, index_st, index_ed, age18):
-    person = conn.table(database=schema_name, name='person')
-    death = conn.table(database=schema_name, name='death')
-    visit_occurrence = conn.table(database=schema_name, name='visit_occurrence')
+    logger = get_run_logger()
+    person = conn.table('person', database=schema_name)
+    death = conn.table('death', database=schema_name)
+    visit_occurrence = conn.table('visit_occurrence', database=schema_name)
+    
+    # Log initial person count
+    total_persons = person.count().execute()
+    logger.info(f"Total persons in person table: {total_persons}")
+    
     birth_date = (
         person.year_of_birth.cast('string') + '-' + 
         person.month_of_birth.cast('string') + '-' + 
@@ -159,19 +184,21 @@ def eligible_person(conn, schema_name, index_st, index_ed, age18):
             )
             .select(person.person_id)
         )
+    
     visit_filter = (
         visit_occurrence
         .filter((visit_occurrence.visit_start_date < index_ed) & (visit_occurrence.visit_end_date > index_st))
-        .group_by(visit_occurrence.person_id)
-        .aggregate(count=visit_occurrence.person_id.count())
-        .filter(lambda t: t['count'] >= 1)
-    )
-    final_expr = (
-        age_filter
-        .inner_join(visit_filter, age_filter.person_id == visit_filter.person_id)
-        .select(age_filter.person_id)
+        .select(visit_occurrence.person_id)
         .distinct()
     )
-    return final_expr.execute()
+    
+    age_df = age_filter.execute()
+    logger.info(f"Persons after age filter (>=18 years old & alive): {len(age_df)}")
+    visit_df = visit_filter.execute()
+    logger.info(f"Persons with visits in period [{index_st} to {index_ed}]: {len(visit_df)}")
+    result = age_df.merge(visit_df, on='person_id').drop_duplicates(subset='person_id')
+    logger.info(f"Final eligible persons (age filter + visit filter): {len(result)}")
+    
+    return result
 
 

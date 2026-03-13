@@ -37,11 +37,6 @@ const getSeeds = (): { [key: string]: any }[] => {
       system: ALP_SYSTEM
     },
     {
-      id: '96f8745c-234f-4dab-a3df-a35a91ae3991',
-      role: ROLES.ALP_NIFI_ADMIN,
-      system: ALP_SYSTEM
-    },
-    {
       id: '1792e31c-5dda-467a-9625-31f97cdfb4ec',
       role: ROLES.ALP_DASHBOARD_VIEWER,
       system: ALP_SYSTEM
@@ -54,6 +49,11 @@ const getSeeds = (): { [key: string]: any }[] => {
     {
       id: '72b00548-2cbf-48f6-aa68-bbf81864857b',
       role: ROLES.STUDY_RESULTS_READ_RESEARCHER,
+      system: ALP_SYSTEM
+    },
+    {
+      id: 'd1c8e5b7-9a0c-4c3b-9c8e-1f2a9e5d6f3a',
+      role: ROLES.ETL_MAPPING_CONTRIBUTOR,
       system: ALP_SYSTEM
     }
   ]

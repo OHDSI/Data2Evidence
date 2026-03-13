@@ -9,14 +9,12 @@ class FhirAPI(BaseAPI):
         self.url = self.get_service_route("fhirGateway")
         self.logger = get_run_logger()
         self.auth = OpenIdAPI()
-    
     def get_headers(self):
         token = self.auth.getClientCredentialToken()
         return {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
         }
-    
     def post(self, study_token: str, resource_type: str, resource):
         url = f"{self.url}project/{study_token}/{resource_type}"
         result = requests.post(
@@ -31,8 +29,8 @@ class FhirAPI(BaseAPI):
         else:
             return True
 
-    def get(self, study_token: str, resource_type: str, query: str):
-        url = f"{self.url}project/{study_token}/{resource_type}{query}"
+    def get(self, resource_type: str, query: str):
+        url = f"{self.url}superadmin/{resource_type}{query}"
         result = requests.get(
             url,
             headers=self.get_headers(),

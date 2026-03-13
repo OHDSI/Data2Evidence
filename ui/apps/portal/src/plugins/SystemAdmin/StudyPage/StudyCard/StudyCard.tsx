@@ -1,16 +1,16 @@
-import { ArrowBack, OpenInBrowser, PlayCircleFilled, StopCircle } from "@mui/icons-material";
 import MailOutline from "@mui/icons-material/MailOutline";
 import { CircularProgress } from "@mui/material";
 import { Button, Card, RunStudyIcon, TrashIcon, EditIcon } from "@portal/components";
-import React, { FC, useCallback, useEffect, useRef, useState } from "react";
+import React, { FC, useCallback, useState, useEffect, useRef } from "react";
 import { api } from "../../../../axios/api";
 import { HighlightText } from "../../../../components";
-import { getAuthToken } from "../../../../containers/auth/auth";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
+import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
+import { ArrowBack, OpenInBrowser, PlayCircleFilled, StopCircle } from "@mui/icons-material";
+import { getAuthToken } from "../../../../containers/auth/auth";
 import env from "../../../../env";
 import { usePollingEffect, useDialogHelper } from "../../../../hooks";
-import { StrategusStudy, StrategusStudyType } from "../../../../types/strategusStudy";
 import StudyTemplateDialog from "../StudyTemplateDialog/StudyTemplateDialog";
 import "./StudyCard.scss";
 
@@ -407,6 +407,7 @@ export const StudyCard: FC<StudyCardProps> = ({
               disabled={!isViewerUp || !selectedDatasetId}
               variant="text"
             />
+
 
             <Button
               onClick={handleCleanupStudy}

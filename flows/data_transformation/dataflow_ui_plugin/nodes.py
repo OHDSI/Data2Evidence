@@ -348,7 +348,7 @@ class TransformFhirDataNode(Node):
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
         query = f"?url={url}"
-        response = fhir_api.get(study_token="fds1", resource_type="StructureDefinition", query=query)
+        response = fhir_api.get(resource_type="StructureDefinition", query=query)
         if(response):
             response_json = response.get("entry", [])[0].get("resource", {})
         else:
@@ -747,7 +747,7 @@ def generate_nodes_flow(graph, sorted_nodes):
 
         # check if node is a subflow
         if nodetype == NodeType.SUBFLOW:
-            subflow_obj = Flow(node)
+            subflow_obj = Flow(nodename, node)
             graph["nodes"][nodename]["nodeobj"] = subflow_obj
             for subflow_nodename in subflow_obj.sorted_nodes:
                 subflow_nodegraph = subflow_obj.graph["nodes"][subflow_nodename]

@@ -10,9 +10,7 @@ export async function retrieveParquetStream(req: IMRIRequest, res) {
     try {
         const datasetId = req.params.datasetId;
         const tableName = req.params.tableName;
-        const studies = await new PortalServerAPI().getStudies(
-            req.headers.authorization
-        );
+        const studies = await new PortalServerAPI().getStudies();
 
         log.debug(`All study details from portal: ${JSON.stringify(studies)}`);
 

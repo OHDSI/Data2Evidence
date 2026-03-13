@@ -4,7 +4,7 @@ import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
-import { CloseDialogType, CreateCacheFlowRun, Feedback, Study } from "../../../../types";
+import { CloseDialogType, CreateCacheFlowRun, CreateFhirCacheFlowRun, Feedback, Study } from "../../../../types";
 import "./CreateCacheDialog.scss";
 
 interface CreateCacheDialogProps {
@@ -35,28 +35,62 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
       const studyFlowParameters = dataset?.flowParameters;
       const sourceDatasetId = dataset?.sourceStudyId;
       const targetDatasetId = sourceDatasetId ?? dataset?.id;
+      const datasetType = dataset?.type?.toLowerCase();
+      const isFhirCacheDataset = datasetType === "non_omop" && sourceDatasetId;
 
       if (!targetDatasetId) {
         setFeedback({
           type: "error",
-          message: "Missing dataset identifier. Please refresh and try again.",
+          message: getText(i18nKeys.CREATE_CACHE_DIALOG__MISSING_DATASET_ID),
         });
         setUpdating(false);
         return;
       }
 
-      const data: CreateCacheFlowRun = { datasetId: targetDatasetId };
+      if (isFhirCacheDataset) {
+        try {
+          const sourceDataset = await api.systemPortal.getDataset(sourceDatasetId);
+          
+          if (!sourceDataset?.databaseCode || !sourceDataset?.schemaName || !dataset?.schemaName) {
+            setFeedback({
+              type: "error",
+              message: getText(i18nKeys.CREATE_CACHE_DIALOG__MISSING_FHIR_INFO),
+            });
+            setUpdating(false);
+            return;
+          }
 
-      // If this is a datamart (has a source), include the cache dataset ID
-      if (sourceDatasetId) {
-        data.cacheDatasetId = dataset?.id;
+          const fhirData: CreateFhirCacheFlowRun = {
+            databaseCode: sourceDataset.databaseCode,
+            schemaName: sourceDataset.schemaName,
+            cacheSchemaName: dataset.schemaName,
+            studyCode: sourceDataset.tokenStudyCode,
+          };
+
+          await api.dataflow.createFhirCacheFlowRun(fhirData);
+        } catch (err: any) {
+          setFeedback({
+            type: "error",
+            message: err.data?.message || err.data || getText(i18nKeys.CREATE_CACHE_DIALOG__FETCH_SOURCE_ERROR),
+          });
+          setUpdating(false);
+          return;
+        }
+      } else {
+        // Handle CDM datasets
+        const data: CreateCacheFlowRun = { datasetId: targetDatasetId };
+
+        // If this is a datamart (has a source), include the cache dataset ID
+        if (sourceDatasetId) {
+          data.cacheDatasetId = dataset?.id;
+        }
+
+        if (studyFlowParameters?.snapshotCopyConfig) {
+          data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
+        }
+
+        await api.dataflow.createCacheFlowRun(data);
       }
-
-      if (studyFlowParameters?.snapshotCopyConfig) {
-        data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
-      }
-
-      await api.dataflow.createCacheFlowRun(data);
 
       setFeedback({
         type: "success",

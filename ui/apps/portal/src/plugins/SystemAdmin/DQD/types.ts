@@ -17,7 +17,7 @@ export interface HistoryJob {
 export interface LineChartFormatConfig {
   tooltipFormat?: string;
   xAxisFormat?: string;
-  yAxisFormat?: string;
+  yAxisFormat?: string | ((value: number) => string);
 }
 export interface DatasetRelease {
   id: number;

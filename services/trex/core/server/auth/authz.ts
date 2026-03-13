@@ -14,13 +14,13 @@ const PUBLIC_API_PATHS = [
 export const ROLES = {
   ALP_USER_ADMIN: "ALP_USER_ADMIN",
   ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
-  ALP_NIFI_ADMIN: "ALP_NIFI_ADMIN",
   ALP_DASHBOARD_VIEWER: "ALP_DASHBOARD_VIEWER",
   TENANT_VIEWER: "TENANT_VIEWER",
   RESEARCHER: "RESEARCHER",
   STUDY_RESEARCHER: "RESEARCHER",
   STUDY_WRITE_DQD_RESEARCHER: "STUDY_WRITE_DQD_RESEARCHER",
   STUDY_RESULTS_READ_RESEARCHER: "STUDY_RESULTS_READ_RESEARCHER",
+  ETL_MAPPING_CONTRIBUTOR: "ETL_MAPPING_CONTRIBUTOR",
   VALIDATE_TOKEN_ROLE: "VALIDATE_TOKEN",
   ADMIN_DATA_READER_ROLE: "ADMIN_DATA_READER",
   BI_DATA_READER_ROLE: "BI_DATA_READER",
@@ -130,9 +130,6 @@ const buildUserFromToken = (
     if (userMgmtGroups.alp_role_system_admin === true) {
       roles.push(ROLES.ALP_SYSTEM_ADMIN);
     }
-    if (userMgmtGroups.alp_role_nifi_admin === true) {
-      roles.push(ROLES.ALP_NIFI_ADMIN);
-    }
     if (userMgmtGroups.alp_role_dashboard_viewer === true) {
       roles.push(ROLES.ALP_DASHBOARD_VIEWER);
     }
@@ -144,6 +141,9 @@ const buildUserFromToken = (
     }
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
       roles.push(ROLES.TENANT_VIEWER);
+    }
+    if (userMgmtGroups.alp_role_etl_mapping_contributor === true) {
+      roles.push(ROLES.ETL_MAPPING_CONTRIBUTOR);
     }
     if (userMgmtGroups.alp_role_study_researcher?.length > 0) {
       //roles.push(ROLES.RESEARCHER)

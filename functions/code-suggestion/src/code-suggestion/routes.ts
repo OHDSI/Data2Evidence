@@ -47,11 +47,27 @@ export class CodeSuggestionRouter {
         res.setHeader("Connection", "keep-alive");
         req.body.model = AI_MODEL;
 
-        // Call the getChatResponse service to fetch a stream of chat responses.
         // Stream the response chunks to the client as they are received.
-        let stream = await getChatResponse(req.body);
-        for await (const chunk of stream) {
-          res.write(chunk);
+        // NOTE: This logic depends on the Langchain Agent streaming format
+        let stream = await getChatResponse(req);
+        let lastChar = "\n";
+        for await (const [token, metadata] of stream) {
+          if (
+            metadata.langgraph_node === "model_request" &&
+            token.contentBlocks?.[0]?.text
+          ) {
+            let text: string = token.contentBlocks[0].text;
+            // Ensure markdown headings start on a new line when the previous chunk didn't end with one.
+            if (text.startsWith("#") && lastChar !== "\n") {
+              text = "\n" + text;
+            } else if (lastChar === "." && /^\S/.test(text)) {
+              // Add a space when a sentence-ending period is immediately followed by a non-whitespace character in the next chunk.
+              text = " " + text;
+            }
+            lastChar = text[text.length - 1];
+            console.log("Streaming token:", text);
+            res.write(text);
+          }
         }
         res.status(200);
         res.end();

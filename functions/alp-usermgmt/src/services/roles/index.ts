@@ -1,6 +1,6 @@
 export * from './SystemAdminService'
-export * from './NifiAdminService'
 export * from './UserAdminService'
 export * from './DashboardViewerService'
 export * from './JobRunnerService'
 export * from './StudyResultService'
+export * from './ETLMappingContributorService'

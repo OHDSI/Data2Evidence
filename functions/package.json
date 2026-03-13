@@ -296,6 +296,12 @@
           "source": "/dockerlogs",
           "service": "docker-logs",
           "rmsrc": false
+        },
+        {
+          "source": "/parquet-export",
+          "function": "/parquet-export",
+          "imports": "/parquet-export/deno.json",
+          "env": "parquet-export"
         }
       ],
       "env": {
@@ -307,8 +313,8 @@
           "HANA__READ_ROLE": "TENANT_READ_ROLE",
           "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
           "PG__READ_ROLE": "postgres_tenant_read_role",
-          "IDP__ALP_SVC__CLIENT_ID": "${LOGTO__ALP_SVC__CLIENT_ID}",
-          "IDP__ALP_SVC__CLIENT_SECRET": "${LOGTO__ALP_SVC__CLIENT_SECRET}",
+          "IDP__ALP_SVC__CLIENT_ID": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}",
+          "IDP__ALP_SVC__CLIENT_SECRET": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}",
           "IDP__SCOPE": "https://alp-default",
           "IDP_SUBJECT_PROP": "sub",
           "MINIO__ACCESS_KEY": "${MINIO__ACCESS_KEY:-root}",
@@ -317,9 +323,6 @@
           "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
           "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
           "MINIO__SSL": "${MINIO__SSL:-false}",
-          "CACHEDB__PORT": 41191,
-          "CACHEDB__HOST": "${PROJECT_NAME:-d2e}-cachedb",
-          "CACHEDB__POOL_SIZE": "${CACHEDB__POOL_SIZE:-10}",
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
@@ -333,25 +336,24 @@
           "PG__IDLE_TIMEOUT_IN_MS": 1000,
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
-          "isHttpTestRun": "${isHttpTestRun}"
+          "isHttpTestRun": "${isHttpTestRun}",
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "parquet-export": {
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "analytics-svc": {
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
           "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
           "ANALYTICS_SVC__PORT": 41102,
-          "ANALYTICS_SVC__STUDIES_METADATA__TTL_IN_SECONDS": 120,
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
-          "DUCKDB__DATA_FOLDER": "/home/docker/src/alp-data-node/app/duckdb_data",
           "LOCAL_DEBUG": "false",
-          "USE_DUCKDB": "${USE_DUCKDB:-true}",
-          "USE_CACHEDB": "${USE_CACHEDB:-true}",
           "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
           "TESTSCHEMA": "${TESTSCHEMA}",
-          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
-          "BIGQUERY_CDM_VERSION": "${BIGQUERY_CDM_VERSION}"
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -432,20 +434,23 @@
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
         },
         "jobplugins": {
-          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
           "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
-          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
           "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
         "dataset": {
-          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}"
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -512,7 +517,7 @@
         "demo": {
           "DEMO__DB_CODE": "demo_database",
           "DEMO__DB_CDM_SCHEMA": "demo_cdm",
-          "DEMO__DB_RESULT_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm_results",
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
@@ -520,7 +525,8 @@
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
-          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/api}",
+          "CACHE_TASK_TIMEOUT": "${CACHE_TASK_TIMEOUT:-10800}",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}",
           "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
           "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
           "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
@@ -532,13 +538,15 @@
           "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
           "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
           "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
+          "D2E_DUCKDB_MEMORY_LIMIT": "${D2E_DUCKDB_MEMORY_LIMIT:-}",
+          "D2E_DUCKDB_THREADS": "${D2E_DUCKDB_THREADS:-4}",
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
           "HANA__DRIVER_CLASS_PATH": "${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}",
           "POSTGRES__DRIVER_CLASS_PATH": "${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}",
-          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
           "DATABASE_CREDENTIALS": "{}",
           "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
           "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
@@ -577,6 +585,7 @@
           "PG_PORT": "${PG_PORT:-5432}",
           "PG_DATABASE": "${PG_DB_NAME:-alp}",
           "PG_SCHEMA": "strategus",
+          "PG_PORTAL_SCHEMA": "portal",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
           "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
@@ -754,6 +763,8 @@
           "gateway.external.dashboards.read",
           "strategus.results.write",
           "strategus.results.delete",
+          "strategus.results.admin.upload",
+          "strategus.results.admin.delete",
           "mlflow",
           "d2e.container.logs.read"
         ],
@@ -794,6 +805,7 @@
           "portal.dataset.paConfig.read",
           "portal.dataset.resource.read",
           "portal.dataset.read",
+          "parquet.export",
           "portal.dataset.resource.download",
           "portal.notebook.read",
           "portal.notebook.add",
@@ -827,7 +839,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "d2e.webapi",
-          "usermgmt.me.jupyter"
+          "usermgmt.me.jupyter",
+          "gateway.dataset.shinylive.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -865,7 +878,15 @@
           "strategus.analysis.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete"
+          "strategus.results.delete",
+          "gateway.dataset.dashboards.read"
+        ],
+        "ETL_MAPPING_CONTRIBUTOR": [
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.dataflow.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write"
         ]
       },
       "scopes": [
@@ -923,6 +944,26 @@
           "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
           "scopes": [
             "jobplugins.flowRun.strategus.removeResults.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/upload",
+          "scopes": [
+            "strategus.results.admin.upload",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/drop/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "scopes": [
+            "strategus.results.admin.delete",
             "portal.dataset.read"
           ],
           "httpMethods": [
@@ -1066,6 +1107,25 @@
           "path": "^/pa-config-svc/db/(.*)",
           "scopes": [
             "PAConfig.svc"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc/read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc"
+          ],
+          "httpMethods": [
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -1350,6 +1410,28 @@
           "httpMethods": [
             "GET",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"          
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update",
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
           ]
         },
         {
@@ -1915,6 +1997,15 @@
           ]
         },
         {
+          "path": "^/system-portal/supabase-storage/upload/folder",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/supabase-storage/get/file",
           "scopes": [
             "portal.supabaseStorage.read"
@@ -1925,6 +2016,42 @@
         },
         {
           "path": "^/system-portal/supabase-storage/delete/file",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/list",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/download",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/upload",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/delete",
           "scopes": [
             "portal.supabaseStorage.delete"
           ],
@@ -2502,7 +2629,7 @@
           ]
         },
         {
-          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-z]+(.*)",
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-Z]+(.*)",
           "scopes": [
             "dbSvc.schema.delete.rollbackTag"
           ],
@@ -2655,7 +2782,26 @@
           ]
         },
         {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.shinylive.read"
+          ],
+          "httpMethods": [
+            "GET",
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/gateway/api/dataset/dashboard/list$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/info$",
           "scopes": [
             "gateway.dataset.dashboards.read"
           ],
@@ -2842,6 +2988,7 @@
           ],
           "httpMethods": [
             "GET",
+            "HEAD",
             "POST",
             "DELETE"
           ]
@@ -2870,6 +3017,16 @@
             "POST",
             "PUT"
           ]
+        },
+        {
+          "path": "^/parquet-export",
+          "scopes": [
+            "parquet.export"
+          ],
+          "httpMethods": [
+            "POST"
+          ],
+          "datasetId": "datasetId"
         }
       ]
     }

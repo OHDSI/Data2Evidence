@@ -39,6 +39,8 @@ class CopyParameters:
 
     limit_statement: str
 
+    chunk_size: int | None
+
 
 class DatamartTableConfig(BaseModel):
     table_name: str = Field(alias="tableName")
@@ -88,6 +90,7 @@ class CreateCacheOptions(BaseModel):
     vocab_schema_name: Optional[str] = Field(default=None, alias="vocabSchemaName")
     results_schema_name: Optional[str] = Field(
         default=None, alias="resultsSchemaName")
+    chunk_size: Optional[int] = Field(default=None, alias="chunkSize")
 
     # Optional flag used to determine which tables to create duckdb FTS indexes.
     # By default only creates FTS indexes for concept table.

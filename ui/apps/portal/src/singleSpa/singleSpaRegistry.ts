@@ -1,10 +1,19 @@
-import { registerApplication, start } from "single-spa";
+import {
+  registerApplication,
+  start,
+  unregisterApplication,
+  getAppStatus,
+  MOUNTED,
+  NOT_LOADED,
+  NOT_MOUNTED,
+} from "single-spa";
 import { RegisteredApp, SingleSpaPluginConfig } from "./types";
 import { createActivityFunction, generateContainerId } from "./utils";
 import { resolveModuleUrl } from "./overrideUtils";
 
 const registeredApps: Map<string, RegisteredApp> = new Map();
 const moduleCache: Map<string, Promise<any>> = new Map();
+const propsStore: Map<string, Record<string, any>> = new Map();
 
 export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promise<void> {
   if (registeredApps.has(config.id)) {
@@ -16,6 +25,8 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
 
   const initialProps = config.customProps || {};
   const activeWhen = createActivityFunction(config.basePath, config.customProps?.autoMount);
+
+  propsStore.set(config.id, initialProps);
 
   const registration = {
     name: config.id,
@@ -37,7 +48,7 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
     },
     activeWhen,
     customProps: () => ({
-      ...initialProps,
+      ...propsStore.get(config.id),
       containerId: generateContainerId(config.id),
     }),
   };
@@ -59,6 +70,9 @@ export function updateCustomProps(appId: string, customProps: Record<string, any
 
   console.debug(`[singleSpaRegistry] ${appId} - updating custom props`, customProps);
 
+  const currentProps = propsStore.get(appId) || {};
+  propsStore.set(appId, { ...currentProps, ...customProps });
+
   window.dispatchEvent(
     new CustomEvent("custom-props-changed", {
       detail: { appId, ...customProps },
@@ -69,4 +83,27 @@ export function updateCustomProps(appId: string, customProps: Record<string, any
 export function startSingleSpa(options?: { urlRerouteOnly?: boolean }): void {
   start(options || { urlRerouteOnly: true });
   console.log("[singleSpaRegistry] Started monitoring URL changes");
+}
+
+export async function unloadSingleSpaApp(appId: string): Promise<void> {
+  if (!registeredApps.has(appId)) {
+    console.debug(`[singleSpaRegistry] App ${appId} is not registered, skipping unload`);
+    return;
+  }
+
+  const status = getAppStatus(appId);
+  console.debug(`[singleSpaRegistry] ${appId} - unregistering, current status: ${status}`);
+
+  try {
+    if (status === MOUNTED || status === NOT_MOUNTED || status === NOT_LOADED) {
+      await unregisterApplication(appId);
+      console.debug(`[singleSpaRegistry] ${appId} - unregistered successfully`);
+    }
+
+    registeredApps.delete(appId);
+    moduleCache.delete(appId);
+    propsStore.delete(appId);
+  } catch (error) {
+    console.error(`[singleSpaRegistry] Failed to unregister app ${appId}:`, error);
+  }
 }

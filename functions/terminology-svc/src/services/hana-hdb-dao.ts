@@ -27,7 +27,7 @@ export class HanaHDBDao {
     this.vocabSchemaName = vocabSchemaName;
     this.databaseCode = databaseCode;
     if (!jwt) {
-      throw new Error("No token passed for CachedbHanaDAO!");
+      throw new Error("No token passed for HanaHDBDao!");
     }
   }
 
@@ -140,7 +140,7 @@ export class HanaHDBDao {
         ${invalidReasonWhereClause}
         `;
       // TODO: Move searchTexts as a sql parameter instead of being in the sql statement itself.
-      // searchTexts has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchTexts has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const result = (await this.asyncExec(client, sql)) as IHanaConcept[];
       if (result) {
@@ -439,7 +439,7 @@ export class HanaHDBDao {
     const client = await this.getHanaHDBConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const sql = `
         select concept_id_1, concept_id_2, relationship_id from ${
@@ -466,7 +466,7 @@ export class HanaHDBDao {
   ): Promise<IConceptAncestor[]> {
     const client = await this.getHanaHDBConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-    // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+    // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
     // https://github.com/alp-os/internal/issues/1411
     try {
       const sql = `
@@ -496,7 +496,7 @@ export class HanaHDBDao {
     const client = await this.getHanaHDBConnection();
     try {
       // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
-      // searchConceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+      // searchConceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
       // https://github.com/alp-os/internal/issues/1411
       const sql = `
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
@@ -597,7 +597,7 @@ export class HanaHDBDao {
           return [];
         } else {
           // TODO: Move conceptIds as a sql parameter instead of being in the sql statement itself.
-          // conceptIds has to be in sql statement now as cachedb does not support array sql parameter types
+          // conceptIds has to be in sql statement now as trex-sql does not support array sql parameter types
           // https://github.com/alp-os/internal/issues/1411
           const sql = `
                     SELECT
@@ -745,6 +745,12 @@ export class HanaHDBDao {
     });
   };
 
+  private injectSessionVariablesToCredentials = (credentials: any, token: string) => {
+    credentials["token"] = token;
+    credentials["SESSIONVARIABLE:APPLICATION"] = `${env.PROJECT_NAME}-concepts`;
+    credentials["SESSIONVARIABLE:APPLICATIONUSER"] = decode(token).email ?? decode(token).sub; // Fallback to sub from logto token if thirdparty token isnt present
+  }
+
   private getHanaHDBConnection = () => {
     return new Promise((resolve, reject) => {
       try {
@@ -773,17 +779,11 @@ export class HanaHDBDao {
 
         if (credentials.authentication_mode === "JWT") {
           // Add token to credentials
-          if (this.jwt) {
-            const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
+          const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
               "thirdPartyToken"
             ];
-
-            credentials["token"] = thirdPartyToken;
-            credentials[
-              "SESSIONVARIABLE:APPLICATION"
-            ] = `${env.PROJECT_NAME}-concepts`;
-            credentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-              decode(thirdPartyToken).oid;
+          if (thirdPartyToken) {
+            this.injectSessionVariablesToCredentials(credentials, thirdPartyToken);
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
@@ -794,6 +794,11 @@ export class HanaHDBDao {
           credentials["user"] = datasetDatabaseCredential.credentials.readUser;
           credentials["password"] =
             datasetDatabaseCredential.credentials.readPassword;
+
+          const token = decode(this.jwt.replace(/bearer /i, ""))[
+              "thirdPartyToken"
+            ] ?? this.jwt.replace(/bearer /i, "");
+          this.injectSessionVariablesToCredentials(credentials, token);
         }
 
         const client = hdb.createClient(credentials);

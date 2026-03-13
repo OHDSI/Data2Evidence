@@ -1,5 +1,6 @@
 import {
   CreateCacheFlowRun,
+  CreateFhirCacheFlowRun,
   CreateDcFlowRun,
   CreateDqdFlowRun,
   CreateFlowRunByMetadata,
@@ -269,6 +270,15 @@ export class Dataflow {
     });
   }
 
+  public createFhirCacheFlowRun(data: CreateFhirCacheFlowRun) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: "cachedb/create-fhir-file",
+      method: "POST",
+      data,
+    });
+  }
+
   public createSearchEmbeddingFlowRun(data: CreateSemanticSearchFlowRun) {
     return request({
       baseURL: JOBPLUGIN_URL,
@@ -316,6 +326,21 @@ export class Dataflow {
       baseURL: JOBPLUGIN_URL,
       url: "prefect/flow/default-deployment",
       method: "POST",
+    });
+  }
+
+  public triggerShinyLiveAssetDeployment(data: {
+    datasetId: string;
+    language: string;
+    appCode: string;
+    name: string;
+    type: string;
+  }) {
+    return request({
+      baseURL: JOBPLUGIN_URL,
+      url: "shiny-live/flow-run",
+      method: "POST",
+      data,
     });
   }
 }

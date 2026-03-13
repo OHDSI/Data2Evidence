@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState } from "react";
 import env from "../../../env";
-import { loadScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
+import { loadEsModuleScript, loadStyleSheet, loadSapScript } from "../../../utils/loadScript";
 import PluginContainer from "./PluginContainer";
 import { Loader } from "@portal/components";
 
@@ -29,21 +29,38 @@ const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas
   };
 
   useEffect(() => {
-    let callbacks: (() => void)[] = [];
+    let isMounted = true;
+    const callbacks: (() => void)[] = [];
+    const cacheKey = `${studyId || "default"}_${releaseId || "default"}_${Date.now()}`;
     setIsLoading(true);
+
     fetch(PA_ASSETS_URL)
       .then((response) => response.json())
       .then(({ css, js }) => {
+        if (!isMounted) return;
+
         loadSapScript(() => {
-          const styleSheetCallbacks = css.map(loadStyleSheet);
-          const scriptCallbacks = js.map(loadScript);
+          if (!isMounted) return;
+
+          css.forEach((href: string) => {
+            callbacks.push(loadStyleSheet(href));
+          });
+
+          js.forEach((src: string) => {
+            const cacheBustedSrc = `${src}?v=${cacheKey}`;
+            callbacks.push(loadEsModuleScript(cacheBustedSrc, () => {}));
+          });
+
           hideLogoutButton();
-          callbacks = [...scriptCallbacks, ...styleSheetCallbacks];
         });
+      })
+      .catch((error) => {
+        console.error("Failed to load Patient Analytics assets:", error);
       });
-    //Remove scripts and links upon component unmounting
+
     return () => {
-      callbacks.forEach((callback) => callback());
+      isMounted = false;
+      callbacks.forEach((cleanup) => cleanup());
     };
   }, [isLocalDev]);
 

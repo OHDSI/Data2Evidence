@@ -38,7 +38,7 @@ export class PrefectController {
         id,
         datasetId,
         uploadResults,
-        token
+        token,
       );
       return res.status(200).send(flowrunId);
     } catch (error) {
@@ -100,11 +100,11 @@ export class PrefectController {
       return res
         .status(200)
         .send({ flowrunId, status: "Successfully created a flow run" });
-    } catch (error) {
+    } catch (error: Error | any) {
       console.log(error);
       return res
         .status(500)
-        .send({ message: "Failed to start network analaysis flow run" });
+        .send({ message: `Failed to start network analaysis flow run with message: ${error.message}` });
     }
   }
 
@@ -115,7 +115,7 @@ export class PrefectController {
         req.headers["Authorization"] || req.headers["authorization"];
       const flowrunId = await this.prefectService.removeAnalysisResultsSchema(
         token,
-        { studyId, datasetId }
+        { studyId, datasetId },
       );
       return res
         .status(200)
@@ -126,20 +126,73 @@ export class PrefectController {
     }
   }
 
+  private async uploadResultsFromStorage(req: Request, res: Response) {
+    try {
+      const { studyId, datasetId, analysisSpec } = req.body;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+
+      if (!studyId || !datasetId) {
+        return res
+          .status(400)
+          .send({ message: "Missing required fields: studyId or datasetId" });
+      }
+
+      const flowrunId = await this.prefectService.uploadResultsFromStorage(
+        token,
+        { studyId, datasetId, analysisSpec },
+      );
+      return res
+        .status(200)
+        .send({ flowrunId, status: "Successfully started upload flow" });
+    } catch (error) {
+      console.log(`uploadResultsFromStorage: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
+  private async dropResultsFromStorage(req: Request, res: Response) {
+    try {
+      const { id: studyId, datasetid: datasetId } = req.params;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+
+      const flowrunId = await this.prefectService.dropResultsFromStorage(
+        token,
+        { studyId, datasetId },
+      );
+      return res
+        .status(200)
+        .send({ flowrunId, status: "Successfully started drop flow" });
+    } catch (error) {
+      console.log(`dropResultsFromStorage: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
   private registerRoutes() {
     this.router.post("/flow-run/:id", this.createFlowrun.bind(this));
     this.router.post("/analysis-run/:id", this.createAnalysisRun.bind(this));
     this.router.post(
       "/flow-run/:id/cancellation",
-      this.cancelFlowrun.bind(this)
+      this.cancelFlowrun.bind(this),
     );
     this.router.post(
       "/jupyter-kernel/flow-run/strategus",
-      this.createAnalaysisRunByJupyterKernel.bind(this)
+      this.createAnalaysisRunByJupyterKernel.bind(this),
     );
     this.router.delete(
       "/flow-run/strategus/remove-results-schema/:id/:datasetid",
-      this.removeAnalysisResultsSchema.bind(this)
+      this.removeAnalysisResultsSchema.bind(this),
+    );
+    // Admin-only endpoints for uploading/dropping results from storage
+    this.router.post(
+      "/strategus-results/upload",
+      this.uploadResultsFromStorage.bind(this),
+    );
+    this.router.delete(
+      "/strategus-results/drop/:id/:datasetid",
+      this.dropResultsFromStorage.bind(this),
     );
     this.router.get("/flow-run/:id/state", this.getFlowrunState.bind(this));
   }

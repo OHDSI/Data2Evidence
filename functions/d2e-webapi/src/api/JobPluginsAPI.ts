@@ -27,11 +27,11 @@ export class JobPluginsAPI {
   }
 
   async createCohortGeneratorFlowRun(
-    dto: ICohortGeneratorFlowRun
+    dto: ICohortGeneratorFlowRun,
   ): Promise<string> {
     try {
       this.logger.info(
-        `Create Cohort Generator flow run: ${JSON.stringify(dto)}`
+        `Create Cohort Generator flow run: ${JSON.stringify(dto)}`,
       );
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/cohort/flow-run`;
@@ -48,13 +48,13 @@ export class JobPluginsAPI {
     }
   }
 
-  async getLatestSuccessfulDataCharacterizationResultsSchemaName(
-    datasetId: string
+  async getConceptRecordsCountResultsSchemaName(
+    datasetId: string,
   ): Promise<string> {
     try {
       const options = await this.getRequestConfig();
       const url = new URL(
-        `${this.baseURL}/dqd/data-characterization/flow-run/latest`
+        `${this.baseURL}/dqd/data-characterization/flow-run/latest`,
       );
       url.searchParams.set("datasetId", datasetId);
 
@@ -64,20 +64,21 @@ export class JobPluginsAPI {
         return "";
       }
 
-      if (result.data.state_type === "COMPLETED") {
+      if (
+        result.data.state_type === "COMPLETED" &&
+        result.data.parameters.options.executeConceptRecordCount !== false
+      ) {
         return result.data.parameters.options.resultsSchema;
       } else {
         return "";
       }
     } catch (error) {
-      if (isAxiosError(error)) {
         // Error 404 means no flow run found for datasetId
-        if (error.status === 404) {
+      if (error.status === 404) {
           return "";
-        }
       }
       console.error(
-        `Error getting latest sucucessful data characterization results schema name: ${error}`
+        `Error getting latest sucucessful data characterization results schema name: ${error}`,
       );
       throw error;
     }

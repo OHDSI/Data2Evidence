@@ -43,7 +43,8 @@ export const startStrategusResultsViewer = async (
       )
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
-      .replace("$STUDY_ID", encodeURIComponent(studyId));
+      .replaceAll("$STUDY_ID", encodeURIComponent(studyId))
+      .replace("$DATASET_ID", datasetId || ""); // relevant for table1 alone; TODO: remove
 
     const future = await kernelConnection.requestExecute({
       code: r_code,

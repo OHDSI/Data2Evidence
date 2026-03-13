@@ -12,9 +12,10 @@ from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
 from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile
-from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings
+from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
+from .table1 import Table1Generator
 
 
 @flow(log_prints=True)
@@ -25,11 +26,20 @@ def strategus_plugin(json_graph, options):
     # lockfile_location = "/app/renv.lock"
     # install_r_packages_from_lockfile(lockfile_location)
 
+    # Get parent flow run ID for auth token
+    parent_flow_run_context = FlowRunContext.get()
+    parent_flow_run_id = str(parent_flow_run_context.flow_run.dict().get("id")) if parent_flow_run_context else None
+
     if(options.get('mode', None) == 'kernel'):
         runStrategus(json_graph, options)
         return
     if(options.get('mode', None) == 'drop-results'):
         drop_strategus_results(options)
+        return
+    if(options.get('mode', None) == 'upload-results-from-storage'):
+        # Pass parent flow run ID for auth
+        options['parentFlowRunId'] = parent_flow_run_id
+        upload_results_from_storage(options)
         return
 
     _options = options
@@ -42,6 +52,7 @@ def strategus_plugin(json_graph, options):
     trace_config = _options["trace_config"]
     tracemode = trace_config["trace_mode"]
     upload_results = _options.get('uploadResults', False)
+    update_results_schema = _options.get('updateResultsSchema', True)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     studyName = options.get("studyName", "")
@@ -79,6 +90,10 @@ def strategus_plugin(json_graph, options):
             key="strategus-analysis-specification",
             markdown=study_analysis_result.data
         )
+        # updateResultsSchema option will drop the existing schema before uploading new results
+        if(update_results_schema):
+            drop_strategus_results(options)
+
         if(upload_results):
             result_db_settings = {
                 'database_code': databaseCode,
@@ -192,7 +207,7 @@ def runStrategus(json_graph, options):
     logger = Logger()
     try:
         root_flow_run_context = FlowRunContext.get().flow_run.dict()
-    except:
+    except Exception:
         root_flow_run_context = {"id":uuid4()}
     flow_run_id = str(root_flow_run_context.get("id"))
     
@@ -201,6 +216,8 @@ def runStrategus(json_graph, options):
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
+    update_results_schema = options.get('updateResultsSchema', True)
+    runTable1 = options.get('runTable1', False)
 
     if(not study_id):
        raise Exception('StudyId is missing')
@@ -226,15 +243,6 @@ def runStrategus(json_graph, options):
     
     if isinstance(analysisSpec, str):
         analysisSpec = json.loads(analysisSpec)
-    
-    # try:
-    #     for resourceIndex in range(len(analysisSpec['sharedResources'])):
-    #         for cohortDefIndex in range(len(analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'])):
-    #             cohortDef = analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex]
-    #             analysisSpec['sharedResources'][resourceIndex]['cohortDefinitions'][cohortDefIndex] = json.loads(cohortDef["cohortDefinition"])
-    # except Exception as e:
-    #     logger.error(f"Error converting cohortDefinitions to JSON: {e}")
-    #     raise e
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
@@ -245,6 +253,10 @@ def runStrategus(json_graph, options):
     executionSettings = json_graph.get('executionSettings', defaultExecutionSettings)
 
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
+    # updateResultsSchema option will drop the existing schema before uploading new results
+    if(update_results_schema):
+        drop_strategus_results(options)
+
     if(upload_results):
         result_db_settings = {
             'database_code': database_code,
@@ -252,6 +264,27 @@ def runStrategus(json_graph, options):
             "study_id": study_id
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
+
+    if(runTable1):
+        # Extract cohort IDs from analysis specification
+        cohort_ids = []
+        shared_resources = json.loads(analysisSpec).get('sharedResources', [])
+        for resource in shared_resources:
+            cohort_definitions = resource.get('cohortDefinitions', [])
+            for cohort in cohort_definitions:
+                cohort_id = cohort.get('cohortId', None)
+                if cohort_id is not None:
+                    cohort_ids.append(cohort_id)
+
+        table1_generator = Table1Generator(
+            study_id=study_id,
+            dataset_id=datasetId,
+            cohort_ids=cohort_ids,
+            database_code=database_code,
+            cdm_schema_name=schema_name
+        )
+
+        table1_generator.generate_and_save_table1()
 
 def drop_strategus_results(options):
     """

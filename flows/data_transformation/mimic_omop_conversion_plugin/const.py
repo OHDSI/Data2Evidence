@@ -4,17 +4,26 @@ MIMICCreateSql = f'{SqlDir}/duckdb_create_mimic.sql'
 CreatVocabTable = f'{SqlDir}/vocabulary-refresh/create_vocab_input_tables.sql'
 
 StagDir = f'{SqlDir}/staging'
-StagSql = ['etl_OMOPCDM_postgresql_5.3_ddl_adapted_no_vocab.sql', 
+StagSql = ['etl_OMOPCDM_postgresql_5.3_ddl_adapted_no_vocab.sql',
                 'st_core.sql',
                 'st_hosp.sql',
                 'st_icu.sql',
                 'voc_copy_to_target_dataset.sql']
+StagLogs = ['Creating OMOP CDM staging schema (DDL, no vocab)',
+                'Staging MIMIC core tables',
+                'Staging MIMIC hospital tables',
+                'Staging MIMIC ICU tables',
+                'Copying vocabularies to target dataset']
 
 CustomVocabDir = f'{SqlDir}/vocabulary-refresh/'
-CustomVocabSqls = ['create_voc_from_tmp.sql', 
+CustomVocabSqls = ['create_voc_from_tmp.sql',
                 'custom_mapping_load.sql',
                 'custom_vocabularies.sql',
                 'vocabulary_cleanup.sql']
+CustomVocabLogs = ['Building vocabularies from temporary staging tables',
+                'Loading custom concept mappings',
+                'Generating custom vocabularies',
+                'Cleaning up temporary vocabulary tables']
 
 
 ETLDir = f'{SqlDir}/etl'
@@ -52,10 +61,45 @@ ETLSqls = ['cdm_location.sql',
             'ext_d_itemid_to_concept.sql',
             'cdm_cdm_source.sql',
             'extra_cdm_tables.sql']
+ETLLogs = ['Populating CDM location table',
+            'Populating CDM care site table',
+            'Populating CDM person table',
+            'Populating CDM death table',
+            'Building visit lookup (part 1: admissions and transfers)',
+            'Building measurement unit lookup',
+            'Building chart events measurement lookup',
+            'Building lab events measurement lookup',
+            'Building specimen measurement lookup',
+            'Building output events measurement lookup',
+            'Building visit lookup (part 2: visit grouping)',
+            'Populating CDM visit occurrence table',
+            'Populating CDM visit detail table',
+            'Building condition diagnosis lookup',
+            'Building procedure lookup',
+            'Building observation lookup',
+            'Populating CDM condition occurrence table',
+            'Populating CDM procedure occurrence table',
+            'Populating CDM specimen table',
+            'Populating CDM measurement table',
+            'Building drug lookup',
+            'Populating CDM drug exposure table',
+            'Populating CDM device exposure table',
+            'Populating CDM observation table',
+            'Populating CDM observation period table',
+            'Finalizing CDM person records',
+            'Populating CDM fact relationship table',
+            'Populating CDM condition era table',
+            'Populating CDM drug era table',
+            'Populating CDM dose era table',
+            'Mapping item IDs to OMOP concepts',
+            'Populating CDM source metadata table',
+            'Populating extra CDM tables']
 
 CdmDir = f'{SqlDir}/unload/'
 CdmSqls = ['OMOPCDM_duckdb_5.3_ddl_adapted.sql',
             'unload_to_atlas_gen.sql']
+CdmLogs = ['Creating final OMOP CDM DuckDB schema',
+            'Unloading CDM data for ATLAS']
 
 # Compare from OHDSI, the ddl of duckdb and postgres are the same
 PostgresDDL = f'{CdmDir}export_postgresql_5.3_ddl_adapted.sql'

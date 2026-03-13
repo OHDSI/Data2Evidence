@@ -5,7 +5,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { ChevronDownIcon } from "@portal/components";
 import { Roles, config } from "../../../config";
 import { Plugins } from "../../../types";
-import { useDataset, useEnabledFeatures, useMenuAnchor } from "../../../hooks";
+import { useEnabledFeatures, useMenuAnchor } from "../../../hooks";
 import { getPluginChildPath } from "../../../utils";
 import { useActiveDataset, useTranslation, useUser } from "../../../contexts";
 import "../Header.scss";
@@ -19,26 +19,25 @@ interface MenuNavProps {
   type: MenuType;
   plugin?: Plugins;
   isSysAdmin?: boolean;
+  isEtl?: boolean;
 }
 
 const toCamelCase = (string: string) => {
   return string.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (match, chr) => chr.toUpperCase());
 };
 
-const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
+const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin, isEtl }) => {
   const { getText, i18nKeys } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [anchorEl, openMenu, closeMenu] = useMenuAnchor();
 
   const { activeDataset } = useActiveDataset();
-  const [dataset] = useDataset(activeDataset.id);
 
   const { user } = useUser();
   const [featureFlags, featuresLoading] = useEnabledFeatures();
   const requiredRoles = useMemo(() => plugin?.requiredRoles || [], [plugin?.requiredRoles]);
   const featureFlag = useMemo(() => plugin?.featureFlag || "", [plugin?.featureFlag]);
-  const datasetTypes = useMemo(() => plugin?.datasetTypes || [], [plugin?.datasetTypes]);
 
   const clonedPlugin = useMemo(() => {
     const cloned = { ...plugin } as Plugins;
@@ -52,11 +51,11 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
 
   const isResearcherPluginAllowed = useCallback(() => {
     let allowed = (requiredRoles.length || 0) === 0;
-    if (isSysAdmin) {
-      if (featureFlag != "" && !featureFlags.includes(featureFlag)) {
-        allowed = false;
+    if (isSysAdmin || isEtl) {
+      if (featureFlag !== "" && !featureFlags.includes(featureFlag)) {
+        return false;
       }
-      return allowed;
+      return true;
     }
     if (type === MenuType.Dataset) return allowed;
     if (!allowed && requiredRoles) {
@@ -72,20 +71,13 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
     } else if (allowed) {
       allowed = featureFlags.includes(featureFlag);
     }
-
-    // Filter by dataset type if datasetTypes is specified
-    if (allowed && datasetTypes.length > 0 && dataset?.type) {
-      allowed = datasetTypes.includes(dataset.type);
-    }
-
     return allowed;
   }, [
     activeDataset.id,
-    dataset?.type,
-    datasetTypes,
     featureFlag,
     featureFlags,
     isSysAdmin,
+    isEtl,
     clonedPlugin?.children,
     requiredRoles,
     type,
@@ -95,10 +87,12 @@ const MenuNav: FC<MenuNavProps> = ({ type, plugin, isSysAdmin }) => {
   const portalTypePath = useMemo(() => {
     if (isSysAdmin) {
       return config.ROUTES.systemadmin;
+    } else if (isEtl) {
+      return config.ROUTES.etl;
     } else {
       return config.ROUTES.researcher;
     }
-  }, [isSysAdmin]);
+  }, [isSysAdmin, isEtl]);
 
   const menuLink = useMemo(() => {
     if (type === MenuType.Plugin && plugin) {

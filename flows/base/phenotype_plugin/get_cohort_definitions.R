@@ -13,7 +13,8 @@ get_cohort_definitions <- function(cohortsID, vocabschemaName, materialize = FAL
     # Convert to character if needed
     cohortsID <- as.character(cohortsID)
     if (cohortsID != "default") {
-        cohortsID <- as.integer(c(cohortsID))}
+        cohortsID <- as.integer(strsplit(cohortsID, ",")[[1]])
+    }
     vocabschemaName <- toString(vocabschemaName)
     library('PhenotypeLibrary')
     library('CirceR')

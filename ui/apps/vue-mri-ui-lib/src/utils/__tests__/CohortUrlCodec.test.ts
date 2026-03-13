@@ -1,3 +1,4 @@
+import { vi } from 'vitest'
 import CohortUrlCodec from '../CohortUrlCodec'
 
 describe('CohortUrlCodec', () => {
@@ -239,20 +240,22 @@ describe('CohortUrlCodec', () => {
       }
 
       // Mock clipboard API
-      Object.assign(navigator, {
-        clipboard: {
-          writeText: jest.fn().mockResolvedValue(undefined),
+      Object.defineProperty(navigator, 'clipboard', {
+        value: {
+          writeText: vi.fn().mockResolvedValue(undefined),
         },
+        writable: true,
+        configurable: true,
       })
 
       // Mock console methods
-      jest.spyOn(console, 'log').mockImplementation(() => {})
-      jest.spyOn(console, 'warn').mockImplementation(() => {})
-      jest.spyOn(console, 'error').mockImplementation(() => {})
+      vi.spyOn(console, 'log').mockImplementation(() => {})
+      vi.spyOn(console, 'warn').mockImplementation(() => {})
+      vi.spyOn(console, 'error').mockImplementation(() => {})
     })
 
     afterEach(() => {
-      jest.restoreAllMocks()
+      vi.restoreAllMocks()
     })
 
     it('returns null when no bookmark data exists', () => {
@@ -301,9 +304,8 @@ describe('CohortUrlCodec', () => {
       const result = CohortUrlCodec.shareCohortDefinition(mockStore)
 
       expect(result).not.toBeNull()
-      expect(result).toContain('http://localhost:3000/portal/researcher')
+      expect(result).toContain('http://localhost:3000/portal/researcher/cohort')
       expect(result).toContain('datasetId=bookmark-dataset')
-      expect(result).toContain('route=cohort')
       expect(result).toContain('linkType=cohort-definition')
       expect(result).toContain('query=')
     })

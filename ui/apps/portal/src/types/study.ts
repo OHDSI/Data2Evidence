@@ -1,8 +1,10 @@
 import { Tenant } from "./tenant";
+import { NetworkStrategusStudy } from "./strategusStudy";
 
 export enum SourceDatasetType {
   SOURCE = "source",
   FHIR = "fhir",
+  STRATEGUS_ANALYSIS = "strategus_analysis",
 }
 
 export enum CacheDatasetType {
@@ -44,7 +46,7 @@ export interface Study {
   tokenStudyCode: string;
   schemaName: string;
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
   type: DatasetType;
   visibilityStatus: string;
   publicKey: string;
@@ -59,6 +61,7 @@ export interface Study {
   fhir_project_id?: string;
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
+  strategusAnalysis?: NetworkStrategusStudy | null;
 }
 
 export interface NewStudyInput {
@@ -68,7 +71,7 @@ export interface NewStudyInput {
   schemaOption: string;
   cdmSchemaValue: string;
   vocabSchemaValue?: string;
-  resultSchemaValue: string;
+  resultsSchemaValue: string;
   tenantName?: string;
   dataModel?: string;
   plugin: string;
@@ -91,13 +94,16 @@ export interface NewStudyInput {
 export interface CopyStudyInput {
   newStudyName: string;
   sourceStudyId: string;
-  sourceType: SourceDatasetType
+  sourceType: SourceDatasetType;
   snapshotLocation: string;
   dataModel: string;
   snapshotCopyConfig?: SnapshotCopyConfig;
   type: CacheDatasetType;
   detail: DatasetDetail;
   paConfigId: string;
+  cdmSchemaValue?: string;
+  vocabSchemaValue?: string;
+  resultsSchemaValue?: string;
 }
 
 export interface NewFhirProjectInput {
@@ -221,7 +227,7 @@ export interface UpdateStudyMetadataInput {
   tags: string[];
   dashboards: DatasetDashboard[];
   vocabSchemaName?: string;
-  resultSchemaName?: string;
+  resultsSchemaName?: string;
 }
 
 // remove once backend is deprecated

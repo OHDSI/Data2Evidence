@@ -49,8 +49,8 @@
           "FHIR_CUSTOM_SCHEMA": "${FHIR_CUSTOM_SCHEMA:-fhir}",
           "DB_CREDENTIALS__PUBLIC_KEYS": "${DB_CREDENTIALS__PUBLIC_KEYS}",
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
-          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__ALP_DATA__CLIENT_ID}",
-          "LOGTO__ALP_DATA__CLIENT_SECRET": "${LOGTO__ALP_DATA__CLIENT_SECRET}"
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}"
         }
       },
       "roles": {
@@ -122,6 +122,15 @@
           "path": "^/system-portal/dataset/list/systemadmin$",
           "scopes": [
             "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/superadmin/StructureDefinition(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
           ],
           "httpMethods": [
             "GET"

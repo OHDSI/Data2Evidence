@@ -10,15 +10,17 @@ interface DrilldownTrellisChartProps {
   data: any;
   trellisXAxisKey?: string;
   maxPlotsPerRow?: number;
+  title?: string;
 }
 
 const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
   data,
   trellisXAxisKey = "YPREVALENCE1000PP",
   maxPlotsPerRow = 5,
+  title: propsTitle,
 }) => {
   const { getText, i18nKeys } = useTranslation();
-  const title = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
+  const title = propsTitle ?? getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TITLE);
   const trellisTopLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_TOP_LABEL);
   const trellisBottomLabel = getText(i18nKeys.DRILLDOWN_TRELLIS_CHART__TRELLIS_BOTTOM_LABEL);
 
@@ -50,14 +52,16 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
   const GRID_HEIGHT = 60 / numRows;
   const GRID_TOP_MARGIN = 8;
   const GRID_VERTICAL_GAP = 30 / numRows;
+  const TITLE_OFFSET = 6 / numRows; // Dynamic offset for grid titles
+  const ROW_LABEL_OFFSET = 9 / numRows; // Dynamic offset for row labels
 
   // Get keys from trellisData sorted
   const sortedTrellisNames = Object.keys(trellisData).sort();
 
   // Calculate global y-axis range for harmonization across all plots
   const allYValues = data.map((obj: any) => Number(obj[trellisXAxisKey])).filter((v: number) => !isNaN(v));
-  const globalYMin = Math.min(...allYValues);
-  const globalYMax = Math.max(...allYValues);
+  const globalYMin = Math.floor(Math.min(...allYValues));
+  const globalYMax = Math.ceil(Math.max(...allYValues));
 
   for (const [index, trellisName] of sortedTrellisNames.entries()) {
     let seriesData = trellisData[trellisName];
@@ -72,7 +76,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
       // Top label for this row (positioned above trellis names)
       gridTitles.push({
         text: trellisTopLabel,
-        top: `${rowTop - 5}%`,
+        top: `${rowTop - ROW_LABEL_OFFSET}%`,
         left: "center",
         textStyle: {
           fontSize: 14,
@@ -104,7 +108,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
     gridTitles.push({
       textAlign: "center",
       text: trellisName,
-      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN - 2}%`,
+      top: `${rowIndex * (GRID_HEIGHT + GRID_VERTICAL_GAP) + GRID_TOP_MARGIN - TITLE_OFFSET}%`,
       left: `${colIndex * (GRID_WIDTH + GRID_GAP) + GRID_WIDTH / 2 + GRID_LEFT_MARGIN}%`,
       textStyle: {
         fontWeight: "normal",
@@ -126,7 +130,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
           focus: "series",
         },
         label: {
-          show: true,
+          show: false,
           position: "top",
         },
         xAxisIndex: index,
