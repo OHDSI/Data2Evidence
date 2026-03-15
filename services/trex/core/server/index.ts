@@ -25,6 +25,18 @@ export async function initTrex() {
     });
     app.use(hlogger())
     await DatabaseManager.get();
+
+    // Load ICU extension for DuckDB functions like current_date
+    const icuConn = new Trex.TrexDB("memory");
+    await icuConn.execute("LOAD icu", []);
+    const icuTest = await icuConn.execute("SELECT current_date AS today", []);
+    logger.log(`Loaded ICU extension (current_date = ${icuTest[0]?.today})`);
+
+    // Load FTS (Full-Text Search) extension for DuckDB
+    const ftsConn = new Trex.TrexDB("memory");
+    await ftsConn.execute("LOAD fts", []);
+    logger.log(`Loaded FTS extension`);
+
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
         const module = await import(`./routes/${r.name}`);

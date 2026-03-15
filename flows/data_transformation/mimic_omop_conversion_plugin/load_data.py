@@ -19,7 +19,7 @@ def create_table(conn, sql_file, schema_name=None):
 
 def make_table_name(file_path):
     basename = os.path.basename(file_path)
-    table_name = os.path.splitext(basename)[0]
+    table_name = basename.split('.')[0]
     pathname = os.path.dirname(file_path)
     dirname = os.path.basename(pathname)
     return f"mimiciv_{dirname}.{table_name}", dirname
@@ -60,13 +60,13 @@ def load_vocab(conn, vocab_dir):
             COPY {table_name} FROM '{file}' (DATEFORMAT '%Y%m%d', DELIMITER '\t', FORMAT CSV, HEADER, QUOTE '"',ESCAPE '\"');
             """
             conn.execute(query)
-            logger.info(f"Loading {table_name} done")
+            logger.info(f"Loading {table_name.replace("mimic_staging.tmp_", "")} done")
         except Exception as e:
             logger.error(f"Error loading {file}: {str(e)}")
             raise Exception()
     # generate_custom_vocab
     try: 
-        execute_raw_sql_from_file(conn, CustomVocabDir,CustomVocabSqls)
+        execute_raw_sql_from_file(conn, CustomVocabDir, CustomVocabSqls, CustomVocabLogs)
     except Exception as e:
         logger.error(f"Error generating custom vocabulories: {str(e)}")
         raise Exception()

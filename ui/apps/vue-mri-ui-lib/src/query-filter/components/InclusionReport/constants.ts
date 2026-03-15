@@ -3,11 +3,11 @@
  * Colors represent different levels of rule failures, from most failures (red) to no failures (green)
  */
 export const INCLUSION_REPORT_COLORS = {
-  allFailedOr5Plus: '#fabfb4',
-  threeToFour: '#fcdab6',
-  two: '#dedcab',
-  one: '#cdd99e',
-  allPassed: '#53bead',
+  allFailedOr5Plus: '#ffe799',
+  threeToFour: '#ece696',
+  two: '#d8e593',
+  one: '#c3e490',
+  allPassed: '#aee28d',
 } as const
 
 /**
@@ -32,13 +32,7 @@ export const FUNNEL_THRESHOLDS = [0.1, 0.25, 0.5, 0.75] as const
  * Legend labels for funnel chart
  * Corresponds to the color thresholds
  */
-export const FUNNEL_LEGEND_LABELS = [
-  '≤10% remain',
-  '10-25% remain',
-  '25-50% remain',
-  '50-75% remain',
-  '>75% remain',
-] as const
+export const FUNNEL_LEGEND_LABELS = ['>90% lost', '75-90% lost', '50-75% lost', '25-50% lost', '<25% lost'] as const
 
 /**
  * Legend items for treemap visualization
@@ -56,4 +50,3 @@ export const TREEMAP_LEGEND_ITEMS = [
  * Gray color used for filtered out/excluded items in treemap
  */
 export const EXCLUDED_COLOR = '#CCCCCC' as const
-

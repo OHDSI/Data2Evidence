@@ -11,6 +11,7 @@ const portalRoutes = [
   "/portal/systemadmin",
   "/portal/systemadmin/*",
   "/portal/public",
+  "/portal/etl/*",
   "/portal/public/*",
 ];
 
@@ -24,7 +25,7 @@ function _addStatic(app: Hono, url: string, path: string) {
         if (reqPath == "/portal/login-callback") return "";
         else return reqPath.replace(new RegExp(`^${url}`), "");
       },
-    })
+    }),
   );
 }
 
@@ -57,7 +58,7 @@ export function addPlugin(app: Hono, value: any, dir: string) {
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),
-      value.uiplugins
+      value.uiplugins,
     );
     logger.log(global.PLUGINS_JSON);
   }
@@ -97,7 +98,7 @@ export function mergeChildren(existingItem: any, incomingItem: any): void {
       // Update existing child with incoming properties
       Object.assign(
         existingChildrenByRoute.get(incomingChild.route),
-        incomingChild
+        incomingChild,
       );
     } else {
       // Add new child to existing children array
@@ -175,6 +176,6 @@ export function updatePluginJson(plugins: any, uiPlugins: any): string {
   // Convert to string and replace any placeholders
   return JSON.stringify(plugins).replace(
     /\$\$FQDN\$\$/g,
-    env.CADDY__ALP__PUBLIC_FQDN
+    env.CADDY__ALP__PUBLIC_FQDN,
   );
 }

@@ -34,6 +34,8 @@ export class StrategusAnalysis {
 
   public createStrategusAnalysis(data: {
     studyId: string;
+    tokenStudyCode: string;
+    tenantId: string;
     analysisSpec: string;
     mode?: string;
     notebookName?: string;

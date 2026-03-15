@@ -783,7 +783,7 @@ export class HanaHDBDao {
               "thirdPartyToken"
             ];
           if (thirdPartyToken) {
-            injectSessionVariablesToCredentials(credentials, thirdPartyToken);
+            this.injectSessionVariablesToCredentials(credentials, thirdPartyToken);
           } else {
             throw new Error(
               "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
@@ -798,7 +798,7 @@ export class HanaHDBDao {
           const token = decode(this.jwt.replace(/bearer /i, ""))[
               "thirdPartyToken"
             ] ?? this.jwt.replace(/bearer /i, "");
-          injectSessionVariablesToCredentials(credentials, token);
+          this.injectSessionVariablesToCredentials(credentials, token);
         }
 
         const client = hdb.createClient(credentials);

@@ -22,12 +22,26 @@ export class DbCredentialsMgr {
       method: "GET",
     });
 
-    return list.map((d) => ({
-      ...omit(d, "db_extra", "authentication_mode", "vocab_schemas"),
-      extra: [{ value: typeof d.db_extra === "string" ? d.db_extra : JSON.stringify(d.db_extra ?? {}), serviceScope: SERVICE_SCOPE_TYPES.INTERNAL }],
-      authenticationMode: d.authentication_mode,
-      vocabSchemas: d.vocab_schemas,
-    }));
+    return list.map((d) => {
+      const dbExtra = d.db_extra ?? {};
+      // If db_extra already has an "Internal" key, use its value directly; otherwise wrap the whole object
+      const hasLegacyExtra = dbExtra && typeof dbExtra === "object" && !Array.isArray(dbExtra) && "Internal" in dbExtra;
+      const internalValue = hasLegacyExtra
+        ? typeof dbExtra.Internal === "string"
+          ? dbExtra.Internal
+          : JSON.stringify(dbExtra.Internal)
+        : typeof dbExtra === "string"
+        ? dbExtra
+        : JSON.stringify(dbExtra);
+
+      return {
+        ...omit(d, "db_extra", "authentication_mode", "vocab_schemas"),
+        extra: [{ value: internalValue, serviceScope: SERVICE_SCOPE_TYPES.INTERNAL }],
+        authenticationMode: d.authentication_mode,
+        vocabSchemas: d.vocab_schemas,
+        hasLegacyExtra,
+      };
+    });
   }
 
   public addDb(db: INewDatabase) {

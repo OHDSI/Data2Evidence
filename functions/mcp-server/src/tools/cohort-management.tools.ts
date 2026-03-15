@@ -40,6 +40,7 @@ export function registerCohortManagementTools(server: McpServer) {
       },
     },
     async ({}, { requestInfo }) => {
+      const toolStart = performance.now();
       // Extract authorization and datasetId (both required for delete)
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       // Fetch d2e cohort list
@@ -52,6 +53,7 @@ export function registerCohortManagementTools(server: McpServer) {
         cohortName: String(cohort.name ?? cohort.bookmarkname ?? ""),
         cohortDescription: cohort.description || "",
       }));
+      console.log(`[MCP-TIMING] [get_cohort_id_name_list] END total=${(performance.now() - toolStart).toFixed(1)}ms items=${cohortData.length}`);
       return createStructuredResponse(
         "Here is the list of cohort ids and names for all cohort description.",
         { cohortsId: cohortData }
@@ -69,8 +71,11 @@ export function registerCohortManagementTools(server: McpServer) {
       inputSchema: GetCohortDefinitionInput,
     },
     async ({ cohortId }) => {
-      const cohortDefinition = await d2eWebapi.getAtlasCohortDefinition(
-        cohortId
+      const toolStart = performance.now();
+      const cohortDefinition =
+        await d2eWebapi.getAtlasCohortDefinition(cohortId);
+      console.log(
+        `[MCP-TIMING] [get_atlas_cohort_definition] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
       );
       return createStructuredResponse(
         `Retrieved cohort definition with ID: ${cohortDefinition.id}, Name: ${cohortDefinition.name}`,
@@ -92,6 +97,7 @@ export function registerCohortManagementTools(server: McpServer) {
       { cohortDefinitionExpression, cohortInfo, isValidCohortDefinition },
       { requestInfo }
     ) => {
+      const toolStart = performance.now();
       if (!isValidCohortDefinition) {
         throw new Error(
           "Cohort definition must be validated before creation. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
@@ -114,6 +120,7 @@ export function registerCohortManagementTools(server: McpServer) {
         throw new Error("Failed to create cohort definition in D2E");
       }
 
+      console.log(`[MCP-TIMING] [create_atlas_cohort_definition] END total=${(performance.now() - toolStart).toFixed(1)}ms`);
       return createTextResponse(
         `Successfully created cohort definition with ID: ${res.id}, Name: ${res.name}`
       );
@@ -138,6 +145,7 @@ export function registerCohortManagementTools(server: McpServer) {
       },
       { requestInfo }
     ) => {
+      const toolStart = performance.now();
       if (!isValidCohortDefinition) {
         throw new Error(
           "Cohort definition must be validated before update. Use validate_atlas_cohort_definition tool first and set isValidCohortDefinition=true"
@@ -171,6 +179,9 @@ export function registerCohortManagementTools(server: McpServer) {
         );
       }
 
+      console.log(
+        `[MCP-TIMING] [update_atlas_cohort_definition] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
+      );
       return createTextResponse(
         `Successfully updated cohort definition with ID: ${res.id}`
       );
@@ -187,6 +198,7 @@ export function registerCohortManagementTools(server: McpServer) {
       inputSchema: DeleteCohortDefinitionInput,
     },
     async ({ cohortId }, { requestInfo }) => {
+      const toolStart = performance.now();
       // Extract authorization and datasetId (both required for delete)
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
@@ -202,6 +214,9 @@ export function registerCohortManagementTools(server: McpServer) {
         );
       }
 
+      console.log(
+        `[MCP-TIMING] [delete_atlas_cohort_definition] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
+      );
       return createTextResponse(
         `Successfully deleted cohort definition with ID: ${cohortId}`
       );

@@ -71,6 +71,7 @@ export class SupabaseStorageClient {
       this.createBucket(this.DEFAULT_BUCKET);
       this.createBucket(envObj.DATA_TRANSFORMATION_BUCKET);
       this.createBucket("strategus-results");
+      this.createBucket("portal-datasets-graphs", true);
     }
   }
 
@@ -95,7 +96,7 @@ export class SupabaseStorageClient {
     }
   }
 
-  private async createBucket(bucketName: string) {
+  private async createBucket(bucketName: string, isPublic = false) {
     try {
       console.info(`Creating bucket ${bucketName}...`);
 
@@ -110,7 +111,7 @@ export class SupabaseStorageClient {
         },
         body: JSON.stringify({
           name: bucketName,
-          public: false,
+          public: isPublic,
         }),
       });
 
@@ -599,6 +600,86 @@ export class SupabaseStorageClient {
       if (client) {
         client.release();
       }
+    }
+  }
+
+  async uploadFolder(
+    bucket: string,
+    basePath: string,
+    files: Array<{ relativePath: string; buffer: ArrayBuffer; mimetype: string }>,
+    parallel: boolean = true,
+    concurrencyLimit: number = 5
+  ): Promise<{ status: string; uploadedFiles: string[]; bucket: string }> {
+    const uploadedFiles: string[] = [];
+
+    const uploadSingleFile = async (file: {
+      relativePath: string;
+      buffer: ArrayBuffer;
+      mimetype: string;
+    }) => {
+      const fullPath = `${basePath}/${file.relativePath}`;
+      console.log(`Uploading file: ${fullPath} to bucket: ${bucket}`);
+
+      const url = `${this.baseUrl}/object/${bucket}/${fullPath}`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.authToken}`,
+          "Content-Type": file.mimetype || "application/octet-stream",
+          "Cache-Control": "3600",
+          "x-upsert": "true",
+        },
+        body: file.buffer,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error uploading file: ${response.status} - ${errorText}`);
+        throw new Error(
+          `Storage service returned ${response.status}: ${errorText}`
+        );
+      }
+
+      console.info(`File successfully uploaded to ${fullPath}`);
+      return fullPath;
+    };
+
+    try {
+      if (parallel) {
+        // Parallel uploads with concurrency limit
+        const results: string[] = [];
+        for (let i = 0; i < files.length; i += concurrencyLimit) {
+          const batch = files.slice(i, i + concurrencyLimit);
+          const batchResults = await Promise.all(batch.map(uploadSingleFile));
+          results.push(...batchResults);
+        }
+        uploadedFiles.push(...results);
+      } else {
+        // Sequential uploads
+        for (const file of files) {
+          const result = await uploadSingleFile(file);
+          uploadedFiles.push(result);
+        }
+      }
+
+      console.info(
+        `Successfully uploaded ${uploadedFiles.length} files to ${bucket}/${basePath}`
+      );
+      return {
+        status: "success",
+        uploadedFiles,
+        bucket,
+      };
+    } catch (e) {
+      console.error(
+        `Error in uploadFolder method: ${
+          e instanceof Error ? e.message : String(e)
+        }`
+      );
+      throw new InternalServerErrorException(
+        `Error occurred uploading folder to ${bucket}/${basePath}`
+      );
     }
   }
 }

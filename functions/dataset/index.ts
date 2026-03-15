@@ -1,7 +1,11 @@
 import express, { NextFunction, Request, Response } from "npm:express";
+import { Buffer } from "node:buffer";
+import fs from "node:fs/promises";
+import path from "node:path";
 import { v4 as uuidv4 } from "npm:uuid";
 import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
 import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
+import { FhirGatewayAPI } from "./api/FhirGatewayAPI.ts";
 import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
 import { PortalAPI } from "./api/PortalAPI.ts";
 import {
@@ -10,12 +14,19 @@ import {
   DbDialect,
   SourceDatasetType,
 } from "./const.ts";
-import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
 import { ShinyLiveService } from "./services/shinylive.service.ts";
 
-const GATEWAY_WO_PROTOCOL_FQDN = env.GATEWAY_WO_PROTOCOL_FQDN!;
 const app = express();
+
+interface DashboardCode {
+  id: number;
+  datasetId: string;
+  name: string;
+  type: string;
+  code: string;
+  language?: string;
+}
 
 export class DatasetRouter {
   public router = express.Router();
@@ -123,7 +134,9 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        const newCacheSchemaName = `CDM${id}`.replace(/-/g, "");
+        const newCacheSchemaName = schemaName
+          ? schemaName
+          : `CDM${id}`.replace(/-/g, "");
         const parsedNewCacheSchemaName = this.schemaCase(
           newCacheSchemaName,
           dialect as DbDialect,
@@ -240,10 +253,14 @@ export class DatasetRouter {
           } catch (createError: any) {
             const status = createError.status || createError.response?.status;
             const responseData = createError.response?.data;
-            this.logger.error(`Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+            this.logger.error(
+              `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+            );
             // Return 400 for client errors, 500 for server errors
             const httpStatus = status >= 400 && status < 500 ? status : 500;
-            return res.status(httpStatus).json(responseData || { error: createError.message });
+            return res
+              .status(httpStatus)
+              .json(responseData || { error: createError.message });
           }
 
           this.logger.info("Creating cache dataset in Portal");
@@ -254,15 +271,41 @@ export class DatasetRouter {
             type === SourceDatasetType.FHIR &&
             cacheDatasetType === CacheDatasetType.NON_OMOP
           ) {
+            // Create FHIR project synchronously so fhir_project_id is available before triggering cache flow
+            let resolvedFhirProjectId = fhirProjectId;
+            if (!resolvedFhirProjectId) {
+              try {
+                this.logger.info(
+                  `Creating FHIR project for dataset '${tokenStudyCode}'..`,
+                );
+                const fhirGatewayAPI = new FhirGatewayAPI(token);
+                resolvedFhirProjectId = await fhirGatewayAPI.createProject(
+                  id,
+                  detail?.name || tokenStudyCode,
+                );
+                this.logger.info(
+                  `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
+                );
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
+                );
+                return res
+                  .status(500)
+                  .send("Error while creating FHIR project");
+              }
+            }
+
             try {
               this.logger.info(
                 `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
               );
-
               const fhirCacheFlowRunDto = {
                 databaseCode: databaseCode,
                 schemaName: schemaName,
                 cacheSchemaName: parsedNewCacheSchemaName,
+                studyCode: tokenStudyCode,
+                fhirProjectId: resolvedFhirProjectId,
               };
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
@@ -354,14 +397,14 @@ export class DatasetRouter {
         schemaName,
         vocabSchemaName,
         resultsSchemaName,
+        tokenStudyCode
       } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
       const id = uuidv4();
 
       // Use parent schema names if provided, otherwise generate new ones
-      const newSchemaName =
-        cdmSchemaValue || (sourceHasSchema ? `CDM${id}`.replace(/-/g, "") : "");
+      const newSchemaName = `CDM${id}`.replace(/-/g, "");
       const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
       const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
 
@@ -402,6 +445,7 @@ export class DatasetRouter {
                 databaseCode: databaseCode,
                 schemaName: schemaName,
                 cacheSchemaName: parsedNewSchemaName,
+                studyCode: tokenStudyCode,
               };
               await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
             } catch (error) {
@@ -444,6 +488,27 @@ export class DatasetRouter {
       }
     });
 
+    this.router.get("/info", async (req: Request, res: Response) => {
+      const { datasetId } = req.query || {};
+
+      if (!datasetId || typeof datasetId !== "string") {
+        return res.status(400).send("datasetId is required");
+      }
+
+      try {
+        const token = req.headers.authorization!;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDataset(datasetId);
+        return res.status(200).json({
+          type: dataset.type,
+          tokenStudyCode: dataset.tokenStudyCode,
+        });
+      } catch (error) {
+        this.logger.error(`Error when getting dataset info: ${JSON.stringify(error)}`);
+        res.status(500).send("Error when getting dataset info");
+      }
+    });
+
     this.router.get("/dashboard/list", async (req: Request, res: Response) => {
       const { datasetId } = req.query || {};
 
@@ -456,11 +521,20 @@ export class DatasetRouter {
       try {
         const token = req.headers.authorization!;
         const portalAPI = new PortalAPI(token);
-        const dataset = await portalAPI.getDataset(datasetId);
-        const mapped = dataset.dashboards.map(({ id, name }) => {
-          const url = `https://${GATEWAY_WO_PROTOCOL_FQDN}/dashboard-gate/${id}/content?token=${token}`;
-          return { name, url };
-        });
+        const dashboards = await portalAPI.getDatasetDashboards(datasetId);
+
+        // Map to return id, datasetId, name, and language
+        const mapped = dashboards.map((dashboard: DashboardCode) => ({
+          id: dashboard.id,
+          datasetId: dashboard.datasetId,
+          name: dashboard.name,
+          language: dashboard.language,
+        }));
+
+        this.logger.info(
+          `Found ${mapped.length} dashboards for dataset ${datasetId}`,
+        );
+
         return res.status(200).json(mapped);
       } catch (error) {
         this.logger.error(
@@ -470,15 +544,21 @@ export class DatasetRouter {
       }
     });
 
-    // resourceId format: datasetId_type_name_language
     this.router.use(
       "/shiny-live/:resourceId",
       async (req: Request, res: Response, next: NextFunction) => {
         const resourceId = req.params.resourceId;
         const [datasetId, type, name, language] = resourceId.split("_");
 
+        if (!datasetId || !type || !name || !language) {
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
+        }
+
         try {
-          // Get the static files directory (downloads and unzips if needed)
           const staticDir = await this.shinyLiveService.getStaticFilesDir(
             datasetId,
             type,
@@ -490,15 +570,79 @@ export class DatasetRouter {
             return res.status(404).send("Shinylive application not found");
           }
 
-          // Serve static files from the unzipped directory
-          const staticMiddleware = express.static(staticDir);
+          express.static(staticDir, {
+            index: "index.html",
+            fallthrough: true,
+          })(req, res, async () => {
+            const requestedPath =
+              req.path === "/" ? "index.html" : req.path.substring(1);
+            const encodedSubPath = requestedPath
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/");
+            const url = this.shinyLiveService.getPublicUrl(
+              datasetId,
+              type,
+              name,
+              language,
+              encodedSubPath,
+            );
 
-          staticMiddleware(req, res, next);
+            try {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                return res.status(response.status).send("Resource not found");
+              }
+
+              const buffer = Buffer.from(await response.arrayBuffer());
+              const contentType =
+                response.headers.get("content-type") ||
+                "application/octet-stream";
+
+              res.set("Content-Type", contentType);
+              res.send(buffer);
+
+              const localFilePath = path.join(staticDir, requestedPath);
+              try {
+                await fs.mkdir(path.dirname(localFilePath), {
+                  recursive: true,
+                });
+                await fs.writeFile(localFilePath, buffer);
+              } catch (e) {}
+            } catch (err) {
+              this.logger.error("[ShinyLive] Proxy error:", err);
+              return res.status(502).send("Error fetching resource");
+            }
+          });
+        } catch (error) {
+          this.logger.error("[ShinyLive] Error:", { resourceId, error });
+          res.status(500).send("Error loading shiny-live application");
+        }
+      },
+    );
+
+    // resourceId format: datasetId_type_name_language
+    this.router.delete(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+        this.logger.info(`Deleting shiny-live resources for ${resourceId}`);
+
+        try {
+          await this.shinyLiveService.deleteDatasetShinyLiveResources(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+          return res.status(200).send("Resource deleted successfully");
         } catch (error) {
           this.logger.error(
-            `Error in shiny-live endpoint: ${JSON.stringify(error)}`,
+            `Error deleting shiny-live resources: ${JSON.stringify(error)}`,
           );
-          res.status(500).send("Error loading shiny-live application");
+          res.status(500).send("Error deleting shiny-live resources");
         }
       },
     );

@@ -15,18 +15,20 @@ export interface SaveCodeParams {
   code: string;
   name: string;
   type: "dashboard" | "cohort";
+  language?: string;
 }
 
 const dashboardCohortStrategy: ConfigStrategy = {
   fetchTemplates: () => api.systemPortal.getDashboardTemplatesFromRepo(),
   fetchCodes: (id, type) => api.systemPortal.getDashboardCodes(id, type),
   fetchStrategusCode: async () => "",
-  saveCode: async ({ id, code, name, type }) => {
+  saveCode: async ({ id, code, name, type, language }) => {
     await api.systemPortal.upsertDashboardCode({
       datasetId: id,
       code,
       type,
       name,
+      language,
     });
   },
   supportsMultipleCodes: true,

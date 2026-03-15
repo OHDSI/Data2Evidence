@@ -8,7 +8,10 @@ interface EmptyNotebookProps {
   importJupyterNb: (event: any) => Promise<void>;
 }
 
-export const EmptyNotebook: FC<EmptyNotebookProps> = ({ createNotebook, importJupyterNb }) => {
+export const EmptyNotebook: FC<EmptyNotebookProps> = ({
+  createNotebook,
+  importJupyterNb,
+}) => {
   const { getText } = useTranslation();
   const hiddenFileInput = React.useRef<HTMLInputElement>(null);
 
@@ -22,9 +25,18 @@ export const EmptyNotebook: FC<EmptyNotebookProps> = ({ createNotebook, importJu
     <div className="notebook-main">
       <div>
         <h1>{getText(i18nKeys.EMPTY_NOTEBOOK__TITLE)}</h1>
-        <Button text={getText(i18nKeys.EMPTY_NOTEBOOK__ADD)} onClick={createNotebook} />
+        <Button
+          text={getText(i18nKeys.EMPTY_NOTEBOOK__ADD)}
+          onClick={createNotebook}
+        />
         <Button
           className="button-import"
+          sx={{
+            "&&:hover": {
+              backgroundColor: "primary.dark",
+              color: "white",
+            },
+          }}
           text={getText(i18nKeys.EMPTY_NOTEBOOK__IMPORT)}
           onClick={handleJupyterInput}
         />

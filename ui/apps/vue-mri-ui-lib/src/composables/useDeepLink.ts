@@ -40,6 +40,7 @@ export function useDeepLink(dispatch: any) {
     const params = new URLSearchParams(window.location.search)
     const linkType = params.get('linkType')
     const query = params.get('query')
+    const wizardsParam = params.get('wizards')
 
     // Check if this is a cohort definition deep link
     if (linkType !== 'cohort-definition') {
@@ -49,6 +50,22 @@ export function useDeepLink(dispatch: any) {
     // Check if query parameter exists and is not empty
     if (!query || query.trim() === '') {
       return
+    }
+
+    // Decompress and save wizards param if present
+    let wizardConfigData: Record<string, any> | null = null
+    if (wizardsParam) {
+      try {
+        const wizardsResult = CohortUrlCodec.safeDecompress(wizardsParam)
+        if (wizardsResult.success) {
+          wizardConfigData = wizardsResult.data as Record<string, any>
+          dispatch('setWizardConfig', { ...wizardConfigData, fromDeepLink: true })
+        } else {
+          console.warn('[DeepLink] Failed to decompress wizards param:', (wizardsResult as any).error)
+        }
+      } catch (err) {
+        console.warn('[DeepLink] Error processing wizards param:', err)
+      }
     }
 
     // Mark as processed to prevent re-processing
@@ -106,12 +123,25 @@ export function useDeepLink(dispatch: any) {
       const cleanUrl = new URL(window.location.href)
       cleanUrl.searchParams.delete('linkType')
       cleanUrl.searchParams.delete('query')
+      cleanUrl.searchParams.delete('wizards')
       window.history.replaceState({}, '', cleanUrl.toString())
 
-      // Show success message
+      // Show success message, enhanced if wizard config has conditions/years
+      let successMessage = 'Cohort definition loaded successfully from shared link.'
+      if (wizardConfigData) {
+        const hasConditions = Array.isArray(wizardConfigData.conditions) && wizardConfigData.conditions.length > 0
+        const hasYears = wizardConfigData.year && (wizardConfigData.year.from || wizardConfigData.year.to)
+        if (hasConditions || hasYears) {
+          const parts: string[] = []
+          if (hasConditions) parts.push('conditions')
+          if (hasYears) parts.push('years')
+          successMessage += ` Note that ${parts.join(' and ')} do not appear in the filter cards but are used in the dashboard.`
+        }
+      }
       dispatch('setAlertMessage', {
-        message: 'Cohort definition loaded successfully from shared link.',
+        message: successMessage,
         messageType: 'success',
+        title: 'Success',
       })
     } catch (error) {
       console.error('[DeepLink] Processing error:', error)

@@ -5,6 +5,7 @@ export const loadPlugins = () => {
   let plugins: IPlugin = {
     researcher: [],
     systemadmin: [],
+    etl: [],
     setup: [],
   };
 

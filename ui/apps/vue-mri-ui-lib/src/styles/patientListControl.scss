@@ -22,7 +22,7 @@ div.patientlist-control {
       border-right: 1px solid var(--color-table-row-border);
     }
 
-    div.cellContainer:nth-child(even) {
+    div.cellContainer + div.cellContainer {
       border-top: 1px solid var(--color-table-row-border);
     }
     div.cellContainer {
@@ -113,6 +113,7 @@ div.patientlist-control {
       }
       td {
         box-sizing: border-box;
+        padding: 0;
         div.row-item {
           padding-left: $cellpadding;
           padding-right: $cellpadding;

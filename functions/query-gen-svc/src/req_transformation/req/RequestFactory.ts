@@ -20,6 +20,7 @@ export class RequestFactory {
             case "boxplot":
             case "kmquery":
             case "totalpcount":
+            case "irtotalpcount":
             case "patientdetail":
             case "patients_collection_service":
                 return new IFR(request, config, pHolderTable);
