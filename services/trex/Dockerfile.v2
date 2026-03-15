@@ -10,6 +10,7 @@ USER root
 
 ENV ONNXRUNTIME_VERSION=1.20.1
 ENV DUCKDB_VERSION=1.4.4
+ENV TREXSQL_EXT_VERSION=0.1.24
 
 # Copy install scripts
 RUN mkdir -p /scripts
@@ -29,6 +30,7 @@ RUN apt-get update && apt-get install -y \
     libopenblas-dev \
     npm \
     tar \
+    zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ONNX Runtime
@@ -94,6 +96,17 @@ RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
     ln -s /usr/src/deno.json /var/lib/ohdsi/webapi/deno.json && \
     ln -s /usr/src/package.json /var/lib/ohdsi/webapi/package.json && \
     ln -s /usr/src/data /var/lib/ohdsi/webapi/data
+
+# Replace trexsql-ext JAR in WebAPI with newer version (DuckDB v1.4.4)
+# Remove old trexsql-ext JAR and conflicting WebAPI trexsql classes (now provided by the new JAR)
+# Nested JARs must use ZIP_STORED (no compression) for Spring Boot's nested jar loader
+RUN cd /var/lib/ohdsi/webapi && \
+    curl -sL https://github.com/p-hoffmann/trexsql-ext/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar -o /tmp/trexsql-new.jar && \
+    zip -d WebAPI.jar "BOOT-INF/lib/trexsql-ext-*" "BOOT-INF/classes/org/ohdsi/webapi/trexsql/*" && \
+    mkdir -p /tmp/webapi-patch/BOOT-INF/lib && \
+    cp /tmp/trexsql-new.jar /tmp/webapi-patch/BOOT-INF/lib/trexsql-ext-v${TREXSQL_EXT_VERSION}.jar && \
+    cd /tmp/webapi-patch && zip -r -0 /var/lib/ohdsi/webapi/WebAPI.jar . && \
+    rm -rf /tmp/trexsql-new.jar /tmp/webapi-patch
 
 # Go back to WebAPI working directory
 WORKDIR /var/lib/ohdsi/webapi
