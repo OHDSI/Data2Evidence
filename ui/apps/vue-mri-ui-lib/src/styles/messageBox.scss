@@ -52,6 +52,7 @@
     min-height: 50px;
     max-height: calc(100vh - 320px);
     overflow-y: auto;
+    position: relative;
   }
   .modal-footer {
     button .buttonInner {

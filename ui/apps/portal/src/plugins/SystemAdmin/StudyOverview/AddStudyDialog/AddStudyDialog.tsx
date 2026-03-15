@@ -18,7 +18,6 @@ import {
   CloseDialogType,
   Feedback,
   IDatabase,
-  NewFhirProjectInput,
   NewStudyInput,
   SourceDatasetType,
   Study,
@@ -110,6 +109,9 @@ interface FormError {
   name: {
     required: boolean;
   };
+  type: {
+    required: boolean;
+  };
 
   cacheDatasetName: {
     required: boolean;
@@ -131,6 +133,7 @@ const EMPTY_FORM_ERROR: FormError = {
   databaseCode: { required: false },
   paConfigId: { required: false },
   name: { required: false },
+  type: { required: false },
   cacheDatasetName: { required: false },
   cacheDatasetType: { required: false },
 };
@@ -359,6 +362,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const isFormError = useCallback(() => {
     const {
+      type,
       tokenStudyCode,
       schemaOption,
       cdmSchemaValue,
@@ -436,6 +440,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, name: { required: true } };
     }
 
+    // Type selection is required for HANA databases
+    if (dialect === "hana" && !type) {
+      formError = { ...formError, type: { required: true } };
+    }
+
     if (!cacheDatasetName && dialect !== "hana") {
       formError = { ...formError, cacheDatasetName: { required: true } };
     }
@@ -490,8 +499,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       cacheDatasetName,
       cacheDatasetType,
     } = formData;
-    const createFhirProject = formData.schemaOption === SchemaTypes.FHIR;
-
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
@@ -529,23 +536,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      const dataset = await api.gateway.createDataset(input);
-      if (createFhirProject) {
-        try {
-          const fhirProjectInput: NewFhirProjectInput = {
-            id: dataset.id,
-            description: description,
-          };
-          await api.fhirGateway.createFhirStaging(fhirProjectInput);
-        } catch (err: any) {
-          setFeedback({
-            type: "error",
-            message: `[FHIR Project] ${err.data?.message || err.data}`,
-          });
-          console.error(err);
-          //return;
-        }
-      }
+      await api.gateway.createDataset(input);
 
       handleClose("success");
     } catch (err: any) {
@@ -673,6 +664,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     dialect: db?.dialect || "",
                     cdmSchemaValue: "",
                     vocabSchemaValue: "",
+                    // Set type to empty for HANA where user need to manually select the type
+                    type: db?.dialect === "hana" ? "" : SourceDatasetType.SOURCE,
                   });
                 }}
                 inputProps={{
@@ -715,6 +708,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               variant="standard"
               disabled={formData.dialect !== "hana"}
               fullWidth
+              {...(formError.type?.required ? { error: true } : {})}
             >
               <InputLabel htmlFor="type-option">Type</InputLabel>
               <Select
@@ -728,12 +722,18 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   id: "type-option",
                 }}
               >
+                <MenuItem sx={styles} value="">
+                  &nbsp;
+                </MenuItem>
                 {cacheDatasetTypeOptions.map((option) => (
                   <MenuItem sx={styles} key={option.type} value={option.type}>
                     {option.title}
                   </MenuItem>
                 ))}
               </Select>
+              {formError.type?.required && (
+                <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
+              )}
             </FormControl>
           </div>
         )}

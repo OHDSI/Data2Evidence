@@ -2,6 +2,10 @@ import { test as base, Page, BrowserContext } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
 
+function passedFirstTry(testInfo: { status?: string; retry: number }) {
+  return testInfo.status === 'passed' && testInfo.retry === 0
+}
+
 // Extend the base test to capture console logs, errors, and HAR
 export const test = base.extend<{
   context: BrowserContext
@@ -72,14 +76,8 @@ export const test = base.extend<{
 
     await use(page)
 
-    // After test, save console logs to a file if there were any errors or warnings
-    const hasErrors = logs.some(
-      log => log.includes('[ERROR]') || log.includes('[PAGE ERROR]') || log.includes('[REQUEST FAILED]')
-    )
-
     // Skip saving logs if test passed on first try
-    const passedFirstTry = testInfo.status === 'passed' && testInfo.retry === 0
-    if (!passedFirstTry) {
+    if (!passedFirstTry(testInfo)) {
       const outputDir = testInfo.outputDir
       if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })

@@ -22,6 +22,7 @@ import "./ManageViewerDialog.scss";
 interface ViewerConfig {
   type: "dashboard" | "cohort" | "strategus";
   id: string;
+  datasetId?: string;
 }
 
 interface ManageViewerDialogProps {
@@ -49,7 +50,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
   const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
-  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
+  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.datasetId ?? config.id);
 
   const {
     templates,
@@ -137,12 +138,23 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
     await execute(
       async () => {
         if (strategy.supportsMultipleCodes) {
+          // Determine language based on templateLanguage
+          let language: string | undefined;
+          if (templateLanguage === ViewerType.Python) {
+            language = "python";
+          } else if (templateLanguage === ViewerType.R) {
+            language = "r";
+          } else if (templateLanguage === ViewerType.SHINY_SERVER) {
+            language = "shiny_server"
+          }
+
           // Save code
           await api.systemPortal.upsertDashboardCode({
             datasetId: config.id,
             code,
             type: codeType,
             name,
+            language,
           });
 
           // Delete removed queries
@@ -174,7 +186,17 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
           markSaved();
         } else {
-          await strategy.saveCode({ id: config.id, code, name, type: codeType });
+          // Determine language based on templateLanguage
+          let language: string | undefined;
+          if (templateLanguage === ViewerType.Python) {
+            language = "python";
+          } else if (templateLanguage === ViewerType.R ) {
+            language = "r";
+          } else if (templateLanguage === ViewerType.SHINY_SERVER) {
+            language = "shiny_server"
+          }
+
+          await strategy.saveCode({ id: config.id, code, name, type: codeType, language });
         }
         setSelectedTemplate("default");
       },

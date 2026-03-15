@@ -17,6 +17,7 @@ describe('Treemap Stats Computation', () => {
           percentExcluded: '10.00%',
           percentSatisfying: '90.00%',
           countSatisfying: 900,
+          isExclude: false,
         },
         {
           id: 1,
@@ -24,9 +25,10 @@ describe('Treemap Stats Computation', () => {
           percentExcluded: '30.00%',
           percentSatisfying: '60.00%',
           countSatisfying: 600,
+          isExclude: false,
         },
       ],
-      treemapData: '{}',
+      treemapData: { name: 'Everyone', children: [] as any[] },
     }
 
     it('should return null for null/undefined data', () => {
@@ -50,7 +52,7 @@ describe('Treemap Stats Computation', () => {
       expect(result?.tooltip.summary).toBe('2 criteria passed, 0 criteria failed')
       expect(result?.tooltip.passed).toHaveLength(2)
       expect(result?.tooltip.failed).toHaveLength(0)
-      expect(result?.itemStyle?.color).toBe('#53bead') // All passed
+      expect(result?.itemStyle?.color).toBe('#aee28d') // All passed
     })
 
     it('should convert node with children', () => {
@@ -75,9 +77,9 @@ describe('Treemap Stats Computation', () => {
 
     it('should assign correct colors based on failure count', () => {
       const testCases = [
-        { name: '11', failCount: 0, expectedColor: '#53bead' }, // All passed
-        { name: '01', failCount: 1, expectedColor: '#cdd99e' }, // One failed
-        { name: '00', failCount: 2, expectedColor: '#dedcab' }, // Two failed
+        { name: '11', failCount: 0, expectedColor: '#aee28d' }, // All passed
+        { name: '01', failCount: 1, expectedColor: '#c3e490' }, // One failed
+        { name: '00', failCount: 2, expectedColor: '#d8e593' }, // Two failed
       ]
 
       testCases.forEach(({ name, expectedColor }) => {
@@ -112,8 +114,45 @@ describe('Treemap Stats Computation', () => {
       expect(result?.tooltip).toBeDefined()
       expect(result?.tooltip.count).toBe('400 people (40.00%)')
       expect(result?.tooltip.summary).toBe('1 criteria passed, 1 criteria failed')
-      expect(result?.tooltip.passed).toEqual(['1. Age >= 18'])
-      expect(result?.tooltip.failed).toEqual(['2. Has Condition'])
+      expect(result?.tooltip.passed).toEqual(['+ Age >= 18'])
+      expect(result?.tooltip.failed).toEqual(['+ Has Condition'])
+    })
+
+    it('should use exclusion prefix for isExclude rules in tooltip', () => {
+      const reportWithExclusion: InclusionReportResponse = {
+        summary: {
+          baseCount: 1000,
+          finalCount: 300,
+          lostCount: 700,
+          percentMatched: '30.00%',
+        },
+        inclusionRuleStats: [
+          {
+            id: 0,
+            name: 'Age >= 18',
+            percentExcluded: '10.00%',
+            percentSatisfying: '90.00%',
+            countSatisfying: 900,
+            isExclude: false,
+          },
+          {
+            id: 1,
+            name: 'No Prior Cancer',
+            percentExcluded: '40.00%',
+            percentSatisfying: '60.00%',
+            countSatisfying: 600,
+            isExclude: true,
+          },
+        ],
+        treemapData: { name: 'Everyone', children: [] as any[] },
+      }
+
+      // '10' means rule 0 passed, rule 1 failed
+      const data = { name: '10', size: 400 }
+      const result = convertTreemapData(data, reportWithExclusion)
+
+      expect(result?.tooltip.passed).toEqual(['+ Age >= 18'])
+      expect(result?.tooltip.failed).toEqual(['- No Prior Cancer'])
     })
   })
 
@@ -189,4 +228,3 @@ describe('Treemap Stats Computation', () => {
     })
   })
 })
-

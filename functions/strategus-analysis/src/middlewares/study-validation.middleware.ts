@@ -1,11 +1,11 @@
-import { Request, Response, NextFunction } from "express";
-import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
+import { NextFunction, Request, Response } from "express";
 import StrategusAnalysisService from "../analysis/services.ts";
+import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
 
 export const validateStudyIdMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const studyId = req.params.studyId || req.body.studyId;
@@ -36,12 +36,12 @@ export const validateStudyIdMiddleware = async (
 
 export async function validateStudyId(
   studyId: string,
-  token?: string
+  token?: string,
 ): Promise<boolean> {
   try {
     if (!token) {
       console.warn(
-        "No authorization token provided, skipping study validation"
+        "No authorization token provided, skipping study validation",
       );
       return true;
     }
@@ -52,7 +52,9 @@ export async function validateStudyId(
       const existingAnalysis = await analysisService.getStudyAnalysis(studyId);
       const datasets = await portalAPI
         .getDatasets()
-        .then((data) => data.filter((dataset: any) => dataset.id === studyId));
+        .then((data) =>
+          data.filter((dataset: any) => dataset.tokenStudyCode === studyId),
+        );
 
       if (datasets.length > 0) return true;
 

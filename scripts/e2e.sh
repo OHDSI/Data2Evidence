@@ -770,7 +770,7 @@ cmd_clean_all() {
     npm run stop || true
 
     log_info "Removing containers for ${PROJECT_NAME}..."
-    docker rm $(docker ps -aq --filter "name=^${PROJECT_NAME}-") 2>/dev/null || true
+    docker rm -f $(docker ps -aq --filter "name=^${PROJECT_NAME}-") 2>/dev/null || true
 
     log_info "Removing all volumes for ${PROJECT_NAME}..."
     docker volume rm $(docker volume ls -q | grep "^${PROJECT_NAME}_") 2>/dev/null || true
@@ -809,7 +809,7 @@ cmd_test() {
     mkdir -p "$temp_results" "$temp_ctrf"
 
     set +e
-    docker run --rm -it \
+    docker run --rm -i \
         --network=host \
         --ipc=host \
         -v "$(pwd)/tests:/work/tests" \

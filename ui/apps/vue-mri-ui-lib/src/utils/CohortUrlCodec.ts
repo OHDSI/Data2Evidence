@@ -197,7 +197,7 @@ class CohortUrlCodec {
         return null
       }
 
-      const url = `${origin}${basePath}?datasetId=${datasetId}&route=cohort&linkType=cohort-definition&query=${compressed}`
+      const url = `${origin}${basePath}/cohort?datasetId=${datasetId}&linkType=cohort-definition&query=${compressed}`
 
       // Check URL length
       const lengthWarning = this.checkUrlLength(url)

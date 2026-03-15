@@ -16,6 +16,16 @@
 /functions/demo                                      @data2evidence/integrate
 /functions/files-manager                             @data2evidence/integrate
 /functions/jobplugins                                @data2evidence/integrate
+/functions/strategus-analysis                        @data2evidence/integrate
+/functions/perseus                                   @data2evidence/integrate
+/functions/jobplugins-init                           @data2evidence/integrate
+/functions/supabase-storage-init                     @data2evidence/integrate
+/functions/white-rabbit-init                         @data2evidence/integrate
+/functions/portal-init                               @data2evidence/integrate
+/functions/alp-usermgmt-init                         @data2evidence/integrate
+/functions/strategus-analysis-init                   @data2evidence/integrate
+/functions/perseus-init                              @data2evidence/integrate
+/functions/files-manager-init                        @data2evidence/integrate
 /functions/mri-pa-config                             @data2evidence/analyze
 /functions/mri-pg-config                             @data2evidence/analyze
 /functions/portal                                    @data2evidence/integrate
@@ -44,3 +54,4 @@
 /ui/apps/portal/src/plugins/Researcher/ConceptSets   @data2evidence/analyze
 /ui/apps/portal/src/plugins/Researcher/Terminology   @data2evidence/analyze
 /ui/apps/concept-sets                                @data2evidence/analyze
+/ui/apps/wizards                                     @data2evidence/analyze

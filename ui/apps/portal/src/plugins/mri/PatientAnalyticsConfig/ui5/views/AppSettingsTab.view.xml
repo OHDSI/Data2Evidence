@@ -57,8 +57,14 @@
 		</Switch>
 		
 		<Label text="{i18n>MRI_PA_CFG_USE_PA_ATLAS_SETTING_LABEL}"/>
-		<Switch state="{analyticsModel>config/panelOptions/usePaAtlas}" 
+		<Switch state="{analyticsModel>config/panelOptions/usePaAtlas}"
 			tooltip="{i18n>MRI_PA_CFG_USE_PA_ATLAS_SETTING_TOOLTIP}">
 		</Switch>
+
+		<Label text="{i18n>MRI_PA_CFG_INCLUSION_REPORT_SETTING_LABEL}"/>
+		<Switch state="{analyticsModel>config/panelOptions/inclusionReport}"
+			tooltip="{i18n>MRI_PA_CFG_INCLUSION_REPORT_SETTING_TOOLTIP}">
+		</Switch>
+
 	</f:SimpleForm>
 </mvc:View>

@@ -8,9 +8,12 @@ import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLi
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
 import "import-map-overrides";
+import "./plugins/core/systemjsSetup";
 
 // Save deep link params BEFORE any redirects happen
 // This must run synchronously before React initializes
+// Only whitelisted paths (/researcher/cohort, /researcher/wizards) will have params extracted
+// New params always replace existing ones
 try {
   const params = extractDeepLinkParamsFromUrl(window.location.href);
   if (Object.keys(params).length > 0) {

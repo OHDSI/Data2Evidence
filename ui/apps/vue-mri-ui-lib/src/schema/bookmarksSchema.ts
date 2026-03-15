@@ -33,5 +33,6 @@ export const MaterializedCohortSchema = z.object({
   cohortDefinitionName: z.string(),
   createdOn: z.union([z.number(), z.string()]),
   description: z.string(),
+  syntax: z.string().optional(),
 })
 

@@ -2,6 +2,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import type { PluginOption, UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
 import path from 'path'
 
@@ -36,17 +37,25 @@ export default defineConfig(({ command, mode }): UserConfig => {
     plugins: [
       vue({
         template: {
+          transformAssetUrls,
           compilerOptions: {
             // Custom element support for d4l web components (matching webpack config)
             isCustomElement: tag => tag.startsWith('d4l-'),
           },
         },
       }),
-      basicSsl({
-        name: 'vue-mri-ui-lib-localhost',
-        domains: ['localhost'],
-        certDir: './.devServer/cert',
+      vuetify({
+        autoImport: true,
+        styles: {
+          configFile: 'src/styles/vuetify-settings.scss',
+        },
       }),
+      !isBuild &&
+        basicSsl({
+          name: 'vue-mri-ui-lib-localhost',
+          domains: ['localhost'],
+          certDir: './.devServer/cert',
+        }),
       // Replace %VITE_*% placeholders in HTML with env values
       htmlEnvPlugin(env),
       // Generate assets.json plugin (matching HtmlWebpackPlugin behavior)

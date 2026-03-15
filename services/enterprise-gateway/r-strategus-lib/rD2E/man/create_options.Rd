@@ -7,11 +7,13 @@
 create_options(
   study_id = "",
   upload_results = FALSE,
-  update_results_schema = TRUE
+  update_results_schema = TRUE,
+  run_table1 = FALSE,
+  study_name = ""
 )
 }
 \arguments{
-\item{study_id}{string value indicating the study ID to be used in the flow run}
+\item{study_id}{string value indicating the study ID to be used in the flow run (maintained for backward compatibility, but study_name should be used going forward)}
 
 \item{upload_results}{boolean value indicating whether to upload results after the flow run
 (default is FALSE)}
@@ -19,6 +21,12 @@ create_options(
 \item{update_results_schema}{boolean value indicating whether to update results schema
 before uploading results (default is TRUE). Any existing results in the schema will be
 dropped before uploading new results.}
+
+\item{run_table1}{boolean value indicating whether to run Table 1 generation
+as part of the flow run (default is FALSE).}
+
+\item{study_name}{string value indicating the study name to be used in the flow run
+(default is an empty string). If provided, this will override the study_id parameter.}
 }
 \value{
 Response object with options for the flow run

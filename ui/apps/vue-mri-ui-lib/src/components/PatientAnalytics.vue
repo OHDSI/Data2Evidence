@@ -1,8 +1,8 @@
 <template>
   <div :class="['pa-component-wrapper']">
     <div class="fullHeight pa-splitter">
-      <splitpanes class="default-theme" @resize="this.paneSize = $event[0].size">
-        <pane :size="paneSize" :min-size="splitterMinWidth">
+      <splitpanes class="default-theme" @resize="paneSize = $event?.[0]?.size ?? paneSize">
+        <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
@@ -33,7 +33,7 @@
             <bookmarks
               @unloadBookmarkEv="toggleCohorts"
               @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-              :init-bookmark-id="this.querystring.bmkId"
+              :init-bookmark-id="querystring.bmkId"
               v-if="getMriFrontendConfig && displayCohorts"
             ></bookmarks>
 
@@ -58,7 +58,7 @@
               :showUnHideFilters="hideLeftPane"
               @unhideEv="togglePanel(PANEL.LEFT)"
               @drilldown="onDrilldown"
-              @open-filtersummary="toggleFilterCardSummary(...arguments)"
+              @open-filtersummary="toggleFilterCardSummary($event)"
               v-if="getMriFrontendConfig"
             ></chartToolbar>
             <!-- "ref" used in solution from similar issue: https://github.com/antoniandre/splitpanes/issues/157 -->
@@ -111,7 +111,7 @@
         <chartToolbar
           :showUnHideFilters="hideLeftPane"
           @unhideEv="togglePanel(PANEL.LEFT)"
-          @open-filtersummary="toggleFilterCardSummary(...arguments)"
+          @open-filtersummary="toggleFilterCardSummary($event)"
           @toggleChartAndListModal="toggleChartAndListModal"
           v-if="getMriFrontendConfig"
         >
@@ -309,6 +309,7 @@ export default {
       'setActiveChart',
       'loadbookmarkToState',
       'setAddNewCohort',
+      'fireCheckIfDatasetCanMaterializeCohorts',
     ]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
@@ -321,6 +322,7 @@ export default {
       return this.fireBookmarkQuery({ params, method: 'get' })
     },
     initializeBookmarks() {
+      this.fireCheckIfDatasetCanMaterializeCohorts()
       return this.loadAllBookmark().then(() => (this.querystring.bmkId = this.initBookmarkId))
     },
     loadAllSharedBookmark() {

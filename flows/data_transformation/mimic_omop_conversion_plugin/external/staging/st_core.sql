@@ -66,3 +66,9 @@ FROM (SELECT transfer_id                                      AS transfer_id,
              (SELECT  main.sha1(subject_id::text || hadm_id::text)) AS trace_id
       FROM mimiciv_hosp.transfers) t
 ;
+
+-- Drop source tables immediately after staging to free memory.
+-- ETL files only read from mimic_etl.src_* tables, not mimiciv_hosp directly.
+DROP TABLE IF EXISTS mimiciv_hosp.patients;
+DROP TABLE IF EXISTS mimiciv_hosp.admissions;
+DROP TABLE IF EXISTS mimiciv_hosp.transfers;

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.12.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.12.2-beta
+version=0.13.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.13.0-beta
 
 
 cmd=""
@@ -354,6 +354,12 @@ EOF
     checkflow) 
         setup_zx_cmd
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        ;;
+    version)
+        CLI_VERSION=$(grep -m1 '"version"' "$node_modules_path/package.json" | awk -F'"' '{print $4}')
+        echo "d2e CLI version:    $CLI_VERSION"
+        echo "Docker image tag:   $DOCKER_TAG_NAME"
+        echo "Plugins API version: $PLUGINS_API_VERSION"
         ;;
     getnoproxy)
         setup_zx_cmd
