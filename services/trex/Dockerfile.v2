@@ -9,7 +9,7 @@ FROM ghcr.io/ohdsi/webapi@sha256:f46522d23716fb20f2f94be47f639bfa120e438f229d41a
 USER root
 
 ENV ONNXRUNTIME_VERSION=1.20.1
-ENV DUCKDB_VERSION=1.4.0
+ENV DUCKDB_VERSION=1.4.4
 
 # Copy install scripts
 RUN mkdir -p /scripts
