@@ -182,12 +182,15 @@ const getters = {
           const minAxisAttr = getters.getMriFrontendConfig?.getAttributeByPath(minAxis.id)
           const isGenderAxis = minAxisAttr?.getConfigKey()?.toLowerCase().includes('gender')
 
+          const maleValues = new Set(['male', 'm', '8507'])
+          const femaleValues = new Set(['female', 'f', '8532'])
+
           let colorIdx = 0
           uniqueValues.forEach(val => {
             const normalised = String(val).toLowerCase()
-            if (isGenderAxis && normalised === 'male') {
+            if (isGenderAxis && maleValues.has(normalised)) {
               colorMap[String(val)] = Constants.ChartColorway.NAVY
-            } else if (isGenderAxis && normalised === 'female') {
+            } else if (isGenderAxis && femaleValues.has(normalised)) {
               colorMap[String(val)] = Constants.ChartColorway.ORANGE
             } else {
               colorMap[String(val)] = colorwayValues[colorIdx++ % colorwayValues.length]
