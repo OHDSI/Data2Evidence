@@ -65,22 +65,17 @@ export default class StrategusAnalysisRouter {
   // endpoint is used by JobPlugins whenever user runs/executes a strategus analysis from the portal; it creates/updates the analysis specification in the database
   private async updateStrategusAnalysis(req: Request, res: Response) {
     try {
-      const { studyId, analysisSpec } = req.body;
-      const token = req.headers["authorization"];
-      if (!studyId || !analysisSpec) {
+      const { studyId, analysisSpec, databaseCode } = req.body;
+      if (!studyId || !analysisSpec || !databaseCode) {
         return res.status(400).json({
-          message: "Missing required fields: studyId or analysisSpec",
+          message: "Missing required fields: studyId, analysisSpec, or databaseCode",
         });
       }
 
-      const result = await this.strategusAnalysisService.createAnalysisSpec(
-        token,
+      const result = await this.strategusAnalysisService.updateStrategusAnalysis(
         studyId,
-        "", // tokenStudyCode is not needed for update
-        "", // tenantId is not needed for update
-        "", // notebookName is not needed for update
         analysisSpec,
-        "" // mode is not needed for update
+        databaseCode
       );
 
       res.status(200).json({
