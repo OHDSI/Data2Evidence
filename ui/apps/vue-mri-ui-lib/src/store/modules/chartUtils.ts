@@ -179,17 +179,28 @@ const getters = {
           // Build a color map: each unique value on the chosen axis gets a color
           const uniqueValues = [...new Set(chartData.data.map(d => d[minAxis.id]))]
           const colorMap: Record<string, string> = {}
-          uniqueValues.forEach((val, i) => {
-            colorMap[String(val)] = colorwayValues[i % colorwayValues.length]
+          const minAxisAttr = getters.getMriFrontendConfig?.getAttributeByPath(minAxis.id)
+          const isGenderAxis = minAxisAttr?.getConfigKey()?.toLowerCase().includes('gender')
+
+          let colorIdx = 0
+          uniqueValues.forEach(val => {
+            const normalised = String(val).toLowerCase()
+            if (isGenderAxis && normalised === 'male') {
+              colorMap[String(val)] = Constants.ChartColorway.NAVY
+            } else if (isGenderAxis && normalised === 'female') {
+              colorMap[String(val)] = Constants.ChartColorway.ORANGE
+            } else {
+              colorMap[String(val)] = colorwayValues[colorIdx++ % colorwayValues.length]
+            }
           })
 
           // Assign per-bar colors
           trace.marker.color = chartData.data.map(d => colorMap[String(d[minAxis.id])])
 
           // Store color legend data for the component to render
-          chartData.colorLegend = uniqueValues.map((val, i) => ({
+          chartData.colorLegend = uniqueValues.map(val => ({
             name: String(val),
-            color: colorwayValues[i % colorwayValues.length],
+            color: colorMap[String(val)],
           }))
         }
       }
