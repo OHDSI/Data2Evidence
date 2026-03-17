@@ -3,6 +3,7 @@ import './globals'
 import { createApp, Component } from 'vue'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
+import vuetify from './plugins/vuetify'
 
 import App from './App.vue'
 import RootLayout from './RootLayout.vue'
@@ -46,6 +47,7 @@ if (isLocal) {
 }
 
 app.use(store)
+app.use(vuetify)
 app.component('app-label', appLabelVue)
 app.component('app-tag-input', appTagInputVue)
 app.component('app-range', appRangeVue)

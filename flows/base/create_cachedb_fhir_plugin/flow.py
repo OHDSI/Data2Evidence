@@ -1,64 +1,37 @@
 import os
-from psycopg2 import connect
 
 from prefect import flow
-from prefect.variables import Variable
-from prefect.blocks.system import Secret
 from prefect.logging import get_run_logger
-
-from .duckdb_postgres import copy_schema_to_cache
-from .config import CreateDuckdbDatabaseFileType
-from .utils import check_supported_duckdb_dialects
 
 from _shared_flow_utils.dao.DBDao import DBDao
 
+from .config import CreateDuckdbDatabaseFileType
+from .duckdb_postgres import get_fhir_project_id_task, copy_fhir_resources_task
 
+os.environ["plugin_name"] = "create_cachedb_fhir_plugin"
 
-os.environ['plugin_name'] = 'create_cachedb_fhir_plugin'
 
 @flow(log_prints=True)
 def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
-
-    dbdao = DBDao(use_cache_db=False,
-                  database_code=options.databaseCode)
-
-    # Check if dialect is supported by duckdb
-    check_supported_duckdb_dialects(dbdao.dialect, logger)
-    
-    # Connect to Trex Sql Interface
-    trex_conn = connect(
-        host=Variable.get("trex_sql_host"),
-        port=Variable.get("trex_sql_port"),
-        user=Variable.get("trex_sql_user"),
-        password=Secret.load("trex-sql-password").get(),
-        dbname=options.databaseCode
+    logger.info(
+        f"Starting FHIR cache creation from medplum for database "
+        f"'{options.databaseCode}' → schema '{options.cacheSchemaName}'"
     )
 
-    # Turn off transactions
-    trex_conn.autocommit = True
-    pg_cursor = None
-    
-    try:
-        logger.info(f"Copying source FHIR schema '{options.schemaName}' to cache as schema '{options.cacheSchemaName}'...")
-        pg_cursor = trex_conn.cursor()
+    # ── Step 1: Resolve the medplum fhir_project_id for this dataset ────────
+    # Use fhirProjectId from options if provided, otherwise look it up from the portal.
+    fhir_project_id = options.fhirProjectId or get_fhir_project_id_task(study_code=options.studyCode)
 
-        # Update cache information
-        pg_cursor.execute("CALL pg_clear_cache();")
+    # ── Step 2: Copy FHIR resource tables directly from medplum postgres ─────
+    dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)
+    copy_fhir_resources_task(
+        fhir_project_id=fhir_project_id,
+        src_con=dbdao,
+        options=options,
+    )
 
-        copy_schema_to_cache(pg_cursor, dbdao, options)
-    except Exception as e:
-        logger.error(
-                f"Error while creating cache for source FHIR schema '{options.schemaName}' for '{options.databaseCode}': {e}"
-            )
-        # trex_conn.rollback()
-        raise
-    else:
-        trex_conn.commit()
-        logger.info(
-                f"Cached schema '{options.schemaName}' successfully created for '{options.databaseCode}'."
-            )
-    finally:
-        if pg_cursor:
-            pg_cursor.close()
-        trex_conn.close()
+    logger.info(
+        f"FHIR cache '{options.cacheSchemaName}' created successfully "
+        f"for database '{options.databaseCode}'."
+    )

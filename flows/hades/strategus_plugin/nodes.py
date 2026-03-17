@@ -1298,6 +1298,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 def execute(rSpec, rExecutionSettings, rConnectionDetails):
     with ro.default_converter.context():
         ro.r(set_trex_env_var(USE_TREX_CONNECTION))
+        ro.r('cat("Max Java Heap Size (GB): ", .jcall(.jnew("java/lang/Runtime"), "J", "maxMemory") / 1e9, "\\n")')
         rStrategus = importr('Strategus')
         rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 

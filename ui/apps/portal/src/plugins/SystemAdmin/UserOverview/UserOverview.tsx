@@ -17,6 +17,7 @@ import {
   TENANT_ROLES,
   ALP_DASHBOARD_VIEWER,
   STUDY_RESULTS_READ_RESEARCHER,
+  ETL_MAPPING_CONTRIBUTOR,
 } from "../../../config";
 import { useTenants, useGroupCleanUp, useDialogHelper } from "../../../hooks";
 import { useFeedback, useTranslation, useUser } from "../../../contexts";
@@ -162,12 +163,16 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       roleList.push(ALP_ROLES[ALP_DASHBOARD_VIEWER]);
     }
 
-    if(roles.includes(STUDY_WRITE_DQD_RESEARCHER)) {
+    if (roles.includes(STUDY_WRITE_DQD_RESEARCHER)) {
       roleList.push(ALP_ROLES[STUDY_WRITE_DQD_RESEARCHER]);
     }
-    
-    if(roles.includes(STUDY_RESULTS_READ_RESEARCHER)) {
+
+    if (roles.includes(STUDY_RESULTS_READ_RESEARCHER)) {
       roleList.push(ALP_ROLES[STUDY_RESULTS_READ_RESEARCHER]);
+    }
+
+    if (roles.includes(ETL_MAPPING_CONTRIBUTOR)) {
+      roleList.push(ALP_ROLES[ETL_MAPPING_CONTRIBUTOR]);
     }
 
     return roleList;

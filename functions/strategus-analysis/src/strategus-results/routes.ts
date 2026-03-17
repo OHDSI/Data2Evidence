@@ -26,11 +26,12 @@ export class StrategusResultsRouter {
           });
         }
 
-        if (!datasetId) {
-          return res.status(400).json({
-            message: "Missing required field: datasetId",
-          });
-        }
+        // results viewer is not dependent on datasetId (except for table1), so not making it mandatory for now; can be removed later
+        // if (!datasetId) {
+        //   return res.status(400).json({
+        //     message: "Missing required field: datasetId",
+        //   });
+        // }
 
         if (!viewerCode) {
           return res.status(400).json({

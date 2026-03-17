@@ -7,9 +7,12 @@ renv_paths_library <- ifelse(length(args) > 1, args[2], "/usr/local/lib/R/site-l
 # Set variables
 renv_config_sandbox_enabled <- FALSE
 lockfile_location <- "/app/renv.lock"
+r_env_profile <- "/app/.Rprofile"
 
 Sys.setenv(RENV_CONFIG_SANDBOX_ENABLED = renv_config_sandbox_enabled)
 Sys.setenv(RENV_PATHS_LIBRARY = renv_paths_library)
+Sys.setenv(R_PROFILE_USER = r_env_profile)
+
 .libPaths(renv_paths_library)
 renv::restore(lockfile = lockfile_location, library = renv_paths_library, prompt = FALSE)
 

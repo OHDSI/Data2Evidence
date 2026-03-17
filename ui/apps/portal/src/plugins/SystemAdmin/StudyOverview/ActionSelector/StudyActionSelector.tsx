@@ -13,6 +13,7 @@ interface ActionSelectorProps {
   handleManageStrategusResultViewer: (study: NetworkStrategusStudy) => void;
   handleUploadStrategusResults: (study: NetworkStrategusStudy) => void;
   handleDownloadStrategusResults: (study: NetworkStrategusStudy) => void;
+  handleStudyPermissions: (study: NetworkStrategusStudy) => void;
 }
 
 interface Action {
@@ -49,16 +50,18 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
   handleManageStrategusResultViewer,
   handleUploadStrategusResults,
   handleDownloadStrategusResults,
+  handleStudyPermissions,
 }) => {
   const { getText, i18nKeys } = useTranslation();
 
   const actionsList: Action[] = useMemo(
     () => [
-      { name: "Run Study", value: "run" },
-      { name: "Cleanup Study", value: "cleanup" },
-      { name: "Manage Result Viewer", value: "manage" },
-      { name: "Upload Strategus Results", value: "upload" },
-      { name: "Download Strategus Results", value: "download" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__RUN_STUDY), value: "run" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__CLEANUP_STUDY), value: "cleanup" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_RESULT_VIEWER), value: "manage" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__UPLOAD_STRATEGUS_RESULTS), value: "upload" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__DOWNLOAD_STRATEGUS_RESULTS), value: "download" },
     ],
     [getText, i18nKeys]
   );
@@ -74,6 +77,9 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
           break;
         case "manage":
           handleManageStrategusResultViewer(study);
+          break;
+        case "permissions":
+          handleStudyPermissions(study);
           break;
         case "upload":
           handleUploadStrategusResults(study);
@@ -92,6 +98,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
       handleManageStrategusResultViewer,
       handleUploadStrategusResults,
       handleDownloadStrategusResults,
+      handleStudyPermissions,
     ]
   );
 

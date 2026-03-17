@@ -82,5 +82,10 @@ export default defineConfig(({ command, mode }) => {
     preview: {
       port: 8082,
     },
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.ts"],
+    },
   };
 });

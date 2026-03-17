@@ -19,7 +19,7 @@ export const MappingLayout: FC<MappingLayoutProps> = ({ mappingSuggestion, nodeI
   const { setTableSourceHandles } = useTable();
 
   useEffect(() => {
-    if (data && (data.field.edges.length > 0 || data.table.edges.length > 0)) {
+    if (data && (data.field?.edges?.length > 0 || data.table?.edges?.length > 0)) {
       load(data);
     } else if (sourceNode) {
       setScannedSchema(sourceNode.data.scannedSchema);

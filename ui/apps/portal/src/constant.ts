@@ -38,6 +38,7 @@ export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
     CacheDatasetType.HANA__NON_OMOP,
   ],
   [SourceDatasetType.FHIR]: [CacheDatasetType.NON_OMOP],
+  [SourceDatasetType.STRATEGUS_ANALYSIS]: [CacheDatasetType.NON_OMOP],
 };
 
 export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
@@ -68,6 +69,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "manage-dashboard",
   ],
   hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
+  strategus_analysis: ["metadata", "permissions", "resources", "delete"],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
@@ -78,6 +80,7 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
   study: [DatasetInfoTab.DatasetInfo],
   hana__omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+  strategus_analysis: [DatasetInfoTab.DatasetInfo],
 };
 
 export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
@@ -88,6 +91,7 @@ export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeature
   study: ["Cohorts", "Notebooks", "Results"],
   hana__omop: ["Cohorts", "Notebooks", "Concepts"],
   hana__non_omop: ["Cohorts", "Notebooks"],
+  strategus_analysis: [],
 };
 
 export enum LogResponseType {

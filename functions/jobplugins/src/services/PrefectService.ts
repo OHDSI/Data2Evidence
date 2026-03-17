@@ -119,6 +119,12 @@ export class PrefectService {
 
     // Save analysis specification for researcher workflows
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+    // if study does not exist, throw error. This ensures that we only create flow runs for valid studies.
+    const study = await this.strategusAnalysisApi.getStudy(options["studyId"]);
+    if (!study) {
+      throw new Error(`Study ${options["studyId"]} does not exist.`);
+    }
+
     await this.strategusAnalysisApi.saveAnalysis(
       options["studyId"],
       options["notebookName"],

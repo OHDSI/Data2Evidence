@@ -64,10 +64,11 @@ function computeTooltipData(bits: string, size: number, inclusionReportResponse:
     const rule = inclusionReportResponse.inclusionRuleStats[b]
     if (!rule) continue
 
+    const prefix = rule.isExclude ? '- ' : '+ '
     if (bits[b] === '1') {
-      passed.push(`${b + 1}. ${rule.name}`)
+      passed.push(`${prefix}${rule.name}`)
     } else {
-      failed.push(`${b + 1}. ${rule.name}`)
+      failed.push(`${prefix}${rule.name}`)
     }
   }
 
@@ -157,4 +158,3 @@ export function convertTreemapData(data: any, inclusionReportResponse: Inclusion
 
   return convert(data)
 }
-

@@ -3,11 +3,13 @@ import os
 
 from prefect import flow
 from prefect.logging import get_run_logger
+from prefect.variables import Variable
 
 from .types import MimicOMOPOptionsType, FlowActionType
 from .load_data import load_mimic_data, load_vocab
 from .omop_conversion import staging_mimic_data, ETL_transformation, final_cdm_tables, export_data
 from _shared_flow_utils.dao.DBDao import DBDao
+from .utils import config_duckdb
 
 @flow(log_prints=True, persist_result=True)
 def mimic_omop_conversion_plugin(options:MimicOMOPOptionsType):
@@ -31,21 +33,26 @@ def mimic_to_duckdb_flow(options:MimicOMOPOptionsType):
     mimic_dir = options.mimic_dir
     vocab_dir = options.vocab_dir
     load_mimic_vocab = options.load_mimic_vocab
-    
+    DUCKDB_MEMORY_LIMIT = Variable.get("duckdb_memory_limit")
+    DUCKDB_THREADS = int(Variable.get("duckdb_threads"))
+
     # Load data to duckdb
     if load_mimic_vocab:
+        logger.info("*** Loading MIMICIV data and Vocabularies ***")
         # every connection in duckdb will release the memory
         with duckdb.connect(duckdb_file_name) as conn:
-            logger.info("*** Loading MIMICIV data and Vocabulories ***")
+            config_duckdb(conn, memory_limit=DUCKDB_MEMORY_LIMIT, threads=DUCKDB_THREADS)
             load_mimic_data(conn, mimic_dir)
             load_vocab(conn, vocab_dir)
         with duckdb.connect(duckdb_file_name) as conn:
+            config_duckdb(conn, memory_limit=DUCKDB_MEMORY_LIMIT, threads=DUCKDB_THREADS)
             staging_mimic_data(conn)
             conn.execute("DROP SCHEMA mimiciv_hosp CASCADE")
             conn.execute("DROP SCHEMA mimiciv_icu CASCADE")
             conn.execute("DROP SCHEMA mimic_staging CASCADE")
     # ETL process
     with duckdb.connect(duckdb_file_name) as conn:
+        config_duckdb(conn, memory_limit=DUCKDB_MEMORY_LIMIT, threads=DUCKDB_THREADS)
         logger.info("*** Doing ETL transformations ***")
         ETL_transformation(conn)
         logger.info("*** Creating final CDM tables and copy data into them ***")
@@ -67,7 +74,6 @@ def duckdb_to_database_flow(options:MimicOMOPOptionsType):
     overwrite_schema = options.overwrite_schema
     chunk_size = options.chunk_size
     # Export OMOP tables to Database
-    logger.info("*** Exporting CDM tables to Database ***") 
     export_data(duckdb_file_name=duckdb_file_name, schema_name=schema_name, to_dbdao=to_dbdao, overwrite_schema=overwrite_schema, chunk_size=chunk_size)
 
 def cleanup(options:MimicOMOPOptionsType):
