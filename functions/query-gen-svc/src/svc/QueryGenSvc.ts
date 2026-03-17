@@ -126,7 +126,7 @@ export class QueryGenSvc {
                     );
                 const entityQueryMap =
                     this.createPluginEntityQueryMap(selectedAttributes);
-                if(this.dialect) {
+                if (this.dialect) {
                     finalQueryObject = this.appendDialectSpecificQueries(finalQueryObject)
                 }
                 const finalResults: QuerySvcResultType = {
