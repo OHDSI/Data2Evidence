@@ -25,7 +25,8 @@ export class QueryGenSvc {
         private settings: any,
         private placeholderTableMap: any,
         private pluginOptionalParams: any,
-        private censoringThreshold?: string
+        private censoringThreshold?: string,
+        private dialect?: string
     ) {}
     public async generateQuery(): Promise<QuerySvcResultType> {
         return new Promise<QuerySvcResultType>(async (resolve, reject) => {
@@ -114,7 +115,7 @@ export class QueryGenSvc {
                 const groupAttrAliases = this.getGroupAttrAliases(fast);
                 const selectedAttributes: PluginSelectedAttributeType[] =
                     this.getSelectedAttributes();
-                const finalQueryObject: QueryObject =
+                let finalQueryObject: QueryObject =
                     this.appendChartSpecificQueries(
                         nql,
                         fast,
@@ -125,6 +126,9 @@ export class QueryGenSvc {
                     );
                 const entityQueryMap =
                     this.createPluginEntityQueryMap(selectedAttributes);
+                if(this.dialect) {
+                    finalQueryObject = this.appendDialectSpecificQueries(finalQueryObject)
+                }
                 const finalResults: QuerySvcResultType = {
                     queryObject: this.serializeQueryObject(finalQueryObject),
                     pCountQueryObject: this.getPCountQueryObject(nql),
@@ -305,6 +309,18 @@ export class QueryGenSvc {
             default:
                 return nql.sql;
         }
+    }
+
+    private appendDialectSpecificQueries(qo: QueryObject): QueryObject {
+        switch (this.dialect) {
+            case "hana":
+                if (Deno.env.get("HANA_HINT")) {
+                    qo.queryString = `${qo.queryString} WITH HINT(${Deno.env.get("HANA_HINT")})`;
+                }
+                break
+            default:
+        }
+        return qo;
     }
 
     private appendAggQuerySpecificQueries(nql: AstElement): QueryObject {
