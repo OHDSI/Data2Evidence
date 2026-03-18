@@ -365,6 +365,15 @@ EOF
         setup_zx_cmd
         $ZX_CMD "$node_modules_path/scripts/get-noproxy.mjs" --script_full_path "$node_modules_path" 
         ;;
+    syncroles)
+        source "$ENVFILE"
+        setup_zx_cmd
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/syncroles.mjs" -n "$ENVFILE"
+        echo "Restarting services..."
+        source "$ENVFILE"
+        restartcmd="$dockerbasecmd up --force-recreate --wait"
+        ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $restartcmd
+        ;;
     *)
         if [ -z ${cmd:-} ]; then
             echo "d2e: command is missing"
@@ -381,6 +390,7 @@ Commands:
   stop        Stops d2e services
   clean       Removes d2e docker containers and volumes
   setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
+  syncroles   Sync usermgmt roles to Logto (one-time migration)
 
 Options:
  -d, --function-path [PATH] Development mode. [PATH] is the path to functions

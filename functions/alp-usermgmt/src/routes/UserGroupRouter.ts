@@ -306,6 +306,62 @@ export class UserGroupRouter {
     )
 
     this.router.post(
+      '/sync-roles-to-logto',
+      permittedUserCheck(),
+      async (req: IAppRequest, res: Response, next: NextFunction) => {
+        this.logger.info('Sync usermgmt roles to Logto')
+
+        try {
+          const users = await this.userService.getUsers()
+          const results: {
+            total: number
+            synced: number
+            skipped: number
+            failed: number
+            failures: { userId: string; username: string; error: string }[]
+          } = {
+            total: 0,
+            synced: 0,
+            skipped: 0,
+            failed: 0,
+            failures: []
+          }
+
+          for (const user of users) {
+            if (!user.idpUserId) {
+              this.logger.warn(`User ${user.id} (${user.username}) has no idpUserId, skipping`)
+              results.skipped++
+              continue
+            }
+
+            const userGroups = await this.userGroupService.getUserGroups(user.id)
+            results.total += userGroups.length
+
+            for (const group of userGroups) {
+              try {
+                await this.userGroupService.syncRoleToLogto(user.id, group.b2cGroupId, 'assign')
+                results.synced++
+              } catch (err) {
+                results.failed++
+                results.failures.push({
+                  userId: user.id,
+                  username: user.username,
+                  error: `Group ${group.b2cGroupId}: ${err}`
+                })
+              }
+            }
+          }
+
+          this.logger.info(`Sync complete: ${JSON.stringify(results)}`)
+          return res.status(200).json(results)
+        } catch (err) {
+          this.logger.error(`Error syncing roles to Logto: ${JSON.stringify(err)}`)
+          return next(err)
+        }
+      }
+    )
+
+    this.router.post(
       '/withdraw-study-roles',
       permittedTenantCheck(['TENANT_ADMIN'], { tenantIdPath: 'body.tenantId' }),
       async (req: IAppRequest, res: Response, next: NextFunction) => {
