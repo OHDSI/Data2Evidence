@@ -31,7 +31,7 @@
         />
       </div>
       <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
-        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
+        <VButton @click="openInclusionReportModal">Attrition Plot</VButton>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">

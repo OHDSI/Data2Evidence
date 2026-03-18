@@ -10,8 +10,8 @@ defineProps<{
   <div class="summary-section">
     <h4>Summary Statistics</h4>
     <div class="summary-data">
-      <p>Total Persons: {{ summary.baseCount }}</p>
-      <p>Matches: {{ summary.finalCount }} ({{ summary.percentMatched }})</p>
+      <p>Total Persons: {{ summary.baseCount.toLocaleString() }}</p>
+      <p>Matches: {{ summary.finalCount.toLocaleString() }} ({{ summary.percentMatched }})</p>
     </div>
   </div>
 </template>
