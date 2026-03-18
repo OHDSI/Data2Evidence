@@ -157,8 +157,7 @@ const flowRunsSort = useRouteQueryParam(
 
 const flowRunsPage = useRouteQueryParam('flow-runs-page', NumberRouteParam, 1)
 
-const limitStorage = useLocalStorage('workspace-runs-list-limit', 10)
-const limit = toRef(limitStorage, 'value')
+const { value: limit } = useLocalStorage('workspace-runs-list-limit', 10)
 
 const flowRunsFilter: Getter<FlowRunsPaginationFilter> = () => {
   const filter = mapper.map('SavedSearchFilter', dashboardFilter, 'FlowRunsFilter')
