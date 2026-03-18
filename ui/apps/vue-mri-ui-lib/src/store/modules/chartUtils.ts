@@ -148,14 +148,19 @@ const getters = {
       })
 
       // When no stacking criterion is selected, assign per-bar colors based on
-      // the x-axis with fewer unique categories
+      // the most suitable x-axis (prefer categorical over numeric, then fewest unique categories)
       if (yAxis.length === 0 && chartData.traces.length === 1 && xAxes.length > 0) {
-        // Skip per-bar coloring for single x-axis with ordered numeric (binnable) attributes
-        // (e.g. Age, Year of Birth, Month of Birth)
-        const singleAxisAttr = xAxes.length === 1 ? getters.getMriFrontendConfig?.getAttributeByPath(xAxes[0].id) : null
-        const skipPerBarColor = singleAxisAttr && singleAxisAttr.isBinnable()
+        const axesWithMeta = xAxes.map(axis => {
+          const attr = getters.getMriFrontendConfig?.getAttributeByPath(axis.id)
+          return {
+            axis,
+            binnable: attr ? attr.isBinnable() : false,
+            uniqueCount: new Set(chartData.data.map(d => d[axis.id])).size,
+          }
+        })
 
-        if (!skipPerBarColor) {
+        // Only apply per-bar coloring if at least one axis is categorical
+        if (axesWithMeta.some(a => !a.binnable)) {
           const trace = chartData.traces[0]
           const colorwayValues = [
             Constants.ChartColorway.NAVY,
@@ -165,22 +170,19 @@ const getters = {
             Constants.ChartColorway.YELLOW,
           ]
 
-          // Find the x-axis with the fewest unique categories
-          let minAxis = xAxes[0]
-          let minUniqueCount = new Set(chartData.data.map(d => d[xAxes[0].id])).size
-          for (let i = 1; i < xAxes.length; i++) {
-            const uniqueCount = new Set(chartData.data.map(d => d[xAxes[i].id])).size
-            if (uniqueCount < minUniqueCount) {
-              minUniqueCount = uniqueCount
-              minAxis = xAxes[i]
-            }
-          }
+          // Pick best axis: prefer categorical (!binnable), then fewest unique categories
+          const { axis: minAxis } = [...axesWithMeta].sort(
+            (a, b) => Number(a.binnable) - Number(b.binnable) || a.uniqueCount - b.uniqueCount
+          )[0]
 
           // Build a color map: each unique value on the chosen axis gets a color
           const uniqueValues = [...new Set(chartData.data.map(d => d[minAxis.id]))]
           const colorMap: Record<string, string> = {}
           const minAxisAttr = getters.getMriFrontendConfig?.getAttributeByPath(minAxis.id)
           const isGenderAxis = minAxisAttr?.getConfigKey()?.toLowerCase().includes('gender')
+
+          // TODO: Remove this guard once per-bar coloring is enabled for other categorical axes
+          if (!isGenderAxis) return chartData
 
           const maleValues = new Set(['male', 'm', '8507'])
           const femaleValues = new Set(['female', 'f', '8532'])
