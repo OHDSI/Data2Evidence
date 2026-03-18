@@ -51,20 +51,23 @@ const getters = {
   dataToTraces:
     (state, getters) =>
     (chartData, selection = [], totalSelected = 0) => {
-      const xAxes: { id: string; axis: number; name: string }[] = chartData.categories.filter(
+      // create on a shallow copy
+      const result = { ...chartData, data: [...chartData.data] }
+
+      const xAxes: { id: string; axis: number; name: string }[] = result.categories.filter(
         category => category.axis === Constants.AxisId.X
       )
       // Flag to toggle the bar chart category type
-      chartData.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
+      result.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
       // Get the unique y-axis attribute id if any
-      const yAxis = chartData.categories.filter(category => category.axis === Constants.AxisId.Y)
+      const yAxis = result.categories.filter(category => category.axis === Constants.AxisId.Y)
 
       const categoryArray: { name: string | number; data: Record<string, string | number>[] }[] = []
       if (yAxis.length !== 0) {
         // Dictionary-based data categorization based on the unique y-axis attribute
         const yAttrKey = yAxis[0].id
         const dataDict = {}
-        chartData.data.forEach(data => {
+        result.data.forEach(data => {
           const yAttrVal = data[yAttrKey]
           if (yAttrVal in dataDict) {
             categoryArray[dataDict[yAttrVal]].data.push(data)
@@ -80,19 +83,19 @@ const getters = {
         // No data split, singleton category
         categoryArray.push({
           name: '',
-          data: chartData.data,
+          data: result.data,
         })
       }
 
-      const measureId = chartData.measures[0].id
+      const measureId = result.measures[0].id
       const toolTipSelected =
-        wrapText(chartData.measures[0].name, 62) +
+        wrapText(result.measures[0].name, 62) +
         ': <b>%{y}</b><br><br><b>' +
         (totalSelected > 1 ? totalSelected + ' values selected' : '') +
         '</b><extra></extra>'
       // Convert data belonging to each attribute category into traces
       // Reversed since the last trace will appear at the top
-      chartData.traces = categoryArray.reverse().map((category, index) => {
+      result.traces = categoryArray.reverse().map((category, index) => {
         let xData = []
         let customdataArray = []
         // Custom tooltip labelling
@@ -149,19 +152,19 @@ const getters = {
 
       // When no stacking criterion is selected, assign per-bar colors based on
       // the most suitable x-axis (prefer categorical over numeric, then fewest unique categories)
-      if (yAxis.length === 0 && chartData.traces.length === 1 && xAxes.length > 0) {
+      if (yAxis.length === 0 && result.traces.length === 1 && xAxes.length > 0) {
         const axesWithMeta = xAxes.map(axis => {
           const attr = getters.getMriFrontendConfig?.getAttributeByPath(axis.id)
           return {
             axis,
             binnable: attr ? attr.isBinnable() : false,
-            uniqueCount: new Set(chartData.data.map(d => d[axis.id])).size,
+            uniqueCount: new Set(result.data.map(d => d[axis.id])).size,
           }
         })
 
         // Only apply per-bar coloring if at least one axis is categorical
         if (axesWithMeta.some(a => !a.binnable)) {
-          const trace = chartData.traces[0]
+          const trace = result.traces[0]
           const colorwayValues = [
             Constants.ChartColorway.NAVY,
             Constants.ChartColorway.ORANGE,
@@ -176,13 +179,13 @@ const getters = {
           )[0]
 
           // Build a color map: each unique value on the chosen axis gets a color
-          const uniqueValues = [...new Set(chartData.data.map(d => d[minAxis.id]))]
+          const uniqueValues = [...new Set(result.data.map(d => d[minAxis.id]))]
           const colorMap: Record<string, string> = {}
           const minAxisAttr = getters.getMriFrontendConfig?.getAttributeByPath(minAxis.id)
           const isGenderAxis = minAxisAttr?.getConfigKey()?.toLowerCase().includes('gender')
 
           // TODO: Remove this guard once per-bar coloring is enabled for other categorical axes
-          if (!isGenderAxis) return chartData
+          if (!isGenderAxis) return result
 
           const maleValues = new Set(['male', 'm', '8507'])
           const femaleValues = new Set(['female', 'f', '8532'])
@@ -200,17 +203,17 @@ const getters = {
           })
 
           // Assign per-bar colors
-          trace.marker.color = chartData.data.map(d => colorMap[String(d[minAxis.id])])
+          trace.marker.color = result.data.map(d => colorMap[String(d[minAxis.id])])
 
           // Store color legend data for the component to render
-          chartData.colorLegend = uniqueValues.map(val => ({
+          result.colorLegend = uniqueValues.map(val => ({
             name: String(val),
             color: colorMap[String(val)],
           }))
         }
       }
 
-      return chartData
+      return result
     },
   processResponse:
     (state, getters) =>
