@@ -1,7 +1,7 @@
 <template>
   <p-layout-default class="flow-runs">
     <template #header>
-      <p-heading heading="4"> Job Runs</p-heading>
+      <p-heading heading="4"> Job Runs </p-heading>
     </template>
 
     <template v-if="loaded">
