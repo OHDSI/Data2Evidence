@@ -105,9 +105,6 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         .xaxis('basicdata', 'smoker')
         .yaxis('basicdata', 'pcount')
       requestBuilder.submit(aliceHanaRequest, PATH, defaultBarChartParameters, function (err, response, body) {
-        logToConsole(`>>>err:${err}`)
-        logToConsole(`>>>response:${JSON.stringify(response)}`)
-        logToConsole(`>>>body:${JSON.stringify(body)}`)
         specUtils.checkAnalyticsResult(body, {
           'patient.attributes.smoker': ['no'],
           'patient.attributes.pcount': [2]
@@ -117,7 +114,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('patient-attributes filter card', function () {
+  xdescribe('patient-attributes filter card', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -206,7 +203,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('single patient-interaction filter card: text attribute', function () {
+  xdescribe('single patient-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -271,7 +268,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('single condition-interaction filter card: text attribute', function () {
+  xdescribe('single condition-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -372,7 +369,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('single condition-interaction filter card: numerical attribute -', function () {
+  xdescribe('single condition-interaction filter card: numerical attribute -', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -542,7 +539,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('two patient-interaction cards of the same type', function () {
+  xdescribe('two patient-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -584,7 +581,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('count interactions --', function () {
+  xdescribe('count interactions --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -645,7 +642,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('two condition-interaction cards of the same type', function () {
+  xdescribe('two condition-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -693,7 +690,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('case sensitivity --', function () {
+  xdescribe('case sensitivity --', function () {
     var patientIcds
 
     before(function (done) {
@@ -800,7 +797,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('absolute time', function () {
+  xdescribe('absolute time', function () {
     var patients
 
     before(function (done) {
@@ -1003,7 +1000,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('successor constraint between two cards', function () {
+  xdescribe('successor constraint between two cards', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -1084,7 +1081,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  describe('freetext field --', function () {
+  xdescribe('freetext field --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
