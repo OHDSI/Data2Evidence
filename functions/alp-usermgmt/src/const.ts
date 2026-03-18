@@ -22,7 +22,8 @@ export const LOGTO_ROLES = {
   TENANT_VIEWER: 'role.viewer',
   RESEARCHER: 'role.researcher',
   JOB_RUNNER: 'role.jobrunner',
-  STUDY_RESULTS_READER: 'role.studyresultsreader'
+  STUDY_RESULTS_READER: 'role.studyresultsreader',
+  ETL_MAPPING_CONTRIBUTOR: 'role.etlmappingcontributor'
 } as const
 
 export const LOGTO_ROLE_NAMES: Record<string, string> = {
@@ -32,7 +33,8 @@ export const LOGTO_ROLE_NAMES: Record<string, string> = {
   [ROLES.TENANT_VIEWER]: LOGTO_ROLES.TENANT_VIEWER,
   [ROLES.STUDY_RESEARCHER]: LOGTO_ROLES.RESEARCHER,
   [ROLES.STUDY_WRITE_DQD_RESEARCHER]: LOGTO_ROLES.JOB_RUNNER,
-  [ROLES.STUDY_RESULTS_READ_RESEARCHER]: LOGTO_ROLES.STUDY_RESULTS_READER
+  [ROLES.STUDY_RESULTS_READ_RESEARCHER]: LOGTO_ROLES.STUDY_RESULTS_READER,
+  [ROLES.ETL_MAPPING_CONTRIBUTOR]: LOGTO_ROLES.ETL_MAPPING_CONTRIBUTOR
 }
 
 // Reverse mapping: Logto role name → internal role name

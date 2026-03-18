@@ -289,6 +289,7 @@ export class UserGroupService {
       alp_role_dashboard_viewer: false,
       alp_role_study_write_dqd_researcher: false,
       alp_role_study_results_read_researcher: false,
+      alp_role_etl_mapping_contributor: false,
       alp_role_tenant_viewer: [],
       alp_role_study_researcher: [],
       // TODO: remove deprecated roles
@@ -322,6 +323,9 @@ export class UserGroupService {
           break
         case LOGTO_ROLES.STUDY_RESULTS_READER:
           roleMap.alp_role_study_results_read_researcher = true
+          break
+        case LOGTO_ROLES.ETL_MAPPING_CONTRIBUTOR:
+          roleMap.alp_role_etl_mapping_contributor = true
           break
         case LOGTO_ROLES.TENANT_VIEWER: {
           roleMap.alp_role_tenant_viewer.push(env.APP_TENANT_ID)
@@ -370,6 +374,7 @@ export class UserGroupService {
         STUDY_RESEARCHER: roleMap.alp_role_study_researcher,
         STUDY_WRITE_DQD_RESEARCHER: roleMap.alp_role_study_write_dqd_researcher,
         STUDY_RESULTS_READ_RESEARCHER: roleMap.alp_role_study_results_read_researcher,
+        ETL_MAPPING_CONTRIBUTOR: roleMap.alp_role_etl_mapping_contributor,
         // TODO: remove deprecated roles
         TENANT_ADMIN: roleMap.alp_role_tenant_admin,
         STUDY_MANAGER: roleMap.alp_role_study_mgr
