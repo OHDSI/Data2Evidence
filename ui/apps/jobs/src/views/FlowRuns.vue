@@ -1,7 +1,7 @@
 <template>
   <p-layout-default class="flow-runs">
     <template #header>
-      <p-heading heading="4"> Job Runs </p-heading>
+      <p-heading heading="4"> Job Runs</p-heading>
     </template>
 
     <template v-if="loaded">
@@ -57,7 +57,7 @@
                 :selectable="flowRunsAreSelectable"
                 :flow-runs="flowRuns"
               />
-              <p-pager :limit="limit" :page="flowRunsPage" :pages="flowRunPages" />
+              <p-pager v-model:page="flowRunsPage" v-model:limit="limit" :pages="flowRunPages" />
             </template>
 
             <template v-else-if="!flowRunsSubscription.executed && flowRunsSubscription.loading">
@@ -157,7 +157,8 @@ const flowRunsSort = useRouteQueryParam(
 
 const flowRunsPage = useRouteQueryParam('flow-runs-page', NumberRouteParam, 1)
 
-const { value: limit } = useLocalStorage('workspace-runs-list-limit', 10)
+const limitStorage = useLocalStorage('workspace-runs-list-limit', 10)
+const limit = toRef(limitStorage, 'value')
 
 const flowRunsFilter: Getter<FlowRunsPaginationFilter> = () => {
   const filter = mapper.map('SavedSearchFilter', dashboardFilter, 'FlowRunsFilter')
