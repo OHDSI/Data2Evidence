@@ -129,6 +129,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
+            export DB_DIALECT=duckdb
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
             
             DC_EXIT_CODE=$?
@@ -203,8 +204,9 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
+          export DB_DIALECT=duckdb
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
-          DB_DIALECT=duckdb ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions -p 41100 start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions -p 41100 start
 
       - name: Wait for services to be ready to avoid mounting race condition
         if: ${{ steps.file_changes.outputs.ui == 'true' }}

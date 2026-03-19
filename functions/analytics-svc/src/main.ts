@@ -777,6 +777,9 @@ const main = async () => {
     log.info(
         `MRI Application started successfully. Server listening on port ${port}`
     );
+    log.info(`[main.ts]DB_DIALECT:${process.env.DB_DIALECT}`)
+    log.info(`[main.ts]isTestEnv:${process.env.isTestEnv}`)
+    log.info(`[main.ts]isHttpTestRun:${process.env.isHttpTestRun}`)
 };
 
 main().catch((err) => {
