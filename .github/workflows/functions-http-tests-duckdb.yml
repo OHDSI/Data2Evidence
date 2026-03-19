@@ -129,9 +129,8 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            export DB_DIALECT=duckdb
+            echo "DB_DIALECT: ${DB_DIALECT}"
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
-            
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -204,8 +203,9 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          export DB_DIALECT=duckdb
+          echo "DB_DIALECT: ${DB_DIALECT}"
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          echo "DB_DIALECT: ${DB_DIALECT}"
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions -p 41100 start
 
       - name: Wait for services to be ready to avoid mounting race condition
