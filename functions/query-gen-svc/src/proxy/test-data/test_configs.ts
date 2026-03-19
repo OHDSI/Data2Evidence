@@ -1518,6 +1518,9 @@ const observation_id = `"OBSERVATION_ID"`;
 // let testSchemaName = Deno.env.get("TESTSCHEMA") || "MRI";
 
 console.log(`[test_configs] DB_DIALECT:${process.env.DB_DIALECT}`);
+console.log(`[test_configs] isTestEnv:${process.env.isTestEnv}`);
+console.log(`[test_configs] isHttpTestRun:${process.env.isHttpTestRun}`);
+
 const DB_DIALECT = process.env.DB_DIALECT;
 let testSchemaName = (DB_DIALECT && DB_DIALECT === "duckdb") ? "demo_database__srcdb.demo_cdm." : (Deno.env.get("TESTSCHEMA") || "MRI");
 console.log(`[test_configs] SCHEMA_NAME:${testSchemaName}`);
