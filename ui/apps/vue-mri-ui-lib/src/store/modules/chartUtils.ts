@@ -24,6 +24,45 @@ const truncateAtWordBoundary = (text: string, maxLength: number): string => {
   return truncated + '...'
 }
 
+// Helper function to build tickvals (full values) and ticktext (truncated) for Plotly x-axis
+const buildTickLabels = (
+  xAxes: { id: string; axis: number; name: string }[],
+  data: Record<string, string | number>[]
+): { tickvals: string[] | string[][]; ticktext: string[] | string[][] } | null => {
+  if (!xAxes || xAxes.length === 0 || !data || data.length === 0) return null
+
+  if (xAxes.length === 1) {
+    const seen = new Set<string>()
+    const tickvals: string[] = []
+    const ticktext: string[] = []
+    data.forEach(row => {
+      const val = String(row[xAxes[0].id] ?? '')
+      if (!seen.has(val)) {
+        seen.add(val)
+        tickvals.push(val)
+        ticktext.push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
+      }
+    })
+    return { tickvals, ticktext }
+  }
+
+  // Multi-axis: one set of tickvals/ticktext per axis level
+  const tickvals: string[][] = xAxes.map(() => [])
+  const ticktext: string[][] = xAxes.map(() => [])
+  const seen: Set<string>[] = xAxes.map(() => new Set<string>())
+  data.forEach(row => {
+    xAxes.forEach((xAxis, i) => {
+      const val = String(row[xAxis.id] ?? '')
+      if (!seen[i].has(val)) {
+        seen[i].add(val)
+        tickvals[i].push(val)
+        ticktext[i].push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
+      }
+    })
+  })
+  return { tickvals, ticktext }
+}
+
 // Helper function to wrap text by inserting <br> at word boundaries when exceeding max width
 const wrapText = (text: string | number, maxWidth: number): string => {
   const str = String(text ?? '')
@@ -98,9 +137,7 @@ const getters = {
         // Custom tooltip labelling
         let hoverTemplate = ''
         if (xAxes.length === 1) {
-          xData = category.data.map(data =>
-            truncateAtWordBoundary(String(data[xAxes[0].id]), Constants.XAxisLabelMaxLength)
-          )
+          xData = category.data.map(data => String(data[xAxes[0].id]))
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
@@ -108,10 +145,7 @@ const getters = {
           }))
           hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
-          // Truncate labels for x-axis display
-          xData = xAxes.map(xAxis =>
-            category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
-          )
+          xData = xAxes.map(xAxis => category.data.map(data => String(data[xAxis.id])))
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
             const fullLabels = xAxes.map(xAxis => wrapText(dataPoint[xAxis.id], 62))
@@ -140,6 +174,18 @@ const getters = {
           meta: { fullName },
         }
       })
+
+      // Attach tick label mappings so the Vue component can apply truncated display labels
+      // while keeping full (untruncated) values in trace.x for selection events
+      const tickLabels = buildTickLabels(xAxes, chartData.data)
+      if (tickLabels) {
+        chartData.tickvals = tickLabels.tickvals
+        chartData.ticktext = tickLabels.ticktext
+      } else {
+        chartData.tickvals = undefined
+        chartData.ticktext = undefined
+      }
+
       return chartData
     },
   processResponse:

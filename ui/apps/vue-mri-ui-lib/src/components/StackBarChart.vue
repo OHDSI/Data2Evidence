@@ -16,8 +16,6 @@ import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
-import { init } from 'echarts'
-import { initial } from 'underscore'
 
 let stackBarChart
 
@@ -333,6 +331,10 @@ export default {
         const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         freshLayout.showlegend = false
         freshLayout.xaxis.type = this.chartData.axisType
+        if (this.chartData.tickvals) {
+          freshLayout.xaxis.tickvals = this.chartData.tickvals
+          freshLayout.xaxis.ticktext = this.chartData.ticktext
+        }      
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -348,6 +350,10 @@ export default {
       const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       initialLayout.showlegend = false
       initialLayout.xaxis.type = this.chartData.axisType
+      if (this.chartData.tickvals) {
+        initialLayout.xaxis.tickvals = this.chartData.tickvals
+        initialLayout.xaxis.ticktext = this.chartData.ticktext
+      }
 
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
@@ -372,15 +378,14 @@ export default {
             const xAxes = pointCustomData.x
             const yAxis = pointCustomData.y
 
-            if (xAxes.length > 1) {
-              xAxes.forEach((xAxis, axisIndex) => {
-                pushPoint(xAxis.id, trace.x[axisIndex][pointIndex])
-              })
-            } else if (xAxes.length === 1) {
-              pushPoint(xAxes[0].id, trace.x[pointIndex])
-            }
+            xAxes.forEach((xAxis, axisIndex) => {
+              // fullLabels contains wrapText-formatted values; strip <br> to get plain full string
+              const wrappedLabel = pointCustomData.fullLabels[axisIndex]
+              const fullValue = wrappedLabel ? wrappedLabel.replace(/<br>/g, ' ') : wrappedLabel
+              pushPoint(xAxis.id, fullValue)
+            })
             if (yAxis.length > 0) {
-              pushPoint(yAxis[0].id, trace.name)
+              pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
             }
             selectedCount++
           })
@@ -397,6 +402,10 @@ export default {
         const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         selectionLayout.showlegend = false
         selectionLayout.xaxis.type = this.chartData.axisType
+        if (this.chartData.tickvals) {
+          selectionLayout.xaxis.tickvals = this.chartData.tickvals
+          selectionLayout.xaxis.ticktext = this.chartData.ticktext
+        }
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
