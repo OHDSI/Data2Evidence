@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
 import RuleNameContent from './RuleNameContent.vue'
@@ -33,7 +34,14 @@ function handleToggleRuleSelection(ruleId: number) {
   emit('toggle-rule-selection', ruleId)
 }
 
+const isDragging = ref(false)
+
+function handleDragStart() {
+  isDragging.value = true
+}
+
 function handleDragEnd() {
+  isDragging.value = false
   emit('drag-end')
 }
 
@@ -54,9 +62,10 @@ function handleMoveRowDown(statId: number) {
     target=".rules-table tbody"
     :disabled="selectedVisualization === 'INTERSECT'"
     :animation="150"
+    @start="handleDragStart"
     @end="handleDragEnd"
   >
-    <table class="rules-table">
+    <table class="rules-table" :class="{ dragging: isDragging }">
       <thead>
         <tr>
           <th class="checkbox-col" v-if="selectedVisualization === 'INTERSECT'">
@@ -192,6 +201,10 @@ table {
 
   tbody tr:hover {
     background-color: var(--color-ui-extra-light-bg, #ddd);
+  }
+
+  &.dragging tbody tr {
+    user-select: none;
   }
 
   .drag-icon-header {
