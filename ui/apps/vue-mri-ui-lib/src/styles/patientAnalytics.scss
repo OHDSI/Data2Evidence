@@ -1,3 +1,4 @@
+@use 'sass:map';
 @import './screen';
 @mixin wrapper-components {
   .fullHeight {
@@ -52,7 +53,7 @@
     .pane-right-content {
       position: inherit;
       flex: 1;
-      min-width: map-get($mriScreen, min-chart-width);
+      min-width: map.get($mriScreen, min-chart-width);
       min-height: 0;
     }
   }

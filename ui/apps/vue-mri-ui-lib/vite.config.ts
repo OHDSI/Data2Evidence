@@ -32,7 +32,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
-    logLevel: 'warn',
+    logLevel: 'info',
 
     plugins: [
       vue({
@@ -94,10 +94,9 @@ export default defineConfig(({ command, mode }): UserConfig => {
         scss: {
           // Use modern-compiler API for better performance with sass
           api: 'modern-compiler',
+          quietDeps: true,
           silenceDeprecations: [
-            'legacy-js-api',
             'import',
-            'abs-percent',
           ],
         } as Record<string, unknown>,
       },

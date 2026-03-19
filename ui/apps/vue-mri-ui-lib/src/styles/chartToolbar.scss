@@ -1,3 +1,4 @@
+@use 'sass:map';
 @import './screen';
 @import './mixins';
 
@@ -79,7 +80,7 @@
   }
 }
 .chartToolbar-main-container {
-  min-width: map-get($mriScreen, min-chart-width);
+  min-width: map.get($mriScreen, min-chart-width);
   justify-content: space-between;
   top: 0px;
 
