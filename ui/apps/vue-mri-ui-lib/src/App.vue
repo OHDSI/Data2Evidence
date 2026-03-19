@@ -1,5 +1,5 @@
 <template>
-  <div id="app" class="mri-app-vue-container">
+  <div id="app">
     <NotificationStack />
     <splashScreen v-if="getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />

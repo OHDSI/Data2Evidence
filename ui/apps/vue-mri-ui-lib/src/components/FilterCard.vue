@@ -45,7 +45,7 @@
               <appIcon icon="slimArrowRight" v-if="!showCollapse"></appIcon>
             </button>
             <label>{{ name }}</label>
-            <bs-badge v-if="displayShowCohortEntryExit" variant="light" class="ml-2 filter-card-badge">{{
+            <bs-badge v-if="displayShowCohortEntryExit" variant="light" class="ms-2 filter-card-badge">{{
               entryExitLabel
             }}</bs-badge>
             <span v-show="isDisabled" class="card-help-button" @click="openHelp">

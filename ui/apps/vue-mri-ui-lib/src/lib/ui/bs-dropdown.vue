@@ -52,7 +52,7 @@ const triggerClasses = computed(() =>
     'btn',
     `btn-${props.variant}`,
     props.size ? `btn-${props.size}` : '',
-    props.block ? 'btn-block' : '',
+    props.block ? 'w-100' : '',
   ].filter(Boolean)
 )
 

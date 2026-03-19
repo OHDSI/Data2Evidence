@@ -90,14 +90,23 @@ export default defineConfig(({ command, mode }): UserConfig => {
     },
 
     css: {
+      postcss: {
+        plugins: [
+          // Remove deprecated `color-adjust` property from third-party CSS (Bootstrap 5, vue-multiselect).
+          // These files already include `print-color-adjust` alongside it, so removing is safe.
+          {
+            postcssPlugin: 'remove-color-adjust',
+            Declaration: {
+              'color-adjust': (decl) => { decl.remove() },
+            },
+          },
+        ],
+      },
       preprocessorOptions: {
         scss: {
           // Use modern-compiler API for better performance with sass
           api: 'modern-compiler',
           quietDeps: true,
-          silenceDeprecations: [
-            'import',
-          ],
         } as Record<string, unknown>,
       },
     },

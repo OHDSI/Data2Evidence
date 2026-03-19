@@ -1,90 +1,111 @@
-@import 'vue-multiselect/dist/vue-multiselect.min.css';
-@import './fonts';
-@import './mri-bootstrap-variables';
-@import './mixins';
+@use './fonts';
+@use './mri-bootstrap-variables' as *;
+@use './mixins' as *;
+@use './button';
+@use './binning';
+@use './dialog';
+@use './label';
+@use './checkbox';
+@use './configSelection';
+@use './addCohort';
+@use './bookmarkToolbar';
+@use './chartToolbar';
+@use './chartButton';
+@use './patientCount';
+@use './dropdown';
+@use './skinnyDropdown';
+@use './segmented-button';
+@use './pdfExport';
+@use './splitter';
+@use './messageBox';
+@use './app';
+@use './patientListChart';
+@use './search';
+@use './searchFilters';
+@use './v2Pager';
+@use './bookmark';
+@use './advancedTimeFilter';
+@use './toast';
+@use './boxplot';
+@use './chartController';
+@use './chartErrorMessage';
+@use './loadingAnimation';
+@use './axisMenuButton';
+@use './kaplanMeier';
+@use './dropDownMenu';
+@use './dropDownMenuItem';
+@use './patientAnalytics';
+@use './kmLegend';
+@use './chartPopover';
+@use './chartPopoverDrill';
+@use './boxplotInfo';
+@use './icon';
+@use './library';
+@use './link';
+@use './kmStatistics';
+@use './textbox';
+@use './patientListControl';
+@use './menuButton';
+@use './range';
+@use './variant-range';
+@use './date';
+@use './dateRange';
+@use './boolContainer';
+@use './boolFilterContainer';
+@use './filtercard';
+@use './constraint';
+@use './filterCardSummary';
+@use './filters';
+@use './multiselect';
+@use './pager';
+@use './expandedFilters';
+@use './filtersfooter';
+@use './cohortCompare';
+@use './tab-button';
+@use './messageStrip';
+@use './textInput';
+@use './popover';
+@use './helpPopover';
 
-.mri-app-vue-container {
-  @import './mri-bootstrap';
+// Bootstrap CSS custom property overrides (replaces SCSS variable customization)
+:root {
+  --bs-font-sans-serif: 'GT-America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+  --bs-body-font-family: var(--bs-font-sans-serif);
+  --bs-body-font-size: #{$font-size-base};
+  --bs-body-color: #{$body-color};
+  --bs-body-bg: #{$body-bg};
+}
+
+// Bootstrap component overrides (no CSS variable available for these)
+.form-control,
+.form-select {
+  border-color: $input-border-color;
+}
+
+.btn-sm {
+  padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
+}
+
+.input-group-sm > .btn {
+  padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
+}
+
+.modal-header {
+  padding: 0;
+}
+
+.form-check-input {
+  border-radius: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: $headings-font-weight;
+}
+
+#app {
   @include mriBaseStyle;
   height: 100%;
   // For alignment of the loading splash screen within PA wrapper
   position: relative;
-
-  /*
-    copied styles from the html and body portion of bootstrap's reboot.scss file
-    since loading bootstrap inside the #app selector, the html and body portions are useless.
-    This is done so we can use sapui5 together with bootstrap
-  */
-  -webkit-text-size-adjust: 100%; // 4
-  -ms-text-size-adjust: 100%; // 4
-  -ms-overflow-style: scrollbar; // 5
-  -webkit-tap-highlight-color: rgba(0, 0, 0, 0); // 6
-  margin: 0; // 1
 }
-
-// default theme
-@import './button';
-@import './binning';
-@import './dialog';
-@import './label';
-@import './checkbox';
-@import './configSelection';
-@import './addCohort';
-@import './bookmarkToolbar';
-@import './chartToolbar';
-@import './chartButton';
-@import './patientCount';
-@import './dropdown';
-@import './skinnyDropdown';
-@import './segmented-button';
-@import './pdfExport';
-@import './splitter';
-@import './messageBox';
-@import './app';
-@import './patientListChart';
-@import './search';
-@import './searchFilters';
-@import './v2Pager.scss';
-@import './bookmark';
-@import './advancedTimeFilter';
-@import './toast';
-@import './boxplot';
-@import './chartController';
-@import './chartErrorMessage';
-@import './loadingAnimation';
-@import './axisMenuButton';
-@import './kaplanMeier';
-@import './dropDownMenu';
-@import './dropDownMenuItem';
-@import './patientAnalytics';
-@import './kmLegend';
-@import './chartPopover';
-@import './chartPopoverDrill';
-@import './boxplotInfo';
-@import './icon';
-@import './library';
-@import './link';
-@import './kmStatistics';
-@import './textbox';
-@import './patientListControl';
-@import './menuButton';
-@import './range';
-@import './variant-range';
-@import './date';
-@import './dateRange';
-@import './boolContainer';
-@import './boolFilterContainer';
-@import './filtercard';
-@import './constraint';
-@import './filterCardSummary';
-@import './filters';
-@import './multiselect';
-@import './pager';
-@import './expandedFilters';
-@import './filtersfooter';
-@import './cohortCompare';
-@import './tab-button';
-@import './messageStrip';
-@import './textInput';
-@import './popover';
-@import './helpPopover';

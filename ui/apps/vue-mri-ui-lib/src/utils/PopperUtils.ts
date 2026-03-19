@@ -1,6 +1,6 @@
 import Popper from 'popper.js'
 
-const MRI_ROOT_CONTAINER = 'mri-app-vue-container'
+const MRI_ROOT_CONTAINER = 'app'
 
 const create = (reference, popper, options = {}) => {
   return new Popper(reference, popper, getDefaultOptions(options))
@@ -13,9 +13,9 @@ const destroy = (popper: Popper) => {
 }
 
 const getMaxHeight = (boundariesElement = MRI_ROOT_CONTAINER, buffer = 7) => {
-  const vueContainer = document.getElementsByClassName(boundariesElement || MRI_ROOT_CONTAINER)
-  if (!!vueContainer && vueContainer.length > 0) {
-    return vueContainer[0].getBoundingClientRect().height - buffer
+  const vueContainer = document.getElementById(boundariesElement || MRI_ROOT_CONTAINER)
+  if (vueContainer) {
+    return vueContainer.getBoundingClientRect().height - buffer
   }
   return window.innerHeight - buffer
 }
@@ -25,7 +25,7 @@ const getDefaultOptions = (options): Popper.PopperOptions => {
     placement: 'bottom-start',
     modifiers: {
       preventOverflow: {
-        boundariesElement: document.getElementsByClassName(MRI_ROOT_CONTAINER)[0] || 'scrollParent',
+        boundariesElement: document.getElementById(MRI_ROOT_CONTAINER) || 'scrollParent',
         ...options.modifiers.preventOverflow,
       },
       ...options.modifiers,

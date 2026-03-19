@@ -1,5 +1,5 @@
 @use 'sass:map';
-@import './screen';
+@use './screen' as *;
 @mixin wrapper-components {
   .fullHeight {
     height: 100%;

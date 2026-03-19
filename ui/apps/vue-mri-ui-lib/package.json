@@ -18,7 +18,7 @@
     "@d4l/web-components-library": "^3.20.2",
     "@vuepic/vue-datepicker": "^11.0.2",
     "axios": ">=0.21.2",
-    "bootstrap": "4.6.1",
+    "bootstrap": "5.3.8",
     "canvg": "^3.0.7",
     "core-js": "^3.8.2",
     "d3": "3.5.17",

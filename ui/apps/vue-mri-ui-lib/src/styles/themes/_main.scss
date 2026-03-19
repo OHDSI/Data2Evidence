@@ -1,4 +1,4 @@
-@import '@d4l/web-components-library/dist/d4l-ui/d4l-ui.css';
+@use '@d4l/web-components-library/dist/d4l-ui/d4l-ui.css';
 
 // Fix for d4l-button not respecting inline styles after pnpm migration
 // Shadow DOM components need explicit display mode to accept margin properties

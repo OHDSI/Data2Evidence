@@ -26,7 +26,7 @@
                         getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
                       }}</span>
                       <span class="bookmark-headelement" v-else>{{ filterCard.name }}</span>
-                      <bs-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ml-2 filter-card-badge">{{
+                      <bs-badge v-if="isDisplayBadge(filterCard)" variant="light" class="ms-2 filter-card-badge">{{
                         getBadgeText(filterCard)
                       }}</bs-badge>
                       <span class="bookmark-headelement" v-if="filterCard.isExcluded"

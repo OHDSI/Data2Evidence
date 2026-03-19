@@ -1,5 +1,7 @@
 // Must be first import to set up sap mock before any component uses it
 import './globals'
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'vue-multiselect/dist/vue-multiselect.min.css'
 import { createApp, Component } from 'vue'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'

@@ -1,4 +1,4 @@
-@import './mixins';
+@use './mixins' as *;
 
 @mixin card-header {
   background-color: var(--color-mri-card-header-bg);
@@ -74,16 +74,14 @@
     padding-left: 2px;
   }
 
-  .custom-control-input:checked {
-    ~ .custom-control-label::after {
-      background-color: #fff;
-      background-size: 100%;
-      border: 1px solid #666666;
-    }
+  .form-check-input:checked {
+    background-color: #fff;
+    background-size: 100%;
+    border: 1px solid #666666;
   }
 
-  .custom-checkbox {
-    .custom-control-label::before {
+  .form-check {
+    .form-check-input {
       border: 1px solid #666666;
       background-color: #fff;
     }

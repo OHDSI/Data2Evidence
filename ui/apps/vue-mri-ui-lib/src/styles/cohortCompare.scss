@@ -1,5 +1,5 @@
 @use 'sass:map';
-@import './screen';
+@use './screen' as *;
 .compareContainer {
   .modal-wrapper {
     .modal-container {

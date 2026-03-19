@@ -1,6 +1,6 @@
 @use 'sass:map';
-@import './screen';
-@import './mixins';
+@use './screen' as *;
+@use './mixins' as *;
 
 .chartToolbar-main-container,
 .filters-toolbar {
