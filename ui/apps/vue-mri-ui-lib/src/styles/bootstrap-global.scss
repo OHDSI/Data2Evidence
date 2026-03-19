@@ -1,0 +1,8 @@
+// Bootstrap 5 compiled from SCSS with custom variable overrides.
+// Must use @import because Bootstrap 5 internally uses @import for its partials.
+// CSS custom properties cannot replace SCSS variable overrides — Bootstrap compiles
+// values like $font-size-base into the CSS at build time, not as var() references.
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import './mri-bootstrap-variables';
+@import 'bootstrap/scss/bootstrap';

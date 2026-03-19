@@ -107,6 +107,9 @@ export default defineConfig(({ command, mode }): UserConfig => {
           // Use modern-compiler API for better performance with sass
           api: 'modern-compiler',
           quietDeps: true,
+          // bootstrap-global.scss must use @import for Bootstrap 5 SCSS variable customization
+          // (Bootstrap compiles $font-size-base etc. into CSS at build time, not as CSS vars)
+          silenceDeprecations: ['import'],
         } as Record<string, unknown>,
       },
     },

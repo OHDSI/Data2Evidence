@@ -1,6 +1,6 @@
 // Must be first import to set up sap mock before any component uses it
 import './globals'
-import 'bootstrap/dist/css/bootstrap.min.css'
+import './styles/bootstrap-global.scss'
 import 'vue-multiselect/dist/vue-multiselect.min.css'
 import { createApp, Component } from 'vue'
 import Multiselect from 'vue-multiselect'

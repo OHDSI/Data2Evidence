@@ -67,42 +67,6 @@
 @use './popover';
 @use './helpPopover';
 
-// Bootstrap CSS custom property overrides (replaces SCSS variable customization)
-:root {
-  --bs-font-sans-serif: 'GT-America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-  --bs-body-font-family: var(--bs-font-sans-serif);
-  --bs-body-font-size: #{$font-size-base};
-  --bs-body-color: #{$body-color};
-  --bs-body-bg: #{$body-bg};
-}
-
-// Bootstrap component overrides (no CSS variable available for these)
-.form-control,
-.form-select {
-  border-color: $input-border-color;
-}
-
-.btn-sm {
-  padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
-}
-
-.input-group-sm > .btn {
-  padding: $input-btn-padding-y-sm $input-btn-padding-x-sm;
-}
-
-.modal-header {
-  padding: 0;
-}
-
-.form-check-input {
-  border-radius: 0;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  font-weight: $headings-font-weight;
-}
-
 #app {
   @include mriBaseStyle;
   height: 100%;
