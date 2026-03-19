@@ -145,6 +145,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
     console.log(
         `[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`
     );
+    console.log(`[population.populationQuery]DB_DIALECT: ${process.env.DB_DIALECT}`);
     const user = getUser(req);
     const language = user.lang;
     let chartType: string = req.params.chartType;
