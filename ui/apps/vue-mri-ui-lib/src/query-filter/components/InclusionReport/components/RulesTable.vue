@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
-import type { InclusionRuleStat } from '@/query-filter/types/InclusionReportTypes'
+import RuleNameContent from './RuleNameContent.vue'
+import type { InclusionRuleStat, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
 import type { AttritionStat } from '../computeAttritionStats'
 
 const props = defineProps<{
@@ -12,6 +13,7 @@ const props = defineProps<{
   areAllRulesChecked: boolean
   isRuleChecked: (ruleId: number) => boolean
   getRowIndex: (statId: number) => number
+  filterCardDetails?: RuleFilterCardDetails[]
 }>()
 
 const emit = defineEmits<{
@@ -98,12 +100,7 @@ function handleMoveRowDown(statId: number) {
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
-            <span>{{ stat.isExclude ? '-' : '+' }}&nbsp;</span>
-            <!-- bold 'OR' -->
-            <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
-              <b v-if="part === 'OR'">OR</b>
-              <template v-else>{{ part }}</template>
-            </template>
+            <RuleNameContent :stat="stat" :filter-card-details="filterCardDetails" />
           </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td v-if="selectedVisualization === 'ATTRITION'">{{ stat.percentSatisfying }}</td>
@@ -117,7 +114,9 @@ function handleMoveRowDown(statId: number) {
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
-          <td class="rule-name">{{ stat.isExclude ? '-' : '+' }} {{ stat.name }}</td>
+          <td class="rule-name">
+            <RuleNameContent :stat="stat" :filter-card-details="filterCardDetails" />
+          </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.percentExcluded }}</td> -->
@@ -139,7 +138,7 @@ table {
   width: 100%;
   border-collapse: collapse;
   border: 1px solid var(--color-ui-light-border, #ddd);
-  text-align: left;
+  text-align: right;
   color: var(--color-ui-medium-text);
 
   .rule-name {
@@ -172,7 +171,6 @@ table {
     }
 
     &.reorder-buttons {
-      display: flex;
       flex-direction: column;
       align-items: center;
       padding: 0.1rem;
@@ -198,6 +196,26 @@ table {
 
   .drag-icon-header {
     border-right: none;
+  }
+
+  :deep(.filter-card-details) {
+    padding-left: 2em;
+  }
+
+  .bookmark-attribute {
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 4px;
+  }
+
+  .bookmark-element {
+    padding-right: 5px;
+    color: var(--color-ui-light-text);
+  }
+
+  .bookmark-constraint {
+    color: var(--color-mri-header-text-light);
+    font-weight: normal;
   }
 }
 </style>

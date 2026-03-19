@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import type { InclusionReportResponse, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
 import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
@@ -20,6 +20,7 @@ const props = withDefaults(
     generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
     cacheKey?: string
     showPersonEventSwitch?: boolean
+    filterCardDetails?: RuleFilterCardDetails[]
     fetchInclusionReport: (
       cohortDefinitionId: string,
       sourceKey: string,
@@ -182,6 +183,7 @@ onUnmounted(() => {
             :are-all-rules-checked="areAllRulesChecked()"
             :is-rule-checked="isRuleChecked"
             :get-row-index="getRowIndex"
+            :filter-card-details="filterCardDetails"
             @toggle-all-rules="toggleAllRules"
             @toggle-rule-selection="toggleRuleSelection"
             @drag-end="handleDragEnd"
