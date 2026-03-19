@@ -20,7 +20,7 @@ var doNothing = function () {
 }
 var logToConsole = function (msg) {
   /* eslint-disable-next-line no-console */
-  console.log('--- LOG --- ' + msg)
+  console.log(msg)
 }
 var log = {
   error: logToConsole,
@@ -262,18 +262,11 @@ HanaRequest.prototype.request = function (query, cb) {
   var that = this
 
   log.debug('initializing request')
-  logToConsole(`[hana_request]body:${JSON.stringify(query)}`)
-  logToConsole(`query:${JSON.stringify(query)}`)
   var theRequest = function theRequest() {
     var options = that._makeRequestOptions(query)
 
     log.debug('theRequest is executed')
     request(options, function (error, response, body) {
-      logToConsole(`[hana_request]error:${error}`)
-      logToConsole(`[hana_request]response.statusCode:${response.statusCode}`)
-      logToConsole(`[hana_request]response:${JSON.stringify(response)}`)
-      logToConsole(`[hana_request]body:${JSON.stringify(body)}`)
-
       if (error) {
         log.debug('Error executing request', request, error)
         return cb(error, response, body)

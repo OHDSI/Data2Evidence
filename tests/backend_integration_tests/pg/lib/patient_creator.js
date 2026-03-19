@@ -86,9 +86,11 @@ PatientCreator.prototype.init = function (cb) {
  * @param {Function} cb - callback
  */
 PatientCreator.prototype.getTables = function (schemaName, cb) {
-  var sqlCommand = `SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION
-        FROM TABLE_COLUMNS WHERE SCHEMA_NAME='${schemaName}'
-        GROUP BY TABLE_NAME, COLUMN_NAME, DATA_TYPE_NAME, POSITION`
+  var sqlCommand = `select t.table_name, c.column_name, c.data_type, c.ordinal_position
+    from information_schema.tables t
+    join information_schema.columns c ON t.table_name = c.table_name AND t.table_schema = c.table_schema
+    where t.table_schema = '${schemaName}' AND t.table_type = 'BASE TABLE'
+    ORDER by t.table_name, c.ordinal_position`
   var dataTypeMap = {
     NVARCHAR: 'text',
     TEXT: 'text',
@@ -110,10 +112,10 @@ PatientCreator.prototype.getTables = function (schemaName, cb) {
     var dataType
     var position
     rows.forEach(function (row) {
-      tableName = row.TABLE_NAME
-      columnName = row.COLUMN_NAME
-      dataType = row.DATA_TYPE_NAME
-      position = row.POSITION
+      tableName = row.table_name
+      columnName = row.column_name
+      dataType = row.data_type
+      position = row.ordinal_position
       if (!(tableName in result)) {
         result[tableName] = {}
       }
@@ -205,8 +207,8 @@ PatientCreator.prototype.insertIntoTable = function (tableName, jsonData, cb) {
   var joinedValuePlaceholders =
     '(' +
     Array.apply(null, Array(fieldNames.length))
-      .map(function () {
-        return '?'
+      .map(function (e, i) {
+        return `$${i + 1}`
       })
       .join(',') +
     ')'
@@ -482,8 +484,7 @@ PatientCreator.prototype.createInteraction = function (requestIterator, interact
  */
 PatientCreator.prototype.executeSqlCommand = function (sqlCmd, cb) {
   this.pgClient.query(sqlCmd, function (err, result) {
-    if (result && result.rows)
-      cb(err, result.rows)
+    if (result && result.rows) cb(err, result.rows)
     else {
       cb(err, result)
     }
@@ -499,13 +500,17 @@ PatientCreator.prototype.executeSqlCommand = function (sqlCmd, cb) {
  * @param {Function} cb - callback
  */
 PatientCreator.prototype.executeSqlStatement = function (sqlCmd, parameterArray, cb) {
-  console.log(`Query to be executed:\n${sqlCmd}`)
-  console.log(`parameterArray:\n${parameterArray}`)
+  try {
+    console.log(`Query to be executed:\n${sqlCmd}`)
+    console.log(`parameterArray:\n${parameterArray}`)
 
-  return this.pool.query(sqlCmd, parameterArray).then(res => {
-    console.log(`Executed query:\n${sqlCmd}`)
-    cb(null, res.rows)
-  })
+    return this.pgClient.query(sqlCmd, parameterArray).then(res => {
+      console.log(`Executed query:\n${sqlCmd}`)
+      cb(null, res.rows)
+    })
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 module.exports = PatientCreator

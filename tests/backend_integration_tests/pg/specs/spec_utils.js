@@ -81,7 +81,7 @@ function truncatePatientData(pgClient, schemaName, cb) {
         tableNames,
         function (tableName, errCallback) {
           var testTable = '"' + schemaName + '"."' + tableName + '"'
-          var sqlCommand = 'TRUNCATE TABLE ' + testTable
+          var sqlCommand = `TRUNCATE TABLE ${testTable} CASCADE`
           // console.log(`sqlCommand: ${sqlCommand}`);
           pgClient.query(sqlCommand, errCallback)
         },
@@ -262,10 +262,18 @@ function checkAnalyticsResult(actualResult, expectedData, accuracy) {
       if (key in numericalMeasureKeys) {
         expect(resDatum[key]).to.be.closeTo(expectedDataValue, accuracy)
       } else {
-        expect(resDatum[key]).to.equal(expectedDataValue)
+        expect(convertToNumber(resDatum[key])).to.equal(convertToNumber(expectedDataValue))
       }
     })
   })
+}
+
+function convertToNumber(n) {
+  return (!isNaN(n)) ? Number(n) : n;
+}
+
+function convertToNumberArray(arr) {
+  return arr.map(value => convertToNumber(value));
 }
 
 /*
@@ -422,3 +430,7 @@ module.exports.setupFullSystem = setupFullSystem
 module.exports.teardownFullSystem = teardownFullSystem
 module.exports.adaptMriConfiguration = adaptMriConfiguration
 module.exports.resetMriConfigurationToDefault = resetMriConfigurationToDefault
+module.exports.convertToNumberArray = convertToNumberArray
+module.exports.convertToNumber = convertToNumber
+
+

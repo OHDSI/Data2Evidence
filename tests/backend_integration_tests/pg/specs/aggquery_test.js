@@ -10,8 +10,8 @@ var ConfigSetupManager = require('../lib/config_setup_manager')
 var PatientBuilder = require('../lib/patient_builder')
 var RequestBuilder = require('../lib/request_builder')
 var HostConfig = require('../lib/host_config')
-var utils = require('../lib//utils')
-var specUtils = require('./spec_utils')
+var utils = require('../lib/utils')
+var specUtils = require('../specs/spec_utils')
 
 // Standard modules
 var path = require('path')
@@ -110,9 +110,6 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
         .xaxis('basicdata', 'smoker')
         .yaxis('basicdata', 'pcount')
       requestBuilder.submit(aliceHanaRequest, PATH, defaultBarChartParameters, function (err, response, body) {
-        logToConsole(`>>>err:${err}`)
-        logToConsole(`>>>response:${JSON.stringify(response)}`)
-        logToConsole(`>>>body:${JSON.stringify(body)}`)
         specUtils.checkAnalyticsResult(body, {
           'patient.attributes.smoker': ['no'],
           'patient.attributes.pcount': [2]
@@ -123,7 +120,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('patient-attributes filter card', function () {
+  describe('patient-attributes filter card', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -212,7 +209,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single patient-interaction filter card: text attribute', function () {
+  describe('single patient-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -277,7 +274,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single condition-interaction filter card: text attribute', function () {
+  describe('single condition-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -378,7 +375,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single condition-interaction filter card: numerical attribute -', function () {
+  describe('single condition-interaction filter card: numerical attribute -', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -548,7 +545,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('two patient-interaction cards of the same type', function () {
+  describe('two patient-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -590,7 +587,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('count interactions --', function () {
+  describe('count interactions --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -651,7 +648,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('two condition-interaction cards of the same type', function () {
+  describe('two condition-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -699,7 +696,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('case sensitivity --', function () {
+  describe('case sensitivity --', function () {
     var patientIcds
 
     before(function (done) {
@@ -806,7 +803,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('absolute time', function () {
+  describe('absolute time', function () {
     var patients
 
     before(function (done) {
@@ -967,7 +964,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
       })
     })
 
-    it('should limit the result to patients that had the specified interactions within the given absolute time frame', function (done) {
+    xit('should limit the result to patients that had the specified interactions within the given absolute time frame', function (done) {
       // with abs time constraint
       var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
       requestBuilder
@@ -1009,7 +1006,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('successor constraint between two cards', function () {
+  describe('successor constraint between two cards', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -1057,7 +1054,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
       specUtils.truncatePatientData(pgClient, hostConfig.getTestSchemaName(), done)
     })
 
-    it('should limit the result to patients that had the specified interactions within the given time frame', function (done) {
+    xit('should limit the result to patients that had the specified interactions within the given time frame', function (done) {
       // with successor constraint
       var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
       requestBuilder
@@ -1090,7 +1087,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('freetext field --', function () {
+  describe('freetext field --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -1123,7 +1120,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
       specUtils.truncatePatientData(pgClient, hostConfig.getTestSchemaName(), done)
     })
 
-    it('should return patients with the given string in the interaction text', function (done) {
+    xit('should return patients with the given string in the interaction text', function (done) {
       var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
       requestBuilder
         .request()
@@ -1145,7 +1142,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
       })
     })
 
-    it('excluded -- should return patients without the given string in the interaction text', function (done) {
+    xit('excluded -- should return patients without the given string in the interaction text', function (done) {
       var requestBuilder = new RequestBuilder(MRI_CONFIG_METADATA, MRI_CUR_CONFIG)
       requestBuilder
         .request()
