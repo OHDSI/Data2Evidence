@@ -125,6 +125,7 @@ function initEnv(__env) {
         console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
         throw new Error("ZOD parse failed");
     }
+    console.log(`[analytics-svc.env] env:\n${JSON.stringify(env)}`);
     return env;
 }
 

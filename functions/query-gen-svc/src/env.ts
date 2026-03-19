@@ -65,5 +65,5 @@ if (result.success) {
     console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
     throw new Error(`Service Failed to Start!! ${JSON.stringify(result)}`)
 }
-
+console.log(`[query-gen-svc.env] env:\n${JSON.stringify(env)}`);
 export { env };
