@@ -1129,7 +1129,7 @@ select "Interaction_Details_$0"."DWID" as "InteractionID",
 from (
         (
             "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Details" as "Interaction_Details_$0"
-            inner join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" as "Interactions_Key_Assoc" on (
+            left join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" as "Interactions_Key_Assoc" on (
                 "Interactions_Key_Assoc"."DWID" = "Interaction_Details_$0"."DWID"
             )
             left outer join "HTTPTEST_SCHEMA"."legacy.ots::Views.Vocabularies" as "Vocabularies_$1" on (
@@ -1219,7 +1219,7 @@ from (
         left outer join "HTTPTEST_SCHEMA"."legacy.ots::Views.Vocabularies" as "Vocabularies_$1" on (
             "Vocabularies_$1"."ExternalID" = "Interactions_Attr_$0"."InteractionType.CodeSystem"
         )
-        inner join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" as "Interactions_Key_Assoc" on (
+        left join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" as "Interactions_Key_Assoc" on (
             "Interactions_Key_Assoc"."DWID" = "Interactions_Attr_$0"."DWID"
         )
     )
@@ -1236,7 +1236,7 @@ select "Observations_Attr_$0"."DWID" as "ObsID",
     "Observations_Attr_$0"."ObsTime",
     "Observations_Attr_$0"."OrgID"
 from "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Observations_Attr" as "Observations_Attr_$0"
-    inner join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Observations_Key" as "Observations_Key_Assoc" on "Observations_Key_Assoc"."DWID" = "Observations_Attr_$0"."DWID"
+    left join "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Observations_Key" as "Observations_Key_Assoc" on "Observations_Key_Assoc"."DWID" = "Observations_Attr_$0"."DWID"
 where ("Observations_Attr_$0"."DWDateTo" is null);
 create view "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWViews._Patient_Practitioner_Attr" as
 select "Patient_Practitioner_Link_Attr_$0"."DWLinkID",
@@ -1532,7 +1532,7 @@ from (
         left outer join "HTTPTEST_SCHEMA"."legacy.ots::Views.Vocabularies" as "Vocabularies_$1" on (
             "Vocabularies_$1"."ExternalID" = "Interaction_Measures_$0"."Attribute.CodeSystem"
         )
-        inner JOIN "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" AS "Interactions_Key_Assoc" ON "Interactions_Key_Assoc"."DWID" = "Interaction_Measures_$0"."DWID"
+        left JOIN "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" AS "Interactions_Key_Assoc" ON "Interactions_Key_Assoc"."DWID" = "Interaction_Measures_$0"."DWID"
     )
 where ("Interaction_Measures_$0"."DWDateTo" is null);
 create view "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWViewsEAV.Interaction_Text" as
@@ -1544,7 +1544,7 @@ select "Interaction_Text_$0"."InteractionTextID",
     "Interaction_Text_$0"."Value",
     "Interaction_Text_$0"."Lang"
 from "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntitiesEAV.Interaction_Text" as "Interaction_Text_$0"
-    inner JOIN "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" AS "Interactions_Key_Assoc" ON "Interactions_Key_Assoc"."DWID" = "Interaction_Text_$0"."DWID"
+    left JOIN "HTTPTEST_SCHEMA"."legacy.cdw.db.models::DWEntities.Interactions_Key" AS "Interactions_Key_Assoc" ON "Interactions_Key_Assoc"."DWID" = "Interaction_Text_$0"."DWID"
 where ("Interaction_Text_$0"."DWDateTo" is null);
 create view "HTTPTEST_SCHEMA"."legacy.cdw.db.models::InterfaceViews.CODES" as
 select "ConceptTerms_$0"."ConceptVocabularyID" as "VOCABULARY_ID",

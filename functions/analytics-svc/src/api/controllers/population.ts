@@ -251,6 +251,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                             console.time(
                                 `time-analytics-svc-populationQuery-${timestamp}`
                             );
+
+                            await _setDBSpecificSettings(req);
                             switch (dataFormat) {
                                 case "csv":
                                     switch (chartType) {
@@ -425,20 +427,17 @@ export async function populationQuery(req: IMRIRequest, res, next) {
     }
 }
 
-async function _setSearchPath(req: IMRIRequest) {
-    console.log(
-        `[population._setSearchPath]analyticsConnection stringify:${JSON.stringify(req.dbConnections.analyticsConnection)}`
-    );
-    console.log(
-        `[population._setSearchPath]setting search path to demo_database__srcdb.demo_cdm...`
+async function _setDefaultNullOrder(req: IMRIRequest) {
+    console.info(
+        `[population._setDefaultNullOrder] Setting default NULL order in DuckDB ....`
     );
 
     return new Promise((resolve, reject) => {
         QueryObject.QueryObject.format(
-            `SET search_path = 'demo_database__srcdb.demo_cdm'`
+            `SET default_null_order = 'NULLS_FIRST'`
         ).executeQuery(req.dbConnections.analyticsConnection, (err, result) => {
-            console.log(`[main.ts]err: ${JSON.stringify(err)}`);
-            console.log(`[main.ts]result: ${JSON.stringify(result)}`);
+            // console.log(`[population._setDefaultNullOrder]err: ${JSON.stringify(err)}`);
+            // console.log(`[population._setDefaultNullOrder]result: ${JSON.stringify(result)}`);
             if (err) {
                 console.error(err);
                 return reject(err);
@@ -446,4 +445,12 @@ async function _setSearchPath(req: IMRIRequest) {
             return resolve(result);
         });
     });
+}
+
+async function _setDBSpecificSettings(req: IMRIRequest) {
+    // ONLY FOR DUCKDB HTTP TESTS
+    // changing the duckdb default behaviour of sorting NULL values at the bottom
+    if ((envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) && process.env.DB_DIALET && process.env.DB_DIALET === "true") {
+        await _setDefaultNullOrder(req);
+    }
 }

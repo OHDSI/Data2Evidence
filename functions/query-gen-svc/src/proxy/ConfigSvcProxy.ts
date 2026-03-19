@@ -12,8 +12,7 @@ const envVarUtils = new EnvVarUtils(Deno.env.toObject());
 export async function callStudyMRIConfig(
     opts
 ): Promise<StudyMriConfigMetaDataType> {
-    console.log(`envVarUtils.isTestEnv():${envVarUtils.isTestEnv()}`);
-    console.log(`envVarUtils.isHttpTestRun():${envVarUtils.isHttpTestRun()}`);
+
     if (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) {
         // this flow is only for integation test
         return getTestConfig(opts.configId);
@@ -25,6 +24,7 @@ export async function callStudyMRIConfig(
 }
 
 function getTestConfig(configId: string): any {
+    console.log(`[ConfigSvcProxy] getting test configs.... configId: ${configId}`)
     let meta = {
         configId,
         configVersion: "",

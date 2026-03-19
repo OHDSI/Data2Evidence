@@ -225,6 +225,7 @@ services:
       PERSEUS__FILES_MANAGER_HOST: trex
       isHttpTestRun: ${isHttpTestRun:-false}
       isTestEnv: ${isTestEnv:-false}
+      DB_DIALECT: ${DB_DIALECT:-duckdb}
       local: ${local}
       TESTSCHEMA: ${TESTSCHEMA}
       REFRESH_TOKEN__ENDPOINT: ${REFRESH_TOKEN__ENDPOINT}

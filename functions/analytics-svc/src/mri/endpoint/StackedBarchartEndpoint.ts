@@ -48,9 +48,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
         bookmarkInputStr,
         language
     ): Promise<MRIEndpointResultType> {
-        log.debug(`[StackedBarchartEndpoint.processRequest]configId:${configId}`)
-        log.debug(`[StackedBarchartEndpoint.processRequest]configVersion:${configVersion}`)
-        log.debug(`[StackedBarchartEndpoint.processRequest]datasetId:${datasetId}`)
 
         let emptyResult: MRIEndpointResultType = {
             sql: "",
@@ -84,11 +81,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                     finalQueryObject.parameterPlaceholders,
                     finalQueryObject.sqlReturnOn
                 );
-                log.debug(`[StackedBarchartEndpoint.processRequest]finalQueryObject.queryString:${finalQueryObject.queryString}`)
-                log.debug(`[StackedBarchartEndpoint.processRequest]finalQueryObject.parameterPlaceholders:${finalQueryObject.parameterPlaceholders}`)
-                log.debug(`[StackedBarchartEndpoint.processRequest]finalQueryObject.sqlReturnOn:${finalQueryObject.sqlReturnOn}`)
-                log.debug(`[StackedBarchartEndpoint.processRequest]typeof this.connection:${typeof this.connection}`)
-                log.debug(`[StackedBarchartEndpoint.processRequest]this.connection stringified:${JSON.stringify(this.connection)}`)
 
                 let fast: any = queryResponse.fast;
                 let config: any = queryResponse.config;
@@ -100,9 +92,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                 // set settings to BaseQueryEngineEndpoint
                 this.setSettings(config.advancedSettings.settings);
                 let qeCallback = (err, result: MRIEndpointResultType) => {
-                log.debug(`[StackedBarchartEndpoint.processRequest]err:${err}`)
-                log.debug(`[StackedBarchartEndpoint.processRequest]result stringified:${JSON.stringify(result)}`)
-
                     if (err) {
                         reject(err);
                         return;
