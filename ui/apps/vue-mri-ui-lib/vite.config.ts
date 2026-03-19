@@ -32,7 +32,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
-    logLevel: 'error', // Change to info after deprecation warnings are resolved
+    logLevel: 'warn',
 
     plugins: [
       vue({
@@ -94,15 +94,9 @@ export default defineConfig(({ command, mode }): UserConfig => {
         scss: {
           // Use modern-compiler API for better performance with sass
           api: 'modern-compiler',
-          // Remove the silenceDeprecations options after fixing sass warnings
-          // Run `rm -rf node_modules/.vite` before `bun serve`
           silenceDeprecations: [
             'legacy-js-api',
             'import',
-            'global-builtin',
-            'color-functions',
-            'slash-div',
-            'bogus-combinators',
             'abs-percent',
           ],
         } as Record<string, unknown>,
