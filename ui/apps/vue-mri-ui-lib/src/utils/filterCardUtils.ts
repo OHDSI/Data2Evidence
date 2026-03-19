@@ -190,16 +190,20 @@ export function getInclusionReportFilterCardDetails(
   }
 
   // --- Non-Basic Data ---
-  for (const bc of boolContainers) {
-    if (isBasicDataContainer(bc)) continue
+  // Two passes to match backend's parseNonBasicDataFilters ordering:
+  // 1) All inclusion cards across all containers first
+  // 2) All exclusion cards across all containers after
+  const nonBasicContainers = boolContainers.filter(bc => !isBasicDataContainer(bc))
 
+  for (const bc of nonBasicContainers) {
     const inclusionCards = bc.content.filter((e: any) => e.op !== 'NOT')
-    const exclusionCards = bc.content.filter((e: any) => e.op === 'NOT')
-
     if (inclusionCards.length > 0) {
       ruleDetails.push(inclusionCards.map(extract))
     }
+  }
 
+  for (const bc of nonBasicContainers) {
+    const exclusionCards = bc.content.filter((e: any) => e.op === 'NOT')
     for (const excCard of exclusionCards) {
       ruleDetails.push(excCard.content.map(extract))
     }
