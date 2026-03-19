@@ -495,8 +495,8 @@ PatientCreator.prototype.executeSqlCommand = function (sqlCmd, cb) {
  * @param {Function} cb - callback
  */
 PatientCreator.prototype.executeSqlStatement = function (sqlCmd, parameterArray, cb) {
-  console.log(`Query to be executed:\n${sqlCmd}`)
-  console.log(`parameterArray:\n${parameterArray}`)
+  // console.log(`Query to be executed:\n${sqlCmd}`)
+  // console.log(`parameterArray:\n${parameterArray}`)
   this.hdbClient.prepare(sqlCmd, function (err, statement) {
     statement.exec(parameterArray, function (err, rows) {
       cb(err, rows)

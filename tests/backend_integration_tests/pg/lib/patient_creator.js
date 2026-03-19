@@ -501,9 +501,8 @@ PatientCreator.prototype.executeSqlCommand = function (sqlCmd, cb) {
  */
 PatientCreator.prototype.executeSqlStatement = function (sqlCmd, parameterArray, cb) {
   try {
-    console.log(`Query to be executed:\n${sqlCmd}`)
-    console.log(`parameterArray:\n${parameterArray}`)
-
+    // console.log(`Query to be executed:\n${sqlCmd}`)
+    // console.log(`parameterArray:\n${parameterArray}`)
     return this.pgClient.query(sqlCmd, parameterArray).then(res => {
       console.log(`Executed query:\n${sqlCmd}`)
       cb(null, res.rows)
