@@ -567,7 +567,6 @@ class D2ECli {
   }
   setupHTTPTestEnv() {
     console.log("Setting up http test database...");
-    console.log(`===> all env vars: \n ${JSON.stringify(process.env)}`);
     this.patch_demodb();
     const database_host = `${this.PROJECT_NAME}-demodb`;
     const zx_cmd = this.setup_zx_cmd();
