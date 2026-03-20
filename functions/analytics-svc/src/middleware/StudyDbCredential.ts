@@ -132,6 +132,7 @@ export default async (req: IMRIRequest, res, next) => {
 
                 const portalServerAPI = new PortalServerAPI();
                 const studies = await portalServerAPI.getStudies();
+
                 const studyMetadata: StudyDbMetadata = studies.find(
                     (o) => o.tokenStudyCode === studyTokenCode
                 );
