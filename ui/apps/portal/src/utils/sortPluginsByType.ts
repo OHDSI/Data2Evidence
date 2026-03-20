@@ -4,8 +4,9 @@ export const sortPluginsByType = (plugins: Plugins[]): Plugins[] => {
   const sortedPlugins = [] as Plugins[];
 
   plugins.forEach((item) => {
-    if ("enabled" in item && !item.enabled) {
-      return;
+    const isVisible = item.visible ?? item.enabled;
+    if ("visible" in item || "enabled" in item) {
+      if (!isVisible) return;
     }
 
     if (item.type && item.type === "hidden") {
@@ -13,7 +14,7 @@ export const sortPluginsByType = (plugins: Plugins[]): Plugins[] => {
     }
 
     if ("children" in item) {
-      sortedPlugins.push({ ...item, children: item.children?.filter((x) => x.enabled) });
+      sortedPlugins.push({ ...item, children: item.children?.filter((x) => x.visible ?? x.enabled) });
     } else {
       sortedPlugins.push(item);
     }
