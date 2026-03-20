@@ -91,10 +91,12 @@ export interface DatasetDashboard {
 }
 
 export interface Dataset {
+  type?: string
   dialect: string
   databaseCode: string
   schemaName: string
   resultsSchemaName: string
   dashboards: DatasetDashboard[]
   vocabSchemaName: string
+  tokenStudyCode: string
 }

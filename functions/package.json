@@ -539,6 +539,8 @@
           "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
           "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
           "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
+          "D2E_DUCKDB_MEMORY_LIMIT": "${D2E_DUCKDB_MEMORY_LIMIT:-}",
+          "D2E_DUCKDB_THREADS": "${D2E_DUCKDB_THREADS:-4}",
           "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
           "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
           "LIQUIBASE_PATH": "",
@@ -584,6 +586,7 @@
           "PG_PORT": "${PG_PORT:-5432}",
           "PG_DATABASE": "${PG_DB_NAME:-alp}",
           "PG_SCHEMA": "strategus",
+          "PG_PORTAL_SCHEMA": "portal",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
           "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
@@ -876,7 +879,15 @@
           "strategus.analysis.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete"
+          "strategus.results.delete",
+          "gateway.dataset.dashboards.read"
+        ],
+        "ETL_MAPPING_CONTRIBUTOR": [
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.dataflow.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write"
         ]
       },
       "scopes": [
@@ -2791,6 +2802,15 @@
           ]
         },
         {
+          "path": "^/gateway/api/dataset/info$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/gateway/api/db/database-creds/list",
           "scopes": [
             "gateway.db.datbase.credentials.list"
@@ -2969,6 +2989,7 @@
           ],
           "httpMethods": [
             "GET",
+            "HEAD",
             "POST",
             "DELETE"
           ]

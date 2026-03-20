@@ -120,8 +120,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
     });
   const [columnFilters, setColumnFilters] = useState<
     { id: string; value: unknown }[]
-  >([]);
-  const [useDefaultFilters, setUseDefaultFilters] = useState(true);
+  >(defaultFilters || []);
+  const [defaultFiltersValidated, setDefaultFiltersValidated] = useState(false);
   const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
@@ -409,46 +409,39 @@ const TerminologyList: FC<TerminologyListProps> = ({
     [onSelectConceptId],
   );
 
+  // Validate defaultFilters against filterOptions once loaded.
+  // defaultFilters are already applied at init, so this only updates
+  // if casing differs or values don't exist in filterOptions.
   useEffect(() => {
-    if (columnFilters.length || !defaultFilters) {
-      setUseDefaultFilters(false);
+    if (defaultFiltersValidated || !defaultFilters || !filterOptions) {
+      return;
     }
-  }, [columnFilters.length, defaultFilters]);
+    setDefaultFiltersValidated(true);
 
-  useEffect(() => {
-    if (useDefaultFilters && defaultFilters && filterOptions) {
-      // Trust defaultFilters from parent component (PA-Atlas)
-      // Apply them immediately without waiting for filterOptions to load
-      // Validate default filters against loaded filter options to prevent empty pills
-      const filters = JSON.parse(
-        JSON.stringify(defaultFilters),
-      ) as typeof defaultFilters;
+    const validFilters = defaultFilters
+      .map((filter) => {
+        const availableOptions =
+          filterOptions[filter.id as keyof FilterOptions];
+        if (!availableOptions) return filter;
 
-      // Filter out values that don't exist in filterOptions
-      const validFilters = filters
-        .map((filter) => {
-          const availableOptions =
-            filterOptions[filter.id as keyof FilterOptions];
-          if (!availableOptions) return filter;
+        const validValues = filter.value
+          .map((val) => {
+            const matchingKey = Object.keys(availableOptions).find(
+              (key) => key.toLowerCase() === val.toLowerCase(),
+            );
+            return matchingKey;
+          })
+          .filter((val): val is string => val !== undefined);
 
-          // Only keep values that exist in the filter options (case-insensitive match)
-          const validValues = filter.value
-            .map((val) => {
-              // Find matching key in availableOptions (case-insensitive)
-              const matchingKey = Object.keys(availableOptions).find(
-                (key) => key.toLowerCase() === val.toLowerCase(),
-              );
-              // Return the properly capitalized value from availableOptions
-              return matchingKey;
-            })
-            .filter((val): val is string => val !== undefined);
+        return { ...filter, value: validValues };
+      })
+      .filter((f) => f.value.length > 0);
 
-          return { ...filter, value: validValues };
-        })
-        .filter((f) => f.value.length > 0);
+    // Only update if validation changed something (e.g. casing fix or invalid value removed)
+    if (JSON.stringify(validFilters) !== JSON.stringify(columnFilters)) {
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, useDefaultFilters, filterOptions]);
+  }, [defaultFilters, defaultFiltersValidated, filterOptions]);
 
   // Reset page to 0 when search criteria change
   useEffect(() => {

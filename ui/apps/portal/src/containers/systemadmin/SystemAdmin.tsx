@@ -1,12 +1,14 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Snackbar, ErrorBoundary } from "@portal/components";
 import { Header } from "../../components";
 import { useFeedback } from "../../contexts";
 import { useFeatures } from "../../hooks";
 import { IPluginItem, Plugins } from "../../types";
 import { loadPlugins, sortPluginsByType, getPluginChildPathPattern } from "../../utils";
+import { SystemAdminSingleSpaPluginRenderer } from "../../plugins/core/SystemAdminSingleSpaPluginRenderer";
 import { SystemAdminPluginRenderer } from "../../plugins/core/SystemAdminPluginRenderer";
+import { initializeImportMap } from "../../singleSpa";
 import { useSystemFeatures } from "../../hooks/useSystemFeatures";
 import { Account } from "../shared/Account/Account";
 import env from "../../env";
@@ -24,6 +26,7 @@ const gitCommit = env.GIT_COMMIT;
 const CURRENT_SYSTEM = env.REACT_APP_CURRENT_SYSTEM;
 
 const SystemAdmin: FC = () => {
+  const location = useLocation();
   const { clearFeedback, getFeedback } = useFeedback();
   const feedback = getFeedback();
   const [systemFeatures] = useSystemFeatures();
@@ -56,6 +59,14 @@ const SystemAdmin: FC = () => {
     return flatPlugins;
   }, [plugins]);
 
+  const singleSpaApps = useMemo(() => systemAdminPluginsFlat.filter((p) => p.type === "app"), [systemAdminPluginsFlat]);
+
+  const legacyPlugins = useMemo(() => systemAdminPluginsFlat.filter((p) => p.type !== "app"), [systemAdminPluginsFlat]);
+
+  useEffect(() => {
+    initializeImportMap(singleSpaApps);
+  }, [singleSpaApps]);
+
   const setupFeatureFlag = useCallback(
     (plugin: IPluginItem) => {
       // Detect and map the feature flag value (true/false) in the data props if key matched
@@ -78,7 +89,7 @@ const SystemAdmin: FC = () => {
   useEffect(() => {
     const updateSystemAdminPlugins = () => {
       const displayedSystemAdminPlugins = plugins.systemadmin
-        .filter((plugin) => plugin.enabled)
+        .filter((plugin) => plugin.visible ?? plugin.enabled)
         .reduce<Plugins[]>((acc, item) => {
           const route = item.route;
           const pluginEnv: { [key: string]: boolean } = {};
@@ -99,7 +110,7 @@ const SystemAdmin: FC = () => {
                     child = setupFeatureFlag(child);
                     return child;
                   })
-                  .filter((x) => x.enabled),
+                  .filter((x) => x.visible ?? x.enabled),
               });
             } else {
               acc.push(item);
@@ -117,7 +128,6 @@ const SystemAdmin: FC = () => {
   }, [feedback, clearFeedback]);
 
   const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
-
   return (
     <div className="systemadmin__container">
       <Header portalType="systemadmin" systemAdminPlugins={sortedPlugins} />
@@ -129,11 +139,35 @@ const SystemAdmin: FC = () => {
           description={feedback?.description}
           visible={feedback?.message != null}
         />
+        {singleSpaApps.map((item: IPluginItem) => {
+          const isActiveRoute = location.pathname.includes(`/systemadmin/${item.route}`);
+          return (
+            <div
+              key={item.route}
+              style={{
+                display: isActiveRoute ? "block" : "none",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              <ErrorBoundary name={item.name}>
+                <SystemAdminSingleSpaPluginRenderer
+                  path={item.pluginPath}
+                  route={item.route}
+                  type={item.type}
+                  system={CURRENT_SYSTEM}
+                  data={item?.data}
+                  basePath="systemadmin"
+                />
+              </ErrorBoundary>
+            </div>
+          );
+        })}
         <Routes>
           <Route path="/">
             <Route index element={<Navigate to={defaultRoute} />} />
             <Route path={ROUTES.account} element={<Account portalType="system_admin" />} />
-            {systemAdminPluginsFlat.map((item: Plugins) => {
+            {legacyPlugins.map((item: IPluginItem) => {
               // Log viewer (a vue app) uses path routing on jobs/* route. The app is mounted in the portal Jobs component.
               // Including "jobs/*" routes avoids a blank screen which is the default when a route cannot be found.
               const items = item.route === "jobs" ? [{ ...item, route: item.route + "/*" }, item] : [item];
@@ -143,12 +177,7 @@ const SystemAdmin: FC = () => {
                   path={getPluginChildPathPattern(item)}
                   element={
                     <ErrorBoundary name={item.name} key={item.route}>
-                      <SystemAdminPluginRenderer
-                        key={item.route}
-                        path={item.pluginPath}
-                        system={CURRENT_SYSTEM}
-                        data={item?.data}
-                      />
+                      <SystemAdminPluginRenderer path={item.pluginPath} system={CURRENT_SYSTEM} data={item?.data} />
                     </ErrorBoundary>
                   }
                 />

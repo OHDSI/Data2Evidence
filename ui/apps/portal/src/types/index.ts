@@ -31,6 +31,8 @@ export interface Plugins {
   iconSize?: number;
   name: string;
   nameI18nKey?: keyof LanguageMappings;
+  visible?: boolean;
+  /** @deprecated Use `visible` instead */
   enabled?: boolean;
   route: string;
   pluginPath: string;
@@ -57,6 +59,8 @@ export interface IPluginItem {
   featureFlag?: string;
   iconUrl?: string;
   iconSize?: number;
+  visible?: boolean;
+  /** @deprecated Use `visible` instead */
   enabled?: boolean;
   requiredRoles?: string[];
   type?: string;
@@ -80,6 +84,7 @@ export interface IPluginItem {
 export interface IPlugin {
   researcher: IPluginItem[];
   systemadmin: IPluginItem[];
+  etl: IPluginItem[];
   setup: IPluginItem[];
 }
 
@@ -152,6 +157,7 @@ export interface ConfigItem {
 export enum PORTAL_TYPE {
   RESEARCHER = "researcher",
   SYSTEM_ADMIN = "system_admin",
+  ETL = "etl",
 }
 
 export type PortalType = `${PORTAL_TYPE}`;

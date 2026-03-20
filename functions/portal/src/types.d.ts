@@ -259,8 +259,12 @@ interface IDatasetReleaseDto {
 
 interface IPortalPlugin {
   name: string;
+  nameI18nKey?: string;
   featureFlag?: string;
+  visible?: boolean;
+  /** @deprecated Use `visible` instead */
   enabled?: string;
+  defaultEnabled?: boolean;
   children?: IPortalPlugin[];
 }
 
@@ -285,6 +289,8 @@ export interface IMetadataConfigAttribute {
 }
 export interface IFeatureDto {
   feature: string;
+  name?: string;
+  nameI18nKey?: string;
   isEnabled: boolean;
 }
 

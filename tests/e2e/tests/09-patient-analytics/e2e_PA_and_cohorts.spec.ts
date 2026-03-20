@@ -221,7 +221,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark')
   await page.getByRole('textbox').fill(COHORT_1_RENAMED)
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByRole('button', { name: 'Save' }).click()
   await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
 
   // Navigate back to cohort list

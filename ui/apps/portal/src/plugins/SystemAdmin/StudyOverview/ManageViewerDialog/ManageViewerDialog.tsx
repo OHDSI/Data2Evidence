@@ -22,6 +22,7 @@ import "./ManageViewerDialog.scss";
 interface ViewerConfig {
   type: "dashboard" | "cohort" | "strategus";
   id: string;
+  datasetId?: string;
 }
 
 interface ManageViewerDialogProps {
@@ -49,7 +50,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const strategy = useMemo(() => createConfigStrategy(config.type), [config.type]);
   const { loading, feedback, clearFeedback, execute } = useAsyncOperation();
-  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.id);
+  const [viewerStatus, startViewer, stopViewer] = useKernelViewer(config.id, config.datasetId ?? config.id);
 
   const {
     templates,

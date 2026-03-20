@@ -37,6 +37,7 @@ export interface IDatabase {
   credentials: IDbCredential[];
   vocabSchemas: string[];
   publications: IDbPublication[];
+  hasLegacyExtra?: boolean;
 }
 
 // Response from API

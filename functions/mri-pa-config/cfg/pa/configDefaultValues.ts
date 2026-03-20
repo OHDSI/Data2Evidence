@@ -91,7 +91,8 @@ export const configDefaultValues = {
         "externalAccessPoints": true,
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
-        "usePaAtlas": false
+        "usePaAtlas": false,
+        "inclusionReport": false
     },
     "configInformations": {
         "note": ""

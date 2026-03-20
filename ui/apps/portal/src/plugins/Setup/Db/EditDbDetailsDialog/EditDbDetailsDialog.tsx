@@ -107,6 +107,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
 
   const hasChanges = useMemo(
     () =>
+      db.hasLegacyExtra ||
       !isEqual(db.name, formData.name) ||
       !isEqual(db.host, formData.host) ||
       !isEqual(db.port, formData.port) ||
