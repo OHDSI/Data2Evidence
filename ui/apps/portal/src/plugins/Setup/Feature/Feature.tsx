@@ -1,18 +1,11 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useMemo, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { Button, Checkbox, Loader, Title } from "@portal/components";
 import { useFeatures } from "../../../hooks";
 import { useFeedback, useTranslation } from "../../../contexts";
+import { LanguageMappings } from "../../../contexts/app-context/hooks/use-translation";
 import { api } from "../../../axios/api";
 import { IFeature } from "../../../types";
 import "./Feature.scss";
-import {
-  FEATURE_DATASET_FILTER,
-  FEATURE_DATASET_SEARCH,
-  FEATURE_FHIR_SERVER,
-  FEATURE_MAPPING_SUGGESTION,
-  FEATURE_DOCKER_LOGS,
-  FEATURE_ADMIN_ONLY_SHARING,
-} from "../../../config";
 
 interface FormData {
   features: IFeature[];
@@ -29,43 +22,14 @@ export const Feature: FC = () => {
   const [features, loading, error] = useFeatures();
   const { setFeedback } = useFeedback();
 
-  const FEATURES: Record<string, { name: string }> = useMemo(
-    () => ({
-      [FEATURE_DATASET_FILTER]: {
-        name: getText(i18nKeys.FEATURE__DATASET_FILTER),
-      },
-      [FEATURE_DATASET_SEARCH]: {
-        name: getText(i18nKeys.FEATURE__DATASET_SEARCH),
-      },
-      conceptSets: {
-        name: getText(i18nKeys.FEATURE__CONCEPTS),
-      },
-      cohort: {
-        name: getText(i18nKeys.FEATURE__COHORT),
-      },
-      starboard: {
-        name: getText(i18nKeys.FEATURE__NOTEBOOKS),
-      },
-      kaplanMeier: {
-        name: getText(i18nKeys.FEATURE__KAPLAN_MEIER),
-      },
-      strategus: {
-        name: getText(i18nKeys.FEATURE__STRATEGUS),
-      },
-      [FEATURE_FHIR_SERVER]: {
-        name: getText(i18nKeys.FEATURE__FHIR_SERVER),
-      },
-      [FEATURE_MAPPING_SUGGESTION]: {
-        name: getText(i18nKeys.FEATURE__DATA_MAPPING_SUGGESTION),
-      },
-      [FEATURE_DOCKER_LOGS]: {
-        name: getText(i18nKeys.FEATURE__DOCKER_LOGS),
-      },
-      [FEATURE_ADMIN_ONLY_SHARING]: {
-        name: getText(i18nKeys.FEATURE__ADMIN_ONLY_SHARING),
-      },
-    }),
-    [getText]
+  const getFeatureLabel = useCallback(
+    (feat: IFeature): string => {
+      if (feat.nameI18nKey && feat.nameI18nKey in i18nKeys) {
+        return getText(feat.nameI18nKey as keyof LanguageMappings);
+      }
+      return feat.name ?? feat.feature;
+    },
+    [getText, i18nKeys]
   );
 
   useEffect(() => {
@@ -111,24 +75,12 @@ export const Feature: FC = () => {
           </div>
           <div className="feature__content">
             {formData.features
-              .sort((a, b) => {
-                const featureOrder = Object.keys(FEATURES);
-                const indexA = featureOrder.indexOf(a.feature);
-                const indexB = featureOrder.indexOf(b.feature);
-
-                if (indexA === -1 && indexB === -1) {
-                  return a.feature.localeCompare(b.feature);
-                }
-                if (indexA === -1) return 1;
-                if (indexB === -1) return -1;
-
-                return indexA - indexB;
-              })
+              .sort((a, b) => getFeatureLabel(a).localeCompare(getFeatureLabel(b)))
               .map((feat) => (
                 <div key={feat.feature} className="feature__item">
                   <Checkbox
                     checked={feat.isEnabled}
-                    label={FEATURES[feat.feature]?.name ?? feat.feature}
+                    label={getFeatureLabel(feat)}
                     onChange={(event: ChangeEvent<HTMLInputElement>) =>
                       handleFormDataChange({
                         features: formData.features.map((f) =>
