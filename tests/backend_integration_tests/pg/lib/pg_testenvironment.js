@@ -626,7 +626,7 @@ TestEnvironment.prototype.callSqlProcedure = function (sqlProc, params, cb) {
       }
     })
     return this.pgClient.query(`CALL ${sqlProc}`, params).then(res => {
-      console.log(`Executed query:\n${query}`)
+      // console.log(`Executed query:\n${query}`)
       cb(null, res)
     })
   } catch (err) {
