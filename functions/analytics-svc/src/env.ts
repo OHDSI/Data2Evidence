@@ -111,9 +111,14 @@ type EnvType = z.infer<typeof Env>;
 let env: EnvType = {};
 
 function initEnv(__env) {
+    console.log(`[analytics-svc.env] __env:\n${JSON.stringify(__env)}`);
+
     const _env = Object.assign({}, Deno.env.toObject(), __env);
+    console.log(`[analytics-svc.env] _env:\n${JSON.stringify(_env)}`);
 
     const result = Env.safeParse(_env);
+    console.log(`[analytics-svc.env] result:\n${JSON.stringify(result)}`);
+
     env = _env;
     if (result.success) {
         env = result.data;
