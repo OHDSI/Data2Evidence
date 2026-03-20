@@ -229,7 +229,7 @@ BackendUplink.prototype.addCdwConfiguration = function (config, configId, config
       return cb(err)
     }
     if (response.statusCode !== 200) {
-      that.log(`backend_uplink: !=200 response...`)
+      that.log('Non-200 reponse!', body)
       return cb(new Error('Failed to activate CDW configuration!'))
     } else if (body) {
       that.log(`backend_uplink: 200 response...`)
@@ -312,10 +312,6 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
   this.log('Storing and activating test MRI configuration')
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
-    that.log(`err:${err}`)
-    that.log(`response:${response}`)
-    that.log(`body:${body}`)
-
     if (err) {
       return cb(err)
     }
@@ -325,7 +321,6 @@ BackendUplink.prototype.addMriConfiguration = function (mriConfig, mriConfigId, 
     } else if (body && body.errors && Array.isArray(body.errors) && body.errors.length !== 0) {
       that.log('MRI Config validation failed!')
     }
-    that.log(`success response...`)
     cb(err)
   })
 }

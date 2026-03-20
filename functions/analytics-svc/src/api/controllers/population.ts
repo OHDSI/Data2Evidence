@@ -140,7 +140,6 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
  * @param next
  */
 export async function populationQuery(req: IMRIRequest, res, next) {
-    // await _setSearchPath(res);
     const { analyticsConnection } = req.dbConnections;
     const user = getUser(req);
     const language = user.lang;
