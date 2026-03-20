@@ -94,6 +94,7 @@ const initRoutes = async (app: express.Application) => {
                         `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
                     );
                 }
+
                 req.studiesDbMetadata = {
                     studies,
                 };
@@ -143,7 +144,7 @@ const initRoutes = async (app: express.Application) => {
                     const databaseCode =
                         parseValueForPrototypePollutingAssignment(
                             req.query.databaseCode as string
-                        );                    
+                        );
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
                     if (!credentials) {

@@ -108,6 +108,7 @@ export class DemoService {
       vocabSchemaValue: env.DEMO_DB_CDM_SCHEMA,
       resultsSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
+
     const result = await datasetAPI.createDataset(dataset);
     this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
     return { ...dataset, ...result };

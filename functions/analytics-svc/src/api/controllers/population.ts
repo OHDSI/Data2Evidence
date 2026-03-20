@@ -142,10 +142,6 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
 export async function populationQuery(req: IMRIRequest, res, next) {
     // await _setSearchPath(res);
     const { analyticsConnection } = req.dbConnections;
-    console.log(
-        `[population.populationQuery]req.dbConnections stringify:${JSON.stringify(req.dbConnections)}`
-    );
-    console.log(`[population.populationQuery]DB_DIALECT: ${process.env.DB_DIALECT}`);
     const user = getUser(req);
     const language = user.lang;
     let chartType: string = req.params.chartType;

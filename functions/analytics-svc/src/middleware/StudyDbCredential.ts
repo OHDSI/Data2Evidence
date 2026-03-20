@@ -137,7 +137,7 @@ export default async (req: IMRIRequest, res, next) => {
                 );
                 log.info(
                     `Selected studyMetadata ${JSON.stringify(studyMetadata)}`
-                );                
+                );
                 // Set req.selectedstudyDbMetadata if it does not already exist
                 if (!req.selectedstudyDbMetadata) {
                     req.selectedstudyDbMetadata = studyMetadata;

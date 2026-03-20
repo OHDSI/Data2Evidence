@@ -89,7 +89,7 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
 
                 // set settings to BaseQueryEngineEndpoint
                 this.setSettings(config.advancedSettings.settings);
-                
+
                 let qeCallback = (err, result: MRIEndpointResultType) => {
                     if (err) {
                         reject(err);

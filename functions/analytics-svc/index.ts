@@ -64,6 +64,7 @@ function main() {
         const dbm = Trex.databaseManager();
         const databaseCredentials =
             dbm.getDatabaseCredentials() as IDatabaseCredential[];
+
         const parsedDatabaseCredentials = databaseCredentials.map((db) => {
             const { credentials, db_extra, dialect, name, port, ...rest } = db;
             const parsedCreds = credentials.reduce<{
