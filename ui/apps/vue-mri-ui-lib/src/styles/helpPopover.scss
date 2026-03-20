@@ -1,4 +1,4 @@
-@import './mixins';
+@use './mixins' as *;
 
 .help-popover-container {
   .help-icon {
