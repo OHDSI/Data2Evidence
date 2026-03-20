@@ -120,7 +120,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('patient-attributes filter card', function () {
+  describe('patient-attributes filter card', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -209,7 +209,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single patient-interaction filter card: text attribute', function () {
+  describe('single patient-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -274,7 +274,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single condition-interaction filter card: text attribute', function () {
+  describe('single condition-interaction filter card: text attribute', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -375,7 +375,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('single condition-interaction filter card: numerical attribute -', function () {
+  describe('single condition-interaction filter card: numerical attribute -', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -545,7 +545,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('two patient-interaction cards of the same type', function () {
+  describe('two patient-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -587,7 +587,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('count interactions --', function () {
+  describe('count interactions --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -648,7 +648,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('two condition-interaction cards of the same type', function () {
+  describe('two condition-interaction cards of the same type', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -696,7 +696,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('case sensitivity --', function () {
+  describe('case sensitivity --', function () {
     var patientIcds
 
     before(function (done) {
@@ -803,7 +803,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('absolute time', function () {
+  describe('absolute time', function () {
     var patients
 
     before(function (done) {
@@ -1006,7 +1006,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('successor constraint between two cards', function () {
+  describe('successor constraint between two cards', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
@@ -1087,7 +1087,7 @@ describe('TEST SUITE TO DEFINE THE BEHAVIOR OF THE AGGREGATION QUERY ENDPOINT --
     })
   })
 
-  xdescribe('freetext field --', function () {
+  describe('freetext field --', function () {
     before(function (done) {
       logToConsole('Creating test patient data')
       var patientBuilder = new PatientBuilder()
