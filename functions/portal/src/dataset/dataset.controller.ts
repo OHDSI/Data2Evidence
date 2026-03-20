@@ -56,7 +56,6 @@ export class DatasetController {
 
   @Get("list/systemadmin")
   async getSystemAdminDatasets(@Query() queryParams: DatasetQueryDto) {
-    console.log(`[dataset.controller.getSystemAdminDatasets] quering datasets...`)
     return await this.datasetQueryService.getDatasets({
       ...queryParams,
       role: DATASET_SYSTEM_ADMIN_ROLE,

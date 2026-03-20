@@ -184,8 +184,7 @@ export class DatasetQueryService {
       },
       Promise.resolve([]),
     );
-    console.log(`[dataset-query.service]datasetDtos: ${JSON.stringify(datasetDtos)}`)
- 
+
     return datasetDtos.map((datasetDto) =>
       this.swapVariables(datasetDto, SWAP_TO.STUDY),
     );

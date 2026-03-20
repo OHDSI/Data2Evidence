@@ -48,7 +48,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
         bookmarkInputStr,
         language
     ): Promise<MRIEndpointResultType> {
-
         let emptyResult: MRIEndpointResultType = {
             sql: "",
             data: [],
@@ -81,7 +80,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                     finalQueryObject.parameterPlaceholders,
                     finalQueryObject.sqlReturnOn
                 );
-
                 let fast: any = queryResponse.fast;
                 let config: any = queryResponse.config;
                 let measures: MRIEndpointResultMeasureType[] =
@@ -91,6 +89,7 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
 
                 // set settings to BaseQueryEngineEndpoint
                 this.setSettings(config.advancedSettings.settings);
+                
                 let qeCallback = (err, result: MRIEndpointResultType) => {
                     if (err) {
                         reject(err);

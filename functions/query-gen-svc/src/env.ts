@@ -52,11 +52,12 @@ const Env = z
             }
         }
     );
+
 let _env = Deno.env.toObject() 
-console.log(`[query-gen-svc.env] _env:\n${JSON.stringify(_env)}`);
+
 
 const result = Env.safeParse(_env);
-console.log(`[query-gen-svc.env] result:\n${JSON.stringify(result)}`);
+
 let env = _env as unknown as z.infer<typeof Env>;
 if (result.success) {
     env = result.data;
@@ -64,5 +65,5 @@ if (result.success) {
     console.error(`Service Failed to Start!! ${JSON.stringify(result)}`);
     throw new Error(`Service Failed to Start!! ${JSON.stringify(result)}`)
 }
-console.log(`[query-gen-svc.env] env:\n${JSON.stringify(env)}`);
+
 export { env };

@@ -90,10 +90,6 @@ export class DBDAO {
         schemaName: string,
         dialect: string
     ): Promise<boolean> => {
-        logger.info(`[DBDAO.checkIfSchemaExists] databaseName: ${databaseName}`);
-        logger.info(`[DBDAO.checkIfSchemaExists] schemaName: ${schemaName}`);
-        logger.info(`[DBDAO.checkIfSchemaExists] dialect: ${dialect}`);
-
         // This is currently required as __srcdb connections in trex sql is not aware of schemas created after its ATTACH
         await this._clearTrexSchemaCache(dialect);
         return new Promise((resolve, reject) => {

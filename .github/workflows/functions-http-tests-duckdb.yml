@@ -129,7 +129,6 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            echo "DB_DIALECT: ${DB_DIALECT}"
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
@@ -203,9 +202,7 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          echo "DB_DIALECT: ${DB_DIALECT}"
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
-          echo "DB_DIALECT: ${DB_DIALECT}"
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions -p 41100 start
 
       - name: Wait for services to be ready to avoid mounting race condition
@@ -354,16 +351,6 @@ jobs:
       - name: Check PG DB connection
         run: |
           PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
-          echo "isHttpTestRun: ${isHttpTestRun}"
-          echo "isTestEnv: ${isTestEnv:-false}"
-          echo "TESTSCHEMA: ${TESTSCHEMA}"
-          echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
-          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           sudo apt install -y postgresql-client
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
@@ -371,11 +358,6 @@ jobs:
       - name: Setup Test DB
         run: |
           PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-          echo "PGPORT: ${PGPORT}"
-          echo "PGPASSWORD: ${PGPASSWORD}"
-          echo "PGUSER: ${PGUSER}"
-          echo "PGHOST: ${PGHOST}"
-          echo "PGDATABASE: ${PGDATABASE}"
           yarn --prefer-offline
           yarn inittestdb-pg
 
@@ -415,9 +397,6 @@ jobs:
             echo "DB_DIALECT: ${DB_DIALECT}"
             echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
             yarn test-specs --test_schema_name=$TESTSCHEMA
-        
-      ###########
-
 
       - name: Logs
         if: success() || failure()

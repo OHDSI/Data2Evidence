@@ -56,9 +56,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             postFilters,
             insert,
         };
-        log.debug(`[query.generateQuery()]configId:${configId}`);
-        log.debug(`[query.generateQuery()]configVersion:${configVersion}`);
-        log.debug(`[query.generateQuery()]datasetId:${datasetId}`);
+
         // get backend config for the given configId, configVersion & datasetId
         const configParams = {
             req,
@@ -110,15 +108,12 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         const censoringThreshold = getCensoringThreshold(config);
 
         // get placeholderTableMap
-        log.debug(`[query.generateQuery()]config.advancedSettings: ${JSON.stringify(config.advancedSettings)}`);
         let userSpecificSettings = new Settings().initAdvancedSettings(
             config.advancedSettings
         );
-        log.debug(`[query.generateQuery()]userSpecificSettings: ${JSON.stringify(userSpecificSettings)}`);
         let placeholderMap: settingsLib.PholderTableMapType =
             userSpecificSettings.getPlaceholderMap();
         // placeholderMap = placeholderMap || Settings.getDimPlaceholderForAttribute();
-        log.debug(`[query.generateQuery()]placeholderMap: ${JSON.stringify(placeholderMap)}`);
 
         const ifrWithConceptSetConcepts = await updateIfrWithConcepts(
             config,
@@ -126,7 +121,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             datasetId,
             req.headers.authorization
         );
-        log.debug(`[query.generateQuery()]before...`)
+
         // generate query
         const queryResponse = await new QueryGenSvc(
             queryType,
@@ -137,7 +132,6 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             pluginOptionalParams,
             censoringThreshold
         ).generateQuery();
-        log.debug(`[query.generateQuery()]after...`)
 
         // set cdm config metadata
         queryResponse.cdmConfigMetaData.id =

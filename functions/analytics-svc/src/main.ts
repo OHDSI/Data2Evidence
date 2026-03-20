@@ -70,7 +70,6 @@ const initRoutes = async (app: express.Application) => {
             acc[item.credentials.code] = item.credentials;
             return acc;
         }, {});
-    log.info(`[main.ts]analyticsCredentials: ${analyticsCredentials}`);
 
     // Calls Alp-Portal for studies db metadata
     // Ignore Alp-Portal check for readiness probe check
@@ -91,8 +90,6 @@ const initRoutes = async (app: express.Application) => {
                     );
                     const portalServerAPI = new PortalServerAPI();
                     studies = await portalServerAPI.getStudies();
-                    log.debug(`[main.ts]studies: ${JSON.stringify(studies)}`);
-
                     console.timeEnd(
                         `timer-analytics-svc-PortalServerAPI-getStudies-${timestamp}`
                     );
@@ -100,14 +97,12 @@ const initRoutes = async (app: express.Application) => {
                 req.studiesDbMetadata = {
                     studies,
                 };
-                log.debug(`[main.ts]req.studiesDbMetadata: ${JSON.stringify(req.studiesDbMetadata)}`);
             }
 
             req.dbCredentials = {
                 ...req.dbCredentials,
                 analyticsCredentials,
             };
-            log.debug(`[main.ts]req.dbCredentials: ${JSON.stringify(req.dbCredentials)}`);
 
             next();
         } catch (err) {
@@ -136,8 +131,6 @@ const initRoutes = async (app: express.Application) => {
                 }
 
                 let credentials;
-                log.debug(`[main] req.dbCredentials stringified: ${JSON.stringify(req.dbCredentials)}`);
-
                 // If request starts with "/analytics-svc/api/services/alpdb/schema/exists", as this request is seeking information where a dataset might not exist yet, get database credentials directly from incoming databaseCode
                 if (
                     req.originalUrl.startsWith(
@@ -147,16 +140,12 @@ const initRoutes = async (app: express.Application) => {
                     log.info(
                         "Getting credentials from analyticsCredentials for /alpdb/schema/exists requests"
                     );
-                    log.debug(`[main]req.query.databaseCode: ${req.query.databaseCode}`);
                     const databaseCode =
                         parseValueForPrototypePollutingAssignment(
                             req.query.databaseCode as string
-                        );
-                    log.debug(`[main]databaseCode: ${databaseCode}`);
-                    
+                        );                    
                     credentials =
                         req.dbCredentials.analyticsCredentials[databaseCode];
-                    log.debug(`[main] 1 credentials stringified: ${JSON.stringify(credentials)}`);
                     if (!credentials) {
                         throw new Error(
                             `Database code:${databaseCode} not found in analyticsCredentials`
@@ -164,11 +153,8 @@ const initRoutes = async (app: express.Application) => {
                     }
                 } else {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
-                    log.debug(`[main] 2 credentials stringified: ${JSON.stringify(credentials)}`);
                 }
 
-                log.debug(`[main]env.USE_TREX_DB_CONN: ${env.USE_TREX_DB_CONN}`);
-                log.debug(`[main]credentials.dialect: ${credentials.dialect}`);
                 if (
                     env.USE_TREX_DB_CONN === "true" &&
                     credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
@@ -182,8 +168,6 @@ const initRoutes = async (app: express.Application) => {
                         userObj,
                     });
                 }
-                log.debug(`[main] req.dbConnections stringified: ${JSON.stringify(req.dbConnections)}`);
-
             }
 
             next();
@@ -242,8 +226,8 @@ const initRoutes = async (app: express.Application) => {
             let action = req.query.action
                 ? req.query.action
                 : req.method === "POST"
-                  ? req.body.action
-                  : "";
+                ? req.body.action
+                : "";
             let tmpbody =
                 (req.query.data ? JSON.parse(<string>req.query.data) : null) ||
                 req.body;
@@ -635,9 +619,6 @@ const getTrexDbConnection = ({
         }
         const trex_direct_connection_alias = `${trex_publication}${direct_connection_suffix}`;
 
-        log.debug(`[main.ts]trex_publication: ${trex_publication}`);
-        log.debug(`[main.ts]direct_connection_suffix: ${direct_connection_suffix}`);
-        log.debug(`[main.ts]trex_direct_connection_alias: ${trex_direct_connection_alias}`);
         const parseSql = (
             temp: string,
             schemaName: string,
@@ -645,17 +626,11 @@ const getTrexDbConnection = ({
             resultsSchemaName: string,
             parameters: any
         ): string => {
-            log.debug(`[main.ts]temp: ${temp}`);
-            log.debug(`[main.ts]schemaName: ${schemaName}`);
-            log.debug(`[main.ts]vocabSchemaName: ${vocabSchemaName}`);
-            log.debug(`[main.ts]resultsSchemaName: ${resultsSchemaName}`);
-            log.debug(`[main.ts]parameters: ${JSON.stringify(parameters)}`);
             // $$$$SCHEMA$$$$ is the replacement, but will appear in the string as $$SCHEMA$$
             temp = temp.replace(
                 /\$\$SCHEMA_DIRECT_CONN\$\$./g,
                 `${trex_direct_connection_alias}.$$$$SCHEMA$$$$.`
             );
-            log.debug(`[main.ts]after temp: ${temp}`);
             return translateHanaToDuckdb(
                 temp,
                 schemaName,
@@ -664,15 +639,6 @@ const getTrexDbConnection = ({
                 parameters
             );
         };
-
-        log.debug(`[main.ts]analyticsCredentials: ${JSON.stringify(analyticsCredentials)}`);
-        log.debug(`[main.ts]analyticsCredentials.code: ${JSON.stringify(analyticsCredentials.code)}`);
-        log.debug(`[main.ts]analyticsCredentials.schema: ${JSON.stringify(analyticsCredentials.schema)}`);
-        log.debug(`[main.ts]analyticsCredentials.vocabSchema: ${JSON.stringify(analyticsCredentials.vocabSchema)}`);
-        log.debug(`[main.ts]analyticsCredentials.resultsSchemaName: ${JSON.stringify(analyticsCredentials.resultsSchemaName)}`);
-
-        log.debug(`[main.ts]parseSql: ${JSON.stringify(parseSql)}`);
-
         const conn = dbm.getConnection(
             analyticsCredentials.code,
             analyticsCredentials.schema,
@@ -680,7 +646,6 @@ const getTrexDbConnection = ({
             analyticsCredentials.resultsSchemaName,
             { duckdb: parseSql }
         );
-        log.debug(`[main.ts]conn: ${JSON.stringify(conn)}`);
 
         return { analyticsConnection: conn };
     } catch (error) {
@@ -705,8 +670,9 @@ const getDBConnections = async ({
     }
 
     if (analyticsCredentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-        analyticsCredentials["SESSIONVARIABLE:APPLICATION"] =
-            `${env.PROJECT_NAME}-cohorts`;
+        analyticsCredentials[
+            "SESSIONVARIABLE:APPLICATION"
+        ] = `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
             userObj.getEmail() ?? userObj.getUser();
 
@@ -777,9 +743,6 @@ const main = async () => {
     log.info(
         `MRI Application started successfully. Server listening on port ${port}`
     );
-    log.info(`[main.ts]DB_DIALECT:${process.env.DB_DIALECT}`)
-    log.info(`[main.ts]isTestEnv:${process.env.isTestEnv}`)
-    log.info(`[main.ts]isHttpTestRun:${process.env.isHttpTestRun}`)
 };
 
 main().catch((err) => {
