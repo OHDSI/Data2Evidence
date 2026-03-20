@@ -12,6 +12,7 @@ import {
     formSelectedAttributesRequest,
 } from "../qe/query_builder/PluginQueryBuilder";
 import * as queryEngine from "../qe/sql_generator2/SqlGenerator";
+import { env } from "../env";
 const logger = Logger.CreateLogger("query-gen-log");
 
 export class QueryGenSvc {
@@ -314,10 +315,10 @@ export class QueryGenSvc {
     private appendDialectSpecificQueries(qo: QueryObject): QueryObject {
         switch (this.dialect) {
             case "hana":
-                if (Deno.env.get("HANA_HINT")) {
-                    qo.queryString = `${qo.queryString} WITH HINT(${Deno.env.get("HANA_HINT")})`;
+                if (env.HANA_HINT) {
+                    qo.queryString = `${qo.queryString} WITH HINT(${env.HANA_HINT})`;
                 }
-                break
+                break;
             default:
         }
         return qo;
