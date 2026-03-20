@@ -1,4 +1,4 @@
-name: HTTP Tests PG
+name: HTTP Tests DuckDB
 
 permissions:
   contents: read
