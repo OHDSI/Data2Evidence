@@ -449,9 +449,13 @@ async function _setDefaultNullOrder(req: IMRIRequest) {
 }
 
 async function _setDBSpecificSettings(req: IMRIRequest) {
+    console.info(`[population._setDBSpecificSettings] envVarUtils.isTestEnv(): ${envVarUtils.isTestEnv()}`);
+    console.info(`[population._setDBSpecificSettings] envVarUtils.isHttpTestRun(): ${envVarUtils.isHttpTestRun()}`);
+    console.info(`[population._setDBSpecificSettings] process.env.DB_DIALECT: ${process.env.DB_DIALECT}`);
+
     // ONLY FOR DUCKDB HTTP TESTS
     // changing the duckdb default behaviour of sorting NULL values at the bottom
-    if ((envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) && process.env.DB_DIALET && process.env.DB_DIALET === "true") {
+    if ((envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) && process.env.DB_DIALECT && process.env.DB_DIALECT === "duckdb") {
         await _setDefaultNullOrder(req);
     }
 }

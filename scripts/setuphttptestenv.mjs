@@ -184,11 +184,10 @@ var response = await fetch(url, {
 });
 const tokenResponse = await response.json();
 const BEARER_TOKEN = tokenResponse.access_token;
-
+// console.log(`BEARER_TOKEN:\n${BEARER_TOKEN}`)
 
 // Setup httptest dataset
 console.log('\nSetup httptest dataset...\n');  
-console.log(`1===> all env vars: \n ${process.env}`);
 const encryptionKeysObj = {
   DataPlatform: "",
   Internal: public_key,
