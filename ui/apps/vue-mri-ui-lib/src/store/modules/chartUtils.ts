@@ -7,60 +7,58 @@ import Sorter from '@/utils/Sorter'
 const state = {}
 
 // Helper function to truncate text at word boundary
+// Strictly honours maxLength: the ellipsis budget (3 chars) is subtracted
+// before searching for the last word boundary, so the result is always ≤ maxLength.
 const truncateAtWordBoundary = (text: string, maxLength: number): string => {
   if (!text) return text
   if (text.length <= maxLength) {
     return text
   }
 
-  // Find the last space before maxLength
-  const truncated = text.slice(0, maxLength)
+  const ellipsis = '...'
+  const budget = maxLength - ellipsis.length // chars available before the ellipsis
+
+  if (budget <= 0) {
+    // maxLength is too small to fit even one char + ellipsis; just truncate hard
+    return text.slice(0, maxLength)
+  }
+
+  // Find the last space within the budget
+  const truncated = text.slice(0, budget)
   const lastSpaceIndex = truncated.lastIndexOf(' ')
 
-  // If there's a space, truncate there; otherwise truncate at maxLength
   if (lastSpaceIndex > 0) {
-    return text.slice(0, lastSpaceIndex) + '...'
+    return text.slice(0, lastSpaceIndex) + ellipsis
   }
-  return truncated + '...'
+  return truncated + ellipsis
 }
 
-// Helper function to build tickvals (full values) and ticktext (truncated) for Plotly x-axis
+// Helper function to build tickvals (full values) and ticktext (truncated/full) for Plotly x-axis.
+// Only operates on single-axis charts — Plotly multicategory tick overrides are fragile and skipped.
+// Returns null for multi-axis charts so the component falls back to Plotly's native rendering.
 const buildTickLabels = (
   xAxes: { id: string; axis: number; name: string }[],
   data: Record<string, string | number>[]
-): { tickvals: string[] | string[][]; ticktext: string[] | string[][] } | null => {
+): { tickvals: string[]; ticktext: string[]; ticktextFull: string[] } | null => {
   if (!xAxes || xAxes.length === 0 || !data || data.length === 0) return null
 
-  if (xAxes.length === 1) {
-    const seen = new Set<string>()
-    const tickvals: string[] = []
-    const ticktext: string[] = []
-    data.forEach(row => {
-      const val = String(row[xAxes[0].id] ?? '')
-      if (!seen.has(val)) {
-        seen.add(val)
-        tickvals.push(val)
-        ticktext.push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
-      }
-    })
-    return { tickvals, ticktext }
-  }
+  // Skip manual tick overrides for multicategory (multi-axis) charts
+  if (xAxes.length > 1) return null
 
-  // Multi-axis: one set of tickvals/ticktext per axis level
-  const tickvals: string[][] = xAxes.map(() => [])
-  const ticktext: string[][] = xAxes.map(() => [])
-  const seen: Set<string>[] = xAxes.map(() => new Set<string>())
+  const seen = new Set<string>()
+  const tickvals: string[] = []
+  const ticktext: string[] = []
+  const ticktextFull: string[] = []
   data.forEach(row => {
-    xAxes.forEach((xAxis, i) => {
-      const val = String(row[xAxis.id] ?? '')
-      if (!seen[i].has(val)) {
-        seen[i].add(val)
-        tickvals[i].push(val)
-        ticktext[i].push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
-      }
-    })
+    const val = String(row[xAxes[0].id] ?? '')
+    if (!seen.has(val)) {
+      seen.add(val)
+      tickvals.push(val)
+      ticktextFull.push(val)
+      ticktext.push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
+    }
   })
-  return { tickvals, ticktext }
+  return { tickvals, ticktext, ticktextFull }
 }
 
 // Helper function to wrap text by inserting <br> at word boundaries when exceeding max width
@@ -181,9 +179,11 @@ const getters = {
       if (tickLabels) {
         chartData.tickvals = tickLabels.tickvals
         chartData.ticktext = tickLabels.ticktext
+        chartData.ticktextFull = tickLabels.ticktextFull
       } else {
         chartData.tickvals = undefined
         chartData.ticktext = undefined
+        chartData.ticktextFull = undefined
       }
 
       return chartData
