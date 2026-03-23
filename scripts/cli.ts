@@ -181,6 +181,7 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
+      USER_MGMT__ROLE_SOURCE: `logto`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH
       )}`,
@@ -628,6 +629,44 @@ class D2ECli {
       process.exit(1);
     }
   }
+
+  syncroles() {
+    console.log("Syncing roles...");
+    dotenvConfig({ path: this.ENVFILE });
+    this.load_env_variables();
+    const zx_cmd = this.setup_zx_cmd();
+    const syncrolesCmd = `${zx_cmd} ${this.node_modules_path}/scripts/syncroles.mjs -n ${this.ENVFILE}`;
+    const syncrolesProc = spawnSync(syncrolesCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (syncrolesProc.error) {
+      console.error("Failed to run script:", syncrolesProc.error);
+      process.exit(1);
+    }
+    if (syncrolesProc.status !== 0) {
+      console.error(`syncroles exited with code ${syncrolesProc.status}`);
+      process.exit(1);
+    }
+
+    console.log("Restarting services...");
+    dotenvConfig({ path: this.ENVFILE });
+    const { cmd, env } = this.build_docker_command(this.program.opts(), "start");
+    console.log(`Executing command: ${cmd}`);
+    const proc = spawn(cmd, {
+      stdio: "inherit",
+      shell: true,
+      env: env,
+    });
+    proc.on("close", (code) => {
+      if (code === 0) {
+        console.log("Process completed successfully.");
+      } else {
+        console.log(`Process exited with code ${code}`);
+      }
+    });
+  }
   async pull_image(imageName: string, tagName: string): Promise<void> {
     const fullImageName = `${this.DOCKER_IMAGE_PREFIX}${imageName}:${tagName}`;
     const cmd_pull = `docker pull --platform linux/amd64 ${fullImageName}`;
@@ -1055,6 +1094,12 @@ class D2ECli {
         this.getnoproxy();
       });
     (getnoproxy_cmd as any)._hidden = true;
+    this.program
+      .command("syncroles")
+      .description("Sync usermgmt roles to Logto (one-time migration)")
+      .action(async () => {
+        this.syncroles();
+      });
     const update_tag = this.program
       .command("updatetag")
       .description("Update image tags for d2e services")
