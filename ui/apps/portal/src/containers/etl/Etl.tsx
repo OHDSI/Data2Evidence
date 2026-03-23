@@ -44,13 +44,13 @@ export const Etl: FC = () => {
     initializeImportMap(singleSpaApps);
   }, [singleSpaApps]);
 
-  const sortedPlugins = useMemo(() => {
+  const filteredPlugins = useMemo(() => {
     return etlPluginsFlat.filter((p) => p.name !== "Concepts");
   }, [etlPluginsFlat]);
 
   return (
     <div className="etl__container">
-      <Header portalType="etl" etlPlugins={sortedPlugins} />
+      <Header portalType="etl" etlPlugins={filteredPlugins} />
       <main>
         {singleSpaApps.map((item: IPluginItem) => {
           const isActiveRoute = location.pathname.includes(`/etl/${item.route}`);
