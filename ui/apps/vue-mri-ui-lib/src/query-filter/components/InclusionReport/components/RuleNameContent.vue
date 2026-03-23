@@ -40,7 +40,7 @@ const nameParts = computed(() => {
         </template>
         <template v-for="atf in part.fc.visibleAdvanceTime" :key="atf">
           <div class="bookmark-attribute">
-            <span class="bookmark-element" v-html="atf"></span>
+            <span class="bookmark-element">{{ atf.replace(/<\/?b>/g, '') }}</span>
           </div>
         </template>
       </div>
