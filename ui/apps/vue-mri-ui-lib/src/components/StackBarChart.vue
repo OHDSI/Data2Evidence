@@ -29,6 +29,7 @@ export default {
       debounceId: 0,
       layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
       resizeObserver: null,
+      chartColorway: Object.values(Constants.ChartColorway),
     }
   },
   created() {
@@ -217,22 +218,7 @@ export default {
       'processResponse',
       'getChartProperty',
     ]),
-    // Dynamically select colorway based on number of traces
-    chartColorway() {
-      const numTraces = this.chartData?.traces?.length || 0
-      const { NAVY, ORANGE, BLUE, PINK, YELLOW } = Constants.ChartColorway
 
-      if (numTraces === 2) {
-        return [NAVY, ORANGE]
-      } else if (numTraces === 3) {
-        return [NAVY, YELLOW, ORANGE]
-      } else if (numTraces === 4) {
-        return [NAVY, BLUE, YELLOW, ORANGE]
-      } else {
-        return [NAVY, ORANGE, BLUE, PINK, YELLOW] // passes WCAG AA contrast requirement with outline #595757, mostly colorblind safe except for tritanopia
-        // return [NAVY, BLUE, '#c0ced1', YELLOW, ORANGE] // colorblind safe, passes WCAG AA contrast requirement with outline #595757
-      }
-    },
     legendTraces() {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => ({
