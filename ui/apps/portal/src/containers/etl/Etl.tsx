@@ -44,9 +44,13 @@ export const Etl: FC = () => {
     initializeImportMap(singleSpaApps);
   }, [singleSpaApps]);
 
+  const sortedPlugins = useMemo(() => {
+    return etlPluginsFlat.filter((p) => p.name !== "Concepts");
+  }, [etlPluginsFlat]);
+
   return (
     <div className="etl__container">
-      <Header portalType="etl" etlPlugins={etlPluginsFlat} />
+      <Header portalType="etl" etlPlugins={sortedPlugins} />
       <main>
         {singleSpaApps.map((item: IPluginItem) => {
           const isActiveRoute = location.pathname.includes(`/etl/${item.route}`);
@@ -67,6 +71,7 @@ export const Etl: FC = () => {
                   system={CURRENT_SYSTEM}
                   data={item?.data}
                   basePath="etl"
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>
