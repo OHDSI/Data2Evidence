@@ -248,6 +248,14 @@ const PDFColorConstOpacity = [
   { originR: 160, originG: 115, originB: 150, newR: 217, newG: 199, newB: 213 },
 ]
 
+const ChartColorway = {
+  NAVY: '#000080',
+  ORANGE: '#f79409',
+  BLUE: '#3e92e0',
+  PINK: '#FB9F9D',
+  YELLOW: '#fcd34b',
+}
+
 const PlotlyFont = {
   color: '#000080',
   family: "'GT-America', sans-serif",
@@ -257,6 +265,7 @@ const PlotlyConsts = {
     barmode: 'stack',
     bargap: 0.3,
     clickmode: 'event+select',
+    colorway: Object.values(ChartColorway),
     dragmode: 'select',
     font: PlotlyFont,
     hoverlabel: {
@@ -297,14 +306,6 @@ const CohortEntryExit = {
   EXIT_ICON: '&#xE069;',
   ENTRY_KEY: 'isEntry',
   EXIT_KEY: 'isExit',
-}
-
-const ChartColorway = {
-  NAVY: '#000080',
-  ORANGE: '#f79409',
-  BLUE: '#3e92e0',
-  PINK: '#FB9F9D',
-  YELLOW: '#fcd34b',
 }
 
 const XAxisLabelMaxLength = 30

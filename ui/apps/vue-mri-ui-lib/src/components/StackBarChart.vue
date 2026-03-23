@@ -29,7 +29,6 @@ export default {
       debounceId: 0,
       layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
       resizeObserver: null,
-      chartColorway: Object.values(Constants.ChartColorway),
     }
   },
   created() {
@@ -232,7 +231,7 @@ export default {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => item.color)
       }
-      return this.chartColorway
+      return Object.values(Constants.ChartColorway)
     },
   },
   beforeUnmount() {
@@ -344,7 +343,6 @@ export default {
         const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         freshLayout.showlegend = false
         freshLayout.xaxis.type = this.chartData.axisType
-        freshLayout.colorway = this.chartColorway
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -360,7 +358,6 @@ export default {
       const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       initialLayout.showlegend = false
       initialLayout.xaxis.type = this.chartData.axisType
-      initialLayout.colorway = this.chartColorway
 
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
@@ -410,7 +407,6 @@ export default {
         const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         selectionLayout.showlegend = false
         selectionLayout.xaxis.type = this.chartData.axisType
-        selectionLayout.colorway = this.chartColorway
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
