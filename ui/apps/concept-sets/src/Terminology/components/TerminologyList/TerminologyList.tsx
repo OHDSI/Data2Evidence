@@ -673,6 +673,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "recordCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT_TOOLTIP),
+                },
                 grow: true,
                 size: 50,
               },
@@ -685,6 +688,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 header: getText(
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT,
                 ),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT_TOOLTIP),
+                },
                 grow: true,
                 size: 50,
               },
@@ -695,6 +701,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "personCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT_TOOLTIP),
+                },
                 grow: true,
                 size: 50,
               },
@@ -707,6 +716,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 header: getText(
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT,
                 ),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT_TOOLTIP),
+                },
                 grow: true,
                 size: 50,
               },
