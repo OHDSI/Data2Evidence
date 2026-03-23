@@ -123,7 +123,7 @@ export const PublicDatasetCard: FC<PublicDatasetCardProps> = ({ dataset, path, h
         <div className="public-dataset-card__attributes">
           <div className="public-dataset-card__attribute">
             <UsersIcon />
-            {getText(i18nKeys.PUBLIC_DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || 0}
+            {getText(i18nKeys.PUBLIC_DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || '0'}
           </div>
           <div className="public-dataset-card__attribute">
             <CalendarIcon />

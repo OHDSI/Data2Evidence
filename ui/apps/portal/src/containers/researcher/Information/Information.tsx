@@ -257,7 +257,7 @@ export const Information: FC = () => {
                             {attributes.map((studyAttribute: StudyAttribute) => (
                               <TableRow key={studyAttribute.attributeId}>
                                 <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
-                                <TableCell>{formatNumber(studyAttribute.value) || studyAttribute.value}</TableCell>
+                                <TableCell>{formatNumber(studyAttribute.value)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
