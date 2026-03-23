@@ -437,6 +437,8 @@ export const i18n = {
     MRI_PA_VIEW_COHORT_TITLE: 'Cohorts',
     MRI_PA_BUTTON_COHORT_BUTTON_TOOLTIP: 'Cohorts',
     MRI_PA_BUTTON_ADD_TO_COLLECTION: 'Materialize cohort',
+    MRI_PA_TOOLTIP_MATERIALIZE_DISABLED:
+      'Cohort materialization is not available. This may be because the dataset does not support it, or the required cohort tables are not set up in the database schema.',
     MRI_PA_BUTTON_DISPLAY_OR_GENERATE_DATA_QUALITY: 'Display or generate data quality',
     MRI_PA_BUTTON_VIEW_COHORT: 'View Cohort',
     MRI_PA_BUTTON_IMPORT_COHORT: 'Import Cohort',
