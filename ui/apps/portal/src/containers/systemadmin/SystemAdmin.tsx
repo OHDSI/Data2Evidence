@@ -127,7 +127,11 @@ const SystemAdmin: FC = () => {
     if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
   }, [feedback, clearFeedback]);
 
-  const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
+  const sortedPlugins = useMemo(
+    () => sortPluginsByType(systemAdminPlugins.filter((p) => p.name !== "Concepts")),
+    [systemAdminPlugins]
+  );
+
   return (
     <div className="systemadmin__container">
       <Header portalType="systemadmin" systemAdminPlugins={sortedPlugins} />
@@ -158,6 +162,7 @@ const SystemAdmin: FC = () => {
                   system={CURRENT_SYSTEM}
                   data={item?.data}
                   basePath="systemadmin"
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>
