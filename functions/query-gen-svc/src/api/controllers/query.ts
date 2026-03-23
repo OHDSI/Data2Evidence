@@ -302,7 +302,7 @@ function enrichConfigWithBasicDataInteraction(
         placeholder: "@PATIENT",
         attributeTables: [],
         hierarchy: false,
-        time: true,
+        time: false,
         oneToN: false,
         condition: false,
     });
