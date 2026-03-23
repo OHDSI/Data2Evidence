@@ -74,11 +74,18 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(500)
   await expect(page).toHaveScreenshot()
 
+  // reset x2-axis
+  await page
+    .locator('div.axis-menu-button-wrapper')
+    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .click()
+  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // Set X1-axis to condition concept name
   await page
     .locator('div.axis-menu-button-wrapper')
     .first()
-    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .getByRole('button', { name: 'Basic Data Gender ◢' })
     .click()
   await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
