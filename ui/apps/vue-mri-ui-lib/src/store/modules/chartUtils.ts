@@ -150,68 +150,7 @@ const getters = {
         }
       })
 
-      // When no stacking criterion is selected, assign per-bar colors based on
-      // the most suitable x-axis (prefer categorical over numeric, then fewest unique categories)
-      if (yAxis.length === 0 && result.traces.length === 1 && xAxes.length > 0) {
-        const axesWithMeta = xAxes.map(axis => {
-          const attr = getters.getMriFrontendConfig?.getAttributeByPath(axis.id)
-          return {
-            axis,
-            binnable: attr ? attr.isBinnable() : false,
-            uniqueCount: new Set(result.data.map(d => d[axis.id])).size,
-          }
-        })
-
-        // Only apply per-bar coloring if at least one axis is categorical
-        if (axesWithMeta.some(a => !a.binnable)) {
-          const trace = result.traces[0]
-          const colorwayValues = [
-            Constants.ChartColorway.NAVY,
-            Constants.ChartColorway.ORANGE,
-            Constants.ChartColorway.BLUE,
-            Constants.ChartColorway.PINK,
-            Constants.ChartColorway.YELLOW,
-          ]
-
-          // Pick best axis: prefer categorical (!binnable), then fewest unique categories
-          const { axis: minAxis } = [...axesWithMeta].sort(
-            (a, b) => Number(a.binnable) - Number(b.binnable) || a.uniqueCount - b.uniqueCount
-          )[0]
-
-          // Build a color map: each unique value on the chosen axis gets a color
-          const uniqueValues = [...new Set(result.data.map(d => d[minAxis.id]))]
-          const colorMap: Record<string, string> = {}
-          const minAxisAttr = getters.getMriFrontendConfig?.getAttributeByPath(minAxis.id)
-          const isGenderAxis = minAxisAttr?.getConfigKey()?.toLowerCase().includes('gender')
-
-          // TODO: Remove this guard once per-bar coloring is enabled for other categorical axes
-          if (!isGenderAxis) return result
-
-          const maleValues = new Set(['male', 'm', '8507'])
-          const femaleValues = new Set(['female', 'f', '8532'])
-
-          let colorIdx = 0
-          uniqueValues.forEach(val => {
-            const normalised = String(val).toLowerCase()
-            if (isGenderAxis && maleValues.has(normalised)) {
-              colorMap[String(val)] = Constants.ChartColorway.NAVY
-            } else if (isGenderAxis && femaleValues.has(normalised)) {
-              colorMap[String(val)] = Constants.ChartColorway.ORANGE
-            } else {
-              colorMap[String(val)] = colorwayValues[colorIdx++ % colorwayValues.length]
-            }
-          })
-
-          // Assign per-bar colors
-          trace.marker.color = result.data.map(d => colorMap[String(d[minAxis.id])])
-
-          // Store color legend data for the component to render
-          result.colorLegend = uniqueValues.map(val => ({
-            name: String(val),
-            color: colorMap[String(val)],
-          }))
-        }
-      }
+      // TODO: coloring based on x-axis categories for non-stacked bar chart
 
       return result
     },
