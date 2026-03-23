@@ -15,7 +15,7 @@ export interface HistoryJob {
 }
 
 export interface LineChartFormatConfig {
-  tooltipFormat?: string;
+  tooltipFormat?: string | ((params: any) => string);
   xAxisFormat?: string;
   yAxisFormat?: string | ((value: number) => string);
 }

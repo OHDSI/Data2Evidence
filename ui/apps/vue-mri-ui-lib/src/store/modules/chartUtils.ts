@@ -87,7 +87,7 @@ const getters = {
       const measureId = chartData.measures[0].id
       const toolTipSelected =
         wrapText(chartData.measures[0].name, 62) +
-        ': <b>%{y}</b><br><br><b>' +
+        ': <b>%{y:,}</b><br><br><b>' +
         (totalSelected > 1 ? totalSelected + ' values selected' : '') +
         '</b><extra></extra>'
       // Convert data belonging to each attribute category into traces
