@@ -33,6 +33,7 @@ interface ResearcherStudyPluginRendererProps {
   route?: string;
   type?: string; // Plugin type: "app" for single-spa, undefined for legacy
   autoMount?: boolean;
+  demoMessage?: string;
 }
 
 export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProps> = ({
@@ -46,6 +47,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
   route,
   type: configType,
   autoMount,
+  demoMessage,
 }) => {
   const {
     userId,
@@ -84,6 +86,7 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
               locale,
               features,
               featuresLoading,
+              demoMessage,
               ...data,
             },
           });
@@ -117,10 +120,11 @@ export const ResearcherStudyPluginRenderer: FC<ResearcherStudyPluginRendererProp
         locale,
         features,
         featuresLoading,
+        demoMessage,
         ...data,
       });
     }
-  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered, features, featuresLoading]);
+  }, [studyId, locale, idpUserId, username, data, path, configType, isRegistered, features, featuresLoading, demoMessage]);
 
   // Cleanup: unload the single-spa app when the component unmounts
   // This ensures the app can be properly remounted when returning to Researcher

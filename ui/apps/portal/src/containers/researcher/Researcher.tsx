@@ -138,9 +138,12 @@ export const Researcher: FC = () => {
   const sortedPlugins = JSON.parse(JSON.stringify(plugins));
   sortedPlugins.researcher = sortedResearcherPlugins;
 
+  // Demo: state for the demo message input, passed to Header and through to micro-frontends
+  const [demoMessage, setDemoMessage] = useState("");
+
   return (
     <div className={classes}>
-      {!isHome && <Header portalType="researcher" plugins={sortedPlugins} />}
+      {!isHome && <Header portalType="researcher" plugins={sortedPlugins} demoMessage={demoMessage} onDemoMessageChange={setDemoMessage} />}
       <main>
         <Snackbar
           type={feedback?.type}
@@ -174,6 +177,7 @@ export const Researcher: FC = () => {
                   fetchMenu={onFetchMenus}
                   subFeatureFlags={subFeatureFlags}
                   autoMount={item.autoMount}
+                  demoMessage={demoMessage}
                 />
               </ErrorBoundary>
             </div>

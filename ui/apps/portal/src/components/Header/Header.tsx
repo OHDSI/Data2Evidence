@@ -20,9 +20,11 @@ interface HeaderProps {
   plugins?: IPlugin;
   systemAdminPlugins?: Plugins[];
   etlPlugins?: Plugins[];
+  demoMessage?: string;
+  onDemoMessageChange?: (value: string) => void;
 }
 
-export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminPlugins, etlPlugins }) => {
+export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminPlugins, etlPlugins, demoMessage, onDemoMessageChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuth = isAuthenticated();
@@ -59,7 +61,7 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
 
   return (
     <header className="portal__header" data-testid="header">
-      <div className="header__logo-group header__menu-group">
+      <div className="header__logo-group header__menu-group" style={{ display: "flex", alignItems: "center" }}>
         <img
           alt="Data2Evidence"
           className="logo"
@@ -67,6 +69,25 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           onClick={handleLogoClick}
           height={56}
         />
+        {portalType === "researcher" && onDemoMessageChange && (
+          <input
+            type="text"
+            value={demoMessage || ""}
+            onChange={(e) => onDemoMessageChange(e.target.value)}
+            placeholder="Demo message →"
+            style={{
+              marginLeft: "12px",
+              padding: "6px 12px",
+              borderRadius: "4px",
+              border: "1px solid #c5cae9",
+              backgroundColor: "#e8eaf6",
+              color: "#283593",
+              fontSize: "13px",
+              width: "220px",
+              outline: "none",
+            }}
+          />
+        )}
       </div>
 
       <div className="header__menu-group">
