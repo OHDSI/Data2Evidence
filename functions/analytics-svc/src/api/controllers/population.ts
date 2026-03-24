@@ -446,10 +446,11 @@ async function _setDefaultNullOrder(req: IMRIRequest) {
 async function _setDBSpecificSettings(req: IMRIRequest) {
     // ONLY FOR DUCKDB HTTP TESTS
     // changing the duckdb default behaviour of sorting NULL values at the bottom
+    const HTTPTEST_DB_DIALECT = Deno.env.get("HTTPTEST_DB_DIALECT");
     if (
         (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) &&
-        process.env.HTTPTEST_DB_DIALECT &&
-        process.env.HTTPTEST_DB_DIALECT === "duckdb"
+        HTTPTEST_DB_DIALECT &&
+        HTTPTEST_DB_DIALECT === "duckdb"
     ) {
         await _setDefaultNullOrder(req);
     }

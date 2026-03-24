@@ -1515,7 +1515,7 @@ const start = `"START"`;
 const end = `"END"`;
 const observation_id = `"OBSERVATION_ID"`;
 
-const HTTPTEST_DB_DIALECT = process.env.HTTPTEST_DB_DIALECT;
+const HTTPTEST_DB_DIALECT = Deno.env.get("HTTPTEST_DB_DIALECT");
 let testSchemaName =
     HTTPTEST_DB_DIALECT && HTTPTEST_DB_DIALECT === "duckdb"
         ? "demo_database__srcdb.demo_cdm."
