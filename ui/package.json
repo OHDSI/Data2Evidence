@@ -306,7 +306,7 @@
             "route": "demo-projects"
           },
           {
-            "visible": true,
+            "visible": false,
             "enabled": true,
             "type": "app",
             "autoMount": true,
