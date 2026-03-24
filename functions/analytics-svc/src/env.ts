@@ -33,7 +33,7 @@ const Env = z
         SQL_RETURN_ON: z.string(),
         isHttpTestRun: z.string().optional(),
         isTestEnv: z.string().optional(),
-        DB_DIALECT: z.string().optional(),
+        HTTPTEST_DB_DIALECT: z.string().optional(),
         TESTSCHEMA: z.string().optional(),
         local: z.string(),
 

@@ -337,7 +337,7 @@
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
           "isHttpTestRun": "${isHttpTestRun}",
-          "DB_DIALECT": "${DB_DIALECT}",
+          "HTTPTEST_DB_DIALECT": "${HTTPTEST_DB_DIALECT}",
           "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "parquet-export": {

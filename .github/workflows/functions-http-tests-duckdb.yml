@@ -24,7 +24,7 @@ env:
   isTestEnv: "true"
   isHttpTestRun: "true"
   USE_TREX_DB_CONN: "true"
-  DB_DIALECT: "duckdb"
+  HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
   demosetup:
@@ -380,7 +380,7 @@ jobs:
           echo "PGDATABASE=${PGDATABASE}" >> $GITHUB_ENV
           echo "isHttpTestRun=${isHttpTestRun}" >> $GITHUB_ENV
           echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
-          echo "DB_DIALECT=${DB_DIALECT:-duckdb}" >> $GITHUB_ENV
+          echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
           echo "USE_TREX_DB_CONN=${USE_TREX_DB_CONN}" >> $GITHUB_ENV
 
       - name: Run HTTP tests
@@ -394,7 +394,7 @@ jobs:
             echo "isHttpTestRun: ${isHttpTestRun}"
             echo "isTestEnv: ${isTestEnv:-false}"
             echo "TESTSCHEMA: ${TESTSCHEMA}"
-            echo "DB_DIALECT: ${DB_DIALECT}"
+            echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
             echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
             yarn test-specs --test_schema_name=$TESTSCHEMA
 

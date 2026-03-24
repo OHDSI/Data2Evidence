@@ -1515,8 +1515,11 @@ const start = `"START"`;
 const end = `"END"`;
 const observation_id = `"OBSERVATION_ID"`;
 
-const DB_DIALECT = process.env.DB_DIALECT;
-let testSchemaName = (DB_DIALECT && DB_DIALECT === "duckdb") ? "demo_database__srcdb.demo_cdm." : (Deno.env.get("TESTSCHEMA") || "MRI");
+const HTTPTEST_DB_DIALECT = process.env.HTTPTEST_DB_DIALECT;
+let testSchemaName =
+    HTTPTEST_DB_DIALECT && HTTPTEST_DB_DIALECT === "duckdb"
+        ? "demo_database__srcdb.demo_cdm."
+        : Deno.env.get("TESTSCHEMA") || "MRI";
 
 export const pholderTableMap: any = {
     "@INTERACTION": `${testSchemaName}."legacy.cdw.db.models::InterfaceViews.INTERACTIONS"`,
@@ -1560,7 +1563,10 @@ export const dw_views_pholderTableMap =
 export const mock_config = mockConfig;
 
 //////////////// HTTP TEST configs ////////////////
-testSchemaName = (DB_DIALECT && DB_DIALECT === "duckdb") ? "demo_database__srcdb.demo_cdm." : "";
+testSchemaName =
+    HTTPTEST_DB_DIALECT && HTTPTEST_DB_DIALECT === "duckdb"
+        ? "demo_database__srcdb.demo_cdm."
+        : "";
 
 export const httptest_acme_mri_cdw_config = {
     config: {

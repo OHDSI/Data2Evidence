@@ -446,7 +446,11 @@ async function _setDefaultNullOrder(req: IMRIRequest) {
 async function _setDBSpecificSettings(req: IMRIRequest) {
     // ONLY FOR DUCKDB HTTP TESTS
     // changing the duckdb default behaviour of sorting NULL values at the bottom
-    if ((envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) && process.env.DB_DIALECT && process.env.DB_DIALECT === "duckdb") {
+    if (
+        (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) &&
+        process.env.HTTPTEST_DB_DIALECT &&
+        process.env.HTTPTEST_DB_DIALECT === "duckdb"
+    ) {
         await _setDefaultNullOrder(req);
     }
 }
