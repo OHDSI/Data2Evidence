@@ -53,10 +53,12 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     server: {
+      host: "0.0.0.0",
       port: 8202,
       cors: true,
     },
     preview: {
+      host: "0.0.0.0",
       port: 8202,
     },
   };
