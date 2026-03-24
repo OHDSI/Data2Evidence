@@ -144,6 +144,18 @@
         {
           "source": "/ui",
           "target": "/resources/ui5/resources/"
+        },
+        {
+          "source": "/resources/demo-team",
+          "target": "/resources/demo-team"
+        },
+        {
+          "source": "/resources/demo-projects",
+          "target": "/resources/demo-projects"
+        },
+        {
+          "source": "/resources/demo-notifications",
+          "target": "/resources/demo-notifications"
         }
       ],
       "uiplugins": {
@@ -266,6 +278,45 @@
               "RESEARCHER"
             ],
             "visible": true
+          },
+          {
+            "visible": true,
+            "enabled": true,
+            "type": "app",
+            "autoMount": false,
+            "featureFlag": "demoTeam",
+            "defaultEnabled": true,
+            "name": "Demo Team",
+            "nameI18nKey": "UI_PLUGIN_DEMO_TEAM",
+            "pluginPath": "/resources/demo-team/lifecycles.js",
+            "requiredRoles": ["RESEARCHER"],
+            "route": "demo-team"
+          },
+          {
+            "visible": true,
+            "enabled": true,
+            "type": "app",
+            "autoMount": false,
+            "featureFlag": "demoProjects",
+            "defaultEnabled": true,
+            "name": "Demo Projects",
+            "nameI18nKey": "UI_PLUGIN_DEMO_PROJECTS",
+            "pluginPath": "/resources/demo-projects/lifecycles.js",
+            "requiredRoles": ["RESEARCHER"],
+            "route": "demo-projects"
+          },
+          {
+            "visible": true,
+            "enabled": true,
+            "type": "app",
+            "autoMount": true,
+            "featureFlag": "demoNotifications",
+            "defaultEnabled": true,
+            "name": "Demo Notifications",
+            "nameI18nKey": "UI_PLUGIN_DEMO_NOTIFICATIONS",
+            "pluginPath": "/resources/demo-notifications/lifecycles.js",
+            "requiredRoles": ["RESEARCHER"],
+            "route": "demo-notifications"
           }
         ],
         "setup": [
