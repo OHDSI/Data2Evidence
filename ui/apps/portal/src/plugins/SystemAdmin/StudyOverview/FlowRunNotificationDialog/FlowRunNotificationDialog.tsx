@@ -2,6 +2,8 @@ import React, { FC } from "react";
 import { useNavigate } from "react-router-dom";
 import { Divider } from "@mui/material";
 import { Button, Dialog } from "@portal/components";
+import { useTranslation } from "../../../../contexts";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 import "./FlowRunNotificationDialog.scss";
 
 interface FlowRunNotificationDialogProps {
@@ -20,6 +22,7 @@ const FlowRunNotificationDialog: FC<FlowRunNotificationDialogProps> = ({
   flowRunId,
 }) => {
   const navigate = useNavigate();
+  const { getText } = useTranslation();
 
   return (
     <Dialog
@@ -34,14 +37,14 @@ const FlowRunNotificationDialog: FC<FlowRunNotificationDialogProps> = ({
       <Divider />
       <div className="flow-run-notification-dialog__content">
         {description}
-        {flowRunId && <p>You can monitor its progress in the Jobs page.</p>}
+        {flowRunId && <p>{getText(i18nKeys.FLOW_RUN_NOTIFICATION_DIALOG__PROGRESS_MESSAGE)}</p>}
       </div>
       <Divider />
       <div className="flow-run-notification-dialog__actions">
-        <Button text="Close" onClick={onClose} variant="outlined" block />
+        <Button text={getText(i18nKeys.FLOW_RUN_NOTIFICATION_DIALOG__CLOSE)} onClick={onClose} variant="outlined" block />
         {flowRunId && (
           <Button
-            text="View Flow Run"
+            text={getText(i18nKeys.FLOW_RUN_NOTIFICATION_DIALOG__VIEW_FLOW_RUN)}
             block
             onClick={() => navigate(`/systemadmin/jobs/runs/flow-run/${flowRunId}`)}
           />

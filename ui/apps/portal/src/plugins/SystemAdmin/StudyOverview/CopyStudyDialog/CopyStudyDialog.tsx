@@ -376,10 +376,10 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
   if (createdDatasetName) {
     return (
       <FlowRunNotificationDialog
-        title="Datamart Created"
+        title={getText(i18nKeys.COPY_STUDY_DIALOG__DATAMART_CREATED_TITLE)}
         open={open}
         onClose={() => handleClose("success")}
-        description={<>Datamart <strong>{createdDatasetName}</strong> has been created successfully.</>}
+        description={getText(i18nKeys.COPY_STUDY_DIALOG__DATAMART_CREATED_DESCRIPTION, [createdDatasetName])}
         flowRunId={flowRunId}
       />
     );

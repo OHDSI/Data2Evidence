@@ -112,10 +112,10 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
   if (triggeredFlowRunId) {
     return (
       <FlowRunNotificationDialog
-        title="Create Cache Flow Triggered"
+        title={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_TITLE)}
         open={open}
         onClose={() => handleClose("success")}
-        description={<>The create cache flow for <strong>{dataset?.studyDetail?.name}</strong> has been triggered successfully.</>}
+        description={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_DESCRIPTION, [String(dataset?.studyDetail?.name)])}
         flowRunId={triggeredFlowRunId}
       />
     );

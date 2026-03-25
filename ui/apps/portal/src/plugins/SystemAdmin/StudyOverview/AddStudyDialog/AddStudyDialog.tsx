@@ -559,10 +559,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   if (createdDatasetName) {
     return (
       <FlowRunNotificationDialog
-        title="Dataset Created"
+        title={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CREATED_TITLE)}
         open={open}
         onClose={() => handleClose("success")}
-        description={<>Dataset <strong>{createdDatasetName}</strong> has been created successfully.</>}
+        description={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CREATED_DESCRIPTION, [createdDatasetName])}
         flowRunId={flowRunId}
       />
     );
