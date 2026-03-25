@@ -1,11 +1,5 @@
-.create-cache-dialog {
+.flow-run-notification-dialog {
   &__content {
-    min-height: 250px;
-    padding: 0 25px;
-    overflow: auto;
-  }
-
-  &__notification {
     padding: 24px 25px;
 
     p {
@@ -14,7 +8,7 @@
     }
   }
 
-  .button-group-actions {
+  &__actions {
     display: flex;
     justify-content: center;
     margin: 24px 0;
