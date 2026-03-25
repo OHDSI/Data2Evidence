@@ -166,7 +166,7 @@
           {
             "type": "app",
             "autoMount": true,
-            "visible": true,
+            "visible": false,
             "name": "Concepts",
             "pluginPath": "/resources/concept-sets/lifecycles.js",
             "route": "concepts"
@@ -455,7 +455,7 @@
           {
             "type": "app",
             "autoMount": true,
-            "visible": true,
+            "visible": false,
             "name": "Concepts",
             "pluginPath": "/resources/concept-sets/lifecycles.js",
             "route": "concepts"

@@ -127,10 +127,7 @@ const SystemAdmin: FC = () => {
     if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
   }, [feedback, clearFeedback]);
 
-  const sortedPlugins = useMemo(
-    () => sortPluginsByType(systemAdminPlugins.filter((p) => p.name !== "Concepts")),
-    [systemAdminPlugins]
-  );
+  const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
 
   return (
     <div className="systemadmin__container">
