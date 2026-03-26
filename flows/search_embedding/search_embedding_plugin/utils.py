@@ -94,8 +94,10 @@ def create_embedding_index(dbdao, schema_name:str, embedding_col:str, index_col:
     """ 
     Create a GTE index on the embedding column of the concept table.
     """ 
-    dbdao.execute_sql("SET hnsw_enable_experimental_persistence=TRUE;")
-    sql = pg_sql.SQL("CREATE INDEX {index_col} ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine')").format(
+    sql = pg_sql.SQL("""
+                     SET hnsw_enable_experimental_persistence=TRUE;
+                     CREATE INDEX {index_col} ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine');
+                     """).format(
         index_col=pg_sql.Identifier(index_col),
         schema_name=pg_sql.Identifier(schema_name),
         embedding_col=pg_sql.Identifier(embedding_col),
