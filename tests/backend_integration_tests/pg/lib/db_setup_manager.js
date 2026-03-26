@@ -11,9 +11,7 @@
 var TestEnvironment = require('./pg_testenvironment')
 var HostConfig = require('./host_config')
 var utils = require('./utils')
-// var {PGConnection} = require('./pg-lib-connection')
 const { Client } = require('pg')
-// const { Client } = pg
 var async = require('async')
 
 /**
