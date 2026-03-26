@@ -1058,7 +1058,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <TextField
                 fullWidth
                 variant="standard"
-                label="Cache Dataset Name"
+                label="Cache dataset name"
                 value={formData.cacheDatasetName}
                 onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
                 error={formError.cacheDatasetName.required}

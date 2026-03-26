@@ -64,7 +64,7 @@ const Death: FC<DeathProps> = ({ flowRunId, datasetId }) => {
           <DrilldownTrellisChart 
             data={deathData.prevalenceByGenderAgeYear} 
             trellisXAxisKey="YPREVALENCE1000PP"
-            title="Death Prevalence"
+            title="Death prevalence"
           />
           <DeathPrevalenceByMonthChart data={deathData.prevalenceByMonth} />
 

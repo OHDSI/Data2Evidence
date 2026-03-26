@@ -209,7 +209,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
           setFeedback({
             type: "error",
-            message: "Cohort Filter is checked, but no cohort was chosen!",
+            message: "Cohort filter is checked, but no cohort was chosen!",
           });
           return;
         }

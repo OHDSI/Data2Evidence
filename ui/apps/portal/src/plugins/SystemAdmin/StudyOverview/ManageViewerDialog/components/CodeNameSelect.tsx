@@ -63,7 +63,7 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
       </div>
       {isNewName && (
         <div>
-          <InputLabel sx={{ mb: 1 }}>New Name</InputLabel>
+          <InputLabel sx={{ mb: 1 }}>New name</InputLabel>
           <TextField
             sx={{ width: "100%" }}
             variant="standard"

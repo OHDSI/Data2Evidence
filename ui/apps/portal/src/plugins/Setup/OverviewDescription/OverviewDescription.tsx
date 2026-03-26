@@ -148,7 +148,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.TERMS_OF_USE_DISPLAY])}
-          label="Display Terms Of Use"
+          label="Display terms of use"
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.TERMS_OF_USE_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -169,7 +169,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.PRIVACY_POLICY_DISPLAY])}
-          label="Display Privacy Policy"
+          label="Display privacy policy"
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.PRIVACY_POLICY_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -190,7 +190,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.IMPRINT_DISPLAY])}
-          label="Display Imprint"
+          label="Display imprint"
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.IMPRINT_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -211,7 +211,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.DISCLAIMER_DISPLAY])}
-          label="Display Disclaimer When Logged In"
+          label="Display disclaimer when logged in"
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.DISCLAIMER_DISPLAY]: event.target.checked ? "1" : "0" })
           }

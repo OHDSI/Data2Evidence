@@ -288,7 +288,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
         <div className="manage-viewer-dialog__header__selection">
           {strategy.supportsMultipleCodes && (
             <div>
-              <InputLabel sx={{ mb: 1 }}>Config Type</InputLabel>
+              <InputLabel sx={{ mb: 1 }}>Config type</InputLabel>
               <Select
                 sx={{ width: "100%" }}
                 variant="standard"
@@ -319,7 +319,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           />
 
           <div>
-            <InputLabel sx={{ mb: 1 }}>Viewer Type</InputLabel>
+            <InputLabel sx={{ mb: 1 }}>Viewer type</InputLabel>
             <Select
               sx={{ width: "100%" }}
               variant="standard"
@@ -372,7 +372,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
         {ViewerType.SHINY_SERVER !== templateLanguage && (
           <div className="manage-viewer-dialog__header__content">
-            <Button onClick={handleBuildAssets} text="Build Shiny Assets" loading={loading} />
+            <Button onClick={handleBuildAssets} text="Build Shiny assets" loading={loading} />
           </div>
         )}
       </div>

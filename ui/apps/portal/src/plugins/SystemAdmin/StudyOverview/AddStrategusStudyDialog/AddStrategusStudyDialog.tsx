@@ -134,7 +134,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
   return (
     <Dialog
       className="add-strategus-study-dialog"
-      title="Add Strategus Study"
+      title="Add Strategus study"
       closable
       fullWidth
       maxWidth="md"
@@ -144,18 +144,18 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     >
       <Divider />
       <div className="add-strategus-study-dialog__content">
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Study Information</div>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Study information</div>
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
-            label="Study Name"
+            label="Study name"
             value={studyName}
             onChange={(event) => setStudyName(event.target.value)}
             error={formError.studyName.required || formError.studyName.invalid}
             disabled={loading}
           />
-          {formError.studyName.required && <FormHelperText error={true}>Study Name is required</FormHelperText>}
+          {formError.studyName.required && <FormHelperText error={true}>Study name is required</FormHelperText>}
           {formError.studyName.invalid && (
             <FormHelperText error={true}>
               Study Name can only contain letters, numbers, underscores, and hyphens
@@ -167,7 +167,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
           <TextField
             fullWidth
             variant="standard"
-            label="Token Dataset Code"
+            label="Token dataset code"
             value={tokenStudyCode}
             onChange={(event) => setTokenStudyCode(event.target.value)}
             inputProps={{ maxLength: 80 }}
@@ -175,7 +175,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             disabled={loading}
           />
           {formError.tokenStudyCode.required && (
-            <FormHelperText error={true}>Token Dataset Code is required</FormHelperText>
+            <FormHelperText error={true}>Token dataset code is required</FormHelperText>
           )}
           {formError.tokenStudyCode.invalid && (
             <FormHelperText error={true}>
@@ -190,7 +190,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
           <TextField
             fullWidth
             variant="standard"
-            label="Analysis Specification (JSON)"
+            label="Analysis specification (JSON)"
             multiline
             rows={4}
             value={analysisSpec}
@@ -199,7 +199,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             disabled={loading}
           />
           {formError.analysisSpec.invalid && (
-            <FormHelperText error={true}>Invalid JSON format for Analysis Specification</FormHelperText>
+            <FormHelperText error={true}>Invalid JSON format for analysis specification</FormHelperText>
           )}
           <FormHelperText>Enter a valid JSON analysis specification</FormHelperText>
         </div>
@@ -207,7 +207,7 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
       <Divider />
       <div className="button-group-actions">
         <Button text="Cancel" onClick={handleClose} variant="outlined" block disabled={loading} />
-        <Button text="Create Study" onClick={handleSubmit} block loading={loading} />
+        <Button text="Create study" onClick={handleSubmit} block loading={loading} />
       </div>
     </Dialog>
   );

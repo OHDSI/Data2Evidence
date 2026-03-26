@@ -20,12 +20,12 @@ export const QueriesSection: FC<QueriesSectionProps> = ({
     <div className="manage-viewer-dialog__queries">
       <div className="manage-viewer-dialog__queries__header">
         <InputLabel>Queries</InputLabel>
-        <Button text="Add Query" onClick={onAddQuery} variant="outlined" size="small" />
+        <Button text="Add query" onClick={onAddQuery} variant="outlined" size="small" />
       </div>
       {queries.map((query, index) => (
         <div key={index} className="manage-viewer-dialog__queries__entry">
           <TextField
-            label="Query Name"
+            label="Query name"
             variant="standard"
             value={query.queryName}
             onChange={(e) => onUpdateQuery(index, "queryName", e.target.value)}

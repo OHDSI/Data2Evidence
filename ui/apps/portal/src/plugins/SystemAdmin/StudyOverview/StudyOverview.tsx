@@ -38,7 +38,7 @@ const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
   SCHEMA_VERSION = "schema_version",
 }
-const MISSING_ATTRIBUTE_ERROR = "Not Available";
+const MISSING_ATTRIBUTE_ERROR = "Not available";
 
 const StudyOverview: FC = () => {
   const { getText, i18nKeys } = useTranslation();
@@ -805,7 +805,7 @@ const StudyOverview: FC = () => {
               <h4 className="dataset-section-title" style={{ margin: 0 }}>
                 {getText(i18nKeys.STUDY_OVERVIEW__STUDIES)}
               </h4>
-              <Button text="Add Study" onClick={openAddStrategusStudyDialog} />
+              <Button text="Add study" onClick={openAddStrategusStudyDialog} />
             </div>
             {loadingStrategusStudies ? (
               <TableContainer className="studyoverview__list">
