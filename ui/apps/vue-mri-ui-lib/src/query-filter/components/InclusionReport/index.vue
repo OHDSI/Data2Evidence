@@ -25,6 +25,7 @@ const props = withDefaults(
     cacheKey?: string
     showPersonEventSwitch?: boolean
     filterCardDetails?: RuleFilterCardDetails[]
+    showIntersectView?: boolean
     fetchInclusionReport: (
       cohortDefinitionId: string,
       sourceKey: string,
@@ -33,6 +34,7 @@ const props = withDefaults(
   }>(),
   {
     showPersonEventSwitch: true,
+    showIntersectView: true,
   }
 )
 
@@ -46,10 +48,14 @@ const personEventOptions = computed(() => [
   { value: 'PERSON', label: getText('MRI_PA_INCLUSION_REPORT_BY_PERSON') },
   { value: 'EVENT', label: getText('MRI_PA_INCLUSION_REPORT_BY_EVENT') },
 ])
-const visualizationOptions = computed(() => [
-  { value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') },
-  { value: 'INTERSECT', text: getText('MRI_PA_INCLUSION_REPORT_INTERSECT') },
-])
+
+const visualizationOptions = computed(() => {
+  const options = [{ value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') }]
+  if (props.showIntersectView) {
+    options.push({ value: 'INTERSECT', text: getText('MRI_PA_INCLUSION_REPORT_INTERSECT') })
+  }
+  return options
+})
 
 // Use composables - order matters here!
 // First, get the data fetching composable (without filtered summary initially)
@@ -155,7 +161,7 @@ onUnmounted(() => {
 
     <div v-if="hasInclusionRules" class="inclusion-rules-detail">
       <!-- Visualization Type Selector -->
-      <div class="group-buttons-container">
+      <div v-if="visualizationOptions.length > 1" class="group-buttons-container">
         <!-- <group-buttons
           :options="visualizationOptions"
           :limit-value="selectedVisualization"

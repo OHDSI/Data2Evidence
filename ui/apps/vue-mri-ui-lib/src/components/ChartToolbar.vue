@@ -158,6 +158,7 @@
             :fetch-inclusion-report="fetchInclusionReport"
             :show-person-event-switch="false"
             :filter-card-details="inclusionReportFilterCardDetails"
+            :show-intersect-view="enableIntersectViewInclusionReport"
           />
         </div>
       </div>
@@ -329,6 +330,9 @@ export default {
         (configPath: string) => getAttributeName(configPath, this.getMriFrontendConfig, 'list'),
         (filter: any) => getAdvanceTimeFilterFormatted(filter, this.getFilterCard, this.getText)
       )
+    },
+    enableIntersectViewInclusionReport() {
+      return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.intersectViewInclusionReport
     },
   },
   methods: {
