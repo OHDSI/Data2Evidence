@@ -765,6 +765,11 @@ function _getValidDefinition(cdwConfig) {
           strict: false,
         },
         {
+          name: "intersectViewInclusionReport",
+          type: "boolean",
+          strict: false,
+        },
+        {
           name: "usePaAtlas",
           type: "boolean",
           strict: false,
