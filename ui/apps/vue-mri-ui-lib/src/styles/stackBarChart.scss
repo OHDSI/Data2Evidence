@@ -1,0 +1,24 @@
+.stackbar-chart-container {
+  /* Style Plotly modebar button icons to match app theme */
+  .js-plotly-plot .plotly .modebar-btn .icon {
+    fill: var(--color-mri-header-text-dark) !important;
+    color: var(--color-mri-header-text-dark) !important;
+  }
+
+  /* Hover effect for modebar buttons */
+  .js-plotly-plot .plotly .modebar-btn:hover {
+    background-color: var(--color-mri-chart-button-hover) !important;
+  }
+
+  .js-plotly-plot .plotly .modebar-btn:hover .icon {
+    fill: var(--color-mri-header-text-dark) !important;
+    color: var(--color-mri-header-text-dark) !important;
+  }
+
+  /* Position modebar in top-right corner */
+  .js-plotly-plot .plotly .modebar {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+  }
+}
