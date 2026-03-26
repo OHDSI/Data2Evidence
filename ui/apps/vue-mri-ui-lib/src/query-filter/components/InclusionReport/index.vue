@@ -53,7 +53,6 @@ const personEventOptions = computed(() => [
   { value: 'PERSON', label: getText('MRI_PA_INCLUSION_REPORT_BY_PERSON') },
   { value: 'EVENT', label: getText('MRI_PA_INCLUSION_REPORT_BY_EVENT') },
 ])
-
 const visualizationOptions = computed(() => {
   const options = [{ value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') }]
   if (props.showIntersectView) {
