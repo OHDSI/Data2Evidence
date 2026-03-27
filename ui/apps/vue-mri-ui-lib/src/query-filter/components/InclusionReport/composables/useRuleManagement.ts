@@ -1,13 +1,43 @@
 import { ref, watch, computed, type Ref } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
 import { computeAttritionStats, type AttritionStat } from '../computeAttritionStats'
 import { calculateFilteredSummary } from '../ruleSelectionFilter'
 
-export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportResponse | null>, treemapData: Ref<any>) {
+/**
+ * Map an AttritionApiResponse into the local AttritionStat[] format
+ * used by the UI (adds percentSatisfying and pctDiff).
+ */
+function mapAttritionApiResponse(apiResponse: AttritionApiResponse): AttritionStat[] {
+  const baseCount = apiResponse.summary.baseCount
+  let priorPct = 1.0
+
+  return apiResponse.attritionStats.map(s => {
+    const percentSatisfying = baseCount !== 0 ? s.cumulativeCountSatisfying / baseCount : 0
+    const pctDiff = priorPct - percentSatisfying
+    priorPct = percentSatisfying
+
+    return {
+      id: s.id,
+      name: s.name,
+      isExclude: s.isExclude,
+      countSatisfying: s.cumulativeCountSatisfying,
+      percentSatisfying: (percentSatisfying * 100).toFixed(2) + '%',
+      pctDiff: (pctDiff * 100).toFixed(2) + '%',
+    }
+  })
+}
+
+export function useRuleManagement(
+  inclusionReportResponse: Ref<InclusionReportResponse | null>,
+  treemapData: Ref<any>,
+  showIntersectView: boolean = true,
+  fetchAttritionReport?: (ruleOrder?: number[]) => Promise<AttritionApiResponse>
+) {
   const checkedRulesIds = ref<number[]>([])
   const draggableAttritionStats = ref<AttritionStat[]>([])
   const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
   const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
+  const isReorderLoading = ref(false)
 
   const filteredSummary = computed(() => {
     if (!treemapData.value || checkedRulesIds.value.length === 0) {
@@ -57,9 +87,32 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     }
   }
 
+  /**
+   * Fetch attrition stats from the attrition API and update local state.
+   * Used when showIntersectView is false and fetchAttritionReport is provided.
+   */
+  async function fetchAndUpdateAttritionStats(ruleOrder?: number[]) {
+    if (!fetchAttritionReport) {
+      // Fallback: compute locally when no API is provided
+      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value!, ruleOrder)
+      return
+    }
+    isReorderLoading.value = true
+    try {
+      const apiResponse = await fetchAttritionReport(ruleOrder)
+      draggableAttritionStats.value = mapAttritionApiResponse(apiResponse)
+    } finally {
+      isReorderLoading.value = false
+    }
+  }
+
   function handleDragEnd() {
     const newOrder = draggableAttritionStats.value.map(stat => stat.id)
-    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+    if (!showIntersectView) {
+      fetchAndUpdateAttritionStats(newOrder)
+    } else {
+      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+    }
   }
 
   function getRowIndex(statId: number): number {
@@ -71,8 +124,14 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     if (index > 0) {
       const newStats = [...draggableAttritionStats.value]
       ;[newStats[index - 1], newStats[index]] = [newStats[index], newStats[index - 1]]
+      // Optimistically reorder rows in the UI
+      draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
-      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      if (!showIntersectView) {
+        fetchAndUpdateAttritionStats(newOrder)
+      } else {
+        draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      }
     }
   }
 
@@ -81,8 +140,14 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     if (index < draggableAttritionStats.value.length - 1) {
       const newStats = [...draggableAttritionStats.value]
       ;[newStats[index], newStats[index + 1]] = [newStats[index + 1], newStats[index]]
+      // Optimistically reorder rows in the UI
+      draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
-      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      if (!showIntersectView) {
+        fetchAndUpdateAttritionStats(newOrder)
+      } else {
+        draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      }
     }
   }
 
@@ -101,7 +166,13 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
       if (newResponse && newResponse.inclusionRuleStats) {
         // Initialize checkedRulesIds with all rule IDs
         checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
-        draggableAttritionStats.value = computeAttritionStats(newResponse)
+
+        if (!showIntersectView) {
+          // Fetch attrition stats from the (mock) API
+          fetchAndUpdateAttritionStats()
+        } else {
+          draggableAttritionStats.value = computeAttritionStats(newResponse)
+        }
       }
     }
   )
@@ -112,6 +183,7 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     allAnyOption,
     passedFailedOption,
     filteredSummary,
+    isReorderLoading,
     toggleRuleSelection,
     isRuleChecked,
     areAllRulesChecked,

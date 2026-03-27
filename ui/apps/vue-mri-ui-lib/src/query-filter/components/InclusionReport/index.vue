@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
-import type { InclusionReportResponse, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import type {
+  InclusionReportResponse,
+  AttritionApiResponse,
+  RuleFilterCardDetails,
+} from '@/query-filter/types/InclusionReportTypes'
 import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
@@ -31,6 +35,7 @@ const props = withDefaults(
       sourceKey: string,
       modeId: number
     ) => Promise<InclusionReportResponse>
+    fetchAttritionReport?: (ruleOrder?: number[]) => Promise<AttritionApiResponse>
   }>(),
   {
     showPersonEventSwitch: true,
@@ -57,6 +62,15 @@ const visualizationOptions = computed(() => {
   return options
 })
 
+watch(
+  () => props.showIntersectView,
+  newVal => {
+    if (!newVal && selectedVisualization.value === 'INTERSECT') {
+      selectedVisualization.value = 'ATTRITION'
+    }
+  }
+)
+
 // Use composables - order matters here!
 // First, get the data fetching composable (without filtered summary initially)
 const dataComposable = useInclusionReportData(
@@ -65,7 +79,9 @@ const dataComposable = useInclusionReportData(
     sourceKey: props.sourceKey,
     generationStatus: props.generationStatus,
     cacheKey: props.cacheKey,
+    showIntersectView: props.showIntersectView,
     fetchInclusionReport: props.fetchInclusionReport,
+    fetchAttritionReport: props.fetchAttritionReport,
   },
   selectedPersonEventView
 )
@@ -85,6 +101,7 @@ const {
   draggableAttritionStats,
   allAnyOption,
   passedFailedOption,
+  isReorderLoading,
   toggleRuleSelection,
   isRuleChecked,
   areAllRulesChecked,
@@ -96,7 +113,7 @@ const {
   handleAllAnyChange,
   handlePassedFailedChange,
   filteredSummary,
-} = useRuleManagement(inclusionReportResponse, treemapData)
+} = useRuleManagement(inclusionReportResponse, treemapData, props.showIntersectView, props.fetchAttritionReport)
 
 const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
   inclusionReportResponse,
@@ -186,6 +203,9 @@ onUnmounted(() => {
         />
 
         <div class="rules-section">
+          <div v-if="isReorderLoading" class="reorder-loading-overlay">
+            <d4l-spinner />
+          </div>
           <!-- Rules Table -->
           <RulesTable
             :selected-visualization="selectedVisualization"
@@ -321,9 +341,20 @@ onUnmounted(() => {
 }
 
 .rules-section {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.reorder-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
 }
 
 h4 {

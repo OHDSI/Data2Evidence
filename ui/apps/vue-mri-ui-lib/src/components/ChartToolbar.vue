@@ -156,6 +156,7 @@
             :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
+            :fetch-attrition-report="fetchAttritionReportFn"
             :show-person-event-switch="false"
             :filter-card-details="inclusionReportFilterCardDetails"
             :show-intersect-view="enableIntersectViewInclusionReport"
@@ -207,6 +208,7 @@ import {
   getAdvanceTimeFilterFormatted,
   getInclusionReportFilterCardDetails,
 } from '../utils/filterCardUtils'
+import { createMockAttritionApi } from '@/mocks/mockAttritionApi'
 
 export default {
   name: 'chartToolbar',
@@ -230,6 +232,7 @@ export default {
       showSaveCohortModal: false,
       showInclusionReportModal: false,
       inclusionReportCache: null,
+      fetchAttritionReportFn: null as ((ruleOrder?: number[]) => Promise<any>) | null,
     }
   },
   watch: {
@@ -250,6 +253,9 @@ export default {
         }
       }
     },
+  },
+  created() {
+    this.fetchAttritionReportFn = createMockAttritionApi(() => this.fetchInclusionReport())
   },
   mounted() {
     try {

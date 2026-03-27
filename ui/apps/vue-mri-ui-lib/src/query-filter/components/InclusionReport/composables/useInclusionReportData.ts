@@ -1,5 +1,9 @@
 import { ref, computed, watch, type Ref } from 'vue'
-import { type InclusionReportResponse, parseTreemapData } from '@/query-filter/types/InclusionReportTypes'
+import {
+  type InclusionReportResponse,
+  type AttritionApiResponse,
+  parseTreemapData,
+} from '@/query-filter/types/InclusionReportTypes'
 
 import { convertTreemapData } from '../computeTreemapStats'
 
@@ -8,11 +12,13 @@ export interface UseInclusionReportDataOptions {
   sourceKey: string
   generationStatus?: 'idle' | 'pending' | 'complete' | 'failed'
   cacheKey?: string
+  showIntersectView?: boolean
   fetchInclusionReport: (
     cohortDefinitionId: string,
     sourceKey: string,
     modeId: number
   ) => Promise<InclusionReportResponse>
+  fetchAttritionReport?: (ruleOrder?: number[]) => Promise<AttritionApiResponse>
 }
 
 export function useInclusionReportData(
@@ -43,15 +49,54 @@ export function useInclusionReportData(
     return !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
   })
 
+  /**
+   * Map an AttritionApiResponse to a minimal InclusionReportResponse
+   * so the rest of the component (SummaryTable, hasInclusionRules) works.
+   */
+  const mapAttritionToInclusionReport = (apiResponse: AttritionApiResponse): InclusionReportResponse => {
+    return {
+      summary: apiResponse.summary,
+      inclusionRuleStats: apiResponse.attritionStats.map(s => {
+        const pctSat = apiResponse.summary.baseCount ? s.cumulativeCountSatisfying / apiResponse.summary.baseCount : 0
+        return {
+          id: s.id,
+          name: s.name,
+          isExclude: s.isExclude,
+          countSatisfying: s.cumulativeCountSatisfying,
+          percentSatisfying: (pctSat * 100).toFixed(2) + '%',
+          percentExcluded: ((1 - pctSat) * 100).toFixed(2) + '%',
+        }
+      }),
+      treemapData: '', // Not needed when showIntersectView is false
+    }
+  }
+
   const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {
     isLoadingInclusionReport.value = true
 
-    const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
     try {
-      if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
-        inclusionReportPersonResponse.value = await options.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
-      } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {
-        inclusionReportEventResponse.value = await options.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
+      if (!options.showIntersectView && options.fetchAttritionReport) {
+        // Use the new attrition API
+        const apiResponse = await options.fetchAttritionReport()
+        const mapped = mapAttritionToInclusionReport(apiResponse)
+
+        if (selectedPersonEventView.value === 'PERSON') {
+          inclusionReportPersonResponse.value = mapped
+        } else {
+          inclusionReportEventResponse.value = mapped
+        }
+      } else {
+        // Use the existing inclusion report API
+        const modeId = selectedPersonEventView.value === 'PERSON' ? 1 : 0
+        if (selectedPersonEventView.value === 'PERSON' && !inclusionReportPersonResponse.value) {
+          inclusionReportPersonResponse.value = await options.fetchInclusionReport(
+            cohortDefinitionId,
+            sourceKey,
+            modeId
+          )
+        } else if (selectedPersonEventView.value === 'EVENT' && !inclusionReportEventResponse.value) {
+          inclusionReportEventResponse.value = await options.fetchInclusionReport(cohortDefinitionId, sourceKey, modeId)
+        }
       }
     } catch (error) {
       console.error('Error fetching inclusion report:', error)
