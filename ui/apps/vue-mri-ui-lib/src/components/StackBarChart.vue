@@ -1,6 +1,6 @@
 <template>
   <div class="stackbar-wrapper">
-    <div class="stackbar-container stackbar-chart-container" id="stacked-chart"></div>
+    <div class="stackbar-container" id="stacked-chart"></div>
     <StackBarChartLegend
       v-if="chartData.traces && chartData.traces.length > 1"
       :traces="chartData.traces"
