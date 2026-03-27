@@ -53,18 +53,20 @@ export default {
             },
 
             click: function (gd) {
-              // Reset axes
               Plotly.relayout(gd, {
                 'xaxis.autorange': true,
                 'yaxis.autorange': true,
               })
 
-              // Clear selection on all traces - use trace indices for proper visual clear
-              const traceIndices = gd.data.map((_, i) => i)
-              Plotly.restyle(gd, { selectedpoints: [null] }, traceIndices)
 
+              // TODO: This is to clear selection on reset, current implementation clears event listeners. To revisit
+              // Plotly.update(
+              //   gd,
+              //   { 'xaxis.autorange': true, 'yaxis.autorange': true, selectedpoints: [null] },
+              //   { selections: [] }
+              // )
               // Clear Vuex selection state
-              this.setChartSelection({ selection: [] })
+              // this.setChartSelection({ selection: [] })
             }.bind(this),
           },
         ],
