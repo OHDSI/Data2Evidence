@@ -58,10 +58,10 @@ function getColumnsForTable(
       ORDER BY \"column_name\"`
       sQuery = queryObjectLib.QueryObject.format(
         query,
-        `cdw_config_svc`,
+        connection.connection.__database,
         schema,
         tableName,
-        `cdw_config_svc`,
+        connection.connection.__database,
         schema,
         tableName
       );

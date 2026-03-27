@@ -47,10 +47,10 @@ export class DbMeta {
         WHERE database_name = ?::text and schema_name = ?::text and table_name = ?::text
         ORDER BY \"column_name\"`
         parameters = [
-          { value: `cdw_config_svc` },
+          { value: this.connection.connection.__database },
           { value: schema },
           { value: parsedName.tableName },
-          { value: `cdw_config_svc` },
+          { value: this.connection.connection.__database },
           { value: schema },
           { value: parsedName.tableName },
         ]
