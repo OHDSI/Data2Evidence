@@ -1,5 +1,6 @@
 import torch.nn.functional as F
 from torch import Tensor
+import torch
 from prefect.logging import get_run_logger
 from psycopg2 import sql as pg_sql
 from pathlib import Path
@@ -17,17 +18,19 @@ def average_pool(last_hidden_states: Tensor,
     last_hidden = last_hidden_states.masked_fill(~attention_mask[..., None].bool(), 0.0)
     return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
 
-def embedding_concept_table(concept_name_list: List[str],tokenizer:Any, model:Any)  -> Tensor:
+def embedding_concept_table(concept_name_list: List[str],tokenizer:Any, model:Any, device:str)  -> Tensor:
     """
     Generate embeddings for a list of concept names using the provided tokenizer and model.
     """
     # Tokenize the input texts
     batch_dict = tokenizer(concept_name_list, max_length=512, padding=True, truncation=True, return_tensors='pt')
-    outputs = model(**batch_dict)
+    batch_dict = {k: v.to(device) for k, v in batch_dict.items()} 
+    with torch.no_grad():  # the embedding function computes gradients unnecessarily
+        outputs = model(**batch_dict)
     embeddings = average_pool(outputs.last_hidden_state, batch_dict['attention_mask'])
     # (Optionally) normalize embeddings
     embeddings = F.normalize(embeddings, p=2, dim=1)
-    return embeddings
+    return embeddings.cpu() # move back to CPU for numpy/list conversion      
 
 def check_duckdb_column_exists(conn: duckdb.DuckDBPyConnection, table_name: str, column: str) -> bool:
     """

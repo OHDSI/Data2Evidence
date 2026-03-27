@@ -2,6 +2,7 @@ import pandas as pd
 import os
 from transformers import AutoTokenizer, AutoModel
 import duckdb
+import torch
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -14,9 +15,10 @@ from _shared_flow_utils.dao.DBDao import DBDao, SupportedDatabaseDialects
 os.environ['plugin_name'] = 'search_embedding_plugin'
 
 # Define global variables for shared configurations
-STEP = 100
+STEP = 1024
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
-model = AutoModel.from_pretrained("Supabase/gte-small")
+model = AutoModel.from_pretrained("Supabase/gte-small").to(device).eval()
 tmp_embedding_table = 'tmp_embeddings'
 embedding_col_name = 'concept_name_embedding'
 index_col = 'embedding_cos_idx'
@@ -62,7 +64,7 @@ def create_embeddings_trex(dbdao, schema_name):
     for i in range(0, length, STEP):
         concept_name = concept['concept_name'][i:i+STEP].tolist()
         concept_id = concept['concept_id'][i:i+STEP].tolist()
-        embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
+        embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
         columns = list(embedding_cols.keys())
         col_values = list(zip(concept_id, embeddings))    
         ## Insert embedding into tmp embedding table
@@ -99,7 +101,7 @@ def create_embeddings_duckdb(conn, schema_name):
     for i in range(0, length, STEP):
         concept_name = concept['concept_name'][i:i+STEP].tolist()
         concept_id = concept['concept_id'][i:i+STEP]
-        embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
+        embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
         rst = pd.DataFrame({'concept_id':concept_id, 'embedding': embeddings})
         ## Insert embedding into tmp embedding table
         conn.execute(f"INSERT INTO {schema_name}.{tmp_embedding_table} SELECT concept_id, embedding FROM rst")
