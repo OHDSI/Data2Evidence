@@ -1163,5 +1163,8 @@
   "TERMINOLOGY__SELECT_CONCEPTS": "Konzepte auswählen",
   "TERMINOLOGY__SHARED": "Geteilt",
   "TRIGGER_PLUGIN_UPLOAD_DIALOG__DESCRIPTION": "Bitte versuchen Sie es erneut. Um den Fehler zu melden, senden Sie eine E-Mail an help@data4life.care.",
-  "TRIGGER_PLUGIN_UPLOAD_DIALOG__TITLE": "Standard-Plugins installieren"
+  "TRIGGER_PLUGIN_UPLOAD_DIALOG__TITLE": "Standard-Plugins installieren",
+  "STUDY_OVERVIEW__NOT_AVAILABLE": "Nicht verfügbar",
+  "STUDY_OVERVIEW__CACHE_DATASETS": "Cache-Datensätze",
+  "STUDY_OVERVIEW__ADD_STUDY": "Studie hinzufügen"
 }

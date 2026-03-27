@@ -38,8 +38,6 @@ const enum StudyAttributeConfigIds {
   LATEST_SCHEMA_VERSION = "latest_schema_version",
   SCHEMA_VERSION = "schema_version",
 }
-const MISSING_ATTRIBUTE_ERROR = "Not available";
-
 const StudyOverview: FC = () => {
   const { getText, i18nKeys } = useTranslation();
   const [refetch, setRefetch] = useState(0);
@@ -553,30 +551,27 @@ const StudyOverview: FC = () => {
     }
   }, [setFetchUpdatesLoading, datasets]);
 
-  const getAttributeValue = (
+  const findAttributeValue = (
+    attributes: StudyAttribute[] | undefined,
+    attributeConfigId: StudyAttributeConfigIds
+  ): string | null => {
+    if (!attributes) return null;
+    const attr = attributes.find((attribute: StudyAttribute) => attribute.attributeId === attributeConfigId);
+    return attr ? attr.value : null;
+  };
+
+  const getAttributeDisplay = (
     attributes: StudyAttribute[] | undefined,
     attributeConfigId: StudyAttributeConfigIds
   ): string => {
-    if (!attributes) {
-      return MISSING_ATTRIBUTE_ERROR;
-    }
-    const latestSchemaVersionAttribute = attributes.find((attribute: StudyAttribute) => {
-      return attribute.attributeId === attributeConfigId;
-    });
-    if (latestSchemaVersionAttribute) {
-      return latestSchemaVersionAttribute.value;
-    } else {
-      return MISSING_ATTRIBUTE_ERROR;
-    }
+    return findAttributeValue(attributes, attributeConfigId) ?? getText(i18nKeys.STUDY_OVERVIEW__NOT_AVAILABLE);
   };
 
   const checkIfStudyIsUpdatable = (dataset: Study): boolean => {
-    // If schema version and
-    const currentSchemaVersion = getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION);
-    const latestSchemaVersion = getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION);
+    const currentSchemaVersion = findAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION);
+    const latestSchemaVersion = findAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION);
 
-    // If current versions or latest verison attribute is missing, return false
-    if (currentSchemaVersion === MISSING_ATTRIBUTE_ERROR || latestSchemaVersion === MISSING_ATTRIBUTE_ERROR) {
+    if (!currentSchemaVersion || !latestSchemaVersion) {
       return false;
     }
 
@@ -623,9 +618,9 @@ const StudyOverview: FC = () => {
           )}
         </TableCell>
         <TableCell style={{ maxWidth: "120px" }}>
-          {getAttributeValue(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
+          {getAttributeDisplay(dataset.attributes, StudyAttributeConfigIds.SCHEMA_VERSION)}
         </TableCell>
-        <TableCell>{getAttributeValue(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}</TableCell>
+        <TableCell>{getAttributeDisplay(dataset.attributes, StudyAttributeConfigIds.LATEST_SCHEMA_VERSION)}</TableCell>
         <TableCell>
           {dataset.dataModel
             ? `${dataset.dataModel} [${dataset.plugin}]`
@@ -722,7 +717,7 @@ const StudyOverview: FC = () => {
                           <>
                             <TableRow className="cache-datasets-header-row">
                               <TableCell colSpan={9} className="cache-datasets-header-cell">
-                                Cache Datasets
+                                {getText(i18nKeys.STUDY_OVERVIEW__CACHE_DATASETS)}
                               </TableCell>
                             </TableRow>
                             {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
@@ -780,7 +775,7 @@ const StudyOverview: FC = () => {
                           <>
                             <TableRow className="cache-datasets-header-row">
                               <TableCell colSpan={9} className="cache-datasets-header-cell">
-                                Cache Datasets
+                                {getText(i18nKeys.STUDY_OVERVIEW__CACHE_DATASETS)}
                               </TableCell>
                             </TableRow>
                             {dataset.children.map((child: Study) => renderDatasetRow(child, true, false))}
@@ -805,7 +800,7 @@ const StudyOverview: FC = () => {
               <h4 className="dataset-section-title" style={{ margin: 0 }}>
                 {getText(i18nKeys.STUDY_OVERVIEW__STUDIES)}
               </h4>
-              <Button text="Add study" onClick={openAddStrategusStudyDialog} />
+              <Button text={getText(i18nKeys.STUDY_OVERVIEW__ADD_STUDY)} onClick={openAddStrategusStudyDialog} />
             </div>
             {loadingStrategusStudies ? (
               <TableContainer className="studyoverview__list">
