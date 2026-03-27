@@ -1129,5 +1129,7 @@
   "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__CANCEL": "Abbrechen",
   "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__SAVE": "Speichern",
   "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__SAVE_SUCCESS": "Code erfolgreich gespeichert",
-  "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__SAVE_ERROR": "Code konnte nicht gespeichert werden"
+  "MANAGE_STRATEGUS_RESULT_VIEWER_DIALOG__SAVE_ERROR": "Code konnte nicht gespeichert werden",
+  "COHORT_FILTER__LOADING": "Kohortendefinitionen werden geladen...",
+  "ACTION_SELECTOR__SOURCE_INFORMATION": "Quellinformationen"
 }

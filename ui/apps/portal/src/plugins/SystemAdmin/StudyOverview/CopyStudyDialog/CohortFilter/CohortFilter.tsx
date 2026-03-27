@@ -50,7 +50,7 @@ const CohortFilter: FC<CohortFilterProps> = ({
 }) => {
   const { getText, i18nKeys } = useTranslation();
   if (!cohortDefinitionList || loading) {
-    return <Loader text={"Loading cohort definitions..."}></Loader>;
+    return <Loader text={getText(i18nKeys.COHORT_FILTER__LOADING)}></Loader>;
   }
 
   if (error) {
