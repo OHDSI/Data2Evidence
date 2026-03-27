@@ -430,4 +430,4 @@ export const defaultTableTypePlaceholderMap: TableTypePlaceholderMapType = {
 
 export const DUCKDB_FILE_DATABASE_CODE = "cdw_config_svc";
 export const DUCKDB_FILE_SCHEMA_NAME = "main";
-export const DUCKDB_FILE_NAME = `cdw_config_svc_validation_schema`;
+export const DUCKDB_FILE_NAME = `${DUCKDB_FILE_DATABASE_CODE}_validation_schema`;
