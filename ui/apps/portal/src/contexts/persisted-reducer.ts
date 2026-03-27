@@ -9,11 +9,27 @@ export function usePrevious(value: any) {
   return ref.current;
 }
 
+const getNestedValue = (obj: any, path: string): any => {
+  return path.split(".").reduce((acc, key) => acc?.[key], obj);
+};
+
+const setNestedValue = (obj: any, path: string, value: any): void => {
+  const keys = path.split(".");
+  let current = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!(keys[i] in current)) {
+      current[keys[i]] = {};
+    }
+    current = current[keys[i]];
+  }
+  current[keys[keys.length - 1]] = value;
+};
+
 export function usePersistedReducer<State extends object, Action>(
   reducer: (state: State, action: Action) => State,
   initialState: State,
   storageKey: string,
-  whitelist: (keyof State)[]
+  whitelist: string[]
 ) {
   const [state, dispatch] = useReducer(reducer, initialState, init);
   const prevState = usePrevious(state);
@@ -22,7 +38,15 @@ export function usePersistedReducer<State extends object, Action>(
     const stringState = localStorage.getItem(storageKey);
     if (stringState) {
       try {
-        return { ...initialState, ...JSON.parse(stringState) };
+        const persisted = JSON.parse(stringState);
+        const merged = JSON.parse(JSON.stringify(initialState));
+        for (const path of whitelist) {
+          const value = getNestedValue(persisted, path);
+          if (value !== undefined) {
+            setNestedValue(merged, path, value);
+          }
+        }
+        return merged;
       } catch (error) {
         return initialState;
       }
@@ -42,11 +66,12 @@ export function usePersistedReducer<State extends object, Action>(
   return { state, dispatch };
 }
 
-const stringifyWithWhitelist = <State extends object>(obj: State, whitelist: (keyof State)[]): string => {
-  const filteredObject: Partial<State> = {};
-  for (const key of whitelist) {
-    if (obj.hasOwnProperty(key)) {
-      filteredObject[key] = obj[key];
+const stringifyWithWhitelist = (obj: any, whitelist: string[]): string => {
+  const filteredObject: any = {};
+  for (const path of whitelist) {
+    const value = getNestedValue(obj, path);
+    if (value !== undefined) {
+      setNestedValue(filteredObject, path, value);
     }
   }
   return JSON.stringify(filteredObject);
