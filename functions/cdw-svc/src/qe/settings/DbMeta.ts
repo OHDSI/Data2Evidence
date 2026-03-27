@@ -19,6 +19,7 @@ export class DbMeta {
       // }
       
       let query = ""
+      let parameters;
       if (this.connection.dialect === "hana") {
         query = `SELECT COLUMN_NAME 
         FROM TABLE_COLUMNS
@@ -30,24 +31,33 @@ export class DbMeta {
         WHERE SCHEMA_NAME = ?
         AND VIEW_NAME = ?
         ORDER BY \"COLUMN_NAME\"`
+        parameters = [
+          { value: schema },
+          { value: parsedName.tableName },
+          { value: schema },
+          { value: parsedName.tableName },
+        ]
       }else{
         query =  `SELECT COLUMN_NAME AS \"COLUMN_NAME\" 
         from information_schema.columns 
-        where table_catalog = ?::text AND TABLE_NAME = ?::text 
+        where table_catalog = ?::text AND table_schema = ?::text AND TABLE_NAME = ?::text 
         UNION 
         SELECT column_name as \"COLUMN_NAME\" 
         from duckdb_columns() 
-        WHERE database_name = ?::text and table_name = ?::text
+        WHERE database_name = ?::text and schema_name = ?::text and table_name = ?::text
         ORDER BY \"column_name\"`
+        parameters = [
+          { value: `cdw_config_svc` },
+          { value: schema },
+          { value: parsedName.tableName },
+          { value: `cdw_config_svc` },
+          { value: schema },
+          { value: parsedName.tableName },
+        ]
       }
       this.connection.executeQuery(
        query,
-        [
-          { value: schema },
-          { value: parsedName.tableName },
-          { value: schema },
-          { value: parsedName.tableName },
-        ],
+       parameters,
         (err, result: Array<{ COLUMN_NAME: string }>) => {
           if (result != null && result.length > 0) {
             cb(
