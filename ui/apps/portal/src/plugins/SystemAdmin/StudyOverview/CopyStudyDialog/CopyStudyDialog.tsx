@@ -209,7 +209,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
           setFeedback({
             type: "error",
-            message: "Cohort filter is checked, but no cohort was chosen!",
+            message: getText(i18nKeys.COPY_STUDY_DIALOG__COHORT_NOT_CHOSEN),
           });
           return;
         }
@@ -231,7 +231,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       if (!formData.paConfigId) {
         setFeedback({
           type: "error",
-          message: "PA Config ID is required!",
+          message: getText(i18nKeys.COPY_STUDY_DIALOG__PA_CONFIG_REQUIRED),
         });
         return;
       }
@@ -456,7 +456,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
           )}
           <div className="snapshotmetadata__filtergroup">
             <FormControl sx={styles} className="select" variant="standard" fullWidth>
-              <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+              <InputLabel htmlFor="cache-dataset-option">{getText(i18nKeys.COPY_STUDY_DIALOG__CACHE_DATASET_TYPE)}</InputLabel>
               <Select
                 sx={styles}
                 value={formData.type}

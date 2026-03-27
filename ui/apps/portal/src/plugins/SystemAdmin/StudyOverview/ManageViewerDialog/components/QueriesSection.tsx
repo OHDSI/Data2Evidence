@@ -2,6 +2,8 @@ import React, { FC } from "react";
 import { Button, TextField } from "@portal/components";
 import InputLabel from "@mui/material/InputLabel";
 import { QueryEntry } from "../hooks/useViewerData";
+import { useTranslation } from "../../../../../contexts";
+import { i18nKeys } from "../../../../../contexts/app-context/states";
 
 interface QueriesSectionProps {
   queries: QueryEntry[];
@@ -16,23 +18,25 @@ export const QueriesSection: FC<QueriesSectionProps> = ({
   onUpdateQuery,
   onRemoveQuery,
 }) => {
+  const { getText } = useTranslation();
+
   return (
     <div className="manage-viewer-dialog__queries">
       <div className="manage-viewer-dialog__queries__header">
-        <InputLabel>Queries</InputLabel>
-        <Button text="Add query" onClick={onAddQuery} variant="outlined" size="small" />
+        <InputLabel>{getText(i18nKeys.QUERIES_SECTION__QUERIES)}</InputLabel>
+        <Button text={getText(i18nKeys.QUERIES_SECTION__ADD_QUERY)} onClick={onAddQuery} variant="outlined" size="small" />
       </div>
       {queries.map((query, index) => (
         <div key={index} className="manage-viewer-dialog__queries__entry">
           <TextField
-            label="Query name"
+            label={getText(i18nKeys.QUERIES_SECTION__QUERY_NAME)}
             variant="standard"
             value={query.queryName}
             onChange={(e) => onUpdateQuery(index, "queryName", e.target.value)}
             sx={{ flex: 1 }}
           />
           <TextField
-            label="SQL"
+            label={getText(i18nKeys.QUERIES_SECTION__SQL)}
             variant="standard"
             value={query.sql}
             onChange={(e) => onUpdateQuery(index, "sql", e.target.value)}
@@ -40,7 +44,7 @@ export const QueriesSection: FC<QueriesSectionProps> = ({
             multiline
             rows={1}
           />
-          <Button text="Remove" onClick={() => onRemoveQuery(index)} variant="text" size="small" />
+          <Button text={getText(i18nKeys.QUERIES_SECTION__REMOVE)} onClick={() => onRemoveQuery(index)} variant="text" size="small" />
         </div>
       ))}
     </div>

@@ -104,7 +104,7 @@ export const Starboard: FC<StarboardProps> = ({ datasetId, userId, getToken, uiF
   const createNotebook = useCallback(
     async (name?: string) => {
       try {
-        const notebookName = name || "Untitled";
+        const notebookName = name || getText(i18nKeys.GENERAL__UNTITLED);
         const newNotebook: StarboardNotebook = await api.studyNotebook.createNotebook(
           activeDatasetId,
           notebookName,

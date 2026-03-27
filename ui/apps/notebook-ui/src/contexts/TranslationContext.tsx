@@ -64,6 +64,17 @@ export const translations = {
 
       // Notebook select
       NOTEBOOK_SELECT__SHARED: "(Shared)",
+
+      // Chat
+      CHAT__PLACEHOLDER: "Type your query",
+
+      // General
+      GENERAL__UNTITLED: "Untitled",
+      GENERAL__ERROR_OCCURRED: "An error has occurred.",
+      GENERAL__ERROR_CONTACT_SUPPORT: "Please try again. To report the error, please contact support.",
+      GENERAL__NOTEBOOK_ERROR: "Notebook Error",
+      GENERAL__NOTEBOOK_LOAD_ERROR: "An error occurred while loading the Notebook application.",
+      GENERAL__ERROR_DETAILS: "Error Details",
     },
   },
 };

@@ -5,6 +5,8 @@ import { Dialog, Button, TextField } from "@portal/components";
 import { Feedback } from "../../../../types";
 import { api } from "../../../../axios/api";
 import { useTenant } from "../../../../hooks";
+import { useTranslation } from "../../../../contexts";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 import "./AddStrategusStudyDialog.scss";
 
 interface AddStrategusStudyDialogProps {
@@ -33,6 +35,7 @@ const EMPTY_FORM_ERROR: FormError = {
 };
 
 const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClose }) => {
+  const { getText } = useTranslation();
   const [tenant] = useTenant();
   const [studyName, setStudyName] = useState("");
   const [tokenStudyCode, setTokenStudyCode] = useState("");
@@ -124,17 +127,17 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
       console.error("Error creating strategus study:", err);
       setFeedback({
         type: "error",
-        message: err?.response?.data?.message || err?.message || "Failed to create study",
+        message: err?.response?.data?.message || err?.message || getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ERROR_CREATE),
       });
     } finally {
       setLoading(false);
     }
-  }, [studyName, tokenStudyCode, analysisSpec, tenant, onClose, validateForm]);
+  }, [studyName, tokenStudyCode, analysisSpec, tenant, onClose, validateForm, getText]);
 
   return (
     <Dialog
       className="add-strategus-study-dialog"
-      title="Add Strategus study"
+      title={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TITLE)}
       closable
       fullWidth
       maxWidth="md"
@@ -144,30 +147,30 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
     >
       <Divider />
       <div className="add-strategus-study-dialog__content">
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Study information</div>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_INFORMATION)}</div>
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
-            label="Study name"
+            label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME)}
             value={studyName}
             onChange={(event) => setStudyName(event.target.value)}
             error={formError.studyName.required || formError.studyName.invalid}
             disabled={loading}
           />
-          {formError.studyName.required && <FormHelperText error={true}>Study name is required</FormHelperText>}
+          {formError.studyName.required && <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_REQUIRED)}</FormHelperText>}
           {formError.studyName.invalid && (
             <FormHelperText error={true}>
-              Study Name can only contain letters, numbers, underscores, and hyphens
+              {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_INVALID)}
             </FormHelperText>
           )}
-          <FormHelperText>Enter a unique name for your study</FormHelperText>
+          <FormHelperText>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_HELPER)}</FormHelperText>
         </div>
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
-            label="Token dataset code"
+            label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE)}
             value={tokenStudyCode}
             onChange={(event) => setTokenStudyCode(event.target.value)}
             inputProps={{ maxLength: 80 }}
@@ -175,22 +178,22 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             disabled={loading}
           />
           {formError.tokenStudyCode.required && (
-            <FormHelperText error={true}>Token dataset code is required</FormHelperText>
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_REQUIRED)}</FormHelperText>
           )}
           {formError.tokenStudyCode.invalid && (
             <FormHelperText error={true}>
-              Token Dataset Code must contain only alphanumeric characters and underscores (max 80 characters)
+              {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_INVALID)}
             </FormHelperText>
           )}
           <FormHelperText>
-            Enter a unique identifier that can contain alphanumeric characters and underscores only
+            {getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_HELPER)}
           </FormHelperText>
         </div>
         <div style={{ marginBottom: "32px" }}>
           <TextField
             fullWidth
             variant="standard"
-            label="Analysis specification (JSON)"
+            label={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC)}
             multiline
             rows={4}
             value={analysisSpec}
@@ -199,15 +202,15 @@ const AddStrategusStudyDialog: FC<AddStrategusStudyDialogProps> = ({ open, onClo
             disabled={loading}
           />
           {formError.analysisSpec.invalid && (
-            <FormHelperText error={true}>Invalid JSON format for analysis specification</FormHelperText>
+            <FormHelperText error={true}>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_INVALID)}</FormHelperText>
           )}
-          <FormHelperText>Enter a valid JSON analysis specification</FormHelperText>
+          <FormHelperText>{getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_HELPER)}</FormHelperText>
         </div>
       </div>
       <Divider />
       <div className="button-group-actions">
-        <Button text="Cancel" onClick={handleClose} variant="outlined" block disabled={loading} />
-        <Button text="Create study" onClick={handleSubmit} block loading={loading} />
+        <Button text={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CANCEL)} onClick={handleClose} variant="outlined" block disabled={loading} />
+        <Button text={getText(i18nKeys.ADD_STRATEGUS_STUDY_DIALOG__CREATE)} onClick={handleSubmit} block loading={loading} />
       </div>
     </Dialog>
   );
