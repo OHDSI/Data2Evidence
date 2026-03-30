@@ -1,7 +1,24 @@
 import pg from "pg";
 import { Service } from "typedi";
-import { ScanDbSettings } from "./models/scanDbSettings.ts";
+import { TestConnectionRequest } from "./models/scanDbSettings.ts";
 import { TestConnectionResultResponse } from "./models/testConnectionResultResponse.ts";
+
+interface IDatabaseCredentialItem {
+  username: string;
+  password: string;
+  userScope: string;
+  serviceScope: string;
+}
+
+interface IDatabaseCredential {
+  code: string;
+  id: string;
+  host: string;
+  port: string;
+  name: string;
+  dialect: string;
+  credentials: IDatabaseCredentialItem[];
+}
 
 @Service()
 export class TestConnectionService {
@@ -11,17 +28,56 @@ export class TestConnectionService {
   constructor() {}
 
   async testConnection(
-    dbSettings: ScanDbSettings
+    request: TestConnectionRequest,
   ): Promise<TestConnectionResultResponse> {
     this.logger.info("Testing connection to database");
 
+    // @ts-ignore Trex is a global provided by the runtime
+    const dbm = Trex.databaseManager();
+    const databaseCredentials =
+      dbm.getDatabaseCredentials() as IDatabaseCredential[];
+    this.logger.info(
+      `databaseCredentials: ${JSON.stringify(databaseCredentials)}`,
+    );
+
+    const dbCredential = databaseCredentials.find(
+      (db) => db.code === request.databaseCode,
+    );
+
+    if (!dbCredential) {
+      return this.buildCanNotConnectResponse(
+        `No database credentials found for databaseCode: ${request.databaseCode}`,
+      );
+    }
+
+    const readCred = dbCredential.credentials.find(
+      (c) => c.userScope === "Read",
+    );
+
+    this.logger.info(`readCred: ${JSON.stringify(readCred)}`);
+
+    if (!readCred) {
+      return this.buildCanNotConnectResponse(
+        `No read credentials found for databaseCode: ${request.databaseCode}`,
+      );
+    }
+
+    this.logger.info(
+      `creds: ${JSON.stringify({
+        host: dbCredential.host,
+        port: parseInt(dbCredential.port),
+        database: dbCredential.name,
+        user: readCred.username,
+        password: readCred.password,
+      })}`,
+    );
+
     const client = new pg.Client({
-      host: dbSettings.server,
-      port: dbSettings.port,
-      database: dbSettings.database,
-      user: dbSettings.user_name,
-      password: dbSettings.password,
-      schema: dbSettings.schema,
+      host: dbCredential.host,
+      port: parseInt(dbCredential.port),
+      database: dbCredential.name,
+      user: readCred.username,
+      password: readCred.password,
     });
 
     try {
@@ -33,29 +89,29 @@ export class TestConnectionService {
         WHERE table_schema = $1
       `;
 
-      const result = await client.query(tableQuery, [dbSettings.schema]);
+      const result = await client.query(tableQuery, [request.schema]);
       const tableNames = result.rows.map((row) => row.table_name);
 
       if (tableNames.length === 0) {
         return this.buildCanNotConnectResponse(
-          `Unable to retrieve table names for database ${dbSettings.database}`
+          `Unable to retrieve table names for database ${dbCredential.name}`,
         );
       }
 
       if (tableNames.length > TestConnectionService.MAX_TABLES_COUNT) {
         return this.buildCanNotConnectResponse(
-          `Database contains too many tables. Max count is ${TestConnectionService.MAX_TABLES_COUNT}`
+          `Database contains too many tables. Max count is ${TestConnectionService.MAX_TABLES_COUNT}`,
         );
       }
 
       return {
         canConnect: true,
-        message: `Successfully connected to ${dbSettings.database} database on server ${dbSettings.server}`,
+        message: `Successfully connected to ${dbCredential.name} database on server ${dbCredential.host}`,
         tableNames: tableNames,
       };
     } catch (error) {
       return this.buildCanNotConnectResponse(
-        `Could not connect to database: ${error.message}`
+        `Could not connect to database: ${error.message}`,
       );
     } finally {
       await client.end();
@@ -63,7 +119,7 @@ export class TestConnectionService {
   }
 
   private buildCanNotConnectResponse(
-    message: string
+    message: string,
   ): TestConnectionResultResponse {
     return {
       canConnect: false,

@@ -56,18 +56,17 @@ export class WhiteRabbit {
     });
   }
 
-  public createDBScanReport(postgresqlForm: ScanDataDBConnectionForm, tablesToScan: string[]) {
+  public createDBScanReport(postgresqlForm: ScanDataDBConnectionForm, tablesToScan: string[], nodeId: string) {
     const iniSettings = {
       ...postgresqlForm,
-      server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
       tables_to_scan: tablesToScan.join(","),
-      database: postgresqlForm.schema, // as per defined in white rabbit config for schema
     };
 
     const data = {
       options: {
         data: iniSettings,
         run_type: "SCAN_REPORT_DB",
+        node_id: nodeId,
       },
     };
 

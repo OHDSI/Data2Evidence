@@ -281,11 +281,12 @@ export const dataflowApiSlice = createApi({
           server_location: `${postgresqlForm.server}:${postgresqlForm.port}/${postgresqlForm.database}`,
           tables_to_scan: tablesToScan.join(","),
           database: postgresqlForm.schema,
+          node_id: nodeId,
         };
+
         const data = {
           options: {
             data: iniSettings,
-            node_id: nodeId,
             run_type: "SCAN_REPORT_DB",
           },
         };
