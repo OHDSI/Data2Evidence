@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { useStore } from 'vuex'
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
+
 const props = defineProps<{
   allAnyOption: 'ALL' | 'ANY'
   passedFailedOption: 'PASSED' | 'FAILED'
@@ -22,15 +27,15 @@ function handlePassedFailedChange(event: Event) {
 
 <template>
   <div class="all-any-selector">
-    <span>Having</span>
+    <span>{{ getText('MRI_PA_INCLUSION_REPORT_HAVING') }}</span>
     <select :value="allAnyOption" @change="handleAllAnyChange">
-      <option value="ALL">ALL</option>
-      <option value="ANY">ANY</option>
+      <option value="ALL">{{ getText('MRI_PA_INCLUSION_REPORT_ALL') }}</option>
+      <option value="ANY">{{ getText('MRI_PA_INCLUSION_REPORT_ANY') }}</option>
     </select>
-    <span>of selected criteria</span>
+    <span>{{ getText('MRI_PA_INCLUSION_REPORT_OF_SELECTED_CRITERIA') }}</span>
     <select :value="passedFailedOption" @change="handlePassedFailedChange">
-      <option value="PASSED">PASSED</option>
-      <option value="FAILED">FAILED</option>
+      <option value="PASSED">{{ getText('MRI_PA_INCLUSION_REPORT_PASSED') }}</option>
+      <option value="FAILED">{{ getText('MRI_PA_INCLUSION_REPORT_FAILED') }}</option>
     </select>
   </div>
 </template>

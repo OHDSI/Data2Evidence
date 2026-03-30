@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useStore } from 'vuex'
 import type { InclusionReportResponse, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
 import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
@@ -12,6 +13,9 @@ import { useTreemapChart } from './composables/useTreemapChart'
 import VButton from '@/components/vuetify/VButton.vue'
 import VMenu from '@/components/vuetify/VMenu.vue'
 import appTab from '@/lib/ui/app-tab.vue'
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
 const props = withDefaults(
   defineProps<{
@@ -38,14 +42,14 @@ const isFading = ref(false)
 const selectedPersonEventView = ref<'PERSON' | 'EVENT'>('PERSON')
 const selectedVisualization = ref<'ATTRITION' | 'INTERSECT'>('ATTRITION')
 
-const personEventOptions = [
-  { value: 'PERSON', label: 'By person' },
-  { value: 'EVENT', label: 'By event' },
-]
-const visualizationOptions = [
-  { value: 'ATTRITION', text: 'Attrition' },
-  { value: 'INTERSECT', text: 'Intersect' },
-]
+const personEventOptions = computed(() => [
+  { value: 'PERSON', label: getText('MRI_PA_INCLUSION_REPORT_BY_PERSON') },
+  { value: 'EVENT', label: getText('MRI_PA_INCLUSION_REPORT_BY_EVENT') },
+])
+const visualizationOptions = computed(() => [
+  { value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') },
+  { value: 'INTERSECT', text: getText('MRI_PA_INCLUSION_REPORT_INTERSECT') },
+])
 
 // Use composables - order matters here!
 // First, get the data fetching composable (without filtered summary initially)
@@ -137,8 +141,10 @@ onUnmounted(() => {
       @update-limit-value="handlePersonEventViewChange($event as 'PERSON' | 'EVENT')"
       class="person-event-view-buttons"
     />
-    <p v-if="selectedPersonEventView === 'PERSON'">using 1 event per person</p>
-    <p v-else>using all events</p>
+    <p v-if="selectedPersonEventView === 'PERSON'">
+      {{ getText('MRI_PA_INCLUSION_REPORT_USING_ONE_EVENT_PER_PERSON') }}
+    </p>
+    <p v-else>{{ getText('MRI_PA_INCLUSION_REPORT_USING_ALL_EVENTS') }}</p>
   </div>
 
   <div v-if="isLoadingInclusionReport" class="status-message loading"><d4l-spinner /></div>
@@ -191,39 +197,60 @@ onUnmounted(() => {
             @move-row-down="moveRowDown"
             @update:draggable-attrition-stats="draggableAttritionStats = $event"
           />
-          <p class="footnote"><sup>1</sup> "+" indicates inclusion criteria, and "-" indicates exclusion criteria.</p>
+          <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
-            <p>Filtered Population: {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})</p>
+            <p>
+              {{ getText('MRI_PA_INCLUSION_REPORT_FILTERED_POPULATION') }}:
+              {{ filteredSummary.value.toLocaleString() }} ({{ filteredSummary.percent }})
+            </p>
           </div>
 
           <!-- Charts -->
           <div v-show="selectedVisualization === 'ATTRITION'" class="chart-section">
             <div class="chart-header">
-              <h4>Attrition plot</h4>
+              <h4>{{ getText('MRI_PA_INCLUSION_REPORT_ATTRITION_PLOT') }}</h4>
               <VMenu>
                 <template #activator="{ props }">
-                  <VButton v-bind="props" rounded variant="outlined" class="download-btn" title="Export"
-                    >Export</VButton
+                  <VButton
+                    v-bind="props"
+                    rounded
+                    variant="outlined"
+                    class="download-btn"
+                    :title="getText('MRI_PA_INCLUSION_REPORT_EXPORT')"
+                    >{{ getText('MRI_PA_INCLUSION_REPORT_EXPORT') }}</VButton
                   >
                 </template>
-                <v-list-item @click="downloadFunnelChartCSV">Export to CSV File</v-list-item>
-                <v-list-item @click="downloadFunnelChart">Export to PNG File</v-list-item>
+                <v-list-item @click="downloadFunnelChartCSV">{{
+                  getText('MRI_PA_INCLUSION_REPORT_EXPORT_CSV')
+                }}</v-list-item>
+                <v-list-item @click="downloadFunnelChart">{{
+                  getText('MRI_PA_INCLUSION_REPORT_EXPORT_PNG')
+                }}</v-list-item>
               </VMenu>
             </div>
             <div ref="funnelChartRef" class="funnel-chart"></div>
           </div>
           <div v-show="selectedVisualization === 'INTERSECT'" class="chart-section">
             <div class="chart-header">
-              <h4>Population treemap</h4>
+              <h4>{{ getText('MRI_PA_INCLUSION_REPORT_POPULATION_TREEMAP') }}</h4>
               <VMenu>
                 <template #activator="{ props }">
-                  <VButton v-bind="props" rounded variant="outlined" class="download-btn" title="Export"
-                    >Export</VButton
+                  <VButton
+                    v-bind="props"
+                    rounded
+                    variant="outlined"
+                    class="download-btn"
+                    :title="getText('MRI_PA_INCLUSION_REPORT_EXPORT')"
+                    >{{ getText('MRI_PA_INCLUSION_REPORT_EXPORT') }}</VButton
                   >
                 </template>
-                <v-list-item @click="downloadTreemapCSV">Export to CSV File</v-list-item>
-                <v-list-item @click="downloadTreemapImage">Export to PNG File</v-list-item>
+                <v-list-item @click="downloadTreemapCSV">{{
+                  getText('MRI_PA_INCLUSION_REPORT_EXPORT_CSV')
+                }}</v-list-item>
+                <v-list-item @click="downloadTreemapImage">{{
+                  getText('MRI_PA_INCLUSION_REPORT_EXPORT_PNG')
+                }}</v-list-item>
               </VMenu>
             </div>
             <div ref="treemapChartRef" class="treemap-chart"></div>
@@ -233,7 +260,7 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <div v-else class="no-data">No inclusion report data available</div>
+  <div v-else class="no-data">{{ getText('MRI_PA_INCLUSION_REPORT_NO_DATA') }}</div>
 </template>
 
 <style scoped lang="scss">

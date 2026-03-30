@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useStore } from 'vuex'
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
 import RuleNameContent from './RuleNameContent.vue'
@@ -52,6 +53,9 @@ function handleMoveRowUp(statId: number) {
 function handleMoveRowDown(statId: number) {
   emit('move-row-down', statId)
 }
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 </script>
 
 <template>
@@ -73,18 +77,20 @@ function handleMoveRowDown(statId: number) {
               type="checkbox"
               :checked="areAllRulesChecked"
               @change="handleToggleAllRules"
-              title="Select/unselect all rules"
+              :title="getText('MRI_PA_INCLUSION_REPORT_SELECT_ALL_RULES')"
             />
           </th>
           <th class="drag-icon-header" v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <!-- <th class="rule-id">ID</th> -->
-          <th class="rule-name">Filter<sup>1</sup></th>
+          <th class="rule-name">{{ getText('MRI_PA_INCLUSION_REPORT_FILTER_COLUMN') }}<sup>1</sup></th>
           <!-- count satisfying -->
-          <th>No. of Persons</th>
+          <th>{{ getText('MRI_PA_INCLUSION_REPORT_NO_OF_PERSONS') }}</th>
           <!-- percent satisfying -->
-          <th v-if="selectedVisualization === 'ATTRITION'">Percentage of Total</th>
-          <th v-else>Percentage satisfied</th>
+          <th v-if="selectedVisualization === 'ATTRITION'">
+            {{ getText('MRI_PA_INCLUSION_REPORT_PERCENTAGE_OF_TOTAL') }}
+          </th>
+          <th v-else>{{ getText('MRI_PA_INCLUSION_REPORT_PERCENTAGE_SATISFIED') }}</th>
           <!-- percent excluded -->
           <!-- <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
           <th v-else>% to-gain</th> -->
@@ -97,13 +103,13 @@ function handleMoveRowDown(statId: number) {
             <ChevronButton
               direction="up"
               :disabled="getRowIndex(stat.id) === 0"
-              title="Move up"
+              :title="getText('MRI_PA_INCLUSION_REPORT_MOVE_UP')"
               @click="handleMoveRowUp(stat.id)"
             />
             <ChevronButton
               direction="down"
               :disabled="getRowIndex(stat.id) === draggableAttritionStats.length - 1"
-              title="Move down"
+              :title="getText('MRI_PA_INCLUSION_REPORT_MOVE_DOWN')"
               @click="handleMoveRowDown(stat.id)"
             />
           </td>
