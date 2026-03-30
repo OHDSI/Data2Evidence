@@ -285,11 +285,11 @@ export const translateHanaToDuckdb = (
   temp = temp.replace(/DAYS_BETWEEN \(/gi, `date_diff ('day', `);
   temp = temp.replace(
     /select count\(\*\) as \"TABLECOUNT\" from pg_tables where schemaname=(\%s|\?|\$[0-9]) and tablename=(\%s|\?|\$[0-9])/gi,
-    `select count(*) AS tableCount from information_schema.tables where table_catalog=%s and table_name=%s`,
+    `select count(*) AS tableCount from information_schema.tables where table_catalog=%s and table_schema=%s and table_name=%s`,
   );
   temp = temp.replace(
     /select count\(\*\) as \"TABLECOUNT\" from pg_views where schemaname=(\%s|\?|\$[0-9]) and viewname=(\%s|\?|\$[0-9])/gi,
-    `select count(*) AS tableCount from duckdb_views where database_name=%s and view_name=%s`,
+    `select count(*) AS tableCount from duckdb_views where database_name=%s and schema_name=%s and view_name=%s`,
   );
 
   // Replace %s or `?` with $n
