@@ -17,12 +17,15 @@ const setNestedValue = (obj: any, path: string, value: any): void => {
   const keys = path.split(".");
   let current = obj;
   for (let i = 0; i < keys.length - 1; i++) {
-    if (!(keys[i] in current)) {
+    if (keys[i] === "__proto__" || keys[i] === "constructor" || keys[i] === "prototype") return;
+    if (!Object.prototype.hasOwnProperty.call(current, keys[i])) {
       current[keys[i]] = {};
     }
     current = current[keys[i]];
   }
-  current[keys[keys.length - 1]] = value;
+  const lastKey = keys[keys.length - 1];
+  if (lastKey === "__proto__" || lastKey === "constructor" || lastKey === "prototype") return;
+  current[lastKey] = value;
 };
 
 export function usePersistedReducer<State extends object, Action>(
