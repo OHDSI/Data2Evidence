@@ -95,7 +95,7 @@ function formatConstraints(constraints: any): string[] {
     } else if (c.operator === '=') {
       try {
         const val = JSON.parse(c.value)
-        if (typeof val === 'object' && val.hasOwnProperty('sProcess')) {
+        if (val !== null && typeof val === 'object' && val.hasOwnProperty('sProcess')) {
           result.push(val.text)
         } else {
           result.push(c.value)

@@ -32,7 +32,7 @@ const nameParts = computed(() => {
             <span class="bookmark-element">{{ attribute.name }}: </span>
             <span
               v-for="(constraint, cIdx) in attribute.visibleConstraints"
-              :key="constraint"
+              :key="cIdx"
               class="bookmark-element bookmark-constraint"
               >{{ constraint }}{{ cIdx < attribute.visibleConstraints.length - 1 ? ', ' : '' }}</span
             >

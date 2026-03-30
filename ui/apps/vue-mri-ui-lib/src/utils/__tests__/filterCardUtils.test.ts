@@ -126,6 +126,13 @@ describe('constraint parsing edge cases (via extractFilterCardDetail)', () => {
     expect(attr.visibleConstraints).toEqual(['{bad json'])
   })
 
+  it('falls back to raw value when JSON.parse returns null (typeof null === "object" guard)', () => {
+    // JSON.parse('null') === null; without a null-guard, val.hasOwnProperty would throw
+    const card = cardWith([makeConstraint('=', 'null')])
+    const [attr] = extractFilterCardDetail(card, noopAttrName, noopAdvTime).visibleAttributes
+    expect(attr.visibleConstraints).toEqual(['null'])
+  })
+
   it('flattens nested constraint groups (c.content) as operator+value pairs', () => {
     const nested = {
       content: [
