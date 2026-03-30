@@ -141,16 +141,9 @@ const getText = (key: string, param?: string | string[]) => store.getters.getTex
   </VueDraggable>
 </template>
 <style scoped lang="scss">
-table {
-  font-size: 16px;
-
-  .rule-name {
-    max-width: 70ch;
-  }
-}
-
 .rules-table {
   width: 100%;
+  font-size: 16px;
   border-collapse: collapse;
   border: 1px solid var(--color-ui-light-border, #ddd);
   text-align: right;
@@ -158,6 +151,7 @@ table {
 
   .rule-name {
     text-align: left;
+    max-width: 70ch;
   }
 
   thead {
@@ -186,8 +180,6 @@ table {
     }
 
     &.reorder-buttons {
-      flex-direction: column;
-      align-items: center;
       padding: 0.1rem;
     }
   }
@@ -219,22 +211,6 @@ table {
 
   :deep(.filter-card-details) {
     padding-left: 2em;
-  }
-
-  .bookmark-attribute {
-    display: flex;
-    flex-wrap: wrap;
-    padding-top: 4px;
-  }
-
-  .bookmark-element {
-    padding-right: 5px;
-    color: var(--color-ui-light-text);
-  }
-
-  .bookmark-constraint {
-    color: var(--color-mri-header-text-light);
-    font-weight: normal;
   }
 }
 </style>
