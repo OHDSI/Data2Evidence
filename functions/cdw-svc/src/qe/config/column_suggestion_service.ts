@@ -33,29 +33,40 @@ function getColumnsForTable(
       ? parsedName.schema
       : connection.schemaName;
     let query = ""
+    let sQuery;
     if (connection.dialect === "hana") {
       query = `SELECT COLUMN_NAME as "value"
       FROM  VIEW_COLUMNS WHERE SCHEMA_NAME = %s AND VIEW_NAME = %s
       UNION
       SELECT COLUMN_NAME as "value"
       FROM  TABLE_COLUMNS WHERE SCHEMA_NAME = %s AND TABLE_NAME = %s`
+      sQuery = queryObjectLib.QueryObject.format(
+        query,
+        schema,
+        tableName,
+        schema,
+        tableName
+      );
     } else{
       query = `SELECT column_name as "value" 
       from information_schema.columns 
-      where table_catalog = %s AND TABLE_NAME = %s 
+      where table_catalog = %s AND table_schema = %s AND TABLE_NAME = %s 
       UNION
       SELECT column_name as "value" 
       from duckdb_columns() 
-      WHERE database_name = %s and table_name = %s
+      WHERE database_name = %s and schema_name = %s and table_name = %s
       ORDER BY \"column_name\"`
+      sQuery = queryObjectLib.QueryObject.format(
+        query,
+        connection.connection.__database,
+        schema,
+        tableName,
+        connection.connection.__database,
+        schema,
+        tableName
+      );
     }
-    const sQuery = queryObjectLib.QueryObject.format(
-      query,
-      schema,
-      tableName,
-      schema,
-      tableName
-    );
+    
     log.debug(sQuery.queryString);
     sQuery.executeQuery(connection, (err, result) => {
       if (err) {
