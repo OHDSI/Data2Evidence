@@ -31,6 +31,8 @@ export interface Plugins {
   iconSize?: number;
   name: string;
   nameI18nKey?: keyof LanguageMappings;
+  visible?: boolean;
+  /** @deprecated Use `visible` instead */
   enabled?: boolean;
   route: string;
   pluginPath: string;
@@ -57,6 +59,8 @@ export interface IPluginItem {
   featureFlag?: string;
   iconUrl?: string;
   iconSize?: number;
+  visible?: boolean;
+  /** @deprecated Use `visible` instead */
   enabled?: boolean;
   requiredRoles?: string[];
   type?: string;
