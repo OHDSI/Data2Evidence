@@ -46,12 +46,26 @@ export async function validateDBTable(
     // }
 
     const query = getQueryString("CHECK_TABLE");
-    const parameters = [
-      { value: schema },
-      { value: parsedName.tableName },
-      { value: schema },
-      { value: parsedName.tableName },
-    ];
+    let parameters;
+    if (connection.dialect === "hana") {
+      parameters = [
+        { value: schema },
+        { value: parsedName.tableName },
+        { value: schema },
+        { value: parsedName.tableName },
+      ];
+
+    } else { //duckdb
+      parameters = [
+        { value: connection.connection.__database },
+        { value: schema },
+        { value: parsedName.tableName },
+        { value: connection.connection.__database },
+        { value: schema },
+        { value: parsedName.tableName },
+      ];
+    }
+
 
     connection.executeQuery(query, parameters, (err, result) => {
       if (err) {
