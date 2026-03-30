@@ -20975,7 +20975,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@COHORT.\"cohort_definition_id\"",
-                        "referenceFilter": "CONTAINS (@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%', FUZZY (0.5))",
+                        "referenceFilter": "JARO_SIMILARITY(@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%') >= 0.5",
                         "referenceExpression": "@RESULT_COHORT_DEF.COHORT_DEFINITION_ID",
                         "order": 0,
                         "domainFilter": "",
