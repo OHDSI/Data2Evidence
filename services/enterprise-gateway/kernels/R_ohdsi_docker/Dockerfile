@@ -76,8 +76,7 @@ RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 &
 # Verify the installation
 RUN java -version && R CMD javareconf
 
-# install renv package
-RUN Rscript -e 'install.packages("renv", repos="https://cran.r-project.org")'
+RUN Rscript -e 'install.packages("remotes", repos="https://cran.r-project.org"); remotes::install_version("renv", version="1.1.6", repos="https://cran.r-project.org")'
 
 # COPY kernel launcher scripts and files from elyra-base
 COPY --from=elyra-base /usr/local/bin/jupyter_enterprise_gateway_kernel_image_files*.tar.gz /usr/local/bin/
