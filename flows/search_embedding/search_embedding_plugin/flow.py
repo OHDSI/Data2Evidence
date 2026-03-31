@@ -19,7 +19,7 @@ os.environ['plugin_name'] = 'search_embedding_plugin'
 STEP = 1024
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device == 'cpu':
-    torch.set_num_threads(os.cpu_count()//2)
+    torch.set_num_threads(max(1, (os.cpu_count() or 1) // 2))
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
 model = AutoModel.from_pretrained("Supabase/gte-small").to(device).eval()
 tmp_embedding_table = 'tmp_embeddings'
