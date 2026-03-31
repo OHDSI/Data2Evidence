@@ -115,19 +115,21 @@ interface SetupBreadcrumbBarProps {
 }
 
 const SetupBreadcrumbBar: FC<SetupBreadcrumbBarProps> = ({ setupLabel, pluginName, onSetupClick }) => {
-  const { subPages } = useSetupBreadcrumb();
+  const { subPages, onPluginNameClick } = useSetupBreadcrumb();
   const hasSubPages = subPages.length > 0;
 
   return (
     <div className="setup-overview__breadcrumb">
       <Breadcrumbs separator="›">
-        <Link component="button" underline="hover" onClick={onSetupClick}>
+        <Link component="button" underline="always" onClick={onSetupClick}>
           {setupLabel}
         </Link>
-        {hasSubPages ? (
-          <Typography>{pluginName}</Typography>
+        {hasSubPages && onPluginNameClick ? (
+          <Link component="button" underline="always" onClick={onPluginNameClick}>
+            {pluginName}
+          </Link>
         ) : (
-          <Typography color="text.primary">{pluginName}</Typography>
+          <Typography color={hasSubPages ? undefined : "text.primary"}>{pluginName}</Typography>
         )}
         {subPages.map((item, index) => {
           const isLast = index === subPages.length - 1;
@@ -136,7 +138,7 @@ const SetupBreadcrumbBar: FC<SetupBreadcrumbBarProps> = ({ setupLabel, pluginNam
               {item.label}
             </Typography>
           ) : (
-            <Link component="button" underline="hover" key={index} onClick={item.onClick}>
+            <Link component="button" underline="always" key={index} onClick={item.onClick}>
               {item.label}
             </Link>
           );

@@ -83,6 +83,13 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
             this
         );
 
+        // Listen for breadcrumb navigate-back event from React
+        var that = this;
+        this._handleBreadcrumbNavigateBack = function () {
+            that._onNavigateToMainConfig();
+        };
+        document.addEventListener("cdm-breadcrumb-navigate-back", this._handleBreadcrumbNavigateBack);
+
     };
 
     MxConfigUIController.prototype.onBeforeRendering = function() {
@@ -133,7 +140,10 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
             this._setViewBusy,
             this
         );
-        
+
+        // Remove breadcrumb navigate-back listener
+        document.removeEventListener("cdm-breadcrumb-navigate-back", this._handleBreadcrumbNavigateBack);
+
         // destroy the model manager in order to unsubscribe from events as well
         this._oModelMgr.destroy();
         
@@ -143,14 +153,13 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
 
     MxConfigUIController.prototype._setViewBusy = function (sChannelId, sEventId, oEventData) {
         var busy = oEventData.busy;
-        this.getView().byId("pageMxConfigUI").setShowNavButton(!busy);
         this.getView().setBusy(busy);
     };
 
     MxConfigUIController.prototype._onNavigateToMainConfig = function () {
         this._pageContainer.bindProperty("title",{path: "hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_APP_TITLE"});
-        this.getView().byId("pageMxConfigUI").setShowNavButton(false);
         this._navContainer.back();
+        document.dispatchEvent(new CustomEvent("cdm-breadcrumb-clear"));
     };
 
     MxConfigUIController.prototype._updateConfigOverview = function() {
@@ -194,7 +203,20 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
         var configEditorJSONModel = oEventData.configEditorJSONModel;
         this._updateConfigModel(configEditorJSONModel);
         this._switchToView("configSectionPage");
-        this.getView().byId("pageMxConfigUI").setShowNavButton(true);
+        this._pageContainer.bindProperty("title", {
+            parts: ["hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_APP_TITLE", "configEditorModel>/configName", "hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB", "configEditorModel>/configVersion"],
+            formatter: function(title, configName, versionText, configVersion) {
+                return title + ": " + configName + " (" + versionText + " " + configVersion + ")";
+            }
+        });
+
+        // Dispatch breadcrumb update with config title
+        var configName = configEditorJSONModel.getProperty("/configName");
+        var configVersion = configEditorJSONModel.getProperty("/configVersion");
+        var rb = this.getView().getModel("hc.hph.cdw.config.ui.i18n").getResourceBundle();
+        var versionText = rb.getText("HPH_CDM_CFG_OVERVIEW_VERSION_NB");
+        var title = configName + " (" + versionText + " " + configVersion + ")";
+        document.dispatchEvent(new CustomEvent("cdm-breadcrumb-update", { detail: { title: title } }));
     };
 
 
@@ -209,16 +231,21 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
                 function(configEditorJSONModel) {
                     that._updateConfigModel(configEditorJSONModel);
                     that._switchToView("configSectionPage");
-                    that.getView().byId("pageMxConfigUI").setShowNavButton(true);
+                    that._pageContainer.bindProperty("title", {
+                        parts: ["hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_APP_TITLE", "configEditorModel>/configName", "hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB", "configEditorModel>/configVersion"],
+                        formatter: function(title, configName, versionText, configVersion) {
+                            return title + ": " + configName + " (" + versionText + " " + configVersion + ")";
+                        }
+                    });
+
+                    // Dispatch breadcrumb update with config title
+                    var configName = configEditorJSONModel.getProperty("/configName");
+                    var configVersion = configEditorJSONModel.getProperty("/configVersion");
+                    var rb = that.getView().getModel("hc.hph.cdw.config.ui.i18n").getResourceBundle();
+                    var versionText = rb.getText("HPH_CDM_CFG_OVERVIEW_VERSION_NB");
+                    var title = configName + " (" + versionText + " " + configVersion + ")";
+                    document.dispatchEvent(new CustomEvent("cdm-breadcrumb-update", { detail: { title: title } }));
                 });
-            this._pageContainer
-        .bindProperty("title",
-            {
-                parts: ["hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_APP_TITLE", "configEditorModel>/configName", "hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB", "configEditorModel>/configVersion"],
-                formatter : function(title, configName, versionText, configVersion) {
-                    return title + ": " + configName + " ("+ versionText + " " + configVersion + ")";
-                    }
-            });
     };
 
     /**

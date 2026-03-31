@@ -9,12 +9,16 @@ interface SetupBreadcrumbContextType {
   subPages: BreadcrumbItem[];
   setSubPages: (items: BreadcrumbItem[]) => void;
   clearSubPages: () => void;
+  onPluginNameClick: (() => void) | null;
+  setOnPluginNameClick: (callback: (() => void) | null) => void;
 }
 
 const SetupBreadcrumbContext = createContext<SetupBreadcrumbContextType>({
   subPages: [],
   setSubPages: () => {},
   clearSubPages: () => {},
+  onPluginNameClick: null,
+  setOnPluginNameClick: () => {},
 });
 
 interface SetupBreadcrumbProviderProps {
@@ -23,6 +27,7 @@ interface SetupBreadcrumbProviderProps {
 
 export const SetupBreadcrumbProvider: FC<SetupBreadcrumbProviderProps> = ({ children }) => {
   const [subPages, setSubPagesState] = useState<BreadcrumbItem[]>([]);
+  const [onPluginNameClick, setOnPluginNameClickState] = useState<(() => void) | null>(null);
 
   const setSubPages = useCallback((items: BreadcrumbItem[]) => {
     setSubPagesState(items);
@@ -32,8 +37,14 @@ export const SetupBreadcrumbProvider: FC<SetupBreadcrumbProviderProps> = ({ chil
     setSubPagesState([]);
   }, []);
 
+  const setOnPluginNameClick = useCallback((callback: (() => void) | null) => {
+    setOnPluginNameClickState(() => callback);
+  }, []);
+
   return (
-    <SetupBreadcrumbContext.Provider value={{ subPages, setSubPages, clearSubPages }}>
+    <SetupBreadcrumbContext.Provider
+      value={{ subPages, setSubPages, clearSubPages, onPluginNameClick, setOnPluginNameClick }}
+    >
       {children}
     </SetupBreadcrumbContext.Provider>
   );
@@ -42,4 +53,3 @@ export const SetupBreadcrumbProvider: FC<SetupBreadcrumbProviderProps> = ({ chil
 export const useSetupBreadcrumb = () => {
   return useContext(SetupBreadcrumbContext);
 };
-
