@@ -1470,11 +1470,11 @@
     },
     "Keeper": {
       "Package": "Keeper",
-      "Version": "0.2.1",
+      "Version": "0.2.0",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "An R package to review patient profiles for phenotype validation",
-      "Date": "2025-09-11",
+      "Date": "2024-06-18",
       "Authors@R": "c( person(\"Ostropolets\", \"Anna\", email = \"ostropolets@ohdsi.org\", role = c(\"aut\", \"cre\")), person(\"Schuemie\", \"Martjn\", role = c(\"aut\")), person(\"Observational Health Data Science and Informatics\", role = c(\"cph\")) )",
       "Maintainer": "Anna <ostropolets@ohdsi.org>",
       "Description": "An R package to review patient profiles for phenotype validation.",
@@ -1509,8 +1509,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "Keeper",
-      "RemoteRef": "v0.2.1",
-      "RemoteSha": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14"
+      "RemoteRef": "v0.2.0",
+      "RemoteSha": "0783796092dec65c75f1251c494314326f6494ba"
     },
     "MASS": {
       "Package": "MASS",
