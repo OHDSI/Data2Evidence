@@ -1509,7 +1509,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "Keeper",
-      "RemoteRef": "main",
+      "RemoteRef": "v0.2.1",
       "RemoteSha": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14"
     },
     "MASS": {
