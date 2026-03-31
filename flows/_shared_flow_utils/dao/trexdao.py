@@ -233,7 +233,7 @@ class TrexDao(DaoBase):
     ):
         pass
 
-    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple]):
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None):
         """
         Insert multiple rows into a specified table in one operation.
         
@@ -242,6 +242,7 @@ class TrexDao(DaoBase):
             table_name: Target table name
             columns: List of column names to insert into
             values: List of tuples, each tuple representing a row to insert
+            con: Optional existing connection to reuse (skips opening a new connection)
         """
         columns_str = ", ".join(columns)
         placeholders = ", ".join(["%s"] * len(columns))
@@ -251,7 +252,8 @@ class TrexDao(DaoBase):
             columns_str=pg_sql.SQL(columns_str),
             placeholders=pg_sql.SQL(placeholders)
         )
-        with self._get_connection() as con:
+
+        def _execute(con):
             cur = None
             try:
                 cur = con.cursor()
@@ -264,6 +266,12 @@ class TrexDao(DaoBase):
             finally:
                 if cur:
                     cur.close()
+
+        if con is not None:
+            _execute(con)
+        else:
+            with self._get_connection() as con:
+                _execute(con)
 
 
     # --- Delete methods ---
