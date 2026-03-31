@@ -44,7 +44,7 @@ export default {
         [
           {
             name: 'resetScaleCustom',
-            title: 'Reset',
+            title: 'Reset view',
             icon: {
               width: 857.1,
               height: 1000,
