@@ -1468,50 +1468,6 @@
       "Author": "Marc A. Suchard [aut, cre], Patrick Ryan [aut], Observational Health Data Sciences and Informatics [cph]",
       "Repository": "CRAN"
     },
-    "Keeper": {
-      "Package": "Keeper",
-      "Version": "0.2.1",
-      "Source": "GitHub",
-      "Type": "Package",
-      "Title": "An R package to review patient profiles for phenotype validation",
-      "Date": "2025-09-11",
-      "Authors@R": "c( person(\"Ostropolets\", \"Anna\", email = \"ostropolets@ohdsi.org\", role = c(\"aut\", \"cre\")), person(\"Schuemie\", \"Martjn\", role = c(\"aut\")), person(\"Observational Health Data Science and Informatics\", role = c(\"cph\")) )",
-      "Maintainer": "Anna <ostropolets@ohdsi.org>",
-      "Description": "An R package to review patient profiles for phenotype validation.",
-      "Depends": [
-        "DatabaseConnector (>= 5.0.0)",
-        "R (>= 4.0.0)"
-      ],
-      "Imports": [
-        "checkmate",
-        "dplyr",
-        "SqlRender",
-        "english",
-        "stringr"
-      ],
-      "Suggests": [
-        "rmarkdown",
-        "testthat",
-        "knitr",
-        "withr",
-        "Eunomia"
-      ],
-      "License": "Apache License",
-      "RoxygenNote": "7.3.3",
-      "VignetteBuilder": "knitr",
-      "URL": "https://ohdsi.github.io/Keeper/, https://github.com/OHDSI/Keeper",
-      "BugReports": "https://github.com/OHDSI/Keeper/issues",
-      "Roxygen": "list(markdown = TRUE)",
-      "Encoding": "UTF-8",
-      "Language": "en-US",
-      "Author": "Ostropolets Anna [aut, cre], Schuemie Martjn [aut], Observational Health Data Science and Informatics [cph]",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteUsername": "ohdsi",
-      "RemoteRepo": "Keeper",
-      "RemoteRef": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14",
-      "RemoteSha": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14"
-    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-64",
