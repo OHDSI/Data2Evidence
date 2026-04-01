@@ -12,8 +12,8 @@ export const CDM: FC<CDMProps> = ({ metadata }) => {
 
   useEffect(() => {
     const handleBreadcrumbUpdate = (event: Event) => {
-      const { title } = (event as CustomEvent).detail;
-      setSubPages([{ label: title }]);
+      const title = (event as CustomEvent<{ title?: string }>).detail?.title;
+      if (typeof title === "string") setSubPages([{ label: title }]);
     };
 
     const handleBreadcrumbClear = () => {
@@ -23,10 +23,12 @@ export const CDM: FC<CDMProps> = ({ metadata }) => {
     document.addEventListener("cdm-breadcrumb-update", handleBreadcrumbUpdate);
     document.addEventListener("cdm-breadcrumb-clear", handleBreadcrumbClear);
 
+    // Enable the breadcrumb link to trigger navigation back inside the UI5 controller.
     setOnPluginNameClick(() => {
       document.dispatchEvent(new CustomEvent("cdm-breadcrumb-navigate-back"));
     });
 
+    // Clean up all listeners and reset breadcrumb state on unmount.
     return () => {
       document.removeEventListener("cdm-breadcrumb-update", handleBreadcrumbUpdate);
       document.removeEventListener("cdm-breadcrumb-clear", handleBreadcrumbClear);

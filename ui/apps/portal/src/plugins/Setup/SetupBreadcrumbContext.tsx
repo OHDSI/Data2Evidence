@@ -12,6 +12,9 @@ interface SetupBreadcrumbContextType {
   onPluginNameClick: (() => void) | null;
   setOnPluginNameClick: (callback: (() => void) | null) => void;
 }
+interface SetupBreadcrumbProviderProps {
+  children: ReactNode;
+}
 
 const SetupBreadcrumbContext = createContext<SetupBreadcrumbContextType>({
   subPages: [],
@@ -20,10 +23,6 @@ const SetupBreadcrumbContext = createContext<SetupBreadcrumbContextType>({
   onPluginNameClick: null,
   setOnPluginNameClick: () => {},
 });
-
-interface SetupBreadcrumbProviderProps {
-  children: ReactNode;
-}
 
 export const SetupBreadcrumbProvider: FC<SetupBreadcrumbProviderProps> = ({ children }) => {
   const [subPages, setSubPagesState] = useState<BreadcrumbItem[]>([]);

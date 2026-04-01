@@ -133,7 +133,7 @@ const SetupBreadcrumbBar: FC<SetupBreadcrumbBarProps> = ({ setupLabel, pluginNam
         )}
         {subPages.map((item, index) => {
           const isLast = index === subPages.length - 1;
-          return isLast ? (
+          return isLast || !item.onClick ? (
             <Typography color="text.primary" key={index}>
               {item.label}
             </Typography>
