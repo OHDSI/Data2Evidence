@@ -120,7 +120,7 @@ const SetupBreadcrumbBar: FC<SetupBreadcrumbBarProps> = ({ setupLabel, pluginNam
 
   return (
     <div className="setup-overview__breadcrumb">
-      <Breadcrumbs separator="›">
+      <Breadcrumbs separator="›" aria-label="breadcrumb">
         <Link component="button" underline="always" onClick={onSetupClick}>
           {setupLabel}
         </Link>
