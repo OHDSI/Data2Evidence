@@ -40,7 +40,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
-  await page.locator('.flow-run-notification-dialog').getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // Wait for datasets to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
