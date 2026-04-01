@@ -14,6 +14,7 @@ export const i18nDefault = {
     CONCEPT_SETS__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     CONCEPT_SETS__SHARED: "Shared",
     CONCEPT_SETS__UPDATED: "Updated",
+    CONCEPT_SETS__NO_CONCEPT_SETS: "No concept sets to display",
     CONCEPT_SET_DELETE_DIALOG__DELETE_CONCEPT_SET: "Delete concept set",
     CONCEPT_SET_DELETE_DIALOG__ARE_YOU_SURE:
       "Are you sure you want to delete this concept set",
