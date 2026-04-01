@@ -319,6 +319,7 @@ export class MRIConfig {
                             source: attributePath,
                             ordered: dmAttribute.type === "num" || defaultValues.attributes.ordered,
                             cached: defaultValues.attributes.cached,
+                            colorByAxesValues: defaultValues.attributes.colorByAxesValues,
                             useRefText: Boolean(dmAttribute.referenceExpression) || defaultValues.attributes.useRefText,
                             useRefValue: Boolean(dmAttribute.referenceExpression) || defaultValues.attributes.useRefValue,
                             category: dmAttribute.type !== "freetext" && !dmAttribute.measureExpression && defaultValues.attributes.category,

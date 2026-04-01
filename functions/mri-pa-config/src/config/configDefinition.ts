@@ -248,6 +248,11 @@ function _getValidDefinition(cdwConfig) {
                 type: "boolean",
             },
             {
+                name: "colorByAxesValues",
+                mandatory: false,
+                type: "boolean",
+            },
+            {
                 name: "defaultBinSize",
                 mandatory: false,
                 type: "number",

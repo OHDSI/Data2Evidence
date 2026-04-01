@@ -7,6 +7,7 @@ export const configDefaultValues = {
     "attributes": {
         "ordered": false,
         "cached": true,
+        "colorByAxesValues": false,
         "useRefText": false,
         "useRefValue": false,
         "category": true,

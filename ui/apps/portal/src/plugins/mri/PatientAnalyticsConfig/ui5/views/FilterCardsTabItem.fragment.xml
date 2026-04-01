@@ -71,6 +71,12 @@
                         <CheckBox selected="false" select="onAllCachePressed"/>
                     </VBox>
                 </Column>
+                <Column hAlign="Center">
+                    <VBox>
+                        <Label text="{i18n>MRI_PA_CFG_ATTRIBUTE_COLOR_BY_AXES_VALUES_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_COLOR_BY_AXES_VALUES_IN_FILTER_TOOLTIP}" />
+                        <CheckBox selected="false" select="onAllColorByAxesValuesPressed"/>
+                    </VBox>
+                </Column>
                 <Column>
                     <Text text="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_COL}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_IN_FILTER_TOOLTIP}" />
                 </Column>
@@ -86,6 +92,7 @@
                 <CheckBox selected="{analyticsModel>measure}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_MEASURE_IN_FILTER_TOOLTIP}" />
                 <CheckBox selected="{analyticsModel>ordered}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_ORDERED_IN_FILTER_TOOLTIP}" />
                 <CheckBox selected="{analyticsModel>cached}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_CACHED_IN_FILTER_TOOLTIP}" />
+                <CheckBox selected="{analyticsModel>colorByAxesValues}" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_COLOR_BY_AXES_VALUES_IN_FILTER_TOOLTIP}" />
                 <Input class="defaultBinSizeInput" value="{analyticsModel>defaultBinSize}" type="Number" tooltip="{i18n>MRI_PA_CFG_ATTRIBUTE_BIN_SIZE_IN_FILTER_TOOLTIP}" />
             </ColumnListItem>
         </Table>

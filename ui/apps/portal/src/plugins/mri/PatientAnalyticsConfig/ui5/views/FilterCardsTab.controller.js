@@ -326,6 +326,30 @@ sap.ui.define(
       }
     };
 
+    FilterCardsTabController.prototype.onAllColorByAxesValuesPressed = function(oEvent) {
+      var newState = oEvent.getParameters().selected;
+      var parentTable = oEvent
+        .getSource()
+        .getParent()
+        .getParent()
+        .getParent();
+      var nbOfAttributes = parentTable
+        .getBindingContext("analyticsModel")
+        .getProperty("attributes").length;
+      var filtercardPath = parentTable
+        .getBindingContext("analyticsModel")
+        .getPath();
+
+      for (var i = 0; i < nbOfAttributes; i++) {
+        this.getView()
+          .getModel("analyticsModel")
+          .setProperty(
+            filtercardPath + "/attributes/" + i + "/colorByAxesValues",
+            newState
+          );
+      }
+    };
+
     /**
      * Handler for the change event on the switch to make all attributes initial.
      * @param {sap.ui.base.Event} oEvent SAPUI5 change Event.
