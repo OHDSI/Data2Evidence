@@ -40,6 +40,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         const configId = queryParams.configId;
         const configVersion = queryParams.configVersion;
         const datasetId = queryParams.datasetId;
+        const dialect = body.dialect;
         const queryType = queryParams.queryType;
         const bookmarkInputStr = queryParams.bookmarkInputStr;
         let ifrRequest = queryParams.ifrRequest;
@@ -130,7 +131,8 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             userSpecificSettings,
             placeholderMap,
             pluginOptionalParams,
-            censoringThreshold
+            censoringThreshold,
+            dialect
         ).generateQuery();
 
         // set cdm config metadata
@@ -300,7 +302,7 @@ function enrichConfigWithBasicDataInteraction(
         placeholder: "@PATIENT",
         attributeTables: [],
         hierarchy: false,
-        time: true,
+        time: false,
         oneToN: false,
         condition: false,
     });

@@ -17,7 +17,7 @@ export const SetupOverview: FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as LocationState;
-  const enabledPlugins = useMemo(() => plugins.setup?.filter((plugin: IPluginItem) => plugin.enabled) || [], []);
+  const enabledPlugins = useMemo(() => plugins.setup?.filter((plugin: IPluginItem) => plugin.visible ?? plugin.enabled) || [], []);
   const state = useMemo(() => locationState || { state: { tab: "setup", subTab: null } }, [locationState]);
 
   const handleOpenPlugin = useCallback(
