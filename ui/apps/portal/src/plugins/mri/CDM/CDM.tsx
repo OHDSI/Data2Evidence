@@ -28,6 +28,11 @@ export const CDM: FC<CDMProps> = ({ metadata }) => {
       document.dispatchEvent(new CustomEvent("cdm-breadcrumb-navigate-back"));
     });
 
+    // Request UI5 to re-emit breadcrumb state in case the NavContainer
+    // is still on a sub-page from a previous session (the UI5 ComponentContainer
+    // is reused across React mount/unmount cycles by MRIComponent).
+    document.dispatchEvent(new CustomEvent("cdm-breadcrumb-sync"));
+
     // Clean up all listeners and reset breadcrumb state on unmount.
     return () => {
       document.removeEventListener("cdm-breadcrumb-update", handleBreadcrumbUpdate);

@@ -90,6 +90,23 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
         };
         document.addEventListener("cdm-breadcrumb-navigate-back", this._handleBreadcrumbNavigateBack);
 
+        // Listen for breadcrumb sync request from React to re-emit current breadcrumb state
+        this._handleBreadcrumbSync = function () {
+            var currentPage = that._navContainer.getCurrentPage();
+            if (currentPage.getViewName() === "hc.hph.cdw.config.ui.views.ConfigSection") {
+                var oModel = that.getView().getModel(ConfigUtils.models.CONFIG_EDITOR);
+                if (oModel) {
+                    var configName = oModel.getProperty("/configName");
+                    var configVersion = oModel.getProperty("/configVersion");
+                    var rb = that.getView().getModel("hc.hph.cdw.config.ui.i18n").getResourceBundle();
+                    var versionText = rb.getText("HPH_CDM_CFG_OVERVIEW_VERSION_NB");
+                    var title = configName + " (" + versionText + " " + configVersion + ")";
+                    document.dispatchEvent(new CustomEvent("cdm-breadcrumb-update", { detail: { title: title } }));
+                }
+            }
+        };
+        document.addEventListener("cdm-breadcrumb-sync", this._handleBreadcrumbSync);
+
     };
 
     MxConfigUIController.prototype.onBeforeRendering = function() {
@@ -141,8 +158,9 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
             this
         );
 
-        // Remove breadcrumb navigate-back listener
+        // Remove breadcrumb navigate-back and sync listeners
         document.removeEventListener("cdm-breadcrumb-navigate-back", this._handleBreadcrumbNavigateBack);
+        document.removeEventListener("cdm-breadcrumb-sync", this._handleBreadcrumbSync);
 
         // destroy the model manager in order to unsubscribe from events as well
         this._oModelMgr.destroy();
