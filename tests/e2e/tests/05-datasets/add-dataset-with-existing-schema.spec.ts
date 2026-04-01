@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.locator('.flow-run-notification-dialog').getByRole('button', { name: 'Close' }).click()
   // Wait for table to load first
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
@@ -137,7 +137,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetExistingCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
-  await page.getByRole('button', { name: 'Close' }).click()
+  await page.locator('.flow-run-notification-dialog').getByRole('button', { name: 'Close' }).click()
   // Wait for table to load and datasets to appear
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible()
