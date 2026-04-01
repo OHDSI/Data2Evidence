@@ -258,18 +258,21 @@ jobs:
             --network=host \
             --ipc=host \
             -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/tests:/work/tests" \
             -v "$(pwd)/ctrf:/work/ctrf" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
 
-      - name: Upload Error Context
-        if: always() # Always run, even if the previous step fails
+      - name: Upload e2e test artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: error-context
-          path: tests/e2e/test-results/**/*
+          name: e2e-test-artifacts
+          path: |
+            tests/e2e/test-results/**/*
+            tests/e2e/tests/**/*-snapshots/**/*
 
       - name: Logs
         if: success() || failure()
