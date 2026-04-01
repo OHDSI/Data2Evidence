@@ -12,7 +12,7 @@ import ConnectionInterface = connLib.ConnectionInterface;
 import { pipeline } from "node:stream/promises";
 import { Transform, Writable } from "node:stream";
 import { promisify } from "node:util";
-
+import { env } from "../../env";
 
 const logger = CreateLogger("analytics-log");
 
@@ -517,13 +517,12 @@ export class CohortEndpoint {
                 // console.log(row.SUBJECT_ID)
                 this.batch.push([row.SUBJECT_ID, row.COHORT_START_DATE, row.COHORT_END_DATE]);
         
-                if (this.batch.length >= 10000) {
+                if (this.batch.length >= env.ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT[this.dialect]) {
                     try {
                         await bulkInsert(
                             insertCohortQueryInBatches,
                             this.batch
                         );
-                        //
                         this.batch = [];
                         callback();
                     } catch (err) {
