@@ -162,6 +162,14 @@
               "dnBaseUrl": "https://$$FQDN$$/",
               "mappingSuggestion": true
             }
+          },
+          {
+            "type": "app",
+            "autoMount": true,
+            "visible": false,
+            "name": "Concepts",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
+            "route": "concepts"
           }
         ],
         "researcher": [
@@ -443,6 +451,14 @@
             "featureFlag": "d2eLogs",
             "defaultEnabled": true,
             "route": "docker-logs"
+          },
+          {
+            "type": "app",
+            "autoMount": true,
+            "visible": false,
+            "name": "Concepts",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
+            "route": "concepts"
           }
         ]
       }
