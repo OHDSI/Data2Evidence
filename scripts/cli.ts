@@ -468,6 +468,8 @@ class D2ECli {
     } else if (command === "pull") {
       cmd = `${cmd} pull`;
     }
+    console.log(`[build_docker_command]cmd:\n${cmd}`);
+    console.log(`[build_docker_command]envVars:\n${JSON.stringify(envVars)}`);
     return { cmd, env: envVars };
   }
 
@@ -484,7 +486,7 @@ class D2ECli {
     );
   }
   setup_zx_cmd() {
-    console.log("Setting up zx command...");
+    // console.log("Setting up zx command...");
     let zx_cmd: string;
     const zxBin = path.join(
       `${this.node_modules_path}`,
@@ -562,6 +564,65 @@ class D2ECli {
       console.error(
         `check_setupdemo exited with code ${check_setupdemo.status}`,
       );
+      process.exit(1);
+    }
+  }
+  setupHTTPTestEnv() {
+    console.log("Setting up http test database...");
+    this.patch_demodb();
+    const database_host = `${this.PROJECT_NAME}-demodb`;
+    const zx_cmd = this.setup_zx_cmd();
+    const setupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setuphttptestenv.mjs -n ${this.ENVFILE}`;
+    const setupHTTPTestEnv = spawnSync(setupHTTPTestEnvCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (setupHTTPTestEnv.error) {
+      console.error("Failed to run script:", setupHTTPTestEnv.error);
+      process.exit(1);
+    }
+    if (setupHTTPTestEnv.status !== 0) {
+      console.error(`setupdemo exited with code ${setupHTTPTestEnv.status}`);
+      process.exit(1);
+    }
+
+    const checkSetupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
+    const check_setuphttptestenv = spawnSync(checkSetupHTTPTestEnvCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (check_setuphttptestenv.error) {
+      console.error("Failed to run script:", check_setuphttptestenv.error);
+      process.exit(1);
+    }
+    if (check_setuphttptestenv.status !== 0) {
+      console.error(
+        `check_setupdemo exited with code ${check_setuphttptestenv.status}`,
+      );
+      process.exit(1);
+    }
+  }
+
+  getbearertoken() {
+    // console.log("getting bearer token...");
+    // console.log(`===> all env vars: \n ${JSON.stringify(process.env)}`);
+    // this.patch_demodb();
+    const database_host = `${this.PROJECT_NAME}-demodb`;
+    const zx_cmd = this.setup_zx_cmd();
+    const getBearerTokenCmd = `${zx_cmd} ${this.node_modules_path}/scripts/get-bearer-token.mjs -n ${this.ENVFILE}`;
+    const getBearerToken = spawnSync(getBearerTokenCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (getBearerToken.error) {
+      console.error("Failed to run script:", getBearerToken.error);
+      process.exit(1);
+    }
+    if (getBearerToken.status !== 0) {
+      console.error(`setupdemo exited with code ${getBearerToken.status}`);
       process.exit(1);
     }
   }
@@ -1074,7 +1135,26 @@ class D2ECli {
         this.load_env_variables();
         this.setupdemo();
       });
-
+    this.program
+      .command("setuphttptestenv")
+      .description(
+        "Load d2e services. Requires d2e init and d2e setup to be run."
+      )
+      .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
+        this.setupHTTPTestEnv();
+      });
+    this.program
+      .command("getbearertoken")
+      .description(
+        "Load d2e services. Requires d2e init and d2e setup to be run."
+      )
+      .action(async () => {
+        dotenvConfig({ path: this.ENVFILE });
+        this.load_env_variables();
+        this.getbearertoken();
+      });
     this.program
       .command("setupdemohana")
       .description(
