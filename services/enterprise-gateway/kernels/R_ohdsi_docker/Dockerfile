@@ -66,7 +66,6 @@ RUN git config --global advice.detachedHead false
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
-ENV R_REMOTES_UPGRADE="always"
 
 # OpenJDK 11
 RUN arch="$(dpkg --print-architecture)"; case "$arch" in 'amd64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_x64_linux_11.0.16_8.tar.gz'; ;; 'arm64') downloadUrl='https://github.com/AdoptOpenJDK/openjdk11-upstream-binaries/releases/download/jdk-11.0.16%2B8/OpenJDK11U-jdk_aarch64_linux_11.0.16_8.tar.gz'; ;; *) echo >&2 "error: unsupported architecture: '$arch'"; exit 1 ;; esac; wget --progress=dot:giga -O openjdk.tgz "$downloadUrl"; mkdir -p ${JAVA_HOME}; tar --extract --file openjdk.tgz --directory "$JAVA_HOME" --strip-components 1 --no-same-owner ;
@@ -77,8 +76,7 @@ RUN update-alternatives --install /usr/bin/java java ${JAVA_HOME}/bin/java 100 &
 # Verify the installation
 RUN java -version && R CMD javareconf
 
-# install renv package
-RUN Rscript -e 'install.packages("renv", repos="https://cran.r-project.org")'
+RUN Rscript -e 'install.packages("remotes", repos="https://cran.r-project.org"); remotes::install_version("renv", version="1.1.6", repos="https://cran.r-project.org")'
 
 # COPY kernel launcher scripts and files from elyra-base
 COPY --from=elyra-base /usr/local/bin/jupyter_enterprise_gateway_kernel_image_files*.tar.gz /usr/local/bin/

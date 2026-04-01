@@ -96,10 +96,18 @@ export interface ILogtoUser {
   id: string
   username: string
   primaryEmail: string | undefined
+  isSuspended: boolean
 }
 
 export interface ILogtoUserCreated {
   id: string
+}
+
+export interface ILogtoRole {
+  id: string
+  name: string
+  description: string
+  type: string
 }
 
 export interface UserAddRequest {
@@ -135,4 +143,9 @@ export interface AzureADSetupRequest {
 export interface IDataset {
   id: string
   token_dataset_code: string
+}
+
+export interface IPortalDataset {
+  id: string
+  tokenStudyCode: string
 }
