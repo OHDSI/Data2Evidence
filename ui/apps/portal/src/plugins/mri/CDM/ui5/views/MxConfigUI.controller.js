@@ -199,8 +199,7 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
         this._navContainer.to(this.getView().byId(viewId));
     };
     
-    MxConfigUIController.prototype._configChanged = function(sChannelId, sEventId, oEventData) {
-        var configEditorJSONModel = oEventData.configEditorJSONModel;
+    MxConfigUIController.prototype._applyConfigModel = function(configEditorJSONModel) {
         this._updateConfigModel(configEditorJSONModel);
         this._switchToView("configSectionPage");
         this._pageContainer.bindProperty("title", {
@@ -219,6 +218,11 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
         document.dispatchEvent(new CustomEvent("cdm-breadcrumb-update", { detail: { title: title } }));
     };
 
+    MxConfigUIController.prototype._configChanged = function(sChannelId, sEventId, oEventData) {
+        var configEditorJSONModel = oEventData.configEditorJSONModel;
+        this._applyConfigModel(configEditorJSONModel);
+    };
+
 
     MxConfigUIController.prototype._configVersionItemChanged = function(sChannelId, sEventId, oEventData) {
         var that = this;
@@ -229,22 +233,7 @@ var MxConfigUIController = Controller.extend("hc.hph.cdw.config.ui.views.MxConfi
         };
         this._oModelMgr.buildConfigEditorModel(meta,
                 function(configEditorJSONModel) {
-                    that._updateConfigModel(configEditorJSONModel);
-                    that._switchToView("configSectionPage");
-                    that._pageContainer.bindProperty("title", {
-                        parts: ["hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_APP_TITLE", "configEditorModel>/configName", "hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_OVERVIEW_VERSION_NB", "configEditorModel>/configVersion"],
-                        formatter: function(title, configName, versionText, configVersion) {
-                            return title + ": " + configName + " (" + versionText + " " + configVersion + ")";
-                        }
-                    });
-
-                    // Dispatch breadcrumb update with config title
-                    var configName = configEditorJSONModel.getProperty("/configName");
-                    var configVersion = configEditorJSONModel.getProperty("/configVersion");
-                    var rb = that.getView().getModel("hc.hph.cdw.config.ui.i18n").getResourceBundle();
-                    var versionText = rb.getText("HPH_CDM_CFG_OVERVIEW_VERSION_NB");
-                    var title = configName + " (" + versionText + " " + configVersion + ")";
-                    document.dispatchEvent(new CustomEvent("cdm-breadcrumb-update", { detail: { title: title } }));
+                    that._applyConfigModel(configEditorJSONModel);
                 });
     };
 
