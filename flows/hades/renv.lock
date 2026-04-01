@@ -1470,7 +1470,7 @@
     },
     "Keeper": {
       "Package": "Keeper",
-      "Version": "0.2.0",
+      "Version": "0.2.1",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "An R package to review patient profiles for phenotype validation",
@@ -1509,8 +1509,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "Keeper",
-      "RemoteRef": "v0.2.0",
-      "RemoteSha": "0783796092dec65c75f1251c494314326f6494ba"
+      "RemoteRef": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14",
+      "RemoteSha": "2848e0b7df0eb743d3f81695d00aba3fc86a5c14"
     },
     "MASS": {
       "Package": "MASS",
