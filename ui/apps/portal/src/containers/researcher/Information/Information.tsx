@@ -358,6 +358,20 @@ export const Information: FC = () => {
               ) : (
                 <>
                   <SubTitle>{getText(i18nKeys.INFORMATION__OVERVIEW)}</SubTitle>
+                  <div className="dqd__info__text">
+                    The following data quality measures are standard metrics developed by the Observational Health Data
+                    Sciences and Informatics (OHDSI) consortium, and should be interpreted relative to previous metrics
+                    provided for the same Mount Sinai clinical dataset. Since different healthcare organizations have
+                    different policies, procedures, and workflows, comparisons of these metrics between hospitals and
+                    organizations should be done with caution (since in most cases it would be considered an "apples to
+                    oranges" comparison). Subtle changes in clinical practices might produce big changes in these
+                    metrics, but may not necessarily indicate data quality issues per se. To understand more about these
+                    metrics, please visit{" "}
+                    <a href="https://github.com/OHDSI/DataQualityDashboard" target="_blank" rel="noreferrer">
+                      https://github.com/OHDSI/DataQualityDashboard
+                    </a>
+                    .
+                  </div>
                   <DQDJobResults
                     datasetId={activeDatasetId}
                     datasetName={dataset?.schemaName}
