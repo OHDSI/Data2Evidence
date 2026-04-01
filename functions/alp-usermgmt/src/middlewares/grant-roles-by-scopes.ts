@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 import { createLogger } from '../Logger'
 import { B2cGroupService, UserGroupService, UserService } from '../services'
-import { env } from '../env'
+import { env, getAutoGrantDatasetCodes } from '../env'
 import { LogtoAPI } from '../api'
 import { IDataset, ITokenUser } from '../types'
 import { UserField } from '../repositories'
@@ -37,7 +37,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       logger.info(`Assigning roles for user with subject "${sub}"`)
     }
 
-    const { scope, email } = token as { scope: string; email: string }
+    const { scope, roles, email } = token as { scope: string, roles: string[]; email: string }
     let user = await userService.getUserByIdpUserId(sub)
     let userId = user?.id
 
@@ -102,7 +102,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         return res.status(500).send({ message: `Tenant not found` })
       }
 
-      const scopes = scope?.split(" ") || []
+      const scopes = roles || scope?.split(" ") || []
       await grantOrRevokeSystemRole(userId, ROLES.ALP_SYSTEM_ADMIN, scopes.includes(IDP_SCOPE_ROLE.SYSTEM_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_USER_ADMIN, scopes.includes(IDP_SCOPE_ROLE.USER_ADMIN))
       await grantOrRevokeSystemRole(userId, ROLES.ALP_DASHBOARD_VIEWER, scopes.includes(IDP_SCOPE_ROLE.DASHBOARD_VIEWER))
@@ -114,8 +114,8 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
           .map(x => x.replace(IDP_SCOPE_ROLE.DATASET_RESEARCHER_PREFIX, ''))
 
         // Auto-grant specific datasets
-        if (env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) {
-          const autoGrantCodes = env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+        const autoGrantCodes = getAutoGrantDatasetCodes()
+        if (autoGrantCodes.length > 0) {
           grantDatasetCodes = [...new Set([...grantDatasetCodes, ...autoGrantCodes])]
         }
 
@@ -202,11 +202,8 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
 const addUserToGroup = async (userId: string, groupId: string) => {
   const userGroupService = Container.get(UserGroupService)
 
-  const member = await userGroupService.getUserGroup(userId, groupId)
-  if (!member?.id) {
-    logger.info(`Grant ${userId} to ${groupId}`)
-    await userGroupService.addUserToGroup(userId, groupId)
-  }
+  logger.info(`Grant ${userId} to ${groupId}`)
+  await userGroupService.registerUserToGroup(userId, groupId, undefined, { skipUserValidation: true })
 }
 
 const removeUserFromGroup = async (userId: string, groupId: string) => {
