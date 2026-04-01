@@ -128,6 +128,7 @@ const SystemAdmin: FC = () => {
   }, [feedback, clearFeedback]);
 
   const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
+
   return (
     <div className="systemadmin__container">
       <Header portalType="systemadmin" systemAdminPlugins={sortedPlugins} />
@@ -158,6 +159,7 @@ const SystemAdmin: FC = () => {
                   system={CURRENT_SYSTEM}
                   data={item?.data}
                   basePath="systemadmin"
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>

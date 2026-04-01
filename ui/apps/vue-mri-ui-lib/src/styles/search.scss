@@ -1,5 +1,5 @@
-@import './mixins';
-@import './patientAnalytics.scss';
+@use './mixins' as *;
+@use './patientAnalytics.scss' as *;
 
 .searchContainer {
   @include wrapper-components;

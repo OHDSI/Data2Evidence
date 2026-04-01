@@ -2,6 +2,8 @@ import type { Component } from 'vue'
 import { getNavigationConfig } from './config'
 import type { NavigationItem } from '../types/navigation'
 
+const pluginModules = import.meta.glob<{ default: Component }>(['../plugins/**/*.{ts,vue}', '!../plugins/vuetify.ts'])
+
 let componentsCache: NavigationItem[] = []
 let componentInstanceCache = new Map<string, Component>()
 
@@ -21,7 +23,14 @@ async function loadComponent(componentPath: string) {
       return componentInstanceCache.get(componentPath)
     }
 
-    const component = await import(/* webpackChunkName: "dynamic-components" */ `../plugins/${componentPath}`)
+    const key = `../plugins/${componentPath}`
+    const loader = pluginModules[key]
+    if (!loader) {
+      console.error('No matching plugin module found:', componentPath)
+      return null
+    }
+
+    const component = await loader()
     const componentInstance = component.default || component
     componentInstanceCache.set(componentPath, componentInstance)
 

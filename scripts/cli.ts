@@ -98,10 +98,10 @@ class D2ECli {
     const LOGTO_API_M2M_CLIENT_ID = `${this.generate_random_password(21)}`;
     const LOGTO_API_M2M_CLIENT_SECRET = `${this.generate_random_password(30)}`;
     const LOGTO__CLIENTID_PASSWORD__BASIC_AUTH = Buffer.from(
-      `${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}`
+      `${LOGTO_API_M2M_CLIENT_ID}:${LOGTO_API_M2M_CLIENT_SECRET}`,
     ).toString("base64");
     console.log(
-      `. INFO generate public & private keys - DB_CREDENTIALS__INTERNAL`
+      `. INFO generate public & private keys - DB_CREDENTIALS__INTERNAL`,
     );
     const DB_CREDENTIALS__INTERNAL__PRIVATE_KEY_PASSPHRASE =
       this.generate_random_password(41);
@@ -136,7 +136,7 @@ class D2ECli {
     this.SUPABASE_STORAGE_JWT_TOKEN = this.generate_jwt(
       this.SUPABASE_STORAGE_JWT_SECRET,
       ROLE,
-      ISSUER
+      ISSUER,
     );
     const envVariables = {
       CADDY__D2E__PUBLIC_FQDN: `${this.CADDY__D2E__PUBLIC_FQDN}`,
@@ -153,40 +153,42 @@ class D2ECli {
       LOGTO_API_M2M_CLIENT_ID: `${LOGTO_API_M2M_CLIENT_ID}`,
       LOGTO_API_M2M_CLIENT_SECRET: `${LOGTO_API_M2M_CLIENT_SECRET}`,
       MINIO__SECRET_KEY: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       PG_ADMIN_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       PG_SUPER_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       PG_WRITE_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       PG_STUDY_RESULTS_ADMIN_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       PG_STUDY_RESULTS_READ_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       DEMO__DB_PASSWORD: `${this.generate_random_password(6)}`,
       REDIS_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       DICOM__HEALTH_CHECK_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       TLS__CADDY_DIRECTIVE: `${this.TLS__CADDY_DIRECTIVE}`,
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
+      // TODO: enable this on next PR
+      // USER_MGMT__ROLE_SOURCE: `logto`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: `${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}`,
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
-        this.DEFAULT_PASSWORD_LENGTH
+        this.DEFAULT_PASSWORD_LENGTH,
       )}`,
       DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY:
         DB_CREDENTIALS__INTERNAL__DECRYPT_PRIVATE_KEY.trim(),
@@ -236,7 +238,7 @@ class D2ECli {
       .description("Usage: d2e [OPTIONS] COMMAND")
       .option(
         "-d, --function-path <path>",
-        "[PATH] Development mode. [PATH] is the path to functions"
+        "[PATH] Development mode. [PATH] is the path to functions",
       )
       .option("-e, --demo", "Include demo database")
       .option("-i, --dicom", "Include DICOM Server")
@@ -246,26 +248,26 @@ class D2ECli {
       .option("--hades", "")
       .option(
         "-c, --composeFile <path>",
-        "[PATH] is path to an additional docker compose file"
+        "[PATH] is path to an additional docker compose file",
       )
       .option("-t, --docker-context <context>", "[CONTEXT] Use docker context")
       .option(
         "-v, --version <version>",
-        "[VERSION] Version of the d2e services to use"
+        "[VERSION] Version of the d2e services to use",
       )
       .option(
         "-a, --args <arguments>",
-        "[ARGUMENTS] Additional arguments for docker-compose"
+        "[ARGUMENTS] Additional arguments for docker-compose",
       )
       .option("-n, --env-file <file>", "[FILE] Path to environment file")
       .option("-p, --port <port>", "[PORT] Port number to use")
       .option(
         "-s, --services <services>",
-        "[SERVICES] Comma-separated list of services to start/stop"
+        "[SERVICES] Comma-separated list of services to start/stop",
       )
       .option(
         "--pull",
-        "Always pull the latest images before starting services"
+        "Always pull the latest images before starting services",
       );
   }
   initialise_node_modules_path(): string {
@@ -274,55 +276,55 @@ class D2ECli {
       this.node_modules_path = process.env.D2ECLI_NODE_MODULES_PATH;
     } else if (
       fs.existsSync(
-        path.join(this.script_full_path, "../lib/node_modules/d2e/")
+        path.join(this.script_full_path, "../lib/node_modules/d2e/"),
       )
     ) {
       this.node_modules_path = path.join(
         this.script_full_path,
-        "../lib/node_modules/d2e/"
+        "../lib/node_modules/d2e/",
       );
     } else if (fs.existsSync(path.join(this.script_full_path, "../d2e/"))) {
       this.node_modules_path = path.join(this.script_full_path, "../d2e/");
     } else if (
       fs.existsSync(
-        path.join(this.script_full_path, "/../lib/node_modules/@ohdsi/d2e/")
+        path.join(this.script_full_path, "/../lib/node_modules/@ohdsi/d2e/"),
       )
     ) {
       this.node_modules_path = path.join(
         this.script_full_path,
-        "/../lib/node_modules/@ohdsi/d2e/"
+        "/../lib/node_modules/@ohdsi/d2e/",
       );
     } else if (
       fs.existsSync(path.join(this.script_full_path, "/../@ohdsi/d2e/"))
     ) {
       this.node_modules_path = path.join(
         this.script_full_path,
-        "/../@ohdsi/d2e/"
+        "/../@ohdsi/d2e/",
       );
     } else if (
       fs.existsSync(
         path.join(
           this.script_full_path,
-          "/../lib/node_modules/@data2evidence/cli/"
-        )
+          "/../lib/node_modules/@data2evidence/cli/",
+        ),
       )
     ) {
       this.node_modules_path = path.join(
         this.script_full_path,
-        "/../lib/node_modules/@data2evidence/cli/"
+        "/../lib/node_modules/@data2evidence/cli/",
       );
     } else if (
       fs.existsSync(path.join(this.script_full_path, "/../@data2evidence/cli/"))
     ) {
       this.node_modules_path = path.join(
         this.script_full_path,
-        "/../@data2evidence/cli/"
+        "/../@data2evidence/cli/",
       );
     } else if (file_name === "cli.js") {
       this.node_modules_path = path.join(this.script_full_path, "/..");
     } else {
       console.log(
-        `Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Exiting`
+        `Can't find d2e cli node_modules dir. You can set D2ECLI_NODE_MODULES_PATH to define the path. Exiting`,
       );
       process.exit(1);
     }
@@ -384,27 +386,27 @@ class D2ECli {
     const iat = Math.floor(Date.now() / 1000);
     const exp = iat + 157788000; // 5 years expiration
     const header = this.base64UrlEncode(
-      JSON.stringify({ alg: "HS256", typ: "JWT" })
+      JSON.stringify({ alg: "HS256", typ: "JWT" }),
     );
     const payloadObj = { role, issuer, iat, exp };
     const payload = this.base64UrlEncode(JSON.stringify(payloadObj));
     const data = `${header}.${payload}`;
     const signature = this.base64UrlEncode(
-      crypto.createHmac("sha256", secret).update(data).digest()
+      crypto.createHmac("sha256", secret).update(data).digest(),
     );
     return `${header}.${payload}.${signature}`;
   }
 
   build_docker_command(
     options: CliOptions,
-    command: string
+    command: string,
   ): { cmd: string; env: NodeJS.ProcessEnv } {
     const dockerbasecmd = ["docker"];
     dockerbasecmd.push("--log-level", this.DOCKER_LOG_LEVEL);
     dockerbasecmd.push("compose");
     dockerbasecmd.push(
       "--file",
-      `${this.node_modules_path}/docker-compose.yml`
+      `${this.node_modules_path}/docker-compose.yml`,
     );
     if (options.demo) dockerbasecmd.push("--profile", "demodb");
     if (options.dicom) dockerbasecmd.push("--profile", "dicom");
@@ -478,7 +480,7 @@ class D2ECli {
       rl.question(query, (answer) => {
         rl.close();
         resolve(answer);
-      })
+      }),
     );
   }
   setup_zx_cmd() {
@@ -488,14 +490,14 @@ class D2ECli {
       `${this.node_modules_path}`,
       "node_modules",
       ".bin",
-      "zx"
+      "zx",
     );
     const zxCliJs = path.join(
       `${this.node_modules_path}`,
       "node_modules",
       "zx",
       "build",
-      "cli.js"
+      "cli.js",
     );
 
     if (fs.existsSync(zxCliJs)) {
@@ -558,7 +560,7 @@ class D2ECli {
     }
     if (check_setupdemo.status !== 0) {
       console.error(
-        `check_setupdemo exited with code ${check_setupdemo.status}`
+        `check_setupdemo exited with code ${check_setupdemo.status}`,
       );
       process.exit(1);
     }
@@ -594,7 +596,7 @@ class D2ECli {
     }
     if (check_setupdemohana.status !== 0) {
       console.error(
-        `check_setupdemohana exited with code ${check_setupdemohana.status}`
+        `check_setupdemohana exited with code ${check_setupdemohana.status}`,
       );
       process.exit(1);
     }
@@ -628,6 +630,47 @@ class D2ECli {
       process.exit(1);
     }
   }
+
+  syncroles() {
+    console.log("Syncing roles...");
+    dotenvConfig({ path: this.ENVFILE });
+    this.load_env_variables();
+    const zx_cmd = this.setup_zx_cmd();
+    const syncrolesCmd = `${zx_cmd} ${this.node_modules_path}/scripts/syncroles.mjs -n ${this.ENVFILE}`;
+    const syncrolesProc = spawnSync(syncrolesCmd, [], {
+      env: { ...process.env, PORT: this.port },
+      stdio: "inherit",
+      shell: true,
+    });
+    if (syncrolesProc.error) {
+      console.error("Failed to run script:", syncrolesProc.error);
+      process.exit(1);
+    }
+    if (syncrolesProc.status !== 0) {
+      console.error(`syncroles exited with code ${syncrolesProc.status}`);
+      process.exit(1);
+    }
+
+    console.log("Restarting services...");
+    dotenvConfig({ path: this.ENVFILE });
+    const { cmd, env } = this.build_docker_command(
+      this.program.opts(),
+      "start",
+    );
+    console.log(`Executing command: ${cmd}`);
+    const proc = spawn(cmd, {
+      stdio: "inherit",
+      shell: true,
+      env: env,
+    });
+    proc.on("close", (code) => {
+      if (code === 0) {
+        console.log("Process completed successfully.");
+      } else {
+        console.log(`Process exited with code ${code}`);
+      }
+    });
+  }
   async pull_image(imageName: string, tagName: string): Promise<void> {
     const fullImageName = `${this.DOCKER_IMAGE_PREFIX}${imageName}:${tagName}`;
     const cmd_pull = `docker pull --platform linux/amd64 ${fullImageName}`;
@@ -651,7 +694,7 @@ class D2ECli {
   updateTag() {
     const kernelPath = path.join(
       this.node_modules_path,
-      "services/enterprise-gateway/kernels/R_ohdsi_docker/kernel.json"
+      "services/enterprise-gateway/kernels/R_ohdsi_docker/kernel.json",
     );
     console.log(`Updating tag of R Jupyter Kernel at ${kernelPath}`);
     if (!fs.existsSync(kernelPath)) {
@@ -681,17 +724,17 @@ class D2ECli {
         let init_choice: string;
         if (process.env.init_choice) {
           console.log(
-            "CI environment detected. Auto-accepting to overwite all values in .env file..."
+            "CI environment detected. Auto-accepting to overwite all values in .env file...",
           );
           init_choice = "y";
         } else {
           init_choice = await this.user_input(
-            "WARNING: Re-running this command again will require you to run `d2e clean` to remove all existing containers and volumes before starting services again with `d2e start`.\nDo you wish to overwrite .env file? (y/n): "
+            "WARNING: Re-running this command again will require you to run `d2e clean` to remove all existing containers and volumes before starting services again with `d2e start`.\nDo you wish to overwrite .env file? (y/n): ",
           );
         }
         if (init_choice.toLowerCase() !== "y") {
           console.log(
-            "Aborting initialization to prevent overwriting .env file."
+            "Aborting initialization to prevent overwriting .env file.",
           );
           return;
         }
@@ -704,13 +747,13 @@ class D2ECli {
     this.program
       .command("start")
       .description(
-        "Starts d2e services. Requires d2e init and d2e setup to be run."
+        "Starts d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         console.log("Starting services...");
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "start"
+          "start",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -735,25 +778,25 @@ class D2ECli {
         console.log("This will initialize SAP HANA Express Edition.");
         console.log("By proceeding, you agree to the SAP License Agreement.");
         console.log(
-          "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf"
+          "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf",
         );
         console.log("\nNote that SAP HANA JDBC driver is required. Please:");
         console.log(
-          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar"
+          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar",
         );
         console.log(
-          "  2. Create a tmp/drivers/ directory in your current working directory"
+          "  2. Create a tmp/drivers/ directory in your current working directory",
         );
         console.log("  3. Place the downloaded .jar file in tmp/drivers/");
         let license_agreement: string;
         if (process.env.ACCEPT_SAP_LICENSE) {
           console.log(
-            "CI environment detected. Auto-accepting SAP license terms..."
+            "CI environment detected. Auto-accepting SAP license terms...",
           );
           license_agreement = "y";
         } else {
           license_agreement = await this.user_input(
-            "Do you agree to the SAP license terms and want to continue? (y/N): "
+            "Do you agree to the SAP license terms and want to continue? (y/N): ",
           );
         }
         if (
@@ -761,19 +804,20 @@ class D2ECli {
           license_agreement.toLowerCase() === "yes"
         ) {
           console.log(
-            "License accepted. Proceeding with HANA initialization..."
+            "License accepted. Proceeding with HANA initialization...",
           );
         } else {
           console.log("License not accepted. Aborting HANA initialization.");
           return;
         }
         const cwd = process.cwd();
-        const hanapw = process.env.HANAPW || `${this.generate_random_password(16)}`;
+        const hanapw =
+          process.env.HANAPW || `${this.generate_random_password(16)}`;
         this.hanapw = hanapw;
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY: `"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"`,
-          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
@@ -781,7 +825,7 @@ class D2ECli {
         fs.writeFileSync(this.ENVFILE, envContent, { flag: "a" });
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "inithana"
+          "inithana",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -806,7 +850,7 @@ class D2ECli {
         console.log("Stopping services...");
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "stop"
+          "stop",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -829,7 +873,7 @@ class D2ECli {
         console.log("Building services...");
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "build"
+          "build",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -852,7 +896,7 @@ class D2ECli {
       .action(async () => {
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "status"
+          "status",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -887,7 +931,7 @@ class D2ECli {
       .action(async () => {
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "logs"
+          "logs",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -911,7 +955,7 @@ class D2ECli {
       .action(async () => {
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "config"
+          "config",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -934,7 +978,7 @@ class D2ECli {
       .description("Removes d2e docker containers and volumes")
       .action(async () => {
         const user_input_init = await this.user_input(
-          "This action will delete all docker containers and volumes. Continue (y/n)? "
+          "This action will delete all docker containers and volumes. Continue (y/n)? ",
         );
         if (user_input_init.toLowerCase() !== "y") {
           console.log("Aborting cleanup.");
@@ -942,7 +986,7 @@ class D2ECli {
         }
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "clean"
+          "clean",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -964,7 +1008,7 @@ class D2ECli {
       .action(async () => {
         const { cmd, env } = this.build_docker_command(
           this.program.opts(),
-          "cleanci"
+          "cleanci",
         );
         console.log(`Executing command: ${cmd}`);
         const proc = spawn(cmd, {
@@ -1023,7 +1067,7 @@ class D2ECli {
     this.program
       .command("setupdemo")
       .description(
-        "Load d2e services. Requires d2e init and d2e setup to be run."
+        "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
@@ -1034,7 +1078,7 @@ class D2ECli {
     this.program
       .command("setupdemohana")
       .description(
-        "Load d2e services for hana. Requires d2e init and d2e setup to be run."
+        "Load d2e services for hana. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         this.setupdemohana();
@@ -1055,6 +1099,12 @@ class D2ECli {
         this.getnoproxy();
       });
     (getnoproxy_cmd as any)._hidden = true;
+    this.program
+      .command("syncroles")
+      .description("Sync usermgmt roles to Logto (one-time migration)")
+      .action(async () => {
+        this.syncroles();
+      });
     const update_tag = this.program
       .command("updatetag")
       .description("Update image tags for d2e services")

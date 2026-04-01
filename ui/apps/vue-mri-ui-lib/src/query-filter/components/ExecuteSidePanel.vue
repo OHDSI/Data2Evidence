@@ -182,5 +182,5 @@ const fetchInclusionReport = (cohortDefinitionId: string, sourceKey: string, mod
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/ExecuteSidePanel.scss';
+@use '../styles/ExecuteSidePanel.scss';
 </style>

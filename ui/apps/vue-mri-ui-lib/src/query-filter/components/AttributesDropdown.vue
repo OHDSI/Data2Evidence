@@ -259,5 +259,5 @@ const hasAttributes = computed(() => availableAttributes.value.length > 0)
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/AttributesDropdown';
+@use '../styles/AttributesDropdown';
 </style>
