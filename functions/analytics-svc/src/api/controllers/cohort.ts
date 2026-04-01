@@ -184,6 +184,9 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             return;
         }
 
+        //Currently streaming is only supported for Hana
+        const stream = req.dbCredentials.studyAnalyticsCredential.dialect.toLowerCase() === "hana"
+
         const querySvcParams = {
             queryParams: {
                 configId: req.paConfigId,
@@ -194,6 +197,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 language,
                 requestQuery,
                 insert: false,
+                stream,
             },
         };
 
@@ -233,11 +237,20 @@ export async function createCohort(req: IMRIRequest, res: Response) {
 
             // Remove existing records from cohort table before saving cohort to db
             await cohortEndpoint.deleteCohortFromDb(cohort.id);
-            await cohortEndpoint.saveCohortToDb(
-                cohort.id,
-                cohort,
-                queryResponse.queryObject
-            );
+            if (stream) {
+                await cohortEndpoint.streamCohortToDb(
+                    cohort.id,
+                    cohort,
+                    queryResponse.queryObject
+                );
+            } else {
+                await cohortEndpoint.saveCohortToDb(
+                    cohort.id,
+                    cohort,
+                    queryResponse.queryObject
+                );
+            }
+            
         } else {
             // Else if there is no existing materialized cohort
             // Save cohort definition to db and query cohort definition id for newly created cohort definition
@@ -247,11 +260,19 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // Get cohort definition id from cohort object
             const cohortDefinitionId =
                 await cohortEndpoint.queryCohortDefinitionId(cohort);
-            await cohortEndpoint.saveCohortToDb(
-                cohortDefinitionId,
-                cohort,
-                queryResponse.queryObject
-            );
+            if (stream) {
+                await cohortEndpoint.streamCohortToDb(
+                    cohortDefinitionId,
+                    cohort,
+                    queryResponse.queryObject
+                );
+            } else {
+                await cohortEndpoint.saveCohortToDb(
+                    cohortDefinitionId,
+                    cohort,
+                    queryResponse.queryObject
+                );
+            }
         }
 
         res.status(200).send(`Cohort successfully materialized`);
