@@ -331,23 +331,23 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                             break;
                                         case "patientcount":
                                             if (body.filter) {
-                                                new PatientCountEndpoint(
-                                                    analyticsConnection
+                                            new PatientCountEndpoint(
+                                                analyticsConnection
+                                            )
+                                                .processRequest(
+                                                    req,
+                                                    configId,
+                                                    configVersion,
+                                                    datasetId,
+                                                    bookmarkInputStr,
+                                                    language
                                                 )
-                                                    .processRequest(
-                                                        req,
-                                                        configId,
-                                                        configVersion,
-                                                        datasetId,
-                                                        bookmarkInputStr,
-                                                        language
-                                                    )
-                                                    .then((res) =>
-                                                        _sendResult(null, res)
-                                                    )
-                                                    .catch((err) =>
-                                                        _sendResult(err, null)
-                                                    );
+                                                .then((res) =>
+                                                    _sendResult(null, res)
+                                                )
+                                                .catch((err) =>
+                                                    _sendResult(err, null)
+                                                );
                                             } else {
                                                 new PatientCountEndpoint(
                                                     analyticsConnection
@@ -382,6 +382,30 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                     configVersion,
                                                     datasetId,
                                                     inclusionReportBody,
+                                                    language
+                                                )
+                                                .then((res) =>
+                                                    _sendResult(null, res)
+                                                )
+                                                .catch((err) =>
+                                                    _sendResult(err, null)
+                                                );
+
+                                            break;
+                                        case "selectiveinclusionreport":
+                                            const selectiveInclusionReportBody =
+                                                body.filter
+                                                    ? body
+                                                    : bookmarkInputStr;
+                                            new InclusionReportEndpoint(
+                                                analyticsConnection
+                                            )
+                                                .processRequestForSelectiveInclusionReport(
+                                                    req,
+                                                    configId,
+                                                    configVersion,
+                                                    datasetId,
+                                                    selectiveInclusionReportBody,
                                                     language
                                                 )
                                                 .then((res) =>
