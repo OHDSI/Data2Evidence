@@ -27,7 +27,6 @@ export default {
   created() {
     this.setDataset()
     this.setDatasetReleaseId()
-    this.requestMriConfig()
   },
   mounted() {
     this.setLocale()
