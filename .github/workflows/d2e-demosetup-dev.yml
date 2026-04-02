@@ -20,30 +20,30 @@ jobs:
   demosetup:
     runs-on: ubuntu-24.04
     steps:
-      # - name: Free Disk Space (Ubuntu)
-      #   uses: jlumbroso/free-disk-space@main
-      #   with:
-      #     # this might remove tools that are actually needed,
-      #     # if set to "true" but frees about 6 GB
-      #     tool-cache: true
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
 
-      #     # all of these default to true, but feel free to set to
-      #     # "false" if necessary for your workflow
-      #     android: true
-      #     dotnet: true
-      #     haskell: true
-      #     large-packages: true
-      #     docker-images: true
-      #     swap-storage: true
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
-      # - name: Increase swapfile to 15G
-      #   run: |
-      #     sudo swapoff -a
-      #     sudo fallocate -l 15G /swapfile
-      #     sudo chmod 600 /swapfile
-      #     sudo mkswap /swapfile
-      #     sudo swapon /swapfile
-      #     sudo swapon --show
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
 
       - uses: actions/checkout@v4
         with:
@@ -198,7 +198,7 @@ jobs:
         if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-          
+
       - name: Flow base docker-compose-local
         if: steps.file_changes.outputs.flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
