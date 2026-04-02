@@ -25,13 +25,11 @@ const mapUserGroupToUser = (idpUserId: string, userGroupMetadata: UserGroupMetad
   const isDashboardViewer = Boolean(userGroupMetadata.alp_role_dashboard_viewer);
   const isTenantViewer = (userGroupMetadata.alp_role_tenant_viewer?.length || 0) > 0;
   const isDatasetResearcher = (userGroupMetadata.alp_role_study_researcher?.length || 0) > 0;
-  const isStudyManager = (userGroupMetadata.alp_role_study_mgr?.length || 0) > 0;
   const isEtlMappingContributor = Boolean(userGroupMetadata.alp_role_etl_mapping_contributor);
-  const isResearcher = isStudyManager || isDatasetResearcher;
 
   const canAccessSystemAdminPortal =
     Boolean(userGroupMetadata.alp_role_system_admin) || Boolean(userGroupMetadata.alp_role_user_admin);
-  const canAccessResearcherPortal = isResearcher || isTenantViewer;
+  const canAccessResearcherPortal = isDatasetResearcher || isTenantViewer;
   const canAccessEtlPortal = isEtlMappingContributor || canAccessSystemAdminPortal;
 
   return {
@@ -40,7 +38,7 @@ const mapUserGroupToUser = (idpUserId: string, userGroupMetadata: UserGroupMetad
     canAccessSystemAdminPortal,
     canAccessResearcherPortal,
     canAccessEtlPortal,
-    isResearcher,
+    isResearcher: isDatasetResearcher,
     isUserAdmin,
     isSystemAdmin,
     isDashboardViewer,

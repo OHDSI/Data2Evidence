@@ -17,7 +17,6 @@ type RoleTypeOf<T> = {
   ETL_MAPPING_CONTRIBUTOR: boolean
   TENANT_ADMIN: T
   TENANT_VIEWER: T
-  STUDY_MANAGER: T
   STUDY_RESEARCHER: T
 }
 
@@ -36,7 +35,6 @@ export interface IAppRequest extends Request {
 export interface RoleMap {
   alp_tenant_id: string[] // list of all tenant ids
   alp_role_study_researcher: string[] // list of study ids
-  alp_role_study_mgr: string[] // list of study ids
   alp_role_study_admin: string[] // list of study ids
   alp_role_tenant_admin: string[] // list of tenant ids
   alp_role_tenant_viewer: string[] // list of tenant ids
