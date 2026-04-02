@@ -28,7 +28,6 @@ export const SAMPLE_USER_JWT: IAppTokenPayload = {
     alp_role_admin: true,
     alp_role_tenant_viewer: [],
     alp_role_study_admin: [],
-    alp_role_study_mgr: [],
   },
   tid: "ef003beb-7f58-44b8-9744-6d8250a015d5",
   scp: "pyqe.client",

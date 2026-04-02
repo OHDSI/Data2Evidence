@@ -23,7 +23,6 @@ type RoleTypeOf<T, Boolean> = {
   STUDY_RESULTS_READ_RESEARCHER: Boolean;
   ETL_MAPPING_CONTRIBUTOR: Boolean;
   TENANT_VIEWER: T;
-  STUDY_MANAGER: T;
   STUDY_RESEARCHER: T;
 };
 
@@ -35,7 +34,6 @@ export interface UserGroupMetadata {
   alpRoleMap: AlpTenantUserRoleMapType;
   alp_tenant_id: string[]; // list of all tenant ids
   alp_role_study_researcher: string[]; // list of study ids
-  alp_role_study_mgr: string[]; // list of study ids
   alp_role_tenant_viewer: string[]; // list of tenant ids
   alp_role_user_admin: boolean; // alp user admin
   alp_role_system_admin: boolean; // alp system admin

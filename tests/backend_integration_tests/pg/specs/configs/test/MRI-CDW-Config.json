@@ -1,0 +1,1436 @@
+{
+  "config": {
+    "censor": {},
+    "mapping": {},
+    "patient": {
+      "attributes": {
+        "pid": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Patient ID"
+            }
+          ],
+          "type": "text",
+          "expression": "@PATIENT.\"PatientID\"",
+          "annotations": ["patient_id"]
+        },
+        "lastName": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Last name"
+            }
+          ],
+          "type": "text",
+          "expression": "@PATIENT.\"FamilyName\""
+        },
+        "multiple_birth_order": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Multiple birth order"
+            }
+          ],
+          "type": "num",
+          "expression": "@PATIENT.\"MultipleBirthOrder\""
+        },
+        "dateOfBirth": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Date of Birth"
+            }
+          ],
+          "type": "time",
+          "expression": "@PATIENT.\"BirthDate\"",
+          "annotations": ["date_of_birth"]
+        },
+        "dateOfDeath": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Date of Death"
+            }
+          ],
+          "type": "time",
+          "expression": "@PATIENT.\"DeceasedDate\"",
+          "annotations": ["date_of_death"]
+        },
+        "obs_char": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Patient observation text value"
+            }
+          ],
+          "type": "text",
+          "defaultFilter": "@OBS.\"ObsType\" = 'TEST_OBS1'",
+          "expression": "@OBS.\"ObsCharValue\""
+        },
+        "obs_num": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Observation numerical value"
+            }
+          ],
+          "type": "num",
+          "defaultFilter": "@OBS.\"ObsType\" = 'TEST_OBS2'",
+          "expression": "@OBS.\"ObsNumValue\""
+        },
+        "obs_unit": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Observation unit of measurement"
+            }
+          ],
+          "type": "text",
+          "defaultFilter": "@OBS.\"ObsType\" = 'TEST_OBS3'",
+          "expression": "@OBS.\"ObsUnit\""
+        },
+        "obs_time": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Observation time"
+            }
+          ],
+          "type": "time",
+          "defaultFilter": "@OBS.\"ObsType\" = 'TEST_OBS4'",
+          "expression": "@OBS.\"ObsTime\""
+        },
+        "pcount": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Patient Count"
+            }
+          ],
+          "type": "num",
+          "measureExpression": "COUNT(DISTINCT(@PATIENT.\"PatientID\"))"
+        },
+        "start": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Start"
+            }
+          ],
+          "type": "time",
+          "expression": "@INTERACTION.\"PeriodStart\"",
+          "order": 0,
+          "isDefault": true
+        },
+        "end": {
+          "name": [
+            {
+              "lang": "",
+              "value": "End"
+            }
+          ],
+          "type": "time",
+          "expression": "@INTERACTION.\"PeriodEnd\"",
+          "order": 1,
+          "isDefault": true
+        }
+      },
+      "interactions": {
+        "patient_interaction_1": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Patient interaction 1"
+            }
+          ],
+          "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'PI1'",
+          "attributes": {
+            "char_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Text attribute"
+                }
+              ],
+              "type": "text",
+              "defaultFilter": "@CODE.\"AttributeValue\" = 'PI1_CHAR_ATTR'",
+              "expression": "@CODE.\"Value\""
+            },
+            "num_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Numerical attribute value"
+                }
+              ],
+              "type": "num",
+              "defaultFilter": "@MEASURE.\"AttributeValue\" = 'PI1_NUM_ATTR'",
+              "expression": "@MEASURE.\"Value\""
+            },
+            "num_attr_unit": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Numerical attribute unit"
+                }
+              ],
+              "type": "text",
+              "defaultFilter": "@MEASURE.\"AttributeValue\" = 'PI1_NUM_ATTR'",
+              "expression": "@MEASURE.\"Unit\""
+            },
+            "freetext_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Freetext attribute"
+                }
+              ],
+              "type": "freetext",
+              "defaultFilter": "@TEXT.\"Attribute\" = 'PI1_FREETEXT_ATTR'",
+              "expression": "@TEXT.\"Value\""
+            }
+          }
+        },
+        "patient_interaction_2": {
+          "name": [
+            {
+              "lang": "",
+              "value": "Patient interaction 2"
+            }
+          ],
+          "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'PI2'",
+          "attributes": {
+            "char_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Text attribute"
+                }
+              ],
+              "type": "text",
+              "defaultFilter": "@CODE.\"AttributeValue\" = 'PI2_CHAR_ATTR'",
+              "expression": "@CODE.\"Value\""
+            },
+            "num_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Numerical attribute value"
+                }
+              ],
+              "type": "num",
+              "defaultFilter": "@MEASURE.\"AttributeValue\" = 'PI2_NUM_ATTR'",
+              "expression": "@MEASURE.\"Value\""
+            },
+            "num_attr_unit": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Numerical attribute unit"
+                }
+              ],
+              "type": "text",
+              "defaultFilter": "@MEASURE.\"AttributeValue\" = 'PI2_NUM_ATTR'",
+              "expression": "@MEASURE.\"Unit\""
+            },
+            "freetext_attr": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Freetext attribute"
+                }
+              ],
+              "type": "freetext",
+              "defaultFilter": "@TEXT.\"Attribute\" = 'PI2_FREETEXT_ATTR'",
+              "expression": "@TEXT.\"Value\"",
+              "fuzziness": 0.8
+            }
+          }
+        }
+      },
+      "conditions": {
+        "condition_a": {
+          "name": "Condition A",
+          "interactions": {
+            "cond_a_interaction_1": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Condition A interaction 1"
+                }
+              ],
+              "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'CAI1'",
+              "attributes": {
+                "char_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Text attribute"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@CODE.\"AttributeValue\" = 'CAI1_CHAR_ATTR'",
+                  "expression": "@CODE.\"Value\"",
+                  "order": 1
+                },
+                "num_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute value"
+                    }
+                  ],
+                  "type": "num",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CAI1_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Value\"",
+                  "order": 2
+                },
+                "num_attr_unit": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute unit"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CAI1_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Unit\"",
+                  "order": 3
+                },
+                "freetext_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Freetext attribute"
+                    }
+                  ],
+                  "type": "freetext",
+                  "defaultFilter": "@TEXT.\"Attribute\" = 'CAI1_FREETEXT_ATTR'",
+                  "expression": "@TEXT.\"Value\"",
+                  "fuzziness": 0.8,
+                  "order": 4
+                }
+              }
+            },
+            "cond_a_interaction_2": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Condition A interaction 2"
+                }
+              ],
+              "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'CAI2'",
+              "attributes": {
+                "char_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Text attribute"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@CODE.\"AttributeValue\" = 'CAI2_CHAR_ATTR'",
+                  "expression": "@CODE.\"Value\"",
+                  "order": 1
+                },
+                "num_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute value"
+                    }
+                  ],
+                  "type": "num",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CAI2_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Value\"",
+                  "order": 2
+                },
+                "num_attr_unit": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute unit"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CAI2_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Unit\"",
+                  "order": 3
+                },
+                "freetext_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Freetext attribute"
+                    }
+                  ],
+                  "type": "freetext",
+                  "defaultFilter": "@TEXT.\"Attribute\" = 'CAI2_FREETEXT_ATTR'",
+                  "expression": "@TEXT.\"Value\"",
+                  "fuzziness": 0.8,
+                  "order": 4
+                }
+              }
+            }
+          }
+        },
+        "condition_b": {
+          "name": "Condition B",
+          "interactions": {
+            "cond_b_interaction_1": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Condition B interaction 1"
+                }
+              ],
+              "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'CBI1'",
+              "attributes": {
+                "char_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Text attribute"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@CODE.\"AttributeValue\" = 'CBI1_CHAR_ATTR'",
+                  "expression": "@CODE.\"Value\"",
+                  "order": 1
+                },
+                "num_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute value"
+                    }
+                  ],
+                  "type": "num",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CBI1_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Value\"",
+                  "order": 2
+                },
+                "num_attr_unit": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute unit"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CBI1_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Unit\"",
+                  "order": 3
+                },
+                "freetext_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Freetext attribute"
+                    }
+                  ],
+                  "type": "freetext",
+                  "defaultFilter": "@TEXT.\"Attribute\" = 'CBI1_FREETEXT_ATTR'",
+                  "expression": "@TEXT.\"Value\"",
+                  "fuzziness": 0.8,
+                  "order": 4
+                }
+              }
+            },
+            "cond_b_interaction_2": {
+              "name": [
+                {
+                  "lang": "",
+                  "value": "Condition B interaction 2"
+                }
+              ],
+              "defaultFilter": "@INTERACTION.\"InteractionTypeValue\" = 'CBI2'",
+              "attributes": {
+                "char_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Text attribute"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@CODE.\"AttributeValue\" = 'CBI2_CHAR_ATTR'",
+                  "expression": "@CODE.\"Value\"",
+                  "order": 1
+                },
+                "num_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute value"
+                    }
+                  ],
+                  "type": "num",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CBI2_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Value\"",
+                  "order": 2
+                },
+                "num_attr_unit": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Numerical attribute unit"
+                    }
+                  ],
+                  "type": "text",
+                  "defaultFilter": "@MEASURE.\"AttributeValue\" = 'CBI2_NUM_ATTR'",
+                  "expression": "@MEASURE.\"Unit\"",
+                  "order": 3
+                },
+                "freetext_attr": {
+                  "name": [
+                    {
+                      "lang": "",
+                      "value": "Freetext attribute"
+                    }
+                  ],
+                  "type": "freetext",
+                  "defaultFilter": "@TEXT.\"Attribute\" = 'CBI2_FREETEXT_ATTR'",
+                  "expression": "@TEXT.\"Value\"",
+                  "fuzziness": 0.8,
+                  "order": 4
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "advancedSettings": {
+      "tableMapping": {
+        "@INTERACTION": "\"legacy.cdw.db.models::DWViews.Interactions\"",
+        "@OBS": "\"legacy.cdw.db.models::DWViews.Observations\"",
+        "@CODE": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Details\"",
+        "@MEASURE": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures\"",
+        "@PATIENT": "\"legacy.cdw.db.models::DWViews.Patient\"",
+        "@TEXT": "\"legacy.cdw.db.models::DWViewsEAV.Interaction_Text\"",
+        "@REF": "\"legacy.ots::Views.ConceptTerms\"",
+        "@INTERACTION.PATIENT_ID": "\"PatientID\"",
+        "@INTERACTION.INTERACTION_ID": "\"InteractionID\"",
+        "@INTERACTION.CONDITION_ID": "\"ConditionID\"",
+        "@INTERACTION.PARENT_INTERACT_ID": "\"ParentInteractionID\"",
+        "@INTERACTION.START": "\"PeriodStart\"",
+        "@INTERACTION.END": "\"PeriodEnd\"",
+        "@INTERACTION.INTERACTION_TYPE": "\"InteractionTypeValue\"",
+        "@OBS.PATIENT_ID": "\"PatientID\"",
+        "@OBS.OBSERVATION_ID": "\"ObsID\"",
+        "@OBS.OBS_TYPE": "\"ObsType\"",
+        "@OBS.OBS_CHAR_VAL": "\"ObsCharValue\"",
+        "@CODE.INTERACTION_ID": "\"InteractionID\"",
+        "@CODE.ATTRIBUTE": "\"AttributeValue\"",
+        "@CODE.VALUE": "\"Value\"",
+        "@MEASURE.INTERACTION_ID": "\"InteractionID\"",
+        "@MEASURE.ATTRIBUTE": "\"AttributeValue\"",
+        "@MEASURE.VALUE": "\"Value\"",
+        "@REF.VOCABULARY_ID": "\"ConceptVocabularyID\"",
+        "@REF.CODE": "\"ConceptCode\"",
+        "@REF.TEXT": "\"TermText\"",
+        "@TEXT.INTERACTION_TEXT_ID": "\"InteractionTextID\"",
+        "@TEXT.INTERACTION_ID": "\"InteractionID\"",
+        "@TEXT.VALUE": "\"Value\"",
+        "@PATIENT.PATIENT_ID": "\"PatientID\"",
+        "@PATIENT.DOD": "\"DeceasedDate\"",
+        "@PATIENT.DOB": "\"BirthDate\""
+      },
+      "tableTypePlaceholderMap": {
+        "factTable": {
+          "placeholder": "@PATIENT",
+          "attributeTables": [
+            {
+              "placeholder": "@OBS",
+              "oneToN": true
+            }
+          ]
+        },
+        "dimTables": [
+          {
+            "placeholder": "@INTERACTION",
+            "hierarchy": true,
+            "time": true,
+            "oneToN": true,
+            "attributeTables": [
+              {
+                "placeholder": "@CODE",
+                "oneToN": true
+              },
+              {
+                "placeholder": "@MEASURE",
+                "oneToN": true
+              }
+            ]
+          }
+        ]
+      },
+      "guardedTableMapping": {
+        "@PATIENT": "\"legacy.cdw.db.models::DWViews.V_GuardedPatient\""
+      },
+      "language": ["en", "de", "fr"],
+      "settings": {
+        "fuzziness": 0.7,
+        "maxResultSize": 5000,
+        "sqlReturnOn": true,
+        "errorDetailsReturnOn": true,
+        "errorStackTraceReturnOn": true,
+        "normalizeCsvData": false,
+        "enableFreeText": true,
+        "freetextTempTable": "\"legacy.cdw.db.models::Helper.TmpTextKeys\"",
+        "genomicsEnabled": true,
+        "vbEnabled": true,
+        "afpEnabled": true,
+        "patientDataAccessLogging": false,
+        "dateFormat": "YYYY-MM-dd",
+        "timeFormat": "HH:mm:ss",
+        "csvDelimiter": ";",
+        "cdwValidationEnabled": true,
+        "otsTableMap": {
+          "@CODE": "\"legacy.cdw.db.models::DWViews.InteractionDetailsOTS\""
+        }
+      },
+      "others": {
+        "sqlReturnOn": false,
+        "errorDetailsReturnOn": false,
+        "errorStackTraceReturnOn": false
+      },
+      "shared": {},
+      "configId": "",
+      "schemaVersion": "1.0"
+    },
+    "filtercards": [
+      {
+        "source": "patient",
+        "visible": true,
+        "order": 1,
+        "initial": true,
+        "attributes": [
+          {
+            "source": "patient.attributes.pid",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false,
+              "order": 0
+            },
+            "modelName": "Patient ID"
+          },
+          {
+            "source": "patient.attributes.lastName",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": true,
+              "visible": true,
+              "linkColumn": true,
+              "order": 1
+            },
+            "modelName": "Last name"
+          },
+          {
+            "source": "patient.attributes.multiple_birth_order",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": true,
+              "visible": true,
+              "linkColumn": false,
+              "order": 3
+            },
+            "defaultBinSize": 2,
+            "modelName": "Multiple birth order"
+          },
+          {
+            "source": "patient.attributes.dateOfBirth",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": true,
+              "visible": true,
+              "linkColumn": false,
+              "order": 2
+            },
+            "modelName": "Date of Birth"
+          },
+          {
+            "source": "patient.attributes.dateOfDeath",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 5
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Date of Death"
+          },
+          {
+            "source": "patient.attributes.obs_char",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 6
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Patient observation text value"
+          },
+          {
+            "source": "patient.attributes.obs_num",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 7
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "defaultBinSize": 2,
+            "modelName": "Observation numerical value"
+          },
+          {
+            "source": "patient.attributes.obs_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 8
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Observation unit of measurement"
+          },
+          {
+            "source": "patient.attributes.obs_time",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 9
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Observation time"
+          },
+          {
+            "source": "patient.attributes.pcount",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": false,
+              "order": 10
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": false,
+              "linkColumn": false
+            },
+            "modelName": "Patient Count"
+          }
+        ],
+        "modelName": "Basic Data"
+      },
+      {
+        "source": "patient.interactions.patient_interaction_1",
+        "visible": true,
+        "order": 2,
+        "initial": true,
+        "attributes": [
+          {
+            "source": "patient.interactions.patient_interaction_1.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": true,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false,
+              "order": 3
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_1.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_1.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_1.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Patient interaction 1"
+      },
+      {
+        "source": "patient.interactions.patient_interaction_2",
+        "visible": true,
+        "order": 3,
+        "initial": false,
+        "attributes": [
+          {
+            "source": "patient.interactions.patient_interaction_2.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_2.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_2.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.interactions.patient_interaction_2.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Patient interaction 2"
+      },
+      {
+        "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1",
+        "visible": true,
+        "order": 4,
+        "initial": false,
+        "attributes": [
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": true,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Condition A interaction 1"
+      },
+      {
+        "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2",
+        "visible": true,
+        "order": 5,
+        "initial": false,
+        "attributes": [
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Condition A interaction 2"
+      },
+      {
+        "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1",
+        "visible": true,
+        "order": 6,
+        "initial": false,
+        "attributes": [
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Condition B interaction 1"
+      },
+      {
+        "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2",
+        "visible": true,
+        "order": 7,
+        "initial": false,
+        "attributes": [
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.char_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 1
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Text attribute"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": true,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 2
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute value"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr_unit",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 3
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Numerical attribute unit"
+          },
+          {
+            "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.freetext_attr",
+            "ordered": false,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": false,
+            "filtercard": {
+              "initial": false,
+              "visible": true,
+              "order": 4
+            },
+            "patientlist": {
+              "initial": false,
+              "visible": true,
+              "linkColumn": false
+            },
+            "modelName": "Freetext attribute"
+          }
+        ],
+        "modelName": "Condition B interaction 2"
+      }
+    ],
+    "chartOptions": {
+      "initialAttributes": {
+        "measures": ["patient.attributes.pcount"],
+        "categories": ["patient.interactions.patient_interaction_1.attributes.char_attr"]
+      },
+      "initialChart": "stacked",
+      "stacked": {
+        "visible": true,
+        "pdfDownloadEnabled": true,
+        "downloadEnabled": true,
+        "imageDownloadEnabled": true,
+        "collectionEnabled": true,
+        "beginVisible": true,
+        "fillMissingValuesEnabled": true,
+        "enabled": true
+      },
+      "boxplot": {
+        "visible": true,
+        "pdfDownloadEnabled": true,
+        "downloadEnabled": true,
+        "imageDownloadEnabled": true,
+        "collectionEnabled": true,
+        "beginVisible": true,
+        "fillMissingValuesEnabled": true
+      },
+      "km": {
+        "visible": true,
+        "pdfDownloadEnabled": true,
+        "downloadEnabled": true,
+        "imageDownloadEnabled": true,
+        "collectionEnabled": true,
+        "beginVisible": true,
+        "confidenceInterval": 1.95996398454,
+        "filters": [],
+        "selectedInteractions": [],
+        "selectedEndInteractions": []
+      },
+      "list": {
+        "visible": true,
+        "zipDownloadEnabled": true,
+        "downloadEnabled": true,
+        "collectionEnabled": true,
+        "beginVisible": true,
+        "pageSize": 20
+      },
+      "vb": {
+        "visible": false,
+        "referenceName": "GRCh37",
+        "enabled": true
+      },
+      "minCohortSize": 0
+    },
+    "panelOptions": {
+      "addToCohorts": true,
+      "domainValuesLimit": 50,
+      "maxFiltercardCount": 10,
+      "calcViewAccessPoint": true,
+      "externalAccessPoints": true,
+      "cohortEntryExit": false
+    },
+    "configInformations": {
+      "note": "MRI configuration for HTTP integration tests"
+    }
+  },
+  "meta": {
+    "configId": "4321DCBAB",
+    "configVersion": "A",
+    "configStatus": "",
+    "configName": "OMOP_GDM_PA_CONF",
+    "configType": "HC/MRI/PA",
+    "dependentConfig": {
+      "configId": "4321DCBAA",
+      "configVersion": "1"
+    },
+    "creator": "ALICE",
+    "created": "2021-09-15T15:30:54.000Z",
+    "modifier": "ALICE",
+    "modified": "2022-09-13T17:56:54.000Z"
+  },
+  "schemaName": ""
+}

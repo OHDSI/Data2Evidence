@@ -1,0 +1,122 @@
+{
+  "patient": {
+    "conditions": {
+      "acme": {
+        "name": "ACME Tumor Case",
+        "interactions": {
+          "priDiag": {
+            "name": "Primary Tumor Diagnosis",
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'ACME_M03'"],
+            "attributes": {
+              "icd_10": {
+                "name": "ICD-10-CM Code",
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'ICD_10'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "nsclc": {
+                "name": "Lung Cancer Subtype",
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'LC_TYPE'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "freetextDiag": {
+                "type": "freetext",
+                "defaultInserts": ["@TEXT.Attribute = 'INTERACTIONS_FREETEXT'", "@TEXT.Value = $$"]
+              }
+            }
+          },
+          "chemo": {
+            "name": "Chemotherapy",
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'ACME_M07_CHEMO'"],
+            "attributes": {
+              "chemo_ops": {
+                "name": "OPS Code",
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CHEMO_OPS'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "chemo_prot": {
+                "name": "Protocol",
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CHEMO_PROT'", "@CODE.Value.OriginalValue = $$"]
+              }
+            }
+          },
+          "radio": {
+            "name": "Radiotherapy",
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'ACME_M07_RADIO'"],
+            "attributes": {
+              "radio_ops": {
+                "name": " OPS Code",
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'RADIO_OPS'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "radio_dosage": {
+                "name": "Radio Dosage",
+                "type": "num",
+                "defaultInserts": [
+                  "@MEASURE.Attribute.OriginalValue = 'DOSAGE'",
+                  "@MEASURE.Unit = 'Gy'",
+                  "@MEASURE.Value = $$"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "interactions": {
+      "vStatus": {
+        "name": "Vital Status",
+        "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'ACME_M16'"],
+        "attributes": {
+          "status": {
+            "name": "Vital Status",
+            "type": "text",
+            "defaultInserts": ["@CODE.Attribute.OriginalValue = 'VITALSTATUS'", "@CODE.Value.OriginalValue = $$"]
+          }
+        }
+      }
+    },
+    "attributes": {
+      "nationality": {
+        "name": "Nationality",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.Nationality = $$"]
+      },
+      "gender": {
+        "name": "Gender",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.Gender.OriginalValue = $$"]
+      },
+      "biomarker": {
+        "name": "Biomarker Type",
+        "defaultInserts": ["@OBS.ObsType = 'BIOMARKER'", "@OBS.ObsCharValue = $$"],
+        "type": "text"
+      },
+      "smoker": {
+        "name": "Smoker",
+        "defaultInserts": ["@OBS.ObsType = 'SMOKER'", "@OBS.ObsCharValue = $$"],
+        "type": "text"
+      },
+      "firstName": {
+        "name": "First name",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.GivenName = $$"]
+      },
+      "lastName": {
+        "name": "Last name",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.GivenName = $$"]
+      },
+      "dateOfBirth": {
+        "name": "Date of birth",
+        "type": "time",
+        "defaultInserts": ["@PATIENT.BirthDate = $$"]
+      },
+      "dateOfDeath": {
+        "name": "Date of death",
+        "type": "time",
+        "defaultInserts": ["@PATIENT.DeceasedDate = $$"]
+      }
+    }
+  }
+}

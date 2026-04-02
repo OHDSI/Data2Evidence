@@ -17,7 +17,6 @@ type RoleTypeOf<T> = {
   ETL_MAPPING_CONTRIBUTOR: boolean
   TENANT_ADMIN: T
   TENANT_VIEWER: T
-  STUDY_MANAGER: T
   STUDY_RESEARCHER: T
 }
 
@@ -36,7 +35,6 @@ export interface IAppRequest extends Request {
 export interface RoleMap {
   alp_tenant_id: string[] // list of all tenant ids
   alp_role_study_researcher: string[] // list of study ids
-  alp_role_study_mgr: string[] // list of study ids
   alp_role_study_admin: string[] // list of study ids
   alp_role_tenant_admin: string[] // list of tenant ids
   alp_role_tenant_viewer: string[] // list of tenant ids
@@ -96,10 +94,18 @@ export interface ILogtoUser {
   id: string
   username: string
   primaryEmail: string | undefined
+  isSuspended: boolean
 }
 
 export interface ILogtoUserCreated {
   id: string
+}
+
+export interface ILogtoRole {
+  id: string
+  name: string
+  description: string
+  type: string
 }
 
 export interface UserAddRequest {
@@ -135,4 +141,9 @@ export interface AzureADSetupRequest {
 export interface IDataset {
   id: string
   token_dataset_code: string
+}
+
+export interface IPortalDataset {
+  id: string
+  tokenStudyCode: string
 }

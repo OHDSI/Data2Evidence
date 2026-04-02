@@ -1,4 +1,5 @@
-@import './screen';
+@use 'sass:map';
+@use './screen' as *;
 .compareContainer {
   .modal-wrapper {
     .modal-container {
@@ -106,7 +107,7 @@
 }
 
 .chartSize {
-  height: map-get($mriScreen, min-height);
+  height: map.get($mriScreen, min-height);
   grid-column: 2;
   .mainChartToolbar {
     text-align: right;
