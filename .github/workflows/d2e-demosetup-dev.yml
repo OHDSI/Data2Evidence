@@ -176,12 +176,12 @@ jobs:
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: UI Setup bun
-        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.23
       - name: UI Build
-        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         working-directory: ./ui
         env:
           CI: false
@@ -194,11 +194,11 @@ jobs:
           [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
 
       - name: UI docker-compose-local
-        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
-        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         run: |
           sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
@@ -209,7 +209,7 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
       - name: Wait for d2e-ui plugin to be installed
-        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         run: |
           echo "Waiting for d2e-ui plugin to be installed..."
           max_attempts=60
@@ -233,7 +233,7 @@ jobs:
           fi
 
       - name: UI Mounting build
-        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.base_ref) }}
+        if: ${{ steps.file_changes.outputs.ui == 'true' || contains('release/', github.event.pull_request.base.ref) }}
         run: |
           docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
