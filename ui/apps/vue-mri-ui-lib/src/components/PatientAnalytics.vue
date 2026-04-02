@@ -343,7 +343,7 @@ export default {
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
-        this.initializeBookmarks()
+        // initializeBookmarks() removed — list is loaded on init and refreshed after CRUD ops only
         this.toggleQueryFilter(false)
       } else {
         if (isPaAtlas) {
