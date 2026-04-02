@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 import psycopg2
 from psycopg2 import sql as pg_sql
+from psycopg2.extras import execute_values
 
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
@@ -245,19 +246,17 @@ class TrexDao(DaoBase):
             con: Optional existing connection to reuse (skips opening a new connection)
         """
         columns_str = ", ".join(columns)
-        placeholders = ", ".join(["%s"] * len(columns))
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})").format(
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s").format(
             schema_name=pg_sql.Identifier(schema_name),
             table_name=pg_sql.Identifier(table_name),
             columns_str=pg_sql.SQL(columns_str),
-            placeholders=pg_sql.SQL(placeholders)
         )
 
         def _execute(con):
             cur = None
             try:
                 cur = con.cursor()
-                cur.executemany(sql, values)
+                execute_values(cur, sql, values, page_size=len(values))
                 if not con.autocommit:
                     con.commit()
             except Exception:
