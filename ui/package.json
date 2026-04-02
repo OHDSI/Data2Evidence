@@ -324,10 +324,10 @@
             "route": "metadata"
           },
           {
-            "description": "Configure Cohort Builder",
+            "description": "Configure cohort builder",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION",
             "visible": true,
-            "name": "Cohort Builder config",
+            "name": "Cohort builder config",
             "nameI18nKey": "UI_PLUGIN_PATIENT_ANALYTICS_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",
@@ -337,7 +337,7 @@
             "description": "Configure CDM",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_CDM_DESCRIPTION",
             "visible": true,
-            "name": "CDM Config",
+            "name": "CDM config",
             "nameI18nKey": "UI_PLUGIN_CDM_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/CDM/module",
@@ -346,7 +346,7 @@
           {
             "description": "Configure patient summary",
             "visible": false,
-            "name": "Patient Summary Config",
+            "name": "Patient summary config",
             "notes": "",
             "pluginPath": "plugins/mri/PatientSummaryConfig/module",
             "route": "ps-config"

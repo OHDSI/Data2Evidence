@@ -22,19 +22,19 @@ interface DataCharacterizationReportsProps {
 }
 
 enum READABLE_MENU_ITEMS {
-  SHOW_ALL = "Show All Reports",
+  SHOW_ALL = "Show all reports",
   DASHBOARD = "Dashboard",
-  DATADENSITY = "Data Density",
+  DATADENSITY = "Data density",
   PERSON = "Person",
   VISIT = "Visit",
-  CONDITION = "Condition Occurence",
-  CONDITIONERA = "Condition Era",
+  CONDITION = "Condition occurrence",
+  CONDITIONERA = "Condition era",
   PROCEDURE = "Procedure",
-  DRUG = "Drug Exposure",
-  DRUGERA = "Drug Era",
+  DRUG = "Drug exposure",
+  DRUGERA = "Drug era",
   MEASUREMENT = "Measurement",
   OBSERVATION = "Observation",
-  OBSERVATIONPERIOD = "Observation Period",
+  OBSERVATIONPERIOD = "Observation period",
   DEATH = "Death",
 }
 

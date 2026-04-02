@@ -145,6 +145,7 @@ interface HistoryTableProps {
 }
 
 const HistoryTable: FC<HistoryTableProps> = ({ data, handleStudySelect, handleCancelJobClick }) => {
+  const { getText, i18nKeys } = useTranslation();
   const datasets = useDatasets("systemAdmin")[0];
   // Dialog show hooks
   const [showResultsDialog, openResultsDialog, closeResultsDialog] = useDialogHelper(false);
@@ -155,7 +156,7 @@ const HistoryTable: FC<HistoryTableProps> = ({ data, handleStudySelect, handleCa
   };
 
   if (data.length === 0) {
-    return <div className="info__section">No Jobs Found</div>;
+    return <div className="info__section">{getText(i18nKeys.HISTORY_TABLE__NO_JOBS)}</div>;
   }
 
   return (
@@ -165,40 +166,40 @@ const HistoryTable: FC<HistoryTableProps> = ({ data, handleStudySelect, handleCa
           <TableHead>
             <TableRow>
               <TableCell align="left" colSpan={1}>
-                Study
+                {getText(i18nKeys.HISTORY_TABLE__STUDY)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Database
+                {getText(i18nKeys.HISTORY_TABLE__DATABASE)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Schema
+                {getText(i18nKeys.HISTORY_TABLE__SCHEMA)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Type
+                {getText(i18nKeys.HISTORY_TABLE__TYPE)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Data Characterization Schema
+                {getText(i18nKeys.HISTORY_TABLE__DC_SCHEMA)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Cohort Definition ID
+                {getText(i18nKeys.HISTORY_TABLE__COHORT_DEFINITION_ID)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Created time
+                {getText(i18nKeys.HISTORY_TABLE__CREATED_TIME)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Completed time
+                {getText(i18nKeys.HISTORY_TABLE__COMPLETED_TIME)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Status
+                {getText(i18nKeys.HISTORY_TABLE__STATUS)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Status detail
+                {getText(i18nKeys.HISTORY_TABLE__STATUS_DETAIL)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Action
+                {getText(i18nKeys.HISTORY_TABLE__ACTION)}
               </TableCell>
               <TableCell align="left" colSpan={1}>
-                Comment
+                {getText(i18nKeys.HISTORY_TABLE__COMMENT)}
               </TableCell>
             </TableRow>
           </TableHead>
