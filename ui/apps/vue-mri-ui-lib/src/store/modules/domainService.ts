@@ -56,7 +56,7 @@ const actions = {
 
     // Skip if already loaded for this dataset (only for full list fetches, not searches)
     const existing = state.domainValues[attributePathUid]
-    if (!searchQuery && existing?.isLoaded && !existing?.isLoading && existing?.datasetId === datasetId) {
+    if (!searchQuery && existing?.isLoaded && !existing?.isLoading && existing?.datasetId === datasetId && datasetId) {
       return Promise.resolve(existing.values)
     }
 

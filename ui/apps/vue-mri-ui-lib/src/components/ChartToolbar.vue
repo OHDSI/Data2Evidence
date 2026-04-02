@@ -225,11 +225,17 @@ export default {
     }
   },
   watch: {
-    getHasAssignedConfig(val) {
-      if (val) {
-        this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-        this.refreshPatientCount()
-      }
+    getHasAssignedConfig: {
+      // immediate: true ensures this fires even when ChartToolbar mounts after config is already true
+      // (which happens with lazy-mount: rightPaneEverOpened is set inside getHasAssignedConfig watcher
+      // in PatientAnalytics, so ChartToolbar mounts AFTER config is already truthy)
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
+          this.refreshPatientCount()
+        }
+      },
     },
     getActiveChart() {
       this.refreshPatientCount()
