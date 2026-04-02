@@ -158,6 +158,7 @@ const SystemAdmin: FC = () => {
                   system={CURRENT_SYSTEM}
                   data={item?.data}
                   basePath="systemadmin"
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>
