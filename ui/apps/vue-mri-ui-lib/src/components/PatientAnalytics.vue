@@ -371,8 +371,8 @@ export default {
       } else if (panel === PANEL.RIGHT) {
         this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
       }
-      // Set flag whenever right pane is revealed (paneSize no longer FULL means right pane visible)
-      if (panel === PANEL.RIGHT && this.paneSize !== PANE_SIZE.FULL) {
+      // Set flag whenever any right-panel operation occurs (both Atlas and normal)
+      if (panel === PANEL.RIGHT) {
         this.rightPaneEverOpened = true
       }
     },
@@ -380,7 +380,7 @@ export default {
     onSplitterDrag(event) {
       const newSize = event?.[0]?.size ?? this.paneSize
       this.paneSize = newSize
-      if (!this.rightPaneEverOpened && newSize < this.PANE_SIZE.FULL) {
+      if (!this.rightPaneEverOpened && newSize < PANE_SIZE.FULL) {
         this.rightPaneEverOpened = true
       }
     },
@@ -505,8 +505,10 @@ export default {
 </script>
 
 <style scoped>
-/* Hide splitter grab handle until right pane has been opened */
-.pa-splitter:not(.right-pane-opened) .splitpanes__splitter {
+/* Hide splitter grab handle until right pane has been opened.
+   :deep() is required because .splitpanes__splitter is rendered by the child component
+   and does not carry this component's scoped attribute. */
+.pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
   pointer-events: none;
   opacity: 0;
 }
