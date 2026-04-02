@@ -37,7 +37,13 @@ export const env = {
   APP__TENANT_ID: _env.APP__TENANT_ID,
   IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
   IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME,
-  AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+  AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
+  USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE")
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
+
+export const getAutoGrantDatasetCodes = (): string[] => {
+  if (!env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) return []
+  return env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+}

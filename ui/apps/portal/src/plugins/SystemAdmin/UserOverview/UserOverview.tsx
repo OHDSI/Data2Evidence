@@ -254,7 +254,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
                     <TableCell>
                       <div className="roles">
                         {user.active && getRole(user.roles).map((r) => <Chip key={r} label={r} size="small" />)}
-                        {!user.active && <Chip label="Inactive" size="small" />}
+                        {!user.active && <Chip label={getText(i18nKeys.USER_OVERVIEW__INACTIVE)} size="small" />}
                       </div>
                     </TableCell>
                     <TableCell className="col-action">

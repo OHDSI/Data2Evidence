@@ -26,7 +26,6 @@ export interface IRoleTypeOf<T, ADMIN_ROLE_TYPE> {
   TENANT_ADMIN_ROLE: T;
   TENANT_VIEWER_ROLE: T;
   STUDY_ADMIN_ROLE: T;
-  STUDY_MANAGER_ROLE: T;
   STUDY_RESEARCHER_ROLE: T;
 }
 
@@ -78,9 +77,6 @@ export interface IUserMgmtGroups {
 
   // list of studyid
   alp_role_study_admin: string[];
-
-  // list of studyid
-  alp_role_study_mgr: string[];
 
   // list of studyid
   alp_role_study_researcher: string[];

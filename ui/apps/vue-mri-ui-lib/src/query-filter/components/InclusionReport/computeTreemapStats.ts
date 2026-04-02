@@ -78,7 +78,7 @@ function computeTooltipData(bits: string, size: number, inclusionReportResponse:
   }
 
   return {
-    count: `${size} ${size === 1 ? 'person' : 'people'} (${percentage.toFixed(2)}%)`,
+    count: `${size.toLocaleString()} ${size === 1 ? 'person' : 'persons'} (${percentage.toFixed(2)}%)`,
     summary: `${passCount} criteria passed, ${failCount} criteria failed`,
     passed,
     failed,

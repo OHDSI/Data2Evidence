@@ -231,7 +231,7 @@ const toggleExpanded = () => {
 </template>
 
 <style lang="scss" scoped>
-@import '@/query-filter/styles/ExpandTransition.scss';
+@use '@/query-filter/styles/ExpandTransition.scss';
 
 .query-filter-criteria-group {
   margin-top: 16px;
