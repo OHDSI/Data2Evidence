@@ -255,7 +255,7 @@ export default {
     },
   },
   created() {
-    this.fetchAttritionReportFn = createMockAttritionApi(() => this.fetchInclusionReport())
+    this.fetchAttritionReportFn = () => this.fetchSelectiveInclusionReport()
   },
   mounted() {
     try {
@@ -503,6 +503,14 @@ export default {
       }).then(result => {
         this.inclusionReportCache = { mriquery, result }
         return result
+      })
+    },
+    fetchSelectiveInclusionReport() {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/selectiveinclusionreport',
+        params: { mriquery, datasetId },
       })
     },
   },
