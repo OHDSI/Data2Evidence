@@ -1487,8 +1487,8 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/QueryFilterModern';
+@use '../styles/QueryFilterModern';
 // Import existing styles for backward compatibility
-@import '../styles/QueryFilter';
+@use '../styles/QueryFilter';
 </style>
 

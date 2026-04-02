@@ -1,0 +1,50 @@
+{
+  "host": "https://localhost",
+  "appport": "41100",
+  "sysappport": "41100",
+  "dbhost": "${HANASERVER}",
+  "dbport": "${HDIPORT}",
+  "database": "${DATABASE}",
+  "instance_no": 90,
+  "system_user": "${HDIUSER}",
+  "system_password": "${HDIPW}",
+  "chp_admin_user": "${HDIUSER}",
+  "chp_admin_password": "${HDIPW}",
+  "mri_admin_user": "${HDIUSER}",
+  "mri_admin_password": "${HDIPW}",
+  "test_user": "${HDIUSER}",
+  "test_password": "${HDIPW}",
+  "chp_technical_user": "${HDIUSER}",
+  "standard_schema_name": "${TESTSCHEMA}",
+  "test_schema_name": "${TESTSCHEMA}",
+  "configurations": {
+    "acme": {
+      "cdw": "configs/acme/CDW.json",
+      "mri": "configs/acme/MRI.json",
+      "patient": "configs/acme/Patient.json",
+      "creation": "configs/acme/Creation.json",
+      "id": "ABCD1234"
+    },
+    "test": {
+      "cdw": "configs/test/CDW.json",
+      "mri": "configs/test/MRI.json",
+      "patient": "configs/test/Patient.json",
+      "creation": "configs/test/Creation.json",
+      "id": "4321DCBA"
+    },
+    "groupedInteractions": {
+      "cdw": "configs/groupedInteraction/CDW.json",
+      "mri": "configs/groupedInteraction/MRI.json",
+      "patient": "configs/groupedInteraction/Patient.json",
+      "creation": "configs/groupedInteraction/Creation.json",
+      "id": "GROUP_INT"
+    }
+  },
+  "integration_test_folder": "specs",
+  "file_pattern": "_test.js$",
+  "log": true,
+  "mocha-reporter": "spec",
+  "mocha-bail": false,
+  "mocha-timeout": 100000,
+  "mocha-slow": 5000
+}
