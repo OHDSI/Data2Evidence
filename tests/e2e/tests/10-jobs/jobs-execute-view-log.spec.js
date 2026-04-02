@@ -112,6 +112,6 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset+/)
   await expect(page.getByRole('dialog')).toHaveText(
-    /.+1047 out of 1933 passed checks are Not Applicable, due to empty tables or fields.+/
+    /.+1,047 out of 1,933 passed checks are Not Applicable, due to empty tables or fields.+/
   )
 })
