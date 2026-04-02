@@ -24,6 +24,7 @@ const state = {
   addNewCohort: false,
   loading: false,
   canDatasetMaterializeCohorts: false,
+  canMaterializeCohortDatasetId: '',   // tracks which dataset the cached result belongs to
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -482,13 +483,21 @@ const actions = {
         })
     })
   },
-  fireCheckIfDatasetCanMaterializeCohorts({ commit, dispatch, rootGetters }) {
+  fireCheckIfDatasetCanMaterializeCohorts({ state, commit, dispatch, rootGetters }) {
+    const currentDatasetId = rootGetters.getSelectedDataset.id
+    // Skip if already loaded for this dataset
+    if (state.canMaterializeCohortDatasetId === currentDatasetId && currentDatasetId) {
+      return Promise.resolve()
+    }
     return dispatch('ajaxAuth', {
-      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${rootGetters.getSelectedDataset.id}`,
+      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${currentDatasetId}`,
       method: 'GET',
     })
       .then(response => {
-        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: response.data })
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: response.data,
+          datasetId: currentDatasetId,
+        })
       })
       .catch(error => {
         console.error(error)
@@ -496,7 +505,10 @@ const actions = {
           message: rootGetters.getText('MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR'),
         })
         // Upon error on api request, disable materialize cohort for dataset
-        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: false })
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: false,
+          datasetId: '',
+        })
       })
   },
 }
@@ -509,8 +521,9 @@ const mutations = {
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
   },
-  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts }) {
+  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts, datasetId }) {
     modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts
+    modulestate.canMaterializeCohortDatasetId = datasetId ?? ''
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
     modulestate.materializedCohorts = materializedCohorts ?? []
@@ -534,6 +547,10 @@ const mutations = {
     modulestate.bookmarks = []
     modulestate.materializedCohorts = []
     modulestate.atlasCohortDefinitions = []
+  },
+  [types.RESET_DATASET_CACHE](modulestate) {
+    modulestate.canDatasetMaterializeCohorts = false
+    modulestate.canMaterializeCohortDatasetId = ''
   },
 }
 
