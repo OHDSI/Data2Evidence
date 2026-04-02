@@ -1,7 +1,7 @@
+@use './fonts';
+@use './mri-bootstrap-variables' as *;
+@use './mixins' as *;
 @import 'vue-multiselect/dist/vue-multiselect.min.css';
-@import './fonts';
-@import './mri-bootstrap-variables';
-@import './mixins';
 
 .mri-app-vue-container {
   @import './mri-bootstrap';

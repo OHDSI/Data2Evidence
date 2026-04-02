@@ -970,6 +970,7 @@ export const paFHIRConfigDuckdb = {
           useRefValue: false,
           category: true,
           measure: true,
+          defaultBinSize: 10,
           filtercard: {
             initial: false,
             visible: true,
@@ -1209,8 +1210,11 @@ export const paFHIRConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: ["patient.attributes.Age"],
-      stackCategory: ["patient.attributes.gendersourcevalue"],
+      categories: [
+        "patient.attributes.gendersourcevalue",
+        "patient.attributes.Age",
+      ],
+      stackCategory: [],
     },
     initialChart: "stacked",
     stacked: {

@@ -1,4 +1,4 @@
-name: d2e-functions/pa Run HTTP tests
+name: HTTP Tests HANA
 permissions:
   contents: read
 
@@ -73,6 +73,7 @@ jobs:
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
+      HTTPTEST_DB_DIALECT: "hana"
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -166,7 +167,7 @@ jobs:
       - name: Setup Test DB
         run: |
           yarn --prefer-offline
-          yarn inittestdb
+          yarn inittestdb-hana
 
       - name: Login to logto and get Bearer token and sub
         run: |
@@ -349,11 +350,11 @@ jobs:
 
       - name: Install dependencies in backend integration tests
         run: |
-          cd ./tests/backend_integration_tests
+          cd ./tests/backend_integration_tests/hana
           yarn
 
       - name: Run HTTP tests
-        working-directory: ./tests/backend_integration_tests
+        working-directory: ./tests/backend_integration_tests/hana
         run: yarn test-specs --test_schema_name=$TESTSCHEMA
 
       - name: print logs for alp-dataflow-gen-1
@@ -395,7 +396,7 @@ jobs:
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
-        run: yarn removetestdb
+        run: yarn removetestdb-hana
 
       - name: Prune system
         if: always()

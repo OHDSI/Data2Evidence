@@ -74,7 +74,7 @@ function isValidYear(str: string): boolean {
 }
 
 function isValidConceptCode(str: string): boolean {
-  return typeof str === "string" && /^[a-zA-Z0-9.]+$/.test(str);
+  return typeof str === "string" && /^[a-zA-Z0-9.\-]+$/.test(str);
 }
 
 function isValidWildcardFlag(val: string): boolean {

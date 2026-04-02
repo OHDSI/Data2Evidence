@@ -18,22 +18,23 @@ if (!fs.existsSync(SEED_FILE)) {
 
 let content = fs.readFileSync(SEED_FILE, "utf8");
 
-// Same-line format: 3 occurrences with JSON-style quoted keys
-content = content.replaceAll(
-  '"categories": ["patient.attributes.Age"]',
-  '"categories": ["patient.attributes.monthOfBirth"]'
+// Same-line format: JSON-style quoted keys with [gender, Age] pair
+// Handles Gender, Gender_concept_name, and gender variants
+content = content.replace(
+  /"categories": \["patient\.attributes\.\w+", "patient\.attributes\.Age"\]/g,
+  (match) => match.replace("patient.attributes.Age", "patient.attributes.monthOfBirth")
 );
 
-// Same-line format: 1 occurrence with JS-style unquoted keys
-content = content.replaceAll(
-  'categories: ["patient.attributes.Age"]',
-  'categories: ["patient.attributes.monthOfBirth"]'
+// Same-line format: JS-style unquoted keys with [gender, Age] pair
+content = content.replace(
+  /categories: \["patient\.attributes\.\w+", "patient\.attributes\.Age"\]/g,
+  (match) => match.replace("patient.attributes.Age", "patient.attributes.monthOfBirth")
 );
 
-// Multiline format: 1 occurrence where value is on separate line (line 13282)
+// Multiline format: 1 occurrence where values are on separate lines
 content = content.replaceAll(
-  '"categories": [\n                "patient.attributes.Age"\n            ]',
-  '"categories": [\n                "patient.attributes.monthOfBirth"\n            ]'
+  '"categories": [\n                "patient.attributes.Gender",\n                "patient.attributes.Age"\n            ]',
+  '"categories": [\n                "patient.attributes.Gender",\n                "patient.attributes.monthOfBirth"\n            ]'
 );
 
 // Set initial: true for monthOfBirth attribute in filtercard (3 occurrences)
