@@ -301,7 +301,6 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 16px;
 
   .group-button {
     width: 80%;
@@ -331,6 +330,7 @@ onUnmounted(() => {
 }
 
 .inclusion-report-container {
+  margin-top: 1rem;
   padding: 1rem;
   display: flex;
   flex-direction: column;
