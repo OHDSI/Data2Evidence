@@ -125,5 +125,5 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/CriteriaSelectorDropdown';
+@use '../styles/CriteriaSelectorDropdown';
 </style>

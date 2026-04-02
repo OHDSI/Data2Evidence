@@ -1715,7 +1715,9 @@
             "visible": true,
             "linkColumn": false
           },
-          "annotations": ["genomics_dw_audit_id"]
+          "annotations": [
+            "genomics_dw_audit_id"
+          ]
         },
         {
           "source": "patient.interactions.ga_mutation.attributes.variant_index",
@@ -1735,7 +1737,9 @@
             "visible": true,
             "linkColumn": false
           },
-          "annotations": ["genomics_variant_index"]
+          "annotations": [
+            "genomics_variant_index"
+          ]
         },
         {
           "source": "patient.interactions.ga_mutation.attributes.allele_index",
@@ -1755,7 +1759,9 @@
             "visible": true,
             "linkColumn": false
           },
-          "annotations": ["genomics_allele_index"]
+          "annotations": [
+            "genomics_allele_index"
+          ]
         },
         {
           "source": "patient.interactions.ga_mutation.attributes.sample_index",
@@ -1775,7 +1781,9 @@
             "visible": true,
             "linkColumn": false
           },
-          "annotations": ["genomics_sample_index"]
+          "annotations": [
+            "genomics_sample_index"
+          ]
         },
         {
           "source": "patient.interactions.ga_mutation.attributes.calYear",
@@ -2480,11 +2488,13 @@
   ],
   "chartOptions": {
     "initialAttributes": {
-      "measures": ["patient.attributes.pcount"],
+      "measures": [
+        "patient.attributes.pcount"
+      ],
       "categories": [
         "patient.conditions.acme.interactions.priDiag.attributes.icd_10"
       ],
-      "stackCategory": ["patient.attributes.gender"]
+      "stackCategory": []
     },
     "initialChart": "stacked",
     "stacked": {
@@ -2509,7 +2519,9 @@
       "collectionEnabled": true,
       "beginVisible": true,
       "confidenceInterval": 1.95996398454,
-      "filters": ["patient.interactions.ga_mutation"],
+      "filters": [
+        "patient.interactions.ga_mutation"
+      ],
       "selectedInteractions": [
         "patient.conditions.acme.interactions.priDiag",
         "patient.conditions.acme.interactions.tnm",

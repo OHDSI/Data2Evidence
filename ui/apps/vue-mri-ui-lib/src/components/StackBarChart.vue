@@ -1,11 +1,7 @@
 <template>
   <div class="stackbar-wrapper">
     <div class="stackbar-container" id="stacked-chart"></div>
-    <StackBarChartLegend
-      v-if="chartData.traces && chartData.traces.length > 1"
-      :traces="chartData.traces"
-      :colorway="layout.colorway"
-    />
+    <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
   </div>
 </template>
 
@@ -221,6 +217,22 @@ export default {
       'processResponse',
       'getChartProperty',
     ]),
+
+    legendTraces() {
+      if (this.chartData?.colorLegend?.length > 0) {
+        return this.chartData.colorLegend.map(item => ({
+          name: item.name,
+          meta: { fullName: item.name },
+        }))
+      }
+      return this.chartData?.traces || []
+    },
+    legendColorway() {
+      if (this.chartData?.colorLegend?.length > 0) {
+        return this.chartData.colorLegend.map(item => item.color)
+      }
+      return Object.values(Constants.ChartColorway)
+    },
   },
   beforeUnmount() {
     if (this.resizeObserver) {

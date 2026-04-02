@@ -14,6 +14,7 @@ import SplashScreen from './components/SplashScreen.vue'
 import store from './store'
 import NotificationStack from './components/NotificationStack.vue'
 import { useDeepLink } from './composables/useDeepLink'
+import CohortUrlCodec from './utils/CohortUrlCodec'
 
 export default {
   store,
@@ -73,18 +74,15 @@ export default {
       'setLocale',
     ]),
     bindShareCohortDefinition() {
-      // Import CohortUrlCodec dynamically to avoid circular dependencies
-      import('./utils/CohortUrlCodec').then(({ default: CohortUrlCodec }) => {
-        // Bind to window for manual testing
-        ;(window as any).shareCohortDefinition = () => {
-          return CohortUrlCodec.shareCohortDefinition(this.$store)
-        }
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            'Deep link utility loaded. Use window.shareCohortDefinition() to generate a shareable URL for the current cohort definition.'
-          )
-        }
-      })
+      // Bind to window for manual testing
+      ;(window as any).shareCohortDefinition = () => {
+        return CohortUrlCodec.shareCohortDefinition(this.$store)
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          'Deep link utility loaded. Use window.shareCohortDefinition() to generate a shareable URL for the current cohort definition.'
+        )
+      }
     },
     async processDeepLinkIfPresent() {
       // Wait for config to be loaded

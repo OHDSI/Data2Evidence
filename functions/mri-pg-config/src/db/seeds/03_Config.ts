@@ -9895,6 +9895,7 @@ const paConfig = {
                     "useRefValue": false,
                     "category": true,
                     "measure": true,
+                    "defaultBinSize": 10,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -13288,11 +13289,10 @@ const paConfig = {
                 "patient.attributes.pcount"
             ],
             "categories": [
+                "patient.attributes.Gender",
                 "patient.attributes.Age"
             ],
-            "stackCategory": [
-                "patient.attributes.Gender"
-            ]
+            "stackCategory": []
         },
         "initialChart": "stacked",
         "stacked": {
@@ -20975,7 +20975,7 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@COHORT.\"cohort_definition_id\"",
-                        "referenceFilter": "CONTAINS (@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%', FUZZY (0.5))",
+                        "referenceFilter": "JARO_SIMILARITY(@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%') >= 0.5",
                         "referenceExpression": "@RESULT_COHORT_DEF.COHORT_DEFINITION_ID",
                         "order": 0,
                         "domainFilter": "",
@@ -23032,6 +23032,7 @@ const paConfigDuckdb = {
                     "useRefValue": false,
                     "category": true,
                     "measure": true,
+                    "defaultBinSize": 10,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -26454,8 +26455,8 @@ const paConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": ["patient.attributes.Age"],
-            "stackCategory": ["patient.attributes.Gender_concept_name"]
+            "categories": ["patient.attributes.Gender_concept_name", "patient.attributes.Age"],
+            "stackCategory": []
         },
         "initialChart": "stacked",
         "stacked": {
@@ -27659,6 +27660,7 @@ const paI2b2ConfigDuckdb = {
           useRefValue: false,
           category: true,
           measure: true,
+          defaultBinSize: 10,
           filtercard: {
             initial: true,
             visible: true,
@@ -28080,8 +28082,8 @@ const paI2b2ConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: ["patient.attributes.Age"],
-      stackCategory: ["patient.attributes.Gender"],
+      categories: ["patient.attributes.Gender", "patient.attributes.Age"],
+      stackCategory: [],
     },
     initialChart: "stacked",
     stacked: {
@@ -32382,6 +32384,7 @@ const pajsonfhirConfigDuckdb = {
                     "useRefValue": false,
                     "category": true,
                     "measure": true,
+                    "defaultBinSize": 10,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -33924,8 +33927,8 @@ const pajsonfhirConfigDuckdb = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": ["patient.attributes.Age"],
-            "stackCategory": ["patient.attributes.gender"]
+            "categories": ["patient.attributes.gender", "patient.attributes.Age"],
+            "stackCategory": []
         },
         "initialChart": "stacked",
         "stacked": {
@@ -36666,6 +36669,7 @@ const omopHanaLeanPAConfig = {
                     "useRefValue": false,
                     "category": true,
                     "measure": true,
+                    "defaultBinSize": 10,
                     "filtercard": {
                         "initial": true,
                         "visible": true,
@@ -37408,8 +37412,8 @@ const omopHanaLeanPAConfig = {
             "measures": [
                 "patient.attributes.pcount"
             ],
-            "categories": ["patient.attributes.Age"],
-            "stackCategory": ["patient.attributes.Gender"]
+            "categories": ["patient.attributes.Gender", "patient.attributes.Age"],
+            "stackCategory": []
         },
         "initialChart": "stacked",
         "stacked": {

@@ -1,4 +1,4 @@
-@import './mri-bootstrap-variables';
+@use './mri-bootstrap-variables' as *;
 
 .appMessageStrip {
   border: 1px solid;
