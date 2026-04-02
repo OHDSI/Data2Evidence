@@ -264,11 +264,10 @@ jobs:
             -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
 
-      - name: Upload e2e test artifacts
-        name: Upload Error Context
+      - name: Upload Error Context
         if: always() # Always run, even if the previous step fails
+        uses: actions/upload-artifact@v4
         with:
-          name: e2e-test-artifacts
           name: error-context
           path: tests/e2e/test-results/**/*
 
