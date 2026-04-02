@@ -10,7 +10,7 @@ import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import { pipeline } from "node:stream/promises";
-import { Transform, Writable } from "node:stream";
+import { Transform } from "node:stream";
 import { promisify } from "node:util";
 import { env } from "../../env";
 
