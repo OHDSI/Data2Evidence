@@ -619,19 +619,25 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
      * @returns An array of strings representing all possible bitmap masks where where all are enabled
      */
     private getSelectiveBitmapMasks(inclusionReportFiltercards): string[] {
-        const n = inclusionReportFiltercards.length;
-        let isExclude = false;
         let bitmapMasks = [];
-        for (let i = 0; i < n; i++) {
-            let bitmapMask = "";
-            for (let j = 0; j <= i; j++) {
-                isExclude = inclusionReportFiltercards[j].isExclude
-                    ? true
-                    : false;
-                bitmapMask += isExclude ? "0" : "1";
-                isExclude = false;
+        if (
+            inclusionReportFiltercards &&
+            inclusionReportFiltercards.length > 0
+        ) {
+            const n = inclusionReportFiltercards.length;
+            let isExclude = false;
+
+            for (let i = 0; i < n; i++) {
+                let bitmapMask = "";
+                for (let j = 0; j <= i; j++) {
+                    isExclude = inclusionReportFiltercards[j].isExclude
+                        ? true
+                        : false;
+                    bitmapMask += isExclude ? "0" : "1";
+                    isExclude = false;
+                }
+                bitmapMasks.push(bitmapMask);
             }
-            bitmapMasks.push(bitmapMask);
         }
         console.log(`bitmapMasks:${bitmapMasks}`);
         return bitmapMasks;
