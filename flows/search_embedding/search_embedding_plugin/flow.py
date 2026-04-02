@@ -70,34 +70,30 @@ def create_embeddings_trex(dbdao, schema_name):
     columns = list(embedding_cols.keys())
     total_batches = int(length / STEP) + (length % STEP > 0)
 
-    with dbdao._get_connection() as con:
-        def insert_batch(col_values):
-            dbdao.batch_insert_values(schema_name, tmp_embedding_table, columns, col_values, con=con)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = None
+        for i in range(0, length, STEP):
+            concept_name = concept['concept_name'][i:i+STEP].tolist()
+            concept_id = concept['concept_id'][i:i+STEP].tolist()
 
-        with ThreadPoolExecutor(max_workers=1) as executor:
-            future = None
-            for i in range(0, length, STEP):
-                concept_name = concept['concept_name'][i:i+STEP].tolist()
-                concept_id = concept['concept_id'][i:i+STEP].tolist()
+            t0 = time.time()
+            embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
+            embed_time = time.time() - t0
 
-                t0 = time.time()
-                embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
-                embed_time = time.time() - t0
+            col_values = list(zip(concept_id, embeddings))
 
-                col_values = list(zip(concept_id, embeddings))
-
-                t1 = time.time()
-                if future is not None:
-                    future.result()
-                insert_wait_time = time.time() - t1
-
-                future = executor.submit(insert_batch, col_values)
-
-                percent = round((i // STEP + 1) / total_batches * 100, 2)
-                logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
-
+            t1 = time.time()
             if future is not None:
                 future.result()
+            insert_wait_time = time.time() - t1
+
+            future = executor.submit(dbdao.batch_insert_values, schema_name, tmp_embedding_table, columns, col_values)
+
+            percent = round((i // STEP + 1) / total_batches * 100, 2)
+            logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
+
+        if future is not None:
+            future.result()
     
     logger.info("***************** Insert embedding *****************")
     ## Add embedding column to concept table
