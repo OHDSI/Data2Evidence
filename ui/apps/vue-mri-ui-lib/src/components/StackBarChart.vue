@@ -430,11 +430,11 @@ export default {
               // Use the canonical plotted value from trace.x (full, untruncated)
               let canonicalValue: string
               if (Array.isArray(trace.x[0])) {
-                // multicategory: trace.x is an array-of-arrays
-                canonicalValue = String(trace.x[axisIndex][pointIndex])
+                // multicategory display labels may be truncated; prefer canonical values from customdata
+                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[axisIndex][pointIndex])
               } else {
                 // single axis
-                canonicalValue = String(trace.x[pointIndex])
+                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[pointIndex])
               }
               pushPoint(xAxis.id, canonicalValue)
             })
@@ -448,7 +448,7 @@ export default {
 
         // Persist selection across Plotly react
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
-        this.dataToTraces(this.chartData, selectedPoints, selectedCount)
+        this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
         stackBarChart.removeAllListeners('plotly_selected')
         stackBarChart.removeAllListeners('plotly_deselect')

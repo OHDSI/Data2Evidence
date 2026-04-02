@@ -142,15 +142,19 @@ const getters = {
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
+            values: [String(dataPoint[xAxes[0].id])],
             fullLabels: [wrapText(dataPoint[xAxes[0].id], 62)],
           }))
           hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
-          xData = xAxes.map(xAxis => category.data.map(data => String(data[xAxis.id])))
+          xData = xAxes.map(xAxis =>
+            category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
+          )
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
+            const values = xAxes.map(xAxis => String(dataPoint[xAxis.id]))
             const fullLabels = xAxes.map(xAxis => wrapText(dataPoint[xAxis.id], 62))
-            return { x: xAxes, y: yAxis, fullLabels }
+            return { x: xAxes, y: yAxis, values, fullLabels }
           })
           for (let i = 0; i < xAxes.length; i++) {
             hoverTemplate += '%{customdata.x[' + i + '].name}: %{customdata.fullLabels[' + i + ']}<br>'
@@ -184,20 +188,20 @@ const getters = {
 
       // Attach tick label mappings so the Vue component can apply truncated display labels
       // while keeping full (untruncated) values in trace.x for selection events
-      const tickLabels = buildTickLabels(xAxes, chartData.data)
+      const tickLabels = buildTickLabels(xAxes, result.data)
       if (tickLabels) {
-        chartData.tickvals = tickLabels.tickvals
-        chartData.ticktext = tickLabels.ticktext
-        chartData.ticktextFull = tickLabels.ticktextFull
+        result.tickvals = tickLabels.tickvals
+        result.ticktext = tickLabels.ticktext
+        result.ticktextFull = tickLabels.ticktextFull
       } else {
-        chartData.tickvals = undefined
-        chartData.ticktext = undefined
-        chartData.ticktextFull = undefined
+        result.tickvals = undefined
+        result.ticktext = undefined
+        result.ticktextFull = undefined
       }
 
       // TODO: coloring based on x-axis categories for non-stacked bar chart
 
-      return chartData
+      return result
     },
   processResponse:
     (state, getters) =>

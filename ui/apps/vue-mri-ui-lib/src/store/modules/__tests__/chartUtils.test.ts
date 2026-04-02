@@ -206,3 +206,35 @@ describe('dataToTraces trace.x canonical values', () => {
     })
   })
 })
+
+describe('dataToTraces multicategory display labels', () => {
+  const state = {}
+  const mockGetters = makeMockGetters()
+
+  it('uses truncated display labels for multicategory axes while preserving canonical full values', () => {
+    const xAxis1 = { id: 'patient.attributes.diagnosis', axis: 1, name: 'Diagnosis' }
+    const xAxis2 = { id: 'patient.attributes.stage', axis: 1, name: 'Stage' }
+    const longDiagnosis = 'This diagnosis name is extremely long and should be truncated for display'
+    const longStage = 'This stage description is also long enough to need truncation'
+    const chartData = {
+      categories: [xAxis1, xAxis2],
+      measures: [{ id: 'patient.attributes.count', name: 'Count' }],
+      data: [
+        {
+          [xAxis1.id]: longDiagnosis,
+          [xAxis2.id]: longStage,
+          'patient.attributes.count': 5,
+        },
+      ],
+    }
+
+    const result = getters.dataToTraces(state, mockGetters)(chartData)
+
+    expect(result.traces[0].x[0][0]).not.toBe(longDiagnosis)
+    expect(result.traces[0].x[1][0]).not.toBe(longStage)
+    expect(result.traces[0].x[0][0].length).toBeLessThanOrEqual(30)
+    expect(result.traces[0].x[1][0].length).toBeLessThanOrEqual(30)
+    expect(result.traces[0].customdata[0].values[0]).toBe(longDiagnosis)
+    expect(result.traces[0].customdata[0].values[1]).toBe(longStage)
+  })
+})
