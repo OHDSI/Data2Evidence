@@ -70,7 +70,7 @@ export function useFunnelChart(
       text: funnelChartData.value.hoverTexts,
       hoverinfo: 'text',
       textposition: 'inside',
-      texttemplate: 'N: %{x} (%{percentInitial:.2%})',
+      texttemplate: 'N: %{x:,} (%{percentInitial:.2%})',
       constraintext: 'outside',
       textinfo: 'value+percent initial',
       marker: {
