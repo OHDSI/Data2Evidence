@@ -510,20 +510,22 @@ export class CohortEndpoint {
                                                     (COHORT_DEFINITION_ID, SUBJECT_ID, COHORT_START_DATE, COHORT_END_DATE) VALUES 
                                                     (${cohortDefinitionId}, ?, ?, ?)`;
             const bulkInsert = promisify(this.connection.executeBulkInsert.bind(this.connection));
+            let batch = [];
+            const dialect = this.dialect;
             const batcher = new Transform({
             objectMode: true,
             async transform(row, encoding, callback) {
-                this.batch = this.batch || [];
+                batch = batch || [];
                 // console.log(row.SUBJECT_ID)
-                this.batch.push([row.SUBJECT_ID, row.COHORT_START_DATE, row.COHORT_END_DATE]);
+                batch.push([row.SUBJECT_ID, row.COHORT_START_DATE, row.COHORT_END_DATE]);
         
-                if (this.batch.length >= env.ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT[this.dialect]) {
+                if (batch.length >= env.ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT[dialect]) {
                     try {
                         await bulkInsert(
                             insertCohortQueryInBatches,
-                            this.batch
+                            batch
                         );
-                        this.batch = [];
+                        batch = [];
                         callback();
                     } catch (err) {
                         callback(err);
@@ -534,11 +536,11 @@ export class CohortEndpoint {
             },
             async flush(callback) {
                 // Insert remaining rows at the end of the stream
-                if (this.batch && this.batch.length > 0) {
+                if (batch && batch.length > 0) {
                     try {
                         await bulkInsert(
                             insertCohortQueryInBatches,
-                            this.batch
+                            batch
                         );
                         callback();
                     } catch (err) {
