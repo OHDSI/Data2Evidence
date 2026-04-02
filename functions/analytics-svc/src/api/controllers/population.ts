@@ -331,23 +331,23 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                             break;
                                         case "patientcount":
                                             if (body.filter) {
-                                            new PatientCountEndpoint(
-                                                analyticsConnection
-                                            )
-                                                .processRequest(
-                                                    req,
-                                                    configId,
-                                                    configVersion,
-                                                    datasetId,
-                                                    bookmarkInputStr,
-                                                    language
+                                                new PatientCountEndpoint(
+                                                    analyticsConnection
                                                 )
-                                                .then((res) =>
-                                                    _sendResult(null, res)
-                                                )
-                                                .catch((err) =>
-                                                    _sendResult(err, null)
-                                                );
+                                                    .processRequest(
+                                                        req,
+                                                        configId,
+                                                        configVersion,
+                                                        datasetId,
+                                                        bookmarkInputStr,
+                                                        language
+                                                    )
+                                                    .then((res) =>
+                                                        _sendResult(null, res)
+                                                    )
+                                                    .catch((err) =>
+                                                        _sendResult(err, null)
+                                                    );
                                             } else {
                                                 new PatientCountEndpoint(
                                                     analyticsConnection
