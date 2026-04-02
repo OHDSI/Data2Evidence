@@ -59,12 +59,15 @@ export const i18nDefault = {
     ADD_STRATEGUS_STUDY_DIALOG__STUDY_INFORMATION: "Study information",
     ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME: "Study name",
     ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_HELPER: "Enter a unique name for your study",
-    ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_INVALID: "Study name can only contain letters, numbers, underscores, and hyphens",
+    ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_INVALID:
+      "Study name can only contain letters, numbers, underscores, and hyphens",
     ADD_STRATEGUS_STUDY_DIALOG__STUDY_NAME_REQUIRED: "Study name is required",
     ADD_STRATEGUS_STUDY_DIALOG__TITLE: "Add Strategus study",
     ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE: "Token dataset code",
-    ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_HELPER: "Enter a unique identifier that can contain alphanumeric characters and underscores only",
-    ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_INVALID: "Token dataset code must contain only alphanumeric characters and underscores (max 80 characters)",
+    ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_HELPER:
+      "Enter a unique identifier that can contain alphanumeric characters and underscores only",
+    ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_INVALID:
+      "Token dataset code must contain only alphanumeric characters and underscores (max 80 characters)",
     ADD_STRATEGUS_STUDY_DIALOG__TOKEN_DATASET_CODE_REQUIRED: "Token dataset code is required",
     ADD_STUDY_DIALOG__ADD: "Add",
     ADD_STUDY_DIALOG__ADD_DATASET: "Add dataset",
@@ -1137,7 +1140,7 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to help@data4life.care.",
     TRIGGER_PLUGIN_UPLOAD_DIALOG__TITLE: "Install default plugins",
     UI_PLUGIN_ANALYSIS: "Analysis",
-    UI_PLUGIN_CDM_CONFIG: "CDM config",
+    UI_PLUGIN_CDM_CONFIG: "CDM configuration",
     UI_PLUGIN_COHORTS: "Cohorts",
     UI_PLUGIN_CONCEPTS: "Concepts",
     UI_PLUGIN_DATABASES: "Databases",
@@ -1172,7 +1175,8 @@ export const i18nDefault = {
     UI_PLUGIN_SHINY_LIVE__NO_DASHBOARDS: "No dashboards available for this dataset",
     UI_PLUGIN_SHINY_LIVE__NO_DASHBOARD_FOR_SELECTION: "No dashboard available for this selection.",
     UI_PLUGIN_SHINY_LIVE__SELECT_DASHBOARD: "Select dashboard",
-    UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED: "You don't have permission to view strategus analysis results. Please contact your administrator.",
+    UI_PLUGIN_SHINY_LIVE__UNAUTHORIZED:
+      "You don't have permission to view strategus analysis results. Please contact your administrator.",
     UI_PLUGIN_SHINY_LIVE__VIEWER_NOT_RUNNING: "The result viewer is not running. Start it from the admin portal.",
     UI_PLUGIN_STUDIES: "Studies",
     UI_PLUGIN_USERS: "Users",
