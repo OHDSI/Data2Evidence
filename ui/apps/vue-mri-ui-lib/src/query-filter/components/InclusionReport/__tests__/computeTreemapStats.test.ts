@@ -48,7 +48,7 @@ describe('Treemap Stats Computation', () => {
       expect(result?.name).toBe('11')
       expect(result?.value).toBe(600)
       expect(result?.tooltip).toBeDefined()
-      expect(result?.tooltip.count).toBe('600 people (60.00%)')
+      expect(result?.tooltip.count).toBe('600 persons (60.00%)')
       expect(result?.tooltip.summary).toBe('2 criteria passed, 0 criteria failed')
       expect(result?.tooltip.passed).toHaveLength(2)
       expect(result?.tooltip.failed).toHaveLength(0)
@@ -112,7 +112,7 @@ describe('Treemap Stats Computation', () => {
       const result = convertTreemapData(data, mockReport)
 
       expect(result?.tooltip).toBeDefined()
-      expect(result?.tooltip.count).toBe('400 people (40.00%)')
+      expect(result?.tooltip.count).toBe('400 persons (40.00%)')
       expect(result?.tooltip.summary).toBe('1 criteria passed, 1 criteria failed')
       expect(result?.tooltip.passed).toEqual(['+ Age >= 18'])
       expect(result?.tooltip.failed).toEqual(['+ Has Condition'])
@@ -164,7 +164,7 @@ describe('Treemap Stats Computation', () => {
 
     it('should format tooltip with passed and failed criteria', () => {
       const tooltipData = {
-        count: '400 people (40.00%)',
+        count: '400 persons (40.00%)',
         summary: '1 criteria passed, 1 criteria failed',
         passed: ['1. Age >= 18'],
         failed: ['2. Has Condition'],
@@ -172,7 +172,7 @@ describe('Treemap Stats Computation', () => {
 
       const html = formatTreemapTooltip(tooltipData)
 
-      expect(html).toContain('400 people (40.00%)')
+      expect(html).toContain('400 persons (40.00%)')
       expect(html).toContain('1 criteria passed, 1 criteria failed')
       expect(html).toContain('Passed:')
       expect(html).toContain('1. Age >= 18')
@@ -182,7 +182,7 @@ describe('Treemap Stats Computation', () => {
 
     it('should format tooltip with only passed criteria', () => {
       const tooltipData = {
-        count: '600 people (60.00%)',
+        count: '600 persons (60.00%)',
         summary: '2 criteria passed, 0 criteria failed',
         passed: ['1. Age >= 18', '2. Has Condition'],
         failed: [],
@@ -190,7 +190,7 @@ describe('Treemap Stats Computation', () => {
 
       const html = formatTreemapTooltip(tooltipData)
 
-      expect(html).toContain('600 people (60.00%)')
+      expect(html).toContain('600 persons (60.00%)')
       expect(html).toContain('Passed:')
       expect(html).toContain('1. Age >= 18')
       expect(html).toContain('2. Has Condition')
@@ -199,7 +199,7 @@ describe('Treemap Stats Computation', () => {
 
     it('should format tooltip with only failed criteria', () => {
       const tooltipData = {
-        count: '100 people (10.00%)',
+        count: '100 persons (10.00%)',
         summary: '0 criteria passed, 2 criteria failed',
         passed: [],
         failed: ['1. Age >= 18', '2. Has Condition'],
@@ -207,7 +207,7 @@ describe('Treemap Stats Computation', () => {
 
       const html = formatTreemapTooltip(tooltipData)
 
-      expect(html).toContain('100 people (10.00%)')
+      expect(html).toContain('100 persons (10.00%)')
       expect(html).toContain('Failed:')
       expect(html).toContain('1. Age >= 18')
       expect(html).toContain('2. Has Condition')
