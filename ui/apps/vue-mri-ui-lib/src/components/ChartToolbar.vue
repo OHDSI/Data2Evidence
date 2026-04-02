@@ -249,7 +249,6 @@ export default {
         window.addEventListener('click', this.closeSubMenu)
       })
       this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-      this.refreshPatientCount()
       this.loadValuesForAttributePath({
         attributePathUid: 'conceptSets',
         searchQuery: '',
