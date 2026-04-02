@@ -14,8 +14,8 @@ export interface DashboardIframeProps {
 export const DashboardIframe: FC<DashboardIframeProps> = ({
   url,
   token,
-  title = "Dashboard Application",
-  loadingMessage = "Loading Dashboard application...",
+  title = "Dashboard application",
+  loadingMessage = "Loading dashboard application...",
   errorMessage,
   onLoad,
 }) => {
