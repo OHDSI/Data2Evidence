@@ -16,8 +16,6 @@ import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
-import { init } from 'echarts'
-import { initial } from 'underscore'
 
 let stackBarChart
 
@@ -249,6 +247,38 @@ export default {
       'setAlertMessage',
       'setPlotlyElement',
     ]),
+    /**
+     * Returns true when x-axis labels should be truncated.
+     * Heuristic: estimate available chars per slot based on plot width,
+     * and compare against the average label length.
+     * Falls back to always-truncate when width is unknown.
+     */
+    shouldTruncateXAxisLabels(plotWidth: number, categoryCount: number, avgLabelLength: number): boolean {
+      if (!plotWidth || !categoryCount) return true
+      const charsPerSlot = plotWidth / categoryCount / 7
+      return avgLabelLength > charsPerSlot * 0.9
+    },
+    /**
+     * Builds the xaxis tick overrides to apply to a Plotly layout object.
+     * Chooses full or truncated ticktext based on available space heuristic.
+     */
+    buildXAxisTicks() {
+      if (!this.chartData || !this.chartData.tickvals) return null
+      const tickvals: string[] = this.chartData.tickvals
+      const ticktextFull: string[] = this.chartData.ticktextFull || tickvals
+      const ticktext: string[] = this.chartData.ticktext || tickvals
+      const categoryCount = tickvals.length
+      // Measure plot width from DOM element if available
+      const plotWidth = stackBarChart ? stackBarChart.clientWidth : 0
+      // Compute average label length from full labels
+      const avgLabelLength = ticktextFull.reduce((sum, t) => sum + t.length, 0) / (ticktextFull.length || 1)
+      const useTruncated = this.shouldTruncateXAxisLabels(plotWidth, categoryCount, avgLabelLength)
+      return {
+        tickvals,
+        ticktext: useTruncated ? ticktext : ticktextFull,
+        tickangle: useTruncated ? 'auto' : 0,
+      }
+    },
     setupAxes() {
       this.disableAllAxesandProperties()
       this.setChartPropertyValue({
@@ -333,6 +363,12 @@ export default {
         const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         freshLayout.showlegend = false
         freshLayout.xaxis.type = this.chartData.axisType
+        const xTicks = this.buildXAxisTicks()
+        if (xTicks) {
+          freshLayout.xaxis.tickvals = xTicks.tickvals
+          freshLayout.xaxis.ticktext = xTicks.ticktext
+          freshLayout.xaxis.tickangle = xTicks.tickangle
+        }
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -348,6 +384,12 @@ export default {
       const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       initialLayout.showlegend = false
       initialLayout.xaxis.type = this.chartData.axisType
+      const initialXTicks = this.buildXAxisTicks()
+      if (initialXTicks) {
+        initialLayout.xaxis.tickvals = initialXTicks.tickvals
+        initialLayout.xaxis.ticktext = initialXTicks.ticktext
+        initialLayout.xaxis.tickangle = initialXTicks.tickangle
+      }
 
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
@@ -372,15 +414,20 @@ export default {
             const xAxes = pointCustomData.x
             const yAxis = pointCustomData.y
 
-            if (xAxes.length > 1) {
-              xAxes.forEach((xAxis, axisIndex) => {
-                pushPoint(xAxis.id, trace.x[axisIndex][pointIndex])
-              })
-            } else if (xAxes.length === 1) {
-              pushPoint(xAxes[0].id, trace.x[pointIndex])
-            }
+            xAxes.forEach((xAxis, axisIndex) => {
+              // Use the canonical plotted value from trace.x (full, untruncated)
+              let canonicalValue: string
+              if (Array.isArray(trace.x[0])) {
+                // multicategory: trace.x is an array-of-arrays
+                canonicalValue = String(trace.x[axisIndex][pointIndex])
+              } else {
+                // single axis
+                canonicalValue = String(trace.x[pointIndex])
+              }
+              pushPoint(xAxis.id, canonicalValue)
+            })
             if (yAxis.length > 0) {
-              pushPoint(yAxis[0].id, trace.name)
+              pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
             }
             selectedCount++
           })
@@ -397,6 +444,12 @@ export default {
         const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         selectionLayout.showlegend = false
         selectionLayout.xaxis.type = this.chartData.axisType
+        const selectionXTicks = this.buildXAxisTicks()
+        if (selectionXTicks) {
+          selectionLayout.xaxis.tickvals = selectionXTicks.tickvals
+          selectionLayout.xaxis.ticktext = selectionXTicks.ticktext
+          selectionLayout.xaxis.tickangle = selectionXTicks.tickangle
+        }
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
