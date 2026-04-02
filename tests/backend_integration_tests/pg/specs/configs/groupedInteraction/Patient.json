@@ -1,0 +1,114 @@
+{
+  "masterdata": {
+    "title": [
+      {
+        "pattern": " {lastName},  {firstName}",
+        "values": []
+      }
+    ],
+    "details": [
+      {
+        "pattern": " {gender}",
+        "values": []
+      }
+    ]
+  },
+  "inspectorOptions": {
+    "relatedDocuments": {
+      "visible": true
+    },
+    "overview": {
+      "visible": true
+    }
+  },
+  "configInformations": {
+    "note": ""
+  },
+  "lanes": [
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Grouped Interaction"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightOrange",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.dummy",
+          "visible": true,
+          "attributes": []
+        },
+        {
+          "source": "patient.interactions.Grouped_Interaction",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.Attribute",
+              "visible": false,
+              "firstTileAttribute": false,
+              "secondTileAttribute": false,
+              "modelName": "Attribute",
+              "annotations": ["interaction_attribute_name"]
+            },
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.Group",
+              "visible": false,
+              "modelName": "Group",
+              "annotations": ["interaction_grouping_attribute"]
+            },
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.Value",
+              "visible": false,
+              "firstTileAttribute": false,
+              "secondTileAttribute": false,
+              "modelName": "Value",
+              "annotations": ["interaction_attribute_value"]
+            },
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.Value_2",
+              "visible": false,
+              "firstTileAttribute": false,
+              "secondTileAttribute": false,
+              "modelName": "Value",
+              "annotations": ["interaction_attribute_value"]
+            },
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.end",
+              "visible": false,
+              "firstTileAttribute": false,
+              "secondTileAttribute": false,
+              "modelName": "End",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.Grouped_Interaction.attributes.start",
+              "visible": false,
+              "firstTileAttribute": false,
+              "secondTileAttribute": false,
+              "modelName": "Start",
+              "annotations": []
+            }
+          ],
+          "modelName": "Grouped Interaction"
+        }
+      ],
+      "order": 0
+    }
+  ]
+}

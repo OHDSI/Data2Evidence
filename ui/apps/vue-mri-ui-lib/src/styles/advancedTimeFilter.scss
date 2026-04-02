@@ -1,4 +1,4 @@
-@import './mixins';
+@use './mixins' as *;
 .advancedtime-filter {
   .card-header {
     color: var(--color-mri-header-text-dark);

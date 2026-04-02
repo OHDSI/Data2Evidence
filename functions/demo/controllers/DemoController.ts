@@ -13,6 +13,10 @@ export class DemoController {
 
   private registerRoutes() {
     this.router.post("/setup", this.executeSetup.bind(this));
+    this.router.post(
+      "/setup-httptest-env",
+      this.executeSetupHTTPTestEnv.bind(this),
+    );
     this.router.post("/setup-db", this.executeSetupDb.bind(this));
     this.router.post("/setup-dataset", this.executeSetupDataset.bind(this));
     this.router.post("/setup-phenotype", this.executeSetupPhenotype.bind(this));
@@ -55,6 +59,28 @@ export class DemoController {
         code: "addResearcherRole",
         message: "Add user as researcher role...",
         task: this.service.addResearcherRoleToDataset.bind(this.service),
+      },
+    ];
+
+    return await this.executeSteps(req, res, steps);
+  }
+
+  private async executeSetupHTTPTestEnv(req: Request, res: Response) {
+    const steps: IStepTask[] = [
+      {
+        code: "db",
+        message: "Adding HTTP test database...",
+        task: this.service.addDatabase.bind(this.service),
+      },
+      {
+        code: "dataset",
+        message: "Adding HTTP test dataset...",
+        task: this.service.addDataset.bind(this.service),
+      },
+      {
+        code: "cache",
+        message: "Creating cache for HTTP test dataset...",
+        task: this.service.createCache.bind(this.service),
       },
     ];
 

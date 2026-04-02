@@ -1,4 +1,4 @@
-@import './mri-bootstrap-variables';
+@use './mri-bootstrap-variables' as *;
 
 div.app-variant-range.form-control.form-control-sm {
   padding: 0px;

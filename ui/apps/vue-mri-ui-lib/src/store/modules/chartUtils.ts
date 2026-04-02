@@ -51,20 +51,23 @@ const getters = {
   dataToTraces:
     (state, getters) =>
     (chartData, selection = [], totalSelected = 0) => {
-      const xAxes: { id: string; axis: number; name: string }[] = chartData.categories.filter(
+      // create on a shallow copy
+      const result = { ...chartData, data: [...chartData.data] }
+
+      const xAxes: { id: string; axis: number; name: string }[] = result.categories.filter(
         category => category.axis === Constants.AxisId.X
       )
       // Flag to toggle the bar chart category type
-      chartData.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
+      result.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
       // Get the unique y-axis attribute id if any
-      const yAxis = chartData.categories.filter(category => category.axis === Constants.AxisId.Y)
+      const yAxis = result.categories.filter(category => category.axis === Constants.AxisId.Y)
 
       const categoryArray: { name: string | number; data: Record<string, string | number>[] }[] = []
       if (yAxis.length !== 0) {
         // Dictionary-based data categorization based on the unique y-axis attribute
         const yAttrKey = yAxis[0].id
         const dataDict = {}
-        chartData.data.forEach(data => {
+        result.data.forEach(data => {
           const yAttrVal = data[yAttrKey]
           if (yAttrVal in dataDict) {
             categoryArray[dataDict[yAttrVal]].data.push(data)
@@ -80,19 +83,19 @@ const getters = {
         // No data split, singleton category
         categoryArray.push({
           name: '',
-          data: chartData.data,
+          data: result.data,
         })
       }
 
-      const measureId = chartData.measures[0].id
+      const measureId = result.measures[0].id
       const toolTipSelected =
-        wrapText(chartData.measures[0].name, 62) +
+        wrapText(result.measures[0].name, 62) +
         ': <b>%{y}</b><br><br><b>' +
         (totalSelected > 1 ? totalSelected + ' values selected' : '') +
         '</b><extra></extra>'
       // Convert data belonging to each attribute category into traces
       // Reversed since the last trace will appear at the top
-      chartData.traces = categoryArray.reverse().map((category, index) => {
+      result.traces = categoryArray.reverse().map((category, index) => {
         let xData = []
         let customdataArray = []
         // Custom tooltip labelling
@@ -138,9 +141,18 @@ const getters = {
           selectedpoints: selection ? selection[index] : [],
           name: truncatedName,
           meta: { fullName },
+          marker: {
+            line: {
+              color: '#595757',
+              width: 0.7,
+            },
+          },
         }
       })
-      return chartData
+
+      // TODO: coloring based on x-axis categories for non-stacked bar chart
+
+      return result
     },
   processResponse:
     (state, getters) =>

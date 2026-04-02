@@ -1515,7 +1515,12 @@ const start = `"START"`;
 const end = `"END"`;
 const observation_id = `"OBSERVATION_ID"`;
 
-let testSchemaName = Deno.env.get("TESTSCHEMA") || "MRI";
+const HTTPTEST_DB_DIALECT = Deno.env.get("HTTPTEST_DB_DIALECT");
+let testSchemaName =
+    HTTPTEST_DB_DIALECT && HTTPTEST_DB_DIALECT === "duckdb"
+        ? "demo_database__srcdb.demo_cdm."
+        : Deno.env.get("TESTSCHEMA") || "MRI";
+
 export const pholderTableMap: any = {
     "@INTERACTION": `${testSchemaName}."legacy.cdw.db.models::InterfaceViews.INTERACTIONS"`,
     "@OBS": `${testSchemaName}."legacy.cdw.db.models::InterfaceViews.OBSERVATIONS"`,
@@ -1558,6 +1563,11 @@ export const dw_views_pholderTableMap =
 export const mock_config = mockConfig;
 
 //////////////// HTTP TEST configs ////////////////
+testSchemaName =
+    HTTPTEST_DB_DIALECT && HTTPTEST_DB_DIALECT === "duckdb"
+        ? "demo_database__srcdb.demo_cdm."
+        : "";
+
 export const httptest_acme_mri_cdw_config = {
     config: {
         censor: {},
@@ -2459,15 +2469,15 @@ export const httptest_acme_mri_cdw_config = {
         },
         advancedSettings: {
             tableMapping: {
-                "@INTERACTION": '"legacy.cdw.db.models::DWViews.Interactions"',
-                "@OBS": '"legacy.cdw.db.models::DWViews.Observations"',
+                "@INTERACTION": `${testSchemaName}"legacy.cdw.db.models::DWViews.Interactions"`,
+                "@OBS": `${testSchemaName}"legacy.cdw.db.models::DWViews.Observations"`,
                 "@CODE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"`,
                 "@MEASURE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"',
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.Patient"',
-                "@TEXT": '"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"',
-                "@REF": '"legacy.ots::Views.ConceptTerms"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"`,
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.Patient"`,
+                "@TEXT": `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"`,
+                "@REF": `${testSchemaName}"legacy.ots::Views.ConceptTerms"`,
                 "@INTERACTION.PATIENT_ID": '"PatientID"',
                 "@INTERACTION.INTERACTION_ID": '"InteractionID"',
                 "@INTERACTION.CONDITION_ID": '"ConditionID"',
@@ -2514,7 +2524,7 @@ export const httptest_acme_mri_cdw_config = {
                 ],
             },
             guardedTableMapping: {
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.V_GuardedPatient"',
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.V_GuardedPatient"`,
             },
             language: ["en", "de", "fr"],
             settings: {
@@ -2525,7 +2535,7 @@ export const httptest_acme_mri_cdw_config = {
                 errorStackTraceReturnOn: true,
                 normalizeCsvData: false,
                 enableFreeText: true,
-                freetextTempTable: '"legacy.cdw.db.models::Helper.TmpTextKeys"',
+                freetextTempTable: `${testSchemaName}"legacy.cdw.db.models::Helper.TmpTextKeys"`,
                 genomicsEnabled: true,
                 vbEnabled: true,
                 afpEnabled: true,
@@ -2536,7 +2546,7 @@ export const httptest_acme_mri_cdw_config = {
                 cdwValidationEnabled: true,
                 otsTableMap: {
                     "@CODE":
-                        '"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"',
+                        `${testSchemaName}"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"`,
                 },
             },
             others: {
@@ -3762,15 +3772,15 @@ export const httptest_groupedinteraction_mri_cdw_config = {
         censor: {},
         advancedSettings: {
             tableMapping: {
-                "@INTERACTION": '"legacy.cdw.db.models::DWViews.Interactions"',
-                "@OBS": '"legacy.cdw.db.models::DWViews.Observations"',
+                "@INTERACTION": `${testSchemaName}"legacy.cdw.db.models::DWViews.Interactions"`,
+                "@OBS": `${testSchemaName}"legacy.cdw.db.models::DWViews.Observations"`,
                 "@CODE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"`,
                 "@MEASURE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"',
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.Patient"',
-                "@TEXT": '"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"',
-                "@REF": '"legacy.ots::Views.ConceptTerms"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"`,
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.Patient"`,
+                "@TEXT": `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"`,
+                "@REF": `${testSchemaName}"legacy.ots::Views.ConceptTerms"`,
                 "@INTERACTION.PATIENT_ID": '"PatientID"',
                 "@INTERACTION.INTERACTION_ID": '"InteractionID"',
                 "@INTERACTION.CONDITION_ID": '"ConditionID"',
@@ -3828,7 +3838,7 @@ export const httptest_groupedinteraction_mri_cdw_config = {
                 ],
             },
             guardedTableMapping: {
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.V_GuardedPatient"',
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.V_GuardedPatient"`,
             },
             language: ["en", "de", "fr"],
             settings: {
@@ -3839,7 +3849,7 @@ export const httptest_groupedinteraction_mri_cdw_config = {
                 errorStackTraceReturnOn: true,
                 normalizeCsvData: false,
                 enableFreeText: true,
-                freetextTempTable: '"legacy.cdw.db.models::Helper.TmpTextKeys"',
+                freetextTempTable: `${testSchemaName}"legacy.cdw.db.models::Helper.TmpTextKeys"`,
                 genomicsEnabled: true,
                 vbEnabled: true,
                 afpEnabled: true,
@@ -3850,7 +3860,7 @@ export const httptest_groupedinteraction_mri_cdw_config = {
                 cdwValidationEnabled: true,
                 otsTableMap: {
                     "@CODE":
-                        '"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"',
+                        `${testSchemaName}"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"`,
                 },
             },
             others: {
@@ -4701,15 +4711,15 @@ export const httptest_test_mri_cdw_config = {
         },
         advancedSettings: {
             tableMapping: {
-                "@INTERACTION": '"legacy.cdw.db.models::DWViews.Interactions"',
-                "@OBS": '"legacy.cdw.db.models::DWViews.Observations"',
+                "@INTERACTION": `${testSchemaName}"legacy.cdw.db.models::DWViews.Interactions"`,
+                "@OBS": `${testSchemaName}"legacy.cdw.db.models::DWViews.Observations"`,
                 "@CODE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Details"`,
                 "@MEASURE":
-                    '"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"',
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.Patient"',
-                "@TEXT": '"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"',
-                "@REF": '"legacy.ots::Views.ConceptTerms"',
+                    `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Measures"`,
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.Patient"`,
+                "@TEXT": `${testSchemaName}"legacy.cdw.db.models::DWViewsEAV.Interaction_Text"`,
+                "@REF": `${testSchemaName}"legacy.ots::Views.ConceptTerms"`,
                 "@INTERACTION.PATIENT_ID": '"PatientID"',
                 "@INTERACTION.INTERACTION_ID": '"InteractionID"',
                 "@INTERACTION.CONDITION_ID": '"ConditionID"',
@@ -4767,7 +4777,7 @@ export const httptest_test_mri_cdw_config = {
                 ],
             },
             guardedTableMapping: {
-                "@PATIENT": '"legacy.cdw.db.models::DWViews.V_GuardedPatient"',
+                "@PATIENT": `${testSchemaName}"legacy.cdw.db.models::DWViews.V_GuardedPatient"`,
             },
             language: ["en", "de", "fr"],
             settings: {
@@ -4778,7 +4788,7 @@ export const httptest_test_mri_cdw_config = {
                 errorStackTraceReturnOn: true,
                 normalizeCsvData: false,
                 enableFreeText: true,
-                freetextTempTable: '"legacy.cdw.db.models::Helper.TmpTextKeys"',
+                freetextTempTable: `${testSchemaName}"legacy.cdw.db.models::Helper.TmpTextKeys"`,
                 genomicsEnabled: true,
                 vbEnabled: true,
                 afpEnabled: true,
@@ -4789,7 +4799,7 @@ export const httptest_test_mri_cdw_config = {
                 cdwValidationEnabled: true,
                 otsTableMap: {
                     "@CODE":
-                        '"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"',
+                        `${testSchemaName}"legacy.cdw.db.models::DWViews.InteractionDetailsOTS"`,
                 },
             },
             others: {
