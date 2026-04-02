@@ -1,5 +1,4 @@
-@import './mri-bootstrap-variables';
-@import './mixins';
+@use './mixins' as *;
 
 .app-tag-input,
 .app-single-select {

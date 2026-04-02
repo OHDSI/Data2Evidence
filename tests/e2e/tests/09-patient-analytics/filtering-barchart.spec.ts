@@ -74,13 +74,21 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(500)
   await expect(page).toHaveScreenshot()
 
+  // reset x2-axis
+  await page
+    .locator('div.axis-menu-button-wrapper')
+    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .click()
+  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+
   // Set X1-axis to condition concept name
   await page
     .locator('div.axis-menu-button-wrapper')
     .first()
-    .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
+    .getByRole('button', { name: 'Basic Data Gender ◢' })
     .click()
-  await page.locator('div.dropdownmenu-container').getByText('Condition Occurrence A').click()
+  await page.locator('div.dropdownmenu-container').getByRole('list').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
@@ -98,8 +106,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set X1-axis to gender
-  await page.getByRole('button', { name: 'Basic Data Gender ◢' }).click()
-  await page.locator('#pane-right').getByRole('list').getByText('Reset Selection').click()
   await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
   await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()

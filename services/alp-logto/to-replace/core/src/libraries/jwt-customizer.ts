@@ -53,19 +53,19 @@ export class JwtCustomizerLibrary {
   // Convert errors to WithTyped client response error to share the error handling logic.
   static async runScriptInLocalVm(data: CustomJwtFetcher) {
     try {
-      const mapId = (data as any).context["user"].primaryEmail;
+      const mapId = (data as any)?.context?.["user"]?.primaryEmail || "default_map_id";
       const payload: CustomJwtScriptPayload = {
         ...(data.tokenType === LogtoJwtTokenKeyType.AccessToken
           ? {
               ...pick(data, 'token', 'context', 'environmentVariables'),
               extra: {
                 // @ts-ignore
-                thirdPartyToken: globalThis.tokenMap
+                thirdPartyToken: globalThis?.tokenMap
                   ? // @ts-ignore
                     globalThis.tokenMap[mapId]
                   : undefined,
                 // @ts-ignore
-                thirdPartyRefreshToken: globalThis.refreshTokenMap
+                thirdPartyRefreshToken: globalThis?.refreshTokenMap
                   ? // @ts-ignore
                     globalThis.refreshTokenMap[mapId]
                   : undefined,
@@ -77,7 +77,11 @@ export class JwtCustomizerLibrary {
       const result = await runScriptFunctionInLocalVm(data.script, 'getCustomJwtClaims', payload);
 
       // @ts-ignore
-      delete globalThis.tokenMap[mapId];
+      if (globalThis.tokenMap) {
+        // @ts-ignore
+        delete globalThis.tokenMap[mapId];
+      }
+
 
       // If the `result` is not a record, we cannot merge it to the existing token payload.
       return z.record(z.unknown()).parse(result);
