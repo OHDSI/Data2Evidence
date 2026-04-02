@@ -83,7 +83,7 @@ jobs:
               - "ui/**"
 
       - name: Build Flow base docker image
-        if: steps.file_changes.outputs.flow_base == 'true' || contains('release/', github.event.pull_request.base.ref)
+        if: steps.file_changes.outputs.flow_base == 'true' || contains('release', github.event.pull_request.base.ref)
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
