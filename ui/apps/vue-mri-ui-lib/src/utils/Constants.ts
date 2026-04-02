@@ -284,6 +284,7 @@ const PlotlyConsts = {
       automargin: true,
       tickson: 'boundaries',
       ticks: 'outside',
+      tickangle: 'auto',
       dividercolor: 'rgba(0,0,0,0.3)',
       type: 'multicategory', // Dynamically toggled with "category" while converting data into Plotly traces
     },

@@ -230,8 +230,8 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           type: codeType,
         }),
       {
-        successMessage: "Shiny assets build triggered successfully.",
-        errorMessage: "Failed to trigger shiny assets build.",
+        successMessage: getText(i18nKeys.MANAGE_VIEWER_DIALOG__SHINY_BUILD_SUCCESS),
+        errorMessage: getText(i18nKeys.MANAGE_VIEWER_DIALOG__SHINY_BUILD_ERROR),
       }
     );
   }, [execute, config.id, templateLanguage, code, name, codeType]);
@@ -246,7 +246,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
   const validateName = useCallback((value: string): string | null => {
     if (value.includes(" ")) {
-      return "Name cannot contain spaces";
+      return getText(i18nKeys.MANAGE_VIEWER_DIALOG__NAME_NO_SPACES);
     }
     return null;
   }, []);
@@ -288,15 +288,15 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
         <div className="manage-viewer-dialog__header__selection">
           {strategy.supportsMultipleCodes && (
             <div>
-              <InputLabel sx={{ mb: 1 }}>Config Type</InputLabel>
+              <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.MANAGE_VIEWER_DIALOG__CONFIG_TYPE)}</InputLabel>
               <Select
                 sx={{ width: "100%" }}
                 variant="standard"
                 value={codeType}
                 onChange={(event) => setCodeType(event.target.value as "dashboard" | "cohort")}
               >
-                <MenuItem value="dashboard">Dashboard</MenuItem>
-                <MenuItem value="cohort">Cohort</MenuItem>
+                <MenuItem value="dashboard">{getText(i18nKeys.MANAGE_VIEWER_DIALOG__DASHBOARD)}</MenuItem>
+                <MenuItem value="cohort">{getText(i18nKeys.MANAGE_VIEWER_DIALOG__COHORT)}</MenuItem>
               </Select>
             </div>
           )}
@@ -319,7 +319,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
           />
 
           <div>
-            <InputLabel sx={{ mb: 1 }}>Viewer Type</InputLabel>
+            <InputLabel sx={{ mb: 1 }}>{getText(i18nKeys.MANAGE_VIEWER_DIALOG__VIEWER_TYPE)}</InputLabel>
             <Select
               sx={{ width: "100%" }}
               variant="standard"
@@ -372,7 +372,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
 
         {ViewerType.SHINY_SERVER !== templateLanguage && (
           <div className="manage-viewer-dialog__header__content">
-            <Button onClick={handleBuildAssets} text="Build Shiny Assets" loading={loading} />
+            <Button onClick={handleBuildAssets} text={getText(i18nKeys.MANAGE_VIEWER_DIALOG__BUILD_SHINY)} loading={loading} />
           </div>
         )}
       </div>
