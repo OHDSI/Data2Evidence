@@ -7,21 +7,58 @@ import Sorter from '@/utils/Sorter'
 const state = {}
 
 // Helper function to truncate text at word boundary
+// Strictly honours maxLength: the ellipsis budget (3 chars) is subtracted
+// before searching for the last word boundary, so the result is always ≤ maxLength.
 const truncateAtWordBoundary = (text: string, maxLength: number): string => {
   if (!text) return text
   if (text.length <= maxLength) {
     return text
   }
 
-  // Find the last space before maxLength
-  const truncated = text.slice(0, maxLength)
+  const ellipsis = '...'
+  const budget = maxLength - ellipsis.length // chars available before the ellipsis
+
+  if (budget <= 0) {
+    // maxLength is too small to fit even one char + ellipsis; just truncate hard
+    return text.slice(0, maxLength)
+  }
+
+  // Find the last space within the budget
+  const truncated = text.slice(0, budget)
   const lastSpaceIndex = truncated.lastIndexOf(' ')
 
-  // If there's a space, truncate there; otherwise truncate at maxLength
   if (lastSpaceIndex > 0) {
-    return text.slice(0, lastSpaceIndex) + '...'
+    return text.slice(0, lastSpaceIndex) + ellipsis
   }
-  return truncated + '...'
+  return truncated + ellipsis
+}
+
+// Helper function to build tickvals (full values) and ticktext (truncated/full) for Plotly x-axis.
+// Only operates on single-axis charts — Plotly multicategory tick overrides are fragile and skipped.
+// Returns null for multi-axis charts so the component falls back to Plotly's native rendering.
+const buildTickLabels = (
+  xAxes: { id: string; axis: number; name: string }[],
+  data: Record<string, string | number>[]
+): { tickvals: string[]; ticktext: string[]; ticktextFull: string[] } | null => {
+  if (!xAxes || xAxes.length === 0 || !data || data.length === 0) return null
+
+  // Skip manual tick overrides for multicategory (multi-axis) charts
+  if (xAxes.length > 1) return null
+
+  const seen = new Set<string>()
+  const tickvals: string[] = []
+  const ticktext: string[] = []
+  const ticktextFull: string[] = []
+  data.forEach(row => {
+    const val = String(row[xAxes[0].id] ?? '')
+    if (!seen.has(val)) {
+      seen.add(val)
+      tickvals.push(val)
+      ticktextFull.push(val)
+      ticktext.push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
+    }
+  })
+  return { tickvals, ticktext, ticktextFull }
 }
 
 // Helper function to wrap text by inserting <br> at word boundaries when exceeding max width
@@ -101,24 +138,23 @@ const getters = {
         // Custom tooltip labelling
         let hoverTemplate = ''
         if (xAxes.length === 1) {
-          xData = category.data.map(data =>
-            truncateAtWordBoundary(String(data[xAxes[0].id]), Constants.XAxisLabelMaxLength)
-          )
+          xData = category.data.map(data => String(data[xAxes[0].id]))
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
+            values: [String(dataPoint[xAxes[0].id])],
             fullLabels: [wrapText(dataPoint[xAxes[0].id], 62)],
           }))
           hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
-          // Truncate labels for x-axis display
           xData = xAxes.map(xAxis =>
             category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
           )
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
+            const values = xAxes.map(xAxis => String(dataPoint[xAxis.id]))
             const fullLabels = xAxes.map(xAxis => wrapText(dataPoint[xAxis.id], 62))
-            return { x: xAxes, y: yAxis, fullLabels }
+            return { x: xAxes, y: yAxis, values, fullLabels }
           })
           for (let i = 0; i < xAxes.length; i++) {
             hoverTemplate += '%{customdata.x[' + i + '].name}: %{customdata.fullLabels[' + i + ']}<br>'
@@ -149,6 +185,19 @@ const getters = {
           },
         }
       })
+
+      // Attach tick label mappings so the Vue component can apply truncated display labels
+      // while keeping full (untruncated) values in trace.x for selection events
+      const tickLabels = buildTickLabels(xAxes, result.data)
+      if (tickLabels) {
+        result.tickvals = tickLabels.tickvals
+        result.ticktext = tickLabels.ticktext
+        result.ticktextFull = tickLabels.ticktextFull
+      } else {
+        result.tickvals = undefined
+        result.ticktext = undefined
+        result.ticktextFull = undefined
+      }
 
       // TODO: coloring based on x-axis categories for non-stacked bar chart
 

@@ -251,7 +251,7 @@ export const Information: FC = () => {
                           </TableHead>
                           <TableBody>
                             <TableRow>
-                              <TableCell>Dataset ID</TableCell>
+                              <TableCell>{getText(i18nKeys.PUBLIC_INFORMATION__DATASET_ID)}</TableCell>
                               <TableCell>{activeDatasetId}</TableCell>
                             </TableRow>
                             {attributes.map((studyAttribute: StudyAttribute) => (

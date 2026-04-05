@@ -25,7 +25,7 @@ try {
 }
 
 const OidcAppInternal: FC = () => {
-  const { changeLocale } = useTranslation();
+  const { changeLocale, locale } = useTranslation();
   const { isAuthenticated } = useOidc();
   const location = useLocation();
   const { setPostLoginRedirectUri } = usePostLoginRedirectUri();
@@ -37,7 +37,9 @@ const OidcAppInternal: FC = () => {
   }, [location.pathname, isAuthenticated]);
 
   useEffect(() => {
-    if (env.REACT_APP_LOCALE) {
+    if (locale && locale !== "default") {
+      changeLocale(locale);
+    } else if (env.REACT_APP_LOCALE) {
       changeLocale(env.REACT_APP_LOCALE);
     }
   }, []);
