@@ -254,10 +254,25 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                     const bitmapMriquery = structuredClone(mriquery);
                     bitmapMriquery.filter.cards.content = [];
 
+                    // Collect interaction IDs for all filtercards in this mask
+                    // (both inclusions and exclusions, since exclusion entities are still present in the query)
+                    const includedFiltercards = bitmapMask
+                        .split("")
+                        .map((_, idx) => inclusionReportFiltercards[idx]);
+                    const includedInteractionIds =
+                        this.collectInteractionIds(includedFiltercards);
+
                     for (const [idx, op] of bitmapMask.split("").entries()) {
                         const bitmaskContent = structuredClone(
                             inclusionReportFiltercards[idx]
                         );
+
+                        // Strip advanceTimeFilter if it references interactions not in this mask
+                        this.stripInvalidAdvanceTimeFilters(
+                            bitmaskContent,
+                            includedInteractionIds
+                        );
+
                         // Set filter to an exclusion filtercard if op is 0
                         if (op === "0") {
                             // If filtercard is nested, split them up into individual exclusions
@@ -605,6 +620,69 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         );
 
         return nonBasicDataFilters;
+    }
+
+    /**
+     * Collects all interaction instanceIDs from the given filtercards.
+     */
+    private collectInteractionIds(filtercards: any[]): Set<string> {
+        const ids = new Set<string>();
+        for (const filtercard of filtercards) {
+            if (filtercard.content) {
+                for (const fc of filtercard.content) {
+                    if (fc.instanceID) ids.add(fc.instanceID);
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Strips advanceTimeFilter from filter card contents when the referenced
+     * target interaction is not present in the provided set of interaction IDs.
+     */
+    private stripInvalidAdvanceTimeFilters(
+        bitmaskContent: any,
+        includedInteractionIds: Set<string>
+    ): void {
+        if (!bitmaskContent.content) return;
+        for (const filtercard of bitmaskContent.content) {
+            if (!filtercard.advanceTimeFilter) continue;
+            const refs = this.getAdvanceTimeFilterRefs(
+                filtercard.advanceTimeFilter
+            );
+            if (refs.some((ref) => !includedInteractionIds.has(ref))) {
+                delete filtercard.advanceTimeFilter;
+            }
+        }
+    }
+
+    /**
+     * Extracts all target interaction references from an advanceTimeFilter.
+     * These are the instanceIDs of other interactions referenced by the temporal query.
+     */
+    private getAdvanceTimeFilterRefs(advanceTimeFilter: any): string[] {
+        const refs: string[] = [];
+        if (advanceTimeFilter.filters) {
+            for (const f of advanceTimeFilter.filters) {
+                if (f.value) refs.push(f.value);
+            }
+        }
+        if (advanceTimeFilter.request) {
+            for (const req of advanceTimeFilter.request) {
+                if (req.and) {
+                    for (const e of req.and) {
+                        if (e.value) refs.push(e.value);
+                        if (e.or) {
+                            for (const o of e.or) {
+                                if (o.value) refs.push(o.value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return refs;
     }
 
     /**
