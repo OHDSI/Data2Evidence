@@ -231,7 +231,7 @@ export default {
       showSaveCohortModal: false,
       showInclusionReportModal: false,
       inclusionReportCache: null,
-      fetchAttritionReportFn: null as (() => Promise<any>) | null,
+      fetchAttritionReportFn: null as ((ruleOrder?: number[]) => Promise<any>) | null,
     }
   },
   watch: {
@@ -254,7 +254,7 @@ export default {
     },
   },
   created() {
-    this.fetchAttritionReportFn = () => this.fetchSelectiveInclusionReport()
+    this.fetchAttritionReportFn = (ruleOrder?: number[]) => this.fetchSelectiveInclusionReport(ruleOrder)
   },
   mounted() {
     try {
@@ -504,12 +504,16 @@ export default {
         return result
       })
     },
-    fetchSelectiveInclusionReport() {
+    fetchSelectiveInclusionReport(ruleOrder?: number[]) {
       const mriquery = JSON.stringify(this.getBookmarksData)
       const datasetId = this.getBookmarksData.datasetId
+      const params: Record<string, any> = { mriquery, datasetId }
+      if (ruleOrder) {
+        params.ruleOrder = JSON.stringify(ruleOrder)
+      }
       return this.fireQuery({
         url: '/analytics-svc/api/services/population/json/selectiveinclusionreport',
-        params: { mriquery, datasetId },
+        params,
       })
     },
   },

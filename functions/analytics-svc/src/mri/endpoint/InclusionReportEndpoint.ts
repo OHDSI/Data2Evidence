@@ -197,7 +197,8 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         configVersion,
         datasetId,
         mriquery,
-        language
+        language,
+        ruleOrder?: number[]
     ): Promise<SelectiveInclusiveReportResults> {
         log.addRequestCorrelationID(req);
         return new Promise(async (resolve, reject) => {
@@ -222,13 +223,27 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
 
                 console.log(`totalPatientCount: ${totalPatientCount}`);
 
-                const inclusionReportFiltercards =
+                let inclusionReportFiltercards =
                     this.getInclusionReportFiltercards(mriquery);
 
                 // Construct base inclusionRuleStats based on filtercard names
-                const baseInclusionRuleStats = this.getBaseInclusionRuleStats(
+                let baseInclusionRuleStats = this.getBaseInclusionRuleStats(
                     inclusionReportFiltercards
                 );
+
+                // Reorder filter cards and rule stats if a custom rule order is provided
+                if (
+                    ruleOrder &&
+                    ruleOrder.length === inclusionReportFiltercards.length
+                ) {
+                    inclusionReportFiltercards = ruleOrder.map(
+                        (id) => inclusionReportFiltercards[id]
+                    );
+                    baseInclusionRuleStats = ruleOrder.map((id, newIdx) => ({
+                        ...baseInclusionRuleStats[id],
+                        id: newIdx,
+                    }));
+                }
 
                 // Construct bitmask filters
                 const bitmapMasks = this.getSelectiveBitmapMasks(
@@ -620,7 +635,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
      */
     private getSelectiveBitmapMasks(inclusionReportFiltercards): string[] {
         let bitmapMasks = [];
-        // max number of filters supported, just to define an upper bound to input array 
+        // max number of filters supported, just to define an upper bound to input array
         const MAX_FILTERCARDS = 20;
         if (
             inclusionReportFiltercards &&

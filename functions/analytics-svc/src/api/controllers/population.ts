@@ -397,6 +397,17 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                 body.filter
                                                     ? body
                                                     : bookmarkInputStr;
+                                            // Parse optional ruleOrder query parameter for drag-and-drop reordering
+                                            let ruleOrder: number[] | undefined;
+                                            if (req.query.ruleOrder) {
+                                                try {
+                                                    ruleOrder = JSON.parse(
+                                                        req.query.ruleOrder
+                                                    );
+                                                } catch (e) {
+                                                    // Ignore invalid ruleOrder
+                                                }
+                                            }
                                             new InclusionReportEndpoint(
                                                 analyticsConnection
                                             )
@@ -406,7 +417,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                     configVersion,
                                                     datasetId,
                                                     selectiveInclusionReportBody,
-                                                    language
+                                                    language,
+                                                    ruleOrder
                                                 )
                                                 .then((res) =>
                                                     _sendResult(null, res)

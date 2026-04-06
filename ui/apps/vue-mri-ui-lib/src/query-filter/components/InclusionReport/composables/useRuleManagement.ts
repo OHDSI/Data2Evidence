@@ -32,7 +32,7 @@ export function useRuleManagement(
   inclusionReportResponse: Ref<InclusionReportResponse | null>,
   treemapData: Ref<any>,
   showIntersectView: boolean = true,
-  fetchAttritionReport?: (signal?: AbortSignal) => Promise<AttritionApiResponse>,
+  fetchAttritionReport?: (ruleOrder?: number[], signal?: AbortSignal) => Promise<AttritionApiResponse>,
   lastAttritionApiResponse?: Ref<AttritionApiResponse | null>
 ) {
   const checkedRulesIds = ref<number[]>([])
@@ -94,10 +94,10 @@ export function useRuleManagement(
    * Fetch attrition stats from the attrition API and update local state.
    * Used when showIntersectView is false and fetchAttritionReport is provided.
    */
-  async function fetchAndUpdateAttritionStats() {
+  async function fetchAndUpdateAttritionStats(ruleOrder?: number[]) {
     if (!fetchAttritionReport) {
       // Fallback: compute locally when no API is provided
-      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value!)
+      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value!, ruleOrder)
       return
     }
     // Abort any in-flight request so only the newest one updates state
@@ -107,7 +107,7 @@ export function useRuleManagement(
 
     isReorderLoading.value = true
     try {
-      const apiResponse = await fetchAttritionReport(controller.signal)
+      const apiResponse = await fetchAttritionReport(ruleOrder, controller.signal)
       draggableAttritionStats.value = mapAttritionApiResponse(apiResponse)
     } catch (error: unknown) {
       if (controller.signal.aborted) return // cancelled by a newer request, ignore
@@ -123,7 +123,7 @@ export function useRuleManagement(
   function handleDragEnd() {
     const newOrder = draggableAttritionStats.value.map(stat => stat.id)
     if (!showIntersectView) {
-      fetchAndUpdateAttritionStats()
+      fetchAndUpdateAttritionStats(newOrder)
     } else {
       draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
     }
@@ -142,7 +142,7 @@ export function useRuleManagement(
       draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
       if (!showIntersectView) {
-        fetchAndUpdateAttritionStats()
+        fetchAndUpdateAttritionStats(newOrder)
       } else {
         draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
       }
@@ -158,7 +158,7 @@ export function useRuleManagement(
       draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
       if (!showIntersectView) {
-        fetchAndUpdateAttritionStats()
+        fetchAndUpdateAttritionStats(newOrder)
       } else {
         draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
       }

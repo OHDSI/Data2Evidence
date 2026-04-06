@@ -18,7 +18,7 @@ export interface UseInclusionReportDataOptions {
     sourceKey: string,
     modeId: number
   ) => Promise<InclusionReportResponse>
-  fetchAttritionReport?: (signal?: AbortSignal) => Promise<AttritionApiResponse>
+  fetchAttritionReport?: (ruleOrder?: number[], signal?: AbortSignal) => Promise<AttritionApiResponse>
 }
 
 export function useInclusionReportData(
