@@ -1160,6 +1160,7 @@ export const i18nDefault = {
     UI_PLUGIN_SHINY_LIVE__NO_DASHBOARD_FOR_SELECTION: "No dashboard available for this selection.",
     UI_PLUGIN_METADATA: "Metadata",
     UI_PLUGIN_NOTEBOOKS: "Notebooks",
+    UI_PLUGIN_WEBR_NOTEBOOKS: "WebR-notebooks",
     UI_PLUGIN_OVERVIEW_DESCRIPTION: "Overview description",
     UI_PLUGIN_PATIENT_ANALYTICS_CONFIG: "Cohort Builder config",
     UI_PLUGIN_PLUGINS: "Plugins",
