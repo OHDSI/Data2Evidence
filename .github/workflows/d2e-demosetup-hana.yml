@@ -236,7 +236,7 @@ jobs:
 
       - name: Build e2e Docker image
         run: |
-          cd ./tests/e2e
+          cd ./tests/e2e/hana
           docker build -t d2e-e2e .
 
       - name: Verify app is reachable
@@ -249,7 +249,7 @@ jobs:
 
       - name: e2e tests
         run: |
-          cd ./tests/e2e
+          cd ./tests/e2e/hana
           docker run --rm \
             --network=host \
             --ipc=host \
@@ -276,7 +276,7 @@ jobs:
         if: always()
         uses: ctrf-io/github-test-reporter@v1
         with:
-          report-path: "./tests/e2e/ctrf/*.json"
+          report-path: "./tests/e2e/hana/ctrf/*.json"
           file-report: true
 
       - name: Stop d2e services
