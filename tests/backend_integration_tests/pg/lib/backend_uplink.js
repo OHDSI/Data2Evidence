@@ -220,16 +220,20 @@ BackendUplink.prototype.addCdwConfiguration = function (config, configId, config
     }
   }
 
-  this.log('Storing and activating test CDW configuration')
   var that = this
   this.hanaRequest.request(setQuery, function (err, response, body) {
+
     if (err) {
+      that.log(`backend_uplink: err response...`)
+
       return cb(err)
     }
     if (response.statusCode !== 200) {
       that.log('Non-200 reponse!', body)
       return cb(new Error('Failed to activate CDW configuration!'))
     } else if (body) {
+      that.log(`backend_uplink: 200 response...`)
+
       var fnPrintError = function (errors) {
         if (typeof errors === 'undefined') {
           return false

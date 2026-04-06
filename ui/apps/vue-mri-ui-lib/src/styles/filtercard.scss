@@ -1,4 +1,4 @@
-@import './mixins';
+@use './mixins' as *;
 
 @mixin card-header {
   background-color: var(--color-mri-card-header-bg);

@@ -89,7 +89,7 @@ const SystemAdmin: FC = () => {
   useEffect(() => {
     const updateSystemAdminPlugins = () => {
       const displayedSystemAdminPlugins = plugins.systemadmin
-        .filter((plugin) => plugin.enabled)
+        .filter((plugin) => plugin.visible ?? plugin.enabled)
         .reduce<Plugins[]>((acc, item) => {
           const route = item.route;
           const pluginEnv: { [key: string]: boolean } = {};
@@ -110,7 +110,7 @@ const SystemAdmin: FC = () => {
                     child = setupFeatureFlag(child);
                     return child;
                   })
-                  .filter((x) => x.enabled),
+                  .filter((x) => x.visible ?? x.enabled),
               });
             } else {
               acc.push(item);
@@ -128,6 +128,7 @@ const SystemAdmin: FC = () => {
   }, [feedback, clearFeedback]);
 
   const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
+
   return (
     <div className="systemadmin__container">
       <Header portalType="systemadmin" systemAdminPlugins={sortedPlugins} />
@@ -158,6 +159,7 @@ const SystemAdmin: FC = () => {
                   system={CURRENT_SYSTEM}
                   data={item?.data}
                   basePath="systemadmin"
+                  autoMount={item.autoMount}
                 />
               </ErrorBoundary>
             </div>

@@ -2,7 +2,7 @@ import { StackedBarchartEndpoint } from "../../mri/endpoint/StackedBarchartEndpo
 import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
 import { InclusionReportEndpoint } from "../../mri/endpoint/InclusionReportEndpoint";
-import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils, QueryObject } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types";
 
 import { DBError as dbe } from "@alp/alp-base-utils";
@@ -247,6 +247,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                             console.time(
                                 `time-analytics-svc-populationQuery-${timestamp}`
                             );
+
+                            await _setDBSpecificSettings(req);
                             switch (dataFormat) {
                                 case "csv":
                                     switch (chartType) {
@@ -418,5 +420,38 @@ export async function populationQuery(req: IMRIRequest, res, next) {
         );
     } catch (err) {
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
+async function _setDefaultNullOrder(req: IMRIRequest) {
+    console.info(
+        `[population._setDefaultNullOrder] Setting default NULL order in DuckDB ....`
+    );
+
+    return new Promise((resolve, reject) => {
+        QueryObject.QueryObject.format(
+            `SET default_null_order = 'NULLS_FIRST'`
+        ).executeQuery(req.dbConnections.analyticsConnection, (err, result) => {
+            // console.log(`[population._setDefaultNullOrder]err: ${JSON.stringify(err)}`);
+            // console.log(`[population._setDefaultNullOrder]result: ${JSON.stringify(result)}`);
+            if (err) {
+                console.error(err);
+                return reject(err);
+            }
+            return resolve(result);
+        });
+    });
+}
+
+async function _setDBSpecificSettings(req: IMRIRequest) {
+    // ONLY FOR DUCKDB HTTP TESTS
+    // changing the duckdb default behaviour of sorting NULL values at the bottom
+    const HTTPTEST_DB_DIALECT = Deno.env.get("HTTPTEST_DB_DIALECT");
+    if (
+        (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) &&
+        HTTPTEST_DB_DIALECT &&
+        HTTPTEST_DB_DIALECT === "duckdb"
+    ) {
+        await _setDefaultNullOrder(req);
     }
 }
