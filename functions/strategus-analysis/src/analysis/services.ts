@@ -45,10 +45,6 @@ export default class StrategusAnalysisService {
     ) {
         this.token = token;
         let analysisId = uuidv4();
-        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
-            where: { studyId: studyId }
-        });
-
         // if( !notebookName || !mode) { // TODO: uncomment this line when notebookName is available in jupyter kernel
         if(!mode) {
             // throw new Error("Missing required fields: notebookName or mode");
@@ -120,7 +116,6 @@ export default class StrategusAnalysisService {
         // NOTE: With this change, each study dataset corresponds to a target dataset (that is the last selected dataset in the portal before running the analysis) and the analysis results will be stored in the same database as the target dataset; And if the user runs the analysis multiple times with different target datasets, the analysis specifications will be overridden with the latest one and the results will be stored in the database corresponding to the latest target dataset
         // TODO: the databaseCode overrides the existing databaseCode and the results from different target datasets will be stored in different databases; And in the next version storing results of multiple target datasets will be handled
         if (databaseCode) {
-            existingAnalysis.databaseCode = databaseCode;
             const portalAPI = new PortalAPI(this.token);
             try {
                 await portalAPI.updateDataset(
