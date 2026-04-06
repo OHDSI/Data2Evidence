@@ -1,0 +1,407 @@
+{
+  "censor": {},
+  "mapping": {},
+  "patient": {
+    "attributes": {
+      "lastName": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Last name"
+          }
+        ],
+        "defaultInserts": ["@PATIENT.FamilyName = $$"]
+      },
+      "multiple_birth_order": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Multiple birth order"
+          }
+        ],
+        "type": "num",
+        "defaultInserts": ["@PATIENT.MultipleBirthOrder = $$"]
+      },
+      "dateOfBirth": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Date of Birth"
+          }
+        ],
+        "type": "time",
+        "defaultInserts": ["@PATIENT.BirthDate = $$"]
+      },
+      "dateOfDeath": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Date of Death"
+          }
+        ],
+        "type": "time",
+        "defaultInserts": ["@PATIENT.DeceasedDate = $$"]
+      },
+      "obs_char": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Patient observation text value"
+          }
+        ],
+        "type": "text",
+        "defaultInserts": ["@OBS.ObsType = 'TEST_OBS1'", "@OBS.ObsCharValue = $$"]
+      },
+      "obs_num": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Observation numerical value"
+          }
+        ],
+        "type": "text",
+        "defaultInserts": ["@OBS.ObsType = 'TEST_OBS2'", "@OBS.ObsNumValue = $$"]
+      },
+      "obs_unit": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Observation unit of measurement"
+          }
+        ],
+        "type": "text",
+        "defaultInserts": ["@OBS.ObsType = 'TEST_OBS3'", "@OBS.ObsUnit = $$"]
+      },
+      "obs_time": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Observation time"
+          }
+        ],
+        "type": "text",
+        "defaultInserts": ["@OBS.ObsType = 'TEST_OBS4'", "@OBS.ObsTime = $$"]
+      }
+    },
+    "interactions": {
+      "patient_interaction_1": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Patient interaction 1"
+          }
+        ],
+        "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'PI1'", "@INTERACTION.OrgID = 400"],
+        "attributes": {
+          "char_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Text attribute"
+              }
+            ],
+            "type": "text",
+            "defaultInserts": ["@CODE.Attribute.OriginalValue = 'PI1_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+          },
+          "num_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Numerical attribute value"
+              }
+            ],
+            "type": "num",
+            "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'PI1_NUM_ATTR'", "@MEASURE.Value = $$"]
+          },
+          "num_attr_unit": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Numerical attribute unit"
+              }
+            ],
+            "type": "text",
+            "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'PI1_NUM_ATTR'", "@MEASURE.Unit = $$"]
+          },
+          "freetext_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Freetext attribute"
+              }
+            ],
+            "type": "freetext",
+            "defaultInserts": ["@TEXT.Attribute = 'PI1_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+          }
+        }
+      },
+      "patient_interaction_2": {
+        "name": [
+          {
+            "lang": "",
+            "value": "Patient interaction 2"
+          }
+        ],
+        "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'PI2'"],
+        "attributes": {
+          "char_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Text attribute"
+              }
+            ],
+            "type": "text",
+            "defaultInserts": ["@CODE.Attribute.OriginalValue = 'PI2_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+          },
+          "num_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Numerical attribute value"
+              }
+            ],
+            "type": "num",
+            "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'PI2_NUM_ATTR'", "@MEASURE.Value = $$"]
+          },
+          "num_attr_unit": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Numerical attribute unit"
+              }
+            ],
+            "type": "text",
+            "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'PI2_NUM_ATTR'", "@MEASURE.Unit = $$"]
+          },
+          "freetext_attr": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Freetext attribute"
+              }
+            ],
+            "type": "freetext",
+            "defaultInserts": ["@TEXT.Attribute = 'PI2_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+          }
+        }
+      }
+    },
+    "conditions": {
+      "condition_a": {
+        "name": "Condition A",
+        "interactions": {
+          "cond_a_interaction_1": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Condition A interaction 1"
+              }
+            ],
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'CAI1'"],
+            "attributes": {
+              "char_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Text attribute"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CAI1_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "num_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute value"
+                  }
+                ],
+                "type": "num",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CAI1_NUM_ATTR'", "@MEASURE.Value = $$"]
+              },
+              "num_attr_unit": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute unit"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CAI1_NUM_ATTR'", "@MEASURE.Unit = $$"]
+              },
+              "freetext_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Freetext attribute"
+                  }
+                ],
+                "type": "freetext",
+                "defaultInserts": ["@TEXT.Attribute = 'CAI1_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+              }
+            }
+          },
+          "cond_a_interaction_2": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Condition A interaction 2"
+              }
+            ],
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'CAI2'"],
+            "attributes": {
+              "char_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Text attribute"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CAI2_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "num_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute value"
+                  }
+                ],
+                "type": "num",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CAI2_NUM_ATTR'", "@MEASURE.Value = $$"]
+              },
+              "num_attr_unit": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute unit"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CAI2_NUM_ATTR'", "@MEASURE.Unit = $$"]
+              },
+              "freetext_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Freetext attribute"
+                  }
+                ],
+                "type": "freetext",
+                "defaultInserts": ["@TEXT.Attribute = 'CAI2_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+              }
+            }
+          }
+        }
+      },
+      "condition_b": {
+        "name": "Condition B",
+        "interactions": {
+          "cond_b_interaction_1": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Condition B interaction 1"
+              }
+            ],
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'CBI1'"],
+            "attributes": {
+              "char_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Text attribute"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CBI1_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "num_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute value"
+                  }
+                ],
+                "type": "num",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CBI1_NUM_ATTR'", "@MEASURE.Value = $$"]
+              },
+              "num_attr_unit": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute unit"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CBI1_NUM_ATTR'", "@MEASURE.Unit = $$"]
+              },
+              "freetext_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Freetext attribute"
+                  }
+                ],
+                "type": "freetext",
+                "defaultInserts": ["@TEXT.Attribute = 'CBI1_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+              }
+            }
+          },
+          "cond_b_interaction_2": {
+            "name": [
+              {
+                "lang": "",
+                "value": "Condition B interaction 2"
+              }
+            ],
+            "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'CBI2'"],
+            "attributes": {
+              "char_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Text attribute"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@CODE.Attribute.OriginalValue = 'CBI2_CHAR_ATTR'", "@CODE.Value.OriginalValue = $$"]
+              },
+              "num_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute value"
+                  }
+                ],
+                "type": "num",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CBI2_NUM_ATTR'", "@MEASURE.Value = $$"]
+              },
+              "num_attr_unit": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Numerical attribute unit"
+                  }
+                ],
+                "type": "text",
+                "defaultInserts": ["@MEASURE.Attribute.OriginalValue = 'CBI2_NUM_ATTR'", "@MEASURE.Unit = $$"]
+              },
+              "freetext_attr": {
+                "name": [
+                  {
+                    "lang": "",
+                    "value": "Freetext attribute"
+                  }
+                ],
+                "type": "freetext",
+                "defaultInserts": ["@TEXT.Attribute = 'CBI2_FREETEXT_ATTR'", "@TEXT.Value = $$"]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

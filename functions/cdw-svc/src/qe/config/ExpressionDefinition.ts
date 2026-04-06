@@ -141,8 +141,11 @@ export class ExpressionDefinition {
             // <EXP>/<AGGR> AND REGEXP_MATCHES(<EXP>/<AGGR>, <EXP>/<AGGR>)
             { regex: /<((?:EXP)|(?:AGGR))>[\s]*AND REGEXP_MATCHES[\s]*\(<((?:EXP)|(?:AGGR))>,[\s]*<((?:EXP)|(?:AGGR))>\)?[\s]*/, placeholder: "<COND>" },
 
-            // <EXP>/<AGGR>/<COND> AND JARO_SIMILARITY(<EXP>,<EXP>) (>=|<=|>|<) x.xx
-            { regex: /<((?:EXP)|(?:AGGR)|(?:COND))> AND JARO_SIMILARITY\(<EXP>,[\s]*<EXP>\)[\s]*(>=|<=|>|<) \d*\.\d+/, placeholder: "<COND>" },
+            //JARO_SIMILARITY(<EXP>,<EXP>) (>=|<=|>|<) x.xx
+            { regex: /JARO_SIMILARITY\(<EXP>,[\s]*<EXP>\)[\s]*(>=|<=|>|<) \d*\.\d+/, placeholder: "<COND>" },
+
+            // <EXP>/<AGGR>/<COND> AND <COND>
+            { regex: /<((?:EXP)|(?:AGGR)|(?:COND))> AND <COND>/, placeholder: "<COND>" },
             // Operators
             { regex: /\([\s]*<((?:EXP)|(?:AGGR))>[\s]*\)/ },
             { regex: /<((?:EXP)|(?:AGGR))>[\s]*(\*|\/|\+|-|\|\|)[\s]*<((?:EXP)|(?:AGGR))>/ },

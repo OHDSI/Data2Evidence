@@ -57,7 +57,7 @@
                 :selectable="flowRunsAreSelectable"
                 :flow-runs="flowRuns"
               />
-              <p-pager :limit="limit" :page="flowRunsPage" :pages="flowRunPages" />
+              <p-pager v-model:page="flowRunsPage" v-model:limit="limit" :pages="flowRunPages" />
             </template>
 
             <template v-else-if="!flowRunsSubscription.executed && flowRunsSubscription.loading">

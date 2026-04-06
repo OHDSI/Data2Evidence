@@ -35,7 +35,7 @@ interface TerminologyDetailProps {
 
 enum TerminologyDetailsTab {
   Hierarchy = "Hierarchy",
-  RelatedConcepts = "Related Concepts",
+  RelatedConcepts = "Related concepts",
 }
 
 const TerminologyDetail: FC<TerminologyDetailProps> = ({

@@ -1,4 +1,4 @@
-@import './mixins';
+@use './mixins' as *;
 
 .app-date {
   width: 100%;

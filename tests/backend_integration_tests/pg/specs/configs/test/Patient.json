@@ -1,0 +1,677 @@
+{
+  "masterdata": {
+    "title": [
+      {
+        "pattern": " {lastName} ({pid})",
+        "values": []
+      }
+    ],
+    "details": [
+      {
+        "pattern": " {obs_num} {obs_unit}",
+        "values": []
+      },
+      {
+        "pattern": " {obs_time}",
+        "values": []
+      },
+      {
+        "pattern": " {obs_char}",
+        "values": []
+      }
+    ]
+  },
+  "inspectorOptions": {
+    "relatedDocuments": {
+      "visible": true,
+      "searchView": "Documents"
+    },
+    "overview": {
+      "visible": true
+    }
+  },
+  "configInformations": {
+    "note": ""
+  },
+  "lanes": [
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Patient Interactions"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightOrange",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.patient_interaction_1",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 1"
+        },
+        {
+          "source": "patient.interactions.patient_interaction_2",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 2"
+        }
+      ],
+      "order": 0
+    },
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Condition A"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightGreen",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.patient_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 1"
+        },
+        {
+          "source": "patient.interactions.patient_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 2"
+        }
+      ],
+      "order": 1
+    },
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Condition B"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightGold",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.patient_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 1"
+        },
+        {
+          "source": "patient.interactions.patient_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.patient_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Patient interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.char_attr",
+              "visible": false,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.freetext_attr",
+              "visible": false,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr",
+              "visible": false,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_a.interactions.cond_a_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition A interaction 2"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_1.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 1"
+        },
+        {
+          "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.char_attr",
+              "visible": true,
+              "modelName": "Text attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.freetext_attr",
+              "visible": true,
+              "modelName": "Freetext attribute",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr",
+              "visible": true,
+              "modelName": "Numerical attribute value",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.condition_b.interactions.cond_b_interaction_2.attributes.num_attr_unit",
+              "visible": false,
+              "modelName": "Numerical attribute unit",
+              "annotations": []
+            }
+          ],
+          "modelName": "Condition B interaction 2"
+        }
+      ],
+      "order": 2
+    }
+  ]
+}

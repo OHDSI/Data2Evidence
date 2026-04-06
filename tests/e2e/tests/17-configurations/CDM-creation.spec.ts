@@ -382,7 +382,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
 
@@ -497,7 +497,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()
@@ -573,7 +573,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()

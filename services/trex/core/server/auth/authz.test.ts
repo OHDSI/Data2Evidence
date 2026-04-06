@@ -206,7 +206,7 @@ Deno.test({
     assertEquals(adUser.mriScopes.includes("trex"), true);
     assertEquals(
       adUser.mriScopes.includes("portal.dataset.systemAdmin.read"),
-      true
+      true,
     );
     assertEquals(adUser.mriScopes.includes("portal.tenant.read"), true);
     assertEquals(user.isClientCredUser, true);
@@ -225,7 +225,7 @@ Deno.test({
     assertThrows(
       () => new MriUser(token, global.ROLE_SCOPES),
       Error,
-      "token has no userMgmtGroups"
+      "token has no userMgmtGroups",
     );
   },
 });
@@ -437,7 +437,6 @@ Deno.test({
           ALP_DASHBOARD_VIEWER: false,
           TENANT_ADMIN: [],
           TENANT_VIEWER: ["tenant-1"],
-          STUDY_MANAGER: [],
           STUDY_RESEARCHER: ["dataset-1"],
         },
         alp_tenant_id: ["tenant-1"],
@@ -447,7 +446,6 @@ Deno.test({
         alp_role_user_admin: true,
         alp_role_dashboard_viewer: false,
         alp_role_study_admin: [],
-        alp_role_study_mgr: [],
       },
     });
 
