@@ -62,7 +62,7 @@ export default class StrategusAnalysisRouter {
     }
   }
 
-  // endpoint is used by JobPlugins whenever user runs/executes a strategus analysis from the portal; it creates/updates the analysis specification in the database
+  // endpoint is used by JobPlugins whenever user runs/executes a strategus analysis from the portal; it updates the analysis specification in the database
   private async updateStrategusAnalysis(req: Request, res: Response) {
     try {
       const { studyId, analysisSpec, databaseCode } = req.body;
