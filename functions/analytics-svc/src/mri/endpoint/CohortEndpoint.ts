@@ -9,6 +9,10 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
+import { pipeline } from "node:stream/promises";
+import { Transform } from "node:stream";
+import { promisify } from "node:util";
+import { env } from "../../env";
 
 const logger = CreateLogger("analytics-log");
 
@@ -462,6 +466,96 @@ export class CohortEndpoint {
             );
             const rowCount = await this.executeCohortQuery(insertQuery, true);
             return rowCount;
+        } catch (err) {
+            logger.error(
+                `Failed to insert cohort with data: ${JSON.stringify(cohort)}`
+            );
+            // Cleanup previously inserted cohort definition and cohort rows
+            await this.deleteCohortDefinitionFromDb(cohortDefinitionId);
+            await this.deleteCohortFromDb(cohortDefinitionId);
+            throw err;
+        }
+    }
+
+    // Currently only for Hana
+    // Create a readable stream from the source query and a writable stream to the target table, with transformation in between
+    public async streamCohortToDb(
+        cohortDefinitionId: number,
+        cohort: CohortType,
+        queryObject: QueryObjectType
+    ) {
+        try {
+            const partialInsertQuery = QueryObject.formatDict(
+                queryObject.queryString,
+                { cohortDefinitionId }
+            );
+            const insertQuery = new QueryObject(
+                this.replaceSchemaAliasWithCohortSchema(
+                    partialInsertQuery.queryString
+                ),
+                [
+                    ...queryObject.parameterPlaceholders,
+                    ...partialInsertQuery.parameterPlaceholders,
+                ]
+            );
+
+            // 1. Create a readable stream of Patient Ids from the source query
+            const { data } = await insertQuery.executeStreamQuery<NodeJS.ReadableStream>(
+                                    this.connection,
+                                    this.schemaName
+                                );
+            
+            // 2. Transform: Batching logic with backpressure support
+            const insertCohortQueryInBatches = `INSERT INTO ${this.schemaName}.COHORT 
+                                                    (COHORT_DEFINITION_ID, SUBJECT_ID, COHORT_START_DATE, COHORT_END_DATE) VALUES 
+                                                    (${cohortDefinitionId}, ?, ?, ?)`;
+            const bulkInsert = promisify(this.connection.executeBulkInsert.bind(this.connection));
+            let batch = [];
+            const dialect = this.dialect;
+            const batcher = new Transform({
+            objectMode: true,
+            async transform(row, encoding, callback) {
+                batch = batch || [];
+                // console.log(row.SUBJECT_ID)
+                batch.push([row.SUBJECT_ID, row.COHORT_START_DATE, row.COHORT_END_DATE]);
+        
+                if (batch.length >= env.ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT[dialect]) {
+                    try {
+                        await bulkInsert(
+                            insertCohortQueryInBatches,
+                            batch
+                        );
+                        batch = [];
+                        callback();
+                    } catch (err) {
+                        callback(err);
+                    }
+                } else {
+                    callback();
+                }
+            },
+            async flush(callback) {
+                // Insert remaining rows at the end of the stream
+                if (batch && batch.length > 0) {
+                    try {
+                        await bulkInsert(
+                            insertCohortQueryInBatches,
+                            batch
+                        );
+                        callback();
+                    } catch (err) {
+                        callback(err);
+                    }
+                } else {
+                    callback();
+                }
+            }
+            });
+        
+            // 3. Execute the pipeline
+            // pipeline handles error propagation and stream cleanup automatically
+            await pipeline(data, batcher);
+            
         } catch (err) {
             logger.error(
                 `Failed to insert cohort with data: ${JSON.stringify(cohort)}`

@@ -14,7 +14,7 @@ on:
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
@@ -23,7 +23,7 @@ jobs:
 
   check_file_changes:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
@@ -157,7 +157,6 @@ jobs:
           sleep 160
           echo "Trex Health check..."
           curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
-
 
       - name: Check status of docker containers
         run: |
@@ -311,7 +310,6 @@ jobs:
               --header 'Content-Type: application/json' \
               --header "authorization: Bearer $BEARER_TOKEN" \
               --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-
 
       - name: Seed dummy dataset
         run: |
