@@ -18,13 +18,14 @@ export interface UseInclusionReportDataOptions {
     sourceKey: string,
     modeId: number
   ) => Promise<InclusionReportResponse>
-  fetchAttritionReport?: () => Promise<AttritionApiResponse>
+  fetchAttritionReport?: (signal?: AbortSignal) => Promise<AttritionApiResponse>
 }
 
 export function useInclusionReportData(
   options: UseInclusionReportDataOptions,
   selectedPersonEventView: Ref<'PERSON' | 'EVENT'>
 ) {
+  const showIntersectView = options.showIntersectView ?? false
   const isLoadingInclusionReport = ref<boolean>(false)
   const inclusionReportPersonResponse = ref<InclusionReportResponse | null>(null)
   const inclusionReportEventResponse = ref<InclusionReportResponse | null>(null)
@@ -76,7 +77,7 @@ export function useInclusionReportData(
     isLoadingInclusionReport.value = true
 
     try {
-      if (!options.showIntersectView && options.fetchAttritionReport) {
+      if (!showIntersectView && options.fetchAttritionReport) {
         // Use the new attrition API
         const apiResponse = await options.fetchAttritionReport()
         lastAttritionApiResponse.value = apiResponse

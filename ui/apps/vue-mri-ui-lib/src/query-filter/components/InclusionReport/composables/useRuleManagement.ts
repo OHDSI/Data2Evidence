@@ -1,4 +1,5 @@
 import { ref, watch, computed, type Ref } from 'vue'
+import axios from 'axios'
 import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
 import { computeAttritionStats, type AttritionStat } from '../computeAttritionStats'
 import { calculateFilteredSummary } from '../ruleSelectionFilter'
@@ -31,7 +32,7 @@ export function useRuleManagement(
   inclusionReportResponse: Ref<InclusionReportResponse | null>,
   treemapData: Ref<any>,
   showIntersectView: boolean = true,
-  fetchAttritionReport?: () => Promise<AttritionApiResponse>,
+  fetchAttritionReport?: (signal?: AbortSignal) => Promise<AttritionApiResponse>,
   lastAttritionApiResponse?: Ref<AttritionApiResponse | null>
 ) {
   const checkedRulesIds = ref<number[]>([])
@@ -39,6 +40,7 @@ export function useRuleManagement(
   const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
   const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
   const isReorderLoading = ref(false)
+  let activeAbortController: AbortController | null = null
 
   const filteredSummary = computed(() => {
     if (!treemapData.value || checkedRulesIds.value.length === 0) {
@@ -98,12 +100,23 @@ export function useRuleManagement(
       draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value!)
       return
     }
+    // Abort any in-flight request so only the newest one updates state
+    activeAbortController?.abort()
+    const controller = new AbortController()
+    activeAbortController = controller
+
     isReorderLoading.value = true
     try {
-      const apiResponse = await fetchAttritionReport()
+      const apiResponse = await fetchAttritionReport(controller.signal)
       draggableAttritionStats.value = mapAttritionApiResponse(apiResponse)
+    } catch (error: unknown) {
+      if (controller.signal.aborted) return // cancelled by a newer request, ignore
+      if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
+      console.error('[useRuleManagement] Failed to fetch attrition stats:', error)
     } finally {
-      isReorderLoading.value = false
+      if (!controller.signal.aborted) {
+        isReorderLoading.value = false
+      }
     }
   }
 

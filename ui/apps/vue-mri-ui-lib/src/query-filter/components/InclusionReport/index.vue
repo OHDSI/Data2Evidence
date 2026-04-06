@@ -35,11 +35,11 @@ const props = withDefaults(
       sourceKey: string,
       modeId: number
     ) => Promise<InclusionReportResponse>
-    fetchAttritionReport?: () => Promise<AttritionApiResponse>
+    fetchAttritionReport?: (signal?: AbortSignal) => Promise<AttritionApiResponse>
   }>(),
   {
     showPersonEventSwitch: true,
-    showIntersectView: true,
+    showIntersectView: false,
   }
 )
 
