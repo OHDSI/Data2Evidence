@@ -620,11 +620,16 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
      */
     private getSelectiveBitmapMasks(inclusionReportFiltercards): string[] {
         let bitmapMasks = [];
+        // max number of filters supported, just to define an upper bound to input array 
+        const MAX_FILTERCARDS = 20;
         if (
             inclusionReportFiltercards &&
             inclusionReportFiltercards.length > 0
         ) {
-            const n = inclusionReportFiltercards.length;
+            const n = Math.min(
+                inclusionReportFiltercards.length,
+                MAX_FILTERCARDS
+            );
             let isExclude = false;
 
             for (let i = 0; i < n; i++) {
