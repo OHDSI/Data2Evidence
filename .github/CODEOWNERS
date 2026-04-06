@@ -54,9 +54,9 @@
 /ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/wizards                                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/tests/e2e/tests/02-Users                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/tests/e2e/tests/03-Researcher                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/tests/e2e/tests/04-Attribute                                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/02-users                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/03-researcher                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/04-attribute                                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /tests/e2e/tests/05-datasets                                  @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /tests/e2e/tests/05-datasets/metadata.spec.ts                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /tests/e2e/tests/05-datasets/dataset-overview-search.spec.ts  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann

@@ -54,9 +54,9 @@
 /ui/apps/portal/src/plugins/Researcher/Terminology   @data2evidence/analyze
 /ui/apps/concept-sets                                @data2evidence/analyze
 /ui/apps/wizards                                              @data2evidence/analyze
-/tests/e2e/tests/02-Users                                     @data2evidence/integrate
-/tests/e2e/tests/03-Researcher                                @data2evidence/integrate
-/tests/e2e/tests/04-Attribute                                 @data2evidence/integrate
+/tests/e2e/tests/02-users                                     @data2evidence/integrate
+/tests/e2e/tests/03-researcher                                @data2evidence/integrate
+/tests/e2e/tests/04-attribute                                 @data2evidence/integrate
 /tests/e2e/tests/05-datasets                                  @data2evidence/data
 /tests/e2e/tests/05-datasets/metadata.spec.ts                 @data2evidence/integrate
 /tests/e2e/tests/05-datasets/dataset-overview-search.spec.ts  @data2evidence/integrate
