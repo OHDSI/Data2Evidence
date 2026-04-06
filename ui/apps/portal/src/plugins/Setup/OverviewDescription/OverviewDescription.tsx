@@ -10,7 +10,7 @@ import { ConfigTypes } from "../../../constant";
 import env from "../../../env";
 import "./OverviewDescription.scss";
 
-const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/svg+xml"];
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 const MAX_IMAGE_SIZE = 1_048_576; // 1MB
 
 const mdeOptions = {
@@ -175,7 +175,7 @@ export const OverviewDescription: FC = () => {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".png,.jpg,.jpeg,.svg"
+              accept=".png,.jpg,.jpeg"
               onChange={handleImageUpload}
               style={{ display: "none" }}
             />
