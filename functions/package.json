@@ -353,7 +353,8 @@
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
           "TESTSCHEMA": "${TESTSCHEMA}",
-          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}"
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
+          "ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT": "${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{\"hana\": 10000}}"
         },
         "mri-pg-config": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
