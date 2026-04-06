@@ -44,6 +44,24 @@ export class PortalServerAPI {
     }
   }
 
+  async getDatasetByToken(tokenStudyCode: string) {
+    try {
+      const url = `${this.baseURL}/dataset/by-token`;
+      const queryParams = new URLSearchParams({ tokenDatasetCode: tokenStudyCode });
+      const options = this.createOptions("GET");
+      const result = await this.channel.get(
+        `${url}?${queryParams.toString()}`,
+        options
+      );
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error('Error while getting dataset by token:', error.message, 'status:', status, 'data:', responseData);
+      throw error;
+    }
+  }
+
   async getDataset(datasetId: string) {
     try {
       const url = `${this.baseURL}/dataset`;

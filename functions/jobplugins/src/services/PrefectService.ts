@@ -117,16 +117,16 @@ export class PrefectService {
       options["datasetId"],
     );
 
-    // Save analysis specification for researcher workflows
+    // Resolve study by token and validate it exists
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
-    // if study does not exist, throw error. This ensures that we only create flow runs for valid studies.
-    const study = await this.strategusAnalysisApi.getStudy(options["studyId"]);
+    const studyDataset = await portalServerApi.getDatasetByToken(options["tokenStudyCode"]);
+    const study = await this.strategusAnalysisApi.getStudyByDatasetId(studyDataset.id);
     if (!study) {
-      throw new Error(`Study ${options["studyId"]} does not exist.`);
+      throw new Error(`Study with token ${options["tokenStudyCode"]} does not exist.`);
     }
 
     await this.strategusAnalysisApi.saveAnalysis(
-      options["studyId"],
+      options["tokenStudyCode"],
       options["notebookName"],
       json_graph["analysisSpecification"],
     );

@@ -19,6 +19,7 @@ export default class StrategusAnalysisRouter {
 
   private async getAllStrategusAnalysis(req: Request, res: Response) {
     try {
+      const token = req.headers["authorization"] as string;
       const { datasetId } = req.query;
       if (datasetId && typeof datasetId === "string") {
         const analysis = await this.strategusAnalysisService.getAnalysisByDatasetId(datasetId);
@@ -27,7 +28,7 @@ export default class StrategusAnalysisRouter {
         }
         return res.status(200).json(analysis);
       }
-      const analysisList = await this.strategusAnalysisService.getAllAnalysis();
+      const analysisList = await this.strategusAnalysisService.getAllAnalysis(token);
       res.status(200).json(analysisList);
     } catch (error) {
       console.error(
@@ -49,8 +50,10 @@ export default class StrategusAnalysisRouter {
         });
       }
 
+      const token = req.headers["authorization"] as string;
       const result = await this.strategusAnalysisService.getStudyAnalysis(
-        studyId as string
+        studyId as string,
+        token
       );
 
       res.status(200).json(result);
@@ -65,22 +68,18 @@ export default class StrategusAnalysisRouter {
   // endpoint is used by JobPlugins whenever user runs/executes a strategus analysis from the portal; it creates/updates the analysis specification in the database
   private async updateStrategusAnalysis(req: Request, res: Response) {
     try {
-      const { studyId, analysisSpec } = req.body;
-      const token = req.headers["authorization"];
-      if (!studyId || !analysisSpec) {
+      const { tokenStudyCode, analysisSpec } = req.body;
+      const token = req.headers["authorization"] as string;
+      if (!tokenStudyCode || !analysisSpec) {
         return res.status(400).json({
-          message: "Missing required fields: studyId or analysisSpec",
+          message: "Missing required fields: tokenStudyCode or analysisSpec",
         });
       }
 
-      const result = await this.strategusAnalysisService.createAnalysisSpec(
+      const result = await this.strategusAnalysisService.updateAnalysisSpecByToken(
         token,
-        studyId,
-        "", // tokenStudyCode is not needed for update
-        "", // tenantId is not needed for update
-        "", // notebookName is not needed for update
+        tokenStudyCode,
         analysisSpec,
-        "" // mode is not needed for update
       );
 
       res.status(200).json({

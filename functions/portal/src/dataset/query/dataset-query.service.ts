@@ -51,6 +51,36 @@ export class DatasetQueryService {
     });
   }
 
+  async getDatasetByToken(tokenDatasetCode: string): Promise<IDataset> {
+    const baseColumns = this.getDatasetBaseColumns();
+    const dataset = await this.datasetRepo
+      .createQueryBuilder("dataset")
+      .leftJoin("dataset.datasetDetail", "datasetDetail")
+      .leftJoin("dataset.dashboards", "dashboard")
+      .leftJoin("dataset.tags", "tag")
+      .leftJoin("dataset.attributes", "attribute")
+      .leftJoin("attribute.attributeConfig", "attributeConfig")
+      .where("dataset.tokenDatasetCode = :tokenDatasetCode", { tokenDatasetCode })
+      .select(baseColumns)
+      .getOne();
+
+    if (!dataset) {
+      throw new HttpException(404, `Dataset with token ${tokenDatasetCode} not found`);
+    } else if (!dataset.datasetDetail) {
+      throw new HttpException(
+        404,
+        `Dataset detail with token ${tokenDatasetCode} not found`,
+      );
+    }
+
+    const tenant = this.tenantService.getTenant();
+    const swapped = this.swapVariables(
+      await this.buildDatasetResponseDto(dataset, tenant),
+      SWAP_TO.STUDY,
+    );
+    return swapped as IDataset;
+  }
+
   async getDataset(id: string): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns();
     const dataset = await this.datasetRepo

@@ -12,18 +12,35 @@ export default class StrategusAnalysisService {
         this.strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     }
 
-    async getAllAnalysis() {
+    async getAllAnalysis(token: string) {
         const analysisList = await this.strategusAnalysisRepository.find();
-        
-        return analysisList;
+        const portalAPI = new PortalAPI(token);
+        return await Promise.all(
+            analysisList.map(async (analysis) => {
+                try {
+                    const dataset = await portalAPI.getDataset(analysis.datasetId);
+                    return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
+                } catch {
+                    return { ...analysis, tokenStudyCode: null };
+                }
+            })
+        );
     }
 
-    async getStudyAnalysis(studyId: string) {
+    async getStudyAnalysis(studyId: string, token: string) {
         const analysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
 
-        return analysis;
+        if (!analysis) return null;
+
+        try {
+            const portalAPI = new PortalAPI(token);
+            const dataset = await portalAPI.getDataset(analysis.datasetId);
+            return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
+        } catch {
+            return { ...analysis, tokenStudyCode: null };
+        }
     }
 
     async getAnalysisByDatasetId(datasetId: string) {
@@ -109,6 +126,24 @@ export default class StrategusAnalysisService {
         }
 
         return { analysisId, message: "Analysis specification saved successfully." };
+    }
+
+    async updateAnalysisSpecByToken(token: string, tokenStudyCode: string, analysisSpec: string) {
+        this.token = token;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDatasetByToken(tokenStudyCode);
+        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
+            where: { datasetId: dataset.id }
+        });
+
+        if (!existingAnalysis) {
+            throw new Error(`Study with token ${tokenStudyCode} does not exist.`);
+        }
+
+        existingAnalysis.analysisSpec = analysisSpec;
+        await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
+
+        return { analysisId: existingAnalysis.id, message: "Analysis specification saved successfully." };
     }
 
     async saveStudyAnalysisViewerCode(studyId: string, viewerCode: string) {

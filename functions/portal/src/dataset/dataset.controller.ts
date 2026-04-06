@@ -47,6 +47,15 @@ export class DatasetController {
     return await this.datasetQueryService.getDataset(id);
   }
 
+  @Get("by-token")
+  async getDatasetByToken(@Query() queryParams: any): Promise<IDataset> {
+    const tokenDatasetCode = queryParams.tokenDatasetCode;
+    if (!tokenDatasetCode) {
+      throw new HttpException(400, "tokenDatasetCode is required");
+    }
+    return await this.datasetQueryService.getDatasetByToken(tokenDatasetCode);
+  }
+
   @Get("exist")
   async hasDataset(@Query() searchParams: any) {
     const dataset = await this.datasetQueryService.hasDataset(searchParams);
