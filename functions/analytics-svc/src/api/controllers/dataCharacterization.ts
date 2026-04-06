@@ -36,7 +36,7 @@ export enum DC_RESULTS_DRILLDOWN_SOURCE_KEYS {
     OBSERVATION = "observation",
 }
 
-const getDcResultsSqlConfig = (sourceKey: string) => {
+const getDcResultsSqlConfig = (sourceKey: string): Record<string, string> => {
     let sqlConfig;
     switch (sourceKey) {
         case DC_RESULTS_SOURCE_KEYS.DASHBOARD:
@@ -83,7 +83,9 @@ const getDcResultsSqlConfig = (sourceKey: string) => {
     return sqlConfig;
 };
 
-const getDcDrilldownResultsSqlConfig = (sourceKey: string) => {
+const getDcDrilldownResultsSqlConfig = (
+    sourceKey: string
+): Record<string, string> => {
     let sqlConfig;
     switch (sourceKey) {
         case DC_RESULTS_DRILLDOWN_SOURCE_KEYS.VISIT:
@@ -120,7 +122,7 @@ const getDcDrilldownResultsSqlConfig = (sourceKey: string) => {
 const mapDcResultKeysToUppercase = (data: unknown[]) => {
     return data.map((obj) => {
         return Object.fromEntries(
-            Object.entries(obj).map(([k, v]) => [
+            Object.entries(obj as Record<string, unknown>).map(([k, v]) => [
                 k.toUpperCase().replace(/_/g, ""),
                 v,
             ])
@@ -129,16 +131,16 @@ const mapDcResultKeysToUppercase = (data: unknown[]) => {
 };
 
 /**
- * Append databaseName infront of schemaName if connection is a TrexConnection
+ * Append databaseCode infront of schemaName if connection is a TrexConnection
  * This is required as TrexConnection holds multiple connections to different databases
  */
 const resolveSchemaValue = (
     connection: Connection.ConnectionInterface,
-    databaseName: string,
+    databaseCode: string,
     schemaName: string
 ): string => {
     if (connection.constructor.name === "TrexConnection") {
-        return `${databaseName}.${schemaName}`;
+        return `${databaseCode}.${schemaName}`;
     } else {
         return schemaName;
     }
@@ -146,7 +148,7 @@ const resolveSchemaValue = (
 
 export async function getDataCharacterizationResult(req: IMRIRequest, res) {
     try {
-        const databaseName = req.params.databaseName;
+        const databaseCode = req.params.databaseCode;
         const resultsSchema = req.params.resultsSchema;
         const vocabSchema = req.params.vocabSchema;
         const sourceKey = req.params.sourceKey;
@@ -161,7 +163,7 @@ export async function getDataCharacterizationResult(req: IMRIRequest, res) {
             results_database_schema: resultsSchema,
             vocab_database_schema: resolveSchemaValue(
                 analyticsConnection,
-                databaseName,
+                databaseCode,
                 vocabSchema
             ),
         };
@@ -212,7 +214,7 @@ export async function getDataCharacterizationDrilldownResult(
     res
 ) {
     try {
-        const databaseName = req.params.databaseName;
+        const databaseCode = req.params.databaseCode;
         const resultsSchema = req.params.resultsSchema;
         const vocabSchema = req.params.vocabSchema;
         const sourceKey = req.params.sourceKey;
@@ -228,7 +230,7 @@ export async function getDataCharacterizationDrilldownResult(
             results_database_schema: resultsSchema,
             vocab_database_schema: resolveSchemaValue(
                 analyticsConnection,
-                databaseName,
+                databaseCode,
                 vocabSchema
             ),
             conceptId: conceptId,

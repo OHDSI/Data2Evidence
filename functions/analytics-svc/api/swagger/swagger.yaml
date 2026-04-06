@@ -824,7 +824,7 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /data-characterization/{databaseName}/{vocabSchema}/{resultsSchema}/{sourceKey}:
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}:
     x-swagger-router-controller: dataCharacterization
     get:
       description: Returns the results for data characterization run 
@@ -832,9 +832,9 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: databaseName
+        - name: databaseCode
           in: path
-          description: Database name
+          description: Database code
           required: true
           type: string
         - name: vocabSchema
@@ -866,7 +866,7 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /data-characterization/{databaseName}/{vocabSchema}/{resultsSchema}/{sourceKey}/{conceptId}:
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}/{conceptId}:
     x-swagger-router-controller: dataCharacterization
     get:
       description: Returns the drilldown results for data characterization run 
@@ -874,9 +874,9 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: databaseName
+        - name: databaseCode
           in: path
-          description: Database name
+          description: Database code
           required: true
           type: string
         - name: vocabSchema
