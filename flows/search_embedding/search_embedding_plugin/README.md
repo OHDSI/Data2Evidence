@@ -64,26 +64,15 @@ holding insert cost fixed at ~2 s/batch):
 
 A standard OMOP vocabulary (~6 M concepts) is a long-running job on CPU. Schedule it during off-peak hours. GPU is the practical option for full-vocab deployments.
 
----
-
-## Memory requirements
-
-| Component | Approximate size |
-|-----------|----------------|
-| `gte-small` model weights | ~66 MB |
-| Tokenizer vocab | ~5 MB |
-| Batch working memory (1,024 rows × 384 floats) | ~1.5 MB |
-| Pandas concept DataFrame (5 M rows) | ~400 MB |
-| **Minimum container memory** | **~1 GB** |
-| **Recommended** | **2 GB** (headroom for Trex DAO + OS) |
-
----
 
 ## Disk space requirements
 
 The embedding column and HNSW index are stored inside the DuckDB cache file.
 
-| Item | Size per concept |
-|------|----------------|
-| `concept_name_embedding FLOAT[384]` column | 1,536 bytes |
-| Intermediate `tmp_embeddings` table (dropped after run) | 1,536 bytes (transient) |
+| Item | Size per concept | Total (~6 M concepts) |
+|------|----------------|----------------------|
+| `concept_name_embedding FLOAT[384]` column | 1,536 bytes | ~8.6 GiB |
+| Intermediate `tmp_embeddings` table (dropped after run) | 1,536 bytes (transient) | — |
+| **Overall persistent disk** | | **~9 GiB** |
+
+> Recommended free disk space: 20 GB — provides headroom for the transient `tmp_embeddings` table during the run, DuckDB write-ahead log, and OS/filesystem overhead.
