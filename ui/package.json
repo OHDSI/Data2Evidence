@@ -147,27 +147,38 @@
         }
       ],
       "uiplugins": {
-        "etl": [{
-          "type": "app",
-          "enabled": true,
-          "name": "ETL",
-          "nameI18nKey": "UI_PLUGIN_ETL",
-          "route": "etl",
-          "pluginPath": "/flow/lifecycles.js",
-          "requiredRoles": [
-            "SYSTEM_ADMIN"
-          ],
-          "data": {
-            "dnBaseUrl": "https://$$FQDN$$/",
-            "mappingSuggestion": true
+        "etl": [
+          {
+            "type": "app",
+            "visible": true,
+            "name": "ETL",
+            "nameI18nKey": "UI_PLUGIN_ETL",
+            "route": "etl",
+            "pluginPath": "/flow/lifecycles.js",
+            "requiredRoles": [
+              "SYSTEM_ADMIN"
+            ],
+            "data": {
+              "dnBaseUrl": "https://$$FQDN$$/",
+              "mappingSuggestion": true
+            }
+          },
+          {
+            "type": "app",
+            "autoMount": true,
+            "visible": false,
+            "name": "Concepts",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
+            "route": "concepts"
           }
-        }],
+        ],
         "researcher": [
           {
-            "enabled": true,
+            "visible": true,
             "type": "app",
             "autoMount": true,
             "featureFlag": "conceptSets",
+            "defaultEnabled": true,
             "name": "Concepts",
             "nameI18nKey": "UI_PLUGIN_CONCEPTS",
             "pluginPath": "/resources/concept-sets/lifecycles.js",
@@ -177,8 +188,9 @@
             "route": "concepts"
           },
           {
-            "enabled": true,
+            "visible": true,
             "featureFlag": "cohort",
+            "defaultEnabled": true,
             "name": "Cohorts",
             "nameI18nKey": "UI_PLUGIN_COHORTS",
             "pluginPath": "plugins/mri/PatientAnalytics/module",
@@ -188,8 +200,9 @@
             "route": "cohort"
           },
           {
-            "enabled": false,
+            "visible": false,
             "featureFlag": "cohorts",
+            "defaultEnabled": false,
             "name": "Cohorts M",
             "pluginPath": "plugins/Cohort/module",
             "requiredRoles": [
@@ -198,9 +211,10 @@
             "route": "cohorts"
           },
           {
-            "enabled": true,
+            "visible": true,
             "type": "app",
             "featureFlag": "starboard",
+            "defaultEnabled": true,
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
             "pluginPath": "/resources/notebook-ui/lifecycles.js",
@@ -213,25 +227,27 @@
             }
           },
           {
-            "enabled": true,
+            "visible": true,
             "type": "app",
             "name": "Analysis",
             "nameI18nKey": "UI_PLUGIN_ANALYSIS",
             "route": "analysis",
             "pluginPath": "/resources/analysis-ui/lifecycles.js",
             "featureFlag": "strategus",
+            "defaultEnabled": true,
             "requiredRoles": [
               "RESEARCHER"
             ]
           },
           {
-            "enabled": true,
+            "visible": true,
             "type": "app",
             "name": "Wizards",
             "nameI18nKey": "UI_PLUGIN_WIZARDS",
             "route": "wizards",
             "pluginPath": "/resources/wizards/lifecycles.js",
             "featureFlag": "wizards",
+            "defaultEnabled": false,
             "requiredRoles": [
               "RESEARCHER"
             ]
@@ -242,27 +258,29 @@
             "route": "kaplan-meier",
             "pluginPath": "plugins/Researcher/KaplanMeier/module",
             "featureFlag": "kaplanMeier",
+            "defaultEnabled": false,
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "enabled": false
+            "visible": false
           },
           {
             "name": "Dashboard",
             "route": "shiny-live",
             "pluginPath": "plugins/Researcher/ShinyLive/module",
             "featureFlag": "shinyLive",
+            "defaultEnabled": true,
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "enabled": true
+            "visible": true
           }
         ],
         "setup": [
           {
             "description": "Database connection and credentials",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_DB_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Databases",
             "nameI18nKey": "UI_PLUGIN_DATABASES",
             "notes": "",
@@ -271,7 +289,7 @@
           },
           {
             "description": "Allow user to sign-in with Azure Active Directory",
-            "enabled": false,
+            "visible": false,
             "name": "Azure AD integration",
             "notes": "Notes: Require manual update of the environment variable to switch the identity provider to Azure",
             "pluginPath": "plugins/Setup/AzureAD/module",
@@ -280,7 +298,7 @@
           {
             "description": "Allow user to configure the git information",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_GIT_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Git configuration",
             "nameI18nKey": "UI_PLUGIN_GIT_CONFIG",
             "pluginPath": "plugins/Setup/GitConfig/module",
@@ -289,7 +307,7 @@
           {
             "description": "Enable / disable feature",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_FEATURE_FLAGS_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Feature flags",
             "nameI18nKey": "UI_PLUGIN_FEATURE_FLAGS",
             "pluginPath": "plugins/Setup/Feature/module",
@@ -298,7 +316,7 @@
           {
             "description": "Configure dataset metadata and tags",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_METADATA_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Metadata",
             "nameI18nKey": "UI_PLUGIN_METADATA",
             "notes": "",
@@ -306,10 +324,10 @@
             "route": "metadata"
           },
           {
-            "description": "Configure Cohort Builder",
+            "description": "Configure cohort builder",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PATIENT_ANALYTICS_DESCRIPTION",
-            "enabled": true,
-            "name": "Cohort Builder config",
+            "visible": true,
+            "name": "Cohort builder config",
             "nameI18nKey": "UI_PLUGIN_PATIENT_ANALYTICS_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/PatientAnalyticsConfig/module",
@@ -318,8 +336,8 @@
           {
             "description": "Configure CDM",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_CDM_DESCRIPTION",
-            "enabled": true,
-            "name": "CDM Config",
+            "visible": true,
+            "name": "CDM config",
             "nameI18nKey": "UI_PLUGIN_CDM_CONFIG",
             "notes": "",
             "pluginPath": "plugins/mri/CDM/module",
@@ -327,8 +345,8 @@
           },
           {
             "description": "Configure patient summary",
-            "enabled": false,
-            "name": "Patient Summary Config",
+            "visible": false,
+            "name": "Patient summary config",
             "notes": "",
             "pluginPath": "plugins/mri/PatientSummaryConfig/module",
             "route": "ps-config"
@@ -336,7 +354,7 @@
           {
             "description": "Configure overview description text",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_OVERVIEW_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Overview description",
             "nameI18nKey": "UI_PLUGIN_OVERVIEW_DESCRIPTION",
             "notes": "",
@@ -346,7 +364,7 @@
           {
             "description": "Configure hybrid search for concepts",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_HYBRID_SEARCH_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Hybrid search",
             "nameI18nKey": "UI_PLUGIN_HYBRID_SEARCH",
             "notes": "",
@@ -356,7 +374,7 @@
           {
             "description": "Manage plugins",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Plugins",
             "nameI18nKey": "UI_PLUGIN_PLUGINS",
             "notes": "",
@@ -366,7 +384,7 @@
           {
             "description": "Setting up demo dataset",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_DEMO_DESCRIPTION",
-            "enabled": true,
+            "visible": true,
             "name": "Demo setup",
             "nameI18nKey": "UI_PLUGIN_DEMO_SETUP",
             "notes": "",
@@ -378,28 +396,28 @@
           {
             "name": "Users",
             "nameI18nKey": "UI_PLUGIN_USERS",
-            "enabled": true,
+            "visible": true,
             "pluginPath": "plugins/SystemAdmin/UserOverview/module",
             "route": "user-overview"
           },
           {
             "name": "Datasets",
             "nameI18nKey": "UI_PLUGIN_DATASETS",
-            "enabled": true,
+            "visible": true,
             "pluginPath": "plugins/SystemAdmin/StudyOverview/module",
             "route": "dataset-overview"
           },
           {
             "name": "Studies",
             "nameI18nKey": "UI_PLUGIN_STUDIES",
-            "enabled": true,
+            "visible": true,
             "pluginPath": "plugins/SystemAdmin/StudyPage/module",
             "route": "study-page"
           },
           {
             "name": "Jobs",
             "nameI18nKey": "UI_PLUGIN_JOBS",
-            "enabled": true,
+            "visible": true,
             "pluginPath": "plugins/SystemAdmin/Jobs/module",
             "route": "jobs"
           },
@@ -407,7 +425,7 @@
             "type": "app",
             "name": "ETL",
             "nameI18nKey": "UI_PLUGIN_ETL",
-            "enabled": true,
+            "visible": true,
             "route": "etl",
             "pluginPath": "/flow/lifecycles.js",
             "requiredRoles": [
@@ -421,7 +439,7 @@
           {
             "name": "Setup",
             "nameI18nKey": "UI_PLUGIN_SETUP",
-            "enabled": true,
+            "visible": true,
             "pluginPath": "plugins/Setup/module",
             "route": "setup"
           },
@@ -429,9 +447,18 @@
             "name": "Logs",
             "nameI18nKey": "UI_PLUGIN_LOGS",
             "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
-            "enabled": true,
+            "visible": true,
             "featureFlag": "d2eLogs",
+            "defaultEnabled": true,
             "route": "docker-logs"
+          },
+          {
+            "type": "app",
+            "autoMount": true,
+            "visible": false,
+            "name": "Concepts",
+            "pluginPath": "/resources/concept-sets/lifecycles.js",
+            "route": "concepts"
           }
         ]
       }

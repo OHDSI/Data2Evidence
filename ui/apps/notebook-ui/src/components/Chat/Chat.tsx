@@ -4,7 +4,7 @@ import Collapse from "@mui/material/Collapse";
 import "@nlux/themes/nova.css";
 
 import { createSend, noOpSend } from "./Send";
-import { useConversationHistory } from "../../contexts";
+import { useConversationHistory, useTranslation, i18nKeys } from "../../contexts";
 import "./Chat.scss";
 
 export interface ChatProps {
@@ -15,6 +15,7 @@ export interface ChatProps {
 }
 
 const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
+  const { getText } = useTranslation();
   const api = useAiChatApi();
   const content = currentContent();
   const [history, setHistory] = useState<ChatItem[]>([]);
@@ -73,7 +74,7 @@ const Chat: FC<ChatProps> = ({ open, onClose, datasetId, currentContent }) => {
         api={api}
         adapter={adapter}
         displayOptions={{ colorScheme: "light" }}
-        composerOptions={{ placeholder: "Type your query" }}
+        composerOptions={{ placeholder: getText(i18nKeys.CHAT__PLACEHOLDER) }}
         events={{ messageReceived: onMessageReceived, messageSent: onMessageSent }}
         messageOptions={{ waitTimeBeforeStreamCompletion: 3000 }}
         initialConversation={conversationHistory}

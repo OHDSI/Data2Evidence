@@ -26,7 +26,7 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
   return (
     <Dialog
       className="source-information-dialog"
-      title="Source Information"
+      title={getText(i18nKeys.SOURCE_INFORMATION_DIALOG__TITLE)}
       closable
       open={open}
       onClose={() => handleClose("cancelled")}
@@ -34,12 +34,12 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
     >
       <Divider />
       <div className="source-information-dialog__content">
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Dataset Name</div>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATASET_NAME)}</div>
         <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.studyDetail?.name} />
         </div>
 
-        <div style={{ marginTop: "32px", fontWeight: "bold" }}>Database Code</div>
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__DATABASE_CODE)}</div>
         <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.databaseCode} />
         </div>

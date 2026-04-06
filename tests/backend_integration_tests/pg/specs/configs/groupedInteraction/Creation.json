@@ -1,0 +1,57 @@
+{
+  "patient": {
+    "conditions": {},
+    "interactions": {
+      "Grouped_Interaction": {
+        "name": "Grouped Interaction",
+        "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'GROUP_ME'"],
+        "attributes": {
+          "Attribute": {
+            "name": "Attribute",
+            "defaultInserts": ["@CODE.Attribute.OriginalValue = 'GROUPING_ATTR_NAME'", "@CODE.Value.OriginalValue = $$"]
+          },
+          "Value": {
+            "name": "Value",
+            "defaultInserts": [
+              "@CODE.Attribute.OriginalValue = 'GROUPING_ATTR_VALUE'",
+              "@CODE.Value.OriginalValue = $$"
+            ]
+          },
+          "Value_2": {
+            "name": "Value 2",
+            "defaultInserts": [
+              "@CODE.Attribute.OriginalValue = 'GROUPING_ATTR_VALUE_2'",
+              "@CODE.Value.OriginalValue = $$"
+            ]
+          },
+          "Group": {
+            "name": "Group",
+            "defaultInserts": ["@CODE.Attribute.OriginalValue = 'GROUP_BY_ATTR'", "@CODE.Value.OriginalValue = $$"]
+          }
+        }
+      },
+      "dummy": {
+        "name": "Dummy interaction for guarded patients",
+        "defaultInserts": ["@INTERACTION.InteractionType.OriginalValue = 'DUMMY'", "@INTERACTION.OrgID = 400"],
+        "attributes": {}
+      }
+    },
+    "attributes": {
+      "gender": {
+        "name": "Gender",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.Gender.OriginalValue = $$"]
+      },
+      "firstName": {
+        "name": "First name",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.GivenName = $$"]
+      },
+      "lastName": {
+        "name": "Last name",
+        "type": "text",
+        "defaultInserts": ["@PATIENT.FamilyName = $$"]
+      }
+    }
+  }
+}
