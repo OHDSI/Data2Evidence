@@ -589,7 +589,11 @@ onErrorCaptured((err, instance, info) => {
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click.stop="addCohort(bookmarkDisplay)"
-            :title="getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')"
+            :title="
+              ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
+                ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')
+                : getText('MRI_PA_TOOLTIP_MATERIALIZE_DISABLED')
+            "
           >
             <GenerateCohortActiveIcon />
           </div>
@@ -742,10 +746,11 @@ onErrorCaptured((err, instance, info) => {
   cursor: pointer;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
-.icon-button-disabled {
-  pointer-events: none;
-  cursor: none;
+.icon-button-disabled,
+.icon-button-disabled:hover {
+  cursor: default;
   opacity: 0.1;
+  box-shadow: none;
 }
 .item-card {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);

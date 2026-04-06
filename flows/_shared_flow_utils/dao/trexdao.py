@@ -4,6 +4,7 @@ from contextlib import contextmanager
 
 import psycopg2
 from psycopg2 import sql as pg_sql
+from psycopg2.extras import execute_values
 
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
@@ -233,7 +234,7 @@ class TrexDao(DaoBase):
     ):
         pass
 
-    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple]):
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None):
         """
         Insert multiple rows into a specified table in one operation.
         
@@ -242,20 +243,20 @@ class TrexDao(DaoBase):
             table_name: Target table name
             columns: List of column names to insert into
             values: List of tuples, each tuple representing a row to insert
+            con: Optional existing connection to reuse (skips opening a new connection)
         """
         columns_str = ", ".join(columns)
-        placeholders = ", ".join(["%s"] * len(columns))
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES ({placeholders})").format(
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s").format(
             schema_name=pg_sql.Identifier(schema_name),
             table_name=pg_sql.Identifier(table_name),
             columns_str=pg_sql.SQL(columns_str),
-            placeholders=pg_sql.SQL(placeholders)
         )
-        with self._get_connection() as con:
+
+        def _execute(con):
             cur = None
             try:
                 cur = con.cursor()
-                cur.executemany(sql, values)
+                execute_values(cur, sql, values, page_size=len(values))
                 if not con.autocommit:
                     con.commit()
             except Exception:
@@ -264,6 +265,12 @@ class TrexDao(DaoBase):
             finally:
                 if cur:
                     cur.close()
+
+        if con is not None:
+            _execute(con)
+        else:
+            with self._get_connection() as con:
+                _execute(con)
 
 
     # --- Delete methods ---
