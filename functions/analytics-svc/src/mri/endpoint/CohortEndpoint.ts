@@ -500,10 +500,7 @@ export class CohortEndpoint {
             );
 
             // 1. Create a readable stream of Patient Ids from the source query
-            const { data } = await insertQuery.executeStreamQuery<NodeJS.ReadableStream>(
-                                    this.connection,
-                                    this.schemaName
-                                );
+            const { data } = await insertQuery.executeStreamQuery<NodeJS.ReadableStream>(this.connection);
             
             // 2. Transform: Batching logic with backpressure support
             const insertCohortQueryInBatches = `INSERT INTO ${this.schemaName}.COHORT 
