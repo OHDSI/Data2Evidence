@@ -104,7 +104,8 @@ export default class StrategusAnalysisService {
         return { analysisId, message: "Analysis specification saved successfully." };
     }
 
-    async updateStrategusAnalysis(studyId: string, analysisSpec: string, databaseCode: string) {
+    async updateStrategusAnalysis(token: string, studyId: string, analysisSpec: string, databaseCode: string) {
+        this.token = token;
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
@@ -114,12 +115,23 @@ export default class StrategusAnalysisService {
         }
 
         existingAnalysis.analysisSpec = analysisSpec;
-        // databaseCode is the source dataset's database code that is needed for the analysis flow to know which database to connect to when running the analysis
+        // databaseCode is the target dataset's database code that is needed for the analysis flow to know which database to connect to when running the analysis
         // databaseCode is known/identified when the user attempts to run/execute the analysis from the portal after the selection of dataset in the Researcher portal
-        // NOTE: With this change, each study dataset corresponds to a source dataset (that is the last selected dataset in the portal before running the analysis) and the analysis results will be stored in the same database as the source dataset; And if the user runs the analysis multiple times with different source datasets, the analysis specifications will be overridden with the latest one and the results will be stored in the database corresponding to the latest source dataset
-        // TODO: the databaseCode overrides the existing databaseCode and the results from different source datasets will be stored in different databases; And in the next version storing results of multiple source datasets will be handled
+        // NOTE: With this change, each study dataset corresponds to a target dataset (that is the last selected dataset in the portal before running the analysis) and the analysis results will be stored in the same database as the target dataset; And if the user runs the analysis multiple times with different target datasets, the analysis specifications will be overridden with the latest one and the results will be stored in the database corresponding to the latest target dataset
+        // TODO: the databaseCode overrides the existing databaseCode and the results from different target datasets will be stored in different databases; And in the next version storing results of multiple target datasets will be handled
         if (databaseCode) {
             existingAnalysis.databaseCode = databaseCode;
+            const portalAPI = new PortalAPI(this.token);
+            try {
+                await portalAPI.updateDataset(
+                    existingAnalysis.datasetId,
+                    databaseCode
+                );
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("Error updating dataset for strategus analysis:", errorMessage);
+                throw new Error(`Failed to update dataset: ${errorMessage}`);
+            }
         }
         await this.strategusAnalysisRepository.save(existingAnalysis);
 
