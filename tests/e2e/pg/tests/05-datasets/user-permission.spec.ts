@@ -1,0 +1,75 @@
+import { test, expect } from '../fixtures'
+
+const TEST_NAME = 'dataset-user-permission'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
+test(TEST_NAME, async ({ page }) => {
+  // Sign in
+  await page.goto('/d2e/portal')
+  await page.locator('input[name="identifier"]').waitFor({ state: 'visible', timeout: 60000 })
+  await page.locator('input[name="identifier"]').click()
+  await page.locator('input[name="identifier"]').fill('admin')
+  await page.locator('input[name="password"]').click()
+  await page.locator('input[name="password"]').fill('Updatepassword12345')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+
+  // Switch to Admin portal
+  await page.getByTestId('button').nth(1).click()
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+
+  // Create user - testuserC
+  await page.getByRole('button', { name: 'Add user' }).click()
+  await page.getByRole('textbox', { name: 'Username' }).click()
+  await page.getByRole('textbox', { name: 'Username' }).fill('testuserC')
+  await page.getByRole('textbox', { name: 'Password' }).click()
+  await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
+  await page.getByRole('button', { name: 'Add' }).click()
+  // Wait for the user to appear after clicking Add
+  await page.waitForTimeout(2000)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: 'testuserC' })).toBeVisible()
+
+  // Go to Datasets
+  await page.getByRole('link', { name: 'Datasets' }).click()
+  const demoRow = page.locator('tr', { hasText: 'Demo dataset' }).first()
+  await demoRow.getByText('Select action').click()
+
+  // Manage dataset permissions
+  await page.getByRole('option', { name: 'Permissions' }).click()
+  await page.getByRole('tab', { name: 'Access' }).click()
+
+  // Grant access to testuserC user
+  const addButton = page.getByTestId('dialog').getByTestId('button')
+  await expect(addButton).toBeVisible()
+  await addButton.click()
+  await expect(page.getByRole('menu')).toBeVisible()
+  // Wait for 10 seconds to ensure the menu items are visible
+  await page.waitForTimeout(10000)
+  await expect(page.getByRole('menuitem', { name: 'testuserC' })).toBeVisible()
+  await page.getByRole('menuitem', { name: 'testuserC' }).click()
+  await expect(page.getByRole('cell', { name: 'testuserC' })).toBeVisible()
+
+  // Revoke access to testuserC user
+  const testuserCRow = page.getByRole('row', { name: /testuserC/ })
+  const revokeButton = testuserCRow.getByRole('button', { name: 'Revoke' })
+  await expect(revokeButton).toBeVisible()
+  await revokeButton.click()
+  await page.waitForTimeout(3000)
+  await expect(
+    page.getByTestId('snackbar').locator('div').filter({ hasText: "You've revoked access for" }).first()
+  ).toBeVisible()
+  await page.getByTestId('dialog-close').click()
+
+  // Cleanup: Delete the user created for testing
+  await test.step('Delete test user', async () => {
+    await page.getByRole('link', { name: 'Users' }).click()
+    const userRow = page.getByRole('row', { name: /testuserC/ })
+    await userRow.getByRole('button', { name: 'Delete' }).click()
+    // await page.getByRole('button', { name: 'Delete' }).nth(2).click();
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    // Wait for the user row to be removed from the table, not just any text
+    await expect(page.getByRole('row', { name: /testuserC/ })).not.toBeVisible() // Verify user is deleted
+  })
+})
