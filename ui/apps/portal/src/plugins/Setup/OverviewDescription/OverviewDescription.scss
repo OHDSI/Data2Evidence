@@ -1,26 +1,108 @@
+$overview-description-max-width: 1000px;
+
 .overview_description {
-    padding: 2em;
-    max-width: 1000px;
-    margin: 0 auto;
+  padding: 2em;
+  max-width: $overview-description-max-width;
+  margin: 0 auto;
 
-    &__header {
-        display: flex;
-        width: 100%;
-        padding-bottom: 16px;
-    
-        .alp-title {
-          margin: 0;
-          flex: 1;
-        }
-      }
+  &__header {
+    display: flex;
+    width: 100%;
+    padding-bottom: 1em;
 
-    &__buttons {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 1em;
-
-        .alp-button__container{
-            margin-left: 1em;
-        }
+    .alp-title {
+      margin: 0;
+      flex: 1;
     }
+  }
+
+  &__header-image {
+    margin-top: 11px;
+    padding-bottom: 2em;
+    margin-bottom: 1em;
+  }
+
+  &__header-image-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  &__header-image-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  &__banner-preview {
+    display: flex;
+    align-items: flex-start;
+    background-color: #fbfbfd;
+    border: 1px solid #dedcda;
+    border-radius: 8px;
+    padding: 24px;
+    gap: 20px;
+  }
+
+  &__banner-preview-image {
+    max-width: 160px;
+    max-height: 107px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  &__banner-preview-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__banner-preview-title {
+    font-family: MetaSerifPro, GT-America, -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 20px;
+    color: #ee695a;
+    margin-bottom: 4px;
+  }
+
+  &__banner-preview-description {
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  &__fixed-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border-top: 1px solid #dedcda;
+    padding: 0.75em 2em;
+    z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    animation: slideUp 0.25s ease-out;
+  }
+
+  &__fixed-footer-content {
+    max-width: $overview-description-max-width;
+    padding: 0 2em;
+    margin: 0 auto;
+    display: flex;
+    justify-content: flex-end;
+
+    .alp-button__container {
+      margin-left: 1em;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
