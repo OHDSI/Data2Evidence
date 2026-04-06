@@ -66,6 +66,7 @@ export default class StrategusAnalysisRouter {
   private async updateStrategusAnalysis(req: Request, res: Response) {
     try {
       const { studyId, analysisSpec, databaseCode } = req.body;
+      const token = req.headers["authorization"];
       if (!studyId || !analysisSpec || !databaseCode) {
         return res.status(400).json({
           message: "Missing required fields: studyId, analysisSpec, or databaseCode",
@@ -73,6 +74,7 @@ export default class StrategusAnalysisRouter {
       }
 
       const result = await this.strategusAnalysisService.updateStrategusAnalysis(
+        token,
         studyId,
         analysisSpec,
         databaseCode
