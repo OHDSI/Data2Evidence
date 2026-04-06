@@ -68,10 +68,10 @@ export const OverviewDescription: FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setFormData({ ...formData, ...configs });
+    setFormData({ ...EMPTY_FORM_DATA, ...configs });
   }, [configs]);
 
-  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData]);
+  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData, configs]);
 
   const handleFormDataChange = useCallback((changes: { [field: string]: string }) => {
     setFormData((formData) => ({ ...formData, ...changes }));
@@ -115,10 +115,12 @@ export const OverviewDescription: FC = () => {
 
       if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
         setFeedback({ type: "error", message: getText(i18nKeys.HEADER_IMAGE__ERROR_INVALID_TYPE) });
+        event.target.value = "";
         return;
       }
       if (file.size > MAX_IMAGE_SIZE) {
         setFeedback({ type: "error", message: getText(i18nKeys.HEADER_IMAGE__ERROR_TOO_LARGE) });
+        event.target.value = "";
         return;
       }
 
@@ -294,11 +296,7 @@ export const OverviewDescription: FC = () => {
               variant="outlined"
               onClick={handleDiscardChanges}
             />
-            <Button
-              text={getText(i18nKeys.OVERVIEW_DESCRIPTION__SAVE)}
-              onClick={handleSave}
-              loading={loading}
-            />
+            <Button text={getText(i18nKeys.OVERVIEW_DESCRIPTION__SAVE)} onClick={handleSave} loading={loading} />
           </div>
         </div>
       )}
