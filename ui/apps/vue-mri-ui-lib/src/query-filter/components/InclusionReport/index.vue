@@ -102,6 +102,7 @@ const {
   allAnyOption,
   passedFailedOption,
   isReorderLoading,
+  errorMessage,
   toggleRuleSelection,
   isRuleChecked,
   areAllRulesChecked,
@@ -207,6 +208,10 @@ onUnmounted(() => {
           @update:all-any-option="handleAllAnyChange"
           @update:passed-failed-option="handlePassedFailedChange"
         />
+
+        <div v-if="errorMessage" class="inclusion-report-error">
+          {{ errorMessage }}
+        </div>
 
         <div class="rules-section">
           <div class="rules-table-wrapper">
@@ -449,5 +454,15 @@ h4 {
 
 .footnote {
   max-width: 80ch;
+}
+
+.inclusion-report-error {
+  color: var(--color-error-text, #b00020);
+  background-color: var(--color-error-bg, #fdecea);
+  border: 1px solid var(--color-error-border, #f5c6cb);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 </style>

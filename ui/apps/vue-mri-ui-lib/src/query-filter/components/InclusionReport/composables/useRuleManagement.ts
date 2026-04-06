@@ -1,4 +1,4 @@
-import { ref, watch, computed, type Ref } from 'vue'
+import { ref, watch, computed, nextTick, type Ref } from 'vue'
 import axios from 'axios'
 import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
 import { computeAttritionStats, type AttritionStat } from '../computeAttritionStats'
@@ -40,6 +40,7 @@ export function useRuleManagement(
   const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
   const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
   const isReorderLoading = ref(false)
+  const errorMessage = ref('')
   let activeAbortController: AbortController | null = null
 
   const filteredSummary = computed(() => {
@@ -106,6 +107,7 @@ export function useRuleManagement(
     activeAbortController = controller
 
     isReorderLoading.value = true
+    errorMessage.value = ''
     try {
       const apiResponse = await fetchAttritionReport(ruleOrder, controller.signal)
       draggableAttritionStats.value = mapAttritionApiResponse(apiResponse)
@@ -113,6 +115,10 @@ export function useRuleManagement(
       if (controller.signal.aborted) return // cancelled by a newer request, ignore
       if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
       console.error('[useRuleManagement] Failed to fetch attrition stats:', error)
+      const axiosError = error as { response?: { data?: { errorMessage?: string } } }
+      errorMessage.value =
+        axiosError?.response?.data?.errorMessage ||
+        (error instanceof Error ? error.message : 'Failed to fetch attrition stats')
     } finally {
       if (!controller.signal.aborted) {
         isReorderLoading.value = false
@@ -120,7 +126,11 @@ export function useRuleManagement(
     }
   }
 
-  function handleDragEnd() {
+  async function handleDragEnd() {
+    // VueDraggable fires @end before @update:modelValue, so draggableAttritionStats
+    // still holds the old order at this point. Wait for nextTick so the model update
+    // (emitted via @update:draggableAttritionStats) is applied before reading the new order.
+    await nextTick()
     const newOrder = draggableAttritionStats.value.map(stat => stat.id)
     if (!showIntersectView) {
       fetchAndUpdateAttritionStats(newOrder)
@@ -203,6 +213,7 @@ export function useRuleManagement(
     passedFailedOption,
     filteredSummary,
     isReorderLoading,
+    errorMessage,
     toggleRuleSelection,
     isRuleChecked,
     areAllRulesChecked,
