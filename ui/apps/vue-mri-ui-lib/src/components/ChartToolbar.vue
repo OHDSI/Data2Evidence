@@ -208,7 +208,6 @@ import {
   getAdvanceTimeFilterFormatted,
   getInclusionReportFilterCardDetails,
 } from '../utils/filterCardUtils'
-import { createMockAttritionApi } from '@/mocks/mockAttritionApi'
 
 export default {
   name: 'chartToolbar',
