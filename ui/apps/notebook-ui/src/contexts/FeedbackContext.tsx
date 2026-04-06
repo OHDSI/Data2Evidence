@@ -1,4 +1,5 @@
 import React, { createContext, FC, ReactNode, useCallback, useContext, useState } from "react";
+import { useTranslation, i18nKeys } from "./TranslationContext";
 
 export interface Feedback {
   type?: "error" | "success";
@@ -17,6 +18,7 @@ interface FeedbackContextValue {
 const FeedbackContext = createContext<FeedbackContextValue | undefined>(undefined);
 
 export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
+  const { getText } = useTranslation();
   const [feedback, setFeedbackState] = useState<Feedback>({});
 
   const setFeedback = useCallback((feedback: Feedback) => {
@@ -34,10 +36,10 @@ export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const setGenericErrorFeedback = useCallback(() => {
     setFeedback({
       type: "error",
-      message: "An error has occurred.",
-      description: "Please try again. To report the error, please contact support.",
+      message: getText(i18nKeys.GENERAL__ERROR_OCCURRED),
+      description: getText(i18nKeys.GENERAL__ERROR_CONTACT_SUPPORT),
     });
-  }, [setFeedback]);
+  }, [setFeedback, getText]);
 
   return (
     <FeedbackContext.Provider value={{ setFeedback, clearFeedback, getFeedback, setGenericErrorFeedback }}>
