@@ -92,6 +92,7 @@ const {
   treemapData,
   shouldFetchInclusionReport,
   fetchInclusionReportInternal,
+  lastAttritionApiResponse,
 } = dataComposable
 
 // Then get rule management which depends on inclusionReportResponse
@@ -112,7 +113,13 @@ const {
   handleAllAnyChange,
   handlePassedFailedChange,
   filteredSummary,
-} = useRuleManagement(inclusionReportResponse, treemapData, props.showIntersectView, props.fetchAttritionReport)
+} = useRuleManagement(
+  inclusionReportResponse,
+  treemapData,
+  props.showIntersectView,
+  props.fetchAttritionReport,
+  lastAttritionApiResponse
+)
 
 const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
   inclusionReportResponse,
@@ -202,26 +209,28 @@ onUnmounted(() => {
         />
 
         <div class="rules-section">
-          <div v-if="isReorderLoading" class="reorder-loading-overlay">
-            <d4l-spinner />
+          <div class="rules-table-wrapper">
+            <div v-if="isReorderLoading" class="reorder-loading-overlay">
+              <d4l-spinner />
+            </div>
+            <!-- Rules Table -->
+            <RulesTable
+              :selected-visualization="selectedVisualization"
+              :selected-person-event-view="selectedPersonEventView"
+              :draggable-attrition-stats="draggableAttritionStats"
+              :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
+              :are-all-rules-checked="areAllRulesChecked()"
+              :is-rule-checked="isRuleChecked"
+              :get-row-index="getRowIndex"
+              :filter-card-details="filterCardDetails"
+              @toggle-all-rules="toggleAllRules"
+              @toggle-rule-selection="toggleRuleSelection"
+              @drag-end="handleDragEnd"
+              @move-row-up="moveRowUp"
+              @move-row-down="moveRowDown"
+              @update:draggable-attrition-stats="draggableAttritionStats = $event"
+            />
           </div>
-          <!-- Rules Table -->
-          <RulesTable
-            :selected-visualization="selectedVisualization"
-            :selected-person-event-view="selectedPersonEventView"
-            :draggable-attrition-stats="draggableAttritionStats"
-            :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
-            :are-all-rules-checked="areAllRulesChecked()"
-            :is-rule-checked="isRuleChecked"
-            :get-row-index="getRowIndex"
-            :filter-card-details="filterCardDetails"
-            @toggle-all-rules="toggleAllRules"
-            @toggle-rule-selection="toggleRuleSelection"
-            @drag-end="handleDragEnd"
-            @move-row-up="moveRowUp"
-            @move-row-down="moveRowDown"
-            @update:draggable-attrition-stats="draggableAttritionStats = $event"
-          />
           <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
@@ -340,10 +349,13 @@ onUnmounted(() => {
 }
 
 .rules-section {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.rules-table-wrapper {
+  position: relative;
 }
 
 .reorder-loading-overlay {

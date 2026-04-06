@@ -232,7 +232,7 @@ export default {
       showSaveCohortModal: false,
       showInclusionReportModal: false,
       inclusionReportCache: null,
-      fetchAttritionReportFn: null as ((ruleOrder?: number[]) => Promise<any>) | null,
+      fetchAttritionReportFn: null as (() => Promise<any>) | null,
     }
   },
   watch: {

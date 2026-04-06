@@ -31,7 +31,8 @@ export function useRuleManagement(
   inclusionReportResponse: Ref<InclusionReportResponse | null>,
   treemapData: Ref<any>,
   showIntersectView: boolean = true,
-  fetchAttritionReport?: (ruleOrder?: number[]) => Promise<AttritionApiResponse>
+  fetchAttritionReport?: (ruleOrder?: number[]) => Promise<AttritionApiResponse>,
+  lastAttritionApiResponse?: Ref<AttritionApiResponse | null>
 ) {
   const checkedRulesIds = ref<number[]>([])
   const draggableAttritionStats = ref<AttritionStat[]>([])
@@ -168,8 +169,13 @@ export function useRuleManagement(
         checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
 
         if (!showIntersectView) {
-          // Fetch attrition stats from the (mock) API
-          fetchAndUpdateAttritionStats()
+          // Use the already-fetched attrition API response if available,
+          // avoiding a duplicate request on initial load
+          if (lastAttritionApiResponse?.value) {
+            draggableAttritionStats.value = mapAttritionApiResponse(lastAttritionApiResponse.value)
+          } else {
+            fetchAndUpdateAttritionStats()
+          }
         } else {
           draggableAttritionStats.value = computeAttritionStats(newResponse)
         }

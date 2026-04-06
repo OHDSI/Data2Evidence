@@ -28,6 +28,7 @@ export function useInclusionReportData(
   const isLoadingInclusionReport = ref<boolean>(false)
   const inclusionReportPersonResponse = ref<InclusionReportResponse | null>(null)
   const inclusionReportEventResponse = ref<InclusionReportResponse | null>(null)
+  const lastAttritionApiResponse = ref<AttritionApiResponse | null>(null)
 
   const inclusionReportResponse = computed(() => {
     return selectedPersonEventView.value === 'PERSON'
@@ -78,6 +79,7 @@ export function useInclusionReportData(
       if (!options.showIntersectView && options.fetchAttritionReport) {
         // Use the new attrition API
         const apiResponse = await options.fetchAttritionReport()
+        lastAttritionApiResponse.value = apiResponse
         const mapped = mapAttritionToInclusionReport(apiResponse)
 
         if (selectedPersonEventView.value === 'PERSON') {
@@ -108,6 +110,7 @@ export function useInclusionReportData(
   const resetData = () => {
     inclusionReportPersonResponse.value = null
     inclusionReportEventResponse.value = null
+    lastAttritionApiResponse.value = null
   }
 
   // Watch for changes in cacheKey and reset/refetch when the underlying query changes
@@ -149,5 +152,6 @@ export function useInclusionReportData(
     shouldFetchInclusionReport,
     fetchInclusionReportInternal,
     resetData,
+    lastAttritionApiResponse,
   }
 }
