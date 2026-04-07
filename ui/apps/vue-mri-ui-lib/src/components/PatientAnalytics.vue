@@ -242,6 +242,11 @@ export default {
         this.completeInitialLoad()
         this.loadAllSharedBookmark()
         this.loadDefaultFilters()
+        this.loadValuesForAttributePath({
+          attributePathUid: 'conceptSets',
+          searchQuery: '',
+          attributeType: 'conceptSet',
+        })
         this.initializeBookmarks()
       }
     },
@@ -313,6 +318,7 @@ export default {
       'setAddNewCohort',
       'fireCheckIfDatasetCanMaterializeCohorts',
       'setRightPaneMounted',
+      'loadValuesForAttributePath',
     ]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
