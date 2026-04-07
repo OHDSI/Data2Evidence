@@ -1,6 +1,30 @@
 <template>
   <div class="stackbar-wrapper">
-    <div class="stackbar-container" id="stacked-chart"></div>
+    <div class="stackbar-chart-area">
+      <div class="stackbar-toolbar">
+        <select v-model="barDisplayMode" @change="renderChart()" class="bar-mode-select">
+          <option value="stack">Stacked</option>
+          <option value="overlay">Overlay</option>
+          <option value="partialOverlay">Partial Overlay</option>
+          <option value="partialOverlaySolid">Partial Overlay (Solid)</option>
+          <option value="outline">Outline</option>
+          <option value="distribution">Distribution Curves</option>
+        </select>
+        <label class="bar-gap-label">
+          Gap
+          <input
+            v-model.number="barGap"
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+            class="bar-gap-input"
+            @change="renderChart()"
+          />
+        </label>
+      </div>
+      <div class="stackbar-container" id="stacked-chart"></div>
+    </div>
     <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
   </div>
 </template>
@@ -35,6 +59,8 @@ export default {
       debounceId: 0,
       layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
       resizeObserver: null,
+      barDisplayMode: 'stack',
+      barGap: 0.3,
     }
   },
   created() {
@@ -458,6 +484,101 @@ export default {
         })
       }
     },
+    applyBarDisplayMode(traces, layout) {
+      if (!traces || !traces.length) return
+      const colorway = Object.values(Constants.ChartColorway)
+      const n = traces.length
+
+      switch (this.barDisplayMode) {
+        case 'overlay':
+          layout.barmode = 'overlay'
+          traces.forEach(trace => {
+            trace.marker = {
+              ...trace.marker,
+              opacity: 0.3,
+            }
+          })
+          break
+
+        case 'partialOverlay':
+          layout.barmode = 'overlay'
+          if (n > 1) {
+            const barWidth = (1 - this.barGap) * 0.68
+            const offsetStep = (barWidth * 0.5) / (n - 1)
+            const groupSpan = (n - 1) * offsetStep + barWidth
+            traces.forEach((trace, i) => {
+              trace.width = barWidth
+              trace.offset = i * offsetStep - groupSpan / 2
+              trace.marker = {
+                ...trace.marker,
+                opacity: 0.7,
+              }
+            })
+          }
+          break
+
+        case 'partialOverlaySolid':
+          layout.barmode = 'overlay'
+          if (n > 1) {
+            const barWidthSolid = (1 - this.barGap) * 0.68
+            const offsetStepSolid = (barWidthSolid * 0.5) / (n - 1)
+            const groupSpanSolid = (n - 1) * offsetStepSolid + barWidthSolid
+            traces.forEach((trace, i) => {
+              trace.width = barWidthSolid
+              trace.offset = i * offsetStepSolid - groupSpanSolid / 2
+            })
+          }
+          break
+
+        case 'outline':
+          layout.barmode = 'overlay'
+          // Assign outline colors based on original trace index
+          traces.forEach((trace, i) => {
+            trace.marker = {
+              ...trace.marker,
+              color: 'rgba(0,0,0,0)',
+              line: {
+                color: colorway[i % colorway.length],
+                width: 2,
+              },
+            }
+          })
+          // Sort traces so taller bars render last (on top in Plotly),
+          // ensuring the taller bar's outline color is visible in overlap regions
+          traces.sort((a, b) => {
+            const maxA = Math.max(...(a.y || [0]).map(Number))
+            const maxB = Math.max(...(b.y || [0]).map(Number))
+            return maxA - maxB
+          })
+          break
+
+        case 'distribution':
+          layout.barmode = 'overlay'
+          traces.forEach((trace, i) => {
+            trace.type = 'scatter'
+            trace.mode = 'lines'
+            trace.line = {
+              color: colorway[i % colorway.length],
+              width: 2,
+              shape: 'spline',
+              smoothing: 1.3,
+            }
+            trace.fill = 'tozeroy'
+            trace.fillcolor = colorway[i % colorway.length] + '20'
+            // Remove bar-specific properties
+            delete trace.marker
+            delete trace.width
+            delete trace.offset
+          })
+          break
+
+        default:
+          // 'stack' — keep default barmode from Constants
+          break
+      }
+
+      layout.bargap = this.barGap
+    },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
         const data = JSON.parse(JSON.stringify(this.chartData))
@@ -523,6 +644,8 @@ export default {
           // Clear color-by state when no color axis is selected
           delete this.chartData.colorLegend
         }
+
+        this.applyBarDisplayMode(this.chartData.traces, freshLayout)
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -610,6 +733,46 @@ export default {
   width: 100%;
   height: 100%;
   gap: 8px;
+}
+.stackbar-chart-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+.stackbar-toolbar {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bar-mode-select {
+  font-size: 12px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+}
+.bar-gap-label {
+  font-size: 12px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0;
+}
+.bar-gap-input {
+  width: 50px;
+  height: 24px;
+  font-size: 12px;
+  padding: 0 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 .stackbar-container {
   flex: 1;
