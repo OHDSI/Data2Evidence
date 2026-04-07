@@ -492,8 +492,25 @@ const actions = {
             })
           }
           if (chartType) {
-            console.debug('[Bookmark] Setting active chart:', chartType)
-            dispatch('setActiveChart', chartType)
+            // Guard: if the bookmark's saved chartType is not visible in the current config
+            // (e.g. bar chart disabled, or bookmark from a different config), fall back to
+            // the config-defined initial chart rather than opening a disabled chart.
+            const frontendConfig = rootGetters.getMriFrontendConfig
+            const effectiveChart =
+              frontendConfig?.isChartVisible(chartType)
+                ? chartType
+                : (rootGetters.getAllChartConfigs.initialChart ?? chartType)
+            if (effectiveChart !== chartType) {
+              console.debug(
+                '[Bookmark] Chart type',
+                chartType,
+                'not visible in config — falling back to',
+                effectiveChart
+              )
+            } else {
+              console.debug('[Bookmark] Setting active chart:', effectiveChart)
+            }
+            dispatch('setActiveChart', effectiveChart)
           }
           if (!skipFireRequest) {
             // Release hold and fire — intermediate calls from getBookmarkFromIFR watcher
