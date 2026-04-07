@@ -66,7 +66,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
         type: "success",
         message: getText(i18nKeys.ANALYSIS_DIALOG__RUN_SUCCESS, [
           String(runType),
-          study?.studyDetail?.name || "Untitled dataset",
+          study?.studyDetail?.name || getText(i18nKeys.ANALYSIS_DIALOG__UNTITLED_DATASET),
         ]),
       });
       setTimeout(() => handleClose("success"), 6000);
@@ -105,7 +105,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
       className="analysis-dialog"
       title={getText(i18nKeys.ANALYSIS_DIALOG__TITLE, [
         getRunName(runType),
-        study?.studyDetail?.name || "Untitled dataset",
+        study?.studyDetail?.name || getText(i18nKeys.ANALYSIS_DIALOG__UNTITLED_DATASET),
       ])}
       open={open}
       onClose={() => handleClose("cancelled")}
@@ -126,7 +126,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
             <TextField
               fullWidth
               variant="standard"
-              label="Results schema name (optional)"
+              label={getText(i18nKeys.ANALYSIS_DIALOG__RESULTS_SCHEMA_NAME)}
               value={formData.resultsSchema}
               onChange={(event) => handleFormDataChange({ resultsSchema: event.target.value })}
               onKeyDown={(e) => {
@@ -143,7 +143,7 @@ const AnalysisDialog: FC<AnalysisDialogProps> = ({ study, runType, open, onClose
           <TextField
             fullWidth
             variant="standard"
-            label="Comment"
+            label={getText(i18nKeys.ANALYSIS_DIALOG__COMMENT)}
             value={formData.comment}
             onChange={(event) => handleFormDataChange({ comment: event.target.value })}
             onKeyDown={(e) => {

@@ -29,11 +29,11 @@ test(TEST_NAME, async ({ page }) => {
     await expect(section.getByText('Active')).toBeVisible()
   })
 
-  await test.step('Check Cohort Builder config overview section for OMOP_DM', async () => {
+  await test.step('Check Cohort builder config overview section for OMOP_DM', async () => {
     await page.getByRole('button').filter({ hasText: /^$/ }).first().click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-inner"]').click()
