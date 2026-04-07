@@ -50,6 +50,8 @@ jobs:
   check_file_changes:
     environment: "github"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read   # Required to check out code
     if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
