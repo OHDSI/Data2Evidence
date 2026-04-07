@@ -415,10 +415,16 @@ const actions = {
       return Promise.reject(error)
     }
     return new Promise((resolve, reject) => {
-      // Hold fire requests during bookmark load to prevent intermediate setFireRequest
-      // calls (e.g. from the getBookmarkFromIFR watcher reacting to setIFRState) from
-      // triggering duplicate chart API calls.
-      dispatch('holdFireRequest')
+      // When the right pane is already mounted, hold fire requests during the load to
+      // suppress the intermediate setFireRequest call from the getBookmarkFromIFR watcher
+      // (which reacts to setIFRState). We release the hold and fire once explicitly.
+      //
+      // When the right pane is NOT yet mounted (skipFireRequest = true), we must NOT hold:
+      // StackBarChart.created() will fire setFireRequest on mount, and holding would block it
+      // since the DOM update queued by SET_ACTIVE_BOOKMARK runs before .then() resolves.
+      if (!skipFireRequest) {
+        dispatch('holdFireRequest')
+      }
       dispatch('setIFRState', { ifr })
         .then(() => {
           if (parsedBookmark.axisSelection) {
@@ -491,20 +497,24 @@ const actions = {
             console.debug('[Bookmark] Setting active chart:', chartType)
             dispatch('setActiveChart', chartType)
           }
-          // Release hold before firing — any intermediate setFireRequest calls (e.g. from
-          // the getBookmarkFromIFR watcher) were suppressed while held.
-          dispatch('releaseFireRequest')
           if (!skipFireRequest) {
+            // Release hold and fire — intermediate calls from getBookmarkFromIFR watcher
+            // were suppressed while held; this is the single explicit fire.
             console.debug('[Bookmark] Firing request (setFireRequest)')
+            dispatch('releaseFireRequest')
             dispatch('setFireRequest')
           } else {
+            // Right pane not yet mounted — StackBarChart.created() will fire setFireRequest
+            // on mount. No hold was placed so it goes through unblocked.
             console.debug('[Bookmark] Skipping setFireRequest (chart will call it on mount)')
           }
           resolve(null)
         })
         .catch(e => {
           console.log(e)
-          dispatch('releaseFireRequest')
+          if (!skipFireRequest) {
+            dispatch('releaseFireRequest')
+          }
           reject()
         })
     })
