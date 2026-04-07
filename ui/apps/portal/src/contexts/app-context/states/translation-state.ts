@@ -271,7 +271,7 @@ export const i18nDefault = {
     COPY_STUDY_DIALOG__NO_TABLE_CHOSEN: "Table Filter is checked, but no table was chosen!",
     COPY_STUDY_DIALOG__PA_CONFIG_REQUIRED: "PA config ID is required!",
     COPY_STUDY_DIALOG__TABLE_FILTER: "Table filter",
-    COPY_STUDY_DIALOG__DATAMART_CREATED_TITLE: "Datamart Created",
+    COPY_STUDY_DIALOG__DATAMART_CREATED_TITLE: "Datamart created",
     COPY_STUDY_DIALOG__DATAMART_CREATED_DESCRIPTION: "Datamart {0} has been created successfully.",
     CREATE_CACHE_DIALOG__CANCEL: "Cancel",
     CREATE_CACHE_DIALOG__FETCH_SOURCE_ERROR: "Failed to fetch source dataset information.",
