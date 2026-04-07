@@ -415,6 +415,10 @@ const actions = {
       return Promise.reject(error)
     }
     return new Promise((resolve, reject) => {
+      // Hold fire requests during bookmark load to prevent intermediate setFireRequest
+      // calls (e.g. from the getBookmarkFromIFR watcher reacting to setIFRState) from
+      // triggering duplicate chart API calls.
+      dispatch('holdFireRequest')
       dispatch('setIFRState', { ifr })
         .then(() => {
           if (parsedBookmark.axisSelection) {
@@ -487,6 +491,9 @@ const actions = {
             console.debug('[Bookmark] Setting active chart:', chartType)
             dispatch('setActiveChart', chartType)
           }
+          // Release hold before firing — any intermediate setFireRequest calls (e.g. from
+          // the getBookmarkFromIFR watcher) were suppressed while held.
+          dispatch('releaseFireRequest')
           if (!skipFireRequest) {
             console.debug('[Bookmark] Firing request (setFireRequest)')
             dispatch('setFireRequest')
@@ -497,6 +504,7 @@ const actions = {
         })
         .catch(e => {
           console.log(e)
+          dispatch('releaseFireRequest')
           reject()
         })
     })
