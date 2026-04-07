@@ -375,9 +375,25 @@ const actions = {
   },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
     const parsedBookmark = getters.getBookmarkById(bmkId)
-
+    const currentActiveChart = rootGetters.getActiveChart
+    const chartIsChanging = chartType && chartType !== currentActiveChart
+    const isRightPaneMounted = rootGetters.isRightPaneMounted
+    console.debug(
+      '[Bookmark] loadbookmarkToState - currentChart:',
+      currentActiveChart,
+      'newChart:',
+      chartType,
+      'changing:',
+      chartIsChanging,
+      'rightPaneMounted:',
+      isRightPaneMounted
+    )
     commit(types.SET_ACTIVE_BOOKMARK, getters.getBookmark(bmkId))
-    return dispatch('_loadParsedBookmarkToState', { parsedBookmark, chartType })
+    return dispatch('_loadParsedBookmarkToState', {
+      parsedBookmark,
+      chartType,
+      skipFireRequest: chartIsChanging || !isRightPaneMounted,
+    })
   },
   /**
    * Internal action to load a parsed bookmark to state

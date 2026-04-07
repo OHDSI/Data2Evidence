@@ -239,7 +239,6 @@ export default {
     },
     getHasAssignedConfig(val) {
       if (val) {
-        this.rightPaneEverOpened = true   // ensure right pane mounts for chart rendering
         this.completeInitialLoad()
         this.loadAllSharedBookmark()
         this.loadDefaultFilters()
@@ -313,6 +312,7 @@ export default {
       'loadbookmarkToState',
       'setAddNewCohort',
       'fireCheckIfDatasetCanMaterializeCohorts',
+      'setRightPaneMounted',
     ]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
@@ -374,6 +374,7 @@ export default {
       // Set flag whenever any right-panel operation occurs (both Atlas and normal)
       if (panel === PANEL.RIGHT) {
         this.rightPaneEverOpened = true
+        this.setRightPaneMounted(true)
       }
     },
 
@@ -382,6 +383,7 @@ export default {
       this.paneSize = newSize
       if (!this.rightPaneEverOpened && newSize < PANE_SIZE.FULL) {
         this.rightPaneEverOpened = true
+        this.setRightPaneMounted(true)
       }
     },
 

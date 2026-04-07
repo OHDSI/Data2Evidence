@@ -41,6 +41,8 @@ const state = {
   fireRequest: false,
   // hold fire request during batch updates (e.g., applying required filters)
   fireRequestHeld: false,
+  // tracks whether the right pane has ever been opened (used to avoid double setFireRequest on bookmark load)
+  rightPaneMounted: false,
 }
 
 // Cancel tokens
@@ -90,6 +92,7 @@ const getters = {
   getZipFireDownload: modulestate => modulestate.zipFireDownload,
   getFireRequest: modulestate => modulestate.fireRequest,
   isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
+  isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
 }
 
 // actions
@@ -340,6 +343,9 @@ const actions = {
       commit(types.CHART_SET_FIRE_REQUEST)
     }
   },
+  setRightPaneMounted({ commit }, value: boolean) {
+    commit(types.SET_RIGHT_PANE_MOUNTED, value)
+  },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
   },
@@ -396,6 +402,9 @@ const mutations = {
   },
   [types.CHART_COLUMNS_TO_INCLUDE](modulestate, columnsToInclude) {
     modulestate.columnsToInclude = columnsToInclude
+  },
+  [types.SET_RIGHT_PANE_MOUNTED](modulestate, value: boolean) {
+    modulestate.rightPaneMounted = value
   },
 }
 
