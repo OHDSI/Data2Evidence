@@ -313,8 +313,6 @@ const actions = {
           dispatch('setToastMessage', {
             text: toastMessage,
           })
-          // Refresh bookmark list after any CRUD mutation
-          dispatch('fireBookmarkQuery', { params: { cmd: 'loadAll' }, method: 'get' })
         }
         return data
       })
