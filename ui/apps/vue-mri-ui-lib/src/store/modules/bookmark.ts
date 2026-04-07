@@ -494,13 +494,15 @@ const actions = {
           if (chartType) {
             // Guard: if the bookmark's saved chartType is not visible in the current config
             // (e.g. bar chart disabled, or bookmark from a different config), fall back to
-            // the config-defined initial chart rather than opening a disabled chart.
+            // a visible config-defined chart rather than opening a disabled chart.
             const frontendConfig = rootGetters.getMriFrontendConfig
-            const effectiveChart =
-              frontendConfig?.isChartVisible(chartType)
-                ? chartType
-                : (rootGetters.getAllChartConfigs.initialChart ?? chartType)
-            if (effectiveChart !== chartType) {
+            const isVisible = chart => !!chart && frontendConfig?.isChartVisible(chart)
+            const initialChart = frontendConfig?.getInitialChart?.() ?? rootGetters.getAllChartConfigs.initialChart
+            let effectiveChart
+            if (isVisible(chartType)) {
+              effectiveChart = chartType
+            } else if (isVisible(initialChart)) {
+              effectiveChart = initialChart
               console.debug(
                 '[Bookmark] Chart type',
                 chartType,
@@ -508,9 +510,17 @@ const actions = {
                 effectiveChart
               )
             } else {
-              console.debug('[Bookmark] Setting active chart:', effectiveChart)
+              console.debug(
+                '[Bookmark] Chart type',
+                chartType,
+                'not visible and no visible fallback chart found — keeping current chart'
+              )
             }
-            dispatch('setActiveChart', effectiveChart)
+
+            if (effectiveChart) {
+              console.debug('[Bookmark] Setting active chart:', effectiveChart)
+              dispatch('setActiveChart', effectiveChart)
+            }
           }
           if (!skipFireRequest) {
             // Release hold and fire — intermediate calls from getBookmarkFromIFR watcher
