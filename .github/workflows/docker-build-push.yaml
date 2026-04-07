@@ -48,13 +48,13 @@ jobs:
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   check_file_changes:
-    environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains(github.ref_name, 'release/') && 'dockerhub' || 'github'}}
+    environment: "github"
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
       rkernel: ${{ steps.file_changes.outputs.rkernel }}
-      jenv: ${{  job.environment }}
+      jenv: ${{ job.environment }}
     steps:
       - uses: actions/checkout@v4
 
