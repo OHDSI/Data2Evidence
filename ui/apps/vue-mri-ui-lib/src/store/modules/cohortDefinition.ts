@@ -50,7 +50,7 @@ const actions = {
       .catch(error => {
         commit(types.COHORT_DEFINITION_RESPONSE_SET, {
           response: {
-            data: 'An error occured',
+            data: 'An error occurred',
           },
         })
         throw error
@@ -88,7 +88,7 @@ const actions = {
       .catch(error => {
         commit(types.COHORT_DEFINITION_RESPONSE_SET, {
           response: {
-            data: 'An error occured',
+            data: 'An error occurred',
           },
         })
         useNotificationStore().setAlertMessage({

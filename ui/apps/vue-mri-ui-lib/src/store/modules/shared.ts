@@ -124,7 +124,7 @@ const actions = {
       cancel = c
     })
     return dispatch('ajaxAuth', { method, params, url, cancelToken }).then(response => {
-      const toastMessage = 'Shared bookmark entry saved successfuly'
+      const toastMessage = 'Shared bookmark entry saved successfully'
       useNotificationStore().setToastMessage({
         text: toastMessage,
       })
@@ -175,7 +175,7 @@ const actions = {
     const url = `/analytics-svc/api/services/federatedQuery/bookmark/${bookmarkId}`
     const method = 'delete'
     return dispatch('ajaxAuth', { method, url }).then(response => {
-      const toastMessage = 'Bookmark deleted successfuly'
+      const toastMessage = 'Bookmark deleted successfully'
       useNotificationStore().setToastMessage({
         text: toastMessage,
       })
