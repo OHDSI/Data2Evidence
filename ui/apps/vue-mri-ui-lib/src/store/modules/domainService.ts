@@ -11,7 +11,7 @@ const latestRequestTimes: { [key: string]: number } = {}
 declare interface IDomainValueItem {
   isLoaded: boolean
   isLoading: boolean
-  datasetId?: string          // tracks which dataset this cache entry belongs to
+  datasetId?: string
   loadedStatus?: 'HAS_RESULTS' | 'NO_RESULTS' | 'TOO_MANY_RESULTS'
   values: Array<{
     display_value?: string

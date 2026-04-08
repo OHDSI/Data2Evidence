@@ -34,7 +34,7 @@ export default {
     const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
-      this.$store.commit('RESET_DATASET_CACHE')  // invalidate per-dataset caches
+      this.$store.commit('RESET_DATASET_CACHE')
       // Update the config in state before doing further queries
       this.requestMriConfig()
         .then(() => {

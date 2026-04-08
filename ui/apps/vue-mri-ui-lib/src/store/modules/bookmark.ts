@@ -24,7 +24,7 @@ const state = {
   addNewCohort: false,
   loading: false,
   canDatasetMaterializeCohorts: false,
-  canMaterializeCohortDatasetId: '',   // tracks which dataset the cached result belongs to
+  canMaterializeCohortDatasetId: '',
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'

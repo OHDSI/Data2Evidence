@@ -215,7 +215,7 @@ export default {
       splitterMinWidth: 0,
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
-      rightPaneEverOpened: false,   // lazy-mount right pane — prevents premature API calls
+      rightPaneEverOpened: false,
     }
   },
   created() {},
@@ -349,7 +349,6 @@ export default {
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
-        // initializeBookmarks() removed — list is loaded on init and refreshed after CRUD ops only
         this.toggleQueryFilter(false)
       } else {
         if (isPaAtlas) {
@@ -377,7 +376,6 @@ export default {
       } else if (panel === PANEL.RIGHT) {
         this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
       }
-      // Set flag whenever any right-panel operation occurs (both Atlas and normal)
       if (panel === PANEL.RIGHT) {
         this.rightPaneEverOpened = true
         this.setRightPaneMounted(true)
@@ -513,9 +511,6 @@ export default {
 </script>
 
 <style scoped>
-/* Hide splitter grab handle until right pane has been opened.
-   :deep() is required because .splitpanes__splitter is rendered by the child component
-   and does not carry this component's scoped attribute. */
 .pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
   pointer-events: none;
   opacity: 0;
