@@ -302,12 +302,6 @@
           "function": "/parquet-export",
           "imports": "/parquet-export/deno.json",
           "env": "parquet-export"
-        },
-        {
-          "source": "/trex-fhir-server",
-          "function": "/trex-fhir-server",
-          "imports": "/trex-fhir-server/deno.json",
-          "env": "trex-fhir-server"
         }
       ],
       "env": {
@@ -774,11 +768,7 @@
           "strategus.results.admin.upload",
           "strategus.results.admin.delete",
           "mlflow",
-          "d2e.container.logs.read",
-          "gateway.fhir.create",
-          "gateway.fhir.delete",
-          "gateway.fhir.forward",
-          "gateway.fhir.get"
+          "d2e.container.logs.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
           "gateway.dashboardGate.content",
@@ -874,11 +864,7 @@
           "filesmanager.delete",
           "whiteRabbit.post",
           "portal.userArtifact.write",
-          "portal.dataset.systemAdmin.read",
-          "gateway.fhir.create",
-          "gateway.fhir.forward",
-          "gateway.fhir.get",
-          "trex"
+          "portal.dataset.systemAdmin.read"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
@@ -3053,64 +3039,6 @@
             "POST"
           ],
           "datasetId": "datasetId"
-        },
-        {
-          "path": "^/trex-fhir-server/healthcheck",
-          "scopes": [
-            "gateway.fhir.forward"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/trex-fhir-server/datasets/list$",
-          "scopes": [
-            "gateway.fhir.get"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/trex-fhir-server/createProject$",
-          "scopes": [
-            "gateway.fhir.create"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
-          "path": "^/trex-fhir-server/deleteProject/[a-zA-Z0-9_-]+$",
-          "scopes": [
-            "gateway.fhir.delete"
-          ],
-          "httpMethods": [
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_-]+/(.*)",
-          "scopes": [
-            "gateway.fhir.forward"
-          ],
-          "httpMethods": [
-            "POST",
-            "GET",
-            "PUT",
-            "PATCH",
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_-]+$",
-          "scopes": [
-            "gateway.fhir.forward"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
         }
       ]
     }

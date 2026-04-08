@@ -27,6 +27,12 @@
           "function": "/alp-fhir-gateway",
           "env": "alp-fhir-gateway",
           "imports": "/alp-fhir-gateway/deno.json"
+        },
+        {
+          "source": "/trex-fhir-gateway",
+          "function": "/trex-fhir-gateway",
+          "imports": "/trex-fhir-gateway/deno.json",
+          "env": "trex-fhir-gateway"
         }
       ],
       "env": { 
@@ -134,6 +140,64 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/healthcheck",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/datasets/list$",
+          "scopes": [
+            "gateway.fhir.get"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/createProject$",
+          "scopes": [
+            "gateway.fhir.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/deleteProject/[a-zA-Z0-9_-]+$",
+          "scopes": [
+            "gateway.fhir.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/project/[a-zA-Z0-9_-]+/(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/trex-fhir-gateway/project/[a-zA-Z0-9_-]+$",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         }
       ]

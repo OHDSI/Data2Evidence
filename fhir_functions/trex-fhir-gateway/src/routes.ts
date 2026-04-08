@@ -6,7 +6,7 @@ import {
   IFhirCreatedDataset,
   IFhirDatasetSummary,
 } from "./FhirServerAPI";
-import { filterHeaders } from "./types";
+import { filterHeaders, HTTPMethod } from "./types";
 import {
   validateCreateFhirProjectDto,
   validateDeleteFhirProjectDto,
@@ -123,6 +123,20 @@ export class FhirRouter {
         });
       }
 
+      if (typeof bundle !== "object" || bundle.resourceType !== "Bundle") {
+        return res.status(400).json({
+          error: true,
+          message: "Request body must be a FHIR Bundle",
+        });
+      }
+
+      if (bundle.type !== "transaction" && bundle.type !== "batch") {
+        return res.status(400).json({
+          error: true,
+          message: 'FHIR Bundle type must be either "transaction" or "batch"',
+        });
+      }
+
       try {
         const fhirServerAPI = new FhirServerAPI(token!);
         const response = await fhirServerAPI.postBundle(id, bundle);
@@ -148,7 +162,18 @@ export class FhirRouter {
 
         const token = req.headers.authorization;
         const { "0": resourcePath, id } = req.params;
-        const httpMethod = req.method;
+        const method = req.method?.toUpperCase();
+        const httpMethod =
+          method in HTTPMethod
+            ? HTTPMethod[method as keyof typeof HTTPMethod]
+            : undefined;
+
+        if (!httpMethod) {
+          return res.status(405).json({
+            error: true,
+            message: `Unsupported HTTP method: ${req.method}`,
+          });
+        }
         const queryParams = req.query ? req.query : {};
         const body = req.body ? req.body : {};
 
