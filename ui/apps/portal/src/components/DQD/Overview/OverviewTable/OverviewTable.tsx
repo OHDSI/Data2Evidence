@@ -213,7 +213,7 @@ const OverviewTable: FC<OverviewTableProps> = ({ data }) => {
         <div>
           {getText(i18nKeys.OVERVIEW_TABLE__NOTE_2, [String(data.total.total.allError), String(data.total.total.fail)])}
         </div>
-        <div>
+        <div data-testid="corrected-pass-percentage-note">
           {getText(i18nKeys.OVERVIEW_TABLE__NOTE_3, [
             data.total.total.correctedPassPercentage,
             String(data.total.total.PassMinusAllNA),

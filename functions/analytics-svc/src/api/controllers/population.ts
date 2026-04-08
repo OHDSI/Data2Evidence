@@ -65,7 +65,7 @@ export async function populationStudyQuery(req: IMRIRequest, res, next) {
         }
 
         analyticsConnection.setCurrentUserToDbSession(
-            user.userObject.userId,
+            user.getEmail() || user.getUser(),
             async (err, data) => {
                 if (err) {
                     return console.error(err);
@@ -169,7 +169,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
         }
 
         analyticsConnection.setCurrentUserToDbSession(
-            user.userObject.userId,
+            user.getEmail() || user.getUser(),
             async (err, data) => {
                 if (err) {
                     return console.error(err);
