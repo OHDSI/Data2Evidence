@@ -455,6 +455,3 @@ async function _setDBSpecificSettings(req: IMRIRequest) {
         await _setDefaultNullOrder(req);
     }
 }
-
-
-// trigger tests
