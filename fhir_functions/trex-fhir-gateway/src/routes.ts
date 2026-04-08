@@ -64,7 +64,7 @@ export class FhirRouter {
         }
 
         const token = req.headers.authorization;
-        const { id, name } = req.body ?? {};
+        const { id, name } = req.body;
 
         try {
           const fhirServerAPI = new FhirServerAPI(token!);
