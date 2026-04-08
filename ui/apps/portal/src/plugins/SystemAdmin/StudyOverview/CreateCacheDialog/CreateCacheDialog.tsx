@@ -5,6 +5,7 @@ import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { CloseDialogType, CreateCacheFlowRun, CreateFhirCacheFlowRun, Feedback, Study } from "../../../../types";
+import FlowRunNotificationDialog from "../FlowRunNotificationDialog/FlowRunNotificationDialog";
 import "./CreateCacheDialog.scss";
 
 interface CreateCacheDialogProps {
@@ -17,13 +18,15 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
   const { getText } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
   const [updating, setUpdating] = useState(false);
+  const [triggeredFlowRunId, setTriggeredFlowRunId] = useState<string | null>(null);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setFeedback({});
+      setTriggeredFlowRunId(null);
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -47,10 +50,12 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
         return;
       }
 
+      let result: { flowRunId: string };
+
       if (isFhirCacheDataset) {
         try {
           const sourceDataset = await api.systemPortal.getDataset(sourceDatasetId);
-          
+
           if (!sourceDataset?.databaseCode || !sourceDataset?.schemaName || !dataset?.schemaName) {
             setFeedback({
               type: "error",
@@ -67,7 +72,7 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
             studyCode: sourceDataset.tokenStudyCode,
           };
 
-          await api.dataflow.createFhirCacheFlowRun(fhirData);
+          result = await api.dataflow.createFhirCacheFlowRun(fhirData);
         } catch (err: any) {
           setFeedback({
             type: "error",
@@ -89,14 +94,10 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
           data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
         }
 
-        await api.dataflow.createCacheFlowRun(data);
+        result = await api.dataflow.createCacheFlowRun(data);
       }
 
-      setFeedback({
-        type: "success",
-        message: getText(i18nKeys.CREATE_CACHE_DIALOG__RUN_SUCCESS, [String(dataset?.studyDetail?.name)]),
-      });
-      setTimeout(() => handleClose("success"), 6000);
+      setTriggeredFlowRunId(result.flowRunId);
     } catch (err: any) {
       setFeedback({
         type: "error",
@@ -106,7 +107,19 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
     } finally {
       setUpdating(false);
     }
-  }, [handleClose, dataset, getText]);
+  }, [dataset, getText]);
+
+  if (triggeredFlowRunId) {
+    return (
+      <FlowRunNotificationDialog
+        title={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_TITLE)}
+        open={open}
+        onClose={() => handleClose("success")}
+        description={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_DESCRIPTION, [String(dataset?.studyDetail?.name)])}
+        flowRunId={triggeredFlowRunId}
+      />
+    );
+  }
 
   return (
     <Dialog
