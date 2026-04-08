@@ -279,6 +279,8 @@ export class DatasetRouter {
                   `Creating FHIR project for dataset '${tokenStudyCode}'..`,
                 );
                 const fhirGatewayAPI = new FhirGatewayAPI(token);
+
+                // Todo: Trex fhir server project Id is same as dataset Id, check for status
                 resolvedFhirProjectId = await fhirGatewayAPI.createProject(
                   id,
                   detail?.name || tokenStudyCode,
@@ -397,7 +399,7 @@ export class DatasetRouter {
         schemaName,
         vocabSchemaName,
         resultsSchemaName,
-        tokenStudyCode
+        tokenStudyCode,
       } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
@@ -504,7 +506,9 @@ export class DatasetRouter {
           tokenStudyCode: dataset.tokenStudyCode,
         });
       } catch (error) {
-        this.logger.error(`Error when getting dataset info: ${JSON.stringify(error)}`);
+        this.logger.error(
+          `Error when getting dataset info: ${JSON.stringify(error)}`,
+        );
         res.status(500).send("Error when getting dataset info");
       }
     });
