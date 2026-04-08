@@ -2,6 +2,7 @@ import axios from 'axios'
 import * as types from '../mutation-types'
 import StringToBinary from '@/utils/StringToBinary'
 import QueryString from '@/utils/QueryString'
+import { useNotificationStore } from '../../stores/notifications'
 
 let cancel
 
@@ -79,7 +80,7 @@ const actions = {
           response.data.noDataReason = getters.getText(response.data.noDataReason)
         }
         commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_SUCCESS'),
         })
         return response.data
@@ -90,7 +91,7 @@ const actions = {
             data: 'An error occured',
           },
         })
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_CREATE_ATLAS_COHORT_DEFINITION_ERROR'),
         })
         throw error
@@ -117,13 +118,13 @@ const actions = {
       cancelToken,
     })
       .then(({ data }) => {
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_RENAME_BMK_SUCCESS'),
         })
         return data
       })
       .catch(error => {
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_RENAME_BMK_ERROR'),
         })
       })
@@ -153,12 +154,12 @@ const actions = {
       cancelToken,
     })
       .then(({ data }) => {
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS'),
         })
       })
       .catch(error => {
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_DELETE_BMK_ERROR'),
         })
       })
@@ -182,12 +183,12 @@ const actions = {
       datasetId,
     })
       .then(({ data }) => {
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_DELETE_BMK_SUCCESS'),
         })
       })
       .catch(error => {
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_DELETE_BMK_ERROR'),
         })
       })
@@ -216,7 +217,7 @@ const actions = {
           response.data.noDataReason = getters.getText(response.data.noDataReason)
         }
         commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: { data: response.data } })
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_UPDATE_ATLAS_COHORT_DEFINITION_SUCCESS'),
         })
         return response.data
@@ -227,7 +228,7 @@ const actions = {
             data: 'An error occurred',
           },
         })
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_UPDATE_ATLAS_COHORT_DEFINITION_ERROR'),
         })
         throw error
@@ -274,7 +275,7 @@ const actions = {
       method: 'get',
     })
       .then(response => {
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: rootGetters.getText('MRI_PA_COLL_SUCCESS_ADD_PATIENT'),
         })
       })

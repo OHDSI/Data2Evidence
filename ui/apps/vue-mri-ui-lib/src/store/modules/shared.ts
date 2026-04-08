@@ -4,6 +4,7 @@
 import axios from 'axios'
 import * as types from '../mutation-types'
 import BMv2Parser from '../../lib/bookmarks/BMv2Parser'
+import { useNotificationStore } from '../../stores/notifications'
 const CancelToken = axios.CancelToken
 function backendFormatter(obj) {
   if (obj instanceof Object) {
@@ -124,7 +125,7 @@ const actions = {
     })
     return dispatch('ajaxAuth', { method, params, url, cancelToken }).then(response => {
       const toastMessage = 'Shared bookmark entry saved successfuly'
-      dispatch('setToastMessage', {
+      useNotificationStore().setToastMessage({
         text: toastMessage,
       })
       dispatch('loadSharedBookmarkList')
@@ -175,7 +176,7 @@ const actions = {
     const method = 'delete'
     return dispatch('ajaxAuth', { method, url }).then(response => {
       const toastMessage = 'Bookmark deleted successfuly'
-      dispatch('setToastMessage', {
+      useNotificationStore().setToastMessage({
         text: toastMessage,
       })
       dispatch('loadSharedBookmarkList')
