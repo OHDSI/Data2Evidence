@@ -106,11 +106,6 @@ export interface CopyStudyInput {
   resultsSchemaValue?: string;
 }
 
-export interface NewFhirProjectInput {
-  id: string;
-  description: string;
-}
-
 export interface CopyStudyTableMetadata {
   tableName: string;
   tableColumnsMetadata: CopyStudyColumnMetadata[];

@@ -5,7 +5,6 @@ import {
   CohortDefinitionList,
   UpdateSchemaInput,
   SchemasVersionInfoResponse,
-  NewFhirProjectInput,
 } from "../types";
 import { request } from "./request";
 
@@ -51,7 +50,7 @@ export class Gateway {
   public getSchemasVersionInformation(
     schemas: string[],
     dialect: string,
-    databaseCode: string
+    databaseCode: string,
   ): Promise<SchemasVersionInfoResponse> {
     return request({
       baseURL: GATEWAY_BASE_URL,
@@ -71,5 +70,4 @@ export class Gateway {
       data: input,
     });
   }
-
 }
