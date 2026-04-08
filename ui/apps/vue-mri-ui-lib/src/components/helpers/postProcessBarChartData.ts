@@ -257,10 +257,11 @@ export function postProcessBarChartData(preProcessedData: IMRIEndpointResultType
  */
 function formatData(result: IMRIEndpointResultType, NOVALUE: string) {
   result.data.forEach(datapoint =>
-    result.categories.forEach(
+    result.categories.forEach(cat => {
       // Check if datapoint[cat.id] value is truthy, BUT allow numerical 0
-      cat => (datapoint[cat.id] = datapoint[cat.id] || datapoint[cat.id] === 0 ? datapoint[cat.id].toString() : NOVALUE)
-    )
+      const tmp = datapoint[cat.id]
+      datapoint[cat.id] = tmp === 0 || tmp ? tmp.toString() : NOVALUE
+    })
   )
   return result
 }
