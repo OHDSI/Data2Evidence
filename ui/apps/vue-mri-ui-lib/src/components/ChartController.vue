@@ -7,6 +7,7 @@
         <template v-for="(item, index) in getAllAxes" :key="index">
           <axisMenuButton v-if="item.props.active" :dimensionIndex="index"></axisMenuButton>
         </template>
+        <xAxisDropdownButton :parentContainer="$refs.axisContainer"></xAxisDropdownButton>
         <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
         <sortMenuButton v-if="displaySort"></sortMenuButton>
         <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
@@ -36,6 +37,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
+import XAxisColorButton from './XAxisColorButton.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import PatientListContainer from './PatientListContainer.vue'
 import SacChart from './SACChart.vue'
@@ -157,6 +159,7 @@ export default {
   components: {
     AxisMenuButton,
     DropDownMenu,
+    XAxisColorButton,
     LoadingAnimation,
     SortMenuButton,
     CohortEntryExit,
