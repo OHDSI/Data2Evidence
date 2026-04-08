@@ -267,6 +267,14 @@ export class SystemPortal {
     });
   }
 
+  public getPublicHeaderImage() {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "config/public/header-image",
+      method: "GET",
+    });
+  }
+
   public getConfigsByTypes(types: ConfigTypes[]) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
