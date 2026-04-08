@@ -1,0 +1,27 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "zod": "npm:zod@^3.23.8",
+    "axios": "npm:axios@^1.7.7",
+    "express": "npm:express@^4.19.2",
+    "express-validator": "npm:express-validator@^7.2.0",
+    "./src/routes": "./src/routes.ts",
+    "./src/env": "./src/env.ts",
+    "./src/FhirServerAPI": "./src/FhirServerAPI.ts",
+    "./src/types": "./src/types.ts",
+    "./src/middleware": "./src/middleware.ts",
+    "crypto": "node:crypto",
+    "stream": "node:stream",
+    "http": "node:http",
+    "https": "node:https"
+  }
+}
