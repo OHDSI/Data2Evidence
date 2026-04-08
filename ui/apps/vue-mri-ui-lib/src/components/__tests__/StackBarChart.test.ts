@@ -141,4 +141,33 @@ describe('StackBarChart selection handling', () => {
 
     expect(Plotly.react).toHaveBeenCalled()
   })
+
+  it('uses relayout only on reset when no active selection exists', async () => {
+    const store = createStore({ actions, getters })
+    const wrapper = shallowMount(StackBarChart as any, {
+      global: { plugins: [store] },
+      props: { busyEv: false, shouldRerenderChart: false },
+    })
+
+    const fakePlotElement = { id: 'plot' }
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          selectedpoints: [],
+        },
+      ],
+      tickvals: ['A'],
+      ticktext: ['A'],
+      ticktextFull: ['A'],
+    }
+
+    ;(wrapper.vm as any).clearSelectionState({ plotElement: fakePlotElement, resetAxes: true })
+
+    expect(Plotly.relayout).toHaveBeenCalledWith(fakePlotElement, {
+      'xaxis.autorange': true,
+      'yaxis.autorange': true,
+    })
+    expect(Plotly.react).not.toHaveBeenCalled()
+  })
 })

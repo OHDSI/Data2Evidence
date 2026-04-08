@@ -328,15 +328,40 @@ export default {
       }
       return layout
     },
+    hasTraceSelectedPoints() {
+      if (!this.chartData?.traces) {
+        return false
+      }
+
+      return this.chartData.traces.some(trace => {
+        const selectedpoints = trace?.selectedpoints
+        return Array.isArray(selectedpoints) && selectedpoints.length > 0
+      })
+    },
     clearSelectionState({ plotElement = stackBarChart, resetAxes = false } = {}) {
       this.setChartSelection({ selection: [] })
+
+      const targetElement = plotElement || stackBarChart
+      if (!targetElement) {
+        return
+      }
+
+      const hasSelection = this.hasTraceSelectedPoints()
+      if (!hasSelection) {
+        if (resetAxes) {
+          Plotly.relayout(targetElement, {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true,
+          })
+        }
+        return
+      }
 
       if (this.chartData?.traces) {
         const clearedSelectedPoints = this.chartData.traces.map(() => [])
         this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
       }
 
-      const targetElement = plotElement || stackBarChart
       if (!targetElement || !this.chartData?.traces) {
         return
       }
@@ -424,17 +449,7 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-
-        const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        freshLayout.showlegend = false
-        freshLayout.xaxis.type = this.chartData.axisType
-        const xTicks = this.buildXAxisTicks()
-        if (xTicks) {
-          freshLayout.xaxis.tickvals = xTicks.tickvals
-          freshLayout.xaxis.ticktext = xTicks.ticktext
-          freshLayout.xaxis.tickangle = xTicks.tickangle
-        }
-
+        const freshLayout = this.buildPlotlyLayout()
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
         // Resize chart after DOM updates to account for legend space
@@ -446,16 +461,7 @@ export default {
     setupPlotly() {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
-      const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-      initialLayout.showlegend = false
-      initialLayout.xaxis.type = this.chartData.axisType
-      const initialXTicks = this.buildXAxisTicks()
-      if (initialXTicks) {
-        initialLayout.xaxis.tickvals = initialXTicks.tickvals
-        initialLayout.xaxis.ticktext = initialXTicks.ticktext
-        initialLayout.xaxis.tickangle = initialXTicks.tickangle
-      }
-
+      const initialLayout = this.buildPlotlyLayout()
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
@@ -503,15 +509,7 @@ export default {
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
-        const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        selectionLayout.showlegend = false
-        selectionLayout.xaxis.type = this.chartData.axisType
-        const selectionXTicks = this.buildXAxisTicks()
-        if (selectionXTicks) {
-          selectionLayout.xaxis.tickvals = selectionXTicks.tickvals
-          selectionLayout.xaxis.ticktext = selectionXTicks.ticktext
-          selectionLayout.xaxis.tickangle = selectionXTicks.tickangle
-        }
+        const selectionLayout = this.buildPlotlyLayout()
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
