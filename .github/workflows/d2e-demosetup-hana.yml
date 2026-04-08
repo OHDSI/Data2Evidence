@@ -1,4 +1,4 @@
-name: d2e/demosetup-hana
+name: E2E tests HANA (demosetup-hana)
 
 permissions:
   contents: read

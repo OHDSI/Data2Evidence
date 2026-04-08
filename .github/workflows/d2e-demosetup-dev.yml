@@ -1,4 +1,4 @@
-name: d2e/demosetup-dev
+name: E2E tests DuckDB (demosetup-dev)
 
 permissions:
   contents: read
