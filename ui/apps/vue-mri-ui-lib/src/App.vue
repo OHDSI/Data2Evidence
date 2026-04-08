@@ -39,7 +39,6 @@ export default {
       this.requestMriConfig()
         .then(() => {
           this.setFireRequest()
-          this.refreshPatientCount()
         })
         .catch(e => {
           console.error('[App] Config reload on dataset change failed', e)
