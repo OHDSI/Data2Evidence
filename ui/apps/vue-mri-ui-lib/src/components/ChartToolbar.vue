@@ -31,7 +31,7 @@
         />
       </div>
       <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
-        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
+        <VButton @click="openInclusionReportModal">{{ getText('MRI_PA_INCLUSION_REPORT_BUTTON') }}</VButton>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
@@ -157,6 +157,7 @@
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
             :show-person-event-switch="false"
+            :filter-card-details="inclusionReportFilterCardDetails"
           />
         </div>
       </div>
@@ -199,6 +200,12 @@ function getBookmarkKey(bookmark) {
 import VButton from './vuetify/VButton.vue'
 import VDialog from './vuetify/VDialog.vue'
 import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
+import type { RuleFilterCardDetails } from '../query-filter/types/InclusionReportTypes'
+import {
+  getAttributeName,
+  getAdvanceTimeFilterFormatted,
+  getInclusionReportFilterCardDetails,
+} from '../utils/filterCardUtils'
 
 export default {
   name: 'chartToolbar',
@@ -282,6 +289,7 @@ export default {
       'getPLRequest',
       'getWizardConfig',
       'getFilterCards',
+      'getFilterCard',
       'getConstraintForAttribute',
       'getBookmarkFromIFR',
       'getConstraint',
@@ -314,6 +322,15 @@ export default {
     },
     enableInclusionReport() {
       return this.getMriFrontendConfig?._internalConfig?.panelOptions?.inclusionReport
+    },
+    inclusionReportFilterCardDetails(): RuleFilterCardDetails[] {
+      const content = this.getBookmarksData?.filter?.cards?.content
+      if (!content) return []
+      return getInclusionReportFilterCardDetails(
+        content,
+        (configPath: string) => getAttributeName(configPath, this.getMriFrontendConfig, 'list'),
+        (filter: any) => getAdvanceTimeFilterFormatted(filter, this.getFilterCard, this.getText)
+      )
     },
   },
   methods: {
@@ -468,6 +485,7 @@ export default {
     closeInclusionReportModal() {
       this.showInclusionReportModal = false
     },
+
     fetchInclusionReport() {
       const mriquery = JSON.stringify(this.getBookmarksData)
       const datasetId = this.getBookmarksData.datasetId

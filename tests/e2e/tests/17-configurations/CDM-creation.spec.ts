@@ -28,8 +28,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
   async function clickTestConfig(testConfigname: string) {
     await page.reload()
     await expect(page.getByText('Clinical Data Model')).toBeVisible()
-    if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
-      await page.getByRole('button', { name: 'Back' }).click()
+    const breadcrumbBackBtn = page
+      .getByRole('navigation', { name: 'breadcrumb' })
+      .getByRole('button', { name: /CDM configuration/i })
+    if (await breadcrumbBackBtn.isVisible()) {
+      await breadcrumbBackBtn.click()
     }
     const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
     await expect(testConfig).toBeVisible()
@@ -53,8 +56,11 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     try {
       await page.reload()
       await expect(page.getByText('Clinical Data Model')).toBeVisible()
-      if (await page.getByRole('button', { name: 'Back' }).isVisible()) {
-        await page.getByRole('button', { name: 'Back' }).click()
+      const breadcrumbBackBtn = page
+        .getByRole('navigation', { name: 'breadcrumb' })
+        .getByRole('button', { name: /CDM configuration/i })
+      if (await breadcrumbBackBtn.isVisible()) {
+        await breadcrumbBackBtn.click()
       }
       const testConfig = page.locator('ul > li').filter({ hasText: testConfigname })
       await scrollElementIntoView(testConfig)
@@ -382,7 +388,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
 
@@ -497,7 +503,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()
@@ -573,7 +579,7 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('link', { name: 'Setup' }).click()
     await page
       .locator('div')
-      .filter({ hasText: /^Cohort Builder configConfigure cohort builderConfigure$/ })
+      .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
     await page.reload()
@@ -619,7 +625,10 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     // Auto-save test
     await page.locator('[id*="--interactionName-inner"]').click()
     await page.locator('[id*="--interactionName-inner"]').fill('Condition Occurrence Autosaving Test')
-    await page.getByRole('button', { name: 'Back' }).click()
+    await page
+      .getByRole('navigation', { name: 'breadcrumb' })
+      .getByRole('button', { name: /CDM configuration/i })
+      .click()
     const testConfig102Item = page
       .locator('[class*="sapMFlexBox sapMFlexBoxAlignContentStretch sapMFlexBoxAlignItemsStretch"]')
       .filter({ hasText: 'TestConfig102' })
@@ -656,7 +665,10 @@ test(TEST_NAME, async ({ page }, testInfo) => {
     await page.getByRole('button', { name: 'Save & Activate' }).click()
     await expect(page.getByText('Success')).toBeVisible()
     await page.getByRole('button', { name: 'OK' }).click()
-    await page.getByRole('button', { name: 'Back' }).click()
+    await page
+      .getByRole('navigation', { name: 'breadcrumb' })
+      .getByRole('button', { name: /CDM configuration/i })
+      .click()
   })
 
   await test.step('Post Cleanup', async () => {

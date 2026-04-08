@@ -3,6 +3,7 @@ import Divider from "@mui/material/Divider";
 import TextField from "@mui/material/TextField";
 import dayjs from "dayjs";
 import { Button, Dialog, Checkbox, InputLabel } from "@portal/components";
+import FlowRunNotificationDialog from "../FlowRunNotificationDialog/FlowRunNotificationDialog";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import { SxProps } from "@mui/system";
 import FormControl from "@mui/material/FormControl";
@@ -168,13 +169,17 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
   }, [fetchCopyStudyMetadata, fetchCohortDefinitionList, study]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
+  const [flowRunId, setFlowRunId] = useState<string | null>(null);
+  const [createdDatasetName, setCreatedDatasetName] = useState<string>("");
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       setFeedback({});
+      setFlowRunId(null);
+      setCreatedDatasetName("");
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose]
   );
 
   const nameRef = webComponentWrapper({
@@ -209,7 +214,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
         if (formData.cohortDefinitionId === "" && rootFilterCheckbox.isCohortFilterSelected) {
           setFeedback({
             type: "error",
-            message: "Cohort Filter is checked, but no cohort was chosen!",
+            message: getText(i18nKeys.COPY_STUDY_DIALOG__COHORT_NOT_CHOSEN),
           });
           return;
         }
@@ -231,7 +236,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       if (!formData.paConfigId) {
         setFeedback({
           type: "error",
-          message: "PA Config ID is required!",
+          message: getText(i18nKeys.COPY_STUDY_DIALOG__PA_CONFIG_REQUIRED),
         });
         return;
       }
@@ -291,8 +296,9 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
       try {
         setLoading(true);
         const gatewayAPI = new Gateway();
-        await gatewayAPI.copyDataset(input);
-        handleClose("success");
+        const result = await gatewayAPI.copyDataset(input);
+        setCreatedDatasetName(name);
+        setFlowRunId((result as any)?.flowRunId ?? null);
       } catch (err: any) {
         setFeedback({
           type: "error",
@@ -366,6 +372,18 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
   const handleCohortDefinitionChange = (value: string) => {
     setFormData((prevState) => ({ ...prevState, cohortDefinitionId: value }));
   };
+
+  if (createdDatasetName) {
+    return (
+      <FlowRunNotificationDialog
+        title={getText(i18nKeys.COPY_STUDY_DIALOG__DATAMART_CREATED_TITLE)}
+        open={open}
+        onClose={() => handleClose("success")}
+        description={getText(i18nKeys.COPY_STUDY_DIALOG__DATAMART_CREATED_DESCRIPTION, [createdDatasetName])}
+        flowRunId={flowRunId}
+      />
+    );
+  }
 
   return (
     <Dialog
@@ -456,7 +474,7 @@ const CopyStudyDialog: FC<CopyStudyDialogProps> = ({ study, open, onClose, loadi
           )}
           <div className="snapshotmetadata__filtergroup">
             <FormControl sx={styles} className="select" variant="standard" fullWidth>
-              <InputLabel htmlFor="cache-dataset-option">Cache dataset type</InputLabel>
+              <InputLabel htmlFor="cache-dataset-option">{getText(i18nKeys.COPY_STUDY_DIALOG__CACHE_DATASET_TYPE)}</InputLabel>
               <Select
                 sx={styles}
                 value={formData.type}

@@ -222,7 +222,7 @@ async function main() {
     "*********************************** SCOPES **********************************************"
   );
   const fetchExistingResourceScopes: Array<Object> = await fetchExisting(
-    `resources/${resourceId}/scopes`,
+    `resources/${resourceId}/scopes?page_size=100`,
     headers
   );
   let logtoScopes: Array<LogtoScope> = [];
@@ -253,7 +253,7 @@ async function main() {
     "*********************************** ROLES **********************************************"
   );
   const fetchExistingRoles: Array<Object> = await fetchExisting(
-    "roles",
+    "roles?page_size=100",
     headers
   );
   let logtoRoles: Array<LogtoScope> = [];

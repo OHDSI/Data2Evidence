@@ -7,21 +7,58 @@ import Sorter from '@/utils/Sorter'
 const state = {}
 
 // Helper function to truncate text at word boundary
+// Strictly honours maxLength: the ellipsis budget (3 chars) is subtracted
+// before searching for the last word boundary, so the result is always ≤ maxLength.
 const truncateAtWordBoundary = (text: string, maxLength: number): string => {
   if (!text) return text
   if (text.length <= maxLength) {
     return text
   }
 
-  // Find the last space before maxLength
-  const truncated = text.slice(0, maxLength)
+  const ellipsis = '...'
+  const budget = maxLength - ellipsis.length // chars available before the ellipsis
+
+  if (budget <= 0) {
+    // maxLength is too small to fit even one char + ellipsis; just truncate hard
+    return text.slice(0, maxLength)
+  }
+
+  // Find the last space within the budget
+  const truncated = text.slice(0, budget)
   const lastSpaceIndex = truncated.lastIndexOf(' ')
 
-  // If there's a space, truncate there; otherwise truncate at maxLength
   if (lastSpaceIndex > 0) {
-    return text.slice(0, lastSpaceIndex) + '...'
+    return text.slice(0, lastSpaceIndex) + ellipsis
   }
-  return truncated + '...'
+  return truncated + ellipsis
+}
+
+// Helper function to build tickvals (full values) and ticktext (truncated/full) for Plotly x-axis.
+// Only operates on single-axis charts — Plotly multicategory tick overrides are fragile and skipped.
+// Returns null for multi-axis charts so the component falls back to Plotly's native rendering.
+const buildTickLabels = (
+  xAxes: { id: string; axis: number; name: string }[],
+  data: Record<string, string | number>[]
+): { tickvals: string[]; ticktext: string[]; ticktextFull: string[] } | null => {
+  if (!xAxes || xAxes.length === 0 || !data || data.length === 0) return null
+
+  // Skip manual tick overrides for multicategory (multi-axis) charts
+  if (xAxes.length > 1) return null
+
+  const seen = new Set<string>()
+  const tickvals: string[] = []
+  const ticktext: string[] = []
+  const ticktextFull: string[] = []
+  data.forEach(row => {
+    const val = String(row[xAxes[0].id] ?? '')
+    if (!seen.has(val)) {
+      seen.add(val)
+      tickvals.push(val)
+      ticktextFull.push(val)
+      ticktext.push(truncateAtWordBoundary(val, Constants.XAxisLabelMaxLength))
+    }
+  })
+  return { tickvals, ticktext, ticktextFull }
 }
 
 // Helper function to wrap text by inserting <br> at word boundaries when exceeding max width
@@ -51,20 +88,23 @@ const getters = {
   dataToTraces:
     (state, getters) =>
     (chartData, selection = [], totalSelected = 0) => {
-      const xAxes: { id: string; axis: number; name: string }[] = chartData.categories.filter(
+      // create on a shallow copy
+      const result = { ...chartData, data: [...chartData.data] }
+
+      const xAxes: { id: string; axis: number; name: string }[] = result.categories.filter(
         category => category.axis === Constants.AxisId.X
       )
       // Flag to toggle the bar chart category type
-      chartData.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
+      result.axisType = xAxes.length > 1 ? 'multicategory' : 'category'
       // Get the unique y-axis attribute id if any
-      const yAxis = chartData.categories.filter(category => category.axis === Constants.AxisId.Y)
+      const yAxis = result.categories.filter(category => category.axis === Constants.AxisId.Y)
 
       const categoryArray: { name: string | number; data: Record<string, string | number>[] }[] = []
       if (yAxis.length !== 0) {
         // Dictionary-based data categorization based on the unique y-axis attribute
         const yAttrKey = yAxis[0].id
         const dataDict = {}
-        chartData.data.forEach(data => {
+        result.data.forEach(data => {
           const yAttrVal = data[yAttrKey]
           if (yAttrVal in dataDict) {
             categoryArray[dataDict[yAttrVal]].data.push(data)
@@ -80,42 +120,41 @@ const getters = {
         // No data split, singleton category
         categoryArray.push({
           name: '',
-          data: chartData.data,
+          data: result.data,
         })
       }
 
-      const measureId = chartData.measures[0].id
+      const measureId = result.measures[0].id
       const toolTipSelected =
-        wrapText(chartData.measures[0].name, 62) +
+        wrapText(result.measures[0].name, 62) +
         ': <b>%{y}</b><br><br><b>' +
         (totalSelected > 1 ? totalSelected + ' values selected' : '') +
         '</b><extra></extra>'
       // Convert data belonging to each attribute category into traces
       // Reversed since the last trace will appear at the top
-      chartData.traces = categoryArray.reverse().map((category, index) => {
+      result.traces = categoryArray.reverse().map((category, index) => {
         let xData = []
         let customdataArray = []
         // Custom tooltip labelling
         let hoverTemplate = ''
         if (xAxes.length === 1) {
-          xData = category.data.map(data =>
-            truncateAtWordBoundary(String(data[xAxes[0].id]), Constants.XAxisLabelMaxLength)
-          )
+          xData = category.data.map(data => String(data[xAxes[0].id]))
           customdataArray = category.data.map(dataPoint => ({
             x: xAxes,
             y: yAxis,
+            values: [String(dataPoint[xAxes[0].id])],
             fullLabels: [wrapText(dataPoint[xAxes[0].id], 62)],
           }))
           hoverTemplate += '%{customdata.x[0].name}: %{customdata.fullLabels[0]}<br>'
         } else {
-          // Truncate labels for x-axis display
           xData = xAxes.map(xAxis =>
             category.data.map(data => truncateAtWordBoundary(String(data[xAxis.id]), Constants.XAxisLabelMaxLength))
           )
           // Build customdata array with full labels for each data point
           customdataArray = category.data.map(dataPoint => {
+            const values = xAxes.map(xAxis => String(dataPoint[xAxis.id]))
             const fullLabels = xAxes.map(xAxis => wrapText(dataPoint[xAxis.id], 62))
-            return { x: xAxes, y: yAxis, fullLabels }
+            return { x: xAxes, y: yAxis, values, fullLabels }
           })
           for (let i = 0; i < xAxes.length; i++) {
             hoverTemplate += '%{customdata.x[' + i + '].name}: %{customdata.fullLabels[' + i + ']}<br>'
@@ -138,9 +177,31 @@ const getters = {
           selectedpoints: selection ? selection[index] : [],
           name: truncatedName,
           meta: { fullName },
+          marker: {
+            line: {
+              color: '#595757',
+              width: 0.7,
+            },
+          },
         }
       })
-      return chartData
+
+      // Attach tick label mappings so the Vue component can apply truncated display labels
+      // while keeping full (untruncated) values in trace.x for selection events
+      const tickLabels = buildTickLabels(xAxes, result.data)
+      if (tickLabels) {
+        result.tickvals = tickLabels.tickvals
+        result.ticktext = tickLabels.ticktext
+        result.ticktextFull = tickLabels.ticktextFull
+      } else {
+        result.tickvals = undefined
+        result.ticktext = undefined
+        result.ticktextFull = undefined
+      }
+
+      // TODO: coloring based on x-axis categories for non-stacked bar chart
+
+      return result
     },
   processResponse:
     (state, getters) =>

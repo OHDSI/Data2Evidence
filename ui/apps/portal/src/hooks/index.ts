@@ -26,6 +26,7 @@ export * from "./dataflow/useDataQualityOverviewFromId";
 export * from "./dataflow/useDatasetLatestFlowRun";
 export * from "./useDatasetReleases";
 export * from "./useOverviewDescription";
+export * from "./useHeaderImage";
 export * from "./useConfigsByTypes";
 export * from "./useOverwriteAllCanvasesFromRemote";
 export * from "./useOverwriteAllNotebooksFromRemote";

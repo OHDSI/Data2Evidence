@@ -1,0 +1,234 @@
+#!/usr/bin/env node
+import dotenv from 'dotenv';
+import fs from "node:fs/promises";
+import https from "node:https";
+import fetch from "node-fetch";
+
+// Helper functions
+function getCookie(setCookieHeaders, name) {
+  for (const cookie of setCookieHeaders) {
+    const match = cookie.match(new RegExp(`${name}=([^;]+)`));
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function extractAuthCode(url) {
+    if (!url) return '';
+    const regex = /code=([^&]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : '';
+}
+
+const args = process.argv.slice(2);
+const vIndex_envfile = args.indexOf("-n");
+let envfile;
+if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith("-")) {
+  envfile = args[vIndex_envfile + 1];
+} else {
+  envfile = ".env";
+}
+try {
+  await fs.access(envfile);
+  dotenv.config({ path: envfile, debug: false });
+} catch {
+  console.log(`FATAL ${envfile} not found`);
+  process.exit(1);
+}
+
+const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO__ALP_APP__CLIENT_ID;
+let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
+let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
+let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
+const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+
+console.log('\nSyncing usermgmt roles to Logto...\n');
+
+// Start OIDC auth flow
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`;
+var response = await fetch(url, {
+  method: "GET",
+  agent: insecureAgent,
+  redirect: 'manual',
+});
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var logto_cookie = getCookie(setCookieHeaders, '_logto');
+
+// Sign in
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/api/interaction`;
+const body = {
+  event: "SignIn",
+  identifier: {
+    username: "admin",
+    password: "Updatepassword12345"
+  }
+};
+
+var response = await fetch(url, {
+  method: "PUT",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto={"appId":"${app_client_id}"}; `
+  },
+  body: JSON.stringify(body),
+  redirect: 'manual',
+  agent: insecureAgent
+});
+
+// Submit sign in page
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/api/interaction/submit`;
+var response = await fetch(url, {
+  method: "POST",
+  headers: {
+    "content-type": "application/json",
+    "Referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+    "Cookie": `_interaction=${interaction_cookie}; ` +
+              `_interaction.sig=${interaction_sig_cookie}; ` +
+               `_logto=$ `
+  },
+  body: JSON.stringify(body),
+  agent: insecureAgent
+});
+
+// Get session
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={"appId":"${app_client_id}"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent
+});
+
+var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
+var session_cookie = getCookie(setCookieHeaders, '_session');
+var session_sig_cookie = getCookie(setCookieHeaders, '_session.sig');
+
+// Submit consent page
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/consent`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent
+});
+
+// Get authorization code
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth/${interaction_cookie}`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
+    },
+    agent: insecureAgent,
+    redirect: 'manual',
+});
+
+const authCodeLocation = await response.text();
+const authorization_code = extractAuthCode(authCodeLocation || '');
+
+// Complete Login
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback?code=${authorization_code}&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc`;
+var response = await fetch(url, {
+    method: "GET",
+    headers: {
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
+    },
+    redirect: 'manual',
+    agent: insecureAgent
+});
+
+// Get Bearer token
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/oauth/token`;
+var params = new URLSearchParams();
+params.append('grant_type', 'authorization_code');
+params.append('client_id', app_client_id);
+params.append('redirect_uri', `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback`);
+params.append('code', authorization_code);
+params.append('code_verifier', 'kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I');
+var response = await fetch(url, {
+    method: "POST",
+    headers: {
+        "accept": "application/json, text/javascript, */*; q=0.01",
+        "content-type": "application/x-www-form-urlencoded",
+        "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`,
+        "origin": `https://${CADDY__D2E__PUBLIC_FQDN}`,
+        "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback`
+    },
+    body: params,
+    agent: insecureAgent
+});
+const tokenResponse = await response.json();
+const BEARER_TOKEN = tokenResponse.access_token;
+
+if (!BEARER_TOKEN) {
+  console.error('Failed to obtain bearer token. Authentication failed.');
+  process.exit(1);
+}
+
+// Call sync-roles-to-logto endpoint
+console.log('Calling sync-roles-to-logto endpoint...\n');
+var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/usermgmt/api/user-group/sync-roles-to-logto`;
+var response = await fetch(url, {
+    method: "POST",
+    headers: {
+        "Authorization": `Bearer ${BEARER_TOKEN}`,
+        "content-type": "application/json"
+    },
+    agent: insecureAgent
+});
+
+if (!response.ok) {
+  const errorText = await response.text();
+  console.error(`Sync failed with status ${response.status}: ${errorText}`);
+  process.exit(1);
+}
+
+const result = await response.json();
+console.log('Sync results:');
+console.log(`  Total role assignments: ${result.total}`);
+console.log(`  Synced:  ${result.synced}`);
+console.log(`  Skipped: ${result.skipped}`);
+console.log(`  Failed:  ${result.failed}`);
+
+if (result.failures && result.failures.length > 0) {
+  console.log('\nFailures:');
+  for (const f of result.failures) {
+    console.log(`  User ${f.username} (${f.userId}): ${f.error}`);
+  }
+  console.log('\nRe-run this command to retry failed users.');
+  process.exit(1);
+} else {
+  // Set USER_MGMT__ROLE_SOURCE=logto in the env file
+  const envContent = await fs.readFile(envfile, 'utf-8');
+  const roleSourceRegex = /^USER_MGMT__ROLE_SOURCE=.*$/m;
+  let updatedContent;
+  if (roleSourceRegex.test(envContent)) {
+    updatedContent = envContent.replace(roleSourceRegex, 'USER_MGMT__ROLE_SOURCE=logto');
+  } else {
+    updatedContent = envContent.trimEnd() + '\nUSER_MGMT__ROLE_SOURCE=logto\n';
+  }
+  await fs.writeFile(envfile, updatedContent);
+  console.log(`\nAll roles synced successfully. Set USER_MGMT__ROLE_SOURCE=logto in ${envfile}`);
+  console.log('Restart services for the change to take effect.');
+}
