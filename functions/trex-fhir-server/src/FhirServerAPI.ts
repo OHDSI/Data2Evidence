@@ -75,7 +75,7 @@ export class FhirServerAPI {
         data: result.data,
       };
     } catch (error: any) {
-      console.error(`Error while checking FHIR server health`, error);
+      this.logger.error(`Error while checking FHIR server health`, error);
       if (error?.response?.data) {
         return {
           status: error.response.status,
