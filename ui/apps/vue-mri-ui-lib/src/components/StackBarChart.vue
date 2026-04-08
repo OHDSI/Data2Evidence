@@ -49,20 +49,7 @@ export default {
             },
 
             click: function (gd) {
-              Plotly.relayout(gd, {
-                'xaxis.autorange': true,
-                'yaxis.autorange': true,
-              })
-
-
-              // TODO: This is to clear selection on reset, current implementation clears event listeners. To revisit
-              // Plotly.update(
-              //   gd,
-              //   { 'xaxis.autorange': true, 'yaxis.autorange': true, selectedpoints: [null] },
-              //   { selections: [] }
-              // )
-              // Clear Vuex selection state
-              // this.setChartSelection({ selection: [] })
+              this.clearSelectionState({ plotElement: gd, resetAxes: true })
             }.bind(this),
           },
         ],
@@ -325,6 +312,38 @@ export default {
         tickangle: useTruncated ? 'auto' : 0,
       }
     },
+    buildPlotlyLayout(resetAxes = false) {
+      const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+      layout.showlegend = false
+      layout.xaxis.type = this.chartData.axisType
+      const xTicks = this.buildXAxisTicks()
+      if (xTicks) {
+        layout.xaxis.tickvals = xTicks.tickvals
+        layout.xaxis.ticktext = xTicks.ticktext
+        layout.xaxis.tickangle = xTicks.tickangle
+      }
+      if (resetAxes) {
+        layout.xaxis.autorange = true
+        layout.yaxis.autorange = true
+      }
+      return layout
+    },
+    clearSelectionState({ plotElement = stackBarChart, resetAxes = false } = {}) {
+      this.setChartSelection({ selection: [] })
+
+      if (this.chartData?.traces) {
+        const clearedSelectedPoints = this.chartData.traces.map(() => [])
+        this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
+      }
+
+      const targetElement = plotElement || stackBarChart
+      if (!targetElement || !this.chartData?.traces) {
+        return
+      }
+
+      const layout = this.buildPlotlyLayout(resetAxes)
+      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
+    },
     setupAxes() {
       this.disableAllAxesandProperties()
       this.setChartPropertyValue({
@@ -484,9 +503,6 @@ export default {
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
-        stackBarChart.removeAllListeners('plotly_selected')
-        stackBarChart.removeAllListeners('plotly_deselect')
-
         const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
         selectionLayout.showlegend = false
         selectionLayout.xaxis.type = this.chartData.axisType
@@ -499,8 +515,12 @@ export default {
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
+      const deselectionUpdate = () => {
+        this.clearSelectionState()
+      }
+
       stackBarChart.on('plotly_selected', selectionUpdate)
-      stackBarChart.on('plotly_deselect', selectionUpdate)
+      stackBarChart.on('plotly_deselect', deselectionUpdate)
       this.setPlotlyElement({ element: stackBarChart })
     },
   },
