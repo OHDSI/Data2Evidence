@@ -12,7 +12,7 @@ import { PatientCountEndpoint } from "./PatientCountEndpoint";
 
 const log = Logger.CreateLogger("analytics-log");
 
-const TOTAL_PATIENt_COUNT_BOOKMARK_STR = JSON.stringify({
+const TOTAL_PATIENT_COUNT_BOOKMARK_STR = JSON.stringify({
     filter: {
         configMetadata: {
             id: "CONFIG_ID",
@@ -210,7 +210,7 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
                     configId,
                     configVersion,
                     datasetId,
-                    TOTAL_PATIENt_COUNT_BOOKMARK_STR.replace(
+                    TOTAL_PATIENT_COUNT_BOOKMARK_STR.replace(
                         "CONFIG_ID",
                         configId
                     )
