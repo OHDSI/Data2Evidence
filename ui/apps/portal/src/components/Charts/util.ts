@@ -185,11 +185,12 @@ export const createTooltipFormatter = (template: string): ((params: any) => stri
     const param = Array.isArray(params) ? params[0] : params;
     const name = String(param?.name ?? param?.axisValue ?? "");
     const rawValue = param?.value;
+    const numValue = typeof rawValue === "string" ? Number(rawValue.trim()) : NaN;
     const value =
       typeof rawValue === "number"
         ? rawValue.toLocaleString("en-US", { maximumFractionDigits: 10 })
-        : typeof rawValue === "string" && rawValue.trim() !== "" && isFinite(Number(rawValue))
-        ? Number(rawValue).toLocaleString("en-US", { maximumFractionDigits: 10 })
+        : typeof rawValue === "string" && rawValue.trim() !== "" && isFinite(numValue)
+        ? numValue.toLocaleString("en-US", { maximumFractionDigits: 10 })
         : String(rawValue ?? "");
     return template
       .replace(/{a}/g, String(param?.seriesName ?? ""))
