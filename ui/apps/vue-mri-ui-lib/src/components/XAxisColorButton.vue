@@ -110,14 +110,18 @@ export default {
         this.closeMenu()
       }
     },
-    handleClick({ data }) {
+    handleClick(data) {
       if (data) {
         const menuItem = this.menuData.find(item => item.data.axisIndex === data.axisIndex)
         if (menuItem) {
           this.selectedOption = menuItem.text
+          this.$emit('colorAxisSelected', data.axisIndex)
         }
       }
       this.closeMenu()
+    },
+    resetSelection() {
+      this.selectedOption = ''
     },
   },
   components: {
@@ -130,6 +134,6 @@ export default {
 .x-axis-dropdown-button {
   position: absolute;
   left: 0px;
-  bottom: 102px;
+  bottom: 138px;
 }
 </style>

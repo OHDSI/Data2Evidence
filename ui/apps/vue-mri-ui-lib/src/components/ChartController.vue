@@ -7,7 +7,11 @@
         <template v-for="(item, index) in getAllAxes" :key="index">
           <axisMenuButton v-if="item.props.active" :dimensionIndex="index"></axisMenuButton>
         </template>
-        <xAxisDropdownButton :parentContainer="$refs.axisContainer"></xAxisDropdownButton>
+        <xAxisColorButton
+          ref="xAxisColorButton"
+          :parentContainer="$refs.axisContainer"
+          @colorAxisSelected="onColorAxisSelected"
+        ></xAxisColorButton>
         <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
         <sortMenuButton v-if="displaySort"></sortMenuButton>
         <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
@@ -18,6 +22,7 @@
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
           :shouldRerenderChart="shouldRerenderChart"
+          :colorAxisIndex="colorAxisIndex"
         ></stackBarChart>
         <!-- <variantBrowser v-if="getActiveChart === 'vb'" :response="response" @busyEv="setChartBusy"></variantBrowser> -->
         <patientListContainer
@@ -57,6 +62,7 @@ export default {
       showErrorLines: false,
       series: [],
       activeChartCollections: false,
+      colorAxisIndex: null as number | null,
     }
   },
   created() {
@@ -83,6 +89,14 @@ export default {
   beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
   },
+  watch: {
+    stackAttributeHasSelection(newVal) {
+      if (newVal) {
+        this.colorAxisIndex = null
+        this.$refs.xAxisColorButton?.resetSelection()
+      }
+    },
+  },
   computed: {
     ...mapGetters([
       'getActiveChart',
@@ -97,6 +111,10 @@ export default {
       'getKMDisplayInfo',
       'getMriFrontendConfig',
     ]),
+    stackAttributeHasSelection() {
+      const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
+      return !!(axis?.props?.filterCardId && axis?.props?.key)
+    },
     showCohorts() {
       if (this.getMriFrontendConfig) {
         return this.getMriFrontendConfig._internalConfig.panelOptions.addToCohorts
@@ -139,7 +157,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setFireRequest', 'setKMDisplayInfo']),
+    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue']),
     setChartBusy(status) {
       this.$emit('setChartBusy', status)
     },
@@ -154,6 +172,11 @@ export default {
     },
     chartConfigs() {
       return this.getAllChartConfigs
+    },
+    onColorAxisSelected(axisIndex: number) {
+      this.colorAxisIndex = axisIndex
+      this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
+      this.setFireRequest()
     },
   },
   components: {

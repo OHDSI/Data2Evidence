@@ -26,7 +26,7 @@ export default {
       notificationStore: useNotificationStore(),
     }
   },
-  props: ['busyEv', 'shouldRerenderChart'],
+  props: ['busyEv', 'shouldRerenderChart', 'colorAxisIndex'],
   data() {
     return {
       chartData: {} as { traces?: any[]; axisType?: string; categories?: any[]; measures?: any[]; data?: any[] },
@@ -156,16 +156,16 @@ export default {
               currentPatientCount: '--',
             })
 
-              if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-                this.notificationStore.setAlertMessage({
-                  messageType: 'info',
-                  message: this.chartData.noDataReason,
-                })
-              } else {
-                this.notificationStore.setAlertMessage({
-                  message: this.chartData.noDataReason,
-                })
-              }
+            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+              this.notificationStore.setAlertMessage({
+                messageType: 'info',
+                message: this.chartData.noDataReason,
+              })
+            } else {
+              this.notificationStore.setAlertMessage({
+                message: this.chartData.noDataReason,
+              })
+            }
             return
           }
 
@@ -226,6 +226,9 @@ export default {
         this.setupPlotly()
         this.renderChart()
       }
+    },
+    colorAxisIndex() {
+      this.renderChart()
     },
   },
   computed: {
@@ -455,6 +458,47 @@ export default {
 
         this.chartData = this.dataToTraces(data)
         const freshLayout = this.buildPlotlyLayout()
+
+        // Apply x-axis category coloring if a color axis is selected
+        if (this.colorAxisIndex != null && this.chartData.traces) {
+          const colorValues = Object.values(Constants.ChartColorway)
+          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+          if (this.colorAxisIndex < xAxes.length) {
+            // Collect unique x-axis values across all traces in stable order
+            const uniqueVals: string[] = []
+            this.chartData.traces.forEach(trace => {
+              trace.customdata?.forEach(cd => {
+                const val = String(cd.values?.[this.colorAxisIndex] ?? '')
+                if (val && !uniqueVals.includes(val)) uniqueVals.push(val)
+              })
+            })
+            // Map each unique value to a ChartColorway color (cycling)
+            const valColorMap: Record<string, string> = {}
+            uniqueVals.forEach((val, i) => {
+              valColorMap[val] = colorValues[i % colorValues.length]
+            })
+            // Assign per-bar marker colors on each trace
+            this.chartData.traces.forEach(trace => {
+              const colors =
+                trace.customdata?.map(
+                  cd => valColorMap[String(cd.values?.[this.colorAxisIndex] ?? '')] || colorValues[0]
+                ) || []
+              trace.marker = { ...trace.marker, color: colors }
+            })
+            // Build color legend for the legend component
+            this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
+          }
+        }
+
+        freshLayout.showlegend = false
+        freshLayout.xaxis.type = this.chartData.axisType
+        const xTicks = this.buildXAxisTicks()
+        if (xTicks) {
+          freshLayout.xaxis.tickvals = xTicks.tickvals
+          freshLayout.xaxis.ticktext = xTicks.ticktext
+          freshLayout.xaxis.tickangle = xTicks.tickangle
+        }
+
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
         // Resize chart after DOM updates to account for legend space
