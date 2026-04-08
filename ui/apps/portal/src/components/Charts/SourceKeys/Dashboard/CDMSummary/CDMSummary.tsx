@@ -3,6 +3,7 @@ import React from "react";
 import ChartContainer from "../../../Common/ChartContainer";
 import "./CDMSummary.scss";
 import { useTranslation } from "../../../../../contexts";
+import { formatNumber } from "../../../../../utils";
 
 interface CDMSummaryProps {
   data: any;
@@ -29,7 +30,7 @@ function CDMSummary({ data }: CDMSummaryProps) {
         {getText(i18nKeys.CDM_SUMMARY__SOURCE_NAME)}: {sourceName}
       </p>
       <p>
-        {getText(i18nKeys.CDM_SUMMARY__NUMBER_OF_PERSONS)}: {numberOfPersons}
+        {getText(i18nKeys.CDM_SUMMARY__NUMBER_OF_PERSONS)}: {formatNumber(numberOfPersons)}
       </p>
     </ChartContainer>
   );
