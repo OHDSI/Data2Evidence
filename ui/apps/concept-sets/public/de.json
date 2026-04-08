@@ -53,5 +53,6 @@
   "TERMINOLOGY_LIST__MAPPED": "Kartiert",
   "TERMINOLOGY_LIST__NAME": "Name",
   "TERMINOLOGY_LIST__VALIDITY": "Gültigkeit",
-  "TERMINOLOGY_LIST__VOCABULARY": "Wortschatz"
+  "TERMINOLOGY_LIST__VOCABULARY": "Wortschatz",
+  "TERMINOLOGY_LIST__EMPTY_TABLE": "keine verwandten konzepte gefunden"
 }
