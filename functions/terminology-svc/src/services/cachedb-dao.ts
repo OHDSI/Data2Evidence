@@ -822,7 +822,7 @@ class TrexConnection {
         }),
         (err, res) => {
           if (err) {
-            reject(err);
+            return reject(err);
           }
 
           // Map results to row object which cachedbDao expects
