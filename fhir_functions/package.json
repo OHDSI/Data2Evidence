@@ -161,7 +161,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-gateway/createProject$",
+          "path": "^/trex-fhir-gateway/createDataset$",
           "scopes": [
             "gateway.fhir.create"
           ],
@@ -170,7 +170,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-gateway/deleteProject/[a-zA-Z0-9_-]+$",
+          "path": "^/trex-fhir-gateway/deleteDataset/[a-zA-Z0-9_-]+$",
           "scopes": [
             "gateway.fhir.delete"
           ],
@@ -179,7 +179,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-gateway/project/[a-zA-Z0-9_-]+/(.*)",
+          "path": "^/trex-fhir-gateway/dataset/[a-zA-Z0-9_-]+/(.*)",
           "scopes": [
             "gateway.fhir.forward"
           ],
@@ -192,7 +192,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-gateway/project/[a-zA-Z0-9_-]+$",
+          "path": "^/trex-fhir-gateway/dataset/[a-zA-Z0-9_-]+$",
           "scopes": [
             "gateway.fhir.forward"
           ],

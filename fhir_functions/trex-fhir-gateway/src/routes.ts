@@ -8,8 +8,8 @@ import {
 } from "./FhirServerAPI";
 import { filterHeaders, HTTPMethod } from "./types";
 import {
-  validateCreateFhirProjectDto,
-  validateDeleteFhirProjectDto,
+  validateCreateFhirDatasetDto,
+  validateDeleteFhirDatasetDto,
   validateProxyDto,
 } from "./middleware";
 
@@ -55,8 +55,8 @@ export class FhirRouter {
     });
 
     this.router.post(
-      "/createProject",
-      validateCreateFhirProjectDto(),
+      "/createDataset",
+      validateCreateFhirDatasetDto(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -74,18 +74,18 @@ export class FhirRouter {
           return res.status(response.status).json(response.data);
         } catch (error: any) {
           const errorMessage = error.response?.data || error.message;
-          console.error(`Error creating project: ${errorMessage}`);
+          console.error(`Error creating FHIR dataset: ${errorMessage}`);
           res.status(500).json({
             error: true,
-            message: `Error creating project: ${errorMessage}`,
+            message: `Error creating FHIR dataset: ${errorMessage}`,
           });
         }
       },
     );
 
     this.router.delete(
-      "/deleteProject/:id",
-      validateDeleteFhirProjectDto(),
+      "/deleteDataset/:id",
+      validateDeleteFhirDatasetDto(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -101,16 +101,16 @@ export class FhirRouter {
           return res.status(response.status).json(response.data);
         } catch (error: any) {
           const errorMessage = error.response?.data || error.message;
-          console.error(`Error deleting project: ${errorMessage}`);
+          console.error(`Error deleting FHIR dataset: ${errorMessage}`);
           res.status(500).json({
             error: true,
-            message: `Error deleting project: ${errorMessage}`,
+            message: `Error deleting FHIR dataset: ${errorMessage}`,
           });
         }
       },
     );
 
-    this.router.post("/project/:id", async (req: Request, res: Response) => {
+    this.router.post("/dataset/:id", async (req: Request, res: Response) => {
       // this endpoint should only allow posting of bundles
       const token = req.headers.authorization;
       const { id } = req.params;
@@ -152,7 +152,7 @@ export class FhirRouter {
     });
 
     this.router.all(
-      "/project/:id/*",
+      "/dataset/:id/*",
       validateProxyDto(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);

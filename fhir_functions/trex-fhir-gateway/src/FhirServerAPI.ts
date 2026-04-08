@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig } from "npm:axios";
 import { env } from "./env";
 import { HTTPMethod, Headers } from "./types";
 
-interface ICreateFhirProjectDto {
+interface ICreateFhirDatasetDto {
   id: string;
   name: string;
 }
@@ -42,8 +42,8 @@ export class FhirServerAPI {
       throw new Error("No token passed for FhirServerAPI!");
     }
 
-    if (this.services.trex) {
-      this.baseURL = this.services.trex;
+    if (this.services.trexFhirGateway) {
+      this.baseURL = this.services.trexFhirGateway;
     } else {
       this.logger.error("No url is set for FhirServerAPI");
       throw new Error("No url is set for FhirServerAPI");
@@ -68,7 +68,7 @@ export class FhirServerAPI {
     try {
       this.logger.info("Checking FHIR server health");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/fhir-server/health`;
+      const url = `${this.baseURL}/health`;
       const result = await axios.get(url, options);
       return {
         status: result.status,
@@ -96,7 +96,7 @@ export class FhirServerAPI {
     try {
       this.logger.info("Fetching FHIR server datasets");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/fhir-server/datasets`;
+      const url = `${this.baseURL}/datasets`;
       const result = await axios.get(url, options);
       return {
         status: result.status,
@@ -112,12 +112,12 @@ export class FhirServerAPI {
   }
 
   async createFhirDataset(
-    payload: ICreateFhirProjectDto,
+    payload: ICreateFhirDatasetDto,
   ): Promise<IFhirApiResponse<IFhirCreatedDataset | Record<string, unknown>>> {
     try {
       this.logger.info("Creating FHIR server dataset");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/fhir-server/datasets`;
+      const url = `${this.baseURL}/datasets`;
       const result = await axios.post(url, payload, options);
       return {
         status: result.status,
@@ -145,7 +145,7 @@ export class FhirServerAPI {
     try {
       this.logger.info("Deleting FHIR server dataset");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/fhir-server/datasets/${datasetId}`;
+      const url = `${this.baseURL}/datasets/${datasetId}`;
       const result = await axios.delete(url, options);
       return {
         status: result.status,
@@ -173,7 +173,7 @@ export class FhirServerAPI {
     try {
       this.logger.info("Posting FHIR bundle");
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/fhir-server/${id}`;
+      const url = `${this.baseURL}/${id}`;
       const result = await axios.post(url, bundle, options);
       return {
         status: result.status,
@@ -209,7 +209,7 @@ export class FhirServerAPI {
     fhirHeaders: Headers,
   ) {
     const normalizedResourcePath = resourcePath?.replace(/^\/+/, "");
-    const url = `${this.baseURL}/fhir-server/${id}${normalizedResourcePath ? "/" + normalizedResourcePath : ""}`;
+    const url = `${this.baseURL}/${id}${normalizedResourcePath ? "/" + normalizedResourcePath : ""}`;
     const statusLogMsg = `Received response after forwarding ${httpMethod} request to ${url}`;
     this.logger.info(
       `Forwarding ${httpMethod} request to FHIR server at URL: ${url}`,
