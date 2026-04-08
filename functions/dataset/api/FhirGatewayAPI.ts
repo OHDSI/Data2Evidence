@@ -28,6 +28,7 @@ export class FhirGatewayAPI {
     };
   }
 
+  // Todo: Update description to name for trex fhir server
   async createProject(id: string, description: string): Promise<string> {
     this.logger.info(`Creating FHIR project for dataset '${id}'`);
     try {
@@ -36,7 +37,9 @@ export class FhirGatewayAPI {
       const result = await this.channel.post(url, { id, description }, options);
       const projectId = result.data?.projectId;
       if (!projectId) {
-        throw new Error(`No projectId returned from FHIR gateway for dataset '${id}'`);
+        throw new Error(
+          `No projectId returned from FHIR gateway for dataset '${id}'`,
+        );
       }
       return projectId;
     } catch (error: any) {
