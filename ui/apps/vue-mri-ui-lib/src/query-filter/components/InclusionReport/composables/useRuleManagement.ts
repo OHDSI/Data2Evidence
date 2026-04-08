@@ -114,7 +114,7 @@ export function useRuleManagement(
       // The attrition API remaps stat.id to the new positional index when a
       // custom ruleOrder is supplied.  Restore the original rule IDs so that
       // filterCardDetails lookup (indexed by original rule ID) stays correct.
-      if (ruleOrder) {
+      if (ruleOrder?.length) {
         stats.forEach((stat, idx) => {
           stat.id = ruleOrder[idx]
         })
