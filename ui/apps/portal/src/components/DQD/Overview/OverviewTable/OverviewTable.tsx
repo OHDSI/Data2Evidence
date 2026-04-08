@@ -215,9 +215,9 @@ const OverviewTable: FC<OverviewTableProps> = ({ data }) => {
           ])}
         </div>
         <div>
-          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_1, [
-            formatNumber(data.total.total.allNa),
-            formatNumber(data.total.total.pass),
+          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_2, [
+            formatNumber(data.total.total.allError),
+            formatNumber(data.total.total.fail),
           ])}
         </div>
         <div>
