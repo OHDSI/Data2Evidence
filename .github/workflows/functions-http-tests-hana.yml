@@ -47,7 +47,6 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
-              - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
