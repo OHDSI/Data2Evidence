@@ -23,6 +23,8 @@ export const getConcepts = async (
         datasetId,
         code: searchText,
         filter,
+        sortBy,
+        sortOrder,
       },
     } = schemas.getConcepts.parse(req);
 
@@ -37,9 +39,34 @@ export const getConcepts = async (
       pageNumber,
       Number(rowsPerPage),
       searchText,
-      filter
+      filter,
+      sortBy,
+      sortOrder,
     );
     res.send(concepts);
+  } catch (e) {
+    console.error(JSON.stringify(e));
+    next(e);
+  }
+};
+
+export const getConceptIds = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const {
+      query: { datasetId, code: searchText, filter },
+    } = schemas.getConceptIds.parse(req);
+
+    const cachedbService = await CachedbService.createCacheDBService(
+      req,
+      datasetId
+    );
+
+    const ids = await cachedbService.getConceptIds(searchText, filter);
+    res.send(ids);
   } catch (e) {
     console.error(JSON.stringify(e));
     next(e);

@@ -12,6 +12,21 @@ import {
 import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
+import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
+
+function buildOrderByClause(
+  sortBy: string | undefined,
+  sortOrder: string | undefined,
+  hasSearchTerm: boolean
+): string {
+  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  if (!sortBy) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
+
+  const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
+  return `ORDER BY ${sortBy} ${direction}`;
+}
 
 export class CachedbDAO {
   private readonly vocabSchemaName: string;
@@ -42,7 +57,9 @@ export class CachedbDAO {
     pageNumber = 0,
     rowsPerPage: number,
     searchText = "",
-    filters: Filters
+    filters: Filters,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const client = this.getTrexConnection();
     try {
@@ -52,19 +69,18 @@ export class CachedbDAO {
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
       select *
           from fts
-          limit ? OFFSET ?;
+          ${orderByClause}
+          LIMIT ? OFFSET ?;
       `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [
-        ...duckdbFtsBaseQueryParams,
-        rowsPerPage,
-        offset,
-      ];
+      const conceptsSqlParams = [...duckdbFtsBaseQueryParams, rowsPerPage, offset];
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -79,6 +95,27 @@ export class CachedbDAO {
         totalHits: results[1] ? parseInt(results[1].rows[0].count) : 0,
       };
       return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
+    const client = this.getTrexConnection();
+    try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
+      const [baseQuery, baseParams] =
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+
+      const sql = `${baseQuery} select concept_id as id from fts`;
+      const result = await client.query(sql, baseParams);
+      return result.rows.map((row: any) => row.id as number);
     } catch (error) {
       console.error(error);
       throw error;
