@@ -54,7 +54,7 @@ services:
           "white-rabbit": false,
           "strategus-analysis": false,
           "mcp-server": false,
-          "trex-fhir-server": false
+          "trex-fhir-gateway": false
         }
 
   alp-caddy:
