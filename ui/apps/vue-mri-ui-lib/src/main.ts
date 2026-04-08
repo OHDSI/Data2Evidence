@@ -47,10 +47,6 @@ if (isLocal) {
   applyTheme('d2e')
 }
 
-const appMode = isLocal ? 'local-root-layout' : 'portal-app'
-const bundleRef = import.meta.url.split('/').pop() || import.meta.url
-console.info(`[MRI_SANITY] bundle=${bundleRef} app=${appMode}`)
-
 const pinia = createPinia()
 app.use(store)
 app.use(pinia)
