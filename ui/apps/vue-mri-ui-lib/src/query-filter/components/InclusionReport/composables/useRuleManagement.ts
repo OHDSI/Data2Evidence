@@ -110,7 +110,16 @@ export function useRuleManagement(
     errorMessage.value = ''
     try {
       const apiResponse = await fetchAttritionReport(ruleOrder, controller.signal)
-      draggableAttritionStats.value = mapAttritionApiResponse(apiResponse)
+      const stats = mapAttritionApiResponse(apiResponse)
+      // The attrition API remaps stat.id to the new positional index when a
+      // custom ruleOrder is supplied.  Restore the original rule IDs so that
+      // filterCardDetails lookup (indexed by original rule ID) stays correct.
+      if (ruleOrder) {
+        stats.forEach((stat, idx) => {
+          stat.id = ruleOrder[idx]
+        })
+      }
+      draggableAttritionStats.value = stats
     } catch (error: unknown) {
       if (controller.signal.aborted) return // cancelled by a newer request, ignore
       if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
