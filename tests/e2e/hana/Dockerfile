@@ -7,10 +7,12 @@ RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists
 
 WORKDIR /work
 RUN pwd && echo "1Working directory is: $(pwd)"
+RUN ls -l
 
 # Copy package files and install dependencies
 COPY package*.json ./
 RUN pwd && echo "2Working directory is: $(pwd)"
+RUN ls -l
 
 RUN npm ci
 
