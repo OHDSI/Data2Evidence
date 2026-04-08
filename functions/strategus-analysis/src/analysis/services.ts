@@ -55,28 +55,16 @@ export default class StrategusAnalysisService {
         const portalAPI = new PortalAPI(token);
         const datasetId = uuidv4();
         
-        const datasetInput = {
+        const datasetInput = Object.assign({}, getDummyDataset(), {
             id: datasetId,
-            type: "strategus_analysis",
             tokenDatasetCode: tokenStudyCode,
             tenantId: tenantId,
-            dialect: "postgres",
-            databaseCode: "dummy",
             schemaName: `results_${studyId}`,
-            vocabSchemaName: "",
-            resultsSchemaName: "",
-            dataModel: "dummy",
-            visibilityStatus: "DEFAULT",
             detail: {
+                ...getDummyDataset().detail,
                 name: studyId,
-                summary: "Strategus analysis dataset",
-                description: "",
-                showRequestAccess: false,
-            },
-            dashboards: [],
-            attributes: [],
-            tags: [],
-        };
+            }
+        });
 
         try {
             await portalAPI.createDataset(datasetInput);
@@ -128,7 +116,7 @@ export default class StrategusAnalysisService {
                 throw new Error(`Failed to update dataset: ${errorMessage}`);
             }
         }
-        await this.strategusAnalysisRepository.save(existingAnalysis);
+        await this.strategusAnalysisRepository.save(existingAnalysis, this.addOwnerInfo(existingAnalysis));
 
         return { analysisId: existingAnalysis.id, message: "Analysis specification updated successfully." }
     }
