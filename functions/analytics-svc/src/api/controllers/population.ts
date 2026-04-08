@@ -398,14 +398,16 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                     ? body
                                                     : bookmarkInputStr;
                                             // Parse optional ruleOrder query parameter for drag-and-drop reordering
-                                            // ruleOrder is zlib-compressed by the frontend's fireQuery (same as mriquery)
+                                            // ruleOrder is sent as a plain JSON array (e.g. [2,0,1])
                                             let ruleOrder: number[] | undefined;
                                             if (req.query.ruleOrder) {
                                                 try {
-                                                    ruleOrder =
-                                                        convertZlibBase64ToJson(
-                                                            req.query.ruleOrder
-                                                        );
+                                                    ruleOrder = JSON.parse(
+                                                        decodeURIComponent(
+                                                            req.query
+                                                                .ruleOrder as string
+                                                        )
+                                                    );
                                                 } catch (e) {
                                                     // Ignore invalid ruleOrder
                                                 }
