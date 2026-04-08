@@ -3082,7 +3082,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-server/deleteProject/[a-zA-Z0-9_]+$",
+          "path": "^/trex-fhir-server/deleteProject/[a-zA-Z0-9_-]+$",
           "scopes": [
             "gateway.fhir.delete"
           ],
@@ -3091,7 +3091,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_]+/(.*)",
+          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_-]+/(.*)",
           "scopes": [
             "gateway.fhir.forward"
           ],
@@ -3104,7 +3104,7 @@
           ]
         },
         {
-          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_]+$",
+          "path": "^/trex-fhir-server/project/[a-zA-Z0-9_-]+$",
           "scopes": [
             "gateway.fhir.forward"
           ],
