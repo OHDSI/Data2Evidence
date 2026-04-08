@@ -257,10 +257,7 @@ export function postProcessBarChartData(preProcessedData: IMRIEndpointResultType
  */
 function formatData(result: IMRIEndpointResultType, NOVALUE: string) {
   result.data.forEach(datapoint =>
-    result.categories.forEach(
-      // Check if datapoint[cat.id] value is truthy, BUT allow numerical 0
-      cat => (datapoint[cat.id] = datapoint[cat.id] || datapoint[cat.id] === 0 ? datapoint[cat.id].toString() : NOVALUE)
-    )
+    result.categories.forEach(cat => (datapoint[cat.id] = datapoint[cat.id] ? datapoint[cat.id].toString() : NOVALUE))
   )
   return result
 }
