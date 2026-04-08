@@ -16,6 +16,21 @@ import {
 } from "../types.ts";
 import { env } from "../env.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
+import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
+
+function buildOrderByClause(
+  sortBy: string | undefined,
+  sortOrder: string | undefined,
+  hasSearchTerm: boolean
+): string {
+  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  if (!sortBy) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
+
+  const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
+  return `ORDER BY ${sortBy} ${direction}`;
+}
 
 export class HanaHDBDao {
   private readonly jwt: string;
@@ -57,25 +72,26 @@ export class HanaHDBDao {
     pageNumber = 0,
     rowsPerPage: number,
     searchText = "",
-    filters: Filters
+    filters: Filters,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const client = await this.getHanaHDBConnection();
     try {
       const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
         this.getHanaFtsBaseQuery(searchText, filters);
+      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+
       const conceptsSql = `
       ${hanaFtsBaseQuery}
       select *
           from fts
-          limit ? OFFSET ?;
+          ${orderByClause}
+          LIMIT ? OFFSET ?;
           `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [
-        ...hanaFtsBaseQueryParams,
-        rowsPerPage,
-        offset,
-      ];
+      const conceptsSqlParams = [...hanaFtsBaseQueryParams, rowsPerPage, offset];
 
       const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = hanaFtsBaseQueryParams;
@@ -89,6 +105,21 @@ export class HanaHDBDao {
         totalHits: results[1][0] ? parseInt(results[1][0].COUNT) : 0,
       };
       return data;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
+  async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
+    const client = await this.getHanaHDBConnection();
+    try {
+      const [baseQuery, baseParams] = this.getHanaFtsBaseQuery(searchText, filters);
+      const sql = `${baseQuery} select concept_id as id from fts`;
+      const result = await this.asyncExec(client, sql, baseParams) as { ID: string }[];
+      return result.map((row) => parseInt(row.ID));
     } catch (error) {
       console.error(error);
       throw error;

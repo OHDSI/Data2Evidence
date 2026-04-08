@@ -187,6 +187,8 @@ export const createTooltipFormatter = (template: string): ((params: any) => stri
     const value =
       typeof rawValue === "number"
         ? rawValue.toLocaleString("en-US", { maximumFractionDigits: 10 })
+        : typeof rawValue === "string" && rawValue.trim() !== "" && isFinite(Number(rawValue))
+        ? Number(rawValue).toLocaleString("en-US", { maximumFractionDigits: 10 })
         : String(rawValue ?? "");
     return template
       .replace(/{a}/g, String(param?.seriesName ?? ""))

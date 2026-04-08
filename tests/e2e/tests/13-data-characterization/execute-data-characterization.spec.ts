@@ -80,6 +80,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Show All Reports' }).click()
 
   // Verify if Dashboard results are rendered
-  await expect(page.getByText('Number of persons: 2,694')).toBeVisible()
+  await expect(page.getByText('Number of persons: 2694')).toBeVisible()
   await expect(page.getByText('Concepts Per Person')).toBeVisible()
 })
