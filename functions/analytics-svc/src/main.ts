@@ -672,7 +672,7 @@ const getDBConnections = async ({
             "SESSIONVARIABLE:APPLICATION"
         ] = `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-            userObj.getEmail() ?? userObj.getUser();
+            userObj.getEmail() || userObj.getUser();
 
         if (analyticsCredentials.authentication_mode === "JWT") {
             delete analyticsCredentials.user;

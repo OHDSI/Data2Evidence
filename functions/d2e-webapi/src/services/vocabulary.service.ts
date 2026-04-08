@@ -23,6 +23,15 @@ import {
   IDomainsResponseDto,
 } from "../dto/vocabulary.ts";
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
+import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
+import {
+  COUNT_SORT_COLUMNS,
+  COUNT_COLUMN_FIELD_MAP,
+  BATCH_SIZE,
+  MAX_CONCURRENCY,
+  chunkArray,
+  runWithConcurrencyLimit,
+} from "../helpers/count-sort.ts";
 
 export const getVocabularySourceInfo = async (
   token: string,
@@ -217,7 +226,9 @@ export const searchConcept = async (
   datasetId: string,
   conceptListDto: IConceptListDto,
   page: number = 0,
-  rowsPerPage: number = 9999
+  rowsPerPage: number = 9999,
+  sortBy?: string,
+  sortOrder?: string
 ): Promise<IConceptListResponseDto> => {
   const terminologySvcApi = new TerminologySvcAPI(token);
   const { QUERY: query } = conceptListDto;
@@ -233,6 +244,74 @@ export const searchConcept = async (
       : [],
   };
 
+  const isCountSort = sortBy !== undefined && COUNT_SORT_COLUMNS.has(sortBy);
+
+  if (isCountSort) {
+    const allIds = await terminologySvcApi.getConceptIds(datasetId, query, filters);
+
+    // Batch-fetch achilles counts in parallel
+    const trexDao = await TrexDAO.getTrexDao(token, datasetId);
+    const jobPluginsApi = new JobPluginsAPI(token);
+    const resultsSchema = await jobPluginsApi.getConceptRecordsCountResultsSchemaName(datasetId);
+
+    const batchResults = await runWithConcurrencyLimit(
+      chunkArray(allIds, BATCH_SIZE).map((ids) => () => trexDao.getConceptRecordCount(ids, resultsSchema)),
+      MAX_CONCURRENCY
+    );
+
+    // Merge counts into a lookup map
+    const countMap = new Map<number, Record<string, number>>();
+    for (const batch of batchResults) {
+      for (const row of batch) {
+        countMap.set(row.CONCEPT_ID, {
+          RECORD_COUNT: Number(row.RECORD_COUNT),
+          DESCENDANT_RECORD_COUNT: Number(row.DESCENDANT_RECORD_COUNT),
+          PERSON_COUNT: Number(row.PERSON_COUNT),
+          DESCENDANT_PERSON_COUNT: Number(row.DESCENDANT_PERSON_COUNT),
+        });
+      }
+    }
+
+    // Sort by the requested count column
+    const sortField = COUNT_COLUMN_FIELD_MAP[sortBy!];
+    const isDesc = !sortOrder || sortOrder === "desc";
+    const sorted = allIds
+      .map((id) => ({ id, count: countMap.get(id)?.[sortField] ?? 0 }))
+      .sort((a, b) => isDesc ? b.count - a.count : a.count - b.count);
+
+    // Slice to page and fetch full concept details for those IDs only
+    const offset = page * rowsPerPage;
+    const pageIds = sorted.slice(offset, offset + rowsPerPage).map((e) => e.id);
+    if (pageIds.length === 0) return [];
+
+    const pageConcepts = await trexDao.getConceptsFromIdentifiers(pageIds);
+    const conceptById = new Map(pageConcepts.map((c) => [c.CONCEPT_ID, c]));
+
+    // Re-order to match count-sorted order and map to response shape
+    return pageIds
+      .map((id) => conceptById.get(id))
+      .filter((c): c is NonNullable<typeof c> => c !== undefined)
+      .map((c) => ({
+        CONCEPT_ID: c.CONCEPT_ID,
+        CONCEPT_NAME: c.CONCEPT_NAME,
+        STANDARD_CONCEPT: c.STANDARD_CONCEPT,
+        STANDARD_CONCEPT_CAPTION: _getStandardConceptCaption(c.STANDARD_CONCEPT),
+        INVALID_REASON: c.INVALID_REASON,
+        INVALID_REASON_CAPTION: _getInvalidReasonCaption(c.INVALID_REASON),
+        CONCEPT_CODE: c.CONCEPT_CODE,
+        DOMAIN_ID: c.DOMAIN_ID,
+        VOCABULARY_ID: c.VOCABULARY_ID,
+        CONCEPT_CLASS_ID: c.CONCEPT_CLASS_ID,
+        VALID_START_DATE: Date.parse(c.VALID_START_DATE),
+        VALID_END_DATE: Date.parse(c.VALID_END_DATE),
+        SCORE: undefined,
+      }));
+  }
+
+  // Standard path — forward sort to terminology-svc
+  const forwardSortBy = sortBy;
+  const forwardSortOrder = sortBy ? sortOrder : undefined;
+
   // ATLAS UI expects all concept search results in a single request, so send count as 9999
   const offset = page * rowsPerPage;
   const concepts = await terminologySvcApi.searchConcept(
@@ -240,7 +319,9 @@ export const searchConcept = async (
     query,
     offset,
     rowsPerPage,
-    filters
+    filters,
+    forwardSortBy,
+    forwardSortOrder
   );
 
   // Map results to webapi format
