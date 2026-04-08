@@ -27,6 +27,15 @@ env:
   HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
   check_file_changes:
     runs-on: ubuntu-latest
     if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
@@ -59,9 +68,10 @@ jobs:
               - ".github/workflows/functions-http-tests-duckdb.yml"
 
   demosetup:
-    needs: [check_file_changes]
+    needs: [pick_runner, check_file_changes]
     if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ubuntu-24.04
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    timeout-minutes: 80
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
