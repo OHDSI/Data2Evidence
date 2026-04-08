@@ -50,7 +50,6 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
-              - ".github/workflows/functions-http-tests-hana.yml"
 
   run-http-tests:
     needs: [pick_runner, check_file_changes]
