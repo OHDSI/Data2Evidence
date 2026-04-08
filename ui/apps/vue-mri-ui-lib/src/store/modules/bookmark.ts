@@ -376,16 +376,7 @@ const actions = {
     const currentActiveChart = rootGetters.getActiveChart
     const chartIsChanging = chartType && chartType !== currentActiveChart
     const isRightPaneMounted = rootGetters.isRightPaneMounted
-    console.debug(
-      '[Bookmark] loadbookmarkToState - currentChart:',
-      currentActiveChart,
-      'newChart:',
-      chartType,
-      'changing:',
-      chartIsChanging,
-      'rightPaneMounted:',
-      isRightPaneMounted
-    )
+
     commit(types.SET_ACTIVE_BOOKMARK, getters.getBookmark(bmkId))
     return dispatch('_loadParsedBookmarkToState', {
       parsedBookmark,
@@ -503,35 +494,17 @@ const actions = {
               effectiveChart = chartType
             } else if (isVisible(initialChart)) {
               effectiveChart = initialChart
-              console.debug(
-                '[Bookmark] Chart type',
-                chartType,
-                'not visible in config — falling back to',
-                effectiveChart
-              )
-            } else {
-              console.debug(
-                '[Bookmark] Chart type',
-                chartType,
-                'not visible and no visible fallback chart found — keeping current chart'
-              )
             }
 
             if (effectiveChart) {
-              console.debug('[Bookmark] Setting active chart:', effectiveChart)
               dispatch('setActiveChart', effectiveChart)
             }
           }
           if (!skipFireRequest) {
             // Release hold and fire — intermediate calls from getBookmarkFromIFR watcher
             // were suppressed while held; this is the single explicit fire.
-            console.debug('[Bookmark] Firing request (setFireRequest)')
             dispatch('releaseFireRequest')
             dispatch('setFireRequest')
-          } else {
-            // Right pane not yet mounted — StackBarChart.created() will fire setFireRequest
-            // on mount. No hold was placed so it goes through unblocked.
-            console.debug('[Bookmark] Skipping setFireRequest (chart will call it on mount)')
           }
           resolve(null)
         })

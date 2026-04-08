@@ -669,7 +669,6 @@ const handleConceptSetAction = ({
       try {
         // Reload all concept sets to get complete data with concepts and flags
         await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
-
         // Find the concept set with complete data from the fresh API response
         const completeConceptSet = allConceptSets.value.find(
           (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetIdToFind.toString()
