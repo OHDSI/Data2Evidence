@@ -3,6 +3,7 @@ import Fuse from 'fuse.js'
 import QueryString from '../../utils/QueryString'
 import * as types from '../mutation-types'
 import { postProcessResults } from '../../../src/components/helpers/postProcessDomainValuesData'
+import { getPortalAPI } from '../../utils/PortalUtils'
 
 const CancelToken = axios.CancelToken
 const cancelers: { [key: string]: Canceler } = {}
@@ -52,7 +53,7 @@ const actions = {
     }: { attributePathUid: string; searchQuery: string; attributeType?: string }
   ) {
     const mriConfig = rootGetters.getMriConfig
-    const datasetId = rootGetters.getSelectedDataset.id
+    const datasetId = rootGetters.getSelectedDataset?.id || getPortalAPI()?.studyId
 
     // Skip if already loaded for this dataset (only for full list fetches, not searches)
     const existing = state.domainValues[attributePathUid]
@@ -123,6 +124,10 @@ const mutations = {
       ...modulestate.domainValues,
       [attributePath]: data,
     }
+  },
+  [types.DOMAIN_INVALIDATE_ATTRIBUTE](modulestate, attributePath: string) {
+    const { [attributePath]: _, ...rest } = modulestate.domainValues
+    modulestate.domainValues = rest
   },
   [types.RESET_DATASET_CACHE](modulestate) {
     modulestate.domainValues = {}

@@ -669,6 +669,17 @@ const handleConceptSetAction = ({
       try {
         // Reload all concept sets to get complete data with concepts and flags
         await loadConceptSets(getDatasetId, allConceptSets, conceptSetDomainValues)
+
+        // Invalidate the Vuex domainValues['conceptSets'] cache so that ChartToolbar
+        // and bookmarkItems see the updated list on their next access.
+        // The dispatch is intentionally not awaited — it runs in the background.
+        store.commit('DOMAIN_INVALIDATE_ATTRIBUTE', 'conceptSets')
+        store.dispatch('loadValuesForAttributePath', {
+          attributePathUid: 'conceptSets',
+          searchQuery: '',
+          attributeType: 'conceptSet',
+        })
+
         // Find the concept set with complete data from the fresh API response
         const completeConceptSet = allConceptSets.value.find(
           (cs: ConceptSetItemDisplay) => cs.value.toString() === conceptSetIdToFind.toString()
