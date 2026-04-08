@@ -708,8 +708,8 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
      * if n === 3 & all filter cards are inclusive, then the output is ['1', '11', '111']
      * if n === 4 & the last filter card is exclusive, then the output is ['1', '11', '111', '1110']
      * if n === 5 & the 3rd & last filter cards are exclusive, then the output is ['1', '11', '110', '1101', '11010']
-     * @param n The number of elements (bits)
-     * @returns An array of strings representing all possible bitmap masks where where all are enabled
+     * @param inclusionReportFiltercards The list of filtercards to be considered for bitmap mask generation
+     * @returns An array of strings representing all possible bitmap masks where all are enabled
      */
     private getSelectiveBitmapMasks(inclusionReportFiltercards): string[] {
         let bitmapMasks = [];
