@@ -655,6 +655,7 @@
   "INFORMATION__METADATA": "Metadaten",
   "INFORMATION__NO_DATASET_DESCRIPTION": "Keine Datensatzbeschreibung verfügbar",
   "INFORMATION__NO_FILE_AVAILABLE": "Keine Datei verfügbar",
+  "INFORMATION__OHDSI_DQD_INFO": "Die folgenden Datenqualitätsmaßnahmen sind Standardmetriken, die vom Konsortium für Observational Health Data Sciences and Informatics (OHDSI) entwickelt wurden, und sollten im Vergleich zu früheren Metriken für denselben klinischen Datensatz des Mount Sinai interpretiert werden. Da verschiedene Gesundheitsorganisationen unterschiedliche Richtlinien, Verfahren und Arbeitsabläufe haben, sollten Vergleiche dieser Metriken zwischen Krankenhäusern und Organisationen mit Vorsicht durchgeführt werden (da dies in den meisten Fällen als ein \"Äpfel-mit-Birnen-Vergleich\" betrachtet werden würde). Geringfügige Änderungen in klinischen Praktiken können zu großen Veränderungen in diesen Metriken führen, müssen aber nicht unbedingt auf Datenqualitätsprobleme hinweisen. Um mehr über diese Metriken zu erfahren, besuchen Sie bitte ",
   "INFORMATION__OVERVIEW": "Überblick",
   "INFORMATION__PENDING_APPROVAL": "Genehmigung ausstehend",
   "INFORMATION__REQUEST_ACCESS": "Anfrage Zugang",

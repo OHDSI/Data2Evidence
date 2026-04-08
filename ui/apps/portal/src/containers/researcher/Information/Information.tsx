@@ -180,19 +180,6 @@ export const Information: FC = () => {
               value="info"
             />
           )}
-          {showDataQuality && (
-            <Tab
-              disableRipple
-              sx={{
-                "&.MuiTab-root": {
-                  width: "200px",
-                },
-              }}
-              label={getText(i18nKeys.INFORMATION__TAB_DATA_QUALITY)}
-              id="tab-1"
-              value="quality"
-            />
-          )}
           {showDataCharacterization && (
             <Tab
               disableRipple
@@ -204,6 +191,19 @@ export const Information: FC = () => {
               label={getText(i18nKeys.INFORMATION__TAB_DATA_CHARACTERIZATION)}
               id="tab-2"
               value="characterization"
+            />
+          )}
+          {showDataQuality && (
+            <Tab
+              disableRipple
+              sx={{
+                "&.MuiTab-root": {
+                  width: "200px",
+                },
+              }}
+              label={getText(i18nKeys.INFORMATION__TAB_DATA_QUALITY)}
+              id="tab-1"
+              value="quality"
             />
           )}
         </Tabs>
@@ -358,6 +358,13 @@ export const Information: FC = () => {
               ) : (
                 <>
                   <SubTitle>{getText(i18nKeys.INFORMATION__OVERVIEW)}</SubTitle>
+                  <div className="dqd__info__text">
+                    {getText(i18nKeys.INFORMATION__OHDSI_DQD_INFO)}
+                    <a href="https://github.com/OHDSI/DataQualityDashboard" target="_blank" rel="noreferrer">
+                      https://github.com/OHDSI/DataQualityDashboard
+                    </a>
+                    .
+                  </div>
                   <DQDJobResults
                     datasetId={activeDatasetId}
                     datasetName={dataset?.schemaName}
