@@ -212,7 +212,7 @@ export class FhirServerAPI {
     const url = `${this.baseURL}/fhir-server/${id}${normalizedResourcePath ? "/" + normalizedResourcePath : ""}`;
     const statusLogMsg = `Received response after forwarding ${httpMethod} request to ${url}`;
     this.logger.info(
-      `Forwarding ${httpMethod} request to FHIR server at URL: ${url} with body: ${JSON.stringify(body)}`,
+      `Forwarding ${httpMethod} request to FHIR server at URL: ${url}`,
     );
     try {
       let options = await this.getRequestConfig();
