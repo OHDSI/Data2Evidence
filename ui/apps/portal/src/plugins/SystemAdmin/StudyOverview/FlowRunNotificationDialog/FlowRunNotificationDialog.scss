@@ -1,0 +1,21 @@
+.flow-run-notification-dialog {
+  &__content {
+    padding: 24px 25px;
+
+    p {
+      margin: 0 0 12px;
+      line-height: 1.5;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

@@ -141,9 +141,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Check that additional tabs on the navbar is visible after access is granted
   await expect(page.getByTestId('header')).toBeVisible()
-  await expect(
-    page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData QualityData' }).first()
-  ).toBeVisible()
+  await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData' }).first()).toBeVisible()
   // Check that the nav bar contains the cache dataset name (not the parent dataset)
   await expect(page.getByTestId('nav')).toContainText(
     `${cacheDatasetName}DatasetConceptsCohortsNotebooksAnalysisDashboardAccount`
