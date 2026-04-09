@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import CohortUrlCodec from '../utils/CohortUrlCodec'
+import { useNotificationStore } from '../stores/notifications'
 
 /**
  * Bookmark data structure
@@ -78,7 +79,7 @@ export function useDeepLink(dispatch: any) {
       if (!result.success) {
         const errorResult = result as { success: false; error: string }
         console.error('[DeepLink] Decompression failed:', errorResult.error)
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: `Failed to load cohort definition: ${errorResult.error}`,
         })
         return
@@ -92,7 +93,7 @@ export function useDeepLink(dispatch: any) {
       // Validate bookmark structure
       if (!bookmark.filter) {
         console.error('[DeepLink] Invalid structure: missing "filter" property. Received:', Object.keys(bookmark))
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: 'Failed to load cohort definition: Invalid format. Expected bookmark format with "filter" property.',
         })
         return
@@ -138,7 +139,7 @@ export function useDeepLink(dispatch: any) {
           successMessage += ` Note that ${parts.join(' and ')} do not appear in the filter cards but are used in the dashboard.`
         }
       }
-      dispatch('setAlertMessage', {
+      useNotificationStore().setAlertMessage({
         message: successMessage,
         messageType: 'success',
         title: 'Success',
@@ -146,7 +147,7 @@ export function useDeepLink(dispatch: any) {
     } catch (error) {
       console.error('[DeepLink] Processing error:', error)
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
-      dispatch('setAlertMessage', {
+      useNotificationStore().setAlertMessage({
         message: `Failed to load cohort definition: ${errorMessage}`,
       })
     }
