@@ -39,8 +39,8 @@
   "TERMINOLOGY_DETAIL__RELATES_TO": "Bezieht sich auf",
   "TERMINOLOGY_DETAIL__RELATIONSHIP": "Beziehung",
   "TERMINOLOGY_DETAIL__VALIDITY": "Gültigkeit",
-  "TERMINOLOGY_DETAIL__VOCABULARY_ID": "Vokabel-ID",
-  "TERMINOLOGY_DETAIL__VOCABULARY": "Wortschatz",
+  "TERMINOLOGY_DETAIL__VOCABULARY_ID": "Terminologie-ID",
+  "TERMINOLOGY_DETAIL__VOCABULARY": "Terminologien",
   "TERMINOLOGY_LIST__": "Bitte versuchen Sie es erneut.",
   "TERMINOLOGY_LIST__CLASS": "Klasse",
   "TERMINOLOGY_LIST__CODE": "Code",
@@ -53,6 +53,6 @@
   "TERMINOLOGY_LIST__MAPPED": "Kartiert",
   "TERMINOLOGY_LIST__NAME": "Name",
   "TERMINOLOGY_LIST__VALIDITY": "Gültigkeit",
-  "TERMINOLOGY_LIST__VOCABULARY": "Wortschatz",
-  "TERMINOLOGY_LIST__EMPTY_TABLE": "keine verwandten konzepte gefunden"
+  "TERMINOLOGY_LIST__VOCABULARY": "Terminologien",
+  "TERMINOLOGY_LIST__EMPTY_TABLE": "Keine verwandten Konzepte gefunden"
 }
