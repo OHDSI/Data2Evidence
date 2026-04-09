@@ -1,32 +1,8 @@
 import { ref, watch, computed, nextTick, type Ref } from 'vue'
 import axios from 'axios'
 import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
-import { computeAttritionStats, type AttritionStat } from '../computeAttritionStats'
+import { computeAttritionStats, mapAttritionApiResponseToStats, type AttritionStat } from '../computeAttritionStats'
 import { calculateFilteredSummary } from '../ruleSelectionFilter'
-
-/**
- * Map an AttritionApiResponse into the local AttritionStat[] format
- * used by the UI (adds percentSatisfying and pctDiff).
- */
-function mapAttritionApiResponse(apiResponse: AttritionApiResponse): AttritionStat[] {
-  const baseCount = apiResponse.summary.baseCount
-  let priorPct = 1.0
-
-  return apiResponse.attritionStats.map(s => {
-    const percentSatisfying = baseCount !== 0 ? s.cumulativeCountSatisfying / baseCount : 0
-    const pctDiff = priorPct - percentSatisfying
-    priorPct = percentSatisfying
-
-    return {
-      id: s.id,
-      name: s.name,
-      isExclude: s.isExclude,
-      countSatisfying: s.cumulativeCountSatisfying,
-      percentSatisfying: (percentSatisfying * 100).toFixed(2) + '%',
-      pctDiff: (pctDiff * 100).toFixed(2) + '%',
-    }
-  })
-}
 
 export function useRuleManagement(
   inclusionReportResponse: Ref<InclusionReportResponse | null>,
@@ -110,7 +86,7 @@ export function useRuleManagement(
     errorMessage.value = ''
     try {
       const apiResponse = await fetchAttritionReport(ruleOrder, controller.signal)
-      const stats = mapAttritionApiResponse(apiResponse)
+      const stats = mapAttritionApiResponseToStats(apiResponse)
       // The attrition API remaps stat.id to the new positional index when a
       // custom ruleOrder is supplied.  Restore the original rule IDs so that
       // filterCardDetails lookup (indexed by original rule ID) stays correct.
@@ -204,7 +180,7 @@ export function useRuleManagement(
           // Use the already-fetched attrition API response if available,
           // avoiding a duplicate request on initial load
           if (lastAttritionApiResponse?.value) {
-            draggableAttritionStats.value = mapAttritionApiResponse(lastAttritionApiResponse.value)
+            draggableAttritionStats.value = mapAttritionApiResponseToStats(lastAttritionApiResponse.value)
           } else {
             fetchAndUpdateAttritionStats()
           }

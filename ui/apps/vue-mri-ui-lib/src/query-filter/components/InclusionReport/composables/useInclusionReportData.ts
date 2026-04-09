@@ -6,6 +6,7 @@ import {
 } from '@/query-filter/types/InclusionReportTypes'
 
 import { convertTreemapData } from '../computeTreemapStats'
+import { mapAttritionApiResponseToStats } from '../computeAttritionStats'
 
 export interface UseInclusionReportDataOptions {
   cohortDefinitionId: string
@@ -51,28 +52,6 @@ export function useInclusionReportData(
     return !(options.generationStatus === 'pending' || options.generationStatus === 'failed')
   })
 
-  /**
-   * Map an AttritionApiResponse to a minimal InclusionReportResponse
-   * so the rest of the component (SummaryTable, hasInclusionRules) works.
-   */
-  const mapAttritionToInclusionReport = (apiResponse: AttritionApiResponse): InclusionReportResponse => {
-    return {
-      summary: apiResponse.summary,
-      inclusionRuleStats: apiResponse.attritionStats.map(s => {
-        const pctSat = apiResponse.summary.baseCount ? s.cumulativeCountSatisfying / apiResponse.summary.baseCount : 0
-        return {
-          id: s.id,
-          name: s.name,
-          isExclude: s.isExclude,
-          countSatisfying: s.cumulativeCountSatisfying,
-          percentSatisfying: (pctSat * 100).toFixed(2) + '%',
-          percentExcluded: ((1 - pctSat) * 100).toFixed(2) + '%',
-        }
-      }),
-      treemapData: '', // Not needed when showIntersectView is false
-    }
-  }
-
   const fetchInclusionReportInternal = async (cohortDefinitionId: string, sourceKey: string) => {
     isLoadingInclusionReport.value = true
 
@@ -81,7 +60,11 @@ export function useInclusionReportData(
         // Use the new attrition API
         const apiResponse = await options.fetchAttritionReport()
         lastAttritionApiResponse.value = apiResponse
-        const mapped = mapAttritionToInclusionReport(apiResponse)
+        const mapped: InclusionReportResponse = {
+          summary: apiResponse.summary,
+          inclusionRuleStats: mapAttritionApiResponseToStats(apiResponse),
+          treemapData: '', // Not needed when showIntersectView is false
+        }
 
         if (selectedPersonEventView.value === 'PERSON') {
           inclusionReportPersonResponse.value = mapped
