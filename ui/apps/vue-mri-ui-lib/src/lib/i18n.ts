@@ -879,6 +879,7 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Summary Statistics',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Total Persons',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Matches',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR: 'Failed to fetch attrition stats',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',
@@ -1862,6 +1863,7 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Zusammenfassende Statistiken',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Gesamtpersonen',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Treffer',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR: 'Attritionsstatistiken konnten nicht abgerufen werden',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Einfuhr',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Attribut "Kohorte"',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
@@ -2763,6 +2765,7 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: '摘要统计',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: '总人数',
     MRI_PA_INCLUSION_REPORT_MATCHES: '匹配数',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR: '无法获取衰减统计数据',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: '进口',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: '群属性',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT: '此处列出的群是您创建的群以及其他用户与您共享的群。',

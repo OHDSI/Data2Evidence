@@ -9,7 +9,8 @@ export function useRuleManagement(
   treemapData: Ref<any>,
   showIntersectView: boolean = true,
   fetchAttritionReport?: (ruleOrder?: number[], signal?: AbortSignal) => Promise<AttritionApiResponse>,
-  lastAttritionApiResponse?: Ref<AttritionApiResponse | null>
+  lastAttritionApiResponse?: Ref<AttritionApiResponse | null>,
+  getText?: (key: string, param?: string | string[]) => string
 ) {
   const checkedRulesIds = ref<number[]>([])
   const draggableAttritionStats = ref<AttritionStat[]>([])
@@ -101,9 +102,9 @@ export function useRuleManagement(
       if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
       console.error('[useRuleManagement] Failed to fetch attrition stats:', error)
       const axiosError = error as { response?: { data?: { errorMessage?: string } } }
-      errorMessage.value =
-        axiosError?.response?.data?.errorMessage ||
-        (error instanceof Error ? error.message : 'Failed to fetch attrition stats')
+      errorMessage.value = getText
+        ? getText('MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR')
+        : 'Failed to fetch attrition stats'
     } finally {
       if (!controller.signal.aborted) {
         isReorderLoading.value = false

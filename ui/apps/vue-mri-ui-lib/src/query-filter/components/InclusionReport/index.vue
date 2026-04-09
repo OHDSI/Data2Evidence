@@ -119,7 +119,8 @@ const {
   treemapData,
   props.showIntersectView,
   props.fetchAttritionReport,
-  lastAttritionApiResponse
+  lastAttritionApiResponse,
+  getText
 )
 
 const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
