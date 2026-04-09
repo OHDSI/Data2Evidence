@@ -41,7 +41,7 @@ export function values(req: IMRIRequest, res, next) {
     const studies: StudyDbMetadata[] = req.studiesDbMetadata.studies;
 
     analyticsConnection.setCurrentUserToDbSession(
-        user.getUser(),
+        user.getEmail() || user.getUser(),
         async (err, data) => {
             if (err) {
                 return console.error(err);

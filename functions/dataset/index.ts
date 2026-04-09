@@ -157,6 +157,7 @@ export class DatasetRouter {
         }
 
         try {
+          let flowRunId: string | undefined;
           this.logger.info(`Create dataset ${id}`);
           const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
           const resultsSchemaName = resultsSchemaValue
@@ -190,7 +191,7 @@ export class DatasetRouter {
                   flowRunName: `datamodel-create-${schemaName}`,
                   options: options,
                 };
-                await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
+                flowRunId = await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
               } catch (error) {
                 this.logger.error(
                   `Error while creating new CDM schema! ${error}`,
@@ -307,7 +308,8 @@ export class DatasetRouter {
                 studyCode: tokenStudyCode,
                 fhirProjectId: resolvedFhirProjectId,
               };
-              await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+              const fhirCacheResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+              flowRunId = fhirCacheResult?.flowRunId;
             } catch (error) {
               this.logger.error(
                 `Error while creating FHIR cache schema! ${error}`,
@@ -344,13 +346,14 @@ export class DatasetRouter {
                   (model) => model.datamodel === dataModel,
                 );
 
-                await jobpluginsAPI.createDatamartCacheFlowRun(
+                const datamartCacheResult = await jobpluginsAPI.createDatamartCacheFlowRun(
                   id,
                   newCacheDataset.id,
                   {},
                   dataModelInfo?.flowId,
                   `datamart-cache-${schemaName}`,
                 );
+                flowRunId = datamartCacheResult?.flowRunId;
               } catch (error) {
                 this.logger.error(
                   `Error while creating cache for existing schema! ${error}`,
@@ -364,7 +367,7 @@ export class DatasetRouter {
 
           return res
             .status(200)
-            .json({ id: newDataset.id, cacheId: newCacheDataset.id });
+            .json({ id: newDataset.id, cacheId: newCacheDataset.id, flowRunId });
         } catch (error) {
           this.logger.error(
             `Error while creating dataset: ${JSON.stringify(error)}`,
@@ -430,6 +433,7 @@ export class DatasetRouter {
 
         this.logger.info("Copying dataset in Portal");
         const newDataset = await portalAPI.copyDataset(snapshotRequest);
+        let flowRunId: string | undefined;
 
         // Copy schema if it exist
         if (sourceHasSchema) {
@@ -447,7 +451,8 @@ export class DatasetRouter {
                 cacheSchemaName: parsedNewSchemaName,
                 studyCode: tokenStudyCode,
               };
-              await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+              const fhirResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+              flowRunId = fhirResult?.flowRunId;
             } catch (error) {
               this.logger.error(`Error copying source FHIR schema! ${error}`);
               throw new Error(`Error copying source FHIR schema! ${error}`);
@@ -465,13 +470,14 @@ export class DatasetRouter {
                 (model) => model.datamodel === dataModel,
               );
 
-              await jobpluginsAPI.createDatamartCacheFlowRun(
+              const datamartResult = await jobpluginsAPI.createDatamartCacheFlowRun(
                 sourceStudyId,
                 newDataset.id,
                 snapshotCopyConfig,
                 dataModelInfo.flowId,
                 `datamart-snapshot-${schemaName}`,
               );
+              flowRunId = datamartResult?.flowRunId;
             } catch (error) {
               this.logger.error(`Error copying CDM schema! ${error}`);
               throw new Error(`Error copying CDM schema! ${error}`);
@@ -479,7 +485,7 @@ export class DatasetRouter {
           }
         }
 
-        return res.status(200).json(newDataset);
+        return res.status(200).json({ ...newDataset, flowRunId });
       } catch (error) {
         this.logger.error(
           `Error when copying dataset: ${JSON.stringify(error)}`,

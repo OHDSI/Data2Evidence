@@ -26,6 +26,7 @@ export enum ConfigTypes {
   NOTEBOOK_GIT_CONFIG = "notebook-git-config",
   DISCLAIMER = "disclaimer",
   DISCLAIMER_DISPLAY = "disclaimer-display",
+  HEADER_IMAGE = "header-image",
 }
 
 export const PUB_SLOT_NAME = "data2evidence";

@@ -1,15 +1,16 @@
 import type { Knex } from '../types'
 import { Container, Service } from 'typedi'
 import { v4 as uuidv4 } from 'uuid'
-import { CONTAINER_KEY, ROLES } from '../const'
+import { CONTAINER_KEY, ROLES, LOGTO_ROLES, LOGTO_ROLE_NAMES, LOGTO_TO_INTERNAL_ROLES } from '../const'
 import { UserGroup } from '../entities'
 import { UserGroupExt } from '../dtos'
 import { UserGroupCriteria, UserGroupExtCriteria, UserGroupField, UserGroupRepository } from '../repositories'
 import { B2cGroupService } from './B2cGroupService'
 import { UserService } from './UserService'
-import { ITokenUser, RoleMap, UserGroupMetadata } from '../types'
+import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types'
 import { createLogger } from '../Logger'
-import { PortalAPI } from '../api'
+import { LogtoAPI, PortalAPI } from '../api'
+import { env, getAutoGrantDatasetCodes } from '../env'
 
 @Service()
 export class UserGroupService {
@@ -19,7 +20,8 @@ export class UserGroupService {
     private readonly portalAPI: PortalAPI,
     private readonly userGroupRepo: UserGroupRepository,
     private readonly groupService: B2cGroupService,
-    private readonly userService: UserService
+    private readonly userService: UserService,
+    private readonly logtoAPI: LogtoAPI
   ) {}
 
   async getUserGroupsMetadata(userId: string, tenantId?: string, system?: string): Promise<UserGroupMetadata> {
@@ -37,7 +39,6 @@ export class UserGroupService {
         ALP_DASHBOARD_VIEWER: alpInfo.alp_role_dashboard_viewer,
         TENANT_ADMIN: alpInfo.alp_role_tenant_admin,
         TENANT_VIEWER: alpInfo.alp_role_tenant_viewer,
-        STUDY_MANAGER: alpInfo.alp_role_study_mgr,
         STUDY_RESEARCHER: alpInfo.alp_role_study_researcher,
         STUDY_WRITE_DQD_RESEARCHER: alpInfo.alp_role_study_write_dqd_researcher,
         STUDY_RESULTS_READ_RESEARCHER: alpInfo.alp_role_study_results_read_researcher,
@@ -94,7 +95,8 @@ export class UserGroupService {
       return
     }
 
-    this.addUserToGroup(userId, groupId, trx)
+    await this.addUserToGroup(userId, groupId, trx)
+    await this.syncRoleToLogto(userId, groupId, 'assign')
   }
 
   async addUserToGroup(userId: string, groupId: string, trx?: Knex) {
@@ -138,6 +140,7 @@ export class UserGroupService {
     }
 
     await this.userGroupRepo.delete({ user_id: userId, b2c_group_id: groupId }, trx)
+    await this.syncRoleToLogto(userId, groupId, 'remove')
   }
 
   async withdrawUserFromGroups(userId: string, groupIds: string[]): Promise<void> {
@@ -198,10 +201,236 @@ export class UserGroupService {
       alp_role_tenant_admin: fn(ROLES.TENANT_ADMIN, 'tenantId'),
       alp_role_tenant_viewer: fn(ROLES.TENANT_VIEWER, 'tenantId'),
       alp_role_study_admin: fn(ROLES.STUDY_ADMIN, 'studyId'),
-      alp_role_study_mgr: fn(ROLES.STUDY_MANAGER, 'studyId'),
       alp_role_study_researcher: fn(ROLES.STUDY_RESEARCHER, 'studyId')
     }
 
     return roleMap
+  }
+
+  // Sync role assignment/removal to Logto
+  async syncRoleToLogto(userId: string, groupId: string, action: 'assign' | 'remove'): Promise<void> {
+    try {
+      const user = await this.userService.getUser(userId)
+      if (!user?.idpUserId) {
+        this.logger.warn(`User ${userId} has no idpUserId, skipping Logto sync`)
+        return
+      }
+
+      const group = await this.groupService.getGroup(groupId)
+      if (!group) {
+        this.logger.warn(`Group ${groupId} not found, skipping Logto sync`)
+        return
+      }
+
+      const logtoRole = await this.buildLogtoRoleName(group)
+      if (!logtoRole) {
+        return
+      }
+
+      const { role, scopes } = logtoRole
+
+      if (action === 'assign') {
+        await this.logtoAPI.assignRoleToUser(user.idpUserId, role, scopes)
+        this.logger.info(`Assigned Logto role ${role} to user ${user.idpUserId}`)
+      } else {
+        await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
+        this.logger.info(`Removed Logto role ${role} from user ${user.idpUserId}`)
+      }
+    } catch (err) {
+      this.logger.error(`Failed to sync role to Logto for user ${userId}, group ${groupId}: ${err}`)
+      // Don't throw - local DB update succeeded, Logto sync is best effort
+    }
+  }
+
+  /**
+   * Build Logto role name from group
+   * Includes dataset context for scoped roles
+   */
+  private async buildLogtoRoleName(group: {
+    role: string
+    studyId?: string | null
+  }): Promise<{ role: string; scopes: string[] } | null> {
+    const { role, studyId: datasetId } = group
+    const logtoRole = LOGTO_ROLE_NAMES[role] || role
+
+    // Dataset-scoped roles need dataset code suffix
+    if (role === ROLES.STUDY_RESEARCHER && datasetId) {
+      const datasets = await this.portalAPI.getDatasets()
+      const dataset = datasets.find(d => d.id === datasetId)
+      if (dataset?.tokenStudyCode) {
+        const name = `${logtoRole}.${dataset.tokenStudyCode}`
+        return {
+          role: name,
+          scopes: [name, `${logtoRole}.${datasetId}`]
+        }
+      }
+      this.logger.warn(`Dataset ${datasetId} has no token_dataset_code, skipping Logto sync`)
+      return null
+    }
+
+    return { role: logtoRole, scopes: [logtoRole] }
+  }
+
+  /**
+   * Get user groups metadata from Logto roles
+   * Parses Logto role names to extract role type and tenant/study context
+   */
+  async getUserGroupsMetadataFromLogto(idpUserId: string): Promise<UserGroupMetadata> {
+    const authHeader = Container.get<string>(CONTAINER_KEY.AUTHORIZATION_HEADER)
+    const token = authHeader.replace('Bearer ', '')
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString())
+    const tokenRoles: string[] = payload.roles || []
+
+    const roleMap: RoleMap = {
+      alp_role_user_admin: false,
+      alp_role_system_admin: false,
+      alp_role_dashboard_viewer: false,
+      alp_role_study_write_dqd_researcher: false,
+      alp_role_study_results_read_researcher: false,
+      alp_role_etl_mapping_contributor: false,
+      alp_role_tenant_viewer: [],
+      alp_role_study_researcher: [],
+      // TODO: remove deprecated roles
+      alp_tenant_id: [env.APP_TENANT_ID],
+      alp_role_tenant_admin: [env.APP_TENANT_ID],
+      alp_role_study_admin: [],
+      alp_role_study_mgr: []
+    }
+
+    const groups: string[] = []
+    const logtoRoleValues = Object.values(LOGTO_ROLES) as string[]
+
+    for (const name of tokenRoles) {
+      groups.push(name)
+
+      const logtoRole = logtoRoleValues.find(r => name === r || name.startsWith(r + '.')) || name.split('.')[0]
+      const context = name.length > logtoRole.length ? name.substring(logtoRole.length + 1) : undefined
+
+      switch (logtoRole) {
+        case LOGTO_ROLES.USER_ADMIN:
+          roleMap.alp_role_user_admin = true
+          break
+        case LOGTO_ROLES.SYSTEM_ADMIN:
+          roleMap.alp_role_system_admin = true
+          break
+        case LOGTO_ROLES.DASHBOARD_VIEWER:
+          roleMap.alp_role_dashboard_viewer = true
+          break
+        case LOGTO_ROLES.JOB_RUNNER:
+          roleMap.alp_role_study_write_dqd_researcher = true
+          break
+        case LOGTO_ROLES.STUDY_RESULTS_READER:
+          roleMap.alp_role_study_results_read_researcher = true
+          break
+        case LOGTO_ROLES.ETL_MAPPING_CONTRIBUTOR:
+          roleMap.alp_role_etl_mapping_contributor = true
+          break
+        case LOGTO_ROLES.TENANT_VIEWER: {
+          roleMap.alp_role_tenant_viewer.push(env.APP_TENANT_ID)
+          break
+        }
+        case LOGTO_ROLES.RESEARCHER:
+          if (context) {
+            const datasetCode = context
+            const datasets = await this.portalAPI.getDatasets()
+            const dataset = datasets.find(d => d.tokenStudyCode === datasetCode)
+            if (dataset?.id) {
+              roleMap.alp_role_study_researcher.push(dataset.id)
+            }
+          }
+          break
+      }
+    }
+
+    // Auto-grant researcher datasets (mirrors grant-roles-by-scopes.ts)
+    const autoGrantCodes = getAutoGrantDatasetCodes()
+    if (autoGrantCodes.length > 0) {
+      const datasets = await this.portalAPI.getDatasets()
+      for (const code of autoGrantCodes) {
+        const dataset = datasets.find(d => d.tokenStudyCode === code)
+        if (dataset?.id && !roleMap.alp_role_study_researcher.includes(dataset.id)) {
+          roleMap.alp_role_study_researcher.push(dataset.id)
+        }
+      }
+
+      if (roleMap.alp_role_study_researcher.length > 0) {
+        roleMap.alp_role_study_write_dqd_researcher = true
+        if (!roleMap.alp_role_tenant_viewer.includes(env.APP_TENANT_ID)) {
+          roleMap.alp_role_tenant_viewer.push(env.APP_TENANT_ID)
+        }
+      }
+    }
+
+    return {
+      userId: idpUserId,
+      groups,
+      alpRoleMap: {
+        ALP_USER_ADMIN: roleMap.alp_role_user_admin,
+        ALP_SYSTEM_ADMIN: roleMap.alp_role_system_admin,
+        ALP_DASHBOARD_VIEWER: roleMap.alp_role_dashboard_viewer,
+        TENANT_VIEWER: roleMap.alp_role_tenant_viewer,
+        STUDY_RESEARCHER: roleMap.alp_role_study_researcher,
+        STUDY_WRITE_DQD_RESEARCHER: roleMap.alp_role_study_write_dqd_researcher,
+        STUDY_RESULTS_READ_RESEARCHER: roleMap.alp_role_study_results_read_researcher,
+        ETL_MAPPING_CONTRIBUTOR: roleMap.alp_role_etl_mapping_contributor,
+        // TODO: remove deprecated roles
+        TENANT_ADMIN: roleMap.alp_role_tenant_admin,
+        STUDY_MANAGER: roleMap.alp_role_study_mgr
+      },
+      ...roleMap
+    }
+  }
+
+  /**
+   * Get user overview from Logto
+   * Lists all users with their roles, matching the shape of the local DB overview
+   */
+  async getUserOverviewFromLogto(): Promise<any[]> {
+    const users = await this.logtoAPI.getUsers()
+    const result: any[] = []
+
+    // Build idpUserId -> internal UUID map
+    const localUsers = await this.userService.getUsers()
+    const idpToLocalId = new Map(localUsers.map(u => [u.idpUserId, u.id]))
+
+    // Pre-fetch datasets for resolving RESEARCHER roles
+    let datasets: IPortalDataset[] = []
+    const logtoRoleValues = Object.values(LOGTO_ROLES) as string[]
+
+    for (const user of users) {
+      const userRoles = await this.logtoAPI.getUserRoles(user.id)
+      const active = !user.isSuspended
+      const localUserId = idpToLocalId.get(user.id) || user.id
+
+      for (const role of userRoles) {
+        const { name } = role
+        const logtoRole = logtoRoleValues.find(r => name === r || name.startsWith(r + '.')) || name
+        const context = name.length > logtoRole.length ? name.substring(logtoRole.length + 1) : undefined
+        const internalRole = LOGTO_TO_INTERNAL_ROLES[logtoRole] || logtoRole
+        let studyId: string | null = null
+
+        if (logtoRole === LOGTO_ROLES.RESEARCHER && context) {
+          if (datasets.length === 0) {
+            datasets = await this.portalAPI.getDatasets()
+          }
+          const dataset = datasets.find(d => d.tokenStudyCode === context)
+          studyId = dataset?.id || null
+        }
+
+        result.push({
+          id: role.id,
+          userId: localUserId,
+          b2cGroupId: role.id,
+          username: user.username,
+          role: internalRole,
+          tenantId: env.APP_TENANT_ID,
+          studyId,
+          system: null,
+          active
+        })
+      }
+    }
+
+    return result
   }
 }

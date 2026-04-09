@@ -182,7 +182,9 @@ export class TerminologySvcAPI {
     query: string,
     offset: number,
     count: number,
-    filters?: ITerminologyFiltersSchema
+    filters?: ITerminologyFiltersSchema,
+    sortBy?: string,
+    sortOrder?: string,
   ): Promise<ITerminologyFhirResource> {
     try {
       const url = new URL(`${this.baseURL}/fhir/4_0_0/valueset/$expand`);
@@ -195,10 +197,37 @@ export class TerminologySvcAPI {
       if (filters) {
         url.searchParams.set("filter", JSON.stringify(filters));
       }
+      if (sortBy) {
+        url.searchParams.set("sortBy", sortBy);
+      }
+      if (sortOrder) {
+        url.searchParams.set("sortOrder", sortOrder);
+      }
       const result = await this.terminologysvcapi.get(url.toString(), options);
       return result.data;
     } catch (error) {
       console.error(`Error while searching concept: ${error}`);
+      throw error;
+    }
+  }
+
+  async getConceptIds(
+    datasetId: string,
+    query: string,
+    filters?: ITerminologyFiltersSchema,
+  ): Promise<number[]> {
+    try {
+      const url = new URL(`${this.baseURL}/concept/ids`);
+      const options = this.getRequestConfig();
+      url.searchParams.set("datasetId", datasetId);
+      url.searchParams.set("code", query);
+      if (filters) {
+        url.searchParams.set("filter", JSON.stringify(filters));
+      }
+      const result = await this.terminologysvcapi.get(url.toString(), options);
+      return result.data;
+    } catch (error) {
+      console.error(`Error while fetching concept IDs: ${error}`);
       throw error;
     }
   }

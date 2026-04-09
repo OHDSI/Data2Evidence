@@ -1,4 +1,4 @@
-import { Container ,  Service } from 'typedi'
+import { Container, Service } from 'typedi'
 import { createLogger } from '../Logger'
 import { UserActivateRequest, UserAddRequest, UserDeleteRequest } from '../types'
 import { CONTAINER_KEY } from '../const'
@@ -32,12 +32,15 @@ export class MemberService {
     const db = Container.get<Knex.Transaction>(CONTAINER_KEY.DB_CONNECTION)
     const trx = await db.transactionProvider()()
 
+    let newUserId: string | undefined
+
     try {
       const newUser = await this.userService.createUser({ username }, trx)
       if (!newUser) {
         this.logger.warn(`Unable to create user ${username}`)
         throw new Error(`Unable to create user ${username}`)
       }
+      newUserId = newUser.id
 
       if (groupIds != null && groupIds.length > 0) {
         for (const groupId of groupIds) {
@@ -55,6 +58,14 @@ export class MemberService {
       await this.userService.updateUser(updateFields, trx)
 
       await trx.commit()
+
+      // Sync roles to Logto AFTER commit (user now has idpUserId)
+      if (newUserId && groupIds != null && groupIds.length > 0) {
+        this.logger.info(`Syncing ${groupIds.length} roles to Logto for user ${idpUserId}`)
+        for (const groupId of groupIds) {
+          await this.userGroupService.syncRoleToLogto(newUserId, groupId, 'assign')
+        }
+      }
     } catch (err) {
       await trx.rollback()
       this.logger.error(`Error when adding user: ${JSON.stringify(err)}`)
