@@ -134,6 +134,8 @@ export interface IDatasetDetailMetadataUpdateDto {
   fhir_project_id?: string;
   vocabSchemaName?: string;
   resultsSchemaName?: string;
+  plugin?: string;
+  dataModel?: string;
 }
 
 export interface IDatasetMetadataUpdateDto {

@@ -29,6 +29,12 @@ import { useTranslation } from "../../../../contexts";
 
 const DATASET_SOURCE_TYPES = new Set<string>(Object.values(SourceDatasetType));
 
+interface Datamodel {
+  flowName: string;
+  datamodel: string;
+  flowId: string;
+}
+
 interface UpdateStudyDialogProps {
   dataset: Study;
   open: boolean;
@@ -44,6 +50,7 @@ interface FormData {
   id: string;
   tokenStudyCode: string;
   type: string;
+  plugin: string;
   name: string;
   summary: string;
   showRequestAccess: boolean;
@@ -84,6 +91,7 @@ const EMPTY_FORM_ERROR: FormError = {
 const EMPTY_FORM_DATA: FormData = {
   id: "",
   type: "",
+  plugin: "",
   tokenStudyCode: "",
   name: "",
   summary: "",
@@ -127,6 +135,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
   const [studyMetadata, setStudyMetadata] = useState<NewStudyMetadataInput[]>([EMPTY_STUDY_METADATA]);
   const [studyTagsData, setStudyTagsData] = useState<Array<string>>([]);
   const [updating, setUpdating] = useState(false);
+  const [pluginOptions, setPluginOptions] = useState<string[]>([]);
 
   const [feedback, setFeedback] = useState<Feedback>({});
   const [formMetadataErrorIndex, setFormMetadataErrorIndex] = useState<Array<Number>>([]);
@@ -139,6 +148,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
         id: dataset.id,
         tokenStudyCode: dataset.tokenStudyCode,
         type: dataset.type,
+        plugin: dataset.dataModel && dataset.plugin ? `${dataset.dataModel} [${dataset.plugin}]` : "",
         paConfigId: dataset.paConfigId,
         name: dataset.studyDetail?.name || "",
         summary: dataset.studyDetail?.summary || "",
@@ -163,6 +173,14 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
       setStudyMetadata([EMPTY_STUDY_METADATA]);
     }
   }, [dataset, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    api.dataflow.getDatamodels().then((result: Datamodel[]) => {
+      const options = result.map((d) => `${d.datamodel} [${d.flowName}]`);
+      setPluginOptions(options);
+    });
+  }, [open]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -245,6 +263,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
 
     const {
       type,
+      plugin,
       tokenStudyCode,
       name,
       summary,
@@ -266,6 +285,8 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
           showRequestAccess,
         },
         type,
+        plugin: plugin ? plugin.replace(/[[\]]/g, "").split(" ")[1] : "",
+        dataModel: plugin ? plugin.replace(/[[\]]/g, "").split(" ")[0] : "",
         tokenDatasetCode: tokenStudyCode,
         vocabSchemaName,
         resultsSchemaName,
@@ -360,6 +381,27 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                 onChange={(event) => handleFormDataChange({ type: event.target.value })}
                 disabled
               />
+            </div>
+
+            <div style={{ marginBottom: "32px" }}>
+              <FormControl sx={styles} className="select" variant="standard" fullWidth>
+                <InputLabel htmlFor="plugin-option">{getText(i18nKeys.UPDATE_STUDY_DIALOG__PLUGIN)}</InputLabel>
+                <Select
+                  sx={styles}
+                  value={formData.plugin}
+                  onChange={(event: SelectChangeEvent<string>) => handleFormDataChange({ plugin: event.target.value })}
+                  inputProps={{ name: "pluginOption", id: "plugin-option" }}
+                >
+                  <MenuItem sx={styles} value="">
+                    &nbsp;
+                  </MenuItem>
+                  {pluginOptions.map((option) => (
+                    <MenuItem sx={styles} key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </div>
 
             <div style={{ marginBottom: "32px" }}>

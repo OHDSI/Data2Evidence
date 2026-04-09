@@ -365,6 +365,8 @@ export class DatasetCommandService {
       fhir_project_id,
       vocabSchemaName,
       resultsSchemaName,
+      plugin,
+      dataModel,
     } = datasetUpdateDto;
 
     const currDataset = await this.datasetRepo.getDataset(datasetId);
@@ -387,6 +389,14 @@ export class DatasetCommandService {
 
     if (resultsSchemaName !== undefined) {
       dataset.resultsSchemaName = resultsSchemaName;
+    }
+
+    if (plugin !== undefined) {
+      dataset.plugin = plugin;
+    }
+
+    if (dataModel !== undefined) {
+      dataset.dataModel = dataModel;
     }
 
     await this.datasetRepo.updateDataset(

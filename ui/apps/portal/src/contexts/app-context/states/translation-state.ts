@@ -1203,6 +1203,7 @@ export const i18nDefault = {
     UPDATE_STUDY_DIALOG__SAVE: "Save",
     UPDATE_STUDY_DIALOG__TAGS: "Tags",
     UPDATE_STUDY_DIALOG__TOKEN_CODE: "Token dataset code",
+    UPDATE_STUDY_DIALOG__PLUGIN: "Plugin",
     UPDATE_STUDY_DIALOG__TYPE: "Type",
     UPDATE_STUDY_DIALOG__UPDATE_DATASET: "Update dataset",
     UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE: "Please enter a valid Token dataset code",

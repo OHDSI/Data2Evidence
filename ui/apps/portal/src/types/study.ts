@@ -228,6 +228,8 @@ export interface UpdateStudyMetadataInput {
   dashboards: DatasetDashboard[];
   vocabSchemaName?: string;
   resultsSchemaName?: string;
+  plugin?: string;
+  dataModel?: string;
 }
 
 // remove once backend is deprecated
