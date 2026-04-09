@@ -23,7 +23,6 @@ env:
   TESTSCHEMA: demo_cdm
   isTestEnv: "true"
   isHttpTestRun: "true"
-  USE_TREX_DB_CONN: "true"
   HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
@@ -424,7 +423,6 @@ jobs:
           echo "isHttpTestRun=${isHttpTestRun}" >> $GITHUB_ENV
           echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
           echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
-          echo "USE_TREX_DB_CONN=${USE_TREX_DB_CONN}" >> $GITHUB_ENV
 
       - name: Run HTTP tests
         working-directory: ./tests/backend_integration_tests/pg
@@ -438,7 +436,6 @@ jobs:
             echo "isTestEnv: ${isTestEnv:-false}"
             echo "TESTSCHEMA: ${TESTSCHEMA}"
             echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
-            echo "USE_TREX_DB_CONN: ${USE_TREX_DB_CONN}"
             yarn test-specs --test_schema_name=$TESTSCHEMA
 
       - name: Logs
