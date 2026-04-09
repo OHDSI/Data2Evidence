@@ -1,7 +1,7 @@
 <template>
   <div :class="['pa-component-wrapper']">
-    <div class="fullHeight pa-splitter">
-      <splitpanes class="default-theme" @resize="paneSize = $event?.[0]?.size ?? paneSize">
+    <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
+      <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
           <div id="pane-left" class="split">
             <div class="panel-header filters-toolbar d-flex">
@@ -54,30 +54,32 @@
 
         <pane :size="PANE_SIZE.FULL - paneSize">
           <div id="pane-right" class="split">
-            <chartToolbar
-              :showUnHideFilters="hideLeftPane"
-              @unhideEv="togglePanel(PANEL.LEFT)"
-              @drilldown="onDrilldown"
-              @open-filtersummary="toggleFilterCardSummary($event)"
-              v-if="getMriFrontendConfig"
-            ></chartToolbar>
-            <!-- "ref" used in solution from similar issue: https://github.com/antoniandre/splitpanes/issues/157 -->
-            <div class="d-flex pane-right-content" ref="pane-right-content">
-              <chartController
-                @setChartBusy="setChartBusy"
-                :chartBusy="chartBusy"
-                :showLeftPane="!hideLeftPane"
+            <template v-if="rightPaneEverOpened">
+              <chartToolbar
+                :showUnHideFilters="hideLeftPane"
+                @unhideEv="togglePanel(PANEL.LEFT)"
                 @drilldown="onDrilldown"
-                :class="{ 'has-filtercard-summary': displayFilterCardSummary }"
-                :shouldRerenderChart="shouldRerenderChart"
-              ></chartController>
-              <filterCardSummary
-                :chartBusy="chartBusy"
-                @unloadFilterCardSummaryEv="toggleFilterCardSummary(false)"
-                v-if="displayFilterCardSummary"
-              >
-              </filterCardSummary>
-            </div>
+                @open-filtersummary="toggleFilterCardSummary($event)"
+                v-if="getMriFrontendConfig"
+              ></chartToolbar>
+              <!-- "ref" used in solution from similar issue: https://github.com/antoniandre/splitpanes/issues/157 -->
+              <div class="d-flex pane-right-content" ref="pane-right-content">
+                <chartController
+                  @setChartBusy="setChartBusy"
+                  :chartBusy="chartBusy"
+                  :showLeftPane="!hideLeftPane"
+                  @drilldown="onDrilldown"
+                  :class="{ 'has-filtercard-summary': displayFilterCardSummary }"
+                  :shouldRerenderChart="shouldRerenderChart"
+                ></chartController>
+                <filterCardSummary
+                  :chartBusy="chartBusy"
+                  @unloadFilterCardSummaryEv="toggleFilterCardSummary(false)"
+                  v-if="displayFilterCardSummary"
+                >
+                </filterCardSummary>
+              </div>
+            </template>
             <resizeObserver @notify="onSplitterResize" />
           </div>
         </pane>
@@ -213,6 +215,7 @@ export default {
       splitterMinWidth: 0,
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
+      rightPaneEverOpened: false,
     }
   },
   created() {},
@@ -236,10 +239,14 @@ export default {
     },
     getHasAssignedConfig(val) {
       if (val) {
-        // loading graphics
         this.completeInitialLoad()
         this.loadAllSharedBookmark()
         this.loadDefaultFilters()
+        this.loadValuesForAttributePath({
+          attributePathUid: 'conceptSets',
+          searchQuery: '',
+          attributeType: 'conceptSet',
+        })
         this.initializeBookmarks()
       }
     },
@@ -310,6 +317,8 @@ export default {
       'loadbookmarkToState',
       'setAddNewCohort',
       'fireCheckIfDatasetCanMaterializeCohorts',
+      'setRightPaneMounted',
+      'loadValuesForAttributePath',
     ]),
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
@@ -340,7 +349,6 @@ export default {
     },
     toggleCohorts(isDisplayCohort, isPaAtlas = false) {
       if (isDisplayCohort) {
-        this.initializeBookmarks()
         this.toggleQueryFilter(false)
       } else {
         if (isPaAtlas) {
@@ -367,6 +375,19 @@ export default {
         this.paneSize = PANE_SIZE.FULL
       } else if (panel === PANEL.RIGHT) {
         this.paneSize = this.paneSize === PANE_SIZE.FULL ? this.splitterMinWidth : PANE_SIZE.FULL
+      }
+      if (panel === PANEL.RIGHT) {
+        this.rightPaneEverOpened = true
+        this.setRightPaneMounted(true)
+      }
+    },
+
+    onSplitterDrag(event) {
+      const newSize = event?.[0]?.size ?? this.paneSize
+      this.paneSize = newSize
+      if (!this.rightPaneEverOpened && newSize < PANE_SIZE.FULL) {
+        this.rightPaneEverOpened = true
+        this.setRightPaneMounted(true)
       }
     },
 
@@ -488,3 +509,10 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
+  pointer-events: none;
+  opacity: 0;
+}
+</style>

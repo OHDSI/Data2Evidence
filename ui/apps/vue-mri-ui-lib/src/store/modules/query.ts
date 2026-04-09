@@ -975,8 +975,8 @@ const actions = {
 
     const hasReleaseDate = !!rootGetters.getSelectedDatasetVersion?.releaseDate
 
-    // Compress all keys except datasetId
-    const compress = Object.keys(params).filter(e => e !== 'datasetId')
+    // Compress all keys except datasetId and ruleOrder
+    const compress = Object.keys(params).filter(e => e !== 'datasetId' && e !== 'ruleOrder')
     const urlWithQuerystring = QueryString({
       url,
       queryString: {

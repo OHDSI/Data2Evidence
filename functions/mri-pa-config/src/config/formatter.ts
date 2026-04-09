@@ -158,6 +158,7 @@ export class Formatter {
           atlasCohortDefinition: mriConfig.panelOptions.atlasCohortDefinition,
           usePaAtlas: mriConfig.panelOptions.usePaAtlas,
           inclusionReport: mriConfig.panelOptions.inclusionReport,
+          intersectViewInclusionReport: mriConfig.panelOptions.intersectViewInclusionReport,
         };
         config.settings = {
           dateFormat: dmConfig.advancedSettings?.settings?.dateFormat || "YYYY-MM-dd"

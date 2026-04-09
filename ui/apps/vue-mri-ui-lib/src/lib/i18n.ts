@@ -879,6 +879,8 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Summary Statistics',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Total Persons',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Matches',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR:
+      'Attrition report update failed. Please contact your system administrator.',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',
@@ -1862,6 +1864,8 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Zusammenfassende Statistiken',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Gesamtpersonen',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Treffer',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR:
+      'Aktualisierung des Attritionsberichts fehlgeschlagen. Bitte wenden Sie sich an Ihren Systemadministrator.',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Einfuhr',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Attribut "Kohorte"',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
@@ -2763,6 +2767,7 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: '摘要统计',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: '总人数',
     MRI_PA_INCLUSION_REPORT_MATCHES: '匹配数',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR: '衰减报告更新失败。请联系您的系统管理员。',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: '进口',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: '群属性',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT: '此处列出的群是您创建的群以及其他用户与您共享的群。',
