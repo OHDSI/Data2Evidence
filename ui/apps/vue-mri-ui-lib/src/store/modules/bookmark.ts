@@ -4,6 +4,7 @@ import BMv2Parser from '../../lib/bookmarks/BMv2Parser'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import isEqual from 'lodash/isEqual'
+import { useNotificationStore } from '../../stores/notifications'
 import {
   formatBookmark,
   formatCohortDefinition,
@@ -309,7 +310,7 @@ const actions = {
           toastMessage = rootGetters.getText('MRI_PA_SAVE_BMK_SUCCESS')
         }
         if (toastMessage) {
-          dispatch('setToastMessage', {
+          useNotificationStore().setToastMessage({
             text: toastMessage,
           })
         }
@@ -327,7 +328,7 @@ const actions = {
           errorMessage = rootGetters.getText('MRI_PA_SAVE_BMK_ERROR')
         }
         if (errorMessage) {
-          dispatch('setAlertMessage', {
+          useNotificationStore().setAlertMessage({
             message: errorMessage,
           })
         } else {
@@ -492,7 +493,7 @@ const actions = {
       })
       .catch(error => {
         console.error(error)
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: rootGetters.getText('MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR'),
         })
         // Upon error on api request, disable materialize cohort for dataset

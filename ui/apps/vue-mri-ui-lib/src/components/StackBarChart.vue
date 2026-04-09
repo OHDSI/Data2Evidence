@@ -7,6 +7,7 @@
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
+import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
@@ -19,6 +20,11 @@ export default {
   name: 'stackBarChart',
   components: {
     StackBarChartLegend,
+  },
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
   },
   props: ['busyEv', 'shouldRerenderChart'],
   data() {
@@ -163,16 +169,16 @@ export default {
               currentPatientCount: '--',
             })
 
-            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.setAlertMessage({
-                messageType: 'info',
-                message: this.chartData.noDataReason,
-              })
-            } else {
-              this.setAlertMessage({
-                message: this.chartData.noDataReason,
-              })
-            }
+              if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+                this.notificationStore.setAlertMessage({
+                  messageType: 'info',
+                  message: this.chartData.noDataReason,
+                })
+              } else {
+                this.notificationStore.setAlertMessage({
+                  message: this.chartData.noDataReason,
+                })
+              }
             return
           }
 
@@ -290,7 +296,6 @@ export default {
       'setCurrentPatientCount',
       'setFireRequest',
       'completeDownloadCSV',
-      'setAlertMessage',
       'setPlotlyElement',
     ]),
     /**
