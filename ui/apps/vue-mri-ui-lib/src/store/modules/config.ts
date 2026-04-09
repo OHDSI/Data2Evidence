@@ -3,6 +3,7 @@ import ChartConfigService from '../../lib/ChartConfigService'
 import MriFrontEndConfig from '../../lib/MriFrontEndConfig'
 import * as types from '../mutation-types'
 import { getPortalAPI } from '../../utils/PortalUtils'
+import { useNotificationStore } from '../../stores/notifications'
 
 let chartConfigServiceInstance
 // let mriFrontendConfigInstance;
@@ -56,7 +57,9 @@ const actions = {
     }
     const processData = aData => {
       if (aData.length === 0) {
-        dispatch('setFatalMessage', {
+        // there is no config assigned
+        // show error message in ui
+        useNotificationStore().setFatalMessage({
           message: rootGetters.getText('MRI_PA_NO_CONFIG_ASSIGNED'),
         })
         commit(types.CONFIG_SET_HAS_ASSIGNED, false)

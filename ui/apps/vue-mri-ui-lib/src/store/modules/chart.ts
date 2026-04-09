@@ -3,6 +3,7 @@ import axios from 'axios'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import QueryString from '../../utils/QueryString'
+import { useNotificationStore } from '../../stores/notifications'
 
 const CancelToken = axios.CancelToken
 const csvEndpoints = {
@@ -174,7 +175,7 @@ const actions = {
         noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', response.data.logId)
       }
 
-      dispatch('setAlertMessage', {
+      useNotificationStore().setAlertMessage({
         message: noDataReason,
       })
 
@@ -246,7 +247,7 @@ const actions = {
       try {
         entityColumns = splitEntitiesByColumns(params.cohortDefinition.columns)
       } catch (e) {
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: e.message,
         })
         throw e
@@ -284,7 +285,7 @@ const actions = {
               noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', err.response.data.logId)
             }
 
-            dispatch('setAlertMessage', {
+            useNotificationStore().setAlertMessage({
               message: noDataReason,
             })
             throw err.response

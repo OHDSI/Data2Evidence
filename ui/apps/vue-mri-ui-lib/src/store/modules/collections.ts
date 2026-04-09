@@ -2,6 +2,7 @@
 import axios from 'axios'
 import StringToBinary from '@/utils/StringToBinary'
 import * as types from '../mutation-types'
+import { useNotificationStore } from '../../stores/notifications'
 
 const CancelToken = axios.CancelToken
 
@@ -103,12 +104,12 @@ const actions = {
               text: response.data.Title,
             })
             commit(types.COLLECTIONS_SET_OLDCOLLECTION, oldColl)
-            dispatch('setToastMessage', {
+            useNotificationStore().setToastMessage({
               text: rootGetters.getText('MRI_PA_COLL_SUCCESS_CREATE_AND_ADD', title),
             })
           }
         } else {
-          dispatch('setToastMessage', {
+          useNotificationStore().setToastMessage({
             text: rootGetters.getText('MRI_PA_COLL_SUCCESS_ADD_PATIENT'),
           })
         }
@@ -182,7 +183,7 @@ const actions = {
           commit(types.COLLECTIONS_COHORT_LIST, response.data.data)
           commit(types.COLLECTIONS_COHORT_LIST_COUNT, response.data.cohortDefinitionCount)
         }
-        dispatch('setToastMessage', {
+        useNotificationStore().setToastMessage({
           text: 'retrieved cohorts',
         })
       })

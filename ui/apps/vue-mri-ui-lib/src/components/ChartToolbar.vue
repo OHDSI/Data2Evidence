@@ -346,7 +346,6 @@ export default {
       'fireBookmarkQuery',
       'fireQuery',
       'onAddCohortOkButtonPress',
-      'setToastMessage',
       'ajaxAuth',
       'addFilterCard',
       'addFilterCardConstraint',
@@ -470,10 +469,6 @@ export default {
 
     handleCancelSaveCohort() {
       this.showSaveCohortModal = false
-    },
-
-    openDashboardModal() {
-      this.handleOpenDashboard()
     },
 
     closeDashboardModal() {
