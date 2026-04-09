@@ -104,7 +104,7 @@ export function useRuleManagement(
       const axiosError = error as { response?: { data?: { errorMessage?: string } } }
       errorMessage.value = getText
         ? getText('MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR')
-        : 'Failed to fetch attrition stats'
+        : 'Attrition report update failed. Please contact your system administrator.'
     } finally {
       if (!controller.signal.aborted) {
         isReorderLoading.value = false
