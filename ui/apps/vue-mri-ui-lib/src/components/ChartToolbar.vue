@@ -232,11 +232,14 @@ export default {
     }
   },
   watch: {
-    getHasAssignedConfig(val) {
-      if (val) {
-        this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-        this.refreshPatientCount()
-      }
+    getHasAssignedConfig: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
+          this.refreshPatientCount()
+        }
+      },
     },
     getActiveChart() {
       this.refreshPatientCount()
@@ -256,7 +259,6 @@ export default {
         window.addEventListener('click', this.closeSubMenu)
       })
       this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-      this.refreshPatientCount()
       this.loadValuesForAttributePath({
         attributePathUid: 'conceptSets',
         searchQuery: '',

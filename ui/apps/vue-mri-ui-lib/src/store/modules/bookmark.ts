@@ -25,6 +25,7 @@ const state = {
   addNewCohort: false,
   loading: false,
   canDatasetMaterializeCohorts: false,
+  canMaterializeCohortDatasetId: '',
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -373,9 +374,16 @@ const actions = {
   },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
     const parsedBookmark = getters.getBookmarkById(bmkId)
+    const currentActiveChart = rootGetters.getActiveChart
+    const chartIsChanging = chartType && chartType !== currentActiveChart
+    const isRightPaneMounted = rootGetters.isRightPaneMounted
 
     commit(types.SET_ACTIVE_BOOKMARK, getters.getBookmark(bmkId))
-    return dispatch('_loadParsedBookmarkToState', { parsedBookmark, chartType })
+    return dispatch('_loadParsedBookmarkToState', {
+      parsedBookmark,
+      chartType,
+      skipFireRequest: chartIsChanging || !isRightPaneMounted,
+    })
   },
   /**
    * Internal action to load a parsed bookmark to state
@@ -397,6 +405,16 @@ const actions = {
       return Promise.reject(error)
     }
     return new Promise((resolve, reject) => {
+      // When the right pane is already mounted, hold fire requests during the load to
+      // suppress the intermediate setFireRequest call from the getBookmarkFromIFR watcher
+      // (which reacts to setIFRState). We release the hold and fire once explicitly.
+      //
+      // When the right pane is NOT yet mounted (skipFireRequest = true), we must NOT hold:
+      // StackBarChart.created() will fire setFireRequest on mount, and holding would block it
+      // since the DOM update queued by SET_ACTIVE_BOOKMARK runs before .then() resolves.
+      if (!skipFireRequest) {
+        dispatch('holdFireRequest')
+      }
       dispatch('setIFRState', { ifr })
         .then(() => {
           if (parsedBookmark.axisSelection) {
@@ -466,30 +484,55 @@ const actions = {
             })
           }
           if (chartType) {
-            console.debug('[Bookmark] Setting active chart:', chartType)
-            dispatch('setActiveChart', chartType)
+            // Guard: if the bookmark's saved chartType is not visible in the current config
+            // (e.g. bar chart disabled, or bookmark from a different config), fall back to
+            // a visible config-defined chart rather than opening a disabled chart.
+            const frontendConfig = rootGetters.getMriFrontendConfig
+            const isVisible = chart => !!chart && frontendConfig?.isChartVisible(chart)
+            const initialChart = frontendConfig?.getInitialChart?.() ?? rootGetters.getAllChartConfigs.initialChart
+            let effectiveChart
+            if (isVisible(chartType)) {
+              effectiveChart = chartType
+            } else if (isVisible(initialChart)) {
+              effectiveChart = initialChart
+            }
+
+            if (effectiveChart) {
+              dispatch('setActiveChart', effectiveChart)
+            }
           }
           if (!skipFireRequest) {
-            console.debug('[Bookmark] Firing request (setFireRequest)')
+            // Release hold and fire — intermediate calls from getBookmarkFromIFR watcher
+            // were suppressed while held; this is the single explicit fire.
+            dispatch('releaseFireRequest')
             dispatch('setFireRequest')
-          } else {
-            console.debug('[Bookmark] Skipping setFireRequest (chart will call it on mount)')
           }
           resolve(null)
         })
         .catch(e => {
           console.log(e)
+          if (!skipFireRequest) {
+            dispatch('releaseFireRequest')
+          }
           reject()
         })
     })
   },
-  fireCheckIfDatasetCanMaterializeCohorts({ commit, dispatch, rootGetters }) {
+  fireCheckIfDatasetCanMaterializeCohorts({ state, commit, dispatch, rootGetters }) {
+    const currentDatasetId = rootGetters.getSelectedDataset.id
+    // Skip if already loaded for this dataset
+    if (state.canMaterializeCohortDatasetId === currentDatasetId && currentDatasetId) {
+      return Promise.resolve()
+    }
     return dispatch('ajaxAuth', {
-      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${rootGetters.getSelectedDataset.id}`,
+      url: `/analytics-svc/api/services/cohort/can-materialize-cohort?datasetId=${currentDatasetId}`,
       method: 'GET',
     })
       .then(response => {
-        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: response.data })
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: response.data,
+          datasetId: currentDatasetId,
+        })
       })
       .catch(error => {
         console.error(error)
@@ -497,7 +540,10 @@ const actions = {
           message: rootGetters.getText('MRI_PA_CHECK_MATERIALIZE_COHORT_ERROR'),
         })
         // Upon error on api request, disable materialize cohort for dataset
-        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, { canDatasetMaterializeCohorts: false })
+        commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: false,
+          datasetId: '',
+        })
       })
   },
 }
@@ -510,8 +556,9 @@ const mutations = {
   [types.SET_BOOKMARKS_LOADING](modulestate, { loading }) {
     modulestate.loading = loading
   },
-  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts }) {
+  [types.SET_CAN_DATASET_MATERIALIZE_COHORTS](modulestate, { canDatasetMaterializeCohorts, datasetId }) {
     modulestate.canDatasetMaterializeCohorts = canDatasetMaterializeCohorts
+    modulestate.canMaterializeCohortDatasetId = datasetId ?? ''
   },
   [types.SET_MATERIALIZED_COHORTS](modulestate, materializedCohorts) {
     modulestate.materializedCohorts = materializedCohorts ?? []
@@ -535,6 +582,10 @@ const mutations = {
     modulestate.bookmarks = []
     modulestate.materializedCohorts = []
     modulestate.atlasCohortDefinitions = []
+  },
+  [types.RESET_DATASET_CACHE](modulestate) {
+    modulestate.canDatasetMaterializeCohorts = false
+    modulestate.canMaterializeCohortDatasetId = ''
   },
 }
 

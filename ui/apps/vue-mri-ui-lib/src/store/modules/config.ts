@@ -7,6 +7,7 @@ import { useNotificationStore } from '../../stores/notifications'
 
 let chartConfigServiceInstance
 // let mriFrontendConfigInstance;
+let configRequestPromise: Promise<any> | null = null
 const analyticsEndpoint = '/analytics-svc/pa/services/analytics.xsjs'
 
 // initial state
@@ -51,6 +52,9 @@ const getters = {
 // actions
 const actions = {
   requestMriConfig({ dispatch, commit, rootGetters }) {
+    if (configRequestPromise) {
+      return configRequestPromise
+    }
     const processData = aData => {
       if (aData.length === 0) {
         // there is no config assigned
@@ -60,12 +64,10 @@ const actions = {
         })
         commit(types.CONFIG_SET_HAS_ASSIGNED, false)
       } else if (aData.length > 1) {
-        // there are more than 1 config assigned. Ask the user what to load
         commit(types.CONFIG_SET_LIST, aData)
         commit(types.CONFIG_SET_CONFIG_SELECTION, { show: true })
         commit(types.CONFIG_SET_HAS_ASSIGNED, false)
       } else if (aData.length === 1) {
-        // there is exactly 1 config assigned. load that config
         aData[0].selected = true
         dispatch('setupFrontendConfig', aData[0])
         dispatch('resetChartProperties')
@@ -73,23 +75,22 @@ const actions = {
         commit(types.CONFIG_SET_HAS_ASSIGNED, true)
       }
     }
-    // uncomment for testing
-    // setTimeout(() => {
-    //   processData([...config]);
-    // }, 1000);
-
-    // load the complete config to our state
     commit(types.CONFIG_SET_HAS_ASSIGNED, false)
-    return dispatch('ajaxAuth', {
+    configRequestPromise = dispatch('ajaxAuth', {
       method: 'get',
       url: `${analyticsEndpoint}?action=getMyConfig${
         rootGetters.getSelectedDataset.id ? `&datasetId=${rootGetters.getSelectedDataset.id}` : ''
       }`,
-    }).then(response => {
-      const aData = response.data
-      processData(aData)
-      return aData[0]
     })
+      .then(response => {
+        const aData = response.data
+        processData(aData)
+        return aData[0]
+      })
+      .finally(() => {
+        configRequestPromise = null
+      })
+    return configRequestPromise
   },
   setupFrontendConfig({ dispatch, commit }, config) {
     MriFrontEndConfig.createFrontendConfig(config)
