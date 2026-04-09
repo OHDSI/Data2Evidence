@@ -47,6 +47,17 @@ Note:
 - Copy contents of `node_modules/@alp-os/alp-starboard-notebook/packages/starboard-notebook/dist` to `resources/starboard-notebook-base`
 - Copy newly created PYQE package to `resources/starboard-notebook-base`
 
+### Local development for existing PYQE package
+
+- Read [create-package.md](./alp-libs/python/pyodidepyqe/dev-docs/create-package.md) for instructions on building pyodidepyqe wheel package.
+- Copy built `pyodidepyqe-*-.whl` file into `resources/starboard-notebook-base`.
+- The `resources/starboard-notebook-base` folder should be mounted to `/usr/src/local-resources` in trex container.
+- From inside trex container, copy file in `/usr/src/local-resources` to `/usr/src/data/plugins/@data2evidence/d2e-ui/resources`
+  - Example copy command
+    ```
+    cp /usr/src/local-resources/starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl /usr/src/data/plugins/@data2evidence/d2e-ui/resources/starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl
+    ```
+
 ## Plugins
 
 For remote plugin, refer to [this](./plugins/README.md)
