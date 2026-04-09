@@ -170,6 +170,14 @@ export default {
           }
 
           this.renderChart()
+
+          // Emit x-axis category counts for default color axis selection
+          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+          const xAxisCategoryCounts = xAxes.map((cat, idx) => ({
+            axisIndex: idx,
+            count: new Set(this.chartData.data.map(d => d[cat.id])).size,
+          }))
+          this.$emit('chartDataReady', xAxisCategoryCounts)
         }
 
         this.fireQuery({

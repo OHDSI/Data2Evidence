@@ -181,18 +181,26 @@ function handleClick(data: any) {
   closeMenu()
 }
 
+function selectAxis(axisIndex: number) {
+  const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === axisIndex)
+  if (menuItem) {
+    selectedOption.value = menuItem.text
+    emit('colorAxisSelected', axisIndex)
+  }
+}
+
 function resetSelection() {
   selectedOption.value = ''
 }
 
-// Expose resetSelection so parent can call it via template ref
-defineExpose({ resetSelection })
+// Expose resetSelection and selectAxis so parent can call them via template ref
+defineExpose({ resetSelection, selectAxis })
 </script>
 
 <style scoped>
 .x-axis-dropdown-button {
   position: absolute;
   left: 0px;
-  bottom: 138px;
+  top: 192px;
 }
 </style>

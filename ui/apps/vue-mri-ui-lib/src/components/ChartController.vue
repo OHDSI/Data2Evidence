@@ -23,6 +23,7 @@
           @busyEv="setChartBusy"
           :shouldRerenderChart="shouldRerenderChart"
           :colorAxisIndex="colorAxisIndex"
+          @chartDataReady="onChartDataReady"
         ></stackBarChart>
         <!-- <variantBrowser v-if="getActiveChart === 'vb'" :response="response" @busyEv="setChartBusy"></variantBrowser> -->
         <patientListContainer
@@ -32,6 +33,23 @@
         ></patientListContainer>
       </div>
     </div>
+    <messageBox
+      messageType="warning"
+      dim="true"
+      dialogWidth="400px"
+      v-if="showClearConfirmation"
+      @close="cancelClearSelection"
+    >
+      <template v-slot:header>Confirm Selection Change</template>
+      <template v-slot:body>
+        <div>{{ clearConfirmationMessage }}</div>
+      </template>
+      <template v-slot:footer>
+        <div class="flex-spacer"></div>
+        <appButton :click="confirmClearSelection" :text="'Confirm'"></appButton>
+        <appButton :click="cancelClearSelection" :text="'Cancel'"></appButton>
+      </template>
+    </messageBox>
   </div>
 </template>
 
@@ -40,6 +58,8 @@ import { mapActions, mapGetters } from 'vuex'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
+import messageBox from './MessageBox.vue'
+import appButton from '../lib/ui/app-button.vue'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import XAxisColorButton from './XAxisColorButton.vue'
@@ -63,6 +83,11 @@ export default {
       series: [],
       activeChartCollections: false,
       colorAxisIndex: null as number | null,
+      hasSetDefaultColorAxis: false,
+      showClearConfirmation: false,
+      clearConfirmationMessage: '',
+      pendingAction: null as (() => void) | null,
+      pendingCancelRevert: null as (() => void) | null,
     }
   },
   created() {
@@ -91,10 +116,25 @@ export default {
   },
   watch: {
     stackAttributeHasSelection(newVal) {
-      if (newVal) {
-        this.colorAxisIndex = null
-        this.$refs.xAxisColorButton?.resetSelection()
+      if (newVal && this.colorAxisIndex !== null) {
+        this.clearConfirmationMessage =
+          'Selecting this option will clear your current Color selection. Do you want to proceed?'
+        this.pendingAction = () => {
+          this.colorAxisIndex = null
+          this.$refs.xAxisColorButton?.resetSelection()
+        }
+        // On cancel, revert the stacking attribute that was already committed to the store
+        this.pendingCancelRevert = () => {
+          this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
+        }
+        this.showClearConfirmation = true
       }
+    },
+    getActiveBookmark() {
+      // Reset default color axis flag when cohort changes so the default is re-applied
+      this.hasSetDefaultColorAxis = false
+      this.colorAxisIndex = null
+      this.$refs.xAxisColorButton?.resetSelection()
     },
   },
   computed: {
@@ -110,6 +150,7 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getMriFrontendConfig',
+      'getActiveBookmark',
     ]),
     stackAttributeHasSelection() {
       const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
@@ -174,12 +215,62 @@ export default {
       return this.getAllChartConfigs
     },
     onColorAxisSelected(axisIndex: number) {
-      this.colorAxisIndex = axisIndex
-      this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
-      this.setFireRequest()
+      if (this.stackAttributeHasSelection) {
+        this.clearConfirmationMessage =
+          'Selecting this option will clear your current Stacking selection. Do you want to proceed?'
+        this.pendingAction = () => {
+          this.colorAxisIndex = axisIndex
+          this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
+          this.setFireRequest()
+        }
+        this.showClearConfirmation = true
+      } else {
+        this.colorAxisIndex = axisIndex
+        this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
+        this.setFireRequest()
+      }
+    },
+    confirmClearSelection() {
+      if (this.pendingAction) {
+        this.pendingAction()
+      }
+      this.showClearConfirmation = false
+      this.clearConfirmationMessage = ''
+      this.pendingAction = null
+      this.pendingCancelRevert = null
+    },
+    cancelClearSelection() {
+      // If the dialog was triggered by a stacking attribute change,
+      // revert the stacking attribute since it was already committed to the store
+      // before the watcher fired.
+      if (this.pendingCancelRevert) {
+        this.pendingCancelRevert()
+      }
+      this.showClearConfirmation = false
+      this.clearConfirmationMessage = ''
+      this.pendingAction = null
+      this.pendingCancelRevert = null
+    },
+    onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
+      if (this.hasSetDefaultColorAxis || xAxisCategoryCounts.length === 0) return
+      if (this.stackAttributeHasSelection) return
+      this.hasSetDefaultColorAxis = true
+
+      // Find the axis with the smaller number of categories
+      const sorted = [...xAxisCategoryCounts].sort((a, b) => a.count - b.count)
+      const smallest = sorted[0]
+
+      // Only set default if the smallest category count is <= 5
+      if (smallest.count > 5) return
+
+      this.$nextTick(() => {
+        this.$refs.xAxisColorButton?.selectAxis(smallest.axisIndex)
+      })
     },
   },
   components: {
+    messageBox,
+    appButton,
     AxisMenuButton,
     DropDownMenu,
     XAxisColorButton,
