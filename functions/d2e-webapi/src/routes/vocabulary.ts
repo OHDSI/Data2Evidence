@@ -361,6 +361,8 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
         querystring: z.object({
           page: z.coerce.number(),
           rowsPerPage: z.coerce.number(),
+          sortBy: z.string().optional(),
+          sortOrder: z.enum(["asc", "desc"]).optional(),
         }),
         params: z.object({ sourceKey: z.string() }),
         body: ConceptListDto,
@@ -374,13 +376,15 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      const { page, rowsPerPage } = req.query;
+      const { page, rowsPerPage, sortBy, sortOrder } = req.query;
       const result = await searchConcept(
         req.token,
         req.datasetId,
         req.body,
         page,
-        rowsPerPage
+        rowsPerPage,
+        sortBy,
+        sortOrder
       );
 
       res.send(result);

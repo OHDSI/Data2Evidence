@@ -1,5 +1,16 @@
 export const isDev = process.env["NODE_ENV"] === "development";
 
+export const formatNumber = (value: number | string | null | undefined): string => {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  const num = typeof value === "string" ? Number(value) : value;
+  if (isNaN(num)) {
+    return String(value);
+  }
+  return num.toLocaleString("en-US", { maximumFractionDigits: 10 });
+};
+
 export const getRoleChanges = (
   roles: string[],
   currentRoles: string[],
