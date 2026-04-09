@@ -5,7 +5,11 @@
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
         <template v-for="(item, index) in getAllAxes" :key="index">
-          <axisMenuButton v-if="item.props.active" :dimensionIndex="index"></axisMenuButton>
+          <axisMenuButton
+            v-if="item.props.active"
+            :dimensionIndex="index"
+            :beforeSelect="getBeforeSelectHandler(index)"
+          ></axisMenuButton>
         </template>
         <xAxisColorButton
           ref="xAxisColorButton"
@@ -86,7 +90,7 @@ export default {
       hasSetDefaultColorAxis: false,
       showClearConfirmation: false,
       clearConfirmationMessage: '',
-      pendingAction: null as (() => void) | null,
+      pendingConfirmResolve: null as ((value: boolean) => void) | null,
       pendingCancelRevert: null as (() => void) | null,
     }
   },
@@ -115,21 +119,6 @@ export default {
     window.removeEventListener('click', this.closeSubMenu)
   },
   watch: {
-    stackAttributeHasSelection(newVal) {
-      if (newVal && this.colorAxisIndex !== null) {
-        this.clearConfirmationMessage =
-          'Selecting this option will clear your current Color selection. Do you want to proceed?'
-        this.pendingAction = () => {
-          this.colorAxisIndex = null
-          this.$refs.xAxisColorButton?.resetSelection()
-        }
-        // On cancel, revert the stacking attribute that was already committed to the store
-        this.pendingCancelRevert = () => {
-          this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
-        }
-        this.showClearConfirmation = true
-      }
-    },
     getActiveBookmark() {
       // Reset default color axis flag when cohort changes so the default is re-applied
       this.hasSetDefaultColorAxis = false
@@ -214,41 +203,71 @@ export default {
     chartConfigs() {
       return this.getAllChartConfigs
     },
+    getBeforeSelectHandler(index: number) {
+      if (index === Constants.MRIChartDimensions.StackAttribute) {
+        return this.confirmStackingOverColor
+      }
+      return null
+    },
+    confirmStackingOverColor(): Promise<boolean> {
+      if (this.colorAxisIndex === null) {
+        return Promise.resolve(true)
+      }
+      this.clearConfirmationMessage =
+        'Selecting this option will clear your current Color selection. Do you want to proceed?'
+      this.pendingCancelRevert = null
+      return new Promise<boolean>(resolve => {
+        this.pendingConfirmResolve = (confirmed: boolean) => {
+          if (confirmed) {
+            this.colorAxisIndex = null
+            this.$refs.xAxisColorButton?.resetSelection()
+          }
+          resolve(confirmed)
+        }
+        this.showClearConfirmation = true
+      })
+    },
     onColorAxisSelected(axisIndex: number) {
       if (this.stackAttributeHasSelection) {
         this.clearConfirmationMessage =
           'Selecting this option will clear your current Stacking selection. Do you want to proceed?'
-        this.pendingAction = () => {
-          this.colorAxisIndex = axisIndex
-          this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
-          this.setFireRequest()
+        // On cancel, revert the xAxisColorButton visual state since it already
+        // updated its selectedOption before emitting the event
+        this.pendingCancelRevert = () => {
+          this.$refs.xAxisColorButton?.resetSelection()
+        }
+        this.pendingConfirmResolve = (confirmed: boolean) => {
+          if (confirmed) {
+            this.colorAxisIndex = axisIndex
+            this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
+            this.setFireRequest()
+          }
         }
         this.showClearConfirmation = true
       } else {
         this.colorAxisIndex = axisIndex
         this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
-        this.setFireRequest()
       }
     },
     confirmClearSelection() {
-      if (this.pendingAction) {
-        this.pendingAction()
+      if (this.pendingConfirmResolve) {
+        this.pendingConfirmResolve(true)
       }
       this.showClearConfirmation = false
       this.clearConfirmationMessage = ''
-      this.pendingAction = null
+      this.pendingConfirmResolve = null
       this.pendingCancelRevert = null
     },
     cancelClearSelection() {
-      // If the dialog was triggered by a stacking attribute change,
-      // revert the stacking attribute since it was already committed to the store
-      // before the watcher fired.
       if (this.pendingCancelRevert) {
         this.pendingCancelRevert()
       }
+      if (this.pendingConfirmResolve) {
+        this.pendingConfirmResolve(false)
+      }
       this.showClearConfirmation = false
       this.clearConfirmationMessage = ''
-      this.pendingAction = null
+      this.pendingConfirmResolve = null
       this.pendingCancelRevert = null
     },
     onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
