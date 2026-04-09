@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { config } from "../../../../config";
-import { useFeedback } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
+import { i18nKeys } from "../../../../contexts/app-context/states";
 import "./DeleteAccountDialog.scss";
 
 interface DeleteAccountDialogProps {
@@ -14,6 +15,7 @@ interface DeleteAccountDialogProps {
 const DeleteAccountDialog: FC<DeleteAccountDialogProps> = ({ open, onClose }) => {
   const navigate = useNavigate();
   const [deleting, setDeleting] = useState(false);
+  const { getText } = useTranslation();
   const { setFeedback, setGenericErrorFeedback } = useFeedback();
 
   const handleDeleteUser = useCallback(async () => {
@@ -38,20 +40,20 @@ const DeleteAccountDialog: FC<DeleteAccountDialogProps> = ({ open, onClose }) =>
   return (
     <Dialog
       className="delete-account-dialog"
-      title="Delete account"
+      title={getText(i18nKeys.DELETE_ACCOUNT_DIALOG__TITLE)}
       closable
       open={open}
       onClose={onClose}
       data-testid="delete-account-dialog"
     >
       <div className="delete-account-dialog__content">
-        Are you sure you want to delete your account?
+        {getText(i18nKeys.DELETE_ACCOUNT_DIALOG__CONFIRM)}
         <br />
-        You can&apos;t undo this action
+        {getText(i18nKeys.DELETE_ACCOUNT_DIALOG__WARNING)}
       </div>
       <div className="button-group-actions">
-        <Button text="Cancel" onClick={onClose} variant="outlined" block disabled={deleting} />
-        <Button text="Yes, delete" onClick={handleDeleteUser} block loading={deleting} data-testid="button-delete" />
+        <Button text={getText(i18nKeys.DELETE_ACCOUNT_DIALOG__CANCEL)} onClick={onClose} variant="outlined" block disabled={deleting} />
+        <Button text={getText(i18nKeys.DELETE_ACCOUNT_DIALOG__DELETE)} onClick={handleDeleteUser} block loading={deleting} data-testid="button-delete" />
       </div>
     </Dialog>
   );

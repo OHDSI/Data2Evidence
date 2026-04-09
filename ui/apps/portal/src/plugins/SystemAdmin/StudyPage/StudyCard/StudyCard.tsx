@@ -403,7 +403,7 @@ export const StudyCard: FC<StudyCardProps> = ({
             <Button
               onClick={handleOpenIframeViewer}
               startIcon={<OpenInBrowser className="study-card__action-icon" />}
-              text="Open viewer"
+              text={getText(i18nKeys.STUDY_CARD__OPEN_VIEWER)}
               disabled={!isViewerUp || !selectedDatasetId}
               variant="text"
             />
@@ -433,10 +433,10 @@ export const StudyCard: FC<StudyCardProps> = ({
           <div className="study-card__fullscreen-header">
             <button onClick={handleCloseIframeViewer} className="study-card__back-button">
               <ArrowBack className="study-card__back-icon" />
-              <span>Back</span>
+              <span>{getText(i18nKeys.STUDY_CARD__BACK)}</span>
             </button>
             <span className="study-card__viewer-title">
-              Results Viewer - {(study.name || study.id)?.replace(/_/g, " ")}
+              {getText(i18nKeys.STUDY_CARD__RESULTS_VIEWER)}{(study.name || study.id)?.replace(/_/g, " ")}
             </span>
           </div>
           <iframe

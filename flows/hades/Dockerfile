@@ -107,7 +107,6 @@ RUN git config --global advice.detachedHead false
 ENV JAVA_HOME=/usr/lib/jvm/openjdk-11
 ENV PATH="$JAVA_HOME/bin::/root/.cargo/bin:$PATH"
 ENV LD_LIBRARY_PATH=/usr/lib/jvm/openjdk-11/lib/server
-ENV R_REMOTES_UPGRADE="always"
 
 
 # OpenJDK 11

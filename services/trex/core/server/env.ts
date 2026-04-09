@@ -37,6 +37,7 @@ export const publicURLs = [
     '^/system-portal/feature/list$',
     '^/system-portal/config/public/types.*$',
     '^/system-portal/config/public/overview-description$',
+    '^/system-portal/config/public/header-image$',
     '^/index.html$',
     '^/assets/.*$',
     '^/api/.*$',

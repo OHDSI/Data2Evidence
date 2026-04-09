@@ -3,6 +3,7 @@ import { TableContainer, Table, TableHead, TableBody, TableRow, TableCell, Paper
 import { OverviewResults } from "../../types";
 import "./OverviewTable.scss";
 import { useTranslation } from "../../../../contexts";
+import { formatNumber } from "../../../../utils";
 
 interface OverviewTableProps {
   data: OverviewResults;
@@ -165,39 +166,39 @@ const OverviewTable: FC<OverviewTableProps> = ({ data }) => {
                 {row.category}
               </TableCell>
               <TableCell className="tableCell" sx={{ color: "#050080" }} align="center">
-                {row.passVerification}
+                {formatNumber(row.passVerification)}
               </TableCell>
               <TableCell className="tableCellFail" align="center">
-                {row.failVerification}
+                {formatNumber(row.failVerification)}
               </TableCell>
               <TableCell className="tableCell" align="center">
-                {row.totalVerification}
+                {formatNumber(row.totalVerification)}
               </TableCell>
               <TableCell className="tableCell" align="center">
                 {row.percentVerification === "-" ? "N/A" : row.percentVerification}
               </TableCell>
 
               <TableCell className="tableCell" align="center">
-                {row.passValidation}
+                {formatNumber(row.passValidation)}
               </TableCell>
               <TableCell className="tableCellFail" align="center">
-                {row.failValidation}
+                {formatNumber(row.failValidation)}
               </TableCell>
               <TableCell className="tableCell" align="center">
-                {row.totalValidation}
+                {formatNumber(row.totalValidation)}
               </TableCell>
               <TableCell className="tableCell" align="center">
                 {row.percentValidation === "-" ? "N/A" : row.percentValidation}
               </TableCell>
 
               <TableCell className="tableCell" align="center">
-                {row.passTotal}
+                {formatNumber(row.passTotal)}
               </TableCell>
               <TableCell className="tableCellFail" align="center">
-                {row.failTotal}
+                {formatNumber(row.failTotal)}
               </TableCell>
               <TableCell className="tableCell" align="center">
-                {row.totalTotal}
+                {formatNumber(row.totalTotal)}
               </TableCell>
               <TableCell className="tableCell" align="center">
                 {row.percentTotal === "-" ? "N/A" : row.percentTotal}
@@ -208,16 +209,22 @@ const OverviewTable: FC<OverviewTableProps> = ({ data }) => {
       </Table>
       <div className="overview-text-container">
         <div>
-          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_1, [String(data.total.total.allNa), String(data.total.total.pass)])}
+          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_1, [
+            formatNumber(data.total.total.allNa),
+            formatNumber(data.total.total.pass),
+          ])}
         </div>
         <div>
-          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_2, [String(data.total.total.allError), String(data.total.total.fail)])}
+          {getText(i18nKeys.OVERVIEW_TABLE__NOTE_2, [
+            formatNumber(data.total.total.allError),
+            formatNumber(data.total.total.fail),
+          ])}
         </div>
-        <div>
+        <div data-testid="corrected-pass-percentage-note">
           {getText(i18nKeys.OVERVIEW_TABLE__NOTE_3, [
             data.total.total.correctedPassPercentage,
-            String(data.total.total.PassMinusAllNA),
-            String(data.total.total.totalMinusAllErrorMinusAllNA),
+            formatNumber(data.total.total.PassMinusAllNA),
+            formatNumber(data.total.total.totalMinusAllErrorMinusAllNA),
           ])}
         </div>
       </div>

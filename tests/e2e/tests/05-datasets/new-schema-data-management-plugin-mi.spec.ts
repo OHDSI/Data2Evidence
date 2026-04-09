@@ -40,6 +40,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
+  // Close the "Dataset Created" notification dialog
+  await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // With parent-child structure, there are multiple tbody elements, so search for rows instead
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Test Cache is a child dataset, so it appears in a nested table within the expanded parent row

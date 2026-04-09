@@ -3,8 +3,8 @@ import { AxiosRequestConfig } from 'axios'
 import { createLogger } from '../Logger'
 import { CONTAINER_KEY } from '../const'
 import https from 'https'
-import { env, services } from '../env'
-import { ITenant, ITenantFeature } from '../types'
+import { services } from '../env'
+import { IPortalDataset, ITenant } from '../types'
 @Service()
 export class PortalAPI {
   private readonly baseURL: string
@@ -68,7 +68,7 @@ export class PortalAPI {
     }
   }
 
-  async getDatasets() {
+  async getDatasets(): Promise<IPortalDataset[]> {
     try {
       const options = await this.getRequestConfig()
       const result = await this.channel.get(`${this.baseURL}/dataset/list/systemadmin`, options)

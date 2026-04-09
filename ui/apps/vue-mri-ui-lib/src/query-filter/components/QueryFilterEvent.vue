@@ -86,5 +86,5 @@ const handleAttributeRemoved = (attributeId: string) => {
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/QueryFilterEvent';
+@use '../styles/QueryFilterEvent';
 </style>
