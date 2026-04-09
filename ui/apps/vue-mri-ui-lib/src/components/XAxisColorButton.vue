@@ -1,5 +1,5 @@
 <template>
-  <div class="axis-menu-button-wrapper x-axis-dropdown-button" v-show="menuData.length > 0">
+  <div class="axis-menu-button-wrapper x-axis-dropdown-button" v-show="axisMenuData.length > 0">
     <div class="iconWrapper">
       <label class="iconLabel">
         <svg
@@ -21,18 +21,19 @@
         class="axisMenuButton"
         ref="menuButton"
         @click="toggleMenu"
-        :title="selectedOption || getText('MRI_PA_CHART_AXIS_PLACEHOLDER')"
+        :title="selectedOption || 'Select an x-axis'"
         tabindex="0"
       >
-        <span class="axisMenuText" :class="{ axisTextPlaceholder: !selectedOption }">
-          {{ selectedOption || getText('MRI_PA_CHART_AXIS_PLACEHOLDER') }}
+        <span class="axisMenuText axisTextPlaceholder" v-if="!selectedOption"> Select an x-axis </span>
+        <span class="axisMenuSubText" v-if="selectedOption">
+          {{ selectedOption }}
         </span>
         <span class="axisMenuButtonIcon"></span>
       </button>
       <dropDownMenu
         :target="menuButtonEl"
         :parentContainer="parentContainer"
-        :subMenu="menuData"
+        :subMenu="axisMenuData"
         :opened="menuVisible"
         @clickEv="handleClick"
         @closeEv="closeMenu"
@@ -41,93 +42,151 @@
   </div>
 </template>
 
-<script lang="ts">
-import { mapGetters } from 'vuex'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue'
+import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 
-export default {
-  name: 'xAxisColorButton',
-  props: ['parentContainer'],
-  data() {
-    return {
-      menuVisible: false,
-      menuButtonEl: null,
-      selectedOption: '',
+// Props & Emits
+defineProps<{ parentContainer: any }>()
+const emit = defineEmits<{ colorAxisSelected: [value: number | null] }>()
+
+// Store
+const store = useStore()
+const getAllAxes = computed(() => store?.getters?.getAllAxes)
+const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
+const getText = (key: string) => store?.getters?.getText?.(key) || key
+
+// Template refs
+const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
+const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
+
+// Reactive state
+const menuVisible = ref(false)
+const menuButtonEl = ref<HTMLButtonElement | null>(null)
+const selectedOption = ref('')
+const axisMenuData = ref<any[]>([])
+
+// Lifecycle
+onMounted(() => {
+  nextTick(() => {
+    window.addEventListener('click', closeSubMenu)
+    menuButtonEl.value = menuButton.value
+  })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', closeSubMenu)
+})
+
+// Watchers
+watch(
+  getAllAxes,
+  () => {
+    buildMenuData()
+  },
+  { deep: true }
+)
+
+watch(getMriFrontendConfig, () => {
+  buildMenuData()
+})
+
+watch(selectedOption, () => {
+  buildMenuData()
+})
+
+// Methods
+function buildMenuData() {
+  const allAxes = getAllAxes.value
+  const menuData: any[] = []
+  if (!getMriFrontendConfig.value) {
+    axisMenuData.value = menuData
+    return
+  }
+  let menuIdx = 0
+  for (let i = 0; i <= 1; i++) {
+    const axis = allAxes[i]
+    if (axis?.props?.filterCardId && axis?.props?.key) {
+      const filterCard = getMriFrontendConfig.value.getFilterCardByInstanceId(axis.props.filterCardId)
+      if (!filterCard) continue
+      let attrName = ''
+      filterCard.aAllAttributes.forEach((attribute: any) => {
+        if (attribute.sConfigPath.split('.').pop() === axis.props.key) {
+          attrName = attribute.oInternalConfigAttribute.name
+        }
+      })
+      if (attrName) {
+        menuData.push({
+          idx: menuIdx,
+          subMenuStyle: {},
+          text: attrName,
+          hasSubMenu: false,
+          isSeperator: false,
+          subMenu: [],
+          disabled: false,
+          data: { axisIndex: i },
+        })
+        menuIdx += 1
+      }
     }
-  },
-  mounted() {
-    this.$nextTick(() => {
-      window.addEventListener('click', this.closeSubMenu)
-      this.menuButtonEl = this.$refs.menuButton
+  }
+  if (selectedOption.value && menuData.length > 0) {
+    menuData.push({
+      idx: (menuIdx += 1),
+      hasSubMenu: false,
+      isSeperator: true,
     })
-  },
-  beforeUnmount() {
-    window.removeEventListener('click', this.closeSubMenu)
-  },
-  computed: {
-    ...mapGetters(['getAllAxes', 'getMriFrontendConfig', 'getText']),
-    menuData() {
-      const allAxes = this.getAllAxes
-      const items = []
-      if (!this.getMriFrontendConfig) return items
-      for (let i = 0; i <= 1; i++) {
-        const axis = allAxes[i]
-        if (axis?.props?.filterCardId && axis?.props?.key) {
-          const filterCard = this.getMriFrontendConfig.getFilterCardByInstanceId(axis.props.filterCardId)
-          if (!filterCard) continue
-          let attrName = ''
-          filterCard.aAllAttributes.forEach(attribute => {
-            if (attribute.sConfigPath.split('.').pop() === axis.props.key) {
-              attrName = attribute.oInternalConfigAttribute.name
-            }
-          })
-          if (attrName) {
-            items.push({
-              idx: i,
-              subMenuStyle: {},
-              text: attrName,
-              hasSubMenu: false,
-              isSeperator: false,
-              subMenu: [],
-              disabled: false,
-              data: { axisIndex: i },
-            })
-          }
-        }
-      }
-      return items
-    },
-  },
-  methods: {
-    toggleMenu() {
-      this.menuVisible = !this.menuVisible
-    },
-    closeMenu() {
-      this.menuVisible = false
-    },
-    closeSubMenu(event) {
-      if (this.menuVisible && this.$refs.menuButtonWrapper && !this.$refs.menuButtonWrapper.contains(event.target)) {
-        this.closeMenu()
-      }
-    },
-    handleClick(data) {
-      if (data) {
-        const menuItem = this.menuData.find(item => item.data.axisIndex === data.axisIndex)
-        if (menuItem) {
-          this.selectedOption = menuItem.text
-          this.$emit('colorAxisSelected', data.axisIndex)
-        }
-      }
-      this.closeMenu()
-    },
-    resetSelection() {
-      this.selectedOption = ''
-    },
-  },
-  components: {
-    DropDownMenu,
-  },
+    menuData.push({
+      idx: (menuIdx += 1),
+      subMenuStyle: {},
+      text: getText('MRI_PA_MENUITEM_NONE'),
+      hasSubMenu: false,
+      isSeperator: false,
+      subMenu: [],
+      disabled: false,
+      data: { action: 'clear' },
+    })
+  }
+  axisMenuData.value = menuData
 }
+
+function toggleMenu() {
+  menuVisible.value = !menuVisible.value
+}
+
+function closeMenu() {
+  menuVisible.value = false
+}
+
+function closeSubMenu(event: MouseEvent) {
+  if (menuVisible.value && menuButtonWrapper.value && !menuButtonWrapper.value.contains(event.target as Node)) {
+    closeMenu()
+  }
+}
+
+function handleClick(data: any) {
+  if (data) {
+    if (data.action === 'clear') {
+      resetSelection()
+      emit('colorAxisSelected', null)
+    } else {
+      const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === data.axisIndex)
+      if (menuItem) {
+        selectedOption.value = menuItem.text
+        emit('colorAxisSelected', data.axisIndex)
+      }
+    }
+  }
+  closeMenu()
+}
+
+function resetSelection() {
+  selectedOption.value = ''
+}
+
+// Expose resetSelection so parent can call it via template ref
+defineExpose({ resetSelection })
 </script>
 
 <style scoped>
