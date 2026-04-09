@@ -28,6 +28,7 @@ import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQ
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
 import { DatasetResource, StudyAttribute, StudyTag, DatasetInfoTab } from "../../../types";
 import { downloadFromJsonResponse } from "../../../utils/downloadResource";
+import { formatNumber } from "../../../utils";
 import { InformationPageMap } from "../../../constant";
 import "./Information.scss";
 
@@ -256,7 +257,7 @@ export const Information: FC = () => {
                             {attributes.map((studyAttribute: StudyAttribute) => (
                               <TableRow key={studyAttribute.attributeId}>
                                 <TableCell>{studyAttribute.attributeConfig.name}</TableCell>
-                                <TableCell>{studyAttribute.value}</TableCell>
+                                <TableCell>{formatNumber(studyAttribute.value)}</TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
