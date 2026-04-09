@@ -1,4 +1,5 @@
 import { shallowMount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { createStore } from 'vuex'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import StackBarChart from '../StackBarChart.vue'
@@ -58,6 +59,16 @@ const getters = {
 const getLastSelectionPayload = () => selectionAction.mock.calls.at(-1)?.[1]
 
 describe('StackBarChart selection handling', () => {
+  const mountComponent = () => {
+    const store = createStore({ actions, getters })
+    const pinia = createPinia()
+
+    return shallowMount(StackBarChart as any, {
+      global: { plugins: [store, pinia] },
+      props: { busyEv: false, shouldRerenderChart: false },
+    })
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
     ;(globalThis as any).ResizeObserver = class {
@@ -67,11 +78,7 @@ describe('StackBarChart selection handling', () => {
   })
 
   it('uses shared clearSelectionState from reset button', async () => {
-    const store = createStore({ actions, getters })
-    const wrapper = shallowMount(StackBarChart as any, {
-      global: { plugins: [store] },
-      props: { busyEv: false, shouldRerenderChart: false },
-    })
+    const wrapper = mountComponent()
 
     const clearSelectionSpy = vi.spyOn(wrapper.vm as any, 'clearSelectionState')
     const fakePlotElement = { id: 'plot' }
@@ -81,11 +88,7 @@ describe('StackBarChart selection handling', () => {
   })
 
   it('captures selection after deselect and clears drilldown state', async () => {
-    const store = createStore({ actions, getters })
-    const wrapper = shallowMount(StackBarChart as any, {
-      global: { plugins: [store] },
-      props: { busyEv: false, shouldRerenderChart: false },
-    })
+    const wrapper = mountComponent()
 
     const handlers: Record<string, () => void> = {}
     const fakePlotElement = {
@@ -143,11 +146,7 @@ describe('StackBarChart selection handling', () => {
   })
 
   it('uses relayout only on reset when no active selection exists', async () => {
-    const store = createStore({ actions, getters })
-    const wrapper = shallowMount(StackBarChart as any, {
-      global: { plugins: [store] },
-      props: { busyEv: false, shouldRerenderChart: false },
-    })
+    const wrapper = mountComponent()
 
     const fakePlotElement = { id: 'plot' }
     ;(wrapper.vm as any).chartData = {
