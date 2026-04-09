@@ -39,7 +39,7 @@ export class AnalyticsApi {
     params.append("datasetsWithSchema", datasetsWithSchema);
     const url = `${
       this.url
-    }/api/services/dataset-filter/filter-scopes?${params.toString()}`;
+    }/analytics-svc/api/services/dataset-filter/filter-scopes?${params.toString()}`;
 
     try {
       const result = await this.channel.get(url, options);
@@ -65,7 +65,7 @@ export class AnalyticsApi {
 
     const url = `${
       this.url
-    }/api/services/dataset-filter/database-schema-filter?${params.toString()}`;
+    }/analytics-svc/api/services/dataset-filter/database-schema-filter?${params.toString()}`;
     const result = await this.channel.get(url, options);
     return result.data;
   }

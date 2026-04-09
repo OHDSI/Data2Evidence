@@ -1,5 +1,3 @@
-// @ts-types="npm:@types/pg"
-import pg from "pg";
 import {
   Filters,
   IConceptRelationship,
@@ -9,9 +7,23 @@ import {
   IConcept,
   IConceptHierarchy,
 } from "../types.ts";
-import { env } from "../env.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
+import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
+
+function buildOrderByClause(
+  sortBy: string | undefined,
+  sortOrder: string | undefined,
+  hasSearchTerm: boolean
+): string {
+  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  if (!sortBy) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
+
+  const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
+  return `ORDER BY ${sortBy} ${direction}`;
+}
 
 export class CachedbDAO {
   private readonly vocabSchemaName: string;
@@ -26,23 +38,23 @@ export class CachedbDAO {
     semanticRatio: number,
     databaseCode: string,
     schemaName: string,
-    resultsSchemaName: string
+    resultsSchemaName: string,
   ) {
     this.vocabSchemaName = vocabSchemaName;
     this.semanticRatio = semanticRatio;
     this.databaseCode = databaseCode;
     this.schemaName = schemaName;
     this.resultsSchemaName = resultsSchemaName;
-    this.fts_concept_identifier = env.USE_TREX_DB_CONN
-      ? `fts_${vocabSchemaName}_concept`
-      : `${vocabSchemaName}.fts_main_concept`;
+    this.fts_concept_identifier = `fts_${vocabSchemaName}_concept`;
   }
 
   async getConcepts(
     pageNumber = 0,
     rowsPerPage: number,
     searchText = "",
-    filters: Filters
+    filters: Filters,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     const client = this.getTrexConnection();
     try {
@@ -52,19 +64,18 @@ export class CachedbDAO {
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
       select *
           from fts
-          limit ? OFFSET ?;
+          ${orderByClause}
+          LIMIT ? OFFSET ?;
       `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [
-        ...duckdbFtsBaseQueryParams,
-        rowsPerPage,
-        offset,
-      ];
+      const conceptsSqlParams = [...duckdbFtsBaseQueryParams, rowsPerPage, offset];
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -87,6 +98,27 @@ export class CachedbDAO {
     }
   }
 
+  async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
+    const client = this.getTrexConnection();
+    try {
+      const textEmbedding =
+        this.semanticRatio > 0
+          ? (await getGTEEmbedding(searchText)).join(",")
+          : "";
+      const [baseQuery, baseParams] =
+        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+
+      const sql = `${baseQuery} select concept_id as id from fts`;
+      const result = await client.query(sql, baseParams);
+      return result.rows.map((row: any) => row.id as number);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    } finally {
+      await client.end();
+    }
+  }
+
   async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
     const client = this.getTrexConnection();
     try {
@@ -101,7 +133,7 @@ export class CachedbDAO {
       const countSqlParams = duckdbFtsBaseQueryParams;
       const results = await client.query<{ count: string }>(
         countSql,
-        countSqlParams
+        countSqlParams,
       );
 
       return results ? parseInt(results.rows[0].count) : 0;
@@ -115,7 +147,7 @@ export class CachedbDAO {
 
   async getMultipleExactConcepts(
     searchTexts: number[],
-    includeInvalid = true
+    includeInvalid = true,
   ): Promise<IDuckdbConcept> {
     if (!searchTexts.length) {
       return {
@@ -145,7 +177,7 @@ export class CachedbDAO {
 
       const result: { rows: IConcept[]; rowCount: number } = await client.query(
         sql,
-        [...searchTexts]
+        [...searchTexts],
       );
       const data = {
         hits: result.rows,
@@ -162,7 +194,7 @@ export class CachedbDAO {
 
   async getConceptFilterOptionsFaceted(
     searchText: string,
-    filters: Filters
+    filters: Filters,
   ): Promise<any> {
     const client = this.getTrexConnection();
     try {
@@ -174,7 +206,7 @@ export class CachedbDAO {
       const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
         searchText,
         textEmbedding,
-        filters
+        filters,
       );
       // Create a single consolidated query that gets all facet data at once
       const sql = `
@@ -251,7 +283,7 @@ export class CachedbDAO {
       // Calculate concept counts (derived from standard_concept)
       const standardConceptCount = filterOptions.standardConcept["S"] || 0;
       const totalConceptCount = Object.values(
-        filterOptions.standardConcept
+        filterOptions.standardConcept,
       ).reduce((acc, val) => acc + val, 0);
 
       filterOptions["concept"] = {
@@ -271,7 +303,7 @@ export class CachedbDAO {
     searchText: string,
     textEmbedding: string,
     filters: Filters,
-    columns: string[] = []
+    columns: string[] = [],
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
 
@@ -358,7 +390,7 @@ export class CachedbDAO {
     searchText: string,
     textEmbedding: string,
     filters: Filters,
-    columns: string[] = []
+    columns: string[] = [],
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
     const columnsToSelect =
@@ -595,7 +627,7 @@ export class CachedbDAO {
 
   async getExactConcept(
     conceptName: string | number,
-    conceptColumnName: "concept_name" | "concept_id" | "concept_code"
+    conceptColumnName: "concept_name" | "concept_id" | "concept_code",
   ): Promise<any> {
     const client = this.getTrexConnection();
     try {
@@ -612,7 +644,7 @@ export class CachedbDAO {
   }
 
   async getExactConceptRecommended(
-    searchConceptIds: number[]
+    searchConceptIds: number[],
   ): Promise<IConceptRecommended[]> {
     const client = this.getTrexConnection();
     try {
@@ -623,8 +655,8 @@ export class CachedbDAO {
         select concept_id_1, concept_id_2, relationship_id from ${
           this.vocabSchemaName
         }.concept_recommended WHERE concept_id_1 IN (${searchConceptIds.join(
-        ", "
-      )});
+          ", ",
+        )});
             `;
       const result = await client.query(sql);
       return result.rows ?? [];
@@ -637,7 +669,7 @@ export class CachedbDAO {
   }
 
   async getExactConceptDescendants(
-    searchConceptIds: number[]
+    searchConceptIds: number[],
   ): Promise<IConceptAncestor[]> {
     const client = this.getTrexConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
@@ -648,7 +680,7 @@ export class CachedbDAO {
       select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
         this.vocabSchemaName
       }.concept_ancestor WHERE ancestor_concept_id IN (${searchConceptIds.join(
-        ", "
+        ", ",
       )});
       `;
       const result = await client.query(sql);
@@ -663,7 +695,7 @@ export class CachedbDAO {
 
   async getConceptRelationship(
     searchConceptIds: number[],
-    conceptRelationshipType: "Maps to"
+    conceptRelationshipType: "Maps to",
   ): Promise<IConceptRelationship[]> {
     const client = this.getTrexConnection();
     try {
@@ -674,8 +706,8 @@ export class CachedbDAO {
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
           this.vocabSchemaName
         }.concept_relationship WHERE concept_id_2 IN (${searchConceptIds.join(
-        ", "
-      )}) AND relationship_id = ? AND invalid_reason IS NULL;
+          ", ",
+        )}) AND relationship_id = ? AND invalid_reason IS NULL;
             `;
       const result = await client.query(sql, [conceptRelationshipType]);
       return result.rows;
@@ -688,7 +720,7 @@ export class CachedbDAO {
   }
 
   async getHierarchyDescendants(
-    searchConceptId: number
+    searchConceptId: number,
   ): Promise<IConceptHierarchy[]> {
     const client = this.getTrexConnection();
     try {
@@ -721,7 +753,7 @@ export class CachedbDAO {
 
   async getHierarchyAncestors(
     searchConceptId: number,
-    maxDepth: number
+    maxDepth: number,
   ): Promise<IConceptHierarchy[]> {
     const client = this.getTrexConnection();
     try {
@@ -777,7 +809,7 @@ export class CachedbDAO {
       this.databaseCode,
       this.schemaName,
       this.vocabSchemaName,
-      this.resultsSchemaName
+      this.resultsSchemaName,
     );
   };
 }
@@ -789,7 +821,7 @@ class TrexConnection {
     databaseCode: string,
     schemaName: string,
     vocabSchemaName: string,
-    resultsSchemaName: string
+    resultsSchemaName: string,
   ) {
     try {
       const dbm = Trex.databaseManager();
@@ -800,7 +832,7 @@ class TrexConnection {
         resultsSchemaName,
         {
           duckdb: (e: unknown) => e,
-        } // Dummy function which returns itself, originally used for translation function
+        }, // Dummy function which returns itself, originally used for translation function
       );
 
       this.conn = conn;
@@ -812,7 +844,7 @@ class TrexConnection {
 
   async query<R extends any = any, I = any>(
     sql: string,
-    params: any[] = []
+    params: any[] = [],
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       this.conn.execute(
@@ -828,7 +860,7 @@ class TrexConnection {
           // Map results to row object which cachedbDao expects
           // TODO: Remove mapping when we decide to remove cachedb connection option
           resolve({ rows: res, rowCount: res.length ?? 0 });
-        }
+        },
       );
     });
   }

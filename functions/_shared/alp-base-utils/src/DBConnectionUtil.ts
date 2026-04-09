@@ -79,6 +79,7 @@ export class DBConnectionUtil {
                 resolve(connection);
             });
             if (dialect === "postgresql") {
+                // PostgresConnection is currently only being used by cdw-svc, mri-pa-config and bookmark-svc for connection to postgres config database
                 PostgresConnection.createConnection(client, schemaName, vocabSchemaName, resultsSchemaName, callback);
             } else {
                 NodeHDBConnection.createConnection(client, schemaName, vocabSchemaName, resultsSchemaName, async (err, connection: ConnectionInterface) => {
@@ -93,8 +94,8 @@ export class DBConnectionUtil {
                     }
 
                     //Set APPLICATIONUSER
-                    if (userObj && userObj.getUser()) {
-                        connection.setCurrentUserToDbSession(userObj.getUser(), () => {
+                    if (userObj && (userObj.getEmail() || userObj.getUser())) {
+                        connection.setCurrentUserToDbSession(userObj.getEmail() || userObj.getUser(), () => {
                             callback(null, connection);
                         })
                     } else {

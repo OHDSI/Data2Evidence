@@ -62,55 +62,6 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /population/studies/patientcount:
-    x-swagger-router-controller: population
-    get:
-      description: Returns results of analytical queries to the frontend
-      operationId: populationStudyQuery
-      produces:
-        - application/json
-      parameters:
-        - name: mriquery
-          in: query
-          type: string
-          description: Filtercard information in bookmark form. This is a binary string encoded in base64
-          required: true
-        - name: releaseDate
-          in: query
-          type: string
-          description: Timestamp of the selected dataset release date (in UTC format)
-          required: false
-      responses:
-        "200":
-          description: Success
-          schema:
-            $ref: "#/definitions/AnalyticsResponse"
-        default:
-          description: Error
-          schema:
-            $ref: "#/definitions/Error"
-  /public/population/studies/patientcount:
-    x-swagger-router-controller: population
-    get:
-      description: Returns results of analytical queries to the frontend
-      operationId: populationStudyQuery
-      produces:
-        - application/json
-      parameters:
-        - name: mriquery
-          in: query
-          type: string
-          description: Filtercard information in bookmark form. This is a binary string encoded in base64
-          required: true
-      responses:
-        "200":
-          description: Success
-          schema:
-            $ref: "#/definitions/AnalyticsResponse"
-        default:
-          description: Error
-          schema:
-            $ref: "#/definitions/Error"
   /population/{dataFormat}/{chartType}:
     x-swagger-router-controller: population
     get:
@@ -873,7 +824,7 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /data-characterization/{databaseName}/{vocabSchema}/{resultsSchema}/{sourceKey}:
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}:
     x-swagger-router-controller: dataCharacterization
     get:
       description: Returns the results for data characterization run 
@@ -881,9 +832,9 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: databaseName
+        - name: databaseCode
           in: path
-          description: Database name
+          description: Database code
           required: true
           type: string
         - name: vocabSchema
@@ -915,7 +866,7 @@ paths:
           description: Error
           schema:
             $ref: "#/definitions/Error"
-  /data-characterization/{databaseName}/{vocabSchema}/{resultsSchema}/{sourceKey}/{conceptId}:
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}/{conceptId}:
     x-swagger-router-controller: dataCharacterization
     get:
       description: Returns the drilldown results for data characterization run 
@@ -923,9 +874,9 @@ paths:
       produces:
         - application/json
       parameters:
-        - name: databaseName
+        - name: databaseCode
           in: path
-          description: Database name
+          description: Database code
           required: true
           type: string
         - name: vocabSchema
