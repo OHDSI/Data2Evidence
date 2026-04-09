@@ -53,8 +53,10 @@ Note:
 - Copy built `pyodidepyqe-*-.whl` file into `resources/starboard-notebook-base`.
 - The `resources/starboard-notebook-base` folder should be mounted to `/usr/src/local-resources` in trex container.
 - From inside trex container, copy file in `/usr/src/local-resources` to `/usr/src/data/plugins/@data2evidence/d2e-ui/resources`
+
   - Example copy command
-    ```
+
+    ```bash
     cp /usr/src/local-resources/starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl /usr/src/data/plugins/@data2evidence/d2e-ui/resources/starboard-notebook-base/pyodidepyqe-0.0.2-py3-none-any.whl
     ```
 
