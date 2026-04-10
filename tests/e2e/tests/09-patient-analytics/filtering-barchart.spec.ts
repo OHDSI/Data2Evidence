@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
     .locator('div.axis-menu-button-wrapper')
     .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
     .click()
-  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').click()
+  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
