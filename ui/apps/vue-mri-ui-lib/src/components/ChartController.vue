@@ -119,11 +119,14 @@ export default {
     window.removeEventListener('click', this.closeSubMenu)
   },
   watch: {
-    getActiveBookmark() {
-      // Reset default color axis flag when cohort changes so the default is re-applied
-      this.hasSetDefaultColorAxis = false
-      this.colorAxisIndex = null
-      this.$refs.xAxisColorButton?.resetSelection()
+    getActiveBookmark(newVal, oldVal) {
+      // Reset default color axis flag only when switching to a different cohort,
+      // not when saving/updating the currently active bookmark (same bmkId).
+      if (newVal?.bmkId !== oldVal?.bmkId) {
+        this.hasSetDefaultColorAxis = false
+        this.colorAxisIndex = null
+        this.$refs.xAxisColorButton?.resetSelection()
+      }
     },
   },
   computed: {
