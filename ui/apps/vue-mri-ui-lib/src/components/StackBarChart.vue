@@ -173,10 +173,15 @@ export default {
 
           // Emit x-axis category counts for default color axis selection
           const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
-          const xAxisCategoryCounts = xAxes.map((cat, idx) => ({
-            axisIndex: idx,
-            count: new Set(this.chartData.data.map(d => d[cat.id])).size,
-          }))
+          const allAxesForEmit = this.getAllAxes
+          const xAxisCategoryCounts = xAxes.map((cat, idx) => {
+            // Find the raw allAxes slot index for this filtered x-axis category
+            const rawSlot = allAxesForEmit ? allAxesForEmit.findIndex(a => a?.props?.attributeId === cat.id) : -1
+            return {
+              axisIndex: rawSlot >= 0 ? rawSlot : idx,
+              count: new Set(this.chartData.data.map(d => d[cat.id])).size,
+            }
+          })
           this.$emit('chartDataReady', xAxisCategoryCounts)
         }
 
@@ -254,6 +259,7 @@ export default {
       'sortProperty',
       'processResponse',
       'getChartProperty',
+      'getAllAxes',
     ]),
 
     legendTraces() {
@@ -471,12 +477,16 @@ export default {
         if (this.colorAxisIndex != null && this.chartData.traces) {
           const colorValues = Object.values(Constants.ChartColorway)
           const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
-          if (this.colorAxisIndex < xAxes.length) {
+          // Resolve raw allAxes slot index to position within filtered xAxes/values[]
+          const allAxesForColor = this.getAllAxes
+          const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
+          const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
+          if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
             // Collect unique x-axis values across all traces in stable order
             const uniqueVals: string[] = []
             this.chartData.traces.forEach(trace => {
               trace.customdata?.forEach(cd => {
-                const val = String(cd.values?.[this.colorAxisIndex] ?? '')
+                const val = String(cd.values?.[valuesIndex] ?? '')
                 if (val && !uniqueVals.includes(val)) uniqueVals.push(val)
               })
             })
@@ -488,9 +498,7 @@ export default {
             // Assign per-bar marker colors on each trace
             this.chartData.traces.forEach(trace => {
               const colors =
-                trace.customdata?.map(
-                  cd => valColorMap[String(cd.values?.[this.colorAxisIndex] ?? '')] || colorValues[0]
-                ) || []
+                trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
               trace.marker = { ...trace.marker, color: colors }
             })
             // Build color legend for the legend component

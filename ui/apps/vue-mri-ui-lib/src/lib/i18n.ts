@@ -963,6 +963,7 @@ export const i18n = {
     MRI_PA_CONFIRM_CLEAR_STACKING:
       'Selecting this option will clear your current Stacking selection. Do you want to proceed?',
     MRI_PA_BUTTON_CONFIRM: 'Confirm',
+    MRI_PA_SELECT_X_AXIS: 'Select an x-axis',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1956,6 +1957,7 @@ export const i18n = {
     MRI_PA_CONFIRM_CLEAR_STACKING:
       'Durch Auswahl dieser Option wird Ihre aktuelle Stapelauswahl gelöscht. Möchten Sie fortfahren?',
     MRI_PA_BUTTON_CONFIRM: 'Bestätigen',
+    MRI_PA_SELECT_X_AXIS: 'X-Achse auswählen',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2857,6 +2859,7 @@ export const i18n = {
     MRI_PA_CONFIRM_CLEAR_COLOR: '选择此选项将清除您当前的颜色选择。是否要继续？',
     MRI_PA_CONFIRM_CLEAR_STACKING: '选择此选项将清除您当前的堆叠选择。是否要继续？',
     MRI_PA_BUTTON_CONFIRM: '确认',
+    MRI_PA_SELECT_X_AXIS: '选择 X 轴',
   },
 }
 

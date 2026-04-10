@@ -18,7 +18,9 @@
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
       <button class="axisMenuButton" ref="menuButton" @click="toggleMenu" :title="selectionTooltip" tabindex="0">
-        <span class="axisMenuText axisTextPlaceholder" v-if="!selectedAttrText"> Select an x-axis </span>
+        <span class="axisMenuText axisTextPlaceholder" v-if="!selectedAttrText">
+          {{ getText('MRI_PA_SELECT_X_AXIS') }}
+        </span>
         <span class="axisMenuText" v-if="selectedAttrText">{{ selectedFilterText }}</span>
         <span class="axisMenuSubText" v-if="selectedAttrText">
           {{ selectedAttrText }}
@@ -64,19 +66,23 @@ const selectedFilterText = ref('')
 const selectedAttrText = ref('')
 const selectedAxisIndex = ref<number | null>(null)
 const selectionTooltip = computed(() =>
-  selectedAttrText.value ? `${selectedFilterText.value} - ${selectedAttrText.value}` : 'Select an x-axis'
+  selectedAttrText.value ? `${selectedFilterText.value} - ${selectedAttrText.value}` : getText('MRI_PA_SELECT_X_AXIS')
 )
 const axisMenuData = ref<any[]>([])
 
 // Lifecycle
+let isUnmounted = false
+
 onMounted(() => {
   nextTick(() => {
+    if (isUnmounted) return
     window.addEventListener('click', closeSubMenu)
     menuButtonEl.value = menuButton.value
   })
 })
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   window.removeEventListener('click', closeSubMenu)
 })
 
