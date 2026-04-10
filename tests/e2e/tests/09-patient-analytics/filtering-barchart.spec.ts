@@ -176,6 +176,7 @@ test(TEST_NAME, async ({ page }) => {
     .last()
     .click()
   await page.locator('#pane-right').getByText('Month of Birth').first().click()
+  await page.getByText('Confirm Selection Change').locator('..').getByRole('button', { name: 'Confirm' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
