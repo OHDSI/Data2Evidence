@@ -959,9 +959,9 @@ export const i18n = {
     MRI_PA_PATIENT_LIST: 'Patient list',
     MRI_PA_CONFIRM_SELECTION_CHANGE: 'Confirm Selection Change',
     MRI_PA_CONFIRM_CLEAR_COLOR:
-      'Selecting this option will clear your current Color selection. Do you want to proceed?',
+      'Selecting this option will clear your current color selection. Do you want to proceed?',
     MRI_PA_CONFIRM_CLEAR_STACKING:
-      'Selecting this option will clear your current Stacking selection. Do you want to proceed?',
+      'Selecting this option will clear your current stacking selection. Do you want to proceed?',
     MRI_PA_BUTTON_CONFIRM: 'Confirm',
     MRI_PA_SELECT_X_AXIS: 'Select an x-axis',
   },
@@ -1953,9 +1953,9 @@ export const i18n = {
     MRI_PA_PATIENT_LIST: 'Patientenliste',
     MRI_PA_CONFIRM_SELECTION_CHANGE: 'Auswahländerung bestätigen',
     MRI_PA_CONFIRM_CLEAR_COLOR:
-      'Durch Auswahl dieser Option wird Ihre aktuelle Farbauswahl gelöscht. Möchten Sie fortfahren?',
+      'Durch Auswahl dieser Option wird Ihre aktuelle farbauswahl gelöscht. Möchten Sie fortfahren?',
     MRI_PA_CONFIRM_CLEAR_STACKING:
-      'Durch Auswahl dieser Option wird Ihre aktuelle Stapelauswahl gelöscht. Möchten Sie fortfahren?',
+      'Durch Auswahl dieser Option wird Ihre aktuelle stapelauswahl gelöscht. Möchten Sie fortfahren?',
     MRI_PA_BUTTON_CONFIRM: 'Bestätigen',
     MRI_PA_SELECT_X_AXIS: 'X-Achse auswählen',
   },
