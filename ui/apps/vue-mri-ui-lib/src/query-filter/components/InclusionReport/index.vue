@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useStore } from 'vuex'
-import type { InclusionReportResponse, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import type {
+  InclusionReportResponse,
+  AttritionApiResponse,
+  RuleFilterCardDetails,
+} from '@/query-filter/types/InclusionReportTypes'
 import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
@@ -25,14 +29,17 @@ const props = withDefaults(
     cacheKey?: string
     showPersonEventSwitch?: boolean
     filterCardDetails?: RuleFilterCardDetails[]
+    showIntersectView?: boolean
     fetchInclusionReport: (
       cohortDefinitionId: string,
       sourceKey: string,
       modeId: number
     ) => Promise<InclusionReportResponse>
+    fetchAttritionReport?: (ruleOrder?: number[], signal?: AbortSignal) => Promise<AttritionApiResponse>
   }>(),
   {
     showPersonEventSwitch: true,
+    showIntersectView: false,
   }
 )
 
@@ -46,10 +53,22 @@ const personEventOptions = computed(() => [
   { value: 'PERSON', label: getText('MRI_PA_INCLUSION_REPORT_BY_PERSON') },
   { value: 'EVENT', label: getText('MRI_PA_INCLUSION_REPORT_BY_EVENT') },
 ])
-const visualizationOptions = computed(() => [
-  { value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') },
-  { value: 'INTERSECT', text: getText('MRI_PA_INCLUSION_REPORT_INTERSECT') },
-])
+const visualizationOptions = computed(() => {
+  const options = [{ value: 'ATTRITION', text: getText('MRI_PA_INCLUSION_REPORT_ATTRITION') }]
+  if (props.showIntersectView) {
+    options.push({ value: 'INTERSECT', text: getText('MRI_PA_INCLUSION_REPORT_INTERSECT') })
+  }
+  return options
+})
+
+watch(
+  () => props.showIntersectView,
+  newVal => {
+    if (!newVal && selectedVisualization.value === 'INTERSECT') {
+      selectedVisualization.value = 'ATTRITION'
+    }
+  }
+)
 
 // Use composables - order matters here!
 // First, get the data fetching composable (without filtered summary initially)
@@ -59,7 +78,9 @@ const dataComposable = useInclusionReportData(
     sourceKey: props.sourceKey,
     generationStatus: props.generationStatus,
     cacheKey: props.cacheKey,
+    showIntersectView: props.showIntersectView,
     fetchInclusionReport: props.fetchInclusionReport,
+    fetchAttritionReport: props.fetchAttritionReport,
   },
   selectedPersonEventView
 )
@@ -71,6 +92,7 @@ const {
   treemapData,
   shouldFetchInclusionReport,
   fetchInclusionReportInternal,
+  lastAttritionApiResponse,
 } = dataComposable
 
 // Then get rule management which depends on inclusionReportResponse
@@ -79,6 +101,8 @@ const {
   draggableAttritionStats,
   allAnyOption,
   passedFailedOption,
+  isReorderLoading,
+  errorMessage,
   toggleRuleSelection,
   isRuleChecked,
   areAllRulesChecked,
@@ -90,7 +114,14 @@ const {
   handleAllAnyChange,
   handlePassedFailedChange,
   filteredSummary,
-} = useRuleManagement(inclusionReportResponse, treemapData)
+} = useRuleManagement(
+  inclusionReportResponse,
+  treemapData,
+  props.showIntersectView,
+  props.fetchAttritionReport,
+  lastAttritionApiResponse,
+  getText
+)
 
 const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
   inclusionReportResponse,
@@ -155,7 +186,7 @@ onUnmounted(() => {
 
     <div v-if="hasInclusionRules" class="inclusion-rules-detail">
       <!-- Visualization Type Selector -->
-      <div class="group-buttons-container">
+      <div v-if="visualizationOptions.length > 1" class="group-buttons-container">
         <!-- <group-buttons
           :options="visualizationOptions"
           :limit-value="selectedVisualization"
@@ -179,24 +210,33 @@ onUnmounted(() => {
           @update:passed-failed-option="handlePassedFailedChange"
         />
 
+        <div v-if="errorMessage" class="inclusion-report-error">
+          {{ errorMessage }}
+        </div>
+
         <div class="rules-section">
-          <!-- Rules Table -->
-          <RulesTable
-            :selected-visualization="selectedVisualization"
-            :selected-person-event-view="selectedPersonEventView"
-            :draggable-attrition-stats="draggableAttritionStats"
-            :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
-            :are-all-rules-checked="areAllRulesChecked()"
-            :is-rule-checked="isRuleChecked"
-            :get-row-index="getRowIndex"
-            :filter-card-details="filterCardDetails"
-            @toggle-all-rules="toggleAllRules"
-            @toggle-rule-selection="toggleRuleSelection"
-            @drag-end="handleDragEnd"
-            @move-row-up="moveRowUp"
-            @move-row-down="moveRowDown"
-            @update:draggable-attrition-stats="draggableAttritionStats = $event"
-          />
+          <div class="rules-table-wrapper">
+            <div v-if="isReorderLoading" class="reorder-loading-overlay">
+              <d4l-spinner />
+            </div>
+            <!-- Rules Table -->
+            <RulesTable
+              :selected-visualization="selectedVisualization"
+              :selected-person-event-view="selectedPersonEventView"
+              :draggable-attrition-stats="draggableAttritionStats"
+              :inclusion-rule-stats="inclusionReportResponse.inclusionRuleStats"
+              :are-all-rules-checked="areAllRulesChecked()"
+              :is-rule-checked="isRuleChecked"
+              :get-row-index="getRowIndex"
+              :filter-card-details="filterCardDetails"
+              @toggle-all-rules="toggleAllRules"
+              @toggle-rule-selection="toggleRuleSelection"
+              @drag-end="handleDragEnd"
+              @move-row-up="moveRowUp"
+              @move-row-down="moveRowDown"
+              @update:draggable-attrition-stats="draggableAttritionStats = $event"
+            />
+          </div>
           <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
@@ -276,7 +316,6 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 16px;
 
   .group-button {
     width: 80%;
@@ -306,6 +345,7 @@ onUnmounted(() => {
 }
 
 .inclusion-report-container {
+  margin-top: 1rem;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -318,6 +358,20 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.rules-table-wrapper {
+  position: relative;
+}
+
+.reorder-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
 }
 
 h4 {
@@ -401,5 +455,15 @@ h4 {
 
 .footnote {
   max-width: 80ch;
+}
+
+.inclusion-report-error {
+  color: var(--color-error-text, #b00020);
+  background-color: var(--color-error-bg, #fdecea);
+  border: 1px solid var(--color-error-border, #f5c6cb);
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 </style>

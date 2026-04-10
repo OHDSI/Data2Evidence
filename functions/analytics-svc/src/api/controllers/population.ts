@@ -284,6 +284,46 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                 );
 
                                             break;
+                                        case "selectiveinclusionreport":
+                                            const selectiveInclusionReportBody =
+                                                body.filter
+                                                    ? body
+                                                    : bookmarkInputStr;
+                                            // Parse optional ruleOrder query parameter for drag-and-drop reordering
+                                            // ruleOrder is sent as a plain JSON array (e.g. [2,0,1])
+                                            let ruleOrder: number[] | undefined;
+                                            if (req.query.ruleOrder) {
+                                                try {
+                                                    ruleOrder = JSON.parse(
+                                                        decodeURIComponent(
+                                                            req.query
+                                                                .ruleOrder as string
+                                                        )
+                                                    );
+                                                } catch (e) {
+                                                    // Ignore invalid ruleOrder
+                                                }
+                                            }
+                                            new InclusionReportEndpoint(
+                                                analyticsConnection
+                                            )
+                                                .processRequestForSelectiveInclusionReport(
+                                                    req,
+                                                    configId,
+                                                    configVersion,
+                                                    datasetId,
+                                                    selectiveInclusionReportBody,
+                                                    language,
+                                                    ruleOrder
+                                                )
+                                                .then((res) =>
+                                                    _sendResult(null, res)
+                                                )
+                                                .catch((err) =>
+                                                    _sendResult(err, null)
+                                                );
+
+                                            break;
                                         default:
                                             next(
                                                 new Error(
