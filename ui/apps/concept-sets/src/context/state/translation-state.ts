@@ -93,6 +93,7 @@ export const i18nDefault = {
     TERMINOLOGY_LIST__PERSON_COUNT_TOOLTIP: "Person Count",
     TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT: "DPC",
     TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT_TOOLTIP: "Descendant Person Count",
+    TERMINOLOGY_LIST__EMPTY_TABLE: "No related concepts found",
   },
 };
 

@@ -7,6 +7,7 @@
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
+import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
@@ -19,6 +20,11 @@ export default {
   name: 'stackBarChart',
   components: {
     StackBarChartLegend,
+  },
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
   },
   props: ['busyEv', 'shouldRerenderChart'],
   data() {
@@ -49,20 +55,7 @@ export default {
             },
 
             click: function (gd) {
-              Plotly.relayout(gd, {
-                'xaxis.autorange': true,
-                'yaxis.autorange': true,
-              })
-
-
-              // TODO: This is to clear selection on reset, current implementation clears event listeners. To revisit
-              // Plotly.update(
-              //   gd,
-              //   { 'xaxis.autorange': true, 'yaxis.autorange': true, selectedpoints: [null] },
-              //   { selections: [] }
-              // )
-              // Clear Vuex selection state
-              // this.setChartSelection({ selection: [] })
+              this.clearSelectionState({ plotElement: gd, resetAxes: true })
             }.bind(this),
           },
         ],
@@ -163,16 +156,16 @@ export default {
               currentPatientCount: '--',
             })
 
-            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.setAlertMessage({
-                messageType: 'info',
-                message: this.chartData.noDataReason,
-              })
-            } else {
-              this.setAlertMessage({
-                message: this.chartData.noDataReason,
-              })
-            }
+              if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+                this.notificationStore.setAlertMessage({
+                  messageType: 'info',
+                  message: this.chartData.noDataReason,
+                })
+              } else {
+                this.notificationStore.setAlertMessage({
+                  message: this.chartData.noDataReason,
+                })
+              }
             return
           }
 
@@ -290,7 +283,6 @@ export default {
       'setCurrentPatientCount',
       'setFireRequest',
       'completeDownloadCSV',
-      'setAlertMessage',
       'setPlotlyElement',
     ]),
     /**
@@ -324,6 +316,63 @@ export default {
         ticktext: useTruncated ? ticktext : ticktextFull,
         tickangle: useTruncated ? 'auto' : 0,
       }
+    },
+    buildPlotlyLayout(resetAxes = false) {
+      const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+      layout.showlegend = false
+      layout.xaxis.type = this.chartData.axisType
+      const xTicks = this.buildXAxisTicks()
+      if (xTicks) {
+        layout.xaxis.tickvals = xTicks.tickvals
+        layout.xaxis.ticktext = xTicks.ticktext
+        layout.xaxis.tickangle = xTicks.tickangle
+      }
+      if (resetAxes) {
+        layout.xaxis.autorange = true
+        layout.yaxis.autorange = true
+      }
+      return layout
+    },
+    hasTraceSelectedPoints() {
+      if (!this.chartData?.traces) {
+        return false
+      }
+
+      return this.chartData.traces.some(trace => {
+        const selectedpoints = trace?.selectedpoints
+        return Array.isArray(selectedpoints) && selectedpoints.length > 0
+      })
+    },
+    clearSelectionState({ plotElement = stackBarChart, resetAxes = false } = {}) {
+      this.setChartSelection({ selection: [] })
+
+      const targetElement = plotElement || stackBarChart
+      if (!targetElement) {
+        return
+      }
+
+      const hasSelection = this.hasTraceSelectedPoints()
+      if (!hasSelection) {
+        if (resetAxes) {
+          Plotly.relayout(targetElement, {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true,
+          })
+        }
+        return
+      }
+
+      if (this.chartData?.traces) {
+        const clearedSelectedPoints = this.chartData.traces.map(() => [])
+        this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
+      }
+
+      if (!targetElement || !this.chartData?.traces) {
+        return
+      }
+
+      const layout = this.buildPlotlyLayout(resetAxes)
+      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
     },
     setupAxes() {
       this.disableAllAxesandProperties()
@@ -405,17 +454,7 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-
-        const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        freshLayout.showlegend = false
-        freshLayout.xaxis.type = this.chartData.axisType
-        const xTicks = this.buildXAxisTicks()
-        if (xTicks) {
-          freshLayout.xaxis.tickvals = xTicks.tickvals
-          freshLayout.xaxis.ticktext = xTicks.ticktext
-          freshLayout.xaxis.tickangle = xTicks.tickangle
-        }
-
+        const freshLayout = this.buildPlotlyLayout()
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
         // Resize chart after DOM updates to account for legend space
@@ -427,16 +466,7 @@ export default {
     setupPlotly() {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
-      const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-      initialLayout.showlegend = false
-      initialLayout.xaxis.type = this.chartData.axisType
-      const initialXTicks = this.buildXAxisTicks()
-      if (initialXTicks) {
-        initialLayout.xaxis.tickvals = initialXTicks.tickvals
-        initialLayout.xaxis.ticktext = initialXTicks.ticktext
-        initialLayout.xaxis.tickangle = initialXTicks.tickangle
-      }
-
+      const initialLayout = this.buildPlotlyLayout()
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
@@ -484,23 +514,16 @@ export default {
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
-        stackBarChart.removeAllListeners('plotly_selected')
-        stackBarChart.removeAllListeners('plotly_deselect')
-
-        const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        selectionLayout.showlegend = false
-        selectionLayout.xaxis.type = this.chartData.axisType
-        const selectionXTicks = this.buildXAxisTicks()
-        if (selectionXTicks) {
-          selectionLayout.xaxis.tickvals = selectionXTicks.tickvals
-          selectionLayout.xaxis.ticktext = selectionXTicks.ticktext
-          selectionLayout.xaxis.tickangle = selectionXTicks.tickangle
-        }
+        const selectionLayout = this.buildPlotlyLayout()
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
+      const deselectionUpdate = () => {
+        this.clearSelectionState()
+      }
+
       stackBarChart.on('plotly_selected', selectionUpdate)
-      stackBarChart.on('plotly_deselect', selectionUpdate)
+      stackBarChart.on('plotly_deselect', deselectionUpdate)
       this.setPlotlyElement({ element: stackBarChart })
     },
   },

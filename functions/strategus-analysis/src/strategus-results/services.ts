@@ -6,6 +6,7 @@ import {
 } from "@jupyterlab/services";
 import { services } from "../env.ts";
 import { env } from "../env.ts";
+import dataSource from "../db/datasource.ts";
 
 interface IKernelModel extends Kernel.IModel {
   id: string;
@@ -34,6 +35,12 @@ export const startStrategusResultsViewer = async (
       studyId,
       manager
     );
+    // dynamically generate the shiny module config.
+    const strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
+    const strategusAnalysisObj = await strategusAnalysisRepository.findOne({
+            where: { studyId: studyId }
+        });
+    const moduleConfig = await createShinyModuleConfig(strategusAnalysisObj);
 
     const r_code = viewerCode
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
@@ -44,7 +51,8 @@ export const startStrategusResultsViewer = async (
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
       .replaceAll("$STUDY_ID", encodeURIComponent(studyId))
-      .replace("$DATASET_ID", datasetId || ""); // relevant for table1 alone; TODO: remove
+      .replace("$DATASET_ID", datasetId || "") // relevant for table1 alone; TODO: remove
+      .replace("$SHINY_MODULE_CONFIG", moduleConfig);
 
     const future = await kernelConnection.requestExecute({
       code: r_code,
@@ -55,7 +63,7 @@ export const startStrategusResultsViewer = async (
       let executionError: Error | null = null;
       let executionComplete = false;
 
-      future.onReply = (msg) => {
+      future.onReply = (msg: any) => {
         if (msg.content.status === "error") {
           console.error("Execution error:", msg);
           executionError = new Error(
@@ -66,7 +74,7 @@ export const startStrategusResultsViewer = async (
         }
       };
 
-      future.onIOPub = (msg) => {
+      future.onIOPub = (msg: any) => {
         console.debug(msg);
         if (
           msg.content &&
@@ -161,5 +169,64 @@ const getKernelConnection = async (
     }
   } catch (error) {
     throw Error(`Failed to create or connect to kernel for study ${studyId}`);
+  }
+};
+
+// Dynamically generate the shiny module config R code based on the study specification.
+const createShinyModuleConfig = async (strategusAnalysisObj: any): Promise<string> => {
+  try {
+    if (!strategusAnalysisObj || !strategusAnalysisObj.analysisSpec) {
+      return "";
+    }
+
+    // Parse the analysis spec JSON
+    const analysisSpec = JSON.parse(strategusAnalysisObj.analysisSpec);
+    const moduleSpecifications = analysisSpec.moduleSpecifications || [];
+
+    // Helper function to generate module config blocks
+    const generateDefaultModuleConfig = (functionName: string): string => {
+      return `addModuleConfig(\n\t\t${functionName}()\n\t)`;
+    };
+
+    const generateCustomModuleConfig = (
+      moduleId: string,
+      tabName: string,
+      uiFunction: string,
+      serverFunction: string
+    ): string => {
+      return `addModuleConfig(\n\t\tcreateModuleConfig(\n\t\t\tmoduleId = "${moduleId}",\n\t\t\ttabName = "${tabName}",\n\t\t\tshinyModulePackage = NULL,\n\t\t\tshinyModulePackageVersion = NULL,\n\t\t\tmoduleUiFunction = ${uiFunction},\n\t\t\tmoduleServerFunction = ${serverFunction},\n\t\t\tmoduleInfoBoxFile = function(){},\n\t\t\tmoduleIcon = "info",\n\t\t\tinstallSource = "CRAN",\n\t\t\tgitHubRepo = NULL\n\t\t)\n\t)`;
+    };
+
+    // Start with base configuration
+    let moduleConfigs: string[] = [];
+    moduleConfigs.push("initializeModuleConfig() |>\n\t" + generateDefaultModuleConfig("createDefaultAboutConfig"));
+    moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultDatasourcesConfig"));
+
+    // Add modules based on the analysis spec
+    for (const moduleSpec of moduleSpecifications) {
+      const moduleName = moduleSpec.module;
+
+      if (moduleName === "CohortGeneratorModule") {
+        moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultCohortGeneratorConfig"));
+      } else if (moduleName === "CohortDiagnosticsModule") {
+        moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultCohortDiagnosticsConfig"));
+      } else if (moduleName === "CharacterizationModule") {
+        moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultCharacterizationConfig"));
+      } else if (moduleName === "PatientLevelPredictionModule") {
+        moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultPredictionConfig"));
+      } else if (moduleName === "CohortMethodModule") {
+        moduleConfigs.push(" |>\n\t" + generateDefaultModuleConfig("createDefaultEstimationConfig"));
+      } else if (moduleName === "CohortSurvivalModule") {
+        moduleConfigs.push(" |>\n\t" + generateCustomModuleConfig("survival", "SurvivalAnalysis", "survivalModuleUI", "survivalModuleServer"));
+      } else if (moduleName === "TreatmentPatternsModule") {
+        moduleConfigs.push(" |>\n\t" + generateCustomModuleConfig("patterns", "TreatmentPatterns", "patternsModuleUI", "patternsModuleServer"));
+      }
+    }
+
+    const rCode = `${moduleConfigs.join("")}\n`;
+    return rCode;
+  } catch (error) {
+    console.error("Error creating shiny module config:", error);
+    return "";
   }
 };

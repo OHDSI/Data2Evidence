@@ -1,9 +1,18 @@
 import { vi, Mock } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { useDeepLink } from '../useDeepLink'
 import CohortUrlCodec from '../../utils/CohortUrlCodec'
+import { useNotificationStore } from '../../stores/notifications'
 
 // Mock dependencies
 vi.mock('../../utils/CohortUrlCodec')
+vi.mock('@/store', () => ({
+  default: {
+    getters: {
+      getText: (key: string) => key,
+    },
+  },
+}))
 
 // Mock store
 const mockDispatch = vi.fn()
@@ -12,6 +21,8 @@ describe('useDeepLink', () => {
   let originalLocation: Location
 
   beforeEach(() => {
+    setActivePinia(createPinia())
+
     // Save original location
     originalLocation = window.location
 
@@ -29,11 +40,23 @@ describe('useDeepLink', () => {
   })
 
   const mockLocation = (search: string) => {
-    delete (window as any).location
-    window.location = {
-      ...originalLocation,
-      search,
-    } as Location
+    const origin = originalLocation.origin || 'http://localhost:3000'
+    const pathname = originalLocation.pathname || '/'
+    const url = new URL(`${origin}${pathname}${search}`)
+    const locationMock = Object.create(originalLocation) as Location
+
+    Object.defineProperties(locationMock, {
+      href: { value: url.href, configurable: true },
+      origin: { value: url.origin, configurable: true },
+      pathname: { value: url.pathname, configurable: true },
+      search: { value: url.search, configurable: true },
+    })
+
+    Object.defineProperty(window, 'location', {
+      value: locationMock,
+      configurable: true,
+      writable: true,
+    })
   }
 
   it('should load cohort definition when linkType=cohort-definition and query present', async () => {
@@ -65,6 +88,13 @@ describe('useDeepLink', () => {
       bookmark: mockBookmark,
       chartType: 'stacked',
     })
+
+    const notificationStore = useNotificationStore()
+    expect(notificationStore.alert.show).toBe(true)
+    expect(notificationStore.alert.message).toBe('Cohort definition loaded successfully from shared link.')
+    expect(notificationStore.alert.messageType).toBe('success')
+    expect(notificationStore.alert.title).toBe('Success')
+    expect(mockDispatch).not.toHaveBeenCalledWith('setAlertMessage', expect.anything())
   })
 
   it('should do nothing when no query param present', async () => {
@@ -99,10 +129,13 @@ describe('useDeepLink', () => {
     const { processDeepLink } = useDeepLink(mockDispatch)
     await processDeepLink()
 
-    // Verify alert was dispatched
-    expect(mockDispatch).toHaveBeenCalledWith('setAlertMessage', {
-      message: 'Failed to load cohort definition: Invalid base64url encoding',
-    })
+    const notificationStore = useNotificationStore()
+
+    expect(notificationStore.alert.message).toBe('Failed to load cohort definition: Invalid base64url encoding')
+    expect(notificationStore.alert.messageType).toBe('error')
+    expect(notificationStore.alert.title).toBe('MRI_PA_NOTIFICATION_ERROR')
+    expect(notificationStore.alert.show).toBe(true)
+    expect(mockDispatch).not.toHaveBeenCalledWith('setAlertMessage', expect.anything())
 
     // Verify loadBookmarkDataToState was NOT dispatched
     expect(mockDispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())
@@ -123,10 +156,15 @@ describe('useDeepLink', () => {
     const { processDeepLink } = useDeepLink(mockDispatch)
     await processDeepLink()
 
-    // Verify alert was dispatched
-    expect(mockDispatch).toHaveBeenCalledWith('setAlertMessage', {
-      message: 'Failed to load cohort definition: Invalid format. Expected bookmark format with "filter" property.',
-    })
+    const notificationStore = useNotificationStore()
+
+    expect(notificationStore.alert.message).toBe(
+      'Failed to load cohort definition: Invalid format. Expected bookmark format with "filter" property.'
+    )
+    expect(notificationStore.alert.messageType).toBe('error')
+    expect(notificationStore.alert.title).toBe('MRI_PA_NOTIFICATION_ERROR')
+    expect(notificationStore.alert.show).toBe(true)
+    expect(mockDispatch).not.toHaveBeenCalledWith('setAlertMessage', expect.anything())
 
     // Verify loadBookmarkDataToState was NOT dispatched
     expect(mockDispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())

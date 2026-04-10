@@ -96,7 +96,8 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
+import { useNotificationStore } from '../stores/notifications'
 import appButton from '../lib/ui/app-button.vue'
 import icon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
@@ -108,6 +109,11 @@ import { getAttributeName, getAdvanceTimeFilterFormatted } from '../utils/filter
 export default {
   name: 'filterCardSummary',
   props: ['unloadBookmarkEv', 'chartBusy'],
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
+  },
   data() {
     return {
       bookmarks: [],
@@ -242,7 +248,6 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setToastMessage']),
     unloadBookmark() {
       this.$emit('unloadFilterCardSummaryEv')
     },
@@ -259,7 +264,7 @@ export default {
     async onClickCopySql() {
       const content = this.getResponse()?.data?.sql || ''
       await navigator.clipboard.writeText(content)
-      this.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_COPIED') })
+      this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_COPIED') })
     },
     onClickCreateCohortDefinition() {
       this.showCohortDefinitionDownloadDialog = true

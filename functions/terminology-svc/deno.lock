@@ -13,7 +13,6 @@
     "npm:jsonwebtoken@9.0.2": "9.0.2",
     "npm:lodash@*": "4.17.21",
     "npm:pako@*": "2.1.0",
-    "npm:pg@8.13.1": "8.13.1",
     "npm:winston@*": "3.19.0",
     "npm:yaml@2.6.1": "2.6.1",
     "npm:zod@3.23.8": "3.23.8"
@@ -600,20 +599,8 @@
     "path-to-regexp@8.3.0": {
       "integrity": "sha512-7jdwVIRtsP8MYpdXSwOS0YdD0Du+qOoF/AEPIt88PcCFrZCzx41oxku1jD88hZBwbNUIEfpqvuhjFaMAqMTWnA=="
     },
-    "pg-cloudflare@1.2.7": {
-      "integrity": "sha512-YgCtzMH0ptvZJslLM1ffsY4EuGaU0cx4XSdXLRFae8bPP4dS5xL1tNB3k2o/N64cHJpwU7dxKli/nZ2lUa5fLg=="
-    },
-    "pg-connection-string@2.9.1": {
-      "integrity": "sha512-nkc6NpDcvPVpZXxrreI/FOtX3XemeLl8E0qFr6F2Lrm/I8WOnaWNhIPK2Z7OHpw7gh5XJThi6j6ppgNoaT1w4w=="
-    },
     "pg-int8@1.0.1": {
       "integrity": "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw=="
-    },
-    "pg-pool@3.10.1_pg@8.13.1": {
-      "integrity": "sha512-Tu8jMlcX+9d8+QVzKIvM/uJtp07PKr82IUOYEphaWcoBhIYkoHpLXN3qO59nAI11ripznDsEzEv8nUxBVWajGg==",
-      "dependencies": [
-        "pg"
-      ]
     },
     "pg-protocol@1.10.3": {
       "integrity": "sha512-6DIBgBQaTKDJyxnXaLiLR8wBpQQcGWuAESkRBX/t6OwA8YsqP+iVSiond2EDy6Y/dsGk8rh/jtax3js5NeV7JQ=="
@@ -626,25 +613,6 @@
         "postgres-bytea",
         "postgres-date",
         "postgres-interval"
-      ]
-    },
-    "pg@8.13.1": {
-      "integrity": "sha512-OUir1A0rPNZlX//c7ksiu7crsGZTKSOXJPgtNiHGIlC9H0lO+NC6ZDYksSgBYY/thSWhnSRBv8w1lieNNGATNQ==",
-      "dependencies": [
-        "pg-connection-string",
-        "pg-pool",
-        "pg-protocol",
-        "pg-types",
-        "pgpass"
-      ],
-      "optionalDependencies": [
-        "pg-cloudflare"
-      ]
-    },
-    "pgpass@1.0.5": {
-      "integrity": "sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug==",
-      "dependencies": [
-        "split2"
       ]
     },
     "postgres-array@2.0.0": {
@@ -791,9 +759,6 @@
         "side-channel-weakmap"
       ]
     },
-    "split2@4.2.0": {
-      "integrity": "sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg=="
-    },
     "stack-trace@0.0.10": {
       "integrity": "sha512-KGzahc7puUKkzyMt+IqAep+TVNbKP+k2Lmwhub39m1AsTSkaDutx56aDCo+HLDzf/D26BIHTJWNiTG1KAJiQCg=="
     },
@@ -894,7 +859,6 @@
       "npm:jsonwebtoken@9.0.2",
       "npm:lodash@*",
       "npm:pako@*",
-      "npm:pg@8.13.1",
       "npm:winston@*",
       "npm:yaml@2.6.1",
       "npm:zod@3.23.8"

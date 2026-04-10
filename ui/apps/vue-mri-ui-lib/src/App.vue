@@ -28,7 +28,6 @@ export default {
   created() {
     this.setDataset()
     this.setDatasetReleaseId()
-    this.requestMriConfig()
   },
   mounted() {
     this.setLocale()
@@ -36,11 +35,15 @@ export default {
     const datasetChangeHandler = () => {
       this.setDataset()
       this.setDatasetReleaseId()
+      this.$store.commit('RESET_DATASET_CACHE')
       // Update the config in state before doing further queries
-      this.requestMriConfig().then(() => {
-        this.setFireRequest()
-        this.refreshPatientCount()
-      })
+      this.requestMriConfig()
+        .then(() => {
+          this.setFireRequest()
+        })
+        .catch(e => {
+          console.error('[App] Config reload on dataset change failed', e)
+        })
     }
     const listenerInfo = { type: 'alp-dataset-change', app: 'patient-analytics', listener: datasetChangeHandler }
     if (!window.d2eListeners) {
@@ -85,12 +88,18 @@ export default {
       }
     },
     async processDeepLinkIfPresent() {
-      // Wait for config to be loaded
-      await this.requestMriConfig()
+      try {
+        // Wait for config to be loaded
+        await this.requestMriConfig()
 
-      // Process deep link (useDeepLink handles all checks internally)
-      const { processDeepLink } = useDeepLink(this.$store.dispatch)
-      await processDeepLink()
+        // Process deep link (useDeepLink handles all checks internally)
+        const { processDeepLink } = useDeepLink(this.$store.dispatch)
+        await processDeepLink()
+      } catch (e) {
+        // requestMriConfig dispatches setFatalMessage for app-level config errors;
+        // this catch handles unexpected network/HTTP failures so the app doesn't hang silently.
+        console.error('[App] Failed to load config or process deep link', e)
+      }
     },
   },
   components: {

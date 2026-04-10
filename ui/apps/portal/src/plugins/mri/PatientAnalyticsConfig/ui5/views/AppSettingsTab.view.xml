@@ -66,5 +66,13 @@
 			tooltip="{i18n>MRI_PA_CFG_INCLUSION_REPORT_SETTING_TOOLTIP}">
 		</Switch>
 
+		<Label text="{i18n>MRI_PA_CFG_INTERSECT_VIEW_INCLUSION_REPORT_SETTING_LABEL}"
+			visible="{analyticsModel>config/panelOptions/inclusionReport}"/>
+		<Switch state="{analyticsModel>config/panelOptions/intersectViewInclusionReport}"
+			tooltip="{i18n>MRI_PA_CFG_INTERSECT_VIEW_INCLUSION_REPORT_SETTING_TOOLTIP}"
+			visible="{analyticsModel>config/panelOptions/inclusionReport}">
+		</Switch>
+
+
 	</f:SimpleForm>
 </mvc:View>

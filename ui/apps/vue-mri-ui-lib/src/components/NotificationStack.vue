@@ -1,7 +1,7 @@
 <script lang="ts">
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters } from 'vuex'
 import notification from './Notification.vue'
-import { MESSAGE_ALERT_SHOW_TOGGLE, MESSAGE_FATAL_SHOW_TOGGLE } from '../store/mutation-types'
+import { useNotificationStore } from '../stores/notifications'
 
 export default {
   name: 'NotificationStack',
@@ -9,16 +9,26 @@ export default {
     fatal: notification,
     alert: notification,
   },
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
+  },
   computed: {
-    ...mapGetters(['getFatalNotification', 'getAlertNotification', 'getText']),
+    ...mapGetters(['getText']),
+    getFatalNotification() {
+      return this.notificationStore.getFatalNotification
+    },
+    getAlertNotification() {
+      return this.notificationStore.getAlertNotification
+    },
   },
   methods: {
-    ...mapMutations([MESSAGE_FATAL_SHOW_TOGGLE, MESSAGE_ALERT_SHOW_TOGGLE]),
     okFatal() {
-      this[MESSAGE_FATAL_SHOW_TOGGLE]()
+      this.notificationStore.closeFatalNotification()
     },
     okAlert() {
-      this[MESSAGE_ALERT_SHOW_TOGGLE]()
+      this.notificationStore.closeAlertNotification()
     },
   },
 }
