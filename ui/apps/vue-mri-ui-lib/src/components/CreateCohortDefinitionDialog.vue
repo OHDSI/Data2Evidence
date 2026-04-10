@@ -55,6 +55,7 @@ export default {
       'cancelCohortDefinitionQuery',
       'fireD2EToAtlasCohortDefinitionQuery',
       'fireCreateAtlasCohortDefinitionQuery',
+      'fireBookmarkQuery',
     ]),
     cancel() {
       if (this.busy) {
@@ -86,14 +87,15 @@ export default {
           expressionType: 'SIMPLE_EXPRESSION',
         }
 
-        this.fireCreateAtlasCohortDefinitionQuery({
+        await this.fireCreateAtlasCohortDefinitionQuery({
           content,
-        }).then(() => {
-          this.isLoading = false
-          this.$emit('closeEv')
         })
+        await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
+        this.$emit('closeEv')
       } catch (error) {
         console.error('Error converting IFR to external cohort:', error)
+      } finally {
+        this.isLoading = false
       }
     },
   },

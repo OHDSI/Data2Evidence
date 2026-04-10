@@ -8,8 +8,34 @@ import { BaseQueryEngineEndpoint } from "./BaseQueryEngineEndpoint";
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
+import { PatientCountEndpoint } from "./PatientCountEndpoint";
+
 const log = Logger.CreateLogger("analytics-log");
 
+const TOTAL_PATIENT_COUNT_BOOKMARK_STR = JSON.stringify({
+    filter: {
+        configMetadata: {
+            id: "CONFIG_ID",
+            version: "CONFIG_VERSION",
+        },
+        cards: {
+            type: "BooleanContainer",
+            op: "AND",
+            content: [
+                {
+                    type: "BooleanContainer",
+                    op: "OR",
+                    content: [],
+                },
+            ],
+        },
+    },
+    axisSelection: [],
+    metadata: {
+        version: 3,
+    },
+    datasetId: "DATASET_ID",
+});
 interface BaseInclusionRuleStat {
     countSatisfying: number;
     countExcluded: number;
@@ -24,6 +50,12 @@ interface InclusionRuleStat {
     name: string;
     id: number;
     isExclude: boolean;
+}
+interface AttritionStat {
+    id: number;
+    name: string;
+    isExclude: boolean;
+    cumulativeCountSatisfying: number;
 }
 interface TreemapData {
     name: string;
@@ -49,6 +81,16 @@ interface InterfaceReportResults {
         finalCount: number;
         baseCount: number;
     };
+}
+
+interface SelectiveInclusiveReportResults {
+    summary: {
+        baseCount: number;
+        finalCount: number;
+        lostCount: number;
+        percentMatched: string;
+    };
+    attritionStats: AttritionStat[];
 }
 
 export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
@@ -137,6 +179,149 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
 
                 const queryResults = await Promise.all(promises);
                 const results = this.formulateInclusionReportResults(
+                    bitmapMasks,
+                    queryResults,
+                    inclusionReportFiltercards,
+                    baseInclusionRuleStats
+                );
+                resolve(results);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
+    public processRequestForSelectiveInclusionReport(
+        req,
+        configId,
+        configVersion,
+        datasetId,
+        mriquery,
+        language,
+        ruleOrder?: number[]
+    ): Promise<SelectiveInclusiveReportResults> {
+        log.addRequestCorrelationID(req);
+        return new Promise(async (resolve, reject) => {
+            try {
+                let res = await new PatientCountEndpoint(
+                    this.connection
+                ).processRequest(
+                    req,
+                    configId,
+                    configVersion,
+                    datasetId,
+                    TOTAL_PATIENT_COUNT_BOOKMARK_STR.replace(
+                        "CONFIG_ID",
+                        configId
+                    )
+                        .replace("CONFIG_VERSION", configVersion)
+                        .replace("DATASET_ID", datasetId),
+                    language
+                );
+                const totalPatientCount =
+                    res["data"][0]["patient.attributes.pcount"];
+
+                console.log(`totalPatientCount: ${totalPatientCount}`);
+
+                let inclusionReportFiltercards =
+                    this.getInclusionReportFiltercards(mriquery);
+
+                // Construct base inclusionRuleStats based on filtercard names
+                let baseInclusionRuleStats = this.getBaseInclusionRuleStats(
+                    inclusionReportFiltercards
+                );
+
+                // Reorder filter cards and rule stats if a custom rule order is provided
+                if (
+                    ruleOrder &&
+                    ruleOrder.length === inclusionReportFiltercards.length
+                ) {
+                    inclusionReportFiltercards = ruleOrder.map(
+                        (id) => inclusionReportFiltercards[id]
+                    );
+                    baseInclusionRuleStats = ruleOrder.map((id, newIdx) => ({
+                        ...baseInclusionRuleStats[id],
+                        id: newIdx,
+                    }));
+                }
+
+                // Construct bitmask filters
+                const bitmapMasks = this.getSelectiveBitmapMasks(
+                    inclusionReportFiltercards
+                );
+
+                const promises = bitmapMasks.map((bitmapMask) => {
+                    const bitmapMriquery = structuredClone(mriquery);
+                    bitmapMriquery.filter.cards.content = [];
+
+                    // Collect interaction IDs for all filtercards in this mask
+                    // (both inclusions and exclusions, since exclusion entities are still present in the query)
+                    const includedFiltercards = bitmapMask
+                        .split("")
+                        .map((_, idx) => inclusionReportFiltercards[idx]);
+                    const includedInteractionIds =
+                        this.collectInteractionIds(includedFiltercards);
+
+                    for (const [idx, op] of bitmapMask.split("").entries()) {
+                        const bitmaskContent = structuredClone(
+                            inclusionReportFiltercards[idx]
+                        );
+
+                        // Strip advanceTimeFilter if it references interactions not in this mask
+                        this.stripInvalidAdvanceTimeFilters(
+                            bitmaskContent,
+                            includedInteractionIds
+                        );
+
+                        // Set filter to an exclusion filtercard if op is 0
+                        if (op === "0") {
+                            // If filtercard is nested, split them up into individual exclusions
+                            if (bitmaskContent.content.length > 1) {
+                                bitmaskContent.content.forEach((e) => {
+                                    bitmapMriquery.filter.cards.content.push({
+                                        content: [
+                                            {
+                                                content: [e],
+                                                type: "BooleanContainer",
+                                                op: "NOT",
+                                            },
+                                        ],
+                                        type: "BooleanContainer",
+                                        op: "OR",
+                                    });
+                                });
+                            } else {
+                                // Else Push filtercard as an exclusion
+                                bitmaskContent["op"] = "NOT";
+                                bitmapMriquery.filter.cards.content.push({
+                                    content: [bitmaskContent],
+                                    type: "BooleanContainer",
+                                    op: "OR",
+                                });
+                            }
+                        } else {
+                            bitmapMriquery.filter.cards.content.push(
+                                bitmaskContent
+                            );
+                        }
+                    }
+                    // Strip all axis selection as is not needed by inclusionreport
+                    bitmapMriquery["axisSelection"] = [];
+
+                    return this.formulateQuery(req, {
+                        queryParams: {
+                            configId,
+                            configVersion,
+                            datasetId,
+                            bookmarkInputStr: bitmapMriquery,
+                            queryType: "irtotalpcount",
+                            language,
+                        },
+                    });
+                });
+                const queryResults = await Promise.all(promises);
+                const results = this.formulateSelectiveInclusionReportResults(
+                    totalPatientCount,
                     bitmapMasks,
                     queryResults,
                     inclusionReportFiltercards,
@@ -244,6 +429,52 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             },
             inclusionRuleStats,
             treemapData: treemapData,
+        };
+
+        return inclusionReportData;
+    }
+
+    private formulateSelectiveInclusionReportResults(
+        totalPatientCount,
+        bitmapMasks: string[],
+        queryResults,
+        inclusionReportFiltercards,
+        baseInclusionRuleStats: BaseInclusionRuleStat[]
+    ): SelectiveInclusiveReportResults {
+        let baseCount = totalPatientCount;
+        let finalCount = 0;
+        let lostCount = 0; // lostCount is determined by exit event
+        bitmapMasks.forEach((bitmapMask, idx) => {
+            const pcount =
+                queryResults[idx]["data"][0]["patient.attributes.pcount"];
+            baseInclusionRuleStats[idx].countSatisfying = pcount;
+            finalCount = pcount;
+        });
+
+        // Construct attritionStats
+        let cumulativeCountSatisfying = 0;
+        const attritionStats: AttritionStat[] = baseInclusionRuleStats.map(
+            (e) => {
+                return {
+                    id: e.id,
+                    name: e.name,
+                    isExclude: e.isExclude,
+                    cumulativeCountSatisfying: e.countSatisfying,
+                };
+            }
+        );
+
+        const inclusionReportData = {
+            summary: {
+                baseCount,
+                finalCount,
+                lostCount,
+                percentMatched: this.calcPercentageString(
+                    finalCount,
+                    baseCount
+                ),
+            },
+            attritionStats,
         };
 
         return inclusionReportData;
@@ -392,6 +623,69 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
     }
 
     /**
+     * Collects all interaction instanceIDs from the given filtercards.
+     */
+    private collectInteractionIds(filtercards: any[]): Set<string> {
+        const ids = new Set<string>();
+        for (const filtercard of filtercards) {
+            if (filtercard.content) {
+                for (const fc of filtercard.content) {
+                    if (fc.instanceID) ids.add(fc.instanceID);
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Strips advanceTimeFilter from filter card contents when the referenced
+     * target interaction is not present in the provided set of interaction IDs.
+     */
+    private stripInvalidAdvanceTimeFilters(
+        bitmaskContent: any,
+        includedInteractionIds: Set<string>
+    ): void {
+        if (!bitmaskContent.content) return;
+        for (const filtercard of bitmaskContent.content) {
+            if (!filtercard.advanceTimeFilter) continue;
+            const refs = this.getAdvanceTimeFilterRefs(
+                filtercard.advanceTimeFilter
+            );
+            if (refs.some((ref) => !includedInteractionIds.has(ref))) {
+                delete filtercard.advanceTimeFilter;
+            }
+        }
+    }
+
+    /**
+     * Extracts all target interaction references from an advanceTimeFilter.
+     * These are the instanceIDs of other interactions referenced by the temporal query.
+     */
+    private getAdvanceTimeFilterRefs(advanceTimeFilter: any): string[] {
+        const refs: string[] = [];
+        if (advanceTimeFilter.filters) {
+            for (const f of advanceTimeFilter.filters) {
+                if (f.value) refs.push(f.value);
+            }
+        }
+        if (advanceTimeFilter.request) {
+            for (const req of advanceTimeFilter.request) {
+                if (req.and) {
+                    for (const e of req.and) {
+                        if (e.value) refs.push(e.value);
+                        if (e.or) {
+                            for (const o of e.or) {
+                                if (o.value) refs.push(o.value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return refs;
+    }
+
+    /**
      * Generates all possible bitmap masks for a set of size n.
      * Example if n === 3, output is ['000', '001', '010', '011', '100', '101', '110', '111']
      * @param n The number of elements (bits)
@@ -405,6 +699,45 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
         for (let i = 0; i < totalCombinations; i++) {
             bitmapMasks.push(i.toString(2).padStart(n, "0"));
         }
+        return bitmapMasks;
+    }
+
+    /**
+     * Generates all possible selective bitmap masks for a set of size n, with default value "1" and "0" if the filter card is excluded.
+     * Examples,
+     * if n === 3 & all filter cards are inclusive, then the output is ['1', '11', '111']
+     * if n === 4 & the last filter card is exclusive, then the output is ['1', '11', '111', '1110']
+     * if n === 5 & the 3rd & last filter cards are exclusive, then the output is ['1', '11', '110', '1101', '11010']
+     * @param inclusionReportFiltercards The list of filtercards to be considered for bitmap mask generation
+     * @returns An array of strings representing all possible bitmap masks where all are enabled
+     */
+    private getSelectiveBitmapMasks(inclusionReportFiltercards): string[] {
+        let bitmapMasks = [];
+        // max number of filters supported, just to define an upper bound to input array
+        const MAX_FILTERCARDS = 20;
+        if (
+            inclusionReportFiltercards &&
+            inclusionReportFiltercards.length > 0
+        ) {
+            const n = Math.min(
+                inclusionReportFiltercards.length,
+                MAX_FILTERCARDS
+            );
+            let isExclude = false;
+
+            for (let i = 0; i < n; i++) {
+                let bitmapMask = "";
+                for (let j = 0; j <= i; j++) {
+                    isExclude = inclusionReportFiltercards[j].isExclude
+                        ? true
+                        : false;
+                    bitmapMask += isExclude ? "0" : "1";
+                    isExclude = false;
+                }
+                bitmapMasks.push(bitmapMask);
+            }
+        }
+        console.log(`bitmapMasks:${bitmapMasks}`);
         return bitmapMasks;
     }
 

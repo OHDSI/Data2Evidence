@@ -3,6 +3,7 @@ import axios from 'axios'
 import Constants from '../../utils/Constants'
 import * as types from '../mutation-types'
 import QueryString from '../../utils/QueryString'
+import { useNotificationStore } from '../../stores/notifications'
 
 const CancelToken = axios.CancelToken
 const csvEndpoints = {
@@ -41,6 +42,8 @@ const state = {
   fireRequest: false,
   // hold fire request during batch updates (e.g., applying required filters)
   fireRequestHeld: false,
+  // tracks whether the right pane has ever been opened (used to avoid double setFireRequest on bookmark load)
+  rightPaneMounted: false,
 }
 
 // Cancel tokens
@@ -90,6 +93,7 @@ const getters = {
   getZipFireDownload: modulestate => modulestate.zipFireDownload,
   getFireRequest: modulestate => modulestate.fireRequest,
   isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
+  isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
 }
 
 // actions
@@ -171,7 +175,7 @@ const actions = {
         noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', response.data.logId)
       }
 
-      dispatch('setAlertMessage', {
+      useNotificationStore().setAlertMessage({
         message: noDataReason,
       })
 
@@ -243,7 +247,7 @@ const actions = {
       try {
         entityColumns = splitEntitiesByColumns(params.cohortDefinition.columns)
       } catch (e) {
-        dispatch('setAlertMessage', {
+        useNotificationStore().setAlertMessage({
           message: e.message,
         })
         throw e
@@ -281,7 +285,7 @@ const actions = {
               noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', err.response.data.logId)
             }
 
-            dispatch('setAlertMessage', {
+            useNotificationStore().setAlertMessage({
               message: noDataReason,
             })
             throw err.response
@@ -340,6 +344,9 @@ const actions = {
       commit(types.CHART_SET_FIRE_REQUEST)
     }
   },
+  setRightPaneMounted({ commit }, value: boolean) {
+    commit(types.SET_RIGHT_PANE_MOUNTED, value)
+  },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
   },
@@ -396,6 +403,9 @@ const mutations = {
   },
   [types.CHART_COLUMNS_TO_INCLUDE](modulestate, columnsToInclude) {
     modulestate.columnsToInclude = columnsToInclude
+  },
+  [types.SET_RIGHT_PANE_MOUNTED](modulestate, value: boolean) {
+    modulestate.rightPaneMounted = value
   },
 }
 

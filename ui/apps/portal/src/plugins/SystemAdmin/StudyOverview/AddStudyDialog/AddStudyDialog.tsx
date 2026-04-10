@@ -13,6 +13,7 @@ import { FEATURE_FHIR_SERVER } from "../../../../config";
 import { DatasetMap } from "../../../../constant";
 import { useTranslation } from "../../../../contexts";
 import { useDbVocabSchemas, useEnabledFeatures, usePaConfigs, useTenant } from "../../../../hooks";
+import FlowRunNotificationDialog from "../FlowRunNotificationDialog/FlowRunNotificationDialog";
 import {
   CacheDatasetType,
   CloseDialogType,
@@ -226,6 +227,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const [feedback, setFeedback] = useState<Feedback>({});
   const [featureFlags] = useEnabledFeatures();
+  const [flowRunId, setFlowRunId] = useState<string | null>(null);
+  const [createdDatasetName, setCreatedDatasetName] = useState<string>("");
 
   const SchemaOptions: dropdownOption[] = useMemo(() => {
     const result: dropdownOption[] = [
@@ -294,9 +297,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       setFeedback({});
       setFormData(EMPTY_FORM_DATA);
       setFormError(EMPTY_FORM_ERROR);
+      setFlowRunId(null);
+      setCreatedDatasetName("");
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose]
   );
 
   const displayCacheConfiguration = useMemo(() => {
@@ -536,9 +541,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
     try {
       setLoading(true);
-      await api.gateway.createDataset(input);
+      const result = await api.gateway.createDataset(input);
 
-      handleClose("success");
+      setCreatedDatasetName(name.trim());
+      setFlowRunId((result as any)?.flowRunId ?? null);
     } catch (err: any) {
       setFeedback({
         type: "error",
@@ -549,6 +555,18 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       setLoading(false);
     }
   }, [formData, tenant, isFormError, setLoading, handleClose, parseDatamodelOption]);
+
+  if (createdDatasetName) {
+    return (
+      <FlowRunNotificationDialog
+        title={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CREATED_TITLE)}
+        open={open}
+        onClose={() => handleClose("success")}
+        description={getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CREATED_DESCRIPTION, [createdDatasetName])}
+        flowRunId={flowRunId}
+      />
+    );
+  }
 
   return (
     <Dialog
