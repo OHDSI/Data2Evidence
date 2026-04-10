@@ -1,24 +1,12 @@
-import { object, z } from "zod";
+const _env = Deno.env.toObject();
 
-const _env = Object.assign({}, Deno.env.toObject());
-const Env = z.object({
-  SERVICE_ROUTES: z
-    .string()
-    .optional()
-    .transform(
-      (
-        str: string | undefined,
-        ctx: any,
-      ): z.infer<ReturnType<typeof object>> | undefined => {
-        if (!str) return undefined;
-        try {
-          return JSON.parse(str);
-        } catch (_e) {
-          ctx.addIssue({ code: "custom", message: "Invalid JSON" });
-          return z.NEVER;
-        }
-      },
-    ),
-});
+export const env = {
+  IDP__ALP_DATA__CLIENT_ID: _env.IDP__ALP_DATA_CLIENT_ID,
+  IDP__ALP_DATA__CLIENT_SECRET: _env.IDP__ALP_DATA__CLIENT_SECRET,
+  ALP_GATEWAY_OAUTH__URL: _env.ALP_GATEWAY_OAUTH__URL,
+  SERVICE_ROUTES: _env.SERVICE_ROUTES || "{}",
+  BINARY_UPLOAD_LIMIT_SIZE: _env.BINARY_UPLOAD_LIMIT_SIZE,
+};
 
-export const env = Env.parse(_env);
+export const services = JSON.parse(env.SERVICE_ROUTES);
+export const binaryUploadLimitSize = env.BINARY_UPLOAD_LIMIT_SIZE;
