@@ -115,7 +115,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set Y-axis to month of birth
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
