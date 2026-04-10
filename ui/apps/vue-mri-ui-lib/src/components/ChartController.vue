@@ -12,8 +12,8 @@
           ></axisMenuButton>
         </template>
         <xAxisColorButton
-          ref="xAxisColorButton"
           :parentContainer="$refs.axisContainer"
+          :selectedAxis="colorAxisIndex"
           @colorAxisSelected="onColorAxisSelected"
         ></xAxisColorButton>
         <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
@@ -125,7 +125,6 @@ export default {
       if (newVal?.bmkId !== oldVal?.bmkId) {
         this.hasSetDefaultColorAxis = false
         this.colorAxisIndex = null
-        this.$refs.xAxisColorButton?.resetSelection()
       }
     },
   },
@@ -141,7 +140,6 @@ export default {
       'getChartCover',
       'getChartSelection',
       'getKMDisplayInfo',
-      'getMriFrontendConfig',
       'getActiveBookmark',
     ]),
     stackAttributeHasSelection() {
@@ -222,7 +220,6 @@ export default {
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
             this.colorAxisIndex = null
-            this.$refs.xAxisColorButton?.resetSelection()
           }
           resolve(confirmed)
         }
@@ -232,11 +229,7 @@ export default {
     onColorAxisSelected(axisIndex: number) {
       if (this.stackAttributeHasSelection) {
         this.clearConfirmationMessage = this.getText('MRI_PA_CONFIRM_CLEAR_STACKING')
-        // On cancel, revert the xAxisColorButton visual state since it already
-        // updated its selectedOption before emitting the event
-        this.pendingCancelRevert = () => {
-          this.$refs.xAxisColorButton?.resetSelection()
-        }
+        this.pendingCancelRevert = null
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
             this.colorAxisIndex = axisIndex
@@ -284,7 +277,7 @@ export default {
       if (smallest.count > 5) return
 
       this.$nextTick(() => {
-        this.$refs.xAxisColorButton?.selectAxis(smallest.axisIndex)
+        this.colorAxisIndex = smallest.axisIndex
       })
     },
   },

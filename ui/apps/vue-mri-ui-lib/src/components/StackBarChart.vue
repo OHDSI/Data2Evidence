@@ -484,10 +484,14 @@ export default {
           if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
             // Collect unique x-axis values across all traces in stable order
             const uniqueVals: string[] = []
+            const seen = new Set<string>()
             this.chartData.traces.forEach(trace => {
               trace.customdata?.forEach(cd => {
                 const val = String(cd.values?.[valuesIndex] ?? '')
-                if (val && !uniqueVals.includes(val)) uniqueVals.push(val)
+                if (val && !seen.has(val)) {
+                  seen.add(val)
+                  uniqueVals.push(val)
+                }
               })
             })
             // Map each unique value to a ChartColorway color (cycling)
@@ -504,15 +508,9 @@ export default {
             // Build color legend for the legend component
             this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
           }
-        }
-
-        freshLayout.showlegend = false
-        freshLayout.xaxis.type = this.chartData.axisType
-        const xTicks = this.buildXAxisTicks()
-        if (xTicks) {
-          freshLayout.xaxis.tickvals = xTicks.tickvals
-          freshLayout.xaxis.ticktext = xTicks.ticktext
-          freshLayout.xaxis.tickangle = xTicks.tickangle
+        } else {
+          // Clear color-by state when no color axis is selected
+          delete this.chartData.colorLegend
         }
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)

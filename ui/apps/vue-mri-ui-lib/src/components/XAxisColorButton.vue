@@ -45,7 +45,7 @@ import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 
 // Props & Emits
-defineProps<{ parentContainer: any }>()
+const props = defineProps<{ parentContainer: any; selectedAxis: number | null }>()
 const emit = defineEmits<{ colorAxisSelected: [value: number | null] }>()
 
 // Store
@@ -65,6 +65,8 @@ const menuButtonEl = ref<HTMLButtonElement | null>(null)
 const selectedFilterText = ref('')
 const selectedAttrText = ref('')
 const selectedAxisIndex = ref<number | null>(null)
+const selectedFilterCardId = ref<string | null>(null)
+const selectedKey = ref<string | null>(null)
 const selectionTooltip = computed(() =>
   selectedAttrText.value ? `${selectedFilterText.value} - ${selectedAttrText.value}` : getText('MRI_PA_SELECT_X_AXIS')
 )
@@ -102,6 +104,18 @@ watch(getMriFrontendConfig, () => {
 watch(selectedAxisIndex, () => {
   buildMenuData()
 })
+
+// Sync internal state when parent changes selectedAxis prop
+watch(
+  () => props.selectedAxis,
+  newVal => {
+    if (newVal === null && selectedAxisIndex.value !== null) {
+      resetSelection()
+    } else if (newVal !== null && newVal !== selectedAxisIndex.value) {
+      selectAxisInternal(newVal)
+    }
+  }
+)
 
 // Methods
 function buildMenuData() {
@@ -175,7 +189,11 @@ function buildMenuData() {
 
   // Reset selection if the selected option is no longer among the available menu items
   if (selectedAxisIndex.value !== null) {
-    const stillValid = menuData.some((item: any) => item.data && item.data.axisIndex === selectedAxisIndex.value)
+    const axis = allAxes[selectedAxisIndex.value]
+    const stillValid =
+      menuData.some((item: any) => item.data && item.data.axisIndex === selectedAxisIndex.value) &&
+      axis?.props?.filterCardId === selectedFilterCardId.value &&
+      axis?.props?.key === selectedKey.value
     if (!stillValid) {
       resetSelection()
       emit('colorAxisSelected', null)
@@ -205,9 +223,6 @@ function handleClick(data: any) {
     } else {
       const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === data.axisIndex)
       if (menuItem) {
-        selectedFilterText.value = menuItem.data.filterText
-        selectedAttrText.value = menuItem.data.attrText
-        selectedAxisIndex.value = data.axisIndex
         emit('colorAxisSelected', data.axisIndex)
       }
     }
@@ -215,13 +230,15 @@ function handleClick(data: any) {
   closeMenu()
 }
 
-function selectAxis(axisIndex: number) {
+function selectAxisInternal(axisIndex: number) {
   const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === axisIndex)
   if (menuItem) {
     selectedFilterText.value = menuItem.data.filterText
     selectedAttrText.value = menuItem.data.attrText
     selectedAxisIndex.value = axisIndex
-    emit('colorAxisSelected', axisIndex)
+    const axis = getAllAxes.value[axisIndex]
+    selectedFilterCardId.value = axis?.props?.filterCardId ?? null
+    selectedKey.value = axis?.props?.key ?? null
   }
 }
 
@@ -229,10 +246,9 @@ function resetSelection() {
   selectedFilterText.value = ''
   selectedAttrText.value = ''
   selectedAxisIndex.value = null
+  selectedFilterCardId.value = null
+  selectedKey.value = null
 }
-
-// Expose resetSelection and selectAxis so parent can call them via template ref
-defineExpose({ resetSelection, selectAxis })
 </script>
 
 <style scoped>
