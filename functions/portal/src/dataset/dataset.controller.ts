@@ -224,4 +224,14 @@ export class DatasetController {
       type,
     );
   }
+
+  @Put("update-database-code")
+  async updateDatabaseCode(
+    @Body() body: { datasetId: string; databaseCode: string },
+  ) {
+    return await this.datasetCommandService.updateDatabaseCode(
+      body.datasetId,
+      body.databaseCode,
+    );
+  }
 }
