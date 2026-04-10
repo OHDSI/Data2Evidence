@@ -1,6 +1,6 @@
 {
   "name": "@ohdsi/d2e",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Data2Evidence Installer",
   "license": "Apache-2.0",
   "homepage": "https://d2e.sg",
@@ -31,15 +31,19 @@
     "deploy:logs": "ENV_TYPE=remote node ./scripts/dist/cli.js -v develop -e -n .env.remote logs",
     "logs": "npm run local -- logs",
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
-    "inittestdb": "node tests/backend_integration_tests/build/initdb.js test",
-    "removetestdb": "node tests/backend_integration_tests/build/initdb.js rmonly",
+    "inittestdb-hana": "node tests/backend_integration_tests/build/initdb-hana.js test",
+    "removetestdb-hana": "node tests/backend_integration_tests/build/initdb-hana.js rmonly",
+    "inittestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js test",
+    "removetestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal",
     "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist",
     "prepare": "npm run build:ts"
   },
   "optionalDependencies": {
     "fast-csv": "5.0.2",
-    "hdb": "0.19.12"
+    "hdb": "0.19.12",
+    "pg": "8.16.3",
+    "pg-format": "1.0.4"
   },
   "devDependencies": {
     "@types/node": "^18",

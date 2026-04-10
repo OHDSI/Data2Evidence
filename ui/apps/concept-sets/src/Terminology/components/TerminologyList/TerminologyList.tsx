@@ -82,6 +82,27 @@ const mapFilterOptions = (options: {
   });
 };
 
+/**
+ * Maps MRT column accessorKey values to the backend sortBy parameter names
+ * accepted by the d2e-webapi vocabulary search endpoint.
+ */
+const MRT_COLUMN_TO_SORT_BY: Record<string, string> = {
+  conceptId: "concept_id",
+  conceptName: "concept_name",
+  vocabularyId: "vocabulary_id",
+  conceptCode: "concept_code",
+  conceptClassId: "concept_class_id",
+  domainId: "domain_id",
+  concept: "standard_concept",
+  validity: "standard_concept",
+  score: "score",
+  // Count columns — forwarded as-is to trigger the two-step path in d2e-webapi
+  recordCount: "recordCount",
+  descendantRecordCount: "descendantRecordCount",
+  personCount: "personCount",
+  descendantPersonCount: "descendantPersonCount",
+};
+
 const TerminologyList: FC<TerminologyListProps> = ({
   userId,
   onConceptClick,
@@ -120,8 +141,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
     });
   const [columnFilters, setColumnFilters] = useState<
     { id: string; value: unknown }[]
-  >([]);
-  const [useDefaultFilters, setUseDefaultFilters] = useState(true);
+  >(defaultFilters || []);
+  const [defaultFiltersValidated, setDefaultFiltersValidated] = useState(false);
   const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const { setFeedback } = useFeedback();
   const tableRef = useRef<HTMLTableElement>(null);
@@ -224,6 +245,15 @@ const TerminologyList: FC<TerminologyListProps> = ({
         (filter) => filter.id === "validity",
       )?.value || []) as string[];
 
+      // Resolve sort params for server-side search (non-Atlas SEARCH tab only)
+      const activeSortColumn = !isAtlas && sorting.length > 0 ? sorting[0] : null;
+      const sortByParam = activeSortColumn
+        ? MRT_COLUMN_TO_SORT_BY[activeSortColumn.id]
+        : undefined;
+      const sortOrderParam = activeSortColumn
+        ? (activeSortColumn.desc ? "desc" : "asc")
+        : undefined;
+
       // Fetch data based on current tab
       if (
         tab === "SEARCH" &&
@@ -261,6 +291,8 @@ const TerminologyList: FC<TerminologyListProps> = ({
               standardConceptFilters,
               validityFilters,
               controller.signal,
+              sortByParam,
+              sortOrderParam,
             ),
             api.terminology.getConceptsCount(
               datasetId,
@@ -393,6 +425,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     allFilterOptionsZeroed,
     getText,
     isAtlas,
+    sorting,
   ]);
 
   // clean up abort controller on unmount
@@ -409,46 +442,39 @@ const TerminologyList: FC<TerminologyListProps> = ({
     [onSelectConceptId],
   );
 
+  // Validate defaultFilters against filterOptions once loaded.
+  // defaultFilters are already applied at init, so this only updates
+  // if casing differs or values don't exist in filterOptions.
   useEffect(() => {
-    if (columnFilters.length || !defaultFilters) {
-      setUseDefaultFilters(false);
+    if (defaultFiltersValidated || !defaultFilters || !filterOptions) {
+      return;
     }
-  }, [columnFilters.length, defaultFilters]);
+    setDefaultFiltersValidated(true);
 
-  useEffect(() => {
-    if (useDefaultFilters && defaultFilters && filterOptions) {
-      // Trust defaultFilters from parent component (PA-Atlas)
-      // Apply them immediately without waiting for filterOptions to load
-      // Validate default filters against loaded filter options to prevent empty pills
-      const filters = JSON.parse(
-        JSON.stringify(defaultFilters),
-      ) as typeof defaultFilters;
+    const validFilters = defaultFilters
+      .map((filter) => {
+        const availableOptions =
+          filterOptions[filter.id as keyof FilterOptions];
+        if (!availableOptions) return filter;
 
-      // Filter out values that don't exist in filterOptions
-      const validFilters = filters
-        .map((filter) => {
-          const availableOptions =
-            filterOptions[filter.id as keyof FilterOptions];
-          if (!availableOptions) return filter;
+        const validValues = filter.value
+          .map((val) => {
+            const matchingKey = Object.keys(availableOptions).find(
+              (key) => key.toLowerCase() === val.toLowerCase(),
+            );
+            return matchingKey;
+          })
+          .filter((val): val is string => val !== undefined);
 
-          // Only keep values that exist in the filter options (case-insensitive match)
-          const validValues = filter.value
-            .map((val) => {
-              // Find matching key in availableOptions (case-insensitive)
-              const matchingKey = Object.keys(availableOptions).find(
-                (key) => key.toLowerCase() === val.toLowerCase(),
-              );
-              // Return the properly capitalized value from availableOptions
-              return matchingKey;
-            })
-            .filter((val): val is string => val !== undefined);
+        return { ...filter, value: validValues };
+      })
+      .filter((f) => f.value.length > 0);
 
-          return { ...filter, value: validValues };
-        })
-        .filter((f) => f.value.length > 0);
+    // Only update if validation changed something (e.g. casing fix or invalid value removed)
+    if (JSON.stringify(validFilters) !== JSON.stringify(columnFilters)) {
       setColumnFilters(validFilters);
     }
-  }, [defaultFilters, useDefaultFilters, filterOptions]);
+  }, [defaultFilters, defaultFiltersValidated, filterOptions]);
 
   // Reset page to 0 when search criteria change
   useEffect(() => {
@@ -456,6 +482,13 @@ const TerminologyList: FC<TerminologyListProps> = ({
       setPage(0);
     }
   }, [searchText, tab, JSON.stringify(columnFilters), userId]);
+
+  // Reset page to 0 when sort changes (server-side search only)
+  useEffect(() => {
+    if (tab === tabNames.SEARCH && !isAtlas) {
+      setPage(0);
+    }
+  }, [JSON.stringify(sorting), tab, isAtlas]);
 
   // Fetch data when search criteria change
   useEffect(() => {
@@ -592,6 +625,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
         {
           accessorKey: "conceptId",
           header: getText(i18nKeys.TERMINOLOGY_LIST__ID),
+          sortDescFirst: false,
           grow: true,
           size: 100,
         },
@@ -599,13 +633,13 @@ const TerminologyList: FC<TerminologyListProps> = ({
           accessorKey: "conceptCode",
           header: getText(i18nKeys.TERMINOLOGY_LIST__CODE),
           grow: true,
-          size: 180,
+          size: 120,
         },
         {
           accessorKey: "conceptName",
           header: getText(i18nKeys.TERMINOLOGY_LIST__NAME),
           grow: true,
-          size: isDrawer ? 250 : 350,
+          size: isDrawer ? 200 : 250,
         },
         ...(listData.some((d) => d.score)
           ? [
@@ -680,8 +714,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "recordCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT_TOOLTIP),
+                },
+                sortDescFirst: true,
                 grow: true,
-                size: 50,
+                size: 100,
               },
             ]
           : []),
@@ -692,8 +730,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 header: getText(
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT,
                 ),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT_TOOLTIP),
+                },
+                sortDescFirst: true,
                 grow: true,
-                size: 50,
+                size: 100,
               },
             ]
           : []),
@@ -702,8 +744,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
               {
                 accessorKey: "personCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT_TOOLTIP),
+                },
+                sortDescFirst: true,
                 grow: true,
-                size: 50,
+                size: 100,
               },
             ]
           : []),
@@ -714,8 +760,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
                 header: getText(
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT,
                 ),
+                muiTableHeadCellProps: {
+                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT_TOOLTIP),
+                },
+                sortDescFirst: true,
                 grow: true,
-                size: 50,
+                size: 100,
               },
             ]
           : []),
@@ -890,11 +940,18 @@ const TerminologyList: FC<TerminologyListProps> = ({
     selectedConcepts,
     getText,
     mode,
+    isAtlas,
+    searchText,
+    JSON.stringify(columnFilters),
   ]);
+
   const table = useMaterialReactTable({
     layoutMode: "grid",
     columns,
     data: listData,
+    localization: {
+      noRecordsToDisplay: getText(i18nKeys.TERMINOLOGY_LIST__EMPTY_TABLE)
+    },
     initialState: {
       density: "compact",
       // Hide column filters for Atlas when filterOptions are empty
@@ -903,7 +960,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     defaultColumn: {
       enableGlobalFilter: false,
       enableHiding: false,
-      enableSorting: isAtlas, // Only enable sorting for PA-Atlas (client-side with all data)
+      enableSorting: isAtlas || tab === tabNames.SEARCH,
       enableColumnFilter: false,
       enableColumnActions: false,
     },

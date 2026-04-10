@@ -32,7 +32,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
-    logLevel: 'error', // Change to info after deprecation warnings are resolved
+    logLevel: 'info',
 
     plugins: [
       vue({
@@ -90,21 +90,25 @@ export default defineConfig(({ command, mode }): UserConfig => {
     },
 
     css: {
+      postcss: {
+        plugins: [
+          // Remove deprecated `color-adjust` property from third-party CSS.
+          // These files already include `print-color-adjust` alongside it, so removing is safe.
+          {
+            postcssPlugin: 'remove-color-adjust',
+            Declaration: {
+              'color-adjust': (decl) => { decl.remove() },
+            },
+          },
+        ],
+      },
       preprocessorOptions: {
         scss: {
           // Use modern-compiler API for better performance with sass
           api: 'modern-compiler',
-          // Remove the silenceDeprecations options after fixing sass warnings
-          // Run `rm -rf node_modules/.vite` before `bun serve`
-          silenceDeprecations: [
-            'legacy-js-api',
-            'import',
-            'global-builtin',
-            'color-functions',
-            'slash-div',
-            'bogus-combinators',
-            'abs-percent',
-          ],
+          quietDeps: true,
+          // Bootstrap scoping in style.scss requires nested @import which cannot use @use
+          silenceDeprecations: ['import'],
         } as Record<string, unknown>,
       },
     },

@@ -92,7 +92,8 @@ export const configDefaultValues = {
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
-        "inclusionReport": false
+        "inclusionReport": false,
+        "intersectViewInclusionReport": false,
     },
     "configInformations": {
         "note": ""

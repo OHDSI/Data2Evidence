@@ -1,8 +1,13 @@
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
+import {
+  type InclusionReportResponse,
+  type AttritionApiResponse,
+  parseTreemapData,
+} from '@/query-filter/types/InclusionReportTypes'
 
 export type AttritionStat = {
   id: number
   name: string
+  isExclude: boolean
   countSatisfying: number
   percentSatisfying: string
   pctDiff: string
@@ -42,7 +47,7 @@ const countMatch = (node: any, ruleIds: number[], totalRuleCount: number): numbe
 export function computeAttritionStats(report: InclusionReportResponse, order?: number[]): AttritionStat[] {
   if (!report) return []
 
-  const treemapData = JSON.parse(report.treemapData)
+  const treemapData = parseTreemapData(report.treemapData)
   const baseCount = report.summary.baseCount
   const ruleOrder: number[] = order || report.inclusionRuleStats.map(rule => rule.id)
 
@@ -61,6 +66,7 @@ export function computeAttritionStats(report: InclusionReportResponse, order?: n
     return {
       id: rule.id,
       name: rule.name,
+      isExclude: rule.isExclude,
       countSatisfying,
       percentSatisfying: (percentSatisfying * 100).toFixed(2) + '%',
       pctDiff: (pctDiff * 100).toFixed(2) + '%',
@@ -68,4 +74,31 @@ export function computeAttritionStats(report: InclusionReportResponse, order?: n
   })
 
   return stats as AttritionStat[]
+}
+
+/**
+ * Map an AttritionApiResponse into enriched stat objects.
+ * Computes percentSatisfying, pctDiff (delta from prior row), and percentExcluded.
+ */
+export function mapAttritionApiResponseToStats(
+  apiResponse: AttritionApiResponse
+): (AttritionStat & { percentExcluded: string })[] {
+  const baseCount = apiResponse.summary.baseCount
+  let priorPct = 1.0
+
+  return apiResponse.attritionStats.map(s => {
+    const pctSat = baseCount !== 0 ? s.cumulativeCountSatisfying / baseCount : 0
+    const pctDiff = priorPct - pctSat
+    priorPct = pctSat
+
+    return {
+      id: s.id,
+      name: s.name,
+      isExclude: s.isExclude,
+      countSatisfying: s.cumulativeCountSatisfying,
+      percentSatisfying: (pctSat * 100).toFixed(2) + '%',
+      pctDiff: (pctDiff * 100).toFixed(2) + '%',
+      percentExcluded: ((1 - pctSat) * 100).toFixed(2) + '%',
+    }
+  })
 }

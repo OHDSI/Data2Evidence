@@ -66,7 +66,7 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
         <div className="u-padding-vertical-normal">
           <FormControl fullWidth>
             <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <Select fullWidth value={language} label="Language" onChange={handleLanguageChange}>
+              <Select fullWidth value={language} label={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE)} onChange={handleLanguageChange}>
                 {SUPPORTED_LANGUAGES.map((language) => (
                   <MenuItem key={language.name} value={language.value}>
                     {language.name}

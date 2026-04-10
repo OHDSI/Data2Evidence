@@ -12,6 +12,7 @@ export interface FunnelChartData {
 export interface AttritionStat {
   id: number
   name: string
+  isExclude: boolean
   countSatisfying: number
   percentSatisfying: string
   pctDiff: string
@@ -36,11 +37,12 @@ export function useFunnelChart(
 
     // Add each inclusion rule with calculated statistics
     stats.forEach(stat => {
+      const prefix = stat.isExclude ? '- ' : '+ '
       const name = stat.name.length > 35 ? stat.name.slice(0, 35) + '...' : stat.name
-      labels.push(`${name}`)
+      labels.push(`${prefix}${name}`)
       values.push(stat.countSatisfying)
       hoverTexts.push(
-        `${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
+        `${prefix}${stat.name}<br>Count: ${stat.countSatisfying.toLocaleString()}<br>Percent: ${stat.percentSatisfying}`
       )
     })
 
@@ -68,7 +70,7 @@ export function useFunnelChart(
       text: funnelChartData.value.hoverTexts,
       hoverinfo: 'text',
       textposition: 'inside',
-      texttemplate: 'N: %{x} (%{percentInitial:.2%})',
+      texttemplate: 'N: %{x:,} (%{percentInitial:.2%})',
       constraintext: 'outside',
       textinfo: 'value+percent initial',
       marker: {
@@ -170,7 +172,10 @@ export function useFunnelChart(
     const headers = ['Rule', 'Count', 'Percent of Total', 'Percent Difference']
     const rows = [
       ['Total', summary.baseCount.toString(), '100.00%', ''],
-      ...stats.map(stat => [stat.name, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]),
+      ...stats.map(stat => {
+        const prefix = stat.isExclude ? '- ' : '+ '
+        return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]
+      }),
     ]
 
     const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')

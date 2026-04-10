@@ -1,21 +1,24 @@
-import { ref, watch, computed, type Ref } from 'vue'
-import type { InclusionReportResponse } from '@/query-filter/types/InclusionReportTypes'
-import { computeAttritionStats } from '../computeAttritionStats'
+import { ref, watch, computed, nextTick, type Ref } from 'vue'
+import axios from 'axios'
+import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
+import { computeAttritionStats, mapAttritionApiResponseToStats, type AttritionStat } from '../computeAttritionStats'
 import { calculateFilteredSummary } from '../ruleSelectionFilter'
 
-export interface AttritionStat {
-  id: number
-  name: string
-  countSatisfying: number
-  percentSatisfying: string
-  pctDiff: string
-}
-
-export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportResponse | null>, treemapData: Ref<any>) {
+export function useRuleManagement(
+  inclusionReportResponse: Ref<InclusionReportResponse | null>,
+  treemapData: Ref<any>,
+  showIntersectView: boolean = true,
+  fetchAttritionReport?: (ruleOrder?: number[], signal?: AbortSignal) => Promise<AttritionApiResponse>,
+  lastAttritionApiResponse?: Ref<AttritionApiResponse | null>,
+  getText?: (key: string, param?: string | string[]) => string
+) {
   const checkedRulesIds = ref<number[]>([])
   const draggableAttritionStats = ref<AttritionStat[]>([])
   const allAnyOption = ref<'ALL' | 'ANY'>('ANY')
   const passedFailedOption = ref<'PASSED' | 'FAILED'>('PASSED')
+  const isReorderLoading = ref(false)
+  const errorMessage = ref('')
+  let activeAbortController: AbortController | null = null
 
   const filteredSummary = computed(() => {
     if (!treemapData.value || checkedRulesIds.value.length === 0) {
@@ -65,9 +68,61 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     }
   }
 
-  function handleDragEnd() {
+  /**
+   * Fetch attrition stats from the attrition API and update local state.
+   * Used when showIntersectView is false and fetchAttritionReport is provided.
+   */
+  async function fetchAndUpdateAttritionStats(ruleOrder?: number[]) {
+    if (!fetchAttritionReport) {
+      // Fallback: compute locally when no API is provided
+      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value!, ruleOrder)
+      return
+    }
+    // Abort any in-flight request so only the newest one updates state
+    activeAbortController?.abort()
+    const controller = new AbortController()
+    activeAbortController = controller
+
+    isReorderLoading.value = true
+    errorMessage.value = ''
+    try {
+      const apiResponse = await fetchAttritionReport(ruleOrder, controller.signal)
+      const stats = mapAttritionApiResponseToStats(apiResponse)
+      // The attrition API remaps stat.id to the new positional index when a
+      // custom ruleOrder is supplied.  Restore the original rule IDs so that
+      // filterCardDetails lookup (indexed by original rule ID) stays correct.
+      if (ruleOrder?.length) {
+        stats.forEach((stat, idx) => {
+          stat.id = ruleOrder[idx]
+        })
+      }
+      draggableAttritionStats.value = stats
+    } catch (error: unknown) {
+      if (controller.signal.aborted) return // cancelled by a newer request, ignore
+      if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
+      console.error('[useRuleManagement] Failed to fetch attrition stats:', error)
+      const axiosError = error as { response?: { data?: { errorMessage?: string } } }
+      errorMessage.value = getText
+        ? getText('MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR')
+        : 'Attrition report update failed. Please contact your system administrator.'
+    } finally {
+      if (!controller.signal.aborted) {
+        isReorderLoading.value = false
+      }
+    }
+  }
+
+  async function handleDragEnd() {
+    // VueDraggable fires @end before @update:modelValue, so draggableAttritionStats
+    // still holds the old order at this point. Wait for nextTick so the model update
+    // (emitted via @update:draggableAttritionStats) is applied before reading the new order.
+    await nextTick()
     const newOrder = draggableAttritionStats.value.map(stat => stat.id)
-    draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+    if (!showIntersectView) {
+      fetchAndUpdateAttritionStats(newOrder)
+    } else {
+      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+    }
   }
 
   function getRowIndex(statId: number): number {
@@ -79,8 +134,14 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     if (index > 0) {
       const newStats = [...draggableAttritionStats.value]
       ;[newStats[index - 1], newStats[index]] = [newStats[index], newStats[index - 1]]
+      // Optimistically reorder rows in the UI
+      draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
-      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      if (!showIntersectView) {
+        fetchAndUpdateAttritionStats(newOrder)
+      } else {
+        draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      }
     }
   }
 
@@ -89,8 +150,14 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     if (index < draggableAttritionStats.value.length - 1) {
       const newStats = [...draggableAttritionStats.value]
       ;[newStats[index], newStats[index + 1]] = [newStats[index + 1], newStats[index]]
+      // Optimistically reorder rows in the UI
+      draggableAttritionStats.value = newStats
       const newOrder = newStats.map(s => s.id)
-      draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      if (!showIntersectView) {
+        fetchAndUpdateAttritionStats(newOrder)
+      } else {
+        draggableAttritionStats.value = computeAttritionStats(inclusionReportResponse.value, newOrder)
+      }
     }
   }
 
@@ -109,7 +176,18 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
       if (newResponse && newResponse.inclusionRuleStats) {
         // Initialize checkedRulesIds with all rule IDs
         checkedRulesIds.value = newResponse.inclusionRuleStats.map(r => r.id)
-        draggableAttritionStats.value = computeAttritionStats(newResponse)
+
+        if (!showIntersectView) {
+          // Use the already-fetched attrition API response if available,
+          // avoiding a duplicate request on initial load
+          if (lastAttritionApiResponse?.value) {
+            draggableAttritionStats.value = mapAttritionApiResponseToStats(lastAttritionApiResponse.value)
+          } else {
+            fetchAndUpdateAttritionStats()
+          }
+        } else {
+          draggableAttritionStats.value = computeAttritionStats(newResponse)
+        }
       }
     }
   )
@@ -120,6 +198,8 @@ export function useRuleManagement(inclusionReportResponse: Ref<InclusionReportRe
     allAnyOption,
     passedFailedOption,
     filteredSummary,
+    isReorderLoading,
+    errorMessage,
     toggleRuleSelection,
     isRuleChecked,
     areAllRulesChecked,

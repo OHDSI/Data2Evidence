@@ -483,7 +483,7 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
                     <Chip variant="outlined" label={option} {...getTagProps({ index })} key={option} />
                   ))
                 }
-                renderInput={(params) => <TextField {...params} label="Tags" variant="standard" />}
+                renderInput={(params) => <TextField {...params} label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TAGS)} variant="standard" />}
                 value={studyTagsData}
                 onChange={handleTagChange}
               />

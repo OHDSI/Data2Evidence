@@ -31,7 +31,7 @@
         />
       </div>
       <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
-        <VButton @click="openInclusionReportModal">Inclusion Report</VButton>
+        <VButton @click="openInclusionReportModal">{{ getText('MRI_PA_INCLUSION_REPORT_BUTTON') }}</VButton>
       </div>
       <div class="d-flex">
         <template v-for="chart in chartConfig" :key="chart.name">
@@ -143,7 +143,7 @@
     >
       <div class="inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Inclusion Report</div>
+          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
           <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
@@ -151,13 +151,15 @@
 
         <div class="inclusion-report-dialog__content">
           <InclusionReport
-            :cohort-definition-id="inclusionReportCohortDefinitionId"
+            cohort-definition-id=""
             :source-key="inclusionReportSourceKey"
-            :is-ready="inclusionReportIsReady"
             :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
+            :fetch-attrition-report="fetchAttritionReportFn"
             :show-person-event-switch="false"
+            :filter-card-details="inclusionReportFilterCardDetails"
+            :show-intersect-view="enableIntersectViewInclusionReport"
           />
         </div>
       </div>
@@ -200,10 +202,17 @@ function getBookmarkKey(bookmark) {
 import VButton from './vuetify/VButton.vue'
 import VDialog from './vuetify/VDialog.vue'
 import InclusionReport from '../query-filter/components/InclusionReport/index.vue'
+import type { RuleFilterCardDetails } from '../query-filter/types/InclusionReportTypes'
+import {
+  getAttributeName,
+  getAdvanceTimeFilterFormatted,
+  getInclusionReportFilterCardDetails,
+} from '../utils/filterCardUtils'
 
 export default {
   name: 'chartToolbar',
   props: ['hideEv', 'config', 'collectionEv', 'showUnHideFilters'],
+  emits: ['unhideEv', 'drilldown', 'open-filtersummary'],
   data() {
     // Initialize dashboard flow composable with dispatch and getters
     const store = (this as any).$store
@@ -222,14 +231,18 @@ export default {
       showSaveCohortModal: false,
       showInclusionReportModal: false,
       inclusionReportCache: null,
+      fetchAttritionReportFn: null as ((ruleOrder?: number[]) => Promise<any>) | null,
     }
   },
   watch: {
-    getHasAssignedConfig(val) {
-      if (val) {
-        this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-        this.refreshPatientCount()
-      }
+    getHasAssignedConfig: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
+          this.refreshPatientCount()
+        }
+      },
     },
     getActiveChart() {
       this.refreshPatientCount()
@@ -243,13 +256,15 @@ export default {
       }
     },
   },
+  created() {
+    this.fetchAttritionReportFn = (ruleOrder?: number[]) => this.fetchSelectiveInclusionReport(ruleOrder)
+  },
   mounted() {
     try {
       this.$nextTick(() => {
         window.addEventListener('click', this.closeSubMenu)
       })
       this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-      this.refreshPatientCount()
       this.loadValuesForAttributePath({
         attributePathUid: 'conceptSets',
         searchQuery: '',
@@ -280,6 +295,7 @@ export default {
       'getPLRequest',
       'getWizardConfig',
       'getFilterCards',
+      'getFilterCard',
       'getConstraintForAttribute',
       'getBookmarkFromIFR',
       'getConstraint',
@@ -304,20 +320,26 @@ export default {
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
     },
-    inclusionReportCohortDefinitionId() {
-      return this.getActiveBookmark?.cohortDefinitionId?.toString()
-    },
     inclusionReportSourceKey() {
       return this.getSelectedDataset?.id
-    },
-    inclusionReportIsReady() {
-      return true
     },
     inclusionReportCacheKey() {
       return JSON.stringify(this.getBookmarksData)
     },
     enableInclusionReport() {
       return this.getMriFrontendConfig?._internalConfig?.panelOptions?.inclusionReport
+    },
+    inclusionReportFilterCardDetails(): RuleFilterCardDetails[] {
+      const content = this.getBookmarksData?.filter?.cards?.content
+      if (!content) return []
+      return getInclusionReportFilterCardDetails(
+        content,
+        (configPath: string) => getAttributeName(configPath, this.getMriFrontendConfig, 'list'),
+        (filter: any) => getAdvanceTimeFilterFormatted(filter, this.getFilterCard, this.getText)
+      )
+    },
+    enableIntersectViewInclusionReport() {
+      return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.intersectViewInclusionReport
     },
   },
   methods: {
@@ -333,7 +355,6 @@ export default {
       'fireBookmarkQuery',
       'fireQuery',
       'onAddCohortOkButtonPress',
-      'setToastMessage',
       'ajaxAuth',
       'addFilterCard',
       'addFilterCardConstraint',
@@ -459,10 +480,6 @@ export default {
       this.showSaveCohortModal = false
     },
 
-    openDashboardModal() {
-      this.handleOpenDashboard()
-    },
-
     closeDashboardModal() {
       this.showDashboardModal = false
     },
@@ -472,6 +489,7 @@ export default {
     closeInclusionReportModal() {
       this.showInclusionReportModal = false
     },
+
     fetchInclusionReport() {
       const mriquery = JSON.stringify(this.getBookmarksData)
       const datasetId = this.getBookmarksData.datasetId
@@ -486,6 +504,18 @@ export default {
       }).then(result => {
         this.inclusionReportCache = { mriquery, result }
         return result
+      })
+    },
+    fetchSelectiveInclusionReport(ruleOrder?: number[]) {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+      const params: Record<string, any> = { mriquery, datasetId }
+      if (ruleOrder) {
+        params.ruleOrder = JSON.stringify(ruleOrder)
+      }
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/selectiveinclusionreport',
+        params,
       })
     },
   },

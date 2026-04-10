@@ -25,7 +25,7 @@ export const translations = {
       STARBOARD__NEW_NOTEBOOK_NO_TEMPLATE: "No template",
       STARBOARD__NEW_NOTEBOOK_CANCEL: "Cancel",
       STARBOARD__NEW_NOTEBOOK_CREATE: "Create",
-      STARBOARD__SYNC_FROM_REMOTE_BUTTON: "Sync from Remote",
+      STARBOARD__SYNC_FROM_REMOTE_BUTTON: "Sync from remote",
       STARBOARD__SYNCING_BUTTON: "Syncing...",
 
       // Header translations
@@ -33,11 +33,11 @@ export const translations = {
       HEADER__DOWNLOAD: "Download source code",
       HEADER__ERROR_DELETE: "An error has occurred while deleting notebook",
       HEADER__ERROR_SAVED: "An error has occurred while saving notebook",
-      HEADER__EXPORT: "Export Notebook",
-      HEADER__FILE_DELETED: "File Deleted",
+      HEADER__EXPORT: "Export notebook",
+      HEADER__FILE_DELETED: "File deleted",
       HEADER__IMPORT_ERROR: "An error has occurred. Please import Jupyter files(.ipynb) only.",
-      HEADER__IMPORT: "Import Notebook",
-      HEADER__NEW: "New Notebook",
+      HEADER__IMPORT: "Import notebook",
+      HEADER__NEW: "New notebook",
       HEADER__RENAME_ERROR: "An error has occurred. Please try again.",
       HEADER__RENAME_SUCCESS: "Changes saved",
       HEADER__SAVE: "Save",
@@ -47,8 +47,8 @@ export const translations = {
       // Edit title dialog
       EDIT_TITLE_DIALOG__ALREADY_EXISTS: "The notebook title already exists. Please enter a different title.",
       EDIT_TITLE_DIALOG__CANCEL: "Cancel",
-      EDIT_TITLE_DIALOG__EDIT_NOTEBOOK_TITLE: "Edit Notebook Title",
-      EDIT_TITLE_DIALOG__NOTEBOOK_TITLE: "Notebook Title",
+      EDIT_TITLE_DIALOG__EDIT_NOTEBOOK_TITLE: "Edit notebook title",
+      EDIT_TITLE_DIALOG__NOTEBOOK_TITLE: "Notebook title",
       EDIT_TITLE_DIALOG__SAVE: "Save",
 
       // Delete notebook dialog
@@ -58,12 +58,23 @@ export const translations = {
       DELETE_NOTEBOOK_DIALOG__DELETE: "Delete",
 
       // Empty notebook
-      EMPTY_NOTEBOOK__ADD: "Add New Notebook",
-      EMPTY_NOTEBOOK__IMPORT: "Import Notebook",
-      EMPTY_NOTEBOOK__TITLE: "ALP Notebook",
+      EMPTY_NOTEBOOK__ADD: "Add new notebook",
+      EMPTY_NOTEBOOK__IMPORT: "Import notebook",
+      EMPTY_NOTEBOOK__TITLE: "ALP notebook",
 
       // Notebook select
       NOTEBOOK_SELECT__SHARED: "(Shared)",
+
+      // Chat
+      CHAT__PLACEHOLDER: "Type your query",
+
+      // General
+      GENERAL__UNTITLED: "Untitled",
+      GENERAL__ERROR_OCCURRED: "An error has occurred.",
+      GENERAL__ERROR_CONTACT_SUPPORT: "Please try again. To report the error, please contact support.",
+      GENERAL__NOTEBOOK_ERROR: "Notebook Error",
+      GENERAL__NOTEBOOK_LOAD_ERROR: "An error occurred while loading the Notebook application.",
+      GENERAL__ERROR_DETAILS: "Error Details",
     },
   },
 };

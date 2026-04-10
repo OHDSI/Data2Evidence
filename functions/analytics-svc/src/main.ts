@@ -156,17 +156,14 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                if (
-                    env.USE_TREX_DB_CONN === "true" &&
-                    credentials.dialect != ANALYTICS_DB_DIALECTS.HANA
-                ) {
-                    req.dbConnections = getTrexDbConnection({
-                        analyticsCredentials: credentials,
-                    });
-                } else {
+                if (credentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
                     req.dbConnections = await getDBConnections({
                         analyticsCredentials: credentials,
                         userObj,
+                    });
+                } else {
+                    req.dbConnections = getTrexDbConnection({
+                        analyticsCredentials: credentials,
                     });
                 }
             }
@@ -675,7 +672,7 @@ const getDBConnections = async ({
             "SESSIONVARIABLE:APPLICATION"
         ] = `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
-            userObj.getEmail() ?? userObj.getUser();
+            userObj.getEmail() || userObj.getUser();
 
         if (analyticsCredentials.authentication_mode === "JWT") {
             delete analyticsCredentials.user;
