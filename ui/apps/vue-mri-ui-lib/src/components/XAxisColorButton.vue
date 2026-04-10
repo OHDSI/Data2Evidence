@@ -17,16 +17,11 @@
       </label>
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
-      <button
-        class="axisMenuButton"
-        ref="menuButton"
-        @click="toggleMenu"
-        :title="selectedOption || 'Select an x-axis'"
-        tabindex="0"
-      >
-        <span class="axisMenuText axisTextPlaceholder" v-if="!selectedOption"> Select an x-axis </span>
-        <span class="axisMenuSubText" v-if="selectedOption">
-          {{ selectedOption }}
+      <button class="axisMenuButton" ref="menuButton" @click="toggleMenu" :title="selectionTooltip" tabindex="0">
+        <span class="axisMenuText axisTextPlaceholder" v-if="!selectedAttrText"> Select an x-axis </span>
+        <span class="axisMenuText" v-if="selectedAttrText">{{ selectedFilterText }}</span>
+        <span class="axisMenuSubText" v-if="selectedAttrText">
+          {{ selectedAttrText }}
         </span>
         <span class="axisMenuButtonIcon"></span>
       </button>
@@ -55,6 +50,7 @@ const emit = defineEmits<{ colorAxisSelected: [value: number | null] }>()
 const store = useStore()
 const getAllAxes = computed(() => store?.getters?.getAllAxes)
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
+const getChartableFilterCards = computed(() => store?.getters?.getChartableFilterCards)
 const getText = (key: string) => store?.getters?.getText?.(key) || key
 
 // Template refs
@@ -64,7 +60,12 @@ const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 // Reactive state
 const menuVisible = ref(false)
 const menuButtonEl = ref<HTMLButtonElement | null>(null)
-const selectedOption = ref('')
+const selectedFilterText = ref('')
+const selectedAttrText = ref('')
+const selectedAxisIndex = ref<number | null>(null)
+const selectionTooltip = computed(() =>
+  selectedAttrText.value ? `${selectedFilterText.value} - ${selectedAttrText.value}` : 'Select an x-axis'
+)
 const axisMenuData = ref<any[]>([])
 
 // Lifecycle
@@ -92,7 +93,7 @@ watch(getMriFrontendConfig, () => {
   buildMenuData()
 })
 
-watch(selectedOption, () => {
+watch(selectedAxisIndex, () => {
   buildMenuData()
 })
 
@@ -117,21 +118,37 @@ function buildMenuData() {
         }
       })
       if (attrName) {
+        let filterCardName = filterCard.oInternalConfigFilterCard.name
+        if (!filterCardName || filterCardName.indexOf('undefined') > -1) {
+          filterCardName = getText('MRI_PA_FILTERCARD_TITLE_BASIC_DATA')
+        }
+        let filterCardCode = ''
+        if (getChartableFilterCards.value) {
+          getChartableFilterCards.value.forEach((fCard: any) => {
+            if (fCard.instanceId === axis.props.filterCardId) {
+              filterCardCode = fCard.name.replace(filterCardName, '').trim()
+            }
+          })
+        }
+        if (filterCardCode) {
+          filterCardCode = filterCardCode + ' - '
+        }
+        const filterText = `${filterCardCode}${filterCardName}`
         menuData.push({
           idx: menuIdx,
           subMenuStyle: {},
-          text: attrName,
+          text: `${filterText} - ${attrName}`,
           hasSubMenu: false,
           isSeperator: false,
           subMenu: [],
           disabled: false,
-          data: { axisIndex: i },
+          data: { axisIndex: i, filterText, attrText: attrName },
         })
         menuIdx += 1
       }
     }
   }
-  if (selectedOption.value && menuData.length > 0) {
+  if (selectedAxisIndex.value !== null && menuData.length > 0) {
     menuData.push({
       idx: (menuIdx += 1),
       hasSubMenu: false,
@@ -149,6 +166,15 @@ function buildMenuData() {
     })
   }
   axisMenuData.value = menuData
+
+  // Reset selection if the selected option is no longer among the available menu items
+  if (selectedAxisIndex.value !== null) {
+    const stillValid = menuData.some((item: any) => item.data && item.data.axisIndex === selectedAxisIndex.value)
+    if (!stillValid) {
+      resetSelection()
+      emit('colorAxisSelected', null)
+    }
+  }
 }
 
 function toggleMenu() {
@@ -173,7 +199,9 @@ function handleClick(data: any) {
     } else {
       const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === data.axisIndex)
       if (menuItem) {
-        selectedOption.value = menuItem.text
+        selectedFilterText.value = menuItem.data.filterText
+        selectedAttrText.value = menuItem.data.attrText
+        selectedAxisIndex.value = data.axisIndex
         emit('colorAxisSelected', data.axisIndex)
       }
     }
@@ -184,13 +212,17 @@ function handleClick(data: any) {
 function selectAxis(axisIndex: number) {
   const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === axisIndex)
   if (menuItem) {
-    selectedOption.value = menuItem.text
+    selectedFilterText.value = menuItem.data.filterText
+    selectedAttrText.value = menuItem.data.attrText
+    selectedAxisIndex.value = axisIndex
     emit('colorAxisSelected', axisIndex)
   }
 }
 
 function resetSelection() {
-  selectedOption.value = ''
+  selectedFilterText.value = ''
+  selectedAttrText.value = ''
+  selectedAxisIndex.value = null
 }
 
 // Expose resetSelection and selectAxis so parent can call them via template ref

@@ -44,14 +44,14 @@
       v-if="showClearConfirmation"
       @close="cancelClearSelection"
     >
-      <template v-slot:header>Confirm Selection Change</template>
+      <template v-slot:header>{{ getText('MRI_PA_CONFIRM_SELECTION_CHANGE') }}</template>
       <template v-slot:body>
         <div>{{ clearConfirmationMessage }}</div>
       </template>
       <template v-slot:footer>
         <div class="flex-spacer"></div>
-        <appButton :click="confirmClearSelection" :text="'Confirm'"></appButton>
-        <appButton :click="cancelClearSelection" :text="'Cancel'"></appButton>
+        <appButton :click="confirmClearSelection" :text="getText('MRI_PA_BUTTON_CONFIRM')"></appButton>
+        <appButton :click="cancelClearSelection" :text="getText('MRI_PA_BUTTON_CANCEL')"></appButton>
       </template>
     </messageBox>
   </div>
@@ -216,8 +216,7 @@ export default {
       if (this.colorAxisIndex === null) {
         return Promise.resolve(true)
       }
-      this.clearConfirmationMessage =
-        'Selecting this option will clear your current Color selection. Do you want to proceed?'
+      this.clearConfirmationMessage = this.getText('MRI_PA_CONFIRM_CLEAR_COLOR')
       this.pendingCancelRevert = null
       return new Promise<boolean>(resolve => {
         this.pendingConfirmResolve = (confirmed: boolean) => {
@@ -232,8 +231,7 @@ export default {
     },
     onColorAxisSelected(axisIndex: number) {
       if (this.stackAttributeHasSelection) {
-        this.clearConfirmationMessage =
-          'Selecting this option will clear your current Stacking selection. Do you want to proceed?'
+        this.clearConfirmationMessage = this.getText('MRI_PA_CONFIRM_CLEAR_STACKING')
         // On cancel, revert the xAxisColorButton visual state since it already
         // updated its selectedOption before emitting the event
         this.pendingCancelRevert = () => {
