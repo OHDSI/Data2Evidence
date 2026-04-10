@@ -1285,5 +1285,6 @@ export const paFHIRConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
+    intersectViewInclusionReport: false,
   },
 };

@@ -1,11 +1,7 @@
 import crypto from "crypto";
 import { Readable } from "stream";
 import * as utilsLib from "@alp/alp-base-utils";
-import {
-    QueryObject as qo,
-    Connection as connLib,
-    PostgresConnection,
-} from "@alp/alp-base-utils";
+import { QueryObject as qo, Connection as connLib } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
 import ConnectionInterface = connLib.ConnectionInterface;
 import { Settings } from "../../qe/settings/Settings";

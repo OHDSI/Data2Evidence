@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import { setActivePinia, createPinia } from 'pinia'
 
 vi.mock('axios')
 vi.mock('@/store', () => ({
@@ -78,6 +79,7 @@ function buildToggleContext(state: { model: { result: string; entities: Record<s
 
 describe('store - query', () => {
   beforeEach(() => {
+    setActivePinia(createPinia())
     KeyCounter.getKeyCountingStrategy('default', 1)
   })
 
