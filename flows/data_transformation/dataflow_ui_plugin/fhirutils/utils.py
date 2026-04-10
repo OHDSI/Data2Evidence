@@ -64,13 +64,13 @@ class omop_transform_utils:
         "measurement":{
             "measurement_id": "id",
             "person_id": "referenceToId",
-            "measurement_concept_id": "map",
+            "measurement_concept_id": "integer",
             "measurement_date": "date",
             "measurement_datetime": "datetime",
-            "measurement_type_concept_id": "map",
+            "measurement_type_concept_id": "integer",
             "measurement_source_value": "string",
-            "unit_concept_id": "map",
-            "value_as_concept_id": "map",
+            "unit_concept_id": "integer",
+            "value_as_concept_id": "integer",
         },
         "procedure_occurrence":{
             "procedure_occurrence_id": "id",
