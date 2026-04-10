@@ -71,6 +71,7 @@ class omop_transform_utils:
             "measurement_source_value": "string",
             "unit_concept_id": "integer",
             "value_as_concept_id": "integer",
+            "value_as_number": "integer"
         },
         "procedure_occurrence":{
             "procedure_occurrence_id": "id",
@@ -103,7 +104,7 @@ class omop_transform_utils:
             # If value is a list/array and target_type is 'integer', parse each value to int and return the list
             if target_type == "integer":
                 if isinstance(value, list):
-                    return [int(v) for v in value]
+                    return [int(v) if v is not None else None for v in value]
                 return int(value)
             elif target_type == "float":
                 if isinstance(value, list):
