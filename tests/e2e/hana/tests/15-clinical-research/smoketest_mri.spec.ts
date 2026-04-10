@@ -12,7 +12,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  await test.step('Check config overview section for OMOP_DM', async () => {
+  await test.step('Check config overview section for OMOP_HANA_DM', async () => {
     await page.getByTestId('button').nth(1).click()
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
     await page.getByRole('link', { name: 'Setup' }).click()
@@ -21,7 +21,7 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^CDM configurationConfigure CDMConfigure$/ })
       .getByTestId('button')
       .click()
-    await page.getByText('OMOP_DM').click()
+    await page.getByText('OMOP_HANA_DM').click()
     await page.locator('[id="__container13--Grid"] div').filter({ hasText: 'ALICE' }).click()
 
     // Example: Find the text 'Active' inside the section with id '__xmlview1--configOverview--anConfigAll-cont'
@@ -29,7 +29,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(section.getByText('Active')).toBeVisible()
   })
 
-  await test.step('Check Cohort builder config overview section for OMOP_DM', async () => {
+  await test.step('Check Cohort builder config overview section for OMOP_HANA_DM', ;async () => {
     await page.getByRole('button').filter({ hasText: /^$/ }).first().click()
     await page
       .locator('div')
@@ -38,10 +38,10 @@ test(TEST_NAME, async ({ page }) => {
       .click()
     await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-inner"]').click()
     await page.locator('[id="__xmlview20--dataModelConfigurationsCombo-arrow"]').click()
-    await page.getByRole('option', { name: 'OMOP_DM' }).click()
+    await page.getByRole('option', { name: 'OMOP_HANA_DM' }).click()
 
-    // Confirm that “OMOP_DM” should exist and it is based on “OMOP”
-    await expect(page.locator('span.sapMRIPAConfigLargeText', { hasText: 'OMOP' })).toBeVisible()
+    // Confirm that OMOP_HANA_DM should exist and it is based on OMOP_HANA
+    await expect(page.locator('span.sapMRIPAConfigLargeText', { hasText: 'OMOP_HANA' })).toBeVisible()
 
     //Validate and save the configuration
     await page.getByRole('button', { name: 'Validate' }).click()
