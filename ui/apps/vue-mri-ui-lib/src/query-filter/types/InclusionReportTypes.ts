@@ -50,6 +50,16 @@ export interface InclusionReportResponse {
   treemapData: TreemapData | string
 }
 
+export interface AttritionApiResponse {
+  summary: Summary
+  attritionStats: Array<{
+    id: number
+    name: string
+    isExclude: boolean
+    cumulativeCountSatisfying: number
+  }>
+}
+
 /**
  * Parse treemapData which may be a JSON string (from legacy backends) or an already-parsed object.
  * Returns null if the input is falsy or cannot be parsed.

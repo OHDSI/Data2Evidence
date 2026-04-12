@@ -134,6 +134,7 @@ def copy_fhir_resources_task(
         # and ensures fhir_project_id is never interpolated into SQL strings.
         # Search-index tables join against this temp table instead of inlining
         # a large UNION ALL.
+        trex_cursor.execute('DROP TABLE IF EXISTS "_project_resource_ids";')
         trex_cursor.execute('CREATE TEMP TABLE "_project_resource_ids" (id VARCHAR);')
         for rt in resource_types:
             trex_cursor.execute(

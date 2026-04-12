@@ -376,70 +376,7 @@ table1ModuleServer <- function(id, connectionHandler, resultDatabaseSettings, co
 }
 
 # ADD OR REMOVE MODULES TAILORED TO YOUR STUDY
-shinyConfig <- initializeModuleConfig() |>
-  addModuleConfig(
-    createDefaultAboutConfig()
-  )  |>
-  addModuleConfig(
-    createDefaultDatasourcesConfig()
-  )  |>
-  addModuleConfig(
-    createDefaultCohortGeneratorConfig()
-  ) |>
-  addModuleConfig(
-    createDefaultCohortDiagnosticsConfig()
-  ) |>
-  addModuleConfig(
-    createDefaultCharacterizationConfig()
-  ) |>
-  addModuleConfig(
-    createDefaultPredictionConfig()
-  ) |>
-  addModuleConfig(
-    createDefaultEstimationConfig()
-  ) |>
-  addModuleConfig(
-    createModuleConfig(
-      moduleId = 'patterns',
-      tabName = "TreatmentPatterns",
-      shinyModulePackage = NULL,
-      shinyModulePackageVersion = NULL,
-      moduleUiFunction = patternsModuleUI,
-      moduleServerFunction = patternsModuleServer,
-      moduleInfoBoxFile = function(){},
-      moduleIcon = "info",
-      installSource = "CRAN",
-      gitHubRepo = NULL
-    )
-  ) |>
-  addModuleConfig(
-    createModuleConfig(
-      moduleId = 'survival',
-      tabName = "SurvivalAnalysis",
-      shinyModulePackage = NULL,
-      shinyModulePackageVersion = NULL,
-      moduleUiFunction = survivalModuleUI,
-      moduleServerFunction = survivalModuleServer,
-      moduleInfoBoxFile = function(){},
-      moduleIcon = "info",
-      installSource = "CRAN",
-      gitHubRepo = NULL
-    )
-  ) |>
-  addModuleConfig(
-    createModuleConfig(
-      moduleId = 'table1',
-      tabName = "Table1",
-      shinyModulePackage = NULL,
-      shinyModulePackageVersion = NULL,
-      moduleUiFunction = table1ModuleUI,
-      moduleServerFunction = table1ModuleServer,
-      moduleInfoBoxFile = function(){},
-      moduleIcon = "info",
-      installSource = "CRAN",
-      gitHubRepo = NULL
-    )
-  )
+shinyConfig <- $SHINY_MODULE_CONFIG
 
 # Set options for base URL
 options(shiny.base_url = "/strategus-results/$STUDY_ID/")
