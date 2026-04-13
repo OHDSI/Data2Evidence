@@ -957,6 +957,13 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: 'Back to filtering',
     MRI_PA_BAR_CHART: 'Bar chart',
     MRI_PA_PATIENT_LIST: 'Patient list',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: 'Confirm Selection Change',
+    MRI_PA_CONFIRM_CLEAR_COLOR:
+      'Selecting this option will clear your current color selection. Do you want to proceed?',
+    MRI_PA_CONFIRM_CLEAR_STACKING:
+      'Selecting this option will clear your current stacking selection. Do you want to proceed?',
+    MRI_PA_BUTTON_CONFIRM: 'Confirm',
+    MRI_PA_SELECT_X_AXIS: 'Select an x-axis',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1944,6 +1951,13 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: 'Zurück zur Filterung',
     MRI_PA_BAR_CHART: 'Balkendiagramm',
     MRI_PA_PATIENT_LIST: 'Patientenliste',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: 'Auswahländerung bestätigen',
+    MRI_PA_CONFIRM_CLEAR_COLOR:
+      'Durch Auswahl dieser Option wird Ihre aktuelle farbauswahl gelöscht. Möchten Sie fortfahren?',
+    MRI_PA_CONFIRM_CLEAR_STACKING:
+      'Durch Auswahl dieser Option wird Ihre aktuelle stapelauswahl gelöscht. Möchten Sie fortfahren?',
+    MRI_PA_BUTTON_CONFIRM: 'Bestätigen',
+    MRI_PA_SELECT_X_AXIS: 'X-Achse auswählen',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2841,6 +2855,11 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: '返回过滤',
     MRI_PA_BAR_CHART: '条形图',
     MRI_PA_PATIENT_LIST: '患者名单',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: '确认选择更改',
+    MRI_PA_CONFIRM_CLEAR_COLOR: '选择此选项将清除您当前的颜色选择。是否要继续？',
+    MRI_PA_CONFIRM_CLEAR_STACKING: '选择此选项将清除您当前的堆叠选择。是否要继续？',
+    MRI_PA_BUTTON_CONFIRM: '确认',
+    MRI_PA_SELECT_X_AXIS: '选择 X 轴',
   },
 }
 
