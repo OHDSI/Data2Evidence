@@ -108,7 +108,7 @@ const momentToDateFnsFormat = (momentFormat: string): string => {
     .replace(/ss/g, 'ss')
 }
 
-function parseDateString(value: string): Date | null {
+const parseDateString = (value: string): Date | null => {
   const parsedMoment = moment(
     value,
     [mergedConfig.value.format, 'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601],
@@ -122,7 +122,7 @@ function parseDateString(value: string): Date | null {
   return !isNaN(fallbackDate.getTime()) ? fallbackDate : null
 }
 
-function isDate(value: unknown): boolean {
+const isDate = (value: unknown): boolean => {
   if (value instanceof Date) {
     return !isNaN(value.getTime())
   }
@@ -132,7 +132,7 @@ function isDate(value: unknown): boolean {
   return false
 }
 
-function normalizeValue(value: unknown): Date | null {
+const normalizeValue = (value: unknown): Date | null => {
   if (!value) return null
   if (value instanceof Date) {
     return isDate(value) ? value : null
@@ -244,7 +244,7 @@ watch(
 )
 
 // Methods
-function updateInternalValue(date: Date | string | null) {
+const updateInternalValue = (date: Date | string | null) => {
   if (date instanceof Date && !isNaN(date.getTime())) {
     internalValue.value = date
   } else if (typeof date === 'string' && date.trim() !== '') {
@@ -259,7 +259,7 @@ function updateInternalValue(date: Date | string | null) {
   }
 }
 
-function updateDisplayValue(value: Date | string | null) {
+const updateDisplayValue = (value: Date | string | null) => {
   if (value instanceof Date && !isNaN(value.getTime())) {
     displayValue.value = moment(value).format(mergedConfig.value.format)
   } else if (typeof value === 'string' && value.trim() !== '') {
