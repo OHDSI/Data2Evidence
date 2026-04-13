@@ -45,13 +45,13 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    studyId: string,
     uploadResults: boolean | undefined,
     token: string,
   ) {
     const revision =
       await this.analysisflowService.getLastAnalysisflowRevision(id);
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow,
     );
