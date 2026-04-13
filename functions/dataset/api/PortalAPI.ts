@@ -186,4 +186,16 @@ export class PortalAPI {
       );
     }
   }
+
+  async deleteDataset(id: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset?datasetId=${id}`;
+      const result = await this.channel.delete(url, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error deleting dataset ${id}. ${error}`);
+      throw new Error(`Error deleting dataset ${id}. ${error}`);
+    }
+  }
 }
