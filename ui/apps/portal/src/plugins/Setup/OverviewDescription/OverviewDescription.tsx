@@ -67,11 +67,11 @@ export const OverviewDescription: FC = () => {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setFormData({ ...EMPTY_FORM_DATA, ...configs });
-  }, [configs]);
-
   const savedFormData = useMemo(() => ({ ...EMPTY_FORM_DATA, ...configs }), [configs]);
+
+  useEffect(() => {
+    setFormData(savedFormData);
+  }, [savedFormData]);
   const hasChanges = useMemo(() => !isEqual(formData, savedFormData), [formData, savedFormData]);
 
   const handleFormDataChange = useCallback((changes: { [field: string]: string }) => {
