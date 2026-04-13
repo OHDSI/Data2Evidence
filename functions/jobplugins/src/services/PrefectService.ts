@@ -59,6 +59,15 @@ export class PrefectService {
     const { schemaName, databaseCode } =
       await portalServerApi.getDataset(datasetId);
 
+    this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+    await this.strategusAnalysisApi.saveAnalysis(
+      studyId,
+      revision.canvas.name,
+      JSON.stringify(prefectParams),
+      databaseCode,
+      "ui",
+    );
+
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
     this.prefectApi = new PrefectAPI(token);
