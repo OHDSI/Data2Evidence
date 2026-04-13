@@ -65,7 +65,7 @@ export class PrefectService {
       revision.canvas.name,
       JSON.stringify(prefectParams),
       databaseCode,
-      "ui",
+      "analysis-ui",
     );
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
