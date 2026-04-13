@@ -699,8 +699,6 @@ export const i18nDefault = {
     INFORMATION__METADATA: "Metadata",
     INFORMATION__NO_DATASET_DESCRIPTION: "No dataset description available",
     INFORMATION__NO_FILE_AVAILABLE: "No file available",
-    INFORMATION__OHDSI_DQD_INFO:
-      "The following data quality measures are standard metrics developed by the Observational Health Data Sciences and Informatics (OHDSI) consortium, and should be interpreted relative to previous metrics provided for the same Mount Sinai clinical dataset. Since different healthcare organizations have different policies, procedures, and workflows, comparisons of these metrics between hospitals and organizations should be done with caution (since in most cases it would be considered an \"apples to oranges\" comparison). Subtle changes in clinical practices might produce big changes in these metrics, but may not necessarily indicate data quality issues per se. To understand more about these metrics, please visit ",
     INFORMATION__OVERVIEW: "Overview",
     INFORMATION__PENDING_APPROVAL: "Pending approval",
     INFORMATION__REQUEST_ACCESS: "Request access",
@@ -805,6 +803,8 @@ export const i18nDefault = {
     OVERVIEW_DESCRIPTION__DISPLAY_IMPRINT: "Display imprint",
     OVERVIEW_DESCRIPTION__DISPLAY_PRIVACY_POLICY: "Display privacy policy",
     OVERVIEW_DESCRIPTION__DISPLAY_TERMS_OF_USE: "Display terms of use",
+    OVERVIEW_DESCRIPTION__DISPLAY_DATA_QUALITY_DESCRIPTION: "Display data quality description",
+    DATA_QUALITY_DESCRIPTION__TITLE: "Data quality description",
     OVERVIEW_DESCRIPTION__DISCARD_CHANGES: "Discard changes",
     OVERVIEW_DESCRIPTION__SAVE: "Save",
     OVERVIEW_DESCRIPTION__SUCCESS_MESSAGE: "Changes saved",
