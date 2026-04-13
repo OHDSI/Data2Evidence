@@ -639,7 +639,7 @@
   "HEADER_IMAGE__ERROR_TOO_LARGE": "图片必须小于 1 MB。",
   "HEADER_IMAGE__HINT": "支持格式：PNG、JPG。最大：1 MB。推荐：320 x 214 像素。",
   "HEADER_IMAGE__PLACEHOLDER_DESCRIPTION": "您的概述说明将显示在此处。",
-  "HEADER_IMAGE__REMOVE": "移除图片",
+  "HEADER_IMAGE__RESTORE_DEFAULT": "恢复默认",
   "HEADER_IMAGE__TITLE": "页眉图片",
   "HEADER_IMAGE__UPLOAD": "上传图片",
   "HOME__DESCRIPTION": "我们的愿景是建立一个健康数据能够全面、数字化、安全地用于研究的世界，并直接影响疾病的预防、诊断和治疗。",

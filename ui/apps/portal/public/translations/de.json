@@ -639,7 +639,7 @@
   "HEADER_IMAGE__ERROR_TOO_LARGE": "Das Bild muss kleiner als 1 MB sein.",
   "HEADER_IMAGE__HINT": "Unterstützte Formate: PNG, JPG. Max. Größe: 1 MB. Empfohlen: 320 x 214 px.",
   "HEADER_IMAGE__PLACEHOLDER_DESCRIPTION": "Ihre Übersichtsbeschreibung wird hier angezeigt.",
-  "HEADER_IMAGE__REMOVE": "Bild entfernen",
+  "HEADER_IMAGE__RESTORE_DEFAULT": "Standard wiederherstellen",
   "HEADER_IMAGE__TITLE": "Kopfzeilenbild",
   "HEADER_IMAGE__UPLOAD": "Bild hochladen",
   "HOME__DESCRIPTION": "Unsere Vision ist eine Welt, in der Gesundheitsdaten umfassend, digital und sicher für die Forschung verfügbar sind und die Prävention, Diagnose und Behandlung von Krankheiten direkt beeinflussen.",

@@ -671,7 +671,7 @@ export const i18nDefault = {
     HEADER_IMAGE__ERROR_TOO_LARGE: "File is too large. Maximum size is 1MB.",
     HEADER_IMAGE__HINT: "Accepted formats: PNG, JPEG. Max size: 1MB. Recommended: 320 x 214 px.",
     HEADER_IMAGE__PLACEHOLDER_DESCRIPTION: "Configure your overview description text.",
-    HEADER_IMAGE__REMOVE: "Remove image",
+    HEADER_IMAGE__RESTORE_DEFAULT: "Restore default",
     HEADER_IMAGE__TITLE: "Header image",
     HEADER_IMAGE__UPLOAD: "Upload image",
     HOME__DESCRIPTION:
