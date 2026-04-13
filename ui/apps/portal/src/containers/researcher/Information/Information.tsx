@@ -23,13 +23,13 @@ import { api } from "../../../axios/api";
 import { Roles } from "../../../config";
 import { useActiveDataset, useFeedback, useTranslation, useUser } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
-import { useDataset, useDatasetResources } from "../../../hooks";
+import { useConfigsByTypes, useDataset, useDatasetResources } from "../../../hooks";
 import { DQDJobResults } from "../../../plugins/SystemAdmin/DQD/DQDJobResults/DQDJobResults";
 import { DQD_TABLE_TYPES } from "../../../plugins/SystemAdmin/DQD/types";
 import { DatasetResource, StudyAttribute, StudyTag, DatasetInfoTab } from "../../../types";
 import { downloadFromJsonResponse } from "../../../utils/downloadResource";
 import { formatNumber } from "../../../utils";
-import { InformationPageMap } from "../../../constant";
+import { ConfigTypes, InformationPageMap } from "../../../constant";
 import "./Information.scss";
 
 enum Access {
@@ -62,6 +62,10 @@ export const Information: FC = () => {
 
   const [dataset, loading, error] = useDataset(activeDatasetId);
   const [resources, resourcesLoading, resourcesError] = useDatasetResources(activeDatasetId);
+  const [configs] = useConfigsByTypes([
+    ConfigTypes.DATA_QUALITY_DESCRIPTION,
+    ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY,
+  ]);
 
   const attributes = useMemo(() => dataset?.attributes || [], [dataset]);
   const tags = useMemo(() => dataset?.tags || [], [dataset]);
@@ -70,7 +74,7 @@ export const Information: FC = () => {
 
   const isUserResearcher = useMemo(
     () => !!user.isDatasetResearcher?.[activeDatasetId],
-    [user.isDatasetResearcher, activeDatasetId]
+    [user.isDatasetResearcher, activeDatasetId],
   );
 
   const availableTabs = useMemo(() => {
@@ -80,18 +84,22 @@ export const Information: FC = () => {
 
   const showDatasetInfo = useMemo(
     () => (canAccessResearcherInfo || isUserResearcher) && availableTabs.includes(DatasetInfoTab.DatasetInfo),
-    [canAccessResearcherInfo, isUserResearcher, availableTabs]
+    [canAccessResearcherInfo, isUserResearcher, availableTabs],
   );
 
   const showDataQuality = useMemo(
     () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataQuality),
-    [isUserResearcher, availableTabs]
+    [isUserResearcher, availableTabs],
   );
 
   const showDataCharacterization = useMemo(
     () => isUserResearcher && availableTabs.includes(DatasetInfoTab.DataCharacterization),
-    [isUserResearcher, availableTabs]
+    [isUserResearcher, availableTabs],
   );
+
+  const showDataQualityDescription =
+    configs[ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY] === "1" &&
+    !!configs[ConfigTypes.DATA_QUALITY_DESCRIPTION]?.trim();
 
   const loadAccessRequests = useCallback(async (): Promise<void> => {
     const accessRequests = await api.userMgmt.getMyStudyAccessRequests();
@@ -123,7 +131,7 @@ export const Information: FC = () => {
         setDownloading(undefined);
       }
     },
-    [activeDatasetId]
+    [activeDatasetId],
   );
 
   const handleRequestAccess = useCallback(async () => {
@@ -359,13 +367,11 @@ export const Information: FC = () => {
               ) : (
                 <>
                   <SubTitle>{getText(i18nKeys.INFORMATION__OVERVIEW)}</SubTitle>
-                  <div className="dqd__info__text">
-                    {getText(i18nKeys.INFORMATION__OHDSI_DQD_INFO)}
-                    <a href="https://github.com/OHDSI/DataQualityDashboard" target="_blank" rel="noreferrer">
-                      https://github.com/OHDSI/DataQualityDashboard
-                    </a>
-                    .
-                  </div>
+                  {showDataQualityDescription && (
+                    <div className="dqd__info__text">
+                      <ReactMarkdown>{configs[ConfigTypes.DATA_QUALITY_DESCRIPTION]}</ReactMarkdown>
+                    </div>
+                  )}
                   <DQDJobResults
                     datasetId={activeDatasetId}
                     datasetName={dataset?.schemaName}
