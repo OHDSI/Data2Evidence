@@ -664,7 +664,6 @@
   "INFORMATION__METADATA": "元数据",
   "INFORMATION__NO_DATASET_DESCRIPTION": "无可用的数据集描述",
   "INFORMATION__NO_FILE_AVAILABLE": "无可用文件",
-  "INFORMATION__OHDSI_DQD_INFO": "以下数据质量指标是由观察性健康数据科学与信息学（OHDSI）联盟开发的标准指标，应相对于为同一西奈山临床数据集提供的历史指标进行解释。由于不同医疗机构有不同的政策、流程和工作方式，跨医院和组织比较这些指标时应谨慎（因为在大多数情况下，这相当于"苹果和橙子"的比较）。临床实践中的细微变化可能导致这些指标发生重大变化，但不一定表示存在数据质量问题。要了解更多关于这些指标的信息，请访问 ",
   "INFORMATION__OVERVIEW": "概述",
   "INFORMATION__PENDING_APPROVAL": "待批准",
   "INFORMATION__REQUEST_ACCESS": "申请进入",
