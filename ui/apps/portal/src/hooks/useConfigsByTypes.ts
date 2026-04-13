@@ -13,11 +13,13 @@ const EMPTY_CONFIGS = {
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
   [ConfigTypes.HYBRID_SEARCH]: "{}",
   [ConfigTypes.DISCLAIMER_DISPLAY]: "0",
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION]: "",
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY]: "0",
 };
 
 export const useConfigsByTypes = (
   types: ConfigTypes[] = [],
-  refetch = 0
+  refetch = 0,
 ): [{ [key: string]: string }, boolean, AppError | undefined] => {
   const [configs, setConfigs] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);

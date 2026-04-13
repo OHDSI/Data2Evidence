@@ -27,6 +27,8 @@ export enum ConfigTypes {
   DISCLAIMER = "disclaimer",
   DISCLAIMER_DISPLAY = "disclaimer-display",
   HEADER_IMAGE = "header-image",
+  DATA_QUALITY_DESCRIPTION = "data-quality-description",
+  DATA_QUALITY_DESCRIPTION_DISPLAY = "data-quality-description-display",
 }
 
 export const PUB_SLOT_NAME = "data2evidence";

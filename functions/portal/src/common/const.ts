@@ -64,6 +64,8 @@ export enum ConfigTypes {
   DATAFLOW_GIT_CONFIG = "dataflow-git-config",
   NOTEBOOK_GIT_CONFIG = "notebook-git-config",
   HEADER_IMAGE = "header-image",
+  DATA_QUALITY_DESCRIPTION = "data-quality-description",
+  DATA_QUALITY_DESCRIPTION_DISPLAY = "data-quality-description-display",
 }
 
 export const PUBLIC_CONFIG_TYPES = [
