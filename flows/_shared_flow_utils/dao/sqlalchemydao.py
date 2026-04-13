@@ -126,6 +126,9 @@ class SqlAlchemyDao(DaoBase):
         return column_names
 
     def get_table_row_count(self, schema: str, table: str) -> int:
+        if self.dialect == SupportedDatabaseDialects.HANA:
+            schema = schema.upper()
+            table = table.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -134,6 +137,10 @@ class SqlAlchemyDao(DaoBase):
         return row_count
 
     def get_distinct_count(self, schema: str, table: str, column: str) -> int:
+        if self.dialect == SupportedDatabaseDialects.HANA:
+            schema = schema.upper()
+            table = table.upper()
+            column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -187,6 +194,10 @@ class SqlAlchemyDao(DaoBase):
             return updated_date
 
     def get_value(self, schema: str, table: str, column: str) -> str:
+        if self.dialect == SupportedDatabaseDialects.HANA:
+            schema = schema.upper()
+            table = table.upper()
+            column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
