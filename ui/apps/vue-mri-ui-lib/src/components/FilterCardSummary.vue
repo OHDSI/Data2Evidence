@@ -295,8 +295,9 @@ export default {
 <style scoped>
 .sql-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0 10px;
 }
 
 .sql-actions .download-sql,
@@ -305,6 +306,7 @@ export default {
   justify-content: center;
   align-items: center;
   flex: 1;
+  margin: 0;
 }
 
 .filter-card-badge {
