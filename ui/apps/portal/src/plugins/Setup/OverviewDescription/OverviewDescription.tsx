@@ -67,19 +67,20 @@ export const OverviewDescription: FC = () => {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setFormData({ ...EMPTY_FORM_DATA, ...configs });
-  }, [configs]);
+  const savedFormData = useMemo(() => ({ ...EMPTY_FORM_DATA, ...configs }), [configs]);
 
-  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData, configs]);
+  useEffect(() => {
+    setFormData(savedFormData);
+  }, [savedFormData]);
+  const hasChanges = useMemo(() => !isEqual(formData, savedFormData), [formData, savedFormData]);
 
   const handleFormDataChange = useCallback((changes: { [field: string]: string }) => {
     setFormData((formData) => ({ ...formData, ...changes }));
   }, []);
 
   const handleDiscardChanges = useCallback(() => {
-    setFormData({ ...EMPTY_FORM_DATA, ...configs });
-  }, [configs]);
+    setFormData(savedFormData);
+  }, [savedFormData]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -185,7 +186,11 @@ export const OverviewDescription: FC = () => {
               onClick={() => fileInputRef.current?.click()}
             />
             {hasCustomImage && (
-              <Button text={getText(i18nKeys.HEADER_IMAGE__REMOVE)} variant="outlined" onClick={handleRemoveImage} />
+              <Button
+                text={getText(i18nKeys.HEADER_IMAGE__RESTORE_DEFAULT)}
+                variant="outlined"
+                onClick={handleRemoveImage}
+              />
             )}
           </div>
           <div className="overview_description__header-image-hint">{getText(i18nKeys.HEADER_IMAGE__HINT)}</div>
