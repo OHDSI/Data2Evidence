@@ -14,6 +14,7 @@ import {
 } from '../utils/dashboardFlowUtils'
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 import BinaryToString from '../utils/BinaryToString'
+import { useNotificationStore } from '../stores/notifications'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -671,7 +672,7 @@ export function useDashboardFlow(
   async function openDashboardModal() {
     const activeBookmark = getters.getActiveBookmark
     if (!activeBookmark) {
-      dispatch('setToastMessage', { text: 'Open or create a cohort before opening dashboards.' })
+      useNotificationStore().setToastMessage({ text: 'Open or create a cohort before opening dashboards.' })
       return
     }
     resetDashboardFlowState()
@@ -1043,7 +1044,7 @@ export function useDashboardFlow(
       if (!activeDashboardWizardConfig.value) {
         await new Promise(resolve => setTimeout(resolve, 50))
         if (!activeDashboardWizardConfig.value) {
-          dispatch('setToastMessage', { text: 'Dashboard configuration not ready. Please try again.' })
+          useNotificationStore().setToastMessage({ text: 'Dashboard configuration not ready. Please try again.' })
           return
         }
       }

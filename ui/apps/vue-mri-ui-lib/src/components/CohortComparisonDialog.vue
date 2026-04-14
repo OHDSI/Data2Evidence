@@ -35,13 +35,14 @@
 </template>
 
 <script lang="ts">
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 // import axios from "axios";
 import messageBox from './MessageBox.vue'
 import appButton from '../lib/ui/app-button.vue'
 import ChartButton from './ChartButton.vue'
 import Constants from '../utils/Constants'
 import CohortComparisonContainer from './CohortComparisonContainer.vue'
+import { useNotificationStore } from '../stores/notifications'
 
 // const CancelToken = axios.CancelToken;
 // let cancel;
@@ -49,6 +50,11 @@ import CohortComparisonContainer from './CohortComparisonContainer.vue'
 export default {
   name: 'cohortComparison',
   props: ['bookmarkList', 'disableCohortCompare', 'openCompareDialog'],
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
+  },
   data() {
     return {
       showCohortCompareDialog: false,
@@ -78,13 +84,12 @@ export default {
     ...mapGetters(['getText', 'getAllChartConfigs', 'getHasAssignedConfig']),
   },
   methods: {
-    ...mapActions(['setAlertMessage']),
     openCohortCompareDialog() {
       if (this.bookmarkList.length <= 10) {
         this.showCohortCompareDialog = true
         this.setFirstChart(this.chartConfig)
       } else {
-        this.setAlertMessage({
+        this.notificationStore.setAlertMessage({
           message: this.getText('MRI_COMP_COHORT_WARN_MESSAGE'),
         })
       }

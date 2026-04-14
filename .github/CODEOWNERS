@@ -45,7 +45,6 @@
 /services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/trex                                       @p-hoffmann
 /tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/tests/e2e                                           @csafreen @SantanM @satish-a0 @suwarnoong @p-hoffmann
 /ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
@@ -54,4 +53,27 @@
 /ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/wizards                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/ui/apps/wizards                                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/02-users                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/03-researcher                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/04-attribute                                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/05-datasets                                  @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/tests/e2e/tests/05-datasets/metadata.spec.ts                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/05-datasets/dataset-overview-search.spec.ts  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/05-datasets/copy-datasets-id-schema-name.spec.js  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/05-datasets/datasets_list.spec.ts            @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/05-datasets/user-permission.spec.ts          @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/06-cohort                                    @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/07-setup                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/08-dataflow                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/09-patient-analytics                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/10-jobs                                      @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/11-admin                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/12-concepts/                                 @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/13-data-characterization                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/tests/e2e/tests/14-data-quality-dashboard                    @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/tests/e2e/tests/14-notebooks/notebook.spec.ts                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/15-clinical-research                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/16-concept-mapping/                          @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/tests/e2e/tests/17-configurations                            @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/tests/e2e/tests/17-new-user-full-config                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd

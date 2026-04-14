@@ -116,15 +116,26 @@ export default {
                 this.model.props.value[index].text = newName
                 this.model.props.value[index].display_name = newName
                 this.updateValue([...this.model.props.value])
-                return
+              } else {
+                const addThis = {
+                  text: onCloseValues.currentConceptSet.name,
+                  display_value: onCloseValues.currentConceptSet.name,
+                  value: onCloseValues.currentConceptSet.id,
+                }
+                this.updateValue([...this.model.props.value, addThis])
               }
 
-              const addThis = {
-                text: onCloseValues.currentConceptSet.name,
-                display_value: onCloseValues.currentConceptSet.name,
-                value: onCloseValues.currentConceptSet.id,
-              }
-              this.updateValue([...this.model.props.value, addThis])
+              // Bust the shared 'conceptSets' Vuex cache so ChartToolbar, bookmarks,
+              // and other consumers see the updated list on their next access.
+              this.$store.commit('DOMAIN_SET_VALUES', {
+                attributePath: 'conceptSets',
+                data: { values: [], isLoaded: false, isLoading: false },
+              })
+              this.loadValuesForAttributePath({
+                attributePathUid: 'conceptSets',
+                searchQuery: '',
+                attributeType: 'conceptSet',
+              })
             },
             defaultFilters,
           },

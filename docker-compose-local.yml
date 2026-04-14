@@ -69,6 +69,10 @@ services:
       - 41120:41120
     environment:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
+  alp-dataflow-gen-worker:
+    build:
+      context: ./services/alp-dataflow-gen-worker
+      dockerfile: Dockerfile
 
   alp-logto:
     build:
