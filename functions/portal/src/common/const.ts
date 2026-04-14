@@ -71,6 +71,12 @@ export enum ConfigTypes {
 export const PUBLIC_CONFIG_TYPES = [
   ConfigTypes.OVERVIEW_DESCRIPTION,
   ConfigTypes.HEADER_IMAGE,
+  ConfigTypes.TERMS_OF_USE,
+  ConfigTypes.TERMS_OF_USE_DISPLAY,
+  ConfigTypes.PRIVACY_POLICY,
+  ConfigTypes.PRIVACY_POLICY_DISPLAY,
+  ConfigTypes.IMPRINT,
+  ConfigTypes.IMPRINT_DISPLAY,
 ];
 
 // Secret config types to be redacted

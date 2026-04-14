@@ -20,6 +20,7 @@ const EMPTY_CONFIGS = {
 export const useConfigsByTypes = (
   types: ConfigTypes[] = [],
   refetch = 0,
+  isPublic = false
 ): [{ [key: string]: string }, boolean, AppError | undefined] => {
   const [configs, setConfigs] = useState<{ [key: string]: string }>({});
   const [loading, setLoading] = useState(false);
@@ -28,7 +29,9 @@ export const useConfigsByTypes = (
   const fetchConfigs = useCallback(async () => {
     try {
       setLoading(refetch ? false : true);
-      const configs = await api.systemPortal.getConfigsByTypes(types);
+      const configs = isPublic
+        ? await api.systemPortal.getPublicConfigsByTypes(types)
+        : await api.systemPortal.getConfigsByTypes(types);
       setConfigs({ ...EMPTY_CONFIGS, ...configs });
     } catch (error: any) {
       if ("message" in error) {

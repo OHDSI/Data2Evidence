@@ -79,7 +79,7 @@ test(TEST_NAME, async ({ page }) => {
     .locator('div.axis-menu-button-wrapper')
     .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
     .click()
-  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').click()
+  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').first().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
@@ -115,14 +115,14 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set Y-axis to month of birth
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
   await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
-  await page.locator('div.dropdownmenu-container').getByText('Basic Data').last().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
   // Set X1-axis to condition concept name
@@ -136,7 +136,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X2-axis to race concept id
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
   await page
-    .locator('div.dropdownmenu-container')
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()
@@ -148,7 +148,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X2-axis to year of birth with bin size of 50
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
   await page
-    .locator('div.dropdownmenu-container')
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()
@@ -163,14 +163,14 @@ test(TEST_NAME, async ({ page }) => {
 
   // Reset X2-axis
   await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
-  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').nth(1).click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set attribute for stacked chart
   await page.locator('div.axis-menu-button-wrapper').nth(4).getByRole('button').click()
   await page
-    .locator('div.dropdownmenu-container')
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()
