@@ -21,6 +21,7 @@ import {
 import { FlowRunState } from "~/features/flow/types";
 import { portalProps } from "~/FlowApp";
 import { RootState, dispatch } from "~/store";
+import { StudySelectDialog } from "./StudySelectDialog";
 
 export const RunFlowButton: FC = () => {
   const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
@@ -32,6 +33,7 @@ export const RunFlowButton: FC = () => {
 
   const status = useSelector((state: RootState) => state.flow.status);
   const [runAfterSaved, setRunAfterSaved] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const nodes = useSelector(selectFlowNodes);
   const edges = useSelector(selectEdges);
@@ -87,28 +89,39 @@ export const RunFlowButton: FC = () => {
     }
   }, [flowRunId]);
 
-  const runFlow = useCallback(async () => {
+  const runFlow = useCallback(
+    async (datasetId: string) => {
+      const studyId = portalProps?.datasetId;
+      if (!studyId) {
+        console.error("No studyId available from plugin metadata");
+        return;
+      }
+      await runDataflow({ id: dataflowId, datasetId, studyId, uploadResults });
+    },
+    [dataflowId, uploadResults]
+  );
+
+  const handleRun = useCallback(async () => {
     if (isTestMode) {
       const body = { uploadResults, dataflow: { nodes, edges } };
       await runTestDataflow(body);
-    } else {
-      const datasetId = portalProps?.datasetId;
-      if (!datasetId) {
-        console.error("No datasetId available from plugin metadata");
-        return;
-      }
-      await runDataflow({ id: dataflowId, datasetId, uploadResults });
+      return;
     }
-  }, [dataflowId, isTestMode, nodes, edges, uploadResults]);
-
-  const handleRun = useCallback(async () => {
     if (status === "draft") {
       dispatch(setSaveFlowDialog({ visible: true, dataflowId }));
       setRunAfterSaved(true);
     } else {
-      await runFlow();
+      setDialogOpen(true);
     }
-  }, [dataflowId, runFlow]);
+  }, [dataflowId, isTestMode, nodes, edges, uploadResults, status]);
+
+  const handleDialogRun = useCallback(
+    async (datasetId: string) => {
+      setDialogOpen(false);
+      await runFlow(datasetId);
+    },
+    [runFlow]
+  );
 
   const handleCancel = useCallback(async () => {
     await cancelFlowRun(flowRunId);
@@ -118,7 +131,7 @@ export const RunFlowButton: FC = () => {
   useEffect(() => {
     if (runAfterSaved && status === "saved") {
       setRunAfterSaved(false);
-      runFlow();
+      setDialogOpen(true);
     }
   }, [runAfterSaved, status]);
 
@@ -165,6 +178,12 @@ export const RunFlowButton: FC = () => {
           </div>
         </Tooltip>
       )}
+      <StudySelectDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onRun={handleDialogRun}
+        isRunning={isRunning}
+      />
     </Box>
   );
 };
