@@ -1,13 +1,16 @@
 import axios, { AxiosRequestConfig } from "axios";
 import memoize from "memoizee";
 import { getAuthToken } from "../containers/auth/auth";
+import { isOidcAuthenticated } from "../containers/auth/oidc/oidc";
 
-const PUBLIC_URLS = ["dataset/public/list", "config/public", "config/public/overview-description"];
+const PUBLIC_URL_PREFIXES = ["dataset/public/list", "config/public"];
+const isPublicUrl = (url?: string) => !!url && PUBLIC_URL_PREFIXES.some((prefix) => url.startsWith(prefix));
+
 const client = axios.create();
 
 client.interceptors.request.use(
   async (config) => {
-    if (!config.url || !PUBLIC_URLS.includes(config.url)) {
+    if (!isPublicUrl(config.url) && isOidcAuthenticated()) {
       const token = await getAuthToken(false);
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
