@@ -100,7 +100,9 @@ export class CachedbService {
     pageNumber = 0,
     rowsPerPage: number,
     searchText = "",
-    filters: Filters
+    filters: Filters,
+    sortBy?: string,
+    sortOrder?: string,
   ) {
     try {
       const cachedbDao = await this.getCachedbDaoFromDialect();
@@ -108,9 +110,21 @@ export class CachedbService {
         pageNumber,
         Number(rowsPerPage),
         searchText,
-        filters
+        filters,
+        sortBy,
+        sortOrder,
       );
       return this.duckdbResultMapping(result);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  }
+
+  async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
+    try {
+      const cachedbDao = await this.getCachedbDaoFromDialect();
+      return await cachedbDao.getConceptIds(searchText, filters);
     } catch (err) {
       console.error(err);
       throw err;

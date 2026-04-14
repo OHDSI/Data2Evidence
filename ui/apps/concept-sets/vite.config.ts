@@ -78,9 +78,15 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 8082,
       cors: true,
+      https: false,
     },
     preview: {
       port: 8082,
+    },
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.ts"],
     },
   };
 });

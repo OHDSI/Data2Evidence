@@ -707,7 +707,7 @@ const isConceptAttribute = (attribute: QueryFilterAttribute) => {
 </template>
 
 <style lang="scss" scoped>
-@import '@/query-filter/styles/ExpandTransition.scss';
+@use '@/query-filter/styles/ExpandTransition.scss';
 
 .query-filter-event-card {
   display: flex;

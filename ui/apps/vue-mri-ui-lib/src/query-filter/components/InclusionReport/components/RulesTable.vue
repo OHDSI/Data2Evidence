@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useStore } from 'vuex'
 import { VueDraggable } from 'vue-draggable-plus'
 import ChevronButton from '@/components/ChevronButton.vue'
-import type { InclusionRuleStat } from '@/query-filter/types/InclusionReportTypes'
+import RuleNameContent from './RuleNameContent.vue'
+import type { InclusionRuleStat, RuleFilterCardDetails } from '@/query-filter/types/InclusionReportTypes'
 import type { AttritionStat } from '../computeAttritionStats'
 
 const props = defineProps<{
@@ -12,6 +15,7 @@ const props = defineProps<{
   areAllRulesChecked: boolean
   isRuleChecked: (ruleId: number) => boolean
   getRowIndex: (statId: number) => number
+  filterCardDetails?: RuleFilterCardDetails[]
 }>()
 
 const emit = defineEmits<{
@@ -31,7 +35,14 @@ function handleToggleRuleSelection(ruleId: number) {
   emit('toggle-rule-selection', ruleId)
 }
 
+const isDragging = ref(false)
+
+function handleDragStart() {
+  isDragging.value = true
+}
+
 function handleDragEnd() {
+  isDragging.value = false
   emit('drag-end')
 }
 
@@ -42,6 +53,9 @@ function handleMoveRowUp(statId: number) {
 function handleMoveRowDown(statId: number) {
   emit('move-row-down', statId)
 }
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 </script>
 
 <template>
@@ -52,9 +66,10 @@ function handleMoveRowDown(statId: number) {
     target=".rules-table tbody"
     :disabled="selectedVisualization === 'INTERSECT'"
     :animation="150"
+    @start="handleDragStart"
     @end="handleDragEnd"
   >
-    <table class="rules-table">
+    <table class="rules-table" :class="{ dragging: isDragging }">
       <thead>
         <tr>
           <th class="checkbox-col" v-if="selectedVisualization === 'INTERSECT'">
@@ -62,18 +77,20 @@ function handleMoveRowDown(statId: number) {
               type="checkbox"
               :checked="areAllRulesChecked"
               @change="handleToggleAllRules"
-              title="Select/unselect all rules"
+              :title="getText('MRI_PA_INCLUSION_REPORT_SELECT_ALL_RULES')"
             />
           </th>
           <th class="drag-icon-header" v-if="selectedVisualization === 'ATTRITION'"></th>
           <th v-if="selectedVisualization === 'ATTRITION'"></th>
           <!-- <th class="rule-id">ID</th> -->
-          <th class="rule-name">Filter<sup>1</sup></th>
+          <th class="rule-name">{{ getText('MRI_PA_INCLUSION_REPORT_FILTER_COLUMN') }}<sup>1</sup></th>
           <!-- count satisfying -->
-          <th>No. of Persons</th>
+          <th>{{ getText('MRI_PA_INCLUSION_REPORT_NO_OF_PERSONS') }}</th>
           <!-- percent satisfying -->
-          <th v-if="selectedVisualization === 'ATTRITION'">Percentage of Total</th>
-          <th v-else>Percentage satisfied</th>
+          <th v-if="selectedVisualization === 'ATTRITION'">
+            {{ getText('MRI_PA_INCLUSION_REPORT_PERCENTAGE_OF_TOTAL') }}
+          </th>
+          <th v-else>{{ getText('MRI_PA_INCLUSION_REPORT_PERCENTAGE_SATISFIED') }}</th>
           <!-- percent excluded -->
           <!-- <th v-if="selectedVisualization === 'ATTRITION'">% diff</th>
           <th v-else>% to-gain</th> -->
@@ -86,24 +103,19 @@ function handleMoveRowDown(statId: number) {
             <ChevronButton
               direction="up"
               :disabled="getRowIndex(stat.id) === 0"
-              title="Move up"
+              :title="getText('MRI_PA_INCLUSION_REPORT_MOVE_UP')"
               @click="handleMoveRowUp(stat.id)"
             />
             <ChevronButton
               direction="down"
               :disabled="getRowIndex(stat.id) === draggableAttritionStats.length - 1"
-              title="Move down"
+              :title="getText('MRI_PA_INCLUSION_REPORT_MOVE_DOWN')"
               @click="handleMoveRowDown(stat.id)"
             />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
           <td class="rule-name">
-            <span>{{ stat.isExclude ? '-' : '+' }}&nbsp;</span>
-            <!-- bold 'OR' -->
-            <template v-for="(part, i) in stat.name.split(/\b(OR)\b/)" :key="i">
-              <b v-if="part === 'OR'">OR</b>
-              <template v-else>{{ part }}</template>
-            </template>
+            <RuleNameContent :stat="stat" :filter-card-details="filterCardDetails" />
           </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td v-if="selectedVisualization === 'ATTRITION'">{{ stat.percentSatisfying }}</td>
@@ -117,7 +129,9 @@ function handleMoveRowDown(statId: number) {
             <input type="checkbox" :checked="isRuleChecked(stat.id)" @change="handleToggleRuleSelection(stat.id)" />
           </td>
           <!-- <td class="rule-id">{{ stat.id + 1 }}</td> -->
-          <td class="rule-name">{{ stat.isExclude ? '-' : '+' }} {{ stat.name }}</td>
+          <td class="rule-name">
+            <RuleNameContent :stat="stat" :filter-card-details="filterCardDetails" />
+          </td>
           <td>{{ stat.countSatisfying.toLocaleString() }}</td>
           <td>{{ stat.percentSatisfying }}</td>
           <!-- <td>{{ stat.percentExcluded }}</td> -->
@@ -127,23 +141,17 @@ function handleMoveRowDown(statId: number) {
   </VueDraggable>
 </template>
 <style scoped lang="scss">
-table {
-  font-size: 16px;
-
-  .rule-name {
-    max-width: 70ch;
-  }
-}
-
 .rules-table {
   width: 100%;
+  font-size: 16px;
   border-collapse: collapse;
   border: 1px solid var(--color-ui-light-border, #ddd);
-  text-align: left;
+  text-align: right;
   color: var(--color-ui-medium-text);
 
   .rule-name {
     text-align: left;
+    max-width: 70ch;
   }
 
   thead {
@@ -172,9 +180,6 @@ table {
     }
 
     &.reorder-buttons {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       padding: 0.1rem;
     }
   }
@@ -196,8 +201,16 @@ table {
     background-color: var(--color-ui-extra-light-bg, #ddd);
   }
 
+  &.dragging tbody tr {
+    user-select: none;
+  }
+
   .drag-icon-header {
     border-right: none;
+  }
+
+  :deep(.filter-card-details) {
+    padding-left: 2em;
   }
 }
 </style>

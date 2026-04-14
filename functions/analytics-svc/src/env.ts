@@ -12,8 +12,6 @@ const Env = z
         IDP__ALP_SVC__CLIENT_SECRET: z.string(),
         USE_EXTENSION_FOR_COHORT_CREATION: z.string(),
 
-        USE_TREX_DB_CONN: z.string(),
-
         PG__IDLE_TIMEOUT_IN_MS: z
             .string()
             .refine((val) => !isNaN(parseInt(val)))
@@ -33,6 +31,7 @@ const Env = z
         SQL_RETURN_ON: z.string(),
         isHttpTestRun: z.string().optional(),
         isTestEnv: z.string().optional(),
+        HTTPTEST_DB_DIALECT: z.string().optional(),
         TESTSCHEMA: z.string().optional(),
         local: z.string(),
 

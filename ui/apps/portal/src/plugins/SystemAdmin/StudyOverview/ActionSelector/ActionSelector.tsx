@@ -76,7 +76,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
 
   const actionsList: Action[] = useMemo(
     () => [
-      { name: "Source Information", value: "info" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__SOURCE_INFORMATION), value: "info" },
       { name: getText(i18nKeys.ACTION_SELECTOR__UPDATE_DATASET), value: "metadata" },
       { name: getText(i18nKeys.ACTION_SELECTOR__CREATE_DATA_MART), value: "version" },
       { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },

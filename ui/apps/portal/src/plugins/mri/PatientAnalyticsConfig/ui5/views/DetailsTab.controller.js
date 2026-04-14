@@ -493,6 +493,9 @@ sap.ui.define([
             if (oldConfig.panelOptions.hasOwnProperty("inclusionReport")) {
                 newConfig.panelOptions.inclusionReport = oldConfig.panelOptions.inclusionReport;
             }
+            if (oldConfig.panelOptions.hasOwnProperty("intersectViewInclusionReport")) {
+                newConfig.panelOptions.intersectViewInclusionReport = oldConfig.panelOptions.intersectViewInclusionReport;
+            }
         }
 
         return aRemovedElements;

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from io import StringIO
 from typing import TYPE_CHECKING
+import math
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -60,21 +61,27 @@ def truncate_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):
 def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, header: bool|None, delimiter: str, encoding: str, chunksize: int, logger):
     logger.info(f"Reading data from file '{file.table_name}'")
 
-    for i, data in read_csv(file.path, escapechar=escapechar, header=header, 
+    total_chunks = None
+    if chunksize:
+        with open(file.path, 'rb') as f:
+            total_rows = max(0, sum(1 for _ in f) - (1 if header == 0 else 0))
+        total_chunks = math.ceil(total_rows / chunksize) if total_rows > 0 else 0
+
+    for i, data in read_csv(file.path, escapechar=escapechar, header=header,
                             delimiter=delimiter, encoding=encoding, chunksize=chunksize):
 
-        transformed_df = format_vocab_synpuf_data(dbdao, data, file.table_name, logger) 
-        
-        load_data(dbdao, schema, transformed_df, header, file, chunksize, i, logger)
-        
+        transformed_df = format_vocab_synpuf_data(dbdao, data, file.table_name, logger)
 
-def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None, 
-              file: FileType, chunksize: int, chunkindex: int, logger):
+        load_data(dbdao, schema, transformed_df, header, file, chunksize, i, total_chunks, logger)
+
+
+def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None,
+              file: FileType, chunksize: int, chunkindex: int, total_chunks: int | None, logger):
     try:
         if header == 0:
             csv_column_names = df.columns.tolist()
             table_column_names = dbdao.get_columns(schema, file.table_name) # use ibis to get columns from table, raise exception if table is empty
-            
+
             if table_column_names is None:
                 raise Exception(f"No columns found for table {file.table_name} in schema {schema}!")
             # else:
@@ -87,7 +94,10 @@ def load_data(dbdao: DaoBase, schema: str, df: pd.DataFrame, header: bool|None,
         logger.error(f"'Data load failed for the table '{schema}.{file.table_name}' at the chunk index: {chunkindex}  with error: {e}")
         raise e
     else:
-        logger.info(f"Data load succeeded for table '{schema}.{file.table_name}'!")
+        if total_chunks:
+            logger.info(f"Chunk {chunkindex}/{total_chunks} load succeeded for table '{schema}.{file.table_name}'!")
+        else:
+            logger.info(f"Data load succeeded for table '{schema}.{file.table_name}'!")
 
 
 def read_csv(filepath, escapechar, header, delimiter, encoding, chunksize):

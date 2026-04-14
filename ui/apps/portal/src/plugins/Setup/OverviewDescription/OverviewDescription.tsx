@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useMemo, useState, ChangeEvent } from "react";
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState, ChangeEvent } from "react";
 import { Button, Title, Checkbox, Loader } from "@portal/components";
 import SimpleMdeReact from "react-simplemde-editor";
 import { useConfigsByTypes } from "../../../hooks";
@@ -7,7 +7,11 @@ import { useFeedback, useTranslation } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";
 import { isEqual } from "lodash";
 import { ConfigTypes } from "../../../constant";
+import env from "../../../env";
 import "./OverviewDescription.scss";
+
+const ALLOWED_IMAGE_TYPES = ["image/png", "image/jpeg"];
+const MAX_IMAGE_SIZE = 1_048_576; // 1MB
 
 const mdeOptions = {
   hideIcons: ["side-by-side", "fullscreen"] as readonly ("side-by-side" | "fullscreen")[],
@@ -24,6 +28,7 @@ interface FormData {
   [ConfigTypes.IMPRINT_DISPLAY]: string;
   [ConfigTypes.DISCLAIMER]: string;
   [ConfigTypes.DISCLAIMER_DISPLAY]: string;
+  [ConfigTypes.HEADER_IMAGE]: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
@@ -36,6 +41,7 @@ const EMPTY_FORM_DATA: FormData = {
   [ConfigTypes.IMPRINT_DISPLAY]: "0",
   [ConfigTypes.DISCLAIMER]: "",
   [ConfigTypes.DISCLAIMER_DISPLAY]: "0",
+  [ConfigTypes.HEADER_IMAGE]: "",
 };
 
 export const OverviewDescription: FC = () => {
@@ -51,6 +57,7 @@ export const OverviewDescription: FC = () => {
       ConfigTypes.TERMS_OF_USE_DISPLAY,
       ConfigTypes.DISCLAIMER,
       ConfigTypes.DISCLAIMER_DISPLAY,
+      ConfigTypes.HEADER_IMAGE,
     ],
     refetch
   );
@@ -61,17 +68,17 @@ export const OverviewDescription: FC = () => {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setFormData({ ...formData, ...configs });
+    setFormData({ ...EMPTY_FORM_DATA, ...configs });
   }, [configs]);
 
-  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData]);
+  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData, configs]);
 
   const handleFormDataChange = useCallback((changes: { [field: string]: string }) => {
     setFormData((formData) => ({ ...formData, ...changes }));
   }, []);
 
-  const handleRevertChanges = useCallback(() => {
-    handleFormDataChange({ [ConfigTypes.OVERVIEW_DESCRIPTION]: configs[ConfigTypes.OVERVIEW_DESCRIPTION] });
+  const handleDiscardChanges = useCallback(() => {
+    setFormData({ ...EMPTY_FORM_DATA, ...configs });
   }, [configs]);
 
   const handleSave = useCallback(async () => {
@@ -99,6 +106,43 @@ export const OverviewDescription: FC = () => {
     }
   }, [formData]);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        setFeedback({ type: "error", message: getText(i18nKeys.HEADER_IMAGE__ERROR_INVALID_TYPE) });
+        event.target.value = "";
+        return;
+      }
+      if (file.size > MAX_IMAGE_SIZE) {
+        setFeedback({ type: "error", message: getText(i18nKeys.HEADER_IMAGE__ERROR_TOO_LARGE) });
+        event.target.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        handleFormDataChange({ [ConfigTypes.HEADER_IMAGE]: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+
+      // Reset input so re-uploading the same file triggers onChange
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    },
+    [handleFormDataChange, setFeedback, getText]
+  );
+
+  const handleRemoveImage = useCallback(() => {
+    handleFormDataChange({ [ConfigTypes.HEADER_IMAGE]: "" });
+  }, [handleFormDataChange]);
+
+  const headerImageSrc = formData[ConfigTypes.HEADER_IMAGE] || `${env.PUBLIC_URL}/assets/landing-page-illustration.svg`;
+  const hasCustomImage = !!formData[ConfigTypes.HEADER_IMAGE];
+
   const convertStringToBoolean = useCallback((s: string) => {
     return s === "1";
   }, []);
@@ -114,6 +158,41 @@ export const OverviewDescription: FC = () => {
   return (
     <div className="overview_description">
       <div className="overview_description__header">
+        <Title>{getText(i18nKeys.HEADER_IMAGE__TITLE)}</Title>
+      </div>
+      <div className="overview_description__content">
+        <div className="overview_description__header-image">
+          <div className="overview_description__banner-preview">
+            <img className="overview_description__banner-preview-image" alt="Header preview" src={headerImageSrc} />
+            <div className="overview_description__banner-preview-text">
+              <div className="overview_description__banner-preview-title">Data2Evidence</div>
+              <div className="overview_description__banner-preview-description">
+                {formData[ConfigTypes.OVERVIEW_DESCRIPTION] || getText(i18nKeys.HEADER_IMAGE__PLACEHOLDER_DESCRIPTION)}
+              </div>
+            </div>
+          </div>
+          <div className="overview_description__header-image-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".png,.jpg,.jpeg"
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+            />
+            <Button
+              text={getText(i18nKeys.HEADER_IMAGE__UPLOAD)}
+              variant="outlined"
+              onClick={() => fileInputRef.current?.click()}
+            />
+            {hasCustomImage && (
+              <Button text={getText(i18nKeys.HEADER_IMAGE__REMOVE)} variant="outlined" onClick={handleRemoveImage} />
+            )}
+          </div>
+          <div className="overview_description__header-image-hint">{getText(i18nKeys.HEADER_IMAGE__HINT)}</div>
+        </div>
+      </div>
+
+      <div className="overview_description__header">
         <Title>{getText(i18nKeys.OVERVIEW_DESCRIPTION__TITLE)}</Title>
       </div>
       <div className="overview_description__content">
@@ -122,15 +201,6 @@ export const OverviewDescription: FC = () => {
           onChange={(value) => handleFormDataChange({ [ConfigTypes.OVERVIEW_DESCRIPTION]: value })}
           options={mdeOptions}
           style={{ marginTop: "11px" }}
-        />
-      </div>
-
-      <div className="overview_description__buttons">
-        <Button
-          text={getText(i18nKeys.OVERVIEW_DESCRIPTION__REVERT_CHANGES)}
-          variant="outlined"
-          disabled={!hasChanges}
-          onClick={handleRevertChanges}
         />
       </div>
 
@@ -148,7 +218,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.TERMS_OF_USE_DISPLAY])}
-          label="Display Terms Of Use"
+          label={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISPLAY_TERMS_OF_USE)}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.TERMS_OF_USE_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -169,7 +239,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.PRIVACY_POLICY_DISPLAY])}
-          label="Display Privacy Policy"
+          label={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISPLAY_PRIVACY_POLICY)}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.PRIVACY_POLICY_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -190,7 +260,7 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.IMPRINT_DISPLAY])}
-          label="Display Imprint"
+          label={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISPLAY_IMPRINT)}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.IMPRINT_DISPLAY]: event.target.checked ? "1" : "0" })
           }
@@ -211,21 +281,25 @@ export const OverviewDescription: FC = () => {
 
         <Checkbox
           checked={convertStringToBoolean(formData[ConfigTypes.DISCLAIMER_DISPLAY])}
-          label="Display Disclaimer When Logged In"
+          label={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISPLAY_DISCLAIMER)}
           onChange={(event: ChangeEvent<HTMLInputElement>) =>
             handleFormDataChange({ [ConfigTypes.DISCLAIMER_DISPLAY]: event.target.checked ? "1" : "0" })
           }
         />
       </div>
 
-      <div className="overview_description__buttons">
-        <Button
-          text={getText(i18nKeys.OVERVIEW_DESCRIPTION__SAVE)}
-          disabled={!hasChanges}
-          onClick={handleSave}
-          loading={loading}
-        />
-      </div>
+      {hasChanges && (
+        <div className="overview_description__fixed-footer">
+          <div className="overview_description__fixed-footer-content">
+            <Button
+              text={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISCARD_CHANGES)}
+              variant="outlined"
+              onClick={handleDiscardChanges}
+            />
+            <Button text={getText(i18nKeys.OVERVIEW_DESCRIPTION__SAVE)} onClick={handleSave} loading={loading} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

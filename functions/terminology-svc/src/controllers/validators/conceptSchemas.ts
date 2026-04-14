@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+export const ALLOWED_SORT_COLUMNS = [
+  "concept_id",
+  "concept_name",
+  "vocabulary_id",
+  "concept_code",
+  "concept_class_id",
+  "domain_id",
+  "standard_concept",
+  "score",
+] as const;
+
+export type AllowedSortColumn = (typeof ALLOWED_SORT_COLUMNS)[number];
+
 const filtersSchema = z
   .object({
     conceptClassId: z.array(z.string()).default([]),
@@ -24,7 +37,8 @@ export const getConceptsQuery = z.object({
   count: z
     .string()
     .refine((val) => !isNaN(parseInt(val)))
-    .transform(Number),
+    .transform(Number)
+    .refine((val) => val > 0, { message: "count must be a positive integer" }),
   datasetId: z.string().uuid(),
   code: z.string(),
   filter: z
@@ -39,6 +53,8 @@ export const getConceptsQuery = z.object({
         return filtersSchema.parse({});
       }
     }),
+  sortBy: z.enum(ALLOWED_SORT_COLUMNS).optional(),
+  sortOrder: z.enum(["asc", "desc"]).optional(),
 });
 export const getConcepts = z.object({
   query: getConceptsQuery,
@@ -62,6 +78,26 @@ export const getConceptsCountQuery = z.object({
 });
 export const getConceptsCount = z.object({
   query: getConceptsCountQuery,
+});
+
+export const getConceptIdsQuery = z.object({
+  datasetId: z.string().uuid(),
+  code: z.string(),
+  filter: z
+    .string()
+    .optional()
+    .transform((value) => {
+      if (!value) return filtersSchema.parse({});
+      try {
+        const parsed = JSON.parse(value);
+        return filtersSchema.parse(parsed);
+      } catch {
+        return filtersSchema.parse({});
+      }
+    }),
+});
+export const getConceptIds = z.object({
+  query: getConceptIdsQuery,
 });
 
 export const getConceptFilterOptionsQuery = z.object({

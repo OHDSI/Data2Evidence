@@ -1,5 +1,6 @@
 // tslint:disable:no-shadowed-variable
 import axios from 'axios'
+import { useNotificationStore } from '../../stores/notifications'
 import { denormalize, normalize, schema } from 'normalizr'
 import BMGetChartableCards from '../../lib/ifr/BMGetChartableCards'
 import BooleanContainers from '../../lib/ifr/BooleanContainers'
@@ -712,7 +713,7 @@ const actions = {
 
       // reset all the axes that use any filtercard(s) in the current boolFilterContainer
       dispatch('resetAxes')
-      dispatch('setToastMessage', {
+      useNotificationStore().setToastMessage({
         text: getters.getText('MRI_PA_NEW_FILTERCARD_NOTIFICATION', getters.getFilterCard(filterCardObj.id).props.name),
       })
       resolve(filterCardObj.id)
@@ -974,8 +975,8 @@ const actions = {
 
     const hasReleaseDate = !!rootGetters.getSelectedDatasetVersion?.releaseDate
 
-    // Compress all keys except datasetId
-    const compress = Object.keys(params).filter(e => e !== 'datasetId')
+    // Compress all keys except datasetId and ruleOrder
+    const compress = Object.keys(params).filter(e => e !== 'datasetId' && e !== 'ruleOrder')
     const urlWithQuerystring = QueryString({
       url,
       queryString: {

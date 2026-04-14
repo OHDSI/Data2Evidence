@@ -138,7 +138,7 @@ const MetadataForm: FC<MetadataFormProps> = ({
             ref={webComponentWrapper({
               handleChange: (event: UsefulEvent) => handleValueChange(event.target.value),
             })}
-            label="Value"
+            label={getText(i18nKeys.METADATA_FORM__VALUE)}
             type={filterType(dataType)}
             value={value}
             error={error}

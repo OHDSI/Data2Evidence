@@ -1,0 +1,741 @@
+{
+  "masterdata": {
+    "title": [
+      {
+        "pattern": " {lastName},  {firstName}",
+        "values": []
+      }
+    ],
+    "details": [
+      {
+        "pattern": " {dateOfBirth}",
+        "values": []
+      },
+      {
+        "pattern": " {biomarker}/{gender}",
+        "values": []
+      }
+    ]
+  },
+  "inspectorOptions": {
+    "relatedDocuments": {
+      "visible": true,
+      "searchView": "Documents"
+    },
+    "overview": {
+      "visible": true
+    }
+  },
+  "configInformations": {
+    "note": ""
+  },
+  "lanes": [
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Diagnostics"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightOrange",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.vStatus",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.interactions.vStatus.attributes.age",
+              "visible": true,
+              "secondTileAttribute": true,
+              "firstTileAttribute": false,
+              "modelName": "Age at Last Contact",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.status",
+              "visible": true,
+              "firstTileAttribute": true,
+              "secondTileAttribute": false,
+              "modelName": "Vital Status",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.year",
+              "visible": false,
+              "modelName": "Year of Last Contact",
+              "annotations": []
+            }
+          ],
+          "modelName": "Vital Status"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.chemo",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_ops",
+              "visible": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_prot",
+              "visible": false,
+              "modelName": "Protocol",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionCount",
+              "visible": false,
+              "modelName": "Interaction Count",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionsPerPatient",
+              "visible": false,
+              "modelName": "Interactions per Patient",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Chemotherapy"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.priDiag",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.age",
+              "visible": true,
+              "modelName": "Age at Diagnosis",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.freetextDiag",
+              "visible": true,
+              "modelName": "Diagnosis Free Text",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.icd_10",
+              "visible": true,
+              "firstTileAttribute": true,
+              "secondTileAttribute": false,
+              "modelName": "ICD-10-CM Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.nsclc",
+              "visible": true,
+              "secondTileAttribute": true,
+              "firstTileAttribute": false,
+              "modelName": "Lung Cancer Subtype",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Primary Tumor Diagnosis"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.radio",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_dosage",
+              "visible": false,
+              "modelName": "Radio Dosage (Gy)",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_ops",
+              "visible": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Radiotherapy"
+        }
+      ],
+      "order": 0
+    },
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Treatment"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightGreen",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.vStatus",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.vStatus.attributes.age",
+              "visible": false,
+              "modelName": "Age at Last Contact",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.status",
+              "visible": false,
+              "modelName": "Vital Status",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.year",
+              "visible": false,
+              "modelName": "Year of Last Contact",
+              "annotations": []
+            }
+          ],
+          "modelName": "Vital Status"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.chemo",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_ops",
+              "visible": true,
+              "firstTileAttribute": true,
+              "secondTileAttribute": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_prot",
+              "visible": true,
+              "secondTileAttribute": true,
+              "firstTileAttribute": false,
+              "modelName": "Protocol",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionCount",
+              "visible": false,
+              "modelName": "Interaction Count",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionsPerPatient",
+              "visible": false,
+              "modelName": "Interactions per Patient",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Chemotherapy"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.priDiag",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.age",
+              "visible": false,
+              "modelName": "Age at Diagnosis",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.freetextDiag",
+              "visible": false,
+              "modelName": "Diagnosis Free Text",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.icd_10",
+              "visible": false,
+              "modelName": "ICD-10-CM Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.nsclc",
+              "visible": false,
+              "modelName": "Lung Cancer Subtype",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Primary Tumor Diagnosis"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.radio",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_dosage",
+              "visible": true,
+              "secondTileAttribute": true,
+              "firstTileAttribute": false,
+              "modelName": "Radio Dosage (Gy)",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_ops",
+              "visible": true,
+              "firstTileAttribute": true,
+              "secondTileAttribute": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Radiotherapy"
+        }
+      ],
+      "order": 1
+    },
+    {
+      "title": [
+        {
+          "lang": "",
+          "value": "Radio"
+        },
+        {
+          "lang": "en",
+          "value": ""
+        },
+        {
+          "lang": "de",
+          "value": ""
+        },
+        {
+          "lang": "fr",
+          "value": ""
+        }
+      ],
+      "color": "LightGold",
+      "visible": true,
+      "initiallyFiltered": true,
+      "laneType": "InteractionLane",
+      "interactions": [
+        {
+          "source": "patient.interactions.vStatus",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.interactions.vStatus.attributes.age",
+              "visible": false,
+              "modelName": "Age at Last Contact",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.status",
+              "visible": false,
+              "modelName": "Vital Status",
+              "annotations": []
+            },
+            {
+              "source": "patient.interactions.vStatus.attributes.year",
+              "visible": false,
+              "modelName": "Year of Last Contact",
+              "annotations": []
+            }
+          ],
+          "modelName": "Vital Status"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.chemo",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_ops",
+              "visible": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.chemo_prot",
+              "visible": false,
+              "modelName": "Protocol",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionCount",
+              "visible": false,
+              "modelName": "Interaction Count",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.interactionsPerPatient",
+              "visible": false,
+              "modelName": "Interactions per Patient",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.chemo.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Chemotherapy"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.priDiag",
+          "visible": false,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.age",
+              "visible": false,
+              "modelName": "Age at Diagnosis",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.freetextDiag",
+              "visible": false,
+              "modelName": "Diagnosis Free Text",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.icd_10",
+              "visible": false,
+              "modelName": "ICD-10-CM Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.nsclc",
+              "visible": false,
+              "modelName": "Lung Cancer Subtype",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.priDiag.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Primary Tumor Diagnosis"
+        },
+        {
+          "source": "patient.conditions.acme.interactions.radio",
+          "visible": true,
+          "attributes": [
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calMonth",
+              "visible": false,
+              "modelName": "Start Month",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.calYear",
+              "visible": false,
+              "modelName": "Start Year",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.end",
+              "visible": false,
+              "modelName": "End Date",
+              "annotations": ["interaction_end"]
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_dosage",
+              "visible": true,
+              "secondTileAttribute": true,
+              "firstTileAttribute": false,
+              "modelName": "Radio Dosage (Gy)",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.radio_ops",
+              "visible": true,
+              "firstTileAttribute": true,
+              "secondTileAttribute": false,
+              "modelName": "OPS Code",
+              "annotations": []
+            },
+            {
+              "source": "patient.conditions.acme.interactions.radio.attributes.start",
+              "visible": false,
+              "modelName": "Start Date",
+              "annotations": ["interaction_start"]
+            }
+          ],
+          "modelName": "Radiotherapy"
+        }
+      ],
+      "order": 2
+    }
+  ]
+}

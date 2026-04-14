@@ -11,6 +11,7 @@ const latestRequestTimes: { [key: string]: number } = {}
 declare interface IDomainValueItem {
   isLoaded: boolean
   isLoading: boolean
+  datasetId?: string
   loadedStatus?: 'HAS_RESULTS' | 'NO_RESULTS' | 'TOO_MANY_RESULTS'
   values: Array<{
     display_value?: string
@@ -52,6 +53,12 @@ const actions = {
   ) {
     const mriConfig = rootGetters.getMriConfig
     const datasetId = rootGetters.getSelectedDataset.id
+
+    // Skip if already loaded for this dataset (only for full list fetches, not searches)
+    const existing = state.domainValues[attributePathUid]
+    if (!searchQuery && existing?.isLoaded && !existing?.isLoading && existing?.datasetId === datasetId && datasetId) {
+      return Promise.resolve(existing.values)
+    }
 
     const requestTime = Date.now()
     latestRequestTimes[attributePathUid] = requestTime
@@ -95,6 +102,7 @@ const actions = {
         isLoading: false,
         isLoaded: true,
         loadedStatus,
+        datasetId,
       }
       if (data?.values?.[0]?.value) {
         const fuse = new Fuse(data.values, { includeScore: true, keys: ['value', { name: 'text', weight: 10 }] })
@@ -115,6 +123,9 @@ const mutations = {
       ...modulestate.domainValues,
       [attributePath]: data,
     }
+  },
+  [types.RESET_DATASET_CACHE](modulestate) {
+    modulestate.domainValues = {}
   },
 }
 
