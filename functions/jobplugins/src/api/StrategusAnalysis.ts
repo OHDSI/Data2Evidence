@@ -20,6 +20,7 @@ export class StrategusAnalysisApi {
     notebookName: string,
     analysisSpec: any,
     databaseCode: string,
+    mode: string,
   ): Promise<{ message: string; analysisId: string }> {
     const headers = {
       "Content-Type": "application/json",
@@ -29,7 +30,7 @@ export class StrategusAnalysisApi {
       studyId,
       analysisSpec,
       notebookName,
-      mode: "kernel", // TODO: update this when analysis-ui supports study datasetId from the UI
+      mode,
       databaseCode,
     });
 
