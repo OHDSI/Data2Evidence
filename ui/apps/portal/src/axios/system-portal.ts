@@ -284,6 +284,15 @@ export class SystemPortal {
     });
   }
 
+  public getPublicConfigsByTypes(types: ConfigTypes[]) {
+    return request({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: "config/public/types",
+      method: "GET",
+      params: { types: JSON.stringify(types) },
+    });
+  }
+
   public insertOrUpdateConfigs(configs: Config[]) {
     return request({
       baseURL: SYSTEM_PORTAL_URL,
