@@ -20,6 +20,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('tr').filter({ hasText: 'Demo dataset' }).getByText('Select action').click()
   await page.getByRole('option', { name: 'Setup semantic search' }).click()
   await page.getByRole('button', { name: 'Setup semantic search' }).click()
+  await expect(
+    page.getByText('Successfully generated the semantic search creation for dataset: Demo dataset')
+  ).toBeVisible()
   await page.getByTestId('dialog-close').click()
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.locator('a:has-text("Job Runs")')).toBeVisible()
