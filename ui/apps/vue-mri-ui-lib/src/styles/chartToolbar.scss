@@ -125,7 +125,7 @@
     align-items: center;
     gap: 2em;
     height: 100%;
-    .dashboardButton {
+    .dashboardButton, .attritionButton {
       display: flex;
       align-items: center;
       height: 100%;
@@ -135,9 +135,12 @@
         padding: 0 1em;
       }
     }
+    .iconActionButton {
+      display: flex;
+      align-items: center;
+    }
   }
 }
-
 .inclusion-report-dialog {
   background: var(--color-ui-extra-light-bg, #f9f9f9);
   border-radius: 32px;
