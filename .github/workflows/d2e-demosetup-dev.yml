@@ -97,7 +97,7 @@ jobs:
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
 
       - name: Build docker images
-        if: success() || failure()
+        if: steps.file_changes.outputs.flow_data_management == 'true' || contains(github.base_ref, 'release/')
         id: pull
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
@@ -203,7 +203,7 @@ jobs:
           sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
       - name: Restart d2e services
-        if: success() || failure()
+        if: steps.file_changes.outputs.flow_data_management == 'true' || contains(github.base_ref, 'release/')
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
