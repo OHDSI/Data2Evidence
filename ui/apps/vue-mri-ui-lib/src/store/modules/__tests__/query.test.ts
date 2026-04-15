@@ -84,6 +84,43 @@ describe('store - query', () => {
   })
 
   describe('actions', () => {
+    describe('drilldown', () => {
+      it('dispatches datetime constraints when selected values come from chart-formatted datetime strings', () => {
+        const dispatch = vi.fn()
+        const context = {
+          rootGetters: {
+            getMriFrontendConfig: {
+              getAttributeByPath: (id: string) => ({
+                getType: () => (id === 'patient.attributes.start_datetime' ? 'datetime' : 'text'),
+              }),
+            },
+          },
+          getters: {
+            getPlotlyElement: null,
+          },
+          dispatch,
+        }
+
+        queryModule.actions.drilldown(context as any, {
+          aSelectedData: [
+            {
+              id: 'patient.attributes.start_datetime',
+              value: '2025-09-30 14:30:00',
+            },
+          ],
+        })
+
+        expect(dispatch).toHaveBeenCalledWith(
+          'updateDateConstraintValue',
+          expect.objectContaining({
+            constraintId: 'patient.attributes.start_datetime',
+            fromDateValue: expect.any(Date),
+            toDateValue: expect.any(Date),
+          })
+        )
+      })
+    })
+
     describe('addFilterCard', () => {
       it('adds a visit filter card to a new BoolFilterContainer', async () => {
         const state = {
@@ -377,6 +414,82 @@ describe('store - query', () => {
         const deathCardIds = deathContainer.props.filterCards.map((fc: any) => fc.id)
         expect(deathCardIds).toEqual(['patient.interactions.death.1'])
         expect(deathCardIds).not.toContain('patient.interactions.measurement.1')
+      })
+    })
+  })
+
+  describe('getters', () => {
+    describe('getConstraint', () => {
+      it('normalizes chart-formatted datetime strings so date controls can render after reload', () => {
+        const state = {
+          model: {
+            entities: {
+              constraints: {
+                'patient.attributes.start_datetime': {
+                  id: 'patient.attributes.start_datetime',
+                  props: {
+                    type: 'datetime',
+                    fromDate: { value: '2025-09-30 14:30:00' },
+                    toDate: { value: '2025-09-30 14:30:00' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.start_datetime')
+
+        expect(constraint.props.fromDate.value).toBeInstanceOf(Date)
+        expect(constraint.props.toDate.value).toBeInstanceOf(Date)
+      })
+
+      it('keeps datetime constraints as Date objects when reloading ISO values', () => {
+        const state = {
+          model: {
+            entities: {
+              constraints: {
+                'patient.attributes.start_datetime': {
+                  id: 'patient.attributes.start_datetime',
+                  props: {
+                    type: 'datetime',
+                    fromDate: { value: '2025-09-30T14:30:00.000Z' },
+                    toDate: { value: '2025-09-30T18:45:00.000Z' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.start_datetime')
+
+        expect(constraint.props.fromDate.value).toBeInstanceOf(Date)
+        expect(constraint.props.toDate.value).toBeInstanceOf(Date)
+      })
+
+      it('returns YYYY-MM-DD strings for time constraints after reload normalization', () => {
+        const state = {
+          model: {
+            entities: {
+              constraints: {
+                'patient.attributes.admission_date': {
+                  id: 'patient.attributes.admission_date',
+                  props: {
+                    type: 'time',
+                    fromDate: { value: '2025-09-30T00:00:00.000Z' },
+                    toDate: { value: '2025-09-30T23:59:59.999Z' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.admission_date')
+
+        expect(constraint.props.fromDate.value).toBe('2025-09-30')
+        expect(constraint.props.toDate.value).toBe('2025-09-30')
       })
     })
   })

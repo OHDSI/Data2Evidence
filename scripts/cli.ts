@@ -468,8 +468,6 @@ class D2ECli {
     } else if (command === "pull") {
       cmd = `${cmd} pull`;
     }
-    console.log(`[build_docker_command]cmd:\n${cmd}`);
-    console.log(`[build_docker_command]envVars:\n${JSON.stringify(envVars)}`);
     return { cmd, env: envVars };
   }
 

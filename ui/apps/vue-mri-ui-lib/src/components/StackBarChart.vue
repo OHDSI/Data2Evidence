@@ -338,12 +338,22 @@ export default {
       const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       layout.showlegend = false
       layout.xaxis.type = this.chartData.axisType
-      const xTicks = this.buildXAxisTicks()
-      if (xTicks) {
-        layout.xaxis.tickvals = xTicks.tickvals
-        layout.xaxis.ticktext = xTicks.ticktext
-        layout.xaxis.tickangle = xTicks.tickangle
+
+      if (this.chartData?.axisType === 'category' && this.chartData?.tickvals && this.chartData?.ticktext) {
+        const labelAlias = this.chartData.tickvals.reduce((acc, value, index) => {
+          const original = String(value)
+          const truncated = String(this.chartData.ticktext[index] ?? value)
+          if (original !== truncated) {
+            acc[original] = truncated
+          }
+          return acc
+        }, {})
+
+        if (Object.keys(labelAlias).length > 0) {
+          layout.xaxis.labelalias = labelAlias
+        }
       }
+
       if (resetAxes) {
         layout.xaxis.autorange = true
         layout.yaxis.autorange = true
@@ -380,7 +390,7 @@ export default {
       }
 
       if (this.chartData?.traces) {
-        const clearedSelectedPoints = this.chartData.traces.map(() => [])
+        const clearedSelectedPoints = this.chartData.traces.map(() => null)
         this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
       }
 
