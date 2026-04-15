@@ -20,6 +20,8 @@ const mdeOptions = {
 
 interface FormData {
   [ConfigTypes.OVERVIEW_DESCRIPTION]: string;
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION]: string;
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY]: string;
   [ConfigTypes.TERMS_OF_USE]: string;
   [ConfigTypes.TERMS_OF_USE_DISPLAY]: string;
   [ConfigTypes.PRIVACY_POLICY]: string;
@@ -33,6 +35,8 @@ interface FormData {
 
 const EMPTY_FORM_DATA: FormData = {
   [ConfigTypes.OVERVIEW_DESCRIPTION]: "",
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION]: "",
+  [ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY]: "0",
   [ConfigTypes.TERMS_OF_USE]: "",
   [ConfigTypes.TERMS_OF_USE_DISPLAY]: "0",
   [ConfigTypes.PRIVACY_POLICY]: "",
@@ -49,6 +53,8 @@ export const OverviewDescription: FC = () => {
   const [configs, configsLoading] = useConfigsByTypes(
     [
       ConfigTypes.OVERVIEW_DESCRIPTION,
+      ConfigTypes.DATA_QUALITY_DESCRIPTION,
+      ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY,
       ConfigTypes.IMPRINT,
       ConfigTypes.IMPRINT_DISPLAY,
       ConfigTypes.PRIVACY_POLICY,
@@ -59,7 +65,7 @@ export const OverviewDescription: FC = () => {
       ConfigTypes.DISCLAIMER_DISPLAY,
       ConfigTypes.HEADER_IMAGE,
     ],
-    refetch
+    refetch,
   );
 
   const { setFeedback, setGenericErrorFeedback } = useFeedback();
@@ -67,19 +73,20 @@ export const OverviewDescription: FC = () => {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    setFormData({ ...EMPTY_FORM_DATA, ...configs });
-  }, [configs]);
+  const savedFormData = useMemo(() => ({ ...EMPTY_FORM_DATA, ...configs }), [configs]);
 
-  const hasChanges = useMemo(() => !isEqual(formData, configs), [formData, configs]);
+  useEffect(() => {
+    setFormData(savedFormData);
+  }, [savedFormData]);
+  const hasChanges = useMemo(() => !isEqual(formData, savedFormData), [formData, savedFormData]);
 
   const handleFormDataChange = useCallback((changes: { [field: string]: string }) => {
     setFormData((formData) => ({ ...formData, ...changes }));
   }, []);
 
   const handleDiscardChanges = useCallback(() => {
-    setFormData({ ...EMPTY_FORM_DATA, ...configs });
-  }, [configs]);
+    setFormData(savedFormData);
+  }, [savedFormData]);
 
   const handleSave = useCallback(async () => {
     try {
@@ -133,7 +140,7 @@ export const OverviewDescription: FC = () => {
       // Reset input so re-uploading the same file triggers onChange
       if (fileInputRef.current) fileInputRef.current.value = "";
     },
-    [handleFormDataChange, setFeedback, getText]
+    [handleFormDataChange, setFeedback, getText],
   );
 
   const handleRemoveImage = useCallback(() => {
@@ -185,7 +192,11 @@ export const OverviewDescription: FC = () => {
               onClick={() => fileInputRef.current?.click()}
             />
             {hasCustomImage && (
-              <Button text={getText(i18nKeys.HEADER_IMAGE__REMOVE)} variant="outlined" onClick={handleRemoveImage} />
+              <Button
+                text={getText(i18nKeys.HEADER_IMAGE__RESTORE_DEFAULT)}
+                variant="outlined"
+                onClick={handleRemoveImage}
+              />
             )}
           </div>
           <div className="overview_description__header-image-hint">{getText(i18nKeys.HEADER_IMAGE__HINT)}</div>
@@ -201,6 +212,26 @@ export const OverviewDescription: FC = () => {
           onChange={(value) => handleFormDataChange({ [ConfigTypes.OVERVIEW_DESCRIPTION]: value })}
           options={mdeOptions}
           style={{ marginTop: "11px" }}
+        />
+      </div>
+
+      <div className="overview_description__header">
+        <Title>{getText(i18nKeys.DATA_QUALITY_DESCRIPTION__TITLE)}</Title>
+      </div>
+      <div className="overview_description__content">
+        <SimpleMdeReact
+          value={formData[ConfigTypes.DATA_QUALITY_DESCRIPTION]}
+          onChange={(value) => handleFormDataChange({ [ConfigTypes.DATA_QUALITY_DESCRIPTION]: value })}
+          options={mdeOptions}
+          style={{ marginTop: "11px" }}
+        />
+
+        <Checkbox
+          checked={convertStringToBoolean(formData[ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY])}
+          label={getText(i18nKeys.OVERVIEW_DESCRIPTION__DISPLAY_DATA_QUALITY_DESCRIPTION)}
+          onChange={(event: ChangeEvent<HTMLInputElement>) =>
+            handleFormDataChange({ [ConfigTypes.DATA_QUALITY_DESCRIPTION_DISPLAY]: event.target.checked ? "1" : "0" })
+          }
         />
       </div>
 

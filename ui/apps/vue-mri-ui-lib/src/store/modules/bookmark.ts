@@ -506,6 +506,11 @@ const actions = {
             // were suppressed while held; this is the single explicit fire.
             dispatch('releaseFireRequest')
             dispatch('setFireRequest')
+          } else {
+            // Even when skipFireRequest=true (e.g. right pane not mounted yet),
+            // trigger one fire after IFR + axis selection restoration so the first
+            // chart render uses restored axis selection rather than stale defaults.
+            dispatch('setFireRequest')
           }
           resolve(null)
         })

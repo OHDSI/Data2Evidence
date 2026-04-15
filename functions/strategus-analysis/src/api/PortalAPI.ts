@@ -69,4 +69,18 @@ export class PortalAPI {
       throw new Error(`Error creating dataset. ${error}`);
     }
   }
+
+  // The endpoint is not exposed in Trex (functions/package.json); Only available through Tokio channel
+  // Clients cannot call the method directly via HTTP since it's only meant to be used internally by StrategusAnalysis when updating the dataset with new database code
+  async updateDataset(datasetId: string, databaseCode: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset/update-database-code`;
+      const result = await this.channel.put(url, { datasetId, databaseCode }, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error updating dataset. ${error}`);
+      throw new Error(`Error updating dataset. ${error}`);
+    }
+  }
 }
