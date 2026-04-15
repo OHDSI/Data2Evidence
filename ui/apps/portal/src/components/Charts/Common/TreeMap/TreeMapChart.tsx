@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from "react";
+import React, { FC, useState, useEffect, useRef, useCallback } from "react";
 import type { EChartsOption } from "echarts";
 
 import ReactECharts from "echarts-for-react";
@@ -17,6 +17,8 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const { getText, i18nKeys } = useTranslation();
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const [chartData, setChartData] = useState<any[]>([]);
+  const visualMapRangeRef = useRef<[number, number] | null>(null);
+  const chartRef = useRef<ReactECharts | null>(null);
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
@@ -34,32 +36,44 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const minRecordsPerPerson = Math.min(...recordsPerPersonValues);
   const maxRecordsPerPerson = Math.max(...recordsPerPersonValues);
 
+  // Build styled data array based on selection and visualMap range
+  const buildStyledData = useCallback(
+    (currentRange: [number, number] | null) => {
+      const solidColor = theme.palette.custom.treeMapLegendColor[1];
+
+      return data.map((item) => {
+        const itemKey = getItemKey(item);
+        const itemStyle: any = {};
+
+        // Apply selection styling (only if item is within visualMap range)
+        if (itemKey && itemKey === selectedItemKey) {
+          const recordsPerPersonVal = item.value?.[1];
+          const isInRange =
+            !currentRange || (recordsPerPersonVal >= currentRange[0] && recordsPerPersonVal <= currentRange[1]);
+          if (isInRange) {
+            itemStyle.borderColor = borderSelectedColor;
+            itemStyle.borderWidth = 3;
+          }
+        }
+
+        // For simple format data, apply solid color
+        if (!hasRecordsPerPerson) {
+          itemStyle.color = solidColor;
+        }
+
+        return {
+          ...item,
+          ...(Object.keys(itemStyle).length > 0 && { itemStyle }),
+        };
+      });
+    },
+    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]
+  );
+
   // Initialize chart data with itemStyle for each item
   useEffect(() => {
-    const solidColor = theme.palette.custom.treeMapLegendColor[1];
-
-    const dataWithStyles = data.map((item) => {
-      const itemKey = getItemKey(item);
-      const itemStyle: any = {};
-
-      // Apply selection styling
-      if (itemKey && itemKey === selectedItemKey) {
-        itemStyle.borderColor = borderSelectedColor;
-        itemStyle.borderWidth = 3;
-      }
-
-      // For simple format data, apply solid color
-      if (!hasRecordsPerPerson) {
-        itemStyle.color = solidColor;
-      }
-
-      return {
-        ...item,
-        ...(Object.keys(itemStyle).length > 0 && { itemStyle }),
-      };
-    });
-    setChartData(dataWithStyles);
-  }, [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]);
+    setChartData(buildStyledData(visualMapRangeRef.current));
+  }, [buildStyledData]);
 
   // Build the base option object
   const baseOption: EChartsOption = {
@@ -170,11 +184,23 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
       // e.value[3] = conceptId, e.value[4] = conceptPath (if available), e.name = display name
       return handleNodeClick(e.value[3], e.value[4] || e.name, e.name);
     },
+    datarangeselected: (e: any) => {
+      if (e.selected != null) {
+        visualMapRangeRef.current = e.selected;
+        // Imperatively update series data to toggle border styling without React re-render
+        const instance = chartRef.current?.getEchartsInstance();
+        if (instance) {
+          const styledData = buildStyledData(e.selected);
+          instance.setOption({ series: [{ data: styledData }] }, false, true);
+        }
+      }
+    },
   };
 
   return (
     <>
       <ReactECharts
+        ref={chartRef}
         style={{
           height: "100%",
           minHeight: 500,
