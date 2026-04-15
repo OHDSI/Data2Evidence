@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef, useCallback } from "react";
+import { FC, useState, useRef, useCallback } from "react";
 import type { EChartsOption } from "echarts";
 
 import ReactECharts from "echarts-for-react";
@@ -16,7 +16,6 @@ interface TreeMapChartProps {
 const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, extraChartConfigs }) => {
   const { getText, i18nKeys } = useTranslation();
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<any[]>([]);
   const chartRef = useRef<ReactECharts | null>(null);
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
@@ -69,20 +68,17 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]
   );
 
-  // Read the current visualMap range from the ECharts instance
-  const getVisualMapRange = useCallback((): [number, number] | null => {
+  // Compute chart data on each render, reading the current visualMap range from the ECharts instance.
+  // During drag, the imperative update in datarangeselected handles styling without triggering re-renders.
+  const getVisualMapRange = (): [number, number] | null => {
     const instance = chartRef.current?.getEchartsInstance();
     if (instance) {
       const opt = instance.getOption() as any;
       return opt?.visualMap?.[0]?.range ?? null;
     }
     return null;
-  }, []);
-
-  // Initialize chart data with itemStyle for each item
-  useEffect(() => {
-    setChartData(buildStyledData(getVisualMapRange()));
-  }, [buildStyledData, getVisualMapRange]);
+  };
+  const chartData = buildStyledData(getVisualMapRange());
 
   // Build the base option object
   const baseOption: EChartsOption = {
@@ -195,7 +191,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     },
     datarangeselected: (e: any) => {
       if (e.selected != null) {
-        // Imperatively update series data to toggle border styling without React re-render
+        // Imperatively update series data for immediate responsiveness during drag
         const instance = chartRef.current?.getEchartsInstance();
         if (instance) {
           const styledData = buildStyledData(e.selected);
