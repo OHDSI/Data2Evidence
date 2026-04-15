@@ -33,7 +33,7 @@ const loadEsModuleScriptAsync = (src: string): Promise<void> =>
     loadEsModuleScript(src, resolve);
   });
 
-const ensurePAAssetsLoaded = (): Promise<void> => {
+export const prewarmPAAssets = (): Promise<void> => {
   if (paAssetsLoadedPromise) {
     return paAssetsLoadedPromise;
   }
@@ -57,6 +57,13 @@ const ensurePAAssetsLoaded = (): Promise<void> => {
 
   return paAssetsLoadedPromise;
 };
+
+const ensurePAAssetsLoaded = (): Promise<void> => prewarmPAAssets();
+
+// Start prewarming real PA assets as soon as this module is imported.
+void prewarmPAAssets().catch(() => {
+  // Fail quietly here; mount flow handles and reports errors.
+});
 
 const PAPlugin: FC<PAPluginProps> = ({ studyId, releaseId, getToken, toggleAtlas }) => {
   const [isLoading, setIsLoading] = useState(false);
