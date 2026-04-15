@@ -20,7 +20,8 @@ export interface AttritionStat {
 
 export function useFunnelChart(
   inclusionReportResponse: Ref<InclusionReportResponse | null>,
-  draggableAttritionStats: Ref<AttritionStat[]>
+  draggableAttritionStats: Ref<AttritionStat[]>,
+  getText: (key: string, param?: string | string[]) => string
 ) {
   const funnelChartRef = ref<HTMLElement | null>(null)
 
@@ -169,12 +170,16 @@ export function useFunnelChart(
     const summary = inclusionReportResponse.value.summary
     const stats = draggableAttritionStats.value
 
-    const headers = ['Rule', 'Count', 'Percent of Total', 'Percent Difference']
+    const headers = [
+      getText('MRI_PA_INCLUSION_REPORT_FILTER_COLUMN'),
+      getText('MRI_PA_INCLUSION_REPORT_NO_OF_PERSONS'),
+      getText('MRI_PA_INCLUSION_REPORT_PERCENTAGE_OF_TOTAL'),
+    ]
     const rows = [
-      ['Total', summary.baseCount.toString(), '100.00%', ''],
+      [getText('MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS'), summary.baseCount.toString(), '100.00%'],
       ...stats.map(stat => {
-        const prefix = stat.isExclude ? '- ' : '+ '
-        return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying, stat.pctDiff]
+        const prefix = stat.isExclude ? 'Exclusion - ' : 'Inclusion - '
+        return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying]
       }),
     ]
 

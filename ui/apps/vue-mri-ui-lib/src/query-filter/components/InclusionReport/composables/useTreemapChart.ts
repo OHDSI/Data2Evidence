@@ -9,7 +9,8 @@ export function useTreemapChart(
   checkedRulesIds: Ref<number[]>,
   allAnyOption: Ref<'ALL' | 'ANY'>,
   passedFailedOption: Ref<'PASSED' | 'FAILED'>,
-  selectedVisualization: Ref<'ATTRITION' | 'INTERSECT'>
+  selectedVisualization: Ref<'ATTRITION' | 'INTERSECT'>,
+  getText: (key: string, param?: string | string[]) => string
 ) {
   const treemapChartRef = ref<HTMLElement | null>(null)
   const echartsTreemap = ref<any>(null)
@@ -241,8 +242,19 @@ export function useTreemapChart(
     const filteredData = applyFiltering(treemapData.value)
     const leaves = collectLeafData(filteredData)
 
-    const headers = ['Count', 'Passed Criteria', 'Failed Criteria']
-    const rows = leaves.map(leaf => [leaf.count.toString(), leaf.passed.join('; '), leaf.failed.join('; ')])
+    const replacePrefixes = (criteria: string[]) =>
+      criteria.map(c => c.replace(/^\+ /, 'Inclusion - ').replace(/^- /, 'Exclusion - '))
+
+    const headers = [
+      getText('MRI_PA_INCLUSION_REPORT_NO_OF_PERSONS'),
+      getText('MRI_PA_INCLUSION_REPORT_PASSED'),
+      getText('MRI_PA_INCLUSION_REPORT_FAILED'),
+    ]
+    const rows = leaves.map(leaf => [
+      leaf.count.toString(),
+      replacePrefixes(leaf.passed).join('; '),
+      replacePrefixes(leaf.failed).join('; '),
+    ])
 
     const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
     const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
