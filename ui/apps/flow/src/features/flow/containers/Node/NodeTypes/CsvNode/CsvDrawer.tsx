@@ -1,3 +1,4 @@
+import FormHelperText from "@mui/material/FormHelperText";
 import {
   Autocomplete,
   Box,
@@ -23,9 +24,11 @@ import {
   markStatusAsSaved,
   selectEdges,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { selectFlowNodes } from "~/features/flow/selectors";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import {
   useDeleteNodeCsvFileMutation,
   useGetLatestDataflowByIdQuery,
@@ -50,6 +53,10 @@ const DelimiterOptions: KeyValue[] = [
 
 interface FormData extends CsvNodeData {}
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
@@ -58,6 +65,10 @@ const EMPTY_FORM_DATA: FormData = {
   hasheader: true,
   columns: [],
   encoding: "utf-8",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
@@ -80,8 +91,10 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
   const nodeState = useSelector((state: RootState) =>
-    selectNodeById(state, node.id)
+    selectNodeById(state, node.id),
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
 
   useEffect(() => {
     if (node.data) {
@@ -141,7 +154,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
 
         // Auto-save with the updated node data
         const updatedNodes = nodes.map((n) =>
-          n.id === node.id ? updatedNode : n
+          n.id === node.id ? updatedNode : n,
         );
 
         const dataflowData: SaveDataflowDto = {
@@ -176,10 +189,15 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
       dataflowId,
       saveDataflow,
       dataflow?.canvas?.name,
-    ]
+    ],
   );
 
   const handleOk = useCallback(() => {
+    if (isDuplicateNodeName(allNodes, node.id, formData.name || "")) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     const updated: NodeState<CsvNodeData> = {
       ...nodeState,
       data: formData,
@@ -188,12 +206,17 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, allNodes, node.id, nodeState, onClose]);
 
   const displayFileName = selectedFile?.name || formData.file;
 
   return (
-    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer
+      {...props}
+      width="500px"
+      onOk={handleOk}
+      onClose={onClose}
+    >
       <Box mb={4}>
         <TextInput
           label="Name"
@@ -202,6 +225,11 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput

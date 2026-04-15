@@ -2,9 +2,10 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
+import FormHelperText from "@mui/material/FormHelperText";
 import {
   Autocomplete,
   Box,
@@ -17,9 +18,11 @@ import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { isValid2dArray } from "~/utils";
 import { useGetDatabasesQuery } from "~/features/flow/slices";
@@ -36,6 +39,10 @@ interface FormData extends Omit<DbReaderNodeData, "testdata"> {
   testdata: string;
 }
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
@@ -43,6 +50,10 @@ const EMPTY_FORM_DATA: FormData = {
   sqlquery: "",
   columns: [],
   testdata: "[[]]",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
@@ -57,6 +68,8 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
 
   useEffect(() => {
     if (node.data) {
@@ -77,6 +90,11 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
   }, [node.data]);
 
   const handleOk = useCallback(() => {
+    if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     let testdata: (string | number | boolean | Date)[][] = [[]];
     if (isValid2dArray(formData.testdata)) {
       testdata = JSON.parse(formData.testdata);
@@ -90,7 +108,7 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, allNodes, node.id, nodeState, onClose]);
 
   return (
     <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
@@ -102,6 +120,11 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput
