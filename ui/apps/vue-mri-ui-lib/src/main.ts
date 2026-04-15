@@ -1,11 +1,11 @@
 // Must be first import to set up sap mock before any component uses it
 import './globals'
-import { createApp, Component } from 'vue'
+import { createApp } from 'vue'
 import Multiselect from 'vue-multiselect'
 import { applyPolyfills, defineCustomElements } from '@d4l/web-components-library/dist/loader'
 import vuetify from './plugins/vuetify'
 
-import App from './App.vue'
+import AppRoot from './App.vue'
 import RootLayout from './RootLayout.vue'
 import clickFocus from './directives/clickFocus'
 import focus from './directives/focus'
@@ -27,49 +27,71 @@ import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 import { applyTheme } from './utils/ThemeManager'
 
-let app: Component
-const portalAPI = getPortalAPI()
-const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
 import './styles/themes/_main.scss'
 
-if (isLocal) {
-  app = createApp(RootLayout as unknown as Component)
-  applyTheme('atlas')
+let app: ReturnType<typeof createApp> | null = null
 
-  // For local development, uncomment to use D2E theme
-  // applyTheme('d2e')
+const createPAApp = () => {
+  const portalAPI = getPortalAPI()
 
-  // Initialize registries
-  initializeApps()
-  initializeComponents()
-} else {
-  app = createApp(App as unknown as Component)
-  applyTheme('d2e')
+  const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+  const paApp = createApp(isLocal ? RootLayout : AppRoot)
+
+  if (isLocal) {
+    applyTheme('atlas')
+
+    // For local development, uncomment to use D2E theme
+    // applyTheme('d2e')
+
+    // Initialize registries
+    initializeApps()
+    initializeComponents()
+  } else {
+    applyTheme('d2e')
+  }
+
+  const pinia = createPinia()
+  paApp.use(store)
+  paApp.use(pinia)
+  paApp.use(vuetify)
+  paApp.component('app-label', appLabelVue)
+  paApp.component('app-tag-input', appTagInputVue)
+  paApp.component('app-range', appRangeVue)
+  paApp.component('app-variant-range', appVariantRangeVue)
+  paApp.component('app-button', appButtonVue)
+  paApp.component('app-date-range', appDateRangeVue as any)
+  paApp.component('app-datetime-range', appDatetimeRangeVue as any)
+  paApp.component('app-single-select', appSingleSelect)
+  paApp.component('multiselect', Multiselect)
+  paApp.directive('focus', focus)
+  paApp.directive('click-focus', clickFocus)
+  paApp.directive('position-center', positionCenter)
+  paApp.directive('mouse-scroll', mouseScroll)
+  paApp.directive('resize-table', resizeTable)
+
+  // Suppress errors and warnings in production unless VITE_DEBUG is enabled
+  if (import.meta.env.VITE_DEBUG !== 'true') {
+    paApp.config.errorHandler = () => null
+    paApp.config.warnHandler = () => null
+  }
+
+  return paApp
 }
 
-const pinia = createPinia()
-app.use(store)
-app.use(pinia)
-app.use(vuetify)
-app.component('app-label', appLabelVue)
-app.component('app-tag-input', appTagInputVue)
-app.component('app-range', appRangeVue)
-app.component('app-variant-range', appVariantRangeVue)
-app.component('app-button', appButtonVue)
-app.component('app-date-range', appDateRangeVue as any)
-app.component('app-datetime-range', appDatetimeRangeVue as any)
-app.component('app-single-select', appSingleSelect)
-app.component('multiselect', Multiselect)
-app.directive('focus', focus)
-app.directive('click-focus', clickFocus)
-app.directive('position-center', positionCenter)
-app.directive('mouse-scroll', mouseScroll)
-app.directive('resize-table', resizeTable)
+const mountPA = () => {
+  if (app) {
+    app.unmount()
+    app = null
+  }
 
-// Suppress errors and warnings in production unless VITE_DEBUG is enabled
-if (import.meta.env.VITE_DEBUG !== 'true') {
-  app.config.errorHandler = () => null
-  app.config.warnHandler = () => null
+  app = createPAApp()
+  app.mount('.vue-main')
+}
+
+const unmountPA = () => {
+  if (!app) return
+  app.unmount()
+  app = null
 }
 
 // Bind the custom elements to the window object
@@ -77,4 +99,9 @@ applyPolyfills().then(() => {
   defineCustomElements()
 })
 
-app.mount('.vue-main')
+window.mountPA = mountPA
+window.unmountPA = unmountPA
+
+if (import.meta.env.DEV) {
+  mountPA()
+}
