@@ -178,12 +178,17 @@ export function useFunnelChart(
     const rows = [
       [getText('MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS'), summary.baseCount.toString(), '100.00%'],
       ...stats.map(stat => {
-        const prefix = stat.isExclude ? 'Exclusion - ' : 'Inclusion - '
+        const prefix = stat.isExclude
+          ? `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} -`
+          : `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} -`
         return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying]
       }),
     ]
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+    const escapeCsvCell = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const csvContent = [headers.map(escapeCsvCell).join(','), ...rows.map(r => r.map(escapeCsvCell).join(','))].join(
+      '\n'
+    )
     const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)

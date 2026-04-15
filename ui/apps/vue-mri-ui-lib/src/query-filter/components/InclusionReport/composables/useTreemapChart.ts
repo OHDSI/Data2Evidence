@@ -243,7 +243,11 @@ export function useTreemapChart(
     const leaves = collectLeafData(filteredData)
 
     const replacePrefixes = (criteria: string[]) =>
-      criteria.map(c => c.replace(/^\+ /, 'Inclusion - ').replace(/^- /, 'Exclusion - '))
+      criteria.map(c =>
+        c
+          .replace(/^\+ /, `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} -`)
+          .replace(/^- /, `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} -`)
+      )
 
     const headers = [
       getText('MRI_PA_INCLUSION_REPORT_NO_OF_PERSONS'),
@@ -256,7 +260,10 @@ export function useTreemapChart(
       replacePrefixes(leaf.failed).join('; '),
     ])
 
-    const csvContent = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+    const escapeCsvCell = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const csvContent = [headers.map(escapeCsvCell).join(','), ...rows.map(r => r.map(escapeCsvCell).join(','))].join(
+      '\n'
+    )
     const blob = new Blob(['\ufeff', csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
