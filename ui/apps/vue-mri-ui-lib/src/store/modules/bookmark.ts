@@ -587,6 +587,7 @@ const mutations = {
     modulestate.bookmarks = []
     modulestate.materializedCohorts = []
     modulestate.atlasCohortDefinitions = []
+    modulestate.activeBookmark = null
   },
   [types.RESET_DATASET_CACHE](modulestate) {
     modulestate.canDatasetMaterializeCohorts = false

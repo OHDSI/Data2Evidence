@@ -22,6 +22,7 @@ import appSingleSelect from './lib/ui/app-single-select.vue'
 import appTagInputVue from './lib/ui/app-tag-input.vue'
 import { createPinia } from 'pinia'
 import store from './store'
+import { SET_ACTIVE_BOOKMARK } from './store/mutation-types'
 import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
@@ -91,6 +92,7 @@ const mountPA = () => {
 const unmountPA = () => {
   if (!app) return
   app.unmount()
+  store.commit(SET_ACTIVE_BOOKMARK, null)
   app = null
 }
 
