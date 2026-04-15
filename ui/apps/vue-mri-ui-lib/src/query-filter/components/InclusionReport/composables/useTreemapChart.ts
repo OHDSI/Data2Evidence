@@ -245,8 +245,8 @@ export function useTreemapChart(
     const replacePrefixes = (criteria: string[]) =>
       criteria.map(c =>
         c
-          .replace(/^\+ /, `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} -`)
-          .replace(/^- /, `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} -`)
+          .replace(/^\+ /, `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} - `)
+          .replace(/^- /, `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} - `)
       )
 
     const headers = [

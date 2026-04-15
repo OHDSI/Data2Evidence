@@ -179,8 +179,8 @@ export function useFunnelChart(
       [getText('MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS'), summary.baseCount.toString(), '100.00%'],
       ...stats.map(stat => {
         const prefix = stat.isExclude
-          ? `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} -`
-          : `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} -`
+          ? `${getText('MRI_PA_FILTERCARD_TITLE_EXCLUSION')} - `
+          : `${getText('MRI_PA_FILTERCARD_TITLE_INCLUSION')} - `
         return [`${prefix}${stat.name}`, stat.countSatisfying.toString(), stat.percentSatisfying]
       }),
     ]
