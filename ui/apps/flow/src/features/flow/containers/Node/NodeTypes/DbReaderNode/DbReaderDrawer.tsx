@@ -110,8 +110,13 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData, allNodes, node.id, nodeState, onClose]);
 
+  const handleClose = useCallback(() => {
+    setFormError(EMPTY_FORM_ERROR);
+    typeof onClose === "function" && onClose();
+  }, [onClose]);
+
   return (
-    <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} onOk={handleOk} onClose={handleClose}>
       <Box mb={4}>
         <TextInput
           label="Name"

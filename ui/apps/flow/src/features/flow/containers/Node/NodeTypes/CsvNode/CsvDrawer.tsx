@@ -208,6 +208,11 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
     typeof onClose === "function" && onClose();
   }, [formData, allNodes, node.id, nodeState, onClose]);
 
+  const handleClose = useCallback(() => {
+    setFormError(EMPTY_FORM_ERROR);
+    typeof onClose === "function" && onClose();
+  }, [onClose]);
+
   const displayFileName = selectedFile?.name || formData.file;
 
   return (
@@ -215,7 +220,7 @@ export const CsvDrawer: FC<CsvDrawerProps> = ({ node, onClose, ...props }) => {
       {...props}
       width="500px"
       onOk={handleOk}
-      onClose={onClose}
+      onClose={handleClose}
     >
       <Box mb={4}>
         <TextInput

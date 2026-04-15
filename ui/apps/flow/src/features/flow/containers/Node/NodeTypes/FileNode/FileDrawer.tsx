@@ -197,10 +197,15 @@ export const FileDrawer: FC<FileDrawerProps> = ({ node, onClose, ...props }) => 
     typeof onClose === "function" && onClose();
   }, [formData, allNodes, node.id, nodeState, onClose]);
 
+  const handleClose = useCallback(() => {
+    setFormError(EMPTY_FORM_ERROR);
+    typeof onClose === "function" && onClose();
+  }, [onClose]);
+
   const displayFileName = selectedFile?.name || formData.file;
 
   return (
-    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} width="500px" onOk={handleOk} onClose={handleClose}>
       <Box mb={4}>
         <TextInput
           label="Name"
