@@ -122,6 +122,22 @@ export class TransformationService {
       name: dataflowDto.name,
       type: "datatransformation-flow",
     };
+
+    if (!dataflowDto.id) {
+      const existingCanvas = await this.canvasRepo
+        .createQueryBuilder("canvas")
+        .select(["canvas.id"])
+        .where("canvas.type = :type", { type: "datatransformation-flow" })
+        .andWhere("LOWER(canvas.name) = LOWER(:name)", {
+          name: dataflowDto.name,
+        })
+        .getOne();
+
+      if (existingCanvas) {
+        throw new Error(`Dataflow with name '${dataflowDto.name}' already exists`);
+      }
+    }
+
     const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
 
     console.log(`createCanvas with canvas id: ${id}`);
