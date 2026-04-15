@@ -111,6 +111,10 @@ jobs:
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Check status of docker containers
+        run: |
+          docker ps -a
+
       - name: Log status
         if: success() || failure()
         run: |
