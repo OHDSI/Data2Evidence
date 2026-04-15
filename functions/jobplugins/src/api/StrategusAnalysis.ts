@@ -18,7 +18,9 @@ export class StrategusAnalysisApi {
   public async saveAnalysis(
     studyId: string,
     notebookName: string,
-    analysisSpec: any
+    analysisSpec: any,
+    databaseCode: string,
+    mode: string,
   ): Promise<{ message: string; analysisId: string }> {
     const headers = {
       "Content-Type": "application/json",
@@ -28,7 +30,8 @@ export class StrategusAnalysisApi {
       studyId,
       analysisSpec,
       notebookName,
-      mode: "kernel",
+      mode,
+      databaseCode,
     });
 
     const response = await this.channel.put(

@@ -288,12 +288,13 @@ export class DatasetRouter {
                   `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
                 );
               } catch (error) {
+                await portalAPI.deleteDataset(id); // Rollback dataset creation if FHIR project creation fails
                 this.logger.error(
                   `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
                 );
                 return res
                   .status(500)
-                  .send("Error while creating FHIR project");
+                  .send("Dataset cannot be created because of FHIR project creation failure");
               }
             }
 

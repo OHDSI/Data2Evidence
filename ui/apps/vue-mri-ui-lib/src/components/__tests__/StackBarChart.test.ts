@@ -35,13 +35,15 @@ const actions = {
 }
 
 const getters = {
-  dataToTraces: () => (chartData, selection = []) => ({
-    ...chartData,
-    traces: (chartData.traces || []).map((trace, index) => ({
-      ...trace,
-      selectedpoints: selection[index] || [],
-    })),
-  }),
+  dataToTraces:
+    () =>
+    (chartData, selection = []) => ({
+      ...chartData,
+      traces: (chartData.traces || []).map((trace, index) => ({
+        ...trace,
+        selectedpoints: selection && index in selection ? selection[index] : [],
+      })),
+    }),
   getMriFrontendConfig: () => ({}),
   getChartSize: () => ({}),
   getCsvFireDownload: () => false,
@@ -52,7 +54,7 @@ const getters = {
   getBookmarksData: () => ({}),
   getChartableFilterCardByInstanceId: () => () => ({ name: 'Card' }),
   sortProperty: () => ({ props: { value: null } }),
-  processResponse: () => (chartData => chartData),
+  processResponse: () => chartData => chartData,
   getChartProperty: () => () => ({ props: { active: true } }),
 }
 
@@ -101,7 +103,6 @@ describe('StackBarChart selection handling', () => {
     Object.defineProperty((wrapper.vm as any).$el, 'querySelector', {
       value: vi.fn(() => fakePlotElement),
     })
-
     ;(wrapper.vm as any).chartData = {
       axisType: 'category',
       traces: [
@@ -120,7 +121,6 @@ describe('StackBarChart selection handling', () => {
       ticktext: ['Alpha', 'Beta'],
       ticktextFull: ['Alpha', 'Beta'],
     }
-
     ;(wrapper.vm as any).setupPlotly()
 
     handlers.plotly_selected()
@@ -133,7 +133,6 @@ describe('StackBarChart selection handling', () => {
     handlers.plotly_deselect()
     const afterDeselect = getLastSelectionPayload()
     expect(afterDeselect.selection).toEqual([])
-
     ;(wrapper.vm as any).chartData.traces[0].selectedpoints = [1]
     handlers.plotly_selected()
     const secondSelection = getLastSelectionPayload()
@@ -160,7 +159,6 @@ describe('StackBarChart selection handling', () => {
       ticktext: ['A'],
       ticktextFull: ['A'],
     }
-
     ;(wrapper.vm as any).clearSelectionState({ plotElement: fakePlotElement, resetAxes: true })
 
     expect(Plotly.relayout).toHaveBeenCalledWith(fakePlotElement, {
@@ -168,5 +166,50 @@ describe('StackBarChart selection handling', () => {
       'yaxis.autorange': true,
     })
     expect(Plotly.react).not.toHaveBeenCalled()
+  })
+
+  it('clears visual selection state with null selectedpoints on reset', async () => {
+    const wrapper = mountComponent()
+
+    const fakePlotElement = { id: 'plot' }
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          selectedpoints: [0],
+          x: ['A'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [] }],
+        },
+      ],
+      tickvals: ['A'],
+      ticktext: ['A'],
+      ticktextFull: ['A'],
+    }
+    ;(wrapper.vm as any).config.modeBarButtons[0][0].click(fakePlotElement)
+
+    expect(Plotly.react).toHaveBeenCalled()
+    const reactTraces = (Plotly.react as any).mock.calls.at(-1)?.[1]
+    expect(reactTraces[0].selectedpoints).toBeNull()
+  })
+
+  it('uses label aliases for truncation without forcing manual ticks', async () => {
+    const wrapper = mountComponent()
+
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+      tickvals: ['Very Long Label A', 'Very Long Label B'],
+      ticktext: ['Very Long...', 'Very Long...'],
+      ticktextFull: ['Very Long Label A', 'Very Long Label B'],
+    }
+
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+
+    expect(layout.xaxis.tickvals).toBeUndefined()
+    expect(layout.xaxis.ticktext).toBeUndefined()
+    expect(layout.xaxis.labelalias).toEqual({
+      'Very Long Label A': 'Very Long...',
+      'Very Long Label B': 'Very Long...',
+    })
   })
 })
