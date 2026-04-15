@@ -123,19 +123,22 @@ export class TransformationService {
       type: "datatransformation-flow",
     };
 
-    if (!dataflowDto.id) {
-      const existingCanvas = await this.canvasRepo
-        .createQueryBuilder("canvas")
-        .select(["canvas.id"])
-        .where("canvas.type = :type", { type: "datatransformation-flow" })
-        .andWhere("LOWER(canvas.name) = LOWER(:name)", {
-          name: dataflowDto.name,
-        })
-        .getOne();
+    const existingCanvasQuery = await this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select(["canvas.id"])
+      .where("canvas.type = :type", { type: "datatransformation-flow" })
+      .andWhere("LOWER(canvas.name) = LOWER(:name)", {
+        name: dataflowDto.name,
+      });
 
-      if (existingCanvas) {
-        throw new Error(`Dataflow with name '${dataflowDto.name}' already exists`);
-      }
+    if (dataflowDto.id) {
+      existingCanvasQuery.andWhere("canvas.id != :id", {
+        id: dataflowDto.id,
+      });
+    }
+
+    if (existingCanvasQuery) {
+      throw new Error(`Dataflow with name '${dataflowDto.name}' already exists`);
     }
 
     const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;

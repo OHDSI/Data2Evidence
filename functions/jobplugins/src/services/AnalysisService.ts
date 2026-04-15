@@ -72,19 +72,23 @@ export class AnalysisService {
     let version = 1;
     const { comment, ...flow } = analysisflowDto.dataflow;
 
-    if (!analysisflowDto.id) {
-      const existingCanvas = await this.canvasRepo
-        .createQueryBuilder("canvas")
-        .select(["canvas.id"])
-        .where("canvas.type = :type", { type: "analysis-flow" })
-        .andWhere("LOWER(canvas.name) = LOWER(:name)", {
-          name: analysisflowDto.name,
-        })
-        .getOne();
+    const existingCanvasQuery = await this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select(["canvas.id"])
+      .where("canvas.type = :type", { type: "analysis-flow" })
+      .andWhere("LOWER(canvas.name) = LOWER(:name)", {
+        name: analysisflowDto.name,
+      });
 
-      if (existingCanvas) {
-        throw new Error(`Analysis flow with name '${analysisflowDto.name}' already exists`);
-      }
+    
+    if (analysisflowDto.id) {
+      existingCanvasQuery.andWhere("canvas.id != :id", {
+        id: analysisflowDto.id,
+      });
+    }
+
+    if (existingCanvasQuery) {
+      throw new Error(`Analysis flow with name '${analysisflowDto.name}' already exists`);
     }
 
     if (analysisflowDto.id) {
