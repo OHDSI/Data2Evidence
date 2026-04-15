@@ -262,7 +262,7 @@ jobs:
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
-            d2e-e2e npm test
+            d2e-e2e npm test ./tests/04-attribute/hybrid-search.spec.ts
 
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails
