@@ -34,7 +34,7 @@ export const translations = {
       HEADER__ERROR_DELETE: "An error has occurred while deleting notebook",
       HEADER__ERROR_SAVED: "An error has occurred while saving notebook",
       HEADER__EXPORT: "Export notebook",
-      HEADER__FILE_DELETED: "File deleted",
+      HEADER__FILE_DELETED: "Notebook deleted",
       HEADER__IMPORT_ERROR: "An error has occurred. Please import Jupyter files(.ipynb) only.",
       HEADER__IMPORT: "Import notebook",
       HEADER__NEW: "New notebook",

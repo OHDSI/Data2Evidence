@@ -64,6 +64,6 @@ test(TEST_NAME, async ({ page }) => {
   //Delete notebook
   await page.getByRole('button', { name: 'Delete' }).click()
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByText('File Deleted')).toBeVisible()
+  await expect(page.getByText('Notebook deleted')).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
 })

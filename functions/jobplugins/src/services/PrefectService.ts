@@ -45,19 +45,28 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    studyId: string,
     uploadResults: boolean | undefined,
     token: string,
   ) {
     const revision =
       await this.analysisflowService.getLastAnalysisflowRevision(id);
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow,
     );
     const portalServerApi = new PortalServerAPI(token);
     const { schemaName, databaseCode } =
       await portalServerApi.getDataset(datasetId);
+
+    this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+    await this.strategusAnalysisApi.saveAnalysis(
+      studyId,
+      revision.canvas.name,
+      JSON.stringify(prefectParams),
+      databaseCode,
+      "analysis-ui",
+    );
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
