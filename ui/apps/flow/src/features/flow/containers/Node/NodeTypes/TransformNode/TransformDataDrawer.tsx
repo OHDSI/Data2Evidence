@@ -1,15 +1,18 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
+import FormHelperText from "@mui/material/FormHelperText";
 import { Box, InputLabel, MenuItem, Select, SelectChangeEvent, TextInput } from "@portal/components";
 import { SelectSource } from "../../SelectSource/SelectSource";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { TransformNodeData } from "./TransformDataNode";
@@ -23,6 +26,10 @@ export interface TransformDataDrawerProps extends Omit<NodeDrawerProps, "childre
 
 interface FormData extends TransformNodeData {}
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
@@ -30,6 +37,10 @@ const EMPTY_FORM_DATA: FormData = {
   id: "",
   structure_map: "",
   output_omop_data: "",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
@@ -42,6 +53,8 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
   const { data: structureMapTemplates = [], isLoading: structureMapTemplatesLoading } =
     useGetFhirStructureMapTemplatesQuery(undefined, {
       skip: false,
@@ -67,6 +80,11 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
 
   const handleOk = useCallback(() => {
     if (!nodeState) return;
+    if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     const updated: NodeState<TransformNodeData> = {
       ...nodeState,
       data: formData,
@@ -75,7 +93,7 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData, nodeState, onClose, dispatch]);
+  }, [formData, nodeState, onClose, dispatch, allNodes, node.id]);
 
   return (
     <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
@@ -87,6 +105,11 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput

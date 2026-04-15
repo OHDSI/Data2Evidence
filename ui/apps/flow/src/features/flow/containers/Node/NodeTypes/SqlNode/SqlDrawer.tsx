@@ -1,15 +1,18 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
+import FormHelperText from "@mui/material/FormHelperText";
 import { Box, TextInput } from "@portal/components";
 import { Editor } from "~/components/Editor/Editor";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { SourceOptions, SourceTypes } from "../../SelectSource/SelectSource";
@@ -24,10 +27,18 @@ export interface SqlDrawerProps extends Omit<NodeDrawerProps, "children"> {
 
 interface FormData extends SqlNodeData {}
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   sql: "",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 const sourceOptions: SourceOptions = {
@@ -43,6 +54,8 @@ export const SqlDrawer: FC<SqlDrawerProps> = ({ node, onClose, ...props }) => {
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
 
   useEffect(() => {
     if (node.data) {
@@ -60,6 +73,11 @@ export const SqlDrawer: FC<SqlDrawerProps> = ({ node, onClose, ...props }) => {
   }, [node.data]);
 
   const handleOk = useCallback(() => {
+    if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     const updated: NodeState<SqlNodeData> = {
       ...nodeState,
       data: formData,
@@ -68,7 +86,7 @@ export const SqlDrawer: FC<SqlDrawerProps> = ({ node, onClose, ...props }) => {
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, allNodes, node.id, nodeState, onClose]);
 
   return (
     <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
@@ -80,6 +98,11 @@ export const SqlDrawer: FC<SqlDrawerProps> = ({ node, onClose, ...props }) => {
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput

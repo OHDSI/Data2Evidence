@@ -1,15 +1,18 @@
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
+import FormHelperText from "@mui/material/FormHelperText";
 import { Box, TextInput } from "@portal/components";
 import { Editor } from "~/components/Editor/Editor";
 import { useFormData } from "~/features/flow/hooks";
 import {
   markStatusAsDraft,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
@@ -22,11 +25,19 @@ export interface PythonDrawerProps extends Omit<NodeDrawerProps, "children"> {
 
 interface FormData extends PythonNodeData {}
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   python_code: "",
   output_json_schema: "",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 export const PythonDrawer: FC<PythonDrawerProps> = ({
@@ -39,6 +50,8 @@ export const PythonDrawer: FC<PythonDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
 
   useEffect(() => {
     if (node.data) {
@@ -57,6 +70,11 @@ export const PythonDrawer: FC<PythonDrawerProps> = ({
   }, [node.data]);
 
   const handleOk = useCallback(() => {
+    if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     const updated: NodeState<PythonNodeData> = {
       ...nodeState,
       data: formData,
@@ -65,7 +83,7 @@ export const PythonDrawer: FC<PythonDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, allNodes, node.id, nodeState, onClose]);
 
   return (
     <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
@@ -77,6 +95,11 @@ export const PythonDrawer: FC<PythonDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput
