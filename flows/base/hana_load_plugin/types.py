@@ -27,7 +27,7 @@ class OmopCDMPluginOptions(BaseModel):
     vocab_schema: Optional[str] = None
     results_schema: Optional[str] = None
     datasets: Optional[List] = None
-    load_csvs: Optional[bool] = False
+    load_csvs: Optional[bool] = True
     data_model: Optional[str] = None
     
     @property
