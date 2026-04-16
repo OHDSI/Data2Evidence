@@ -804,7 +804,7 @@ export const cdwFHIRConfigDuckdb = {
     },
     tableMapping: {
       "@QUESTIONNAIRERESPONSE": "$$SCHEMA$$.QuestionnaireResponse",
-      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
+      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[9:]", // Skip first 9 characters which is a prefix `Patient/`
       "@PATIENT": '$$SCHEMA$$."Patient"',
       "@PATIENT.PATIENT_ID": "id",
       "@PATIENT.DOD": "deathDate",

@@ -63,6 +63,8 @@ export enum ConfigTypes {
   HYBRID_SEARCH = "hybrid-search",
   DATAFLOW_GIT_CONFIG = "dataflow-git-config",
   NOTEBOOK_GIT_CONFIG = "notebook-git-config",
+  DATA_QUALITY_DESCRIPTION = "data-quality-description",
+  DATA_QUALITY_DESCRIPTION_DISPLAY = "data-quality-description-display",
 }
 
 export const PUBLIC_CONFIG_TYPES = [ConfigTypes.OVERVIEW_DESCRIPTION];

@@ -108,13 +108,26 @@ const momentToDateFnsFormat = (momentFormat: string): string => {
     .replace(/ss/g, 'ss')
 }
 
+const parseDateString = (value: string): Date | null => {
+  const parsedMoment = moment(
+    value,
+    [mergedConfig.value.format, 'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601],
+    true
+  )
+  if (parsedMoment.isValid()) {
+    return parsedMoment.toDate()
+  }
+
+  const fallbackDate = new Date(value)
+  return !isNaN(fallbackDate.getTime()) ? fallbackDate : null
+}
+
 const isDate = (value: unknown): boolean => {
   if (value instanceof Date) {
     return !isNaN(value.getTime())
   }
   if (typeof value === 'string') {
-    const date = new Date(value)
-    return !isNaN(date.getTime())
+    return parseDateString(value) !== null
   }
   return false
 }
@@ -125,12 +138,7 @@ const normalizeValue = (value: unknown): Date | null => {
     return isDate(value) ? value : null
   }
   if (typeof value === 'string') {
-    try {
-      const date = new Date(value)
-      return isDate(date) ? date : null
-    } catch {
-      return null
-    }
+    return parseDateString(value)
   }
   return null
 }
@@ -240,8 +248,9 @@ const updateInternalValue = (date: Date | string | null) => {
   if (date instanceof Date && !isNaN(date.getTime())) {
     internalValue.value = date
   } else if (typeof date === 'string' && date.trim() !== '') {
-    if (isDate(date)) {
-      internalValue.value = new Date(date)
+    const parsedDate = parseDateString(date)
+    if (parsedDate) {
+      internalValue.value = parsedDate
     } else {
       internalValue.value = date
     }
@@ -254,8 +263,9 @@ const updateDisplayValue = (value: Date | string | null) => {
   if (value instanceof Date && !isNaN(value.getTime())) {
     displayValue.value = moment(value).format(mergedConfig.value.format)
   } else if (typeof value === 'string' && value.trim() !== '') {
-    if (!isActive.value && isDate(value)) {
-      displayValue.value = moment(value).format(mergedConfig.value.format)
+    const parsedDate = parseDateString(value)
+    if (!isActive.value && parsedDate) {
+      displayValue.value = moment(parsedDate).format(mergedConfig.value.format)
     } else {
       displayValue.value = value
     }
