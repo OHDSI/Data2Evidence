@@ -11,9 +11,10 @@ interface TreeMapChartProps {
   title: string;
   setSelectedConcept: (value: { id: string; name: string } | null) => void;
   extraChartConfigs?: any;
+  loading?: boolean;
 }
 
-const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, extraChartConfigs }) => {
+const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, extraChartConfigs, loading }) => {
   const { getText, i18nKeys } = useTranslation();
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const chartRef = useRef<ReactECharts | null>(null);
@@ -203,11 +204,11 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   };
 
   return (
-    <>
+    <div className="treemap-chart-wrapper">
+      {loading && <div className="treemap-chart-overlay" />}
       <ReactECharts
         ref={chartRef}
         style={{
-          height: "100%",
           minHeight: 500,
           width: "100%",
         }}
@@ -217,7 +218,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         lazyUpdate={true}
       />
       <div className="legend-box-size">{getText(i18nKeys.TREE_MAP_CHART__CHART_LEGEND)}</div>
-    </>
+    </div>
   );
 };
 
