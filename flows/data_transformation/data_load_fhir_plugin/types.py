@@ -7,7 +7,7 @@ class FileType(BaseModel):
 class DataloadOptions(BaseModel):
     files: List[FileType]
     truncate_tables: Optional[bool] = False
-    dataset_token: str
+    datast_id: str
     
     @property
     def use_cache_db(self) -> str:

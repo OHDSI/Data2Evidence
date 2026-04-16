@@ -19,23 +19,24 @@ def data_load_fhir_plugin(options: DataloadOptions):
     files = options.files
     truncate_tables = options.truncate_tables
     use_cache_db = options.use_cache_db
-    dataset_token = options.dataset_token
+    dataset_id = options.dataset_id
+    fhir_dataset_id = f"fhir-{dataset_id}"
     try:
         fhir_database_code = Variable.get("fhir_database_code")
         dbdao = DBDao(use_cache_db=use_cache_db,
                   database_code=fhir_database_code)
         fhir_tables_all = set()
         for incoming_file in files:
-            if(truncate_tables):
-                logger.info(f"get_unique_resource_types_from_file '{incoming_file.path}'")
-                fhir_tables = get_unique_resource_types_from_file(incoming_file)
-                # Only truncate tables not already truncated
-                tables_to_truncate = [table for table in fhir_tables if table not in fhir_tables_all]
-                if tables_to_truncate:
-                    truncate_fhir_tables(tables_to_truncate, "fhir", dbdao, logger)
-                # Add only new tables to the set
-                fhir_tables_all.update(tables_to_truncate)
-            load_data(dataset_token, incoming_file, logger)
+            # if(truncate_tables):
+            #     logger.info(f"get_unique_resource_types_from_file '{incoming_file.path}'")
+            #     fhir_tables = get_unique_resource_types_from_file(incoming_file)
+            #     # Only truncate tables not already truncated
+            #     tables_to_truncate = [table for table in fhir_tables if table not in fhir_tables_all]
+            #     if tables_to_truncate:
+            #         truncate_fhir_tables(tables_to_truncate, "fhir", dbdao, logger)
+            #     # Add only new tables to the set
+            #     fhir_tables_all.update(tables_to_truncate)
+            load_data(fhir_dataset_id, incoming_file, logger)
     except Exception as e:
         logger.error(f"Error connecting to trex fhir database: {e}")
         raise e
@@ -63,7 +64,7 @@ def post_fhir_resource(resource, idx, json_file, fhir_api: FhirAPI, logger, stud
         logger.error(f"Error posting resource for index {idx}: {e}")
 
 @task(log_prints=True)
-def load_data(dataset_token, json_file, logger):
+def load_data(fhir_dataset_id: str, json_file, logger):
     logger.debug(f"Loading data from file '{json_file}' into FHIR service")
     fhir_api = FhirAPI()
     try:
@@ -75,7 +76,7 @@ def load_data(dataset_token, json_file, logger):
                         continue
                     resource_data = json.loads(line)
                     logger.debug(f"Processing line {idx} in file '{json_file}'")
-                    post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, dataset_token)
+                    post_fhir_resource(resource_data, idx, json_file, fhir_api, logger, fhir_dataset_id)
         elif json_file.path.endswith('.json'):
             with open(json_file.path, "r") as f:
                 logger.debug(f"Processing JSON file '{json_file}'")
@@ -83,15 +84,15 @@ def load_data(dataset_token, json_file, logger):
                 logger.debug(data.get("resourceType"))
                 if isinstance(data, dict) and data.get("resourceType") == "Bundle":
                     logger.debug(f"Processing Bundle in file '{json_file}'")
-                    response = fhir_api.post(studyToken=dataset_token, resourceType="", resource=data)
+                    response = fhir_api.post(studyToken=fhir_dataset_id, resourceType="", resource=data)
                     logger.info(f"Posted Bundle: {response}")
                 elif isinstance(data, list):
                     for idx, entry in enumerate(data):
                         logger.debug(f"Processing entry {idx} in list from file '{json_file}'")
-                        post_fhir_resource(entry, idx, json_file, fhir_api, logger, dataset_token)
+                        post_fhir_resource(entry, idx, json_file, fhir_api, logger, fhir_dataset_id)
                 else:
                     logger.debug(f"Processing single resource in file '{json_file}'")
-                    post_fhir_resource(data, 0, json_file, fhir_api, logger, dataset_token)
+                    post_fhir_resource(data, 0, json_file, fhir_api, logger, fhir_dataset_id)
         else:
             logger.error(f"Unsupported file type for '{json_file}'. Only .ndjson and .json are supported.")
             return
