@@ -72,6 +72,12 @@ jobs:
       - name: Check status of HANA containers
         run: |
           docker ps -a
+
+      - name: Check HANA
+        run: |
+          export resDataset=$(docker exec d2e-hana-run-f6932ee7d043 hdbsql -n hana:39041 -u SYSTEM -p TestPW1234 -d HXE -c "SELECT * FROM DUMMY" 2>/dev/null)
+          echo "$resDataset"
+
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
         with:
