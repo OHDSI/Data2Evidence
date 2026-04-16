@@ -67,8 +67,11 @@ jobs:
         id: inithana
         run: |
           echo "HDIPW: ${HDIPW}"
-          timeout 15m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 20m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
+      - name: Check status of HANA containers
+        run: |
+          docker ps -a
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
         with:
