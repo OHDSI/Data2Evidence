@@ -36,19 +36,19 @@ export class FhirRouter {
       }
     });
 
-    this.router.get("/datasets/list", async (req: Request, res: Response) => {
-      const token = req.headers.authorization;
-      try {
-        const response = await getFhirDatasets(token);
-        return res.status(200).json(response);
-      } catch (error: any) {
-        console.error(`Error fetching datasets:`, error);
-        res.status(500).json({
-          error: true,
-          message: error.message,
-        });
-      }
-    });
+    // this.router.get("/datasets/list", async (req: Request, res: Response) => {
+    //   const token = req.headers.authorization;
+    //   try {
+    //     const response = await getFhirDatasets(token);
+    //     return res.status(200).json(response);
+    //   } catch (error: any) {
+    //     console.error(`Error fetching datasets:`, error);
+    //     res.status(500).json({
+    //       error: true,
+    //       message: error.message,
+    //     });
+    //   }
+    // });
 
     this.router.post(
       "/createDataset",

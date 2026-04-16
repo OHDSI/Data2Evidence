@@ -58,15 +58,6 @@
           ]
         },
         {
-          "path": "^/fhir-gateway/datasets/list$",
-          "scopes": [
-            "gateway.fhir.get"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
           "path": "^/fhir-gateway/createDataset$",
           "scopes": [
             "gateway.fhir.create"
