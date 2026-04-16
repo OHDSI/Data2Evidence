@@ -18,6 +18,7 @@
     "./src/services": "./src/services.ts",
     "./src/env": "./src/env.ts",
     "./src/FhirServerAPI": "./src/FhirServerAPI.ts",
+    "./src/FhirServerPublicAPI": "./src/FhirServerPublicAPI.ts",
     "./src/types": "./src/types.ts",
     "./src/middleware": "./src/middleware.ts",
     "crypto": "node:crypto",

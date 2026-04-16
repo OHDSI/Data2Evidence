@@ -26,8 +26,7 @@ export class FhirRouter {
   private registerRoutes() {
     this.router.get("/healthcheck", async (req: Request, res: Response) => {
       try {
-        const token = req.headers.authorization;
-        const response = await checkFhirServerHealth(token);
+        const response = await checkFhirServerHealth();
         return res.status(200).json(response);
       } catch (error: any) {
         return res.status(500).json({
@@ -57,7 +56,10 @@ export class FhirRouter {
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          return res.status(400).json({ errors: errors.array() });
+          return res.status(400).json({
+            error: true,
+            errors: errors.array(),
+          });
         }
 
         const token = req.headers.authorization;
@@ -66,10 +68,12 @@ export class FhirRouter {
           const result = await createFhirDataset(req.body, token);
           return res.status(200).json({
             error: false,
-            message: `FHIR dataset with id ${req.body.id} created successfully`,
+            fhirDatasetId: result.id,
+            fhirDatasetName: result.name,
+            message: `FHIR dataset created successfully`,
           });
         } catch (error: any) {
-          console.error(`Error creating FHIR dataset:`, error);
+          console.error(error);
           return res.status(500).json({
             error: true,
             message: error.message,

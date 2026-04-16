@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "npm:axios";
+import axios, { AxiosRequestConfig } from "../lib/axios";
 import { services } from "../env";
 import { HTTPMethod, Headers } from "../types";
 import {
@@ -16,11 +16,11 @@ export class FhirServerAPI {
 
   constructor(token: string) {
     if (!token) throw new Error("No token passed for FhirServerAPI!");
-    if (!services.trexFhirServer)
+    if (!services.fhirServer)
       throw new Error("No url is set for FhirServerAPI");
 
     this.token = token;
-    this.baseURL = services.trexFhirServer;
+    this.baseURL = services.fhirServer;
   }
 
   private async getRequestConfig(): Promise<AxiosRequestConfig> {
@@ -32,17 +32,10 @@ export class FhirServerAPI {
     };
   }
 
-  async healthCheck(): Promise<IFhirHealthCheckAPI> {
-    this.logger.info("Checking FHIR server health");
-    const url = `${this.baseURL}/health`;
-    const result = await axios.get(url);
-    return result.data;
-  }
-
   async getFhirDatasets(): Promise<IFhirDatasets[]> {
-    this.logger.info("Fetching FHIR server datasets");
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/datasets`;
+    this.logger.info(`Fetching FHIR datasets from URL: ${url}`);
     const result = await axios.get(url, options);
     return result.data;
   }
@@ -50,11 +43,18 @@ export class FhirServerAPI {
   async createFhirDataset(
     datasetPayload: ICreateFhirDatasetDto,
   ): Promise<IFhirCreatedDataset> {
-    this.logger.info("Creating FHIR server dataset");
+    this.logger.info("Creating FHIR server dataset:", datasetPayload);
     const options = await this.getRequestConfig();
     const url = `${this.baseURL}/datasets`;
-    const result = await axios.post(url, datasetPayload, options);
-    return result.data;
+    try {
+      const result = await axios.post(url, datasetPayload, options);
+      return result.data;
+    } catch (error: any) {
+      const errorDetails = error.response?.data?.message || error.message;
+      const errorMessage = `Failed to create FHIR dataset with id '${datasetPayload.id}': ${errorDetails}`;
+      this.logger.error(errorMessage);
+      throw new Error(errorMessage);
+    }
   }
 
   async deleteFhirDataset(datasetId: string): Promise<void> {

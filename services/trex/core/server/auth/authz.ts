@@ -96,7 +96,7 @@ const buildADUserFromToken = (token: IAppTokenPayload): IUser => {
 
 const buildUserFromToken = (
   token: IAppTokenPayload,
-  ROLE_SCOPES: any
+  ROLE_SCOPES: any,
 ): IUser => {
   const {
     client_id,
@@ -114,8 +114,8 @@ const buildUserFromToken = (
   ) {
     logger.error(
       `SECURITY INCIDENT: User does not belong to a tenant ${JSON.stringify(
-        token
-      )}`
+        token,
+      )}`,
     );
     //throw new Error('User does not belong to a tenant')
   }
@@ -164,7 +164,7 @@ const buildUserFromToken = (
     return accumulator
   }, mriScopes)*/
   const roleScopesMap: Map<string, string[]> = new Map(
-    Object.entries(ROLE_SCOPES)
+    Object.entries(ROLE_SCOPES),
   );
   const userScopes: string[] = [];
   const studyScopes: string[] = [];
@@ -214,7 +214,7 @@ export class MriUser {
   constructor(
     private token: IAppTokenPayload | string,
     ROLE_SCOPES: any,
-    private userLang: string = "en"
+    private userLang: string = "en",
   ) {
     if (typeof token === "string") {
       this.isAlice = true;
@@ -265,8 +265,8 @@ export async function authz(c: Context, next: any) {
   if (publicURLs.some((url) => new RegExp(url).test(c.req.path))) {
     logger.log(
       `PUBLIC URL ${c.req.path} ${publicURLs.indexOf(
-        c.req.path
-      )} NO AUTHZ CHECK`
+        c.req.path,
+      )} NO AUTHZ CHECK`,
     );
     await next();
   } else {
@@ -275,27 +275,6 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    // Check for cookie if no token in authorization header
-    // And for req with /fhir-server path, token is part of cookie
-    if (
-      !bearerToken ||
-      bearerToken === "" ||
-      (bearerToken && originalUrl.startsWith("/fhir-server/"))
-    ) {
-      if (c.req.header("cookie")) {
-        const cookies = c.req.header("cookie")?.split("; ");
-        for (const cookie of cookies) {
-          if (cookie.startsWith("authtoken=")) {
-            bearerToken = cookie.split("=")[1];
-            bearerToken = `Bearer ${bearerToken}`;
-            break;
-          } else if (cookie.startsWith("fhirtoken=")) {
-            bearerToken = cookie.split("=")[1];
-            break;
-          }
-        }
-      }
-    }
 
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
@@ -315,7 +294,7 @@ export async function authz(c: Context, next: any) {
     const match = global.REQUIRED_URL_SCOPES.find(
       ({ path, httpMethods }) =>
         new RegExp(path).test(originalUrl) &&
-        (typeof httpMethods == "undefined" || httpMethods.indexOf(method) > -1)
+        (typeof httpMethods == "undefined" || httpMethods.indexOf(method) > -1),
     );
 
     if (!match) {
@@ -331,7 +310,7 @@ export async function authz(c: Context, next: any) {
       try {
         const userGroups = await userMgmtApi.getUserGroups(
           bearerToken.replace(/token /i, "bearer "),
-          idpUserId
+          idpUserId,
         );
         token["userMgmtGroups"] = userGroups;
         mriUserObj = new MriUser(token, global.ROLE_SCOPES).b2cUserObject;
@@ -355,12 +334,12 @@ export async function authz(c: Context, next: any) {
 
     if (!hasRequiredScopes(scopes, assignedScopes)) {
       logger.info(
-        `inside authz: Forbidden, token does not have required scope`
+        `inside authz: Forbidden, token does not have required scope`,
       );
       logger.debug(
         `inside authz: Forbidden url: ${originalUrl} scope: ${JSON.stringify(
-          match
-        )} user: ${JSON.stringify(mriUserObj)}`
+          match,
+        )} user: ${JSON.stringify(mriUserObj)}`,
       );
       throw new HTTPException(401, {
         res: new Response("Forbidden", { status: 401 }),
@@ -368,7 +347,7 @@ export async function authz(c: Context, next: any) {
     }
 
     logger.info(
-      `AUTHORIZED ACCESS: user ${mriUserObj.userId}, url ${originalUrl}`
+      `AUTHORIZED ACCESS: user ${mriUserObj.userId}, url ${originalUrl}`,
     );
     if (isDev) {
       //logger.info(`🚀 inside au, req.headers: ${JSON.stringify(c.req.headers)}`)
@@ -391,7 +370,7 @@ export async function authz(c: Context, next: any) {
     const datasetId = await extractDatasetIdFromRequestContext(c, datasetIdKey);
     if (!datasetId) {
       logger.error(
-        `\x1b[0m\x1b[41m>>> NO datasetId defined in scope @ ${c.req.method} ${c.req.path}<<<\x1b[0m`
+        `\x1b[0m\x1b[41m>>> NO datasetId defined in scope @ ${c.req.method} ${c.req.path}<<<\x1b[0m`,
       );
       throw new HTTPException(403, {
         res: new Response("Dataset id is missing in the request", {
@@ -402,7 +381,7 @@ export async function authz(c: Context, next: any) {
 
     if (mriUserObj.alpRoleMap.STUDY_RESEARCHER_ROLE.indexOf(datasetId) > -1) {
       logger.info(
-        `AUTHORIZED STUDY ACCESS: user ${mriUserObj.userId}, url ${originalUrl}`
+        `AUTHORIZED STUDY ACCESS: user ${mriUserObj.userId}, url ${originalUrl}`,
       );
       return next();
     } else {
@@ -423,7 +402,7 @@ If datasetId is not found, return null
 */
 const extractDatasetIdFromRequestContext = async (
   c,
-  datasetIdKey: string
+  datasetIdKey: string,
 ): Promise<string | null> => {
   let datasetId: string | null = null;
 
@@ -445,7 +424,7 @@ const extractDatasetIdFromRequestContext = async (
 
 const _lookForDatasetIdInBody = async (
   c,
-  datasetIdKey: string
+  datasetIdKey: string,
 ): Promise<string | null> => {
   let datasetId = null;
 
@@ -474,7 +453,7 @@ function hasRequiredScopes(reqScopes: string[], userScopes: string[]) {
 
 function requireDatasetId(scopes: string[]): boolean {
   const roleScopesMap: Map<string, string[]> = new Map(
-    Object.entries(global.ROLE_SCOPES)
+    Object.entries(global.ROLE_SCOPES),
   );
   const researcherScopes = roleScopesMap.get(ROLES.STUDY_RESEARCHER);
   return scopes.some((s) => researcherScopes?.includes(s));

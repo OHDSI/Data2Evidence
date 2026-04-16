@@ -1,11 +1,18 @@
-import axios, { AxiosRequestConfig } from "npm:axios";
 import { services } from "../env";
 import { Dataset } from "../types";
+import axios, { AxiosRequestConfig } from "../lib/axios";
 
 export class PortalAPI {
   private readonly baseURL: string;
   private readonly token: string;
   private readonly logger = console;
+
+  private getErrorMessage(error: unknown): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return String(error);
+  }
 
   constructor(token: string) {
     if (!token) throw new Error("No token passed for PortalAPI!");
@@ -34,8 +41,9 @@ export class PortalAPI {
       const result = await axios.get(url, options);
       return result.data;
     } catch (error) {
-      this.logger.error("Error while getting datasets");
-      throw new Error("Error while getting datasets");
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to fetch datasets: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 
@@ -46,20 +54,25 @@ export class PortalAPI {
       const result = await axios.get(url, options);
       return result.data;
     } catch (error) {
-      this.logger.error("Error while getting dataset");
-      throw new Error("Error while getting dataset");
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to get dataset: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 
   async updateDataset(datasetToUpdate: Dataset) {
     try {
       const options = await this.getRequestConfig();
+      this.logger.info(
+        `Updating portal dataset id '${datasetToUpdate.id}' to link to FHIR dataset with id '${datasetToUpdate.fhir_project_id}'`,
+      );
       const url = `${this.baseURL}/dataset`;
       const result = await axios.put(url, datasetToUpdate, options);
       return result.data;
     } catch (error) {
-      this.logger.error("Error while updating dataset");
-      throw new Error("Error while updating dataset");
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to update dataset: ${errorMessage}`);
+      throw new Error(errorMessage);
     }
   }
 }

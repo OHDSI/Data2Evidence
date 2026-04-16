@@ -1,13 +1,20 @@
 import { body, param } from "express-validator";
 import { FhirBundleType } from "./types";
 
+const FHIR_DATASET_ID_REGEX =
+  /^fhir-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 export const validateCreateFhirDatasetDto = () => [
-  body("id").isUUID().withMessage("id must be a uuid"),
+  body("id")
+    .matches(FHIR_DATASET_ID_REGEX)
+    .withMessage("id must match format fhir-<uuid>"),
   body("name").isString().withMessage("name must be a string"),
 ];
 
 export const validateDeleteFhirDatasetDto = () => [
-  param("id").isUUID().withMessage("id must be a uuid"),
+  param("id")
+    .matches(FHIR_DATASET_ID_REGEX)
+    .withMessage("id must match format fhir-<uuid>"),
 ];
 
 export const validateBundle = () => [
@@ -22,5 +29,7 @@ export const validateBundle = () => [
 ];
 
 export const validateProxyDto = () => [
-  param("id").isUUID().withMessage("id must be a uuid"),
+  param("id")
+    .matches(FHIR_DATASET_ID_REGEX)
+    .withMessage("id must match format fhir-<uuid>"),
 ];

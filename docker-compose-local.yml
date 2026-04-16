@@ -24,7 +24,7 @@ services:
       TREX_DEBUG_GC: 0
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-notebook-plugin", "d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-notebook-plugin", "d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "storage", "fhir"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "./plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
@@ -32,7 +32,7 @@ services:
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-fhir-gateway": false,
+          "fhir-gateway": false,
           "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
@@ -54,7 +54,6 @@ services:
           "white-rabbit": false,
           "strategus-analysis": false,
           "mcp-server": false,
-          "trex-fhir-gateway": false
         }
 
   alp-caddy:
@@ -107,18 +106,6 @@ services:
       dockerfile: Dockerfile
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
-
-  # alp-fhir-server-post-init:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/alp-fhir/Dockerfile.client
-  #   volumes:
-  #     - ./services/alp-fhir/dist:/home/docker/src/alp-data-node/app/dist
-  #     - ./services/alp-fhir/src:/home/docker/src/alp-data-node/app/src
-  #   environment:
-  #     LOCAL_DEBUG: "true"
-  #   ports:
-  #     - 9226:9226
 
 
   enterprise-gateway:

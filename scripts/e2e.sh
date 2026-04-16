@@ -561,7 +561,7 @@ cmd_setup_env() {
     log_info "Adding PLUGINS_SEED to .env.local..."
     echo '' >> .env.local
     echo '# E2E: Match CI plugin seed configuration' >> .env.local
-    echo 'PLUGINS_SEED='\''["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'\''' >> .env.local
+    echo 'PLUGINS_SEED='\''["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "i2b2-flow", "data-management-flow"]'\''' >> .env.local
     echo '# Plugin reinstall on restart (false prevents race condition with UI mounting)' >> .env.local
     echo "PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE" >> .env.local
 

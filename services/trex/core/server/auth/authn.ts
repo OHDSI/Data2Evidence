@@ -10,35 +10,18 @@ export async function authn(c: Context, next: Function) {
   if (publicURLs.some((url) => new RegExp(url).test(c.req.path))) {
     logger.log(
       `PUBLIC URL ${c.req.path} ${publicURLs.indexOf(
-        c.req.path
-      )} NO AUTHN CHECK`
+        c.req.path,
+      )} NO AUTHN CHECK`,
     );
   } else {
     let token = "";
     const regex = /\b(Bearer|bearer|token)\b/;
-    
+
     if (
       c.req.header("authorization") &&
       c.req.header("authorization")?.split(" ")[0].match(regex)
     ) {
       token = c.req.header("authorization")?.split(" ")[1] || "";
-    }
-    // Check for cookie if no token in authorization header
-    // And for req with /fhir-server path, token is part of cookie
-    if (token === "" || c.req.path.startsWith("/fhir-server/")) {
-      if (c.req.header("cookie")) {
-        const cookies = c.req.header("cookie")?.split("; ");
-        for (const cookie of cookies) {
-          if (cookie.startsWith("authtoken=")) {
-            token = cookie.split("=")[1];
-            break;
-          } else if (cookie.startsWith("fhirtoken=")) {
-            token = cookie.split("=")[1];
-            token = token.split(" ")[1];
-            break;
-          }
-        }
-      }
     }
 
     if (token === null || token.length === 0) {
