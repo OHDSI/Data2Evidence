@@ -71,6 +71,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   // Compute chart data on each render, reading the current visualMap range from the ECharts instance.
   // During drag, the imperative update in datarangeselected handles styling without triggering re-renders.
   const getVisualMapRange = (): [number, number] | null => {
+    if (!hasRecordsPerPerson) return null;
     const instance = chartRef.current?.getEchartsInstance();
     if (instance) {
       const opt = instance.getOption() as any;
