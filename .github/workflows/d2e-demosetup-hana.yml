@@ -75,8 +75,16 @@ jobs:
 
       - name: Check HANA
         run: |
-          export resDataset=$(docker exec d2e-hana-run-f6932ee7d043 hdbsql -n hana:39041 -u SYSTEM -p TestPW1234 -d HXE -c "SELECT * FROM DUMMY" 2>/dev/null)
+          hanaContainerName=$(docker ps | grep hana | awk '{print $NF}')
+          if [ -z "$hanaContainerName" ]; then
+              echo "Error: HANA container not found"
+              exit 1
+          fi
+
+          export hanaContainerName
+          export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
           echo "$resDataset"
+
 
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
