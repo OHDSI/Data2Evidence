@@ -64,7 +64,7 @@ export class PortalAPI {
     try {
       const options = await this.getRequestConfig();
       this.logger.info(
-        `Updating portal dataset id '${datasetToUpdate.id}' to link to FHIR dataset with id '${datasetToUpdate.fhir_project_id}'`,
+        `Updating portal dataset id '${datasetToUpdate.id}' to link to FHIR dataset with id '${datasetToUpdate.fhirDatasetId}'`,
       );
       const url = `${this.baseURL}/dataset`;
       const result = await axios.put(url, datasetToUpdate, options);

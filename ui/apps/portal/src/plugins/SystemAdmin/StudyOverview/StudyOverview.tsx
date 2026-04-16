@@ -50,7 +50,7 @@ const StudyOverview: FC = () => {
       const currDb = databases.find((db) => db.code === dbName);
       return currDb ? currDb.dialect : "";
     },
-    [databases]
+    [databases],
   );
 
   const [showAddStudyDialog, openAddStudyDialog, closeAddStudyDialog] = useDialogHelper(false);
@@ -92,7 +92,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openSourceInformationDialog();
     },
-    [openSourceInformationDialog]
+    [openSourceInformationDialog],
   );
 
   const handleUpdateStudy = useCallback(
@@ -100,7 +100,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openUpdateStudyDialog();
     },
-    [openUpdateStudyDialog]
+    [openUpdateStudyDialog],
   );
 
   const handleResources = useCallback(
@@ -108,7 +108,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openResourcesDialog();
     },
-    [openResourcesDialog]
+    [openResourcesDialog],
   );
 
   const handleCopyStudy = useCallback(
@@ -116,7 +116,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openCopyStudyDialog();
     },
-    [openCopyStudyDialog]
+    [openCopyStudyDialog],
   );
 
   const handleDeleteStudy = useCallback(
@@ -124,7 +124,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openDeleteStudyDialog();
     },
-    [openDeleteStudyDialog]
+    [openDeleteStudyDialog],
   );
 
   const handlePermissions = useCallback(
@@ -132,7 +132,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openPermissionsDialog();
     },
-    [openPermissionsDialog]
+    [openPermissionsDialog],
   );
 
   const handleRelease = useCallback(
@@ -141,7 +141,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openReleaseDialog();
     },
-    [getDbDialect, openReleaseDialog]
+    [getDbDialect, openReleaseDialog],
   );
 
   const handleUpdate = useCallback(
@@ -150,7 +150,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openUpdateDialog();
     },
-    [getDbDialect, openUpdateDialog]
+    [getDbDialect, openUpdateDialog],
   );
 
   const handleDataQuality = useCallback(
@@ -159,7 +159,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openDataQualityDialog();
     },
-    [getDbDialect, openDataQualityDialog]
+    [getDbDialect, openDataQualityDialog],
   );
 
   const handleDataCharacterization = useCallback(
@@ -168,7 +168,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openDataCharacterizationDialog();
     },
-    [getDbDialect, openDataCharacterizationDialog]
+    [getDbDialect, openDataCharacterizationDialog],
   );
 
   const handleCreateCache = useCallback(
@@ -176,7 +176,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openCreateCacheDialog();
     },
-    [openCreateCacheDialog]
+    [openCreateCacheDialog],
   );
 
   const handleSetupSemanticSearch = useCallback(
@@ -184,7 +184,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openSetupSemanticSearchDialog();
     },
-    [openSetupSemanticSearchDialog]
+    [openSetupSemanticSearchDialog],
   );
 
   const handleManageDashboard = useCallback(
@@ -193,7 +193,7 @@ const StudyOverview: FC = () => {
       setViewerDialogType("dashboard");
       openManageViewerDialog();
     },
-    [openManageViewerDialog]
+    [openManageViewerDialog],
   );
 
   const handleRunStrategusStudy = useCallback(
@@ -201,7 +201,7 @@ const StudyOverview: FC = () => {
       setActiveStrategusStudy(study);
       openRunStrategusStudyDialog();
     },
-    [openRunStrategusStudyDialog]
+    [openRunStrategusStudyDialog],
   );
 
   const handleCleanupStrategusStudy = useCallback(
@@ -209,7 +209,7 @@ const StudyOverview: FC = () => {
       setActiveStrategusStudy(study);
       openCleanupStrategusStudyDialog();
     },
-    [openCleanupStrategusStudyDialog]
+    [openCleanupStrategusStudyDialog],
   );
 
   const handleManageStrategusResultViewer = useCallback(
@@ -218,7 +218,7 @@ const StudyOverview: FC = () => {
       setViewerDialogType("strategus");
       openManageViewerDialog();
     },
-    [openManageViewerDialog]
+    [openManageViewerDialog],
   );
 
   const handleStrategusStudyPermissions = useCallback(
@@ -228,7 +228,7 @@ const StudyOverview: FC = () => {
       setActiveDataset(dataset);
       openPermissionsDialog();
     },
-    [datasets, openPermissionsDialog]
+    [datasets, openPermissionsDialog],
   );
 
   const handleUploadStrategusResults = useCallback(
@@ -236,7 +236,7 @@ const StudyOverview: FC = () => {
       setActiveStrategusStudy(study);
       openUploadStrategusResultsDialog();
     },
-    [openUploadStrategusResultsDialog]
+    [openUploadStrategusResultsDialog],
   );
 
   const handleDownloadStrategusResults = useCallback(async (study: NetworkStrategusStudy) => {
@@ -289,7 +289,7 @@ const StudyOverview: FC = () => {
   useEffect(() => {
     const fetchStrategusStudies = async () => {
       if (!datasets) return;
-      
+
       setLoadingStrategusStudies(true);
       try {
         const studies = await api.strategusAnalysis.getAllStrategusAnalysis();
@@ -307,7 +307,8 @@ const StudyOverview: FC = () => {
 
   // Organize datasets into parent-child structure for source/omop/hana and fhir, and separate lists for studies and strategus_analysis
   const { sourceOmopHanaDatasets, studyDatasets, fhirDatasets, strategusAnalysisDatasets } = useMemo(() => {
-    if (!datasets) return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [], strategusAnalysisDatasets: [] };
+    if (!datasets)
+      return { sourceOmopHanaDatasets: [], studyDatasets: [], fhirDatasets: [], strategusAnalysisDatasets: [] };
 
     const sourceOmopHana: Study[] = [];
     const studies: Study[] = [];
@@ -433,7 +434,7 @@ const StudyOverview: FC = () => {
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeAddStudyDialog]
+    [closeAddStudyDialog],
   );
 
   const handleCloseUpdateStudyDialog = useCallback(
@@ -443,7 +444,7 @@ const StudyOverview: FC = () => {
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeUpdateStudyDialog]
+    [closeUpdateStudyDialog],
   );
 
   const handleCloseCopyStudyDialog = useCallback(
@@ -453,7 +454,7 @@ const StudyOverview: FC = () => {
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeCopyStudyDialog]
+    [closeCopyStudyDialog],
   );
 
   const handleCloseDeleteStudyDialog = useCallback(
@@ -463,7 +464,7 @@ const StudyOverview: FC = () => {
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeDeleteStudyDialog]
+    [closeDeleteStudyDialog],
   );
 
   const handleCloseAddStrategusStudyDialog = useCallback(
@@ -473,7 +474,7 @@ const StudyOverview: FC = () => {
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeAddStrategusStudyDialog]
+    [closeAddStrategusStudyDialog],
   );
 
   const fetchDatamodelUpdates = useCallback(async () => {
@@ -519,7 +520,7 @@ const StudyOverview: FC = () => {
               datasets: datasetsByFlow[flow],
             },
           },
-        })
+        }),
       );
     }
 
@@ -538,7 +539,7 @@ const StudyOverview: FC = () => {
               datasets: cacheDatasets,
             },
           },
-        })
+        }),
       );
     }
 
@@ -553,7 +554,7 @@ const StudyOverview: FC = () => {
 
   const findAttributeValue = (
     attributes: StudyAttribute[] | undefined,
-    attributeConfigId: StudyAttributeConfigIds
+    attributeConfigId: StudyAttributeConfigIds,
   ): string | null => {
     if (!attributes) return null;
     const attr = attributes.find((attribute: StudyAttribute) => attribute.attributeId === attributeConfigId);
@@ -562,7 +563,7 @@ const StudyOverview: FC = () => {
 
   const getAttributeDisplay = (
     attributes: StudyAttribute[] | undefined,
-    attributeConfigId: StudyAttributeConfigIds
+    attributeConfigId: StudyAttributeConfigIds,
   ): string => {
     return findAttributeValue(attributes, attributeConfigId) ?? getText(i18nKeys.STUDY_OVERVIEW__NOT_AVAILABLE);
   };
@@ -624,8 +625,8 @@ const StudyOverview: FC = () => {
         <TableCell>
           {dataset.dataModel
             ? `${dataset.dataModel} [${dataset.plugin}]`
-            : dataset.fhir_project_id && (
-                <Tooltip placement="top" title={dataset.fhir_project_id}>
+            : dataset.fhirDatasetId && (
+                <Tooltip placement="top" title={dataset.fhirDatasetId}>
                   <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
                 </Tooltip>
               )}
@@ -1015,7 +1016,6 @@ const StudyOverview: FC = () => {
               onClose={closeUploadStrategusResultsDialog}
             />
           )}
-
         </div>
       </div>
     </div>

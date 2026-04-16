@@ -27,7 +27,7 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
       setInputError(false);
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose, setFeedback],
   );
 
   const isInputError = useCallback(() => {
@@ -47,13 +47,13 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
 
     try {
       setDeleting(true);
-      
+
       // Delete all children datasets first
       if (study.children && study.children.length > 0) {
         for (const child of study.children) {
           try {
-            if (child.fhir_project_id != null) {
-              await api.fhirGateway.deleteFhirStaging(child.fhir_project_id);
+            if (child.fhirDatasetId != null) {
+              await api.fhirGateway.deleteFhirStaging(child.fhirDatasetId);
             }
             await api.systemPortal.deleteDataset(child.id);
           } catch (err: any) {
@@ -61,9 +61,9 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
           }
         }
       }
-      
+
       // Delete the parent dataset
-      if (study.fhir_project_id != null) await api.fhirGateway.deleteFhirStaging(study.fhir_project_id);
+      if (study.fhirDatasetId != null) await api.fhirGateway.deleteFhirStaging(study.fhirDatasetId);
       await api.systemPortal.deleteDataset(study.id);
       handleClose("success");
     } catch (err: any) {
@@ -94,19 +94,18 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
       <div className="delete-study-dialog__content">
         <div className="delete-study-dialog__content-text">
           <div>
-            {getText(i18nKeys.DELETE_STUDY_DIALOG__CONFIRM)}: <strong>&quot;{study?.studyDetail?.name || study?.id}&quot;</strong>?
+            {getText(i18nKeys.DELETE_STUDY_DIALOG__CONFIRM)}:{" "}
+            <strong>&quot;{study?.studyDetail?.name || study?.id}&quot;</strong>?
           </div>
           {hasChildren && (
             <div style={{ marginTop: "16px", fontWeight: "bold" }}>
               {getText(i18nKeys.DELETE_STUDY_DIALOG__WARNING_CHILDREN, [
                 String(childrenCount),
-                childrenCount > 1 ? "s" : ""
+                childrenCount > 1 ? "s" : "",
               ])}
             </div>
           )}
-          <div style={{ marginTop: "16px" }}>
-            {getText(i18nKeys.DELETE_STUDY_DIALOG__CONFIRM_INSTRUCTION)}
-          </div>
+          <div style={{ marginTop: "16px" }}>{getText(i18nKeys.DELETE_STUDY_DIALOG__CONFIRM_INSTRUCTION)}</div>
         </div>
         <div className="delete-study-dialog__content-input" style={{ marginTop: "24px" }}>
           <TextField

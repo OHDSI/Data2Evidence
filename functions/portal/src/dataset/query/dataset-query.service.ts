@@ -232,7 +232,7 @@ export class DatasetQueryService {
       return baseColumns.concat([
         "dataset.type",
         "dataset.visibilityStatus",
-        "dataset.fhir_project_id",
+        "dataset.fhirDatasetId",
       ]);
     }
     return baseColumns;

@@ -1,47 +1,57 @@
-import { Type } from 'npm:class-transformer'
-import { IsArray, IsNotEmpty, IsNotEmptyObject, IsUUID, ValidateNested } from 'npm:class-validator'
-import { IDatasetDetailMetadataUpdateDto } from '../../types.d.ts'
-import { DatasetCustomAttribute, DatasetDashboardBaseDto, DatasetDetailDto } from './dataset.dto.ts'
+import { Type } from "npm:class-transformer";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsUUID,
+  ValidateNested,
+} from "npm:class-validator";
+import { IDatasetDetailMetadataUpdateDto } from "../../types.d.ts";
+import {
+  DatasetCustomAttribute,
+  DatasetDashboardBaseDto,
+  DatasetDetailDto,
+} from "./dataset.dto.ts";
 
 export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpdateDto {
   @IsNotEmpty()
   @IsUUID()
-  id: string
+  id: string;
 
   @ValidateNested()
   @IsNotEmptyObject()
   @Type(() => DatasetDetailDto)
-  detail: DatasetDetailDto
+  detail: DatasetDetailDto;
 
   @ValidateNested()
   @Type(() => DatasetDashboardBaseDto)
   @IsArray()
-  dashboards: DatasetDashboardBaseDto[]
+  dashboards: DatasetDashboardBaseDto[];
 
   @ValidateNested()
   @Type(() => DatasetCustomAttribute)
   @IsArray()
-  attributes: DatasetCustomAttribute[]
+  attributes: DatasetCustomAttribute[];
 
   @IsArray()
-  tags: string[]
+  tags: string[];
 
   @IsNotEmpty()
-  tokenDatasetCode: string
+  tokenDatasetCode: string;
 
-  type?: string
+  type?: string;
+
+  fhirDatasetId?: string;
 
   @IsNotEmpty()
-  visibilityStatus: string
+  visibilityStatus: string;
 
   @IsNotEmpty()
   @IsUUID()
-  paConfigId: string
+  paConfigId: string;
 
   @IsUUID()
-  fhir_project_id?: string
+  vocabSchemaName?: string;
 
-  vocabSchemaName?: string
-
-  resultsSchemaName?: string
+  resultsSchemaName?: string;
 }

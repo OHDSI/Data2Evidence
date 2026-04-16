@@ -27,7 +27,7 @@ export interface Dataset {
   plugin: string;
   attributes: string[];
   tags: string[];
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
   dashboards: string[];
   tenant: {
     id: string;

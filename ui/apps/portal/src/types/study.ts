@@ -58,7 +58,7 @@ export interface Study {
   studyDetail?: StudyDetail;
   attributes?: StudyAttribute[];
   tags?: StudyTag[];
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
   strategusAnalysis?: NetworkStrategusStudy | null;
@@ -78,7 +78,6 @@ export interface NewStudyInput {
   databaseCode: string;
   dialect: string;
   paConfigId: string;
-  fhirProjectId: string | undefined;
   visibilityStatus: string;
   detail: DatasetDetail;
   dashboards: DatasetDashboard[];

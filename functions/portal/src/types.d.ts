@@ -36,7 +36,7 @@ export interface IDataset {
     description: string;
   };
   tenant?: ITenant;
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
   flowParameters?: DatasetFlowParameters | null;
 }
 
@@ -68,7 +68,7 @@ export interface IDatasetDto {
   dashboards: IDatasetDashboardBaseDto[];
   attributes: IDatasetAttribute[];
   tags: string[];
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
 }
 
 export interface IDatasetSnapshotDto {
@@ -131,7 +131,7 @@ export interface IDatasetDetailMetadataUpdateDto {
   tokenDatasetCode: string;
   visibilityStatus: string;
   paConfigId: string;
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
   vocabSchemaName?: string;
   resultsSchemaName?: string;
 }
@@ -177,7 +177,7 @@ export interface IDatasetResponseDto {
   totalSubjects?: number;
   dataModel: string;
   plugin: string;
-  fhir_project_id?: string;
+  fhirDatasetId?: string;
   flowParameters?: DatasetFlowParameters | null;
 }
 
@@ -190,8 +190,7 @@ export type IPublicDatasetQueryDto = IDatasetSearchFilterDto;
 export type DatasetQueryRole = (typeof DATASET_QUERY_ROLES)[number];
 
 export interface IDatasetQueryDto
-  extends IDatasetSearchFilterDto,
-    IDatasetFilterParamsDto {
+  extends IDatasetSearchFilterDto, IDatasetFilterParamsDto {
   role?: DatasetQueryRole;
 }
 export interface IDatasetSearchFilterDto {

@@ -96,7 +96,7 @@ export const createFhirDataset = async (
   if (existingDataset) {
     const portalDataset = await getPortalDataset(datasetId, token);
 
-    if (portalDataset.fhir_project_id) {
+    if (portalDataset.fhirDatasetId) {
       throw new Error(
         `Portal dataset with id '${datasetId}' is already linked to a FHIR dataset!`,
       );

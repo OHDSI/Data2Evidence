@@ -254,22 +254,22 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const displayDatabases = useMemo(
     () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
-    [formData.schemaOption]
+    [formData.schemaOption],
   );
 
   const displayDataModels = useMemo(
     () => formData.databaseCode && ![SchemaTypes.NoCDM, SchemaTypes.FHIR].includes(formData.schemaOption),
-    [formData.schemaOption, formData.databaseCode]
+    [formData.schemaOption, formData.databaseCode],
   );
 
   const displayCustomDataModelInput = useMemo(
     () => formData.dataModel.split(" ")[0] === customDataModelOption.datamodel,
-    [formData.dataModel]
+    [formData.dataModel],
   );
 
   const displaySameCdmVocabSchemaCheckbox = useMemo(
     () => [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM, SchemaTypes.ExistingCDM].includes(formData.schemaOption),
-    [formData.schemaOption]
+    [formData.schemaOption],
   );
 
   const displayVocabSchemaDropdown = useMemo(
@@ -277,17 +277,17 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formData.databaseCode &&
       !formData.isSameCdmSchemaForVocab &&
       [SchemaTypes.CreateCDM, SchemaTypes.CustomCDM].includes(formData.schemaOption),
-    [formData.databaseCode, formData.isSameCdmSchemaForVocab, formData.schemaOption]
+    [formData.databaseCode, formData.isSameCdmSchemaForVocab, formData.schemaOption],
   );
 
   const displayVocabSchemaInput = useMemo(
     () => formData.schemaOption === SchemaTypes.ExistingCDM && !formData.isSameCdmSchemaForVocab,
-    [formData.schemaOption, formData.isSameCdmSchemaForVocab]
+    [formData.schemaOption, formData.isSameCdmSchemaForVocab],
   );
 
   const displaySchemaNameInput = useMemo(
     () => formData.schemaOption === SchemaTypes.CustomCDM || formData.schemaOption === SchemaTypes.ExistingCDM,
-    [formData.schemaOption]
+    [formData.schemaOption],
   );
 
   const displayResultsSchemaInput = useMemo(() => formData.schemaOption !== SchemaTypes.FHIR, [formData.schemaOption]);
@@ -301,12 +301,12 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       setCreatedDatasetName("");
       typeof onClose === "function" && onClose(type);
     },
-    [onClose]
+    [onClose],
   );
 
   const displayCacheConfiguration = useMemo(() => {
-    return formData.dialect !== "hana";
-  }, [formData.dialect]);
+    return formData.dialect !== "hana" && formData.schemaOption !== SchemaTypes.FHIR;
+  }, [formData.dialect, formData.schemaOption]);
 
   const getDataModels = useCallback(async () => {
     try {
@@ -507,7 +507,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
-    let fhirProjectId;
 
     const parsedDatasetType = dialect === "hana" ? `hana__${type}` : type;
 
@@ -530,7 +529,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       databaseCode,
       dialect,
       paConfigId,
-      fhirProjectId,
       visibilityStatus: dialect === "hana" ? "DEFAULT" : visibilityStatus,
       attributes: [],
       tags: [],
@@ -858,7 +856,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 handleFormDataChange(
                   isSameCdmSchemaForVocab
                     ? { vocabSchemaValue: "", isSameCdmSchemaForVocab }
-                    : { isSameCdmSchemaForVocab }
+                    : { isSameCdmSchemaForVocab },
                 );
               }}
             />
@@ -1070,7 +1068,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
         </div>
         {displayCacheConfiguration && (
           <>
-            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_CONFIGURATION)}</div>
+            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>
+              {getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_CONFIGURATION)}
+            </div>
 
             <div style={{ marginBottom: "32px" }}>
               <TextField
@@ -1093,7 +1093,9 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 fullWidth
                 {...(formError.vocabSchemaValue.required ? { error: true } : {})}
               >
-                <InputLabel htmlFor="cache-dataset-option">{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_TYPE)}</InputLabel>
+                <InputLabel htmlFor="cache-dataset-option">
+                  {getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_TYPE)}
+                </InputLabel>
                 <Select
                   sx={styles}
                   value={formData.cacheDatasetType}
