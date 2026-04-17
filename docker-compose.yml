@@ -614,6 +614,8 @@ services:
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
       PREFECT_EVENTS_ENABLED: false
+      CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
+      CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:

@@ -137,7 +137,7 @@ async function ensureConcurrencyLimit(name: string, limitVar: string) {
 			limit = parseInt(process.env[limitVar], 10);
 			logger.log(`Using env var ${limitVar} for concurrency limit ${name}: ${limit}`);
 		} else {
-			limit = parseInt(limitVar, 1);
+			limit = 1;
 			logger.log(`Using default value ${limit} for concurrency limit ${name} (env ${limitVar} not set)`);
 		}
 		// Find existing concurrency limit by tag

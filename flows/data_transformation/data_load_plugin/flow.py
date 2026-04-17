@@ -63,7 +63,7 @@ def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, heade
 
     total_chunks = None
     if chunksize:
-        with open(file.path, 'rb') as f:
+        with open(file.path, 'r', encoding=encoding) as f:
             total_rows = max(0, sum(1 for _ in f) - (1 if header == 0 else 0))
         total_chunks = math.ceil(total_rows / chunksize) if total_rows > 0 else 0
 
