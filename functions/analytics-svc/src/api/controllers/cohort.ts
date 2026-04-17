@@ -38,8 +38,8 @@ export async function getAllCohorts(req: IMRIRequest, res: Response) {
             req.dbCredentials.studyAnalyticsCredential.authentication_mode
         );
 
-        const offset = req.query.offset;
-        const limit = req.query.limit;
+        const offset = Number(req.query.offset);
+        const limit = Number(req.query.limit);
         const excludePatientIds = req.query.excludePatientIds === "true";
 
         // Send empty object to query all cohorts
@@ -65,8 +65,8 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
         const analyticsConnection = getCohortAnalyticsConnection(req);
         const filterColumn = req.params.filterColumn;
         const filterValue = req.params.filterValue;
-        const offset = req.query.offset;
-        const limit = req.query.limit;
+        const offset = Number(req.query.offset);
+        const limit = Number(req.query.limit);
         const excludePatientIds = req.query.excludePatientIds === "true";
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
@@ -87,14 +87,19 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
             excludePatientIds
         );
 
-        // Get count of all cohort definitions based on filter column for pagination
-        let cohortDefinitionCount =
-            await cohortEndpoint.queryCohortDefinitionCount({
-                [filterColumn]:
-                    filterColumn === "SYNTAX"
-                        ? JSON.parse(filterValue)
-                        : filterValue,
-            });
+        let cohortDefinitionCount;
+        if (limit) {
+            // Get count of all cohort definitions based on filter column for pagination
+            cohortDefinitionCount =
+                await cohortEndpoint.queryCohortDefinitionCount({
+                    [filterColumn]:
+                        filterColumn === "SYNTAX"
+                            ? JSON.parse(filterValue)
+                            : filterValue,
+                });
+        } else {
+            cohortDefinitionCount = result.length;
+        }
 
         res.status(200).send({ data: result, cohortDefinitionCount });
     } catch (err) {
