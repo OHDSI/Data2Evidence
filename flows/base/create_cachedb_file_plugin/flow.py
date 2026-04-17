@@ -41,6 +41,7 @@ def update_parameters(options: CreateCacheOptions,
 
 def create_results_cache_flow(options: CreateCacheOptions):
     new_options = update_parameters(options, 'schema_name', options.results_schema_name)
+    new_options = update_parameters(new_options, 'vocab_schema_name', None)
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
     create_cache_flow(final_options)
 
