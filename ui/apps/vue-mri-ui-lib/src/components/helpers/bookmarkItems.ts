@@ -1,6 +1,74 @@
 import AxisModel from '../../lib/models/AxisModel'
 import MriFrontendConfig from '../../lib/MriFrontEndConfig'
 
+const isYYYYMMDD = (value: unknown): value is string => {
+  return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)
+}
+
+const pad2 = (value: number) => String(value).padStart(2, '0')
+
+const formatTimeConstraintValue = (value: unknown): string => {
+  if (isYYYYMMDD(value)) {
+    return value
+  }
+
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (isNaN(date.getTime())) {
+    return String(value)
+  }
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatDateTimeConstraintValue = (value: unknown): string => {
+  const date = value instanceof Date ? value : new Date(String(value))
+  if (isNaN(date.getTime())) {
+    return String(value)
+  }
+
+  const year = date.getFullYear()
+  const month = pad2(date.getMonth() + 1)
+  const day = pad2(date.getDate())
+  const hour = pad2(date.getHours())
+  const minute = pad2(date.getMinutes())
+  return `${year}-${month}-${day} ${hour}:${minute}`
+}
+
+const buildTimeRangeLabel = (expressions: { operator: string; value: string }[]): string | null => {
+  if (!Array.isArray(expressions) || expressions.length < 2) {
+    return null
+  }
+
+  const lower = expressions.find(expression => expression.operator === '>=')
+  const upper = expressions.find(expression => expression.operator === '<=')
+  if (!lower || !upper) {
+    return null
+  }
+
+  const fromDate = formatTimeConstraintValue(lower.value)
+  const toDate = formatTimeConstraintValue(upper.value)
+  return `${fromDate} - ${toDate}`
+}
+
+const buildDateTimeRangeLabel = (expressions: { operator: string; value: string }[]): string | null => {
+  if (!Array.isArray(expressions) || expressions.length < 2) {
+    return null
+  }
+
+  const lower = expressions.find(expression => expression.operator === '>=')
+  const upper = expressions.find(expression => expression.operator === '<=')
+  if (!lower || !upper) {
+    return null
+  }
+
+  const fromDate = formatDateTimeConstraintValue(lower.value)
+  const toDate = formatDateTimeConstraintValue(upper.value)
+  return `${fromDate} - ${toDate}`
+}
+
 export const getAttributeName = ({
   attributeId,
   type,
@@ -119,15 +187,53 @@ export const getCardsFormatted = ({
                 attributeId: attributes.content[iii].configPath,
                 type: 'list',
               })
+
               const isConceptSet = getAttributeType(attributes.content[iii].configPath) === 'conceptSet'
+              const attributeType = getAttributeType(attributes.content[iii].configPath)
               const visibleConstraints = []
               const constraints = attributes.content[iii].constraints
+              console.debug('[BookmarkItems][constraints][input]', {
+                attributeName: name,
+                attributePath: attributes.content[iii].configPath,
+                attributeType,
+                constraints,
+              })
+
               for (let iv = 0; iv < constraints.content.length; iv += 1) {
                 if (constraints.content[iv].content) {
+                  if (attributeType === 'time') {
+                    const rangeLabel = buildTimeRangeLabel(constraints.content[iv].content)
+                    if (rangeLabel) {
+                      visibleConstraints.push(rangeLabel)
+                      continue
+                    }
+                  }
+
+                  if (attributeType === 'datetime') {
+                    const rangeLabel = buildDateTimeRangeLabel(constraints.content[iv].content)
+                    if (rangeLabel) {
+                      visibleConstraints.push(rangeLabel)
+                      continue
+                    }
+                  }
+
                   for (let v = 0; v < constraints.content[iv].content.length; v += 1) {
-                    visibleConstraints.push(
-                      `${constraints.content[iv].content[v].operator}${constraints.content[iv].content[v].value}`
-                    )
+                    const formattedValue =
+                      attributeType === 'time'
+                        ? formatTimeConstraintValue(constraints.content[iv].content[v].value)
+                        : attributeType === 'datetime'
+                          ? formatDateTimeConstraintValue(constraints.content[iv].content[v].value)
+                          : constraints.content[iv].content[v].value
+                    const visibleConstraint = `${constraints.content[iv].content[v].operator}${formattedValue}`
+                    visibleConstraints.push(visibleConstraint)
+                    console.debug('[BookmarkItems][constraints][nested-expression]', {
+                      attributeName: name,
+                      attributePath: attributes.content[iii].configPath,
+                      attributeType,
+                      operator: constraints.content[iv].content[v].operator,
+                      value: formattedValue,
+                      visibleConstraint,
+                    })
                   }
                 } else if (constraints.content[iv].operator === '=') {
                   if (isConceptSet) {
@@ -135,14 +241,58 @@ export const getCardsFormatted = ({
                     const conceptSetName = conceptSets?.values?.find(
                       set => set.value === constraints.content[iv].value
                     )?.text
-                    visibleConstraints.push(conceptSetName || constraints.content[iv].value)
+                    const visibleConstraint = conceptSetName || constraints.content[iv].value
+                    visibleConstraints.push(visibleConstraint)
+                    console.debug('[BookmarkItems][constraints][equals-concept-set]', {
+                      attributeName: name,
+                      attributePath: attributes.content[iii].configPath,
+                      attributeType,
+                      operator: constraints.content[iv].operator,
+                      rawValue: constraints.content[iv].value,
+                      visibleConstraint,
+                    })
                   } else {
-                    visibleConstraints.push(constraints.content[iv].value)
+                    const visibleConstraint =
+                      attributeType === 'time'
+                        ? formatTimeConstraintValue(constraints.content[iv].value)
+                        : attributeType === 'datetime'
+                          ? formatDateTimeConstraintValue(constraints.content[iv].value)
+                          : constraints.content[iv].value
+                    visibleConstraints.push(visibleConstraint)
+                    console.debug('[BookmarkItems][constraints][equals]', {
+                      attributeName: name,
+                      attributePath: attributes.content[iii].configPath,
+                      attributeType,
+                      operator: constraints.content[iv].operator,
+                      rawValue: constraints.content[iv].value,
+                      visibleConstraint,
+                    })
                   }
                 } else {
-                  visibleConstraints.push(`${constraints.content[iv].operator}${constraints.content[iv].value}`)
+                  const formattedValue =
+                    attributeType === 'time'
+                      ? formatTimeConstraintValue(constraints.content[iv].value)
+                      : attributeType === 'datetime'
+                        ? formatDateTimeConstraintValue(constraints.content[iv].value)
+                        : constraints.content[iv].value
+                  const visibleConstraint = `${constraints.content[iv].operator}${formattedValue}`
+                  visibleConstraints.push(visibleConstraint)
+                  console.debug('[BookmarkItems][constraints][operator-value]', {
+                    attributeName: name,
+                    attributePath: attributes.content[iii].configPath,
+                    attributeType,
+                    operator: constraints.content[iv].operator,
+                    rawValue: formattedValue,
+                    visibleConstraint,
+                  })
                 }
               }
+              console.debug('[BookmarkItems][constraints][output]', {
+                attributeName: name,
+                attributePath: attributes.content[iii].configPath,
+                attributeType,
+                visibleConstraints,
+              })
               const attributeObj = {
                 name,
                 visibleConstraints,
@@ -167,4 +317,3 @@ export const getCardsFormatted = ({
   }
   return returnObj
 }
-
