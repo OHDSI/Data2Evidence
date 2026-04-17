@@ -2,13 +2,19 @@
 
 import {env, logger} from "../env.ts"
 import { DatabaseManager } from '../lib/dbm.ts';
+import { Hono } from "npm:hono";
 
-export async function addPlugin(value: any, dir: any) {
+export async function addPlugin(app: Hono, value: any, dir: any) {
     try {
 
         if(value.name) {
             const conn = new Trex.TrexDB("memory");
-            const ext = `${dir}/${value.name}.duckdb_extension`;
+            let ext = `${dir}/${value.name}.trex`;
+            try {
+                await Deno.stat(ext);
+            } catch {
+                ext = `${dir}/${value.name}.duckdb_extension`;
+            }
             let r = await conn.execute(`LOAD '${ext}'`, []);
             logger.info(`Loaded plugin ${value.name}: ${r}`);
             const cred = await (await DatabaseManager.get()).getCredentialsDecrypted();

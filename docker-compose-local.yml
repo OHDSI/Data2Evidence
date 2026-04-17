@@ -9,6 +9,7 @@ services:
       - 25432:5432
       - 25433:5433
       - 33000:33000
+      - 33003:33003
     volumes:
       - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir

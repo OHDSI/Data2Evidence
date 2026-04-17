@@ -135,7 +135,7 @@ export class Plugins {
 						addFlowPlugin(value);
 						break;
 					case "core":
-						addCorePlugin(value, dir);
+						addCorePlugin(app, value, dir);
 						break;
 					default:
 						logger.log(`Unknown type: ${key}`);
