@@ -88,7 +88,7 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
         );
 
         let cohortDefinitionCount;
-        if (limit) {
+        if (limit && Number(limit) > 0) {
             // Get count of all cohort definitions based on filter column for pagination
             cohortDefinitionCount =
                 await cohortEndpoint.queryCohortDefinitionCount({
