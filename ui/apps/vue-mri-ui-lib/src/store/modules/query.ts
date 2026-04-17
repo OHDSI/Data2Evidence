@@ -234,6 +234,10 @@ const getters = {
                     break
                   case 'time':
                   case 'datetime':
+                  case 'hc.mri.pa.ui.lib.CDMAttrType.Date':
+                  case 'hc.mri.pa.ui.lib.CDMAttrType.Datetime':
+                  case Constants.CDMAttrType.Date:
+                  case Constants.CDMAttrType.Datetime:
                     const aExpressions = []
 
                     if (constraint.props.fromDate.value !== '') {
