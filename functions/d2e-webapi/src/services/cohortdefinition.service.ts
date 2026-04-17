@@ -465,28 +465,27 @@ const _filterUntaggedMaterializedCohorts = (
   AtlasCohortDefinitions: IAtlasCohortDefinition[],
   formattedMaterializedCohorts: IMaterializedCohort[],
 ): IMaterializedCohort[] => {
-  // Create a list of cohort definitions ids which are tagged to either a bookmark or atlas cohort definition
-  const cohortDefinitionIds: number[] = [];
+  // Create a set of cohort definition ids which are tagged to either a bookmark or atlas cohort definition
+  const cohortDefinitionIds = new Set<number>();
 
-  // Get cohort definition ids from bookmarks
-  bookmarks.reduce((acc, bookmark) => {
+  // Add cohort definition ids from bookmarks to cohortDefinitionIds set
+  for (const bookmark of bookmarks) {
     if (bookmark.cohortDefinitionId) {
-      acc.push(bookmark.cohortDefinitionId);
+      cohortDefinitionIds.add(bookmark.cohortDefinitionId);
     }
-    return acc;
-  }, cohortDefinitionIds);
+  }
 
-  // Get cohort definition ids from AtlasCohortDefinitions
-  AtlasCohortDefinitions.reduce((acc, atlasCohortDefinition) => {
+  // Add cohort definition ids from AtlasCohortDefinitions to cohortDefinitionIds set
+  for (const atlasCohortDefinition of AtlasCohortDefinitions) {
     if (atlasCohortDefinition.cohortDefinitionId) {
-      acc.push(atlasCohortDefinition.cohortDefinitionId);
+      cohortDefinitionIds.add(atlasCohortDefinition.cohortDefinitionId);
     }
-    return acc;
-  }, cohortDefinitionIds);
+  }
 
+  // Filter materialized cohorts based on cohortDefinitionIds
   const filteredMaterializedCohorts = formattedMaterializedCohorts.filter(
     (materializedCohorts) => {
-      return cohortDefinitionIds.includes(materializedCohorts.id);
+      return cohortDefinitionIds.has(materializedCohorts.id);
     },
   );
 
