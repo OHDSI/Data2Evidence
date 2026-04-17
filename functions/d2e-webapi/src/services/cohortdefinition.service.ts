@@ -170,11 +170,13 @@ export const getCohortDefinitionList = async (
   isAtlas: boolean
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
   const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinitions =
-    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
 
-  const baseCohortDefinitions = atlasCohortDefinitions.map(
-    (atlasCohortDefinition) => ({
+  const mapAtlasCohortDefinitions = (
+    atlasCohortDefinitions: Awaited<
+      ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
+    >
+  ): IAtlasCohortDefinition[] =>
+    atlasCohortDefinitions.map((atlasCohortDefinition) => ({
       id: atlasCohortDefinition.id,
       name: atlasCohortDefinition.name,
       description: atlasCohortDefinition.description,
@@ -185,46 +187,36 @@ export const getCohortDefinitionList = async (
       hasWriteAccess: true,
       hasReadAccess: true,
       tags: atlasCohortDefinition.tags,
-    })
-  );
-
-  // Return early if isAtlas is true
-  if (isAtlas) {
-    return baseCohortDefinitions;
-  }
-
-  // Else continue to load PA bookmarks and materialized cohorts
-  const bookmarksApi = new BookmarksAPI(token);
-  const rawDataFromBookmarks = await bookmarksApi.getAllBookmarks(datasetId);
-  const parsedBookmarksData = BookmarksSchema.parse(rawDataFromBookmarks);
-
-  // Try to get materialized cohorts, but continue with empty list if it fails
-  const analyticsSvcAPI = new AnalyticsSvcAPI(token);
-  let baseMaterializedCohorts: IBaseMaterializedCohort[] = [];
-  try {
-    const result = await analyticsSvcAPI.getFilteredCohorts(datasetId, {
-      datasetId,
-    });
-    // Handle undefined or non-array results
-    baseMaterializedCohorts = Array.isArray(result) ? result : [];
-  } catch (error) {
-    console.error(
-      "Failed to fetch materialized cohorts, continuing with empty list:",
-      error
-    );
-  }
-
-  // Parse bookmark and atlas cohort definition
-  const parsedbookmarks: IBookmark[] = parsedBookmarksData.bookmarks.map(
-    (b) => ({
-      ...b,
-    })
-  );
-  const parsedAtlasCohortDefinitions: IAtlasCohortDefinition[] =
-    baseCohortDefinitions.map((acd) => ({
-      ...acd,
     }));
 
+  // isAtlas=true only needs atlas cohort definitions and return early
+  if (isAtlas) {
+    const atlasCohortDefinitions =
+      await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+    return mapAtlasCohortDefinitions(atlasCohortDefinitions);
+  }
+  const bookmarksApi = new BookmarksAPI(token);
+  const analyticsSvcAPI = new AnalyticsSvcAPI(token);
+
+  const [atlasCohortDefinitions, rawDataFromBookmarks, baseMaterializedCohorts] =
+    await Promise.all([
+      portalServerApi.getAtlasCohortDefinitionList(datasetId),
+      bookmarksApi.getAllBookmarks(datasetId),
+      analyticsSvcAPI 
+        .getFilteredCohorts(datasetId, { datasetId }) // Try to get materialized cohorts, but continue with empty list if it fails
+        .then((result) => (Array.isArray(result) ? result : [])) // Handle undefined or non-array results
+        .catch((error) => {
+          console.error(
+            "Failed to fetch materialized cohorts, continuing with empty list:",
+            error
+          );
+          return [] as IBaseMaterializedCohort[];
+        }),
+    ]);
+
+    // Parse bookmark and atlas cohort definition
+  const parsedbookmarks = BookmarksSchema.parse(rawDataFromBookmarks).bookmarks;
+  const parsedAtlasCohortDefinitions = mapAtlasCohortDefinitions(atlasCohortDefinitions);
 
   // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
   const bookmarkIdToCohortId = new Map<string, number>();
