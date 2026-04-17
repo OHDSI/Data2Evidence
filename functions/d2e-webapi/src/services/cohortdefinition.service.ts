@@ -225,23 +225,30 @@ export const getCohortDefinitionList = async (
       ...acd,
     }));
 
+
+  // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
+  const bookmarkIdToCohortId = new Map<string, number>();
+  const atlasDefIdToCohortId = new Map<number, number>();
+  for (const cohort of baseMaterializedCohorts) {
+    const syntax = JSON.parse(cohort.syntax);
+    if (syntax.bookmarkId !== undefined) {
+      bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
+    }
+    if (syntax.atlasCohortDefinitionId !== undefined) {
+      atlasDefIdToCohortId.set(syntax.atlasCohortDefinitionId, cohort.id);
+    }
+  }
+
   // Add cohortDefinitionId to bookmarks if there is a respective materialized cohort
   const bookmarksWithId = parsedbookmarks.map((bookmark) => ({
     ...bookmark,
-    cohortDefinitionId: _getBookmarkMaterializedCohortDefinitionId(
-      bookmark.bmkId,
-      baseMaterializedCohorts
-    ),
+    cohortDefinitionId: bookmarkIdToCohortId.get(bookmark.bmkId),
   }));
   // Add cohortDefinitionId to atlas cohort definition if there is a respective materialized cohort
   const cohortDefinitionsWithId = parsedAtlasCohortDefinitions.map(
     (atlasCohortDefinition) => ({
       ...atlasCohortDefinition,
-      cohortDefinitionId:
-        _getAtlasCohortDefinitionMaterializedCohortDefinitionId(
-          atlasCohortDefinition.id,
-          baseMaterializedCohorts
-        ),
+      cohortDefinitionId: atlasDefIdToCohortId.get(atlasCohortDefinition.id),
     })
   );
 
@@ -454,31 +461,6 @@ const _formatMaterializedCohort = (
   ...(includeSyntax && { syntax: cohortDefinition.syntax }),
 });
 
-const _getBookmarkMaterializedCohortDefinitionId = (
-  bookmarkId: string,
-  materializedCohorts: IBaseMaterializedCohort[]
-): number | undefined => {
-  for (const cohort of materializedCohorts) {
-    const cohortSyntax = JSON.parse(cohort.syntax);
-    if (cohortSyntax["bookmarkId"] === bookmarkId) {
-      return cohort.id;
-    }
-  }
-  return undefined;
-};
-
-const _getAtlasCohortDefinitionMaterializedCohortDefinitionId = (
-  atlasCohortDefinitionId: number,
-  materializedCohorts: IBaseMaterializedCohort[]
-): number | undefined => {
-  for (const cohort of materializedCohorts) {
-    const cohortSyntax = JSON.parse(cohort.syntax);
-    if (cohortSyntax["atlasCohortDefinitionId"] === atlasCohortDefinitionId) {
-      return cohort.id;
-    }
-  }
-  return undefined;
-};
 
 /*
 Function to filter out materialized cohorts which do not belong to a formatted bookmark or formatted atlas cohort definition
