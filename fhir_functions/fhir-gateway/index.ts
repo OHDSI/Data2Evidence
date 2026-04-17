@@ -22,7 +22,7 @@ export class App {
       }
       next(err);
     });
-    this.app.use("/trex-fhir-gateway/", new FhirRouter().router);
+    this.app.use("/fhir-gateway/", new FhirRouter().router);
     this.app.listen(8000);
   }
 }

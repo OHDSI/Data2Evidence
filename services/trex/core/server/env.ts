@@ -50,7 +50,7 @@ export const publicURLs = [
   "^/prefect/docs$",
   "^/openapi.json$",
   "^/fhir-server/health$",
-  "^/trex-fhir-gateway/healthcheck$",
+  "^/fhir-gateway/healthcheck$",
   "^/gateway/api/dataset/shiny-live/.*$",
 ];
 
