@@ -153,7 +153,7 @@ We welcome community contributions!
 
 1. Open issues or feature requests on GitHub  
 2. Submit pull requests  
-3. Join our [Discord](https://data2evidence.org/discord) for discussions  
+3. Join our [Slack](https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig) for discussions  
 
 ## Citing  
 
