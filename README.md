@@ -12,7 +12,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-d9dbec.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/Website-data2evidence.org-d9dbec)](https://data2evidence.org)
 [![Docs](https://img.shields.io/badge/Docs-Getting_Started-d9dbec)](https://data2evidence.org/docs/getting_started/)
-[![Community](https://img.shields.io/badge/Chat-Discord-d9dbec?logo=Discord&logoColor=FFFFFF)](https://data2evidence.org/discord)
+[![Commuity](https://img.shields.io/badge/Community-Slack-d9dbec)](https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/m/ohdsi/d2e?label=Commit%20activty&logo=github&color=d9dbec)](https://github.com/ohdsi/d2e/graphs/contributors)
 [![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=D2E%20installer&logo=npm&color=d9dbec)](https://www.npmjs.com/package/d2e)
 
@@ -143,9 +143,9 @@ functions/  → Analytical utilities and notebook helpers
 |-|-|-|
 | [![d2e/cli build and publish](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml) |  [![d2e-functions build plugin](https://github.com/ohdsi/d2e/actions/workflows/functions-plugin-ci.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-plugin-ci.yml) | [![d2e-ui build plugin](https://github.com/ohdsi/d2e/actions/workflows/ui-plugin-ci.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-plugin-ci.yml)  |  
 | [![d2e Docker Build](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml) | [![d2e-functions/pa Run HTTP tests](https://github.com/ohdsi/d2e/actions/workflows/functions-http-tests.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-http-tests.yml)  | [![d2e-ui/pa (vue)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml)   |  
-| [![d2e/services Docker Compose Up](https://github.com/ohdsi/d2e/actions/workflows/services-docker-compose-up.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/services-docker-compose-up.yml)| [![Run Authorization Tests](https://github.com/OHDSI/d2e/actions/workflows/trex-authz-tests.yml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/trex-authz-tests.yml) | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |
+| [![d2e/services envConverter unit tests](https://github.com/ohdsi/d2e/actions/workflows/services-env-converter-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/services-env-converter-test.yml)| [![Run Authorization Tests](https://github.com/OHDSI/d2e/actions/workflows/trex-authz-tests.yml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/trex-authz-tests.yml) | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |
 |[![d2e/services Cachedb tests](https://github.com/ohdsi/d2e/actions/workflows/services-cachedb-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/services-cachedb-test.yml)|  **Flows**  | [![d2e-ui/portal unit tests (Components Library)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml) |
-|[![d2e/services envConverter unit tests](https://github.com/ohdsi/d2e/actions/workflows/services-env-converter-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/services-env-converter-test.yml)| [![d2e-flows build plugin](https://github.com/ohdsi/d2e/actions/workflows/flows-plugin-ci.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/flows-plugin-ci.yml) | [![d2e-ui/pyqe unit tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
+| | [![d2e-flows build plugin](https://github.com/ohdsi/d2e/actions/workflows/flows-plugin-ci.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/flows-plugin-ci.yml) | [![d2e-ui/pyqe unit tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
 
 ## Contributing  
 
@@ -154,6 +154,10 @@ We welcome community contributions!
 1. Open issues or feature requests on GitHub  
 2. Submit pull requests  
 3. Join our [Discord](https://data2evidence.org/discord) for discussions  
+
+## Citing  
+
+If you use Data2Evidence in your research, please cite it using the metadata in [CITATION.cff](CITATION.cff). GitHub provides a "Cite this repository" shortcut in the sidebar that generates APA and BibTeX entries from this file.
 
 ## License  
 
