@@ -341,6 +341,8 @@ try {
             agent: insecureAgent
         });
         const resp = await response.json();
+        console.log(`Check progress resp:\n${JSON.stringify(resp)}`);
+
         for (const step of resp.steps) {
             console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
         }
