@@ -327,7 +327,7 @@ var resp = await response.json();
 console.log(`After dataset creation:\n${JSON.stringify(resp)}`);
 
 var progress_status = "inprogress";
-
+const progress_id = resp.id;
 
 try {
     while (progress_status == "inprogress") {
