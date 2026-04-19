@@ -140,6 +140,11 @@ jobs:
         run: |
           docker ps -a
 
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn init-e2e-testdb-hana
+
       - name: Log status
         if: success() || failure()
         run: |
