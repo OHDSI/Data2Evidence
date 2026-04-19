@@ -76,6 +76,15 @@ jobs:
           # timeout 10m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
           timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
+      - name: Manipulate configuration
+        run: |
+          yq -i '.networks.alp.external=true' docker-compose.yml
+          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
+
+      - name: Create network for external to use
+        run: |
+          docker network inspect alp > /dev/null || docker network create alp
+
       - name: Check status of HANA containers
         run: |
           docker ps -a
