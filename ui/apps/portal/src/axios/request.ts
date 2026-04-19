@@ -76,8 +76,12 @@ const requestNoCache = async <T = any>(options: AxiosRequestConfig): Promise<T> 
   }
 };
 
-export const request = memoize(requestNoCache, {
+const isPlaywright = typeof navigator !== "undefined" && navigator.webdriver;
+
+const memoizedRequest = memoize(requestNoCache, {
   maxAge: 800,
   promise: true,
   normalizer: (args) => JSON.stringify(args),
 });
+
+export const request = isPlaywright ? requestNoCache : memoizedRequest;

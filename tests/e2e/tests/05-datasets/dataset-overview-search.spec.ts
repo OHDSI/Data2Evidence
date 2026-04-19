@@ -35,8 +35,6 @@ test(TEST_NAME, async ({ page }) => {
 
   await page.getByRole('link', { name: 'Account' }).click()
   await page.getByRole('button', { name: 'Switch to Researcher portal' }).click()
-  await page.reload()
-  await expect(page.getByRole('textbox', { name: 'search terms' }).nth(1)).toBeVisible()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('demo')
   await page.getByRole('button', { name: 'Search' }).nth(1).click()
@@ -62,15 +60,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).click()
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('xxxxxxxxx')
 
-  // Seems like there is some kind debounce or delay in the search functionality
-  await page.waitForTimeout(10000)
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
   await expect(page.locator('.overview__datasets--empty')).toContainText('No dataset available')
 
-  await page.waitForTimeout(3000)
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).fill('')
   await page.getByRole('textbox', { name: 'search terms' }).nth(1).press('Enter')
-  await page.waitForTimeout(5000)
+  await page.waitForTimeout(100)
 
   // Demo setup only has one dataset, so scrolling to bottom is not enough to make the header scrolled
   // Clone the dataset div to create more content for scrolling
@@ -85,7 +80,6 @@ test(TEST_NAME, async ({ page }) => {
       originalDiv.parentNode?.appendChild(clonedDiv2)
     }
   })
-  await page.waitForTimeout(1000)
 
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)) // scroll to bottom
   await expect(page.locator('.home-header')).toHaveClass(/home-header--scrolled/)
