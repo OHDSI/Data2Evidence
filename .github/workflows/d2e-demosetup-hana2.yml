@@ -1,0 +1,335 @@
+name: E2E tests HANA 2 (demosetup-hana)
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch: # Allow manual triggering
+  pull_request:
+    types: [opened, ready_for_review, reopened, synchronize]
+  merge_group:
+  push:
+    branches:
+      - develop
+
+env:
+  VERSION: develop
+  HDIPW: TestPW1234
+  HANASERVER: hana
+  HANASERVER_INT: hana
+  HDIPORT: 39041
+  HDIUSER: SYSTEM
+  TESTSCHEMA: E2E_TEST_SCHEMA
+
+jobs:
+  pick_runner:
+    runs-on: ubuntu-latest
+    outputs:
+      random_runner: ${{ steps.shuffle.outputs.random_runner }}
+    steps:
+      - id: shuffle
+        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
+
+  demosetup:
+    needs: [pick_runner]
+    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: npm install
+        if: success() || failure()
+        run: |
+          npm install
+
+      - name: Initialise d2e
+        if: success() || failure()
+        id: init
+        run: |
+          ls -la
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+        env:
+          init_choice: y
+
+      - name: Initialise HANA
+        if: success() || failure()
+        id: inithana
+        run: |
+          echo "HDIPW: ${HDIPW}"
+          # timeout 10m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Manipulate configuration
+        run: |
+          yq -i '.networks.alp.external=true' docker-compose.yml
+          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
+
+      - name: Create network for external to use
+        run: |
+          docker network inspect alp > /dev/null || docker network create alp
+
+      - name: Check status of HANA containers
+        run: |
+          docker ps -a
+
+      - name: Check HANA
+        run: |
+          hanaContainerName=$(docker ps | grep hana | awk '{print $NF}')
+          if [ -z "$hanaContainerName" ]; then
+              echo "Error: HANA container not found"
+              exit 1
+          fi
+
+          export hanaContainerName
+          export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
+          echo "$resDataset"
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn init-e2e-testdb-hana
+
+      - uses: dorny/paths-filter@v3
+        id: flow_file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "flows/base/**"
+
+      - name: Build Flow base docker image
+        if: steps.flow_file_changes.outputs.src == 'true'
+        id: build_flow_base_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+
+      - name: Build docker images
+        if: success() || failure()
+        id: pull
+        run: |
+          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune images
+        if: always()
+        id: prune
+        run: |
+          docker buildx prune -af
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions --hana start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
+            echo "DOCKER_STATUS_FILE=$DOCKER_STATUS_FILE" >> $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Check status of docker containers
+        run: |
+          docker ps -a
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Setupdemohana
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemohana
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: View dataset details
+        run: |
+          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
+          echo "$resDataset"
+          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
+          echo "$resDatasetDetail"
+          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
+          echo "$resTrexDB"
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: UI Setup bun
+        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+
+      - name: UI Build
+        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        working-directory: ./ui
+        env:
+          CI: false
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl file git
+          bun install
+          bun build-all
+          UI_BUILD_EXIT_CODE=$?
+          [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
+
+      - name: UI docker-compose-local
+        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+      - name: Flow base docker-compose-local
+        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' }}
+        run: |
+          sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
+
+      - name: Wait for d2e-ui plugin to be installed
+        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          echo "Waiting for d2e-ui plugin to be installed..."
+          max_attempts=60
+          attempt=0
+          start_time=$(date +%s)
+          while [ $attempt -lt $max_attempts ]; do
+            # Check if plugin resources directory exists and has files
+            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
+              end_time=$(date +%s)
+              elapsed=$((end_time - start_time))
+              echo "d2e-ui plugin is ready (took ${elapsed}s)"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "  Attempt $attempt/$max_attempts: waiting..."
+            sleep 2
+          done
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Timeout waiting for d2e-ui plugin to be installed"
+            exit 1
+          fi
+
+      - name: UI Mounting build
+        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        run: |
+          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+
+      - name: Build e2e Docker image
+        run: |
+          cd ./tests/e2e/hana
+          docker build -t d2e-e2e .
+
+      - name: Verify app is reachable
+        run: |
+          curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
+          curl -k -I https://localhost:443/d2e/portal || true
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e/hana
+          docker run --rm \
+            --network=host \
+            --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
+            d2e-e2e npm test
+
+      - name: Upload Error Context
+        if: always() # Always run, even if the previous step fails
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context
+          path: tests/e2e/hana/test-results/**/*
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./tests/e2e/hana/ctrf/*.json"
+          file-report: true
+
+      - name: Stop d2e services
+        if: success() || failure()
+        id: stop
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+
+      - name: Prune system
+        if: always()
+        id: prune_system
+        run: |
+          docker system prune -af
