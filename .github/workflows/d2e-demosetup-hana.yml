@@ -19,6 +19,7 @@ env:
   HANASERVER_INT: hana
   HDIPORT: 39041
   HDIUSER: SYSTEM
+  TESTSCHEMA: E2E_TEST_SCHEMA
 
 jobs:
   pick_runner:
@@ -74,6 +75,11 @@ jobs:
           echo "HDIPW: ${HDIPW}"
           # timeout 10m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
           timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn init-e2e-testdb-hana
 
       - name: Check status of HANA containers
         run: |
@@ -139,11 +145,6 @@ jobs:
       - name: Check status of docker containers
         run: |
           docker ps -a
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn init-e2e-testdb-hana
 
       - name: Log status
         if: success() || failure()
