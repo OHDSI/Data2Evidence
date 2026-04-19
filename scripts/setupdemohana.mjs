@@ -185,6 +185,7 @@ var response = await fetch(url, {
 });
 const tokenResponse = await response.json();
 const BEARER_TOKEN = tokenResponse.access_token;
+console.log(`BEARER_TOKEN:\n${BEARER_TOKEN}`);
 
 
 async function createCredentials (password, public_key) {
@@ -323,6 +324,45 @@ var response = await fetch(url, {
 });
 
 var resp = await response.json();
+console.log(`After dataset creation:\n${JSON.stringify(resp)}`);
+
+var progress_status = "inprogress";
+
+
+try {
+    while (progress_status == "inprogress") {
+        var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/demo/progress/${progress_id}`;
+        var response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "content-type": "application/x-www-form-urlencoded",
+                "Authorization": `Bearer ${BEARER_TOKEN}`
+            },
+            agent: insecureAgent
+        });
+        const resp = await response.json();
+        for (const step of resp.steps) {
+            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
+        }
+        progress_status = resp.status;
+        console.log(`progress_status: ${progress_status}\n`);
+        if (progress_status == "inprogress") {
+            console.log(`Setup in progress...`);
+            await new Promise(resolve => setTimeout(resolve, 15000));
+        } else if (progress_status == "completed") {
+            console.log(`Setup completed succcessfully. Go to Job Runs to view the result.\n`);
+        }
+        else {
+            console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
+            process.exit(1);
+        }
+    }
+} catch (error) {
+    console.error(error);
+    process.exit(1);   
+}
+console.log(`progress_status:\n${progress_status}`);
+
 if (resp.id !== undefined) {
     console.log(`HANA demo dataset added successfully.`);
     var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
