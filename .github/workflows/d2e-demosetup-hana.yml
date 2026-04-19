@@ -15,7 +15,7 @@ on:
 env:
   VERSION: develop
   HDIPW: TestPW1234
-  HANASERVER: localhost
+  HANASERVER: hana
   HANASERVER_INT: hana
   HDIPORT: 39041
   HDIUSER: SYSTEM
