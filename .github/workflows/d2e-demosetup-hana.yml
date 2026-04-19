@@ -76,11 +76,6 @@ jobs:
           # timeout 10m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
           timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn init-e2e-testdb-hana
-
       - name: Check status of HANA containers
         run: |
           docker ps -a
@@ -97,6 +92,10 @@ jobs:
           export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
           echo "$resDataset"
 
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn init-e2e-testdb-hana
 
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
