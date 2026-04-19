@@ -1,38 +1,80 @@
-name: E2E tests HANA 2 (demosetup-hana)
-
+name: E2E Tests HANA 2
 permissions:
   contents: read
 
 on:
-  workflow_dispatch: # Allow manual triggering
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   merge_group:
   push:
     branches:
       - develop
-
-env:
-  VERSION: develop
-  HDIPW: TestPW1234
-  HANASERVER: hana
-  HANASERVER_INT: hana
-  HDIPORT: 39041
-  HDIUSER: SYSTEM
-  TESTSCHEMA: E2E_TEST_SCHEMA
+  workflow_dispatch:
 
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
-  demosetup:
-    needs: [pick_runner]
+  check_file_changes:
+    runs-on: ubuntu-latest
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    outputs:
+      changes: ${{ steps.file_changes.outputs.src }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: dorny/paths-filter@v3
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            src:
+              - "functions/_shared/alp-libs/nodejs/**"
+              - "functions/analytics-svc/**"
+              - "functions/bookmark-svc/**"
+              - "functions/cdw-svc/**"
+              - "functions/mri-pa-config/**"
+              - "functions/mri-pg-config/**"
+              - "functions/query-gen-svc/**"
+              - "services/mri-db/**"
+              - "services/alp-logto/**"
+              - "services/alp-pg-management/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "scripts/**"
+              - ".github/workflows/functions-http-tests-hana.yml"
+
+  run-http-tests:
+    needs: [pick_runner, check_file_changes]
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    timeout-minutes: 80
+    env:
+      TESTSCHEMA: HTTP_${{github.run_id}}
+      isTestEnv: "true"
+      isHttpTestRun: "true"
+      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HANASERVER_INT: hana
+      HDIPORT: 39041 # az-hn-db/DB Port
+      HDIPW: TestPW1234 # az-hn-db/Admin password
+      HDIUSER: SYSTEM # az-hn-db/Admin user
+      TESTPORT: 39041 # az-hn-db/DB Port
+      TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
+      PROJECT_NAME: alp
+      CADDY__CONFIG: ./deploy/caddy-config
+      ENV_TYPE: local
+      DOTENV_FILE: .env.local
+      D2E_RESOURCE_LIMIT: 1.0
+      HTTPTEST_DB_DIALECT: "hana"
+
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -46,13 +88,29 @@ jobs:
           android: true
           dotnet: true
           haskell: true
-          large-packages: false
+          large-packages: true
           docker-images: true
           swap-storage: true
 
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          clean: false
+
+      - name: Print env vars
+        run: |
+          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
+          echo "HDIPORT: ${HDIPORT}"
+          echo "HDIPW: ${HDIPW}"
+          echo "HDIUSER: ${HDIUSER}"
+          echo "HANASERVER: ${HANASERVER}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.20.4"
 
       - name: npm install
         if: success() || failure()
@@ -63,18 +121,25 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          ls -la
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
-        env:
-          init_choice: y
+          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
 
       - name: Initialise HANA
         if: success() || failure()
         id: inithana
         run: |
-          echo "HDIPW: ${HDIPW}"
-          # timeout 10m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
+
+      - name: Build system services
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
@@ -85,248 +150,252 @@ jobs:
         run: |
           docker network inspect alp > /dev/null || docker network create alp
 
-      - name: Check status of HANA containers
+      - name: Start system services
         run: |
-          docker ps -a
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          echo "Waiting 160 secs for services to start..."
+          sleep 160
+          echo "Trex Health check..."
+          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
 
-      - name: Check HANA
-        run: |
-          hanaContainerName=$(docker ps | grep hana | awk '{print $NF}')
-          if [ -z "$hanaContainerName" ]; then
-              echo "Error: HANA container not found"
-              exit 1
-          fi
-
-          export hanaContainerName
-          export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
-          echo "$resDataset"
-
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn init-e2e-testdb-hana
-
-      - uses: dorny/paths-filter@v3
-        id: flow_file_changes
-        with:
-          initial-fetch-depth: 1
-          filters: |
-            src:
-              - "flows/base/**"
-
-      - name: Build Flow base docker image
-        if: steps.flow_file_changes.outputs.src == 'true'
-        id: build_flow_base_image
-        run: |
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
-
-      - name: Build docker images
-        if: success() || failure()
-        id: pull
-        run: |
-          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions build
-          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
-
-      - name: Prune images
-        if: always()
-        id: prune
-        run: |
-          docker buildx prune -af
-
-      - name: Start services
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: start
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 2
-          retry_on: any
-          command: |
-            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions --hana start
-            DC_EXIT_CODE=$?
-            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
-            echo "DOCKER_STATUS_FILE=$DOCKER_STATUS_FILE" >> $GITHUB_ENV
-            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: Check status of docker containers
         run: |
           docker ps -a
 
-      - name: Log status
-        if: success() || failure()
+      - name: Setup Test DB
         run: |
-          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
-          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
-          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
-          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
-          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
-          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+          yarn --prefer-offline
+          yarn inittestdb-hana
 
-      - name: Logs
-        if: success() || failure()
+      - name: Login to logto and get Bearer token and sub
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+          # Get sign in page
+          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
+          printf "%s\n" "$response"
 
-      - name: Setupdemohana
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: setupdemo
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 1
-          retry_on: any
-          command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemohana
-            DC_EXIT_CODE=$?
-            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
-            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+          # Extract cookies
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
 
-      - name: View dataset details
+          # Sign in
+          response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
+              --header 'content-type: application/json' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --data '{
+              "event": "SignIn",
+              "identifier": {
+                  "username": "admin",
+                  "password": "Updatepassword12345"
+              }
+          }')
+          printf "%s\n" "$response"
+
+          # Submit sign in page
+          response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
+              --header 'accept: application/json' \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          # Get session
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+
+          # Submit consent page
+          response=$(curl -ik 'https://localhost:41100/consent' \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          # Get authorization code
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
+
+          # Complete login
+          response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          # Get Bearer token
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
+              --data-urlencode 'grant_type=authorization_code' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
+              --data-urlencode "code=$authorization_code" \
+              --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV # Make available to subsequent github actions steps
+
+          echo "BEARER TOKEN:"
+          echo $BEARER_TOKEN
+          # Get the idp sub
+
+          decode_base64_url() {
+              local len=$((${#1} % 4))
+              local result="$1"
+              if [ $len -eq 2 ]; then
+                  result="$1"'=='
+              elif [ $len -eq 3 ]; then
+                  result="$1"'='
+              fi
+              echo "$result" | tr '_-' '/+' | openssl enc -d -base64
+          }
+
+          decode_jwt() {
+              decode_base64_url $(echo -n $2 | cut -d "." -f $1)
+          }
+
+          DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
+          echo "DECODED TOKEN:"
+          echo $DECODED_TOKEN
+          export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
+          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV # Make available to subsequent github actions steps
+          echo "IDP SUB:"
+          echo $IDP_SUB
+
+          # Endpoint to update user management with idp user id
+          response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/no-access' \
+              --data-raw "{\"userId\":\"$IDP_SUB\"}")
+          printf "%s\n" "$response"
+          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
+          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
+          echo "USER_MGMT_ID:"
+          echo $USER_MGMT_ID
+
+      - name: Seed db credentials
         run: |
-          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
-          echo "$resDataset"
-          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
-          echo "$resDatasetDetail"
-          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
-          echo "$resTrexDB"
+          echo "Seed db credentials"
+          export ENCSALT=salt
+          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
+          echo $ENCRYPTED_CREDS
+          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
+          curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/d2e/trex/db/' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header 'accept: application/json, text/plain, */*' \
+              --header 'Content-Type: application/json' \
+              --header "authorization: Bearer $BEARER_TOKEN" \
+              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
 
-      - name: Logs
-        if: success() || failure()
+
+      - name: Seed dummy dataset
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
+          ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
 
-      - name: Checkflow
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: checkflow
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 1
-          retry_on: any
-          command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
-            DC_EXIT_CODE=$?
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
+          ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
-      - name: UI Setup bun
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
-
-      - name: UI Build
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
-        working-directory: ./ui
-        env:
-          CI: false
+      # Restart is required for alp-trex container after seeding database credentials into the db table
+      - name: Restart alp-trex service
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl file git
-          bun install
-          bun build-all
-          UI_BUILD_EXIT_CODE=$?
-          [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
+          docker container restart alp-trex
+          echo "Waiting 120 secs for alp-trex to restart..."
+          sleep 120
+          # Health check
+          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
 
-      - name: UI docker-compose-local
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+      - name: Assign and verify researcher assigned to user
         run: |
-          sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-      - name: Flow base docker-compose-local
-        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' }}
+          curl --max-time 100 --fail -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
+              --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
+
+          curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
+          -H 'accept: application/json, text/plain, */*' \
+          -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
+          -H 'content-type: application/json' \
+          -H 'origin: https://localhost:41100' \
+          -H "authorization: Bearer $BEARER_TOKEN"
+
+      - name: Install dependencies in backend integration tests
         run: |
-          sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
+          cd ./tests/backend_integration_tests/hana
+          yarn
 
-      - name: Restart d2e services
-        if: success() || failure()
+      - name: Run HTTP tests
+        working-directory: ./tests/backend_integration_tests/hana
+        run: yarn test-specs --test_schema_name=$TESTSCHEMA
+
+      - name: print logs for alp-dataflow-gen-1
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
-
-      - name: Wait for d2e-ui plugin to be installed
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+          docker logs alp-dataflow-gen-1 -t
+      - name: print logs for alp-dataflow-gen-worker
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          echo "Waiting for d2e-ui plugin to be installed..."
-          max_attempts=60
-          attempt=0
-          start_time=$(date +%s)
-          while [ $attempt -lt $max_attempts ]; do
-            # Check if plugin resources directory exists and has files
-            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
-              end_time=$(date +%s)
-              elapsed=$((end_time - start_time))
-              echo "d2e-ui plugin is ready (took ${elapsed}s)"
-              break
-            fi
-            attempt=$((attempt + 1))
-            echo "  Attempt $attempt/$max_attempts: waiting..."
-            sleep 2
-          done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "Timeout waiting for d2e-ui plugin to be installed"
-            exit 1
-          fi
-
-      - name: UI Mounting build
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+          docker logs alp-dataflow-gen-worker -t
+      - name: print logs for alp-logto-1
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-
-      - name: Build e2e Docker image
+          docker logs alp-logto-1 -t
+      - name: print logs for alp-minerva-postgres-1
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          cd ./tests/e2e/hana
-          docker build -t d2e-e2e .
-
-      - name: Verify app is reachable
+          docker logs alp-minerva-postgres-1 -t
+      - name: print logs for alp-supabase-storage-1
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
-          curl -k -I https://localhost:443/d2e/portal || true
-
-      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
-        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
-
-      - name: e2e tests
+          docker logs alp-supabase-storage-1 -t
+      - name: print logs for trex
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          cd ./tests/e2e/hana
-          docker run --rm \
-            --network=host \
-            --ipc=host \
-            -v "$(pwd)/test-results:/work/test-results" \
-            -v "$(pwd)/ctrf:/work/ctrf" \
-            -e D2E_BASE_URL=https://localhost:443 \
-            -e CI=true \
-            -e GITHUB_ACTIONS=true \
-            d2e-e2e npm test
-
-      - name: Upload Error Context
-        if: always() # Always run, even if the previous step fails
-        uses: actions/upload-artifact@v4
-        with:
-          name: error-context
-          path: tests/e2e/hana/test-results/**/*
-
-      - name: Logs
-        if: success() || failure()
+          docker logs alp-trex -t
+      - name: print logs for alp-minerva-pg-mgmt-init-1
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
-
-      - name: Publish Test Report
-        if: always()
-        uses: ctrf-io/github-test-reporter@v1
-        with:
-          report-path: "./tests/e2e/hana/ctrf/*.json"
-          file-report: true
-
-      - name: Stop d2e services
-        if: success() || failure()
-        id: stop
+          docker logs alp-minerva-pg-mgmt-init-1 -t
+      - name: print logs for alp-logto-post-init
+        if: ${{ always() || cancelled() || failure() }}
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          docker logs alp-logto-post-init-1 -t
+      - name: print logs for hana
+        if: ${{ always() || cancelled() || failure() }}
+        run: |
+          docker logs hana -t
+
+      - name: Remove Test DB
+        if: ${{ always() || cancelled() || failure() }}
+        run: yarn removetestdb-hana
 
       - name: Prune system
         if: always()
