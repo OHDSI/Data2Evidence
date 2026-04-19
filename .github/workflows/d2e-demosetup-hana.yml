@@ -62,6 +62,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
+          ls -l
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
         env:
           init_choice: y
