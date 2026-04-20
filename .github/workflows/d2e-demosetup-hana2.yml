@@ -166,7 +166,7 @@ jobs:
       - name: Setup Test DB
         run: |
           yarn --prefer-offline
-          yarn inittestdb-hana
+          yarn init-e2e-testdb-hana
 
       # - name: Login to logto and get Bearer token and sub
       #   run: |
