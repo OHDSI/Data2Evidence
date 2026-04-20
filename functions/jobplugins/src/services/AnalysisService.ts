@@ -72,22 +72,7 @@ export class AnalysisService {
     let version = 1;
     const { comment, ...flow } = analysisflowDto.dataflow;
 
-    const existingCanvasQuery = await this.canvasRepo
-      .createQueryBuilder("canvas")
-      .select(["canvas.id"])
-      .where("canvas.type = :type", { type: "analysis-flow" })
-      .andWhere("LOWER(canvas.name) = LOWER(:name)", {
-        name: analysisflowDto.name,
-      });
-
-    
-    if (analysisflowDto.id) {
-      existingCanvasQuery.andWhere("canvas.id != :id", {
-        id: analysisflowDto.id,
-      });
-    }
-
-    if (existingCanvasQuery) {
+    if (await this.checkAnalysisflowNameExists(analysisflowDto.name, analysisflowDto.id || undefined)) {
       throw new Error(`Analysis flow with name '${analysisflowDto.name}' already exists`);
     }
 
@@ -128,6 +113,21 @@ export class AnalysisService {
       revisionId: revisionEntity.id,
       version: revisionEntity.version,
     };
+  }
+
+  async checkAnalysisflowNameExists(name: string, excludeId?: string | undefined): Promise<boolean> {
+    const existingCanvasQuery = this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select("canvas.id")
+      .where("canvas.type = :type", { type: "analysis-flow" })
+      .andWhere("LOWER(canvas.name) = LOWER(:name)", { name });
+
+    if (excludeId) {
+      existingCanvasQuery.andWhere("canvas.id != :id", { id: excludeId });
+    }
+
+    const existingCanvas = await existingCanvasQuery.getOne();
+    return !!existingCanvas;
   }
 
   async deleteAnalysisflow(id: string) {
