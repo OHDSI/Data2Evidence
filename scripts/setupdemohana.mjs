@@ -185,7 +185,6 @@ var response = await fetch(url, {
 });
 const tokenResponse = await response.json();
 const BEARER_TOKEN = tokenResponse.access_token;
-console.log(`BEARER_TOKEN:\n${BEARER_TOKEN}`);
 
 
 async function createCredentials (password, public_key) {
@@ -287,7 +286,7 @@ console.log(`Adding hana dataset...`);
 let encryptionKeysObjDataset = {
     tenantId: "e0348e4d-2e17-43f2-a3c6-efd752d17c23",
     detail: {
-        "name": "Demo dataset",
+        "name": "Demo dataset HANA",
         "summary": "",
         "description": "",
         "showRequestAccess": false
@@ -324,47 +323,6 @@ var response = await fetch(url, {
 });
 
 var resp = await response.json();
-console.log(`After dataset creation:\n${JSON.stringify(resp)}`);
-
-var progress_status = "inprogress";
-const progress_id = resp.flowRunId;
-
-try {
-    while (progress_status == "inprogress") {
-        var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/demo/progress/${progress_id}`;
-        var response = await fetch(url, {
-            method: "GET",
-            headers: {
-                "content-type": "application/x-www-form-urlencoded",
-                "Authorization": `Bearer ${BEARER_TOKEN}`
-            },
-            agent: insecureAgent
-        });
-        const resp = await response.json();
-        console.log(`Check progress resp:\n${JSON.stringify(resp)}`);
-
-        for (const step of resp.steps) {
-            console.log(`${step.step ?? 'N/A'}. ${step.message}. Status: ${step.status}`);
-        }
-        progress_status = resp.status;
-        console.log(`progress_status: ${progress_status}\n`);
-        if (progress_status == "inprogress") {
-            console.log(`Setup in progress...`);
-            await new Promise(resolve => setTimeout(resolve, 15000));
-        } else if (progress_status == "completed") {
-            console.log(`Setup completed succcessfully. Go to Job Runs to view the result.\n`);
-        }
-        else {
-            console.log(`Setup unsuccessful. progress_status: ${progress_status}`);
-            process.exit(1);
-        }
-    }
-} catch (error) {
-    console.error(error);
-    process.exit(1);   
-}
-console.log(`progress_status:\n${progress_status}`);
-
 if (resp.id !== undefined) {
     console.log(`HANA demo dataset added successfully.`);
     var url = `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/system-portal/dataset/list/systemadmin`;
@@ -381,7 +339,7 @@ if (resp.id !== undefined) {
         var data = resp[i];
         var databaseName = data['databaseName'];
         var studyName = data['studyDetail']['name'];
-        if (databaseName == "demo_database_hana" && studyName == "Demo dataset") {
+        if (databaseName == "demo_database_hana" && studyName == "Demo dataset HANA") {
             var studyId = data['id'];
             var tenantId = data['tenant']['id'];
         }
