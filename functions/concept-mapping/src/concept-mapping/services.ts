@@ -1,61 +1,101 @@
-import pako from "pako";
-import DAO from "./dao/dao";
-import { DatabaseConfig, Dataset } from "../types";
+import { convertZlibBase64ToJson } from "../../../_shared/alp-base-utils/src/utils";
 import {
   SOURCE_TO_CONCEPT_MAP_TABLE,
   SOURCE_TO_CONCEPT_MAP_COLUMNS,
 } from "../constants";
-import { PortalAPI } from "../api/PortalAPI";
-import { convertZlibBase64ToJson } from "../../../_shared/alp-base-utils/src/utils";
 
-const convert = (stringToConvert: string) =>
-  btoa(pako.deflate(stringToConvert, { to: "string" }));
+class TrexConnection {
+  private readonly conn: any;
+
+  constructor(databaseCode: string, schemaName: string) {
+    try {
+      // @ts-ignore Cannot find name 'Trex'
+      const dbm = Trex.databaseManager();
+      this.conn = dbm.getConnection(
+        databaseCode,
+        schemaName,
+        schemaName,
+        schemaName,
+        { duckdb: (e: unknown) => e }
+      );
+    } catch (err) {
+      console.error("Error getting trex connection, ", err);
+      throw err;
+    }
+  }
+
+  async query(sql: string, params: any[] = []): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.conn.execute(
+        sql,
+        params.map((e) => ({ value: e })),
+        (err: any, res: any) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve({ rows: res, rowCount: res.length ?? 0 });
+        }
+      );
+    });
+  }
+
+  async end() {
+    this.conn.close();
+  }
+}
 
 export const getSourceToConceptMappings = async (
-  user: string,
-  datasetId: string
+  databaseCode: string,
+  schemaName: string
 ) => {
+  const client = new TrexConnection(databaseCode, schemaName);
   try {
-    const dataset: Dataset = await new PortalAPI(user).getDataset(datasetId);
-    const client = new DAO(user, dataset);
-
-    return await client.getAllRecords(SOURCE_TO_CONCEPT_MAP_TABLE);
+    const sql = `SELECT * FROM ${schemaName}.${SOURCE_TO_CONCEPT_MAP_TABLE}`;
+    const result = await client.query(sql);
+    return result.rows;
   } catch (error) {
-    throw new Error(`Failed to retrieve source to concept mappings:s ${Error}`);
+    console.error(error);
+    throw new Error("Failed to retrieve source to concept mappings");
+  } finally {
+    await client.end();
   }
 };
 
 export const saveSourceToConceptMappings = async (
-  user: string,
-  datasetId: string,
-  dialect: string,
+  databaseCode: string,
+  schemaName: string,
   sourceVocabularyId: string,
   conceptMappings: string
 ) => {
+  const client = new TrexConnection(databaseCode, schemaName);
   try {
-    const dataset: Dataset = await new PortalAPI(user).getDataset(datasetId);
-
-    const client = new DAO(user, dataset);
-
-    const parsedConceptMappings = convertZlibBase64ToJson(conceptMappings).map(
-      (mapping) => {
-        return {
-          ...mapping,
-          source_vocabulary_id: sourceVocabularyId,
-        };
-      }
+    const parsedMappings = convertZlibBase64ToJson(conceptMappings).map(
+      (mapping) => ({
+        ...mapping,
+        source_vocabulary_id: sourceVocabularyId,
+      })
     );
 
-    const result = await client.insertRecords(
-      SOURCE_TO_CONCEPT_MAP_TABLE,
-      SOURCE_TO_CONCEPT_MAP_COLUMNS,
-      parsedConceptMappings
+    const columns = SOURCE_TO_CONCEPT_MAP_COLUMNS;
+    const valuePlaceholders = parsedMappings
+      .map(() => {
+        const rowParams = columns.map(() => `?`);
+        return `(${rowParams.join(", ")})`;
+      })
+      .join(", ");
+
+    const sql = `INSERT INTO ${schemaName}.${SOURCE_TO_CONCEPT_MAP_TABLE} (${columns.join(", ")}) VALUES ${valuePlaceholders}`;
+
+    const params = parsedMappings.flatMap((row: any) =>
+      columns.map((col) => row[col] ?? null)
     );
 
+    const result = await client.query(sql, params);
     return result.rowCount;
   } catch (error) {
-    throw new Error(
-      `Failed to save source to concept mappings for ${dialect}|${datasetId}: ${Error}`
-    );
+    console.error(error);
+    throw new Error("Failed to save source to concept mappings");
+  } finally {
+    await client.end();
   }
 };

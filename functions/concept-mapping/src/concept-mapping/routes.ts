@@ -27,12 +27,11 @@ export class ConceptMappingRouter {
         }
 
         try {
-          const user = req.headers["authorization"]!;
-          const { datasetId } = matchedData(req, {
+          const { databaseCode, schemaName } = matchedData(req, {
             locations: ["query"],
           });
 
-          const response = await getSourceToConceptMappings(user, datasetId);
+          const response = await getSourceToConceptMappings(databaseCode, schemaName);
           res.status(200).json(response);
         } catch (error) {
           res.status(500).send(error);
@@ -52,8 +51,7 @@ export class ConceptMappingRouter {
         }
 
         try {
-          const user = req.headers["authorization"]!;
-          const { datasetId, dialect } = matchedData(req, {
+          const { databaseCode, schemaName } = matchedData(req, {
             locations: ["query"],
           });
           const { conceptMappings, sourceVocabularyId } = matchedData(req, {
@@ -61,16 +59,15 @@ export class ConceptMappingRouter {
           });
 
           const rows = await saveSourceToConceptMappings(
-            user,
-            datasetId,
-            dialect,
+            databaseCode,
+            schemaName,
             sourceVocabularyId,
             conceptMappings
           );
 
           res
             .status(200)
-            .send(`Inserted ${rows} rows to ${dialect}|${datasetId}`);
+            .send(`Inserted ${rows} rows to ${databaseCode}`);
         } catch (error) {
           res.status(500).send(error);
         }
