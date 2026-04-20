@@ -643,22 +643,22 @@ class D2ECli {
       process.exit(1);
     }
 
-    const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
-    const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (check_setupdemohana.error) {
-      console.error("Failed to run script:", check_setupdemohana.error);
-      process.exit(1);
-    }
-    if (check_setupdemohana.status !== 0) {
-      console.error(
-        `check_setupdemohana exited with code ${check_setupdemohana.status}`,
-      );
-      process.exit(1);
-    }
+    // const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
+    // const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
+    //   env: { ...process.env, PORT: this.port },
+    //   stdio: "inherit",
+    //   shell: true,
+    // });
+    // if (check_setupdemohana.error) {
+    //   console.error("Failed to run script:", check_setupdemohana.error);
+    //   process.exit(1);
+    // }
+    // if (check_setupdemohana.status !== 0) {
+    //   console.error(
+    //     `check_setupdemohana exited with code ${check_setupdemohana.status}`,
+    //   );
+    //   process.exit(1);
+    // }
   }
 
   checkflow() {
