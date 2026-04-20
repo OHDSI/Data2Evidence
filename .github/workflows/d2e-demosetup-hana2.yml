@@ -315,7 +315,7 @@ jobs:
           fi
 
       - name: UI Mounting build
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
