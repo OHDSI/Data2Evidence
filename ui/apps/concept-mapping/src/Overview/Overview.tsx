@@ -1,6 +1,8 @@
 import React, { FC, useState, useContext, useCallback, useEffect } from "react";
+import pako from "pako";
 import { useDatasets, useDialogHelper, useFeedback } from "../hooks";
-import { Snackbar } from "@portal/components";
+import { Snackbar, Button } from "@portal/components";
+import { api } from "../axios/api";
 import { CsvReader } from "../components/CsvReader/CsvReader";
 import { ImportDialog } from "../components/ImportDialog/ImportDialog";
 import { MappingTable } from "../components/MappingTable/MappingTable";
@@ -8,7 +10,7 @@ import { MappingDrawer } from "../components/MappingDrawer/MappingDrawer";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { useTranslation } from "../hooks/use-translation";
-import { ConceptMappingState, csvData } from "../types";
+import { ConceptMappingState, csvData, Study } from "../types";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { i18nKeys } from "../Context/state";
 import "./Overview.scss";
@@ -24,7 +26,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
   const [datasets] = useDatasets();
-  const { clearFeedback, getFeedback } = useFeedback();
+  const { setFeedback, clearFeedback, getFeedback } = useFeedback();
   const feedback = getFeedback();
 
   useEffect(() => {
@@ -39,7 +41,9 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
 
   // local states
   const [loading, setLoading] = useState(false);
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string>();
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedDataset, setSelectedDataset] = useState<Study>();
+  const selectedDatasetId = selectedDataset?.id;
   const [showImportDialog, openImportDialog, closeImportDialog] = useDialogHelper(false);
 
   useEffect(() => {
@@ -54,8 +58,15 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
 
   useEffect(() => {
     const { columnMapping, csvData } = conceptMappingState;
-    typeof onChange === "function" && onChange({ columnMapping, csvData });
-  }, [onChange, conceptMappingState]);
+    typeof onChange === "function" &&
+      onChange({
+        columnMapping,
+        csvData,
+        databaseCode: selectedDataset?.databaseCode,
+        schemaName: selectedDataset?.schemaName,
+        sourceVocabularyId: csvData.name,
+      });
+  }, [onChange, conceptMappingState, selectedDataset]);
 
   const handleCloseImportDialog = useCallback(() => {
     closeImportDialog();
@@ -69,12 +80,59 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
     [dispatch, openImportDialog]
   );
 
-  useEffect(() => {
-    if (!datasets || selectedDatasetId) return;
-    if (datasets?.[0]?.id) {
-      setSelectedDatasetId(datasets[0].id);
+  const handleSave = useCallback(async () => {
+    const databaseCode = selectedDataset?.databaseCode;
+    const schemaName = selectedDataset?.schemaName;
+    const csvData = conceptMappingState.csvData;
+
+    if (!databaseCode || !schemaName || !csvData?.data?.length) return;
+
+    setIsSaving(true);
+    try {
+      const { sourceCode, sourceName } = conceptMappingState.columnMapping;
+      const toISODate = (val: unknown): string => {
+        if (!val) return "";
+        const d = val instanceof Date ? val : new Date(String(val));
+        if (isNaN(d.getTime())) return "";
+        return d.toISOString().slice(0, 10);
+      };
+
+      const mappings = csvData.data
+        .filter((d) => d.status === "checked")
+        .map((row) => ({
+          source_code: row[sourceCode] ?? "",
+          source_concept_id: 0,
+          source_code_description: row[sourceName] ?? "",
+          target_concept_id: row.conceptId ?? 0,
+          target_vocabulary_id: row.system ?? "",
+          valid_start_date: toISODate(row.validStartDate),
+          valid_end_date: toISODate(row.validEndDate),
+          invalid_reason: row.validity ?? "",
+        }));
+
+      const encoded = window.btoa(pako.deflate(JSON.stringify(mappings), { to: "string" }));
+      await api.conceptMapping.saveConceptMappings(databaseCode, schemaName, csvData.name || "", encoded);
+      setFeedback({
+        type: "success",
+        message: `Saved to ${databaseCode}`,
+        autoClose: 3000,
+      });
+    } catch {
+      setFeedback({
+        type: "error",
+        message: "Failed to save concept mappings",
+      });
+    } finally {
+      setIsSaving(false);
     }
-  }, [datasets, selectedDatasetId]);
+  }, [selectedDataset, conceptMappingState.csvData, conceptMappingState.columnMapping, setFeedback]);
+
+  useEffect(() => {
+    if (!datasets || selectedDataset) return;
+    if (datasets?.[0]) {
+      setSelectedDataset(datasets[0]);
+    }
+  }, [datasets, selectedDataset]);
 
   if (!selectedDatasetId) {
     return null;
@@ -93,9 +151,10 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
         <div style={{ marginRight: "10px" }}>{getText(i18nKeys.OVERVIEW__REFERENCE_CONCEPTS)}: </div>
         <FormControl sx={{ marginRight: "20px" }}>
           <Select
-            value={selectedDatasetId}
+            value={selectedDatasetId ?? ""}
             onChange={(e: SelectChangeEvent) => {
-              setSelectedDatasetId(e.target.value);
+              const dataset = datasets?.find((d) => d.id === e.target.value);
+              if (dataset) setSelectedDataset(dataset);
             }}
             sx={{ "& .MuiSelect-outlined": { paddingTop: "8px", paddingBottom: "8px" } }}
           >
@@ -106,6 +165,16 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
             ))}
           </Select>
         </FormControl>
+        <Button
+          text="Save to Database"
+          onClick={handleSave}
+          loading={isSaving}
+          disabled={
+            !selectedDataset?.databaseCode ||
+            !selectedDataset?.schemaName ||
+            conceptMappingState.csvData.data.length === 0
+          }
+        />
       </div>
 
       <div className="testing">

@@ -12,16 +12,17 @@ export class ConceptMapping {
     });
   };
 
-  public saveConceptMappings = (datasetId: string, sourceVocabularyId: string, conceptMappings: string) => {
+  public saveConceptMappings = (databaseCode: string, schemaName: string, sourceVocabularyId: string, conceptMappings: string) => {
     return request({
       baseURL: CONCEPT_MAPPING_URL,
       method: "POST",
       params: {
-        datasetId: datasetId,
+        databaseCode,
+        schemaName,
       },
       data: {
-        sourceVocabularyId: sourceVocabularyId,
-        conceptMappings: conceptMappings,
+        sourceVocabularyId,
+        conceptMappings,
       },
     });
   };
