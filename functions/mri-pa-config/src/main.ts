@@ -3,20 +3,16 @@ import {
   DBConnectionUtil as dbConnectionUtil,
   Logger,
   healthCheckMiddleware,
-  Constants,
   User,
   Connection,
   getUser,
   utils,
-  QueryObject as qo,
 } from "@alp/alp-base-utils";
-
-const QueryObject = qo.QueryObject;
 import * as xsenv from "@sap/xsenv";
 import express from "express";
 import { MRIConfig } from "./config/config";
 import { ConfigFacade as MriConfigFacade } from "./config/ConfigFacade";
-import { IRequest, IDBCredentialsType } from "./types";
+import { IDBCredentialsType } from "./types";
 import { configDefaultValues } from "../cfg/pa/configDefaultValues.ts"
 import https from "https";
 import fs from "node:fs";
@@ -52,6 +48,24 @@ const getConnections = async ({
   };
 };
 
+const invokeConfigFacade = async ({
+  facade,
+  request,
+}: {
+  facade: MriConfigFacade;
+  request: Record<string, unknown>;
+}) => {
+  return await new Promise<any>((resolve, reject) => {
+    facade.invokeService(request, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+};
+
 function initRoutes() {
   app.use(express.json({ strict: false, limit: "50mb" }));
   app.use(express.urlencoded({ extended: true, limit: "50mb" }));
@@ -60,7 +74,7 @@ function initRoutes() {
     log.addRequestCorrelationID(req);
     next();
   });
-  app.use(async (req: IRequest, res, next) => {
+  app.use(async (req: any, res, next) => {
     if (!utils.isHealthProbesReq(req)) {
       let userObj: User;
       try {
@@ -93,7 +107,7 @@ function initRoutes() {
     }
   });
 
-  app.use("/pa-config-svc/services/config.xsjs", (req: IRequest, res) => {
+  app.use("/pa-config-svc/services/config.xsjs", (req: any, res) => {
     // get user from request
     const user = getUser(req);
     const language = user.lang;
@@ -138,7 +152,7 @@ function initRoutes() {
     });
   });
 
-  app.use("/pa-config-svc/enduser", (req: IRequest, res) => {
+  app.use("/pa-config-svc/enduser", (req: any, res) => {
     // get user from request
     const user = getUser(req);
     const language = user.lang;
@@ -186,139 +200,8 @@ function initRoutes() {
     });
   });
 
-  app.use("/pa-config-svc/db", (req: IRequest, res) => {
+  app.use("/pa-config-svc/db", (req: any, res) => {
     res.json(configDefaultValues)
-  });
-
-  // Wizards config endpoints
-  const WIZARDS_CONFIG_ID = "wizards-config";
-  const WIZARDS_CONFIG_VERSION = "1";
-  const WIZARDS_CONFIG_TYPE = "WIZARDS";
-
-  app.get("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const { db } = req.dbConnections;
-
-    const query = QueryObject.format(
-      `SELECT "Data" FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
-    );
-
-    query.executeQuery(db, (err, result) => {
-      if (err) {
-        log.error("Error fetching wizards config:", err);
-        return res.status(500).json({ error: "Failed to fetch wizards config" });
-      }
-
-      if (!result || !result.data || result.data.length === 0) {
-        return res.status(200).json({ wizards: [] });
-      }
-
-      try {
-        const data = JSON.parse(result.data[0].Data);
-        return res.status(200).json(data);
-      } catch (parseErr) {
-        log.error("Error parsing wizards config:", parseErr);
-        return res.status(500).json({ error: "Failed to parse wizards config" });
-      }
-    });
-  });
-
-  app.put("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const user = getUser(req);
-    const { db } = req.dbConnections;
-    const configData = req.body;
-
-    if (!configData || !configData.wizards) {
-      return res.status(400).json({ error: "Invalid config format. Expected { wizards: [...] }" });
-    }
-
-    const dataJson = JSON.stringify(configData);
-    const username = user.getUser();
-    const now = new Date();
-
-    // Check if config exists
-    const checkQuery = QueryObject.format(
-      `SELECT "Id" FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
-    );
-
-    checkQuery.executeQuery(db, (err, result) => {
-      if (err) {
-        log.error("Error checking existing config:", err);
-        return res.status(500).json({ error: "Failed to check existing config" });
-      }
-
-      const exists = result && result.data && result.data.length > 0;
-
-      if (exists) {
-        const updateQuery = QueryObject.format(
-          `UPDATE "ConfigDbModels_Config" SET "Data" = %s, "Modifier" = %s, "Modified" = %t WHERE "Id" = %s AND "Version" = %s`,
-          dataJson,
-          username,
-          now,
-          WIZARDS_CONFIG_ID,
-          WIZARDS_CONFIG_VERSION
-        );
-
-        updateQuery.executeUpdate(db, (updateErr) => {
-          if (updateErr) {
-            log.error("Error updating wizards config:", updateErr);
-            return res.status(500).json({ error: "Failed to update wizards config" });
-          }
-          db.commit();
-          return res.status(200).json({ success: true, message: "Config updated" });
-        });
-      } else {
-        const insertQuery = QueryObject.format(
-          `INSERT INTO "ConfigDbModels_Config" ("Id", "Version", "Status", "Name", "Type", "Creator", "Created", "Modifier", "Modified", "Data") VALUES (%s, %s, %s, %s, %s, %s, %t, %s, %t, %s)`,
-          WIZARDS_CONFIG_ID,
-          WIZARDS_CONFIG_VERSION,
-          "A",
-          "Wizards Configuration",
-          WIZARDS_CONFIG_TYPE,
-          username,
-          now,
-          username,
-          now,
-          dataJson
-        );
-
-        insertQuery.executeUpdate(db, (insertErr) => {
-          if (insertErr) {
-            log.error("Error inserting wizards config:", insertErr);
-            return res.status(500).json({ error: "Failed to create wizards config" });
-          }
-          db.commit();
-          return res.status(201).json({ success: true, message: "Config created" });
-        });
-      }
-    });
-  });
-
-  app.delete("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const { db } = req.dbConnections;
-
-    const deleteQuery = QueryObject.format(
-      `DELETE FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
-    );
-
-    deleteQuery.executeUpdate(db, (err, linesEffected) => {
-      if (err) {
-        log.error("Error deleting wizards config:", err);
-        return res.status(500).json({ error: "Failed to delete wizards config" });
-      }
-      db.commit();
-
-      if (linesEffected === 0) {
-        return res.status(404).json({ error: "Config not found" });
-      }
-
-      return res.status(200).json({ success: true, message: "Config deleted" });
-    });
   });
 
   app.use((err, req, res, next) => {

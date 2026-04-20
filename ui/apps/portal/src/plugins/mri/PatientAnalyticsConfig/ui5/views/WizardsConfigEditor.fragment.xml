@@ -8,7 +8,7 @@
             </VBox>
         </content>
         <beginButton>
-            <Button text="{i18n>MRI_PA_CFG_BUTTON_SAVE}" press="onSaveWizardsConfig" />
+            <Button text="{i18n>MRI_PA_CFG_BUTTON_APPLY}" press="onSaveWizardsConfig" />
         </beginButton>
         <endButton>
             <Button text="{i18n>MRI_PA_CFG_BUTTON_CANCEL}" press="onCancelWizardsConfig" />

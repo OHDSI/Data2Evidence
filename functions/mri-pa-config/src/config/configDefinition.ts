@@ -811,6 +811,13 @@ function _getValidDefinition(cdwConfig) {
         ],
     };
 
+    const wizardsConfig = {
+        name: "wizardsConfig",
+        type: "object",
+        strict: false,
+        mandatory: false,
+    };
+
     const validDefinition = {
         type: "object",
         strict: true,
@@ -825,6 +832,7 @@ function _getValidDefinition(cdwConfig) {
             chartOptions,
             panelOptions,
             configInformations,
+            wizardsConfig,
             {
                 name: "pageTitle",
                 type: "string",
