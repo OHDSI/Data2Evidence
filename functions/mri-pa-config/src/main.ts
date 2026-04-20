@@ -16,6 +16,7 @@ import { IDBCredentialsType, IRequest } from "./types";
 import { configDefaultValues } from "../cfg/pa/configDefaultValues.ts"
 import https from "https";
 import fs from "node:fs";
+declare const Trex: any;
 const log = Logger.CreateLogger("mri-config-log");
 
 let credentials;
@@ -202,6 +203,95 @@ function initRoutes() {
 
   app.use("/pa-config-svc/db", (req: IRequest, res) => {
     res.json(configDefaultValues)
+  });
+
+  const getDatasetPaConfigId = async ({
+    datasetId,
+    authToken,
+  }: {
+    datasetId: string;
+    authToken?: string;
+  }): Promise<string | null> => {
+    const portalBaseUrl = env.SERVICE_ROUTES?.portalServer;
+    if (!portalBaseUrl) {
+      throw new Error("Portal Server URL is not configured");
+    }
+
+    const portalApi = Trex.tokioChannel("d2e-functions/portal");
+    const url = `${portalBaseUrl}/dataset?datasetId=${encodeURIComponent(datasetId)}`;
+    const options = authToken
+      ? {
+          headers: {
+            Authorization: authToken,
+          },
+        }
+      : undefined;
+
+    const result = await portalApi.get(url, options);
+    const dataset = result?.data;
+    if (!dataset) {
+      return null;
+    }
+
+    return dataset.paConfigId || dataset.pa_config_id || null;
+  };
+
+  app.get("/pa-config-svc/wizards/config", (req: IRequest, res) => {
+    const reqAny = req as any;
+    const user = getUser(reqAny);
+    const language = user.lang;
+    const datasetId = (reqAny.query?.datasetId || "").toString().trim();
+
+    if (!datasetId) {
+      return res.status(400).json({ error: "datasetId is required" });
+    }
+
+    const mriConfig = new MRIConfig(
+      req.dbConnections.db,
+      user,
+      fs,
+      reqAny.headers?.authorization,
+    );
+
+    const facade = new MriConfigFacade(
+      req.dbConnections.db,
+      mriConfig,
+      isTestEnvironment,
+      fs,
+    );
+
+    getDatasetPaConfigId({ datasetId, authToken: reqAny.headers?.authorization })
+      .then((paConfigId) => {
+        if (!paConfigId) {
+          return res.status(200).json({ wizards: [] });
+        }
+
+        facade.invokeService(
+          {
+            action: "getConfig",
+            configId: paConfigId,
+            configVersion: "A",
+            language,
+          },
+          (getErr, configResult) => {
+            if (getErr) {
+              log.enrichErrorWithRequestCorrelationID(getErr, reqAny);
+              log.error(getErr);
+              return res.status(500).json({ error: "Failed to fetch wizards config" });
+            }
+
+            const wizards = configResult?.config?.wizardsConfig?.wizards;
+            return res.status(200).json({
+              wizards: Array.isArray(wizards) ? wizards : [],
+            });
+          },
+        );
+      })
+      .catch((err) => {
+        log.enrichErrorWithRequestCorrelationID(err, reqAny);
+        log.error(err);
+        return res.status(500).json({ error: "Failed to resolve dataset PA config" });
+      });
   });
 
   app.use((err, req, res, next) => {
