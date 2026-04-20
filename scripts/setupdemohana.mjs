@@ -43,7 +43,12 @@ let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP_
 let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
 let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
 const insecureAgent = new https.Agent({ rejectUnauthorized: false });
-const HANA_SYSTEM_PASSWORD = process.env.HANA_SYSTEM_PASSWORD;
+const HANA_SYSTEM_PASSWORD = process.env.HDIPW;
+const TESTSCHEMA = process.env.TESTSCHEMA;
+
+console.log(`HANA_SYSTEM_PASSWORD:${HANA_SYSTEM_PASSWORD}`)
+console.log(`TESTSCHEMA:${TESTSCHEMA}`)
+
 
 var url= `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
 var response = await fetch(url, {
@@ -220,13 +225,13 @@ const encryptionKeysObjDb = {
     extra: {
     "Internal": {
         "Internal": {
-            "schema": "CDMSYNPUF5PCT",
+            "schema": TESTSCHEMA,
             "useTLS": false,
             "encrypt": false,
             "pooling": true,
             "autoCommit": true,
             "probeSchema": "TEST",
-            "vocabSchema": "TEST",
+            "vocabSchema": TESTSCHEMA,
             "enableAuditPolicies": true,
             "validateCertificate": false,
             "hostnameInCertificate": "hana"
@@ -250,7 +255,7 @@ const encryptionKeysObjDb = {
             "serviceScope": "Internal"
         }
     ],
-    vocabSchemas: ["CDMVOCAB"],
+    vocabSchemas: [TESTSCHEMA],
     publications: [],
     DataPlatform: "",
     Internal: public_key,
@@ -294,9 +299,9 @@ let encryptionKeysObjDataset = {
     type: "hana__omop",
     tokenStudyCode: "demohana",
     schemaOption: "create_cdm",
-    cdmSchemaValue: "",
-    vocabSchemaValue: "",
-    resultsSchemaValue: "cdmdemohana",
+    cdmSchemaValue: TESTSCHEMA,
+    vocabSchemaValue: TESTSCHEMA,
+    resultsSchemaValue: TESTSCHEMA,
     dataModel: "omop5-3",
     plugin: "hana_load_plugin",
     databaseCode: "demo_database_hana",
