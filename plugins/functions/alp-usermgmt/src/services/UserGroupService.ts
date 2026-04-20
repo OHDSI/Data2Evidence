@@ -376,8 +376,11 @@ export class UserGroupService {
       }
     }
 
+    const user = await this.userService.getUserByIdpUserId(idpUserId)
+    const userId = user?.id || idpUserId
+
     return {
-      userId: idpUserId,
+      userId,
       groups,
       alpRoleMap: {
         ALP_USER_ADMIN: roleMap.alp_role_user_admin,
