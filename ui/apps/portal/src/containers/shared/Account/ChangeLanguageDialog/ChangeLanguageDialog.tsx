@@ -16,6 +16,7 @@ const SUPPORTED_LANGUAGES = [
   { name: "English", value: "default" },
   { name: "Deutsch", value: "de" },
   { name: "中文", value: "zh" },
+  { name: "한국어", value: "ko" },
 ];
 
 export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onClose }) => {
