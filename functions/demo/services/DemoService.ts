@@ -84,20 +84,22 @@ export class DemoService {
     const portalAPI = new PortalAPI(token);
     const datasets = await portalAPI.getDatasets();
 
-    const exist = datasets.find(
+    const sourceDataset = datasets.find(
       (dataset) =>
         dataset.databaseCode === env.DEMO_DB_CODE &&
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
-        dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA
+        dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
+        dataset.visibilityStatus === "HIDDEN" &&
+        dataset.sourceStudyId == null
     );
 
     const cacheDataset = datasets.find(
-      (dataset) => dataset.sourceStudyId === exist?.id
+      (dataset) => dataset.sourceStudyId === sourceDataset?.id
     );
 
-    if (exist && cacheDataset) {
-      this.logger.info(`Dataset exists: ${JSON.stringify(exist)}`);
-      return { ...exist, cacheId: cacheDataset.id };
+    if (sourceDataset && cacheDataset) {
+      this.logger.info(`Dataset exists: ${JSON.stringify(sourceDataset)}`);
+      return { ...sourceDataset, cacheId: cacheDataset.id };
     }
 
     const datasetAPI = new DatasetAPI(token);
