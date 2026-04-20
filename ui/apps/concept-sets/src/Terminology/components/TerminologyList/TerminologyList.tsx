@@ -949,6 +949,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
     layoutMode: "grid",
     columns,
     data: listData,
+    localization: {
+      noRecordsToDisplay: getText(i18nKeys.TERMINOLOGY_LIST__EMPTY_TABLE)
+    },
     initialState: {
       density: "compact",
       // Hide column filters for Atlas when filterOptions are empty

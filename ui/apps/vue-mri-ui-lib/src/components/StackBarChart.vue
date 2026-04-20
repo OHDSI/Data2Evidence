@@ -26,7 +26,7 @@ export default {
       notificationStore: useNotificationStore(),
     }
   },
-  props: ['busyEv', 'shouldRerenderChart'],
+  props: ['busyEv', 'shouldRerenderChart', 'colorAxisIndex'],
   data() {
     return {
       chartData: {} as { traces?: any[]; axisType?: string; categories?: any[]; measures?: any[]; data?: any[] },
@@ -55,20 +55,7 @@ export default {
             },
 
             click: function (gd) {
-              Plotly.relayout(gd, {
-                'xaxis.autorange': true,
-                'yaxis.autorange': true,
-              })
-
-
-              // TODO: This is to clear selection on reset, current implementation clears event listeners. To revisit
-              // Plotly.update(
-              //   gd,
-              //   { 'xaxis.autorange': true, 'yaxis.autorange': true, selectedpoints: [null] },
-              //   { selections: [] }
-              // )
-              // Clear Vuex selection state
-              // this.setChartSelection({ selection: [] })
+              this.clearSelectionState({ plotElement: gd, resetAxes: true })
             }.bind(this),
           },
         ],
@@ -169,20 +156,33 @@ export default {
               currentPatientCount: '--',
             })
 
-              if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-                this.notificationStore.setAlertMessage({
-                  messageType: 'info',
-                  message: this.chartData.noDataReason,
-                })
-              } else {
-                this.notificationStore.setAlertMessage({
-                  message: this.chartData.noDataReason,
-                })
-              }
+            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+              this.notificationStore.setAlertMessage({
+                messageType: 'info',
+                message: this.chartData.noDataReason,
+              })
+            } else {
+              this.notificationStore.setAlertMessage({
+                message: this.chartData.noDataReason,
+              })
+            }
             return
           }
 
           this.renderChart()
+
+          // Emit x-axis category counts for default color axis selection
+          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+          const allAxesForEmit = this.getAllAxes
+          const xAxisCategoryCounts = xAxes.map((cat, idx) => {
+            // Find the raw allAxes slot index for this filtered x-axis category
+            const rawSlot = allAxesForEmit ? allAxesForEmit.findIndex(a => a?.props?.attributeId === cat.id) : -1
+            return {
+              axisIndex: rawSlot >= 0 ? rawSlot : idx,
+              count: new Set(this.chartData.data.map(d => d[cat.id])).size,
+            }
+          })
+          this.$emit('chartDataReady', xAxisCategoryCounts)
         }
 
         this.fireQuery({
@@ -240,6 +240,9 @@ export default {
         this.renderChart()
       }
     },
+    colorAxisIndex() {
+      this.renderChart()
+    },
   },
   computed: {
     ...mapGetters([
@@ -256,6 +259,7 @@ export default {
       'sortProperty',
       'processResponse',
       'getChartProperty',
+      'getAllAxes',
     ]),
 
     legendTraces() {
@@ -329,6 +333,73 @@ export default {
         ticktext: useTruncated ? ticktext : ticktextFull,
         tickangle: useTruncated ? 'auto' : 0,
       }
+    },
+    buildPlotlyLayout(resetAxes = false) {
+      const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
+      layout.showlegend = false
+      layout.xaxis.type = this.chartData.axisType
+
+      if (this.chartData?.axisType === 'category' && this.chartData?.tickvals && this.chartData?.ticktext) {
+        const labelAlias = this.chartData.tickvals.reduce((acc, value, index) => {
+          const original = String(value)
+          const truncated = String(this.chartData.ticktext[index] ?? value)
+          if (original !== truncated) {
+            acc[original] = truncated
+          }
+          return acc
+        }, {})
+
+        if (Object.keys(labelAlias).length > 0) {
+          layout.xaxis.labelalias = labelAlias
+        }
+      }
+
+      if (resetAxes) {
+        layout.xaxis.autorange = true
+        layout.yaxis.autorange = true
+      }
+      return layout
+    },
+    hasTraceSelectedPoints() {
+      if (!this.chartData?.traces) {
+        return false
+      }
+
+      return this.chartData.traces.some(trace => {
+        const selectedpoints = trace?.selectedpoints
+        return Array.isArray(selectedpoints) && selectedpoints.length > 0
+      })
+    },
+    clearSelectionState({ plotElement = stackBarChart, resetAxes = false } = {}) {
+      this.setChartSelection({ selection: [] })
+
+      const targetElement = plotElement || stackBarChart
+      if (!targetElement) {
+        return
+      }
+
+      const hasSelection = this.hasTraceSelectedPoints()
+      if (!hasSelection) {
+        if (resetAxes) {
+          Plotly.relayout(targetElement, {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true,
+          })
+        }
+        return
+      }
+
+      if (this.chartData?.traces) {
+        const clearedSelectedPoints = this.chartData.traces.map(() => null)
+        this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
+      }
+
+      if (!targetElement || !this.chartData?.traces) {
+        return
+      }
+
+      const layout = this.buildPlotlyLayout(resetAxes)
+      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
     },
     setupAxes() {
       this.disableAllAxesandProperties()
@@ -410,15 +481,46 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
+        const freshLayout = this.buildPlotlyLayout()
 
-        const freshLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        freshLayout.showlegend = false
-        freshLayout.xaxis.type = this.chartData.axisType
-        const xTicks = this.buildXAxisTicks()
-        if (xTicks) {
-          freshLayout.xaxis.tickvals = xTicks.tickvals
-          freshLayout.xaxis.ticktext = xTicks.ticktext
-          freshLayout.xaxis.tickangle = xTicks.tickangle
+        // Apply x-axis category coloring if a color axis is selected
+        if (this.colorAxisIndex != null && this.chartData.traces) {
+          const colorValues = Object.values(Constants.ChartColorway)
+          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+          // Resolve raw allAxes slot index to position within filtered xAxes/values[]
+          const allAxesForColor = this.getAllAxes
+          const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
+          const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
+          if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
+            // Collect unique x-axis values across all traces in stable order
+            const uniqueVals: string[] = []
+            const seen = new Set<string>()
+            this.chartData.traces.forEach(trace => {
+              trace.customdata?.forEach(cd => {
+                const val = String(cd.values?.[valuesIndex] ?? '')
+                if (val && !seen.has(val)) {
+                  seen.add(val)
+                  uniqueVals.push(val)
+                }
+              })
+            })
+            // Map each unique value to a ChartColorway color (cycling)
+            const valColorMap: Record<string, string> = {}
+            uniqueVals.forEach((val, i) => {
+              valColorMap[val] = colorValues[i % colorValues.length]
+            })
+            // Assign per-bar marker colors on each trace
+            this.chartData.traces.forEach(trace => {
+              const colors =
+                trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
+              trace.marker = { ...trace.marker, color: colors }
+            })
+            // Build color legend for the legend component
+            this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
+          }
+        } else {
+          // Clear color-by state when no color axis is selected
+          delete this.chartData.colorLegend
         }
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
@@ -432,16 +534,7 @@ export default {
     setupPlotly() {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
-      const initialLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-      initialLayout.showlegend = false
-      initialLayout.xaxis.type = this.chartData.axisType
-      const initialXTicks = this.buildXAxisTicks()
-      if (initialXTicks) {
-        initialLayout.xaxis.tickvals = initialXTicks.tickvals
-        initialLayout.xaxis.ticktext = initialXTicks.ticktext
-        initialLayout.xaxis.tickangle = initialXTicks.tickangle
-      }
-
+      const initialLayout = this.buildPlotlyLayout()
       Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
@@ -489,23 +582,16 @@ export default {
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
-        stackBarChart.removeAllListeners('plotly_selected')
-        stackBarChart.removeAllListeners('plotly_deselect')
-
-        const selectionLayout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
-        selectionLayout.showlegend = false
-        selectionLayout.xaxis.type = this.chartData.axisType
-        const selectionXTicks = this.buildXAxisTicks()
-        if (selectionXTicks) {
-          selectionLayout.xaxis.tickvals = selectionXTicks.tickvals
-          selectionLayout.xaxis.ticktext = selectionXTicks.ticktext
-          selectionLayout.xaxis.tickangle = selectionXTicks.tickangle
-        }
+        const selectionLayout = this.buildPlotlyLayout()
         Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
       }
 
+      const deselectionUpdate = () => {
+        this.clearSelectionState()
+      }
+
       stackBarChart.on('plotly_selected', selectionUpdate)
-      stackBarChart.on('plotly_deselect', selectionUpdate)
+      stackBarChart.on('plotly_deselect', deselectionUpdate)
       this.setPlotlyElement({ element: stackBarChart })
     },
   },

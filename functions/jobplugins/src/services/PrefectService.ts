@@ -45,19 +45,28 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
+    studyId: string,
     uploadResults: boolean | undefined,
     token: string,
   ) {
     const revision =
       await this.analysisflowService.getLastAnalysisflowRevision(id);
     const studyName = revision.canvas.name;
-    const studyId = revision.canvas.name;
     const prefectParams = this.prefectAnalysisParamsTransformer.transform(
       revision.flow,
     );
     const portalServerApi = new PortalServerAPI(token);
     const { schemaName, databaseCode } =
       await portalServerApi.getDataset(datasetId);
+
+    this.strategusAnalysisApi = new StrategusAnalysisApi(token);
+    await this.strategusAnalysisApi.saveAnalysis(
+      studyId,
+      revision.canvas.name,
+      JSON.stringify(prefectParams),
+      databaseCode,
+      "analysis-ui",
+    );
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
@@ -113,6 +122,7 @@ export class PrefectService {
     this.prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
 
+    // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
     const { schemaName, databaseCode } = await portalServerApi.getDataset(
       options["datasetId"],
     );
@@ -129,6 +139,7 @@ export class PrefectService {
       options["studyId"],
       options["notebookName"],
       json_graph["analysisSpecification"],
+      databaseCode,
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(

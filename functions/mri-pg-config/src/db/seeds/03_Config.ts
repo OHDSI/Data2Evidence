@@ -13364,7 +13364,8 @@ const paConfig = {
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
-        "inclusionReport": false
+        "inclusionReport": false,
+        "intersectViewInclusionReport": false
     }
 };
 
@@ -26528,7 +26529,8 @@ const paConfigDuckdb = {
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
-        "inclusionReport": true
+        "inclusionReport": true,
+        "intersectViewInclusionReport": false
     }
 };
 
@@ -28155,6 +28157,7 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
+    intersectViewInclusionReport: false
   },
 };
 
@@ -34000,7 +34003,8 @@ const pajsonfhirConfigDuckdb = {
         "cohortEntryExit": false,
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
-        "inclusionReport": false
+        "inclusionReport": false,
+        "intersectViewInclusionReport": false
     }
 };
 
@@ -37485,6 +37489,7 @@ const omopHanaLeanPAConfig = {
         "cohortEntryExit": false,
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
-        "inclusionReport": false
+        "inclusionReport": false,
+        "intersectViewInclusionReport": false
     }
 };

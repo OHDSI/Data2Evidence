@@ -28,9 +28,10 @@
   }
 
   .download-cohort-definition {
-    height: 4rem;
-    margin-left: 10px;
-    margin-right: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 10px;
     margin-bottom: 10px;
   }
 
