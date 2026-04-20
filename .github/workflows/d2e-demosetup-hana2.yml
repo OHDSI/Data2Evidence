@@ -225,11 +225,11 @@ jobs:
 
       - name: View dataset details
         run: |
-          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
+          export resDataset=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
           echo "$resDataset"
-          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
+          export resDatasetDetail=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
           echo "$resDatasetDetail"
-          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
+          export resTrexDB=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
           echo "$resTrexDB"
       # - name: Login to logto and get Bearer token and sub
       #   run: |
