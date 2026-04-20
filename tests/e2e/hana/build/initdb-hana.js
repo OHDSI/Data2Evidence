@@ -55,7 +55,7 @@ async function createDBArtefacts(sqlStatements) {
       }
       sqlStatements.forEach((query, index) => {
         // console.log(`query: ${query}`);
-        client.exec(query.replaceAll('HTTPTEST_SCHEMA', TESTSCHEMA).replaceAll('HTTPTEST_USER', user), err => {
+        client.exec(query.replaceAll('E2E_TEST_SCHEMA', TESTSCHEMA), err => {
           if (err) {
             reject(err)
           }
@@ -136,7 +136,7 @@ async function insertDataToTable(csvFile, query, delimiter) {
         if (err) {
           reject(err)
         }
-        client.prepare(query.replaceAll('HTTPTEST_SCHEMA', TESTSCHEMA), (err, statement) => {
+        client.prepare(query.replaceAll('E2E_TEST_SCHEMA', TESTSCHEMA), (err, statement) => {
           if (err) {
             console.error('Prepare error:', err)
             reject(err)
@@ -165,47 +165,47 @@ async function loadTestData() {
   const csvFileSQLArray = [
     [
       'person.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.person VALUES (?, ?, ?, ?, ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.person VALUES (?, ?, ?, ?, ?, TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'observation_period.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.observation_period VALUES (?, ?, TO_DATE(?), TO_DATE(?), ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.observation_period VALUES (?, ?, TO_DATE(?), TO_DATE(?), ?)`,
       ','
     ],
     [
       'visit_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'condition_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.condition_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.condition_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'drug_exposure.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.drug_exposure VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.drug_exposure VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'visit_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'visit_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'visit_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
       'visit_occurrence.csv',
-      `INSERT INTO HTTPTEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ]
   ]

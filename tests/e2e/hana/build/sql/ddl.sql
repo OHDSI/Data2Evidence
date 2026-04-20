@@ -1,10 +1,6 @@
-DROP SCHEMA HTTPTEST_SCHEMA CASCADE;
+CREATE SCHEMA E2E_TEST_SCHEMA;
 
-CREATE SCHEMA HTTPTEST_SCHEMA;
-
-
-
-CREATE TABLE HTTPTEST_SCHEMA.person (
+CREATE TABLE E2E_TEST_SCHEMA.person (
 			person_id integer NOT NULL,
 			gender_concept_id integer NOT NULL,
 			year_of_birth integer NOT NULL,
@@ -24,14 +20,14 @@ CREATE TABLE HTTPTEST_SCHEMA.person (
 			ethnicity_source_value nvarchar(50) NULL,
 			ethnicity_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.observation_period (
+CREATE TABLE E2E_TEST_SCHEMA.observation_period (
 			observation_period_id integer NOT NULL,
 			person_id integer NOT NULL,
 			observation_period_start_date date NOT NULL,
 			observation_period_end_date date NOT NULL,
 			period_type_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.visit_occurrence (
+CREATE TABLE E2E_TEST_SCHEMA.visit_occurrence (
 			visit_occurrence_id integer NOT NULL,
 			person_id integer NOT NULL,
 			visit_concept_id integer NOT NULL,
@@ -50,7 +46,7 @@ CREATE TABLE HTTPTEST_SCHEMA.visit_occurrence (
 			discharged_to_source_value nvarchar(50) NULL,
 			preceding_visit_occurrence_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.visit_detail (
+CREATE TABLE E2E_TEST_SCHEMA.visit_detail (
 			visit_detail_id integer NOT NULL,
 			person_id integer NOT NULL,
 			visit_detail_concept_id integer NOT NULL,
@@ -71,7 +67,7 @@ CREATE TABLE HTTPTEST_SCHEMA.visit_detail (
 			parent_visit_detail_id integer NULL,
 			visit_occurrence_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.condition_occurrence (
+CREATE TABLE E2E_TEST_SCHEMA.condition_occurrence (
 			condition_occurrence_id integer NOT NULL,
 			person_id integer NOT NULL,
 			condition_concept_id integer NOT NULL,
@@ -89,7 +85,7 @@ CREATE TABLE HTTPTEST_SCHEMA.condition_occurrence (
 			condition_source_concept_id integer NULL,
 			condition_status_source_value nvarchar(50) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.drug_exposure (
+CREATE TABLE E2E_TEST_SCHEMA.drug_exposure (
 			drug_exposure_id integer NOT NULL,
 			person_id integer NOT NULL,
 			drug_concept_id integer NOT NULL,
@@ -114,7 +110,7 @@ CREATE TABLE HTTPTEST_SCHEMA.drug_exposure (
 			route_source_value nvarchar(50) NULL,
 			dose_unit_source_value nvarchar(50) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.procedure_occurrence (
+CREATE TABLE E2E_TEST_SCHEMA.procedure_occurrence (
 			procedure_occurrence_id integer NOT NULL,
 			person_id integer NOT NULL,
 			procedure_concept_id integer NOT NULL,
@@ -132,7 +128,7 @@ CREATE TABLE HTTPTEST_SCHEMA.procedure_occurrence (
 			procedure_source_concept_id integer NULL,
 			modifier_source_value nvarchar(50) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.device_exposure (
+CREATE TABLE E2E_TEST_SCHEMA.device_exposure (
 			device_exposure_id integer NOT NULL,
 			person_id integer NOT NULL,
 			device_concept_id integer NOT NULL,
@@ -153,7 +149,7 @@ CREATE TABLE HTTPTEST_SCHEMA.device_exposure (
 			unit_source_value nvarchar(50) NULL,
 			unit_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.measurement (
+CREATE TABLE E2E_TEST_SCHEMA.measurement (
 			measurement_id integer NOT NULL,
 			person_id integer NOT NULL,
 			measurement_concept_id integer NOT NULL,
@@ -178,7 +174,7 @@ CREATE TABLE HTTPTEST_SCHEMA.measurement (
 			measurement_event_id integer NULL,
 			meas_event_field_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.observation (
+CREATE TABLE E2E_TEST_SCHEMA.observation (
 			observation_id integer NOT NULL,
 			person_id integer NOT NULL,
 			observation_concept_id integer NOT NULL,
@@ -201,7 +197,7 @@ CREATE TABLE HTTPTEST_SCHEMA.observation (
 			observation_event_id integer NULL,
 			obs_event_field_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.death (
+CREATE TABLE E2E_TEST_SCHEMA.death (
 			person_id integer NOT NULL,
 			death_date date NOT NULL,
 			death_datetime TIMESTAMP NULL,
@@ -210,7 +206,7 @@ CREATE TABLE HTTPTEST_SCHEMA.death (
 			cause_source_value nvarchar(50) NULL,
 			cause_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.note (
+CREATE TABLE E2E_TEST_SCHEMA.note (
 			note_id integer NOT NULL,
 			person_id integer NOT NULL,
 			note_date date NOT NULL,
@@ -228,7 +224,7 @@ CREATE TABLE HTTPTEST_SCHEMA.note (
 			note_event_id integer NULL,
 			note_event_field_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.note_nlp (
+CREATE TABLE E2E_TEST_SCHEMA.note_nlp (
 			note_nlp_id integer NOT NULL,
 			note_id integer NOT NULL,
 			section_concept_id integer NULL,
@@ -244,7 +240,7 @@ CREATE TABLE HTTPTEST_SCHEMA.note_nlp (
 			term_temporal nvarchar(50) NULL,
 			term_modifiers nvarchar(2000) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.specimen (
+CREATE TABLE E2E_TEST_SCHEMA.specimen (
 			specimen_id integer NOT NULL,
 			person_id integer NOT NULL,
 			specimen_concept_id integer NOT NULL,
@@ -261,14 +257,14 @@ CREATE TABLE HTTPTEST_SCHEMA.specimen (
 			anatomic_site_source_value nvarchar(50) NULL,
 			disease_status_source_value nvarchar(50) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.fact_relationship (
+CREATE TABLE E2E_TEST_SCHEMA.fact_relationship (
 			domain_concept_id_1 integer NOT NULL,
 			fact_id_1 integer NOT NULL,
 			domain_concept_id_2 integer NOT NULL,
 			fact_id_2 integer NOT NULL,
 			relationship_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.location (
+CREATE TABLE E2E_TEST_SCHEMA.location (
 			location_id integer NOT NULL,
 			address_1 nvarchar(50) NULL,
 			address_2 nvarchar(50) NULL,
@@ -282,7 +278,7 @@ CREATE TABLE HTTPTEST_SCHEMA.location (
 			latitude NUMERIC NULL,
 			longitude NUMERIC NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.care_site (
+CREATE TABLE E2E_TEST_SCHEMA.care_site (
 			care_site_id integer NOT NULL,
 			care_site_name nvarchar(255) NULL,
 			place_of_service_concept_id integer NULL,
@@ -290,7 +286,7 @@ CREATE TABLE HTTPTEST_SCHEMA.care_site (
 			care_site_source_value nvarchar(50) NULL,
 			place_of_service_source_value nvarchar(50) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.provider (
+CREATE TABLE E2E_TEST_SCHEMA.provider (
 			provider_id integer NOT NULL,
 			provider_name nvarchar(255) NULL,
 			npi nvarchar(20) NULL,
@@ -305,7 +301,7 @@ CREATE TABLE HTTPTEST_SCHEMA.provider (
 			gender_source_value nvarchar(50) NULL,
 			gender_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.payer_plan_period (
+CREATE TABLE E2E_TEST_SCHEMA.payer_plan_period (
 			payer_plan_period_id integer NOT NULL,
 			person_id integer NOT NULL,
 			payer_plan_period_start_date date NOT NULL,
@@ -324,7 +320,7 @@ CREATE TABLE HTTPTEST_SCHEMA.payer_plan_period (
 			stop_reason_source_value nvarchar(50) NULL,
 			stop_reason_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.cost (
+CREATE TABLE E2E_TEST_SCHEMA.cost (
 			cost_id integer NOT NULL,
 			cost_event_id integer NOT NULL,
 			cost_domain_id nvarchar(20) NOT NULL,
@@ -348,7 +344,7 @@ CREATE TABLE HTTPTEST_SCHEMA.cost (
 			drg_concept_id integer NULL,
 			drg_source_value nvarchar(3) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.drug_era (
+CREATE TABLE E2E_TEST_SCHEMA.drug_era (
 			drug_era_id integer NOT NULL,
 			person_id integer NOT NULL,
 			drug_concept_id integer NOT NULL,
@@ -357,7 +353,7 @@ CREATE TABLE HTTPTEST_SCHEMA.drug_era (
 			drug_exposure_count integer NULL,
 			gap_days integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.dose_era (
+CREATE TABLE E2E_TEST_SCHEMA.dose_era (
 			dose_era_id integer NOT NULL,
 			person_id integer NOT NULL,
 			drug_concept_id integer NOT NULL,
@@ -366,7 +362,7 @@ CREATE TABLE HTTPTEST_SCHEMA.dose_era (
 			dose_era_start_date date NOT NULL,
 			dose_era_end_date date NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.condition_era (
+CREATE TABLE E2E_TEST_SCHEMA.condition_era (
 			condition_era_id integer NOT NULL,
 			person_id integer NOT NULL,
 			condition_concept_id integer NOT NULL,
@@ -374,7 +370,7 @@ CREATE TABLE HTTPTEST_SCHEMA.condition_era (
 			condition_era_end_date date NOT NULL,
 			condition_occurrence_count integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.episode (
+CREATE TABLE E2E_TEST_SCHEMA.episode (
 			episode_id integer NOT NULL,
 			person_id integer NOT NULL,
 			episode_concept_id integer NOT NULL,
@@ -389,12 +385,12 @@ CREATE TABLE HTTPTEST_SCHEMA.episode (
 			episode_source_value nvarchar(50) NULL,
 			episode_source_concept_id integer NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.episode_event (
+CREATE TABLE E2E_TEST_SCHEMA.episode_event (
 			episode_id integer NOT NULL,
 			event_id integer NOT NULL,
 			episode_event_field_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.metadata (
+CREATE TABLE E2E_TEST_SCHEMA.metadata (
 			metadata_id integer NOT NULL,
 			metadata_concept_id integer NOT NULL,
 			metadata_type_concept_id integer NOT NULL,
@@ -405,7 +401,7 @@ CREATE TABLE HTTPTEST_SCHEMA.metadata (
 			metadata_date date NULL,
 			metadata_datetime TIMESTAMP NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.cdm_source (
+CREATE TABLE E2E_TEST_SCHEMA.cdm_source (
 			cdm_source_name nvarchar(255) NOT NULL,
 			cdm_source_abbreviation nvarchar(25) NOT NULL,
 			cdm_holder nvarchar(255) NOT NULL,
@@ -418,7 +414,7 @@ CREATE TABLE HTTPTEST_SCHEMA.cdm_source (
 			cdm_version_concept_id integer NOT NULL,
 			vocabulary_version nvarchar(20) NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.concept (
+CREATE TABLE E2E_TEST_SCHEMA.concept (
 			concept_id integer NOT NULL,
 			concept_name nvarchar(255) NOT NULL,
 			domain_id nvarchar(20) NOT NULL,
@@ -430,24 +426,24 @@ CREATE TABLE HTTPTEST_SCHEMA.concept (
 			valid_end_date date NOT NULL,
 			invalid_reason nvarchar(1) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.vocabulary (
+CREATE TABLE E2E_TEST_SCHEMA.vocabulary (
 			vocabulary_id nvarchar(20) NOT NULL,
 			vocabulary_name nvarchar(255) NOT NULL,
 			vocabulary_reference nvarchar(255) NULL,
 			vocabulary_version nvarchar(255) NULL,
 			vocabulary_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.domain (
+CREATE TABLE E2E_TEST_SCHEMA.domain (
 			domain_id nvarchar(20) NOT NULL,
 			domain_name nvarchar(255) NOT NULL,
 			domain_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.concept_class (
+CREATE TABLE E2E_TEST_SCHEMA.concept_class (
 			concept_class_id nvarchar(20) NOT NULL,
 			concept_class_name nvarchar(255) NOT NULL,
 			concept_class_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.concept_relationship (
+CREATE TABLE E2E_TEST_SCHEMA.concept_relationship (
 			concept_id_1 integer NOT NULL,
 			concept_id_2 integer NOT NULL,
 			relationship_id nvarchar(20) NOT NULL,
@@ -455,7 +451,7 @@ CREATE TABLE HTTPTEST_SCHEMA.concept_relationship (
 			valid_end_date date NOT NULL,
 			invalid_reason nvarchar(1) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.relationship (
+CREATE TABLE E2E_TEST_SCHEMA.relationship (
 			relationship_id nvarchar(20) NOT NULL,
 			relationship_name nvarchar(255) NOT NULL,
 			is_hierarchical nvarchar(1) NOT NULL,
@@ -463,18 +459,18 @@ CREATE TABLE HTTPTEST_SCHEMA.relationship (
 			reverse_relationship_id nvarchar(20) NOT NULL,
 			relationship_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.concept_synonym (
+CREATE TABLE E2E_TEST_SCHEMA.concept_synonym (
 			concept_id integer NOT NULL,
 			concept_synonym_name nvarchar(1000) NOT NULL,
 			language_concept_id integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.concept_ancestor (
+CREATE TABLE E2E_TEST_SCHEMA.concept_ancestor (
 			ancestor_concept_id integer NOT NULL,
 			descendant_concept_id integer NOT NULL,
 			min_levels_of_separation integer NOT NULL,
 			max_levels_of_separation integer NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.source_to_concept_map (
+CREATE TABLE E2E_TEST_SCHEMA.source_to_concept_map (
 			source_code nvarchar(50) NOT NULL,
 			source_concept_id integer NOT NULL,
 			source_vocabulary_id nvarchar(20) NOT NULL,
@@ -485,7 +481,7 @@ CREATE TABLE HTTPTEST_SCHEMA.source_to_concept_map (
 			valid_end_date date NOT NULL,
 			invalid_reason nvarchar(1) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.drug_strength (
+CREATE TABLE E2E_TEST_SCHEMA.drug_strength (
 			drug_concept_id integer NOT NULL,
 			ingredient_concept_id integer NOT NULL,
 			amount_value NUMERIC NULL,
@@ -499,13 +495,13 @@ CREATE TABLE HTTPTEST_SCHEMA.drug_strength (
 			valid_end_date date NOT NULL,
 			invalid_reason nvarchar(1) NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.cohort (
+CREATE TABLE E2E_TEST_SCHEMA.cohort (
 			cohort_definition_id integer NOT NULL,
 			subject_id integer NOT NULL,
 			cohort_start_date date NOT NULL,
 			cohort_end_date date NOT NULL );
 
-CREATE TABLE HTTPTEST_SCHEMA.cohort_definition (
+CREATE TABLE E2E_TEST_SCHEMA.cohort_definition (
 			cohort_definition_id integer NOT NULL,
 			cohort_definition_name nvarchar(255) NOT NULL,
 			cohort_definition_description TEXT NULL,
