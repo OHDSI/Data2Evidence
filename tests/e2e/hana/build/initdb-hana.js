@@ -161,7 +161,7 @@ async function insertDataToTable(csvFile, query, delimiter) {
 }
 
 async function loadTestData() {
-  console.log(`Loading test data ...`)
+  console.log(`Loading Broadsea test data ...`)
   const csvFileSQLArray = [
     [
       'person.csv',
@@ -189,25 +189,38 @@ async function loadTestData() {
       ','
     ],
     [
-      'visit_occurrence.csv',
-      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      'procedure_occurrence.csv',
+      `INSERT INTO E2E_TEST_SCHEMA.procedure_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
-      'visit_occurrence.csv',
-      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      'measurement.csv',
+      `INSERT INTO E2E_TEST_SCHEMA.measurement VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
     [
-      'visit_occurrence.csv',
-      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      'observation.csv',
+      `INSERT INTO E2E_TEST_SCHEMA.observation VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ','
     ],
+    ['drug_era.csv', `INSERT INTO E2E_TEST_SCHEMA.drug_era VALUES (?, ?, ?, TO_DATE(?), TO_DATE(?), ?, ?)`, ','],
+    ['condition_era.csv', `INSERT INTO E2E_TEST_SCHEMA.condition_era VALUES (?, ?, ?, TO_DATE(?), TO_DATE(?), ?)`, ','],
     [
-      'visit_occurrence.csv',
-      `INSERT INTO E2E_TEST_SCHEMA.visit_occurrence VALUES (?, ?, ?, TO_DATE(?), TO_TIMESTAMP(?), TO_DATE(?), TO_TIMESTAMP(?), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      'cdm_source.csv',
+      `INSERT INTO E2E_TEST_SCHEMA.cdm_source VALUES (?, ?, ?, ?, ?, ?, TO_DATE(?), TO_DATE(?), ?, ?, ?)`,
       ','
-    ]
+    ],
+    ['concept.csv', `INSERT INTO E2E_TEST_SCHEMA.concept VALUES (?, ?, ?, ?, ?, ?, ?, TO_DATE(?), TO_DATE(?), ?)`, ','],
+    ['vocabulary.csv', `INSERT INTO E2E_TEST_SCHEMA.vocabulary VALUES (?, ?, ?, ?, ?)`, ','],
+    ['domain.csv', `INSERT INTO E2E_TEST_SCHEMA.domain VALUES (?, ?, ?)`, ','],
+    [
+      'concept_relationship.csv',
+      `INSERT INTO E2E_TEST_SCHEMA.concept_relationship VALUES (?, ?, ?, TO_DATE(?), TO_DATE(?), ?)`,
+      ','
+    ],
+    ['relationship.csv', `INSERT INTO E2E_TEST_SCHEMA.relationship VALUES (?, ?, ?, ?, ?, ?)`, ','],
+    ['concept_synonym.csv', `INSERT INTO E2E_TEST_SCHEMA.concept_synonym VALUES (?, ?, ?)`, ','],
+    ['concept_ancestor.csv', `INSERT INTO E2E_TEST_SCHEMA.concept_ancestor VALUES (?, ?, ?, ?)`, ',']
   ]
 
   for (let i = 0; i < csvFileSQLArray.length; i++) {
