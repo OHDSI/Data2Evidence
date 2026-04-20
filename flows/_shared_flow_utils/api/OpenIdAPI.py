@@ -36,7 +36,7 @@ class OpenIdAPI:
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         return signing_key.key
 
-    def get_client_credential_token(self, type: str) -> str:
+    def get_client_credential_token(self) -> str:
         params = {
             'grant_type': "client_credentials",
             'client_id': self.client_id.get(),
