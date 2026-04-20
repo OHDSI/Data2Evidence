@@ -4,37 +4,49 @@ import requests
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
-from _shared_flow_utils.api.BaseAPI import BaseAPI
 
-
-class OpenIdAPI(BaseAPI):
+class OpenIdAPI:
     def __init__(self):
-        super().__init__()
+        self.python_verify_ssl = Variable.get("python_verify_ssl")
+        self.tls_internal_ca_cert = Secret.load("tls-internal-ca-cert")
+
+        if self.python_verify_ssl == 'true' and self.tls_internal_ca_cert is None:
+            raise ValueError("'tls-internal-ca-cert' prefect secret is undefined")
+
         self.url = self.get_service_route("idIssuerUrl")
         self.client_id = Secret.load("idp-alp-data-client-id")
         self.client_secret = Secret.load("idp-alp-data-client-secret")
         self.scope = Variable.get("idp_scope")
+
+    def get_service_route(self, service_name: str) -> str:
+        if Variable.get("service_routes") is None:
+            raise ValueError("'service_routes' prefect variable is undefined")
+        return Variable.get("service_routes").get(service_name) + "/"
+
+    def get_verify_value(self) -> bool:
+        return False if self.python_verify_ssl == 'false' else self.tls_internal_ca_cert.get()
         
-    def getOptions(self):
+    def get_options(self):
         return {
             "Content-Type": "application/json",
         }
 
-    def getSigningKey(self, token):
+    def get_signing_key(self, token):
         jwks_client = jwt.PyJWKClient(f"{self.url}/jwks")
         signing_key = jwks_client.get_signing_key_from_jwt(token)
         return signing_key.key
 
-    def getClientCredentialToken(self) -> str:
+    def get_client_credential_token(self, type: str) -> str:
         params = {
             'grant_type': "client_credentials",
             'client_id': self.client_id.get(),
             'client_secret': self.client_secret.get(),
+            'scope': 'openid'
         }
 
         result = requests.post(
             f"{self.url}token",
-            headers=self.getOptions(),
+            headers=self.get_options(),
             verify=self.get_verify_value(),
             json=params
         )
@@ -45,12 +57,12 @@ class OpenIdAPI(BaseAPI):
         else:
             return result.json()['access_token']
 
-    def isTokenExpiredOrEmpty(self, token: str | None) -> bool:
+    def is_token_expired_or_empty(self, token: str | None) -> bool:
         if not token:
             return True
 
         try:
-            signing_key = self.getSigningKey(token)
+            signing_key = self.get_signing_key(token)
             jwt.decode(token, 
                        key=signing_key,
                        audience=self.scope,

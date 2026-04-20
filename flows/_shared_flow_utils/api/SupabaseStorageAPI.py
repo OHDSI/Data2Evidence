@@ -8,11 +8,10 @@ from _shared_flow_utils.api.BaseAPI import BaseAPI
 class SupabaseStorageAPI(BaseAPI):
     def __init__(self):
         super().__init__()
-        self.url = f"{self.get_service_route("jobplugins")}jobplugins/dataflow/node/file"
-
+        self.url = f"{self.get_service_route("dataflowStorage")}"
 
     def list_files(self, node_id: str) -> list[dict]:
-        request_url = f"{self.url}/list?nodeId={node_id}"
+        request_url = f"{self.url}list/file?nodeId={node_id}"
 
         response = requests.get(
             request_url,
@@ -26,7 +25,7 @@ class SupabaseStorageAPI(BaseAPI):
 
 
     def delete_file(self, node_id: str, filename: str) -> dict:
-        request_url = f"{self.url}?nodeId={node_id}&fileName={filename}"
+        request_url = f"{self.url}delete/file?nodeId={node_id}&fileName={filename}"
 
         response = requests.delete(
             request_url,
@@ -43,7 +42,7 @@ class SupabaseStorageAPI(BaseAPI):
         file_path_obj = Path(file_path)
         filename = file_path_obj.name
 
-        request_url = f"{self.url}?nodeId={node_id}"
+        request_url = f"{self.url}upload/file?nodeId={node_id}"
 
         headers = self.get_options()
         headers.pop("Content-Type", None)
@@ -94,9 +93,9 @@ class SupabaseStorageAPI(BaseAPI):
 
         return file_path
 
-    def get_file(self, node_id: str, filename: str) -> dict:
-        request_url = f"{self.url}?nodeId={node_id}&fileName={filename}"
 
+    def get_file(self, node_id: str, filename: str) -> dict:
+        request_url = f"{self.url}get/file?nodeId={node_id}&fileName={filename}"
         response = requests.get(
             request_url, 
             headers=self.get_options(),

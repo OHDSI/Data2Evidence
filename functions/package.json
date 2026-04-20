@@ -861,7 +861,10 @@
           "filesmanager.delete",
           "whiteRabbit.post",
           "portal.userArtifact.write",
-          "portal.dataset.systemAdmin.read"
+          "portal.dataset.systemAdmin.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
