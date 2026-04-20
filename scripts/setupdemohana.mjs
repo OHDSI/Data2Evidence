@@ -291,7 +291,7 @@ console.log(`Adding hana dataset...`);
 let encryptionKeysObjDataset = {
     tenantId: "e0348e4d-2e17-43f2-a3c6-efd752d17c23",
     detail: {
-        "name": "Demo dataset HANA",
+        "name": "Demo dataset",
         "summary": "",
         "description": "",
         "showRequestAccess": false
@@ -344,7 +344,7 @@ if (resp.id !== undefined) {
         var data = resp[i];
         var databaseName = data['databaseName'];
         var studyName = data['studyDetail']['name'];
-        if (databaseName == "demo_database_hana" && studyName == "Demo dataset HANA") {
+        if (databaseName == "demo_database_hana" && studyName == "Demo dataset") {
             var studyId = data['id'];
             var tenantId = data['tenant']['id'];
         }
