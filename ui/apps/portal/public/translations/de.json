@@ -859,6 +859,7 @@
   "SAVE_ATTRIBUTE_DIALOG__EDIT": "Attribut bearbeiten",
   "SAVE_ATTRIBUTE_DIALOG__SAVE": "Speichern",
   "SAVE_ATTRIBUTE_DIALOG__SUCCESS": "Attributkonfiguration erfolgreich hinzugefügt.",
+  "SAVE_ATTRIBUTE_DIALOG__EDIT_SUCCESS": "Attributkonfiguration erfolgreich bearbeitet.",
   "SAVE_DB_DIALOG__ADD_DATABASE": "Datenbank hinzufügen",
   "SAVE_DB_DIALOG__AUTHENTICATION_MODE": "Authentifizierungsmodus",
   "SAVE_DB_DIALOG__CACHE_REPLICATION": "Cache-Replikation",
