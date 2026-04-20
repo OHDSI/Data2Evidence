@@ -2718,8 +2718,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-SqlRender",
-      "RemoteRef": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf",
-      "RemoteSha": "26ed300a81f474c8ae81f1f9294d8d83d00d8cbf"
+      "RemoteRef": "6573c8044a9ddc27da5222a50dc4d9ecdbc59525",
+      "RemoteSha": "6573c8044a9ddc27da5222a50dc4d9ecdbc59525"
     },
     "TTR": {
       "Package": "TTR",

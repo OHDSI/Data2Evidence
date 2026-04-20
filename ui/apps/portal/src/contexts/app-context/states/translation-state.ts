@@ -895,6 +895,7 @@ export const i18nDefault = {
     SAVE_ATTRIBUTE_DIALOG__EDIT: "Edit attribute",
     SAVE_ATTRIBUTE_DIALOG__SAVE: "Save",
     SAVE_ATTRIBUTE_DIALOG__SUCCESS: "Attribute config added successfully.",
+    SAVE_ATTRIBUTE_DIALOG__EDIT_SUCCESS: "Attribute config edited successfully.",
     SAVE_DB_DIALOG__ADD_DATABASE: "Add database",
     SAVE_DB_DIALOG__AUTHENTICATION_MODE: "Authentication mode",
     SAVE_DB_DIALOG__CACHE_REPLICATION: "Cache replication",
