@@ -38,8 +38,8 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isLocal = computed(() => getPortalAPI()?.isLocal)
 
+const isLocal = getPortalAPI()?.isLocal || false
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => getPortalAPI()?.username || '')
 
@@ -143,7 +143,11 @@ const totalPages = computed(() => {
   return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
-const paginatedBookmarks = computed(() => {
+const paginatedBookmarks = computed(() => {  
+  if (!isLocal) {
+    return bookmarksDisplaySorted.value
+  }
+
   const start = (currentPage.value - 1) * Number(itemsPerPage.value)
   const end = start + Number(itemsPerPage.value)
   return bookmarksDisplaySorted.value.slice(start, end)
@@ -632,7 +636,7 @@ onErrorCaptured((err, instance, info) => {
 
     <!-- Pagination Footer -->
     <div
-      v-if="props.bookmarksDisplay.length > 0"
+      v-if="isLocal && props.bookmarksDisplay.length > 0"
       style="
         position: fixed;
         bottom: 0;
