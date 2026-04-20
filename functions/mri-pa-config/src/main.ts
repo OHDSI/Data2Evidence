@@ -12,7 +12,7 @@ import * as xsenv from "@sap/xsenv";
 import express from "express";
 import { MRIConfig } from "./config/config";
 import { ConfigFacade as MriConfigFacade } from "./config/ConfigFacade";
-import { IDBCredentialsType } from "./types";
+import { IDBCredentialsType, IRequest } from "./types";
 import { configDefaultValues } from "../cfg/pa/configDefaultValues.ts"
 import https from "https";
 import fs from "node:fs";
@@ -74,7 +74,7 @@ function initRoutes() {
     log.addRequestCorrelationID(req);
     next();
   });
-  app.use(async (req: any, res, next) => {
+  app.use(async (req: IRequest, res, next) => {
     if (!utils.isHealthProbesReq(req)) {
       let userObj: User;
       try {
@@ -107,7 +107,7 @@ function initRoutes() {
     }
   });
 
-  app.use("/pa-config-svc/services/config.xsjs", (req: any, res) => {
+  app.use("/pa-config-svc/services/config.xsjs", (req: IRequest, res) => {
     // get user from request
     const user = getUser(req);
     const language = user.lang;
@@ -152,7 +152,7 @@ function initRoutes() {
     });
   });
 
-  app.use("/pa-config-svc/enduser", (req: any, res) => {
+  app.use("/pa-config-svc/enduser", (req: IRequest, res) => {
     // get user from request
     const user = getUser(req);
     const language = user.lang;
@@ -200,7 +200,7 @@ function initRoutes() {
     });
   });
 
-  app.use("/pa-config-svc/db", (req: any, res) => {
+  app.use("/pa-config-svc/db", (req: IRequest, res) => {
     res.json(configDefaultValues)
   });
 
