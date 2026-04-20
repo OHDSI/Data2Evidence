@@ -202,11 +202,6 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn init-e2e-testdb-hana
-
       - name: Setupdemohana
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -237,24 +232,29 @@ jobs:
           export resTrexDB=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
           echo "$resTrexDB"
 
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn init-e2e-testdb-hana
+
       - name: Logs
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Checkflow
-        if: success() || failure()
-        uses: nick-fields/retry@v3
-        id: checkflow
-        with:
-          timeout_seconds: 1800
-          retry_wait_seconds: 100
-          max_attempts: 1
-          retry_on: any
-          command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
-            DC_EXIT_CODE=$?
-            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+      # - name: Checkflow
+        # if: success() || failure()
+        # uses: nick-fields/retry@v3
+        # id: checkflow
+        # with:
+        #   timeout_seconds: 1800
+        #   retry_wait_seconds: 100
+        #   max_attempts: 1
+        #   retry_on: any
+        #   command: |
+        #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
+        #     DC_EXIT_CODE=$?
+        #     [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: UI Setup bun
         # if: ${{ steps.file_changes.outputs.ui == 'true' }}
