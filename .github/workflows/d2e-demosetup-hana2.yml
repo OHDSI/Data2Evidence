@@ -291,7 +291,7 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
       - name: Wait for d2e-ui plugin to be installed
-        # if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           echo "Waiting for d2e-ui plugin to be installed..."
           max_attempts=60
