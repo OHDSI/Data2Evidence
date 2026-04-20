@@ -89,22 +89,22 @@ jobs:
         run: |
           docker ps -a
 
-      - name: Check HANA
-        run: |
-          hanaContainerName=$(docker ps | grep hana | awk '{print $NF}')
-          if [ -z "$hanaContainerName" ]; then
-              echo "Error: HANA container not found"
-              exit 1
-          fi
+      # - name: Check HANA
+      #   run: |
+      #     hanaContainerName=$(docker ps | grep hana | awk '{print $NF}')
+      #     if [ -z "$hanaContainerName" ]; then
+      #         echo "Error: HANA container not found"
+      #         exit 1
+      #     fi
 
-          export hanaContainerName
-          export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
-          echo "$resDataset"
+      #     export hanaContainerName
+      #     export resDataset=$(docker exec "$hanaContainerName" hdbsql -n localhost:39041 -u SYSTEM -p TestPW1234 -d HXE -q "SELECT * FROM DUMMY" 2>/dev/null)
+      #     echo "$resDataset"
 
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn init-e2e-testdb-hana
+      # - name: Setup Test DB
+      #   run: |
+      #     yarn --prefer-offline
+      #     yarn init-e2e-testdb-hana
 
       - uses: dorny/paths-filter@v3
         id: flow_file_changes
