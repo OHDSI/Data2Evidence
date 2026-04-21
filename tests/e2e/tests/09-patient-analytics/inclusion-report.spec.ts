@@ -129,13 +129,14 @@ test(TEST_NAME, async ({ page }) => {
 
   await test.step('Verify attrition funnel chart screenshot', async () => {
     const funnelChart = dialog.locator('.funnel-chart')
-    await funnelChart.scrollIntoViewIfNeeded()
+    await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
     await expect(funnelChart).toBeVisible()
     await expect(funnelChart).toHaveScreenshot()
   })
 
   await test.step('Reorder rules via Move up button', async () => {
     const rulesRows = dialog.locator('table.rules-table tbody tr')
+    await rulesRows.nth(0).scrollIntoViewIfNeeded()
     await rulesRows.nth(1).getByTitle('Move up').click()
     await expect(dialog.locator('.reorder-loading-overlay')).not.toBeVisible({ timeout: 30000 })
     await rulesRows.nth(2).getByTitle('Move up').click()
@@ -164,7 +165,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await test.step('Verify updated attrition funnel chart screenshot', async () => {
     const funnelChart = dialog.locator('.funnel-chart')
-    await funnelChart.scrollIntoViewIfNeeded()
+    await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
     await expect(funnelChart).toBeVisible()
     await expect(funnelChart).toHaveScreenshot()
   })
