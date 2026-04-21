@@ -4387,11 +4387,11 @@ export const i18n: FastifyPluginAsyncZod = async function (app) {
         //   name: "Русский",
         //   default: false,
         // },
-        {
-          code: "ko",
-          name: "한국어",
-          default: false,
-        },
+        //{
+        //  code: "ko",
+        //  name: "한국어",
+        //  default: false,
+        //},
         // {
         //   code: "zh",
         //   name: "中文",
