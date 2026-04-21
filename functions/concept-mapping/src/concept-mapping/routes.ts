@@ -31,12 +31,16 @@ export class ConceptMappingRouter {
             locations: ["query"],
           });
 
-          const response = await getSourceToConceptMappings(databaseCode, schemaName);
+          const response = await getSourceToConceptMappings(
+            databaseCode,
+            schemaName,
+          );
           res.status(200).json(response);
         } catch (error) {
-          res.status(500).send(error);
+          console.error(error);
+          res.status(500).send("Failed to retrieve concept mappings");
         }
-      }
+      },
     );
 
     this.router.post(
@@ -62,16 +66,15 @@ export class ConceptMappingRouter {
             databaseCode,
             schemaName,
             sourceVocabularyId,
-            conceptMappings
+            conceptMappings,
           );
 
-          res
-            .status(200)
-            .send(`Inserted ${rows} rows to ${databaseCode}`);
+          res.status(200).send(`Inserted ${rows} rows to ${databaseCode}`);
         } catch (error) {
-          res.status(500).send(error);
+          console.error(error);
+          res.status(500).send("Failed to save concept mappings");
         }
-      }
+      },
     );
   }
 }
