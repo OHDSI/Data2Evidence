@@ -222,9 +222,11 @@ jobs:
         run: |
           export resDataset=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
           echo "$resDataset"
-          echo "Update schema name to E2E_TEST_SCHEMA..."
-          export resDataset=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "update portal.dataset set schema_name = 'E2E_TEST_SCHEMA'" 2>/dev/null)
-          echo "$resDataset"
+          export TESTSCHEMA=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select schema_name from portal.dataset" 2>/dev/null)
+          echo "$TESTSCHEMA"
+          # echo "Update schema name to E2E_TEST_SCHEMA..."
+          # export resDataset=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "update portal.dataset set schema_name = 'E2E_TEST_SCHEMA'" 2>/dev/null)
+          # echo "$resDataset"
           export resDataset=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
           echo "$resDataset"
           export resDatasetDetail=$(docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
@@ -235,6 +237,11 @@ jobs:
       - name: Setup Test DB
         run: |
           yarn --prefer-offline
+          echo "TESTSCHEMA: $TESTSCHEMA"
+          echo "HDIUSER: $HDIUSER"
+          echo "HDIPW: $HDIPW"
+          echo "HANASERVER: $HANASERVER"
+          echo "HDIPORT: $HDIPORT"
           yarn init-e2e-testdb-hana
 
       - name: Logs
