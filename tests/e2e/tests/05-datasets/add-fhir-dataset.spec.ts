@@ -9,15 +9,16 @@ const randomString = Math.random().toString(36).substring(2, 10)
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(360 * 1000)
   // Sign in
-  await page.goto('https://localhost:41100/d2e/portal/public/overview')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
 
-  const datasetNewSchema = 'New automated test FHIR dataset 1'
-  const datasetNewCacheSchema = 'New automated test cache FHIR dataset 1'
+  const datasetSchema = 'New automated test FHIR dataset 1'
+  const datasetCacheSchema = 'New automated test cache FHIR dataset 1'
+  const datasetNewCacheSchema = 'New automated test cache dataset 2'
   // const vocabSchemaName = 'demo_cdm'
 
   // Switch to admin portal
@@ -42,7 +43,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
-  for (const dataset of [datasetNewSchema, datasetNewCacheSchema]) {
+  for (const dataset of [datasetSchema, datasetCacheSchema]) {
     const datasetRow = page.locator('tr', { hasText: `${dataset}` }).first()
     if (await datasetRow.isVisible()) {
       await datasetRow.getByText('Select action').click()
@@ -58,7 +59,9 @@ test(TEST_NAME, async ({ page }) => {
   async function createComplete() {
     // Wait for job container to stabilize
     await page.waitForTimeout(5000)
-    await page.locator('a:text("create-fhir-cache-file-fhir")').isVisible()
+    await expect(
+      page.locator('.page-heading-flow-run').getByText('create-fhir-cache-file-')
+    ).toBeVisible({ timeout: MINUTE_2 })
     const entry = page
       .locator('.page-heading-flow-run__flow-details')
       .first()
@@ -69,11 +72,20 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   }
 
+  async function openFlowRunDetails() {
+    const viewFlowRunButton = page.getByRole('button', { name: 'View flow run', exact: true }).first()
+    await expect(viewFlowRunButton).toBeVisible({ timeout: MINUTE_2 })
+    await expect(viewFlowRunButton).toBeEnabled({ timeout: MINUTE_2 })
+    await viewFlowRunButton.scrollIntoViewIfNeeded()
+    await viewFlowRunButton.click()
+    await expect(page.locator('.page-heading-flow-run__flow-details').first()).toBeVisible({ timeout: MINUTE_2 })
+  }
+
   // Add new dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.getByRole('button', { name: 'Add dataset' }).click()
-  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetNewSchema)
-  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetNewSchema)
+  await page.getByRole('textbox', { name: 'Dataset name - Displayed on' }).fill(datasetSchema)
+  await page.getByRole('textbox', { name: 'Dataset summary' }).fill(datasetSchema)
   await page.locator('#mui-component-select-schemaOption').click()
   await page.getByRole('option', { name: 'Create FHIR server project', exact: true }).click()
   // Uncheck the "Use default result schema name" checkbox to enable custom input
@@ -81,34 +93,63 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'FHIR_QR', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill(`${randomString}1`)
   await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
-  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetNewCacheSchema)
+  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill(datasetCacheSchema)
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  // Close the "Dataset Created" notification dialog
-  await page.getByRole('button', { name: 'View flow run', exact: true }).click({ timeout: MINUTE_2 })
+  //View flow run details
+  await openFlowRunDetails()
 
   // Wait for schema to be created in the database (this also creates the cache dataset)
   await createComplete()
 
   // After the job completes, the cache dataset should be visible
   // Parent rows are automatically expanded by default, so child rows should be visible
-  await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('tr', { hasText: datasetCacheSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+
+  //Create data mart
+  const cacheRow = page.locator('tr', { hasText: datasetSchema }).first()
+  await expect(cacheRow).toBeVisible()
+  await cacheRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Create data mart' }).click()
+  await page.locator('.input__element').nth(0).fill(datasetNewCacheSchema)
+  await page.locator('#mui-component-select-paConfigOption').click()
+  await page.getByRole('option', { name: 'FHIR_QR', exact: true }).click()
+  await page.getByRole('button', { name: 'Create', exact: true }).click()
+  //View flow run details
+  await openFlowRunDetails()
+  // Wait for schema to be created in the database (this also creates the cache dataset)
+  await createComplete()
+
+  // After the job completes, the cache dataset should be visible
+  // Parent rows are automatically expanded by default, so child rows should be visible
+  await expect(page.locator('tr', { hasText: datasetCacheSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
 
   // Clean up Delete the newly created dataset
-  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-  // Find and delete the child dataset first (datasetNewCacheSchema)
-  const newCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
+  // Find and delete the child dataset first (datasetCacheSchema)
+  const newCacheRow = page.locator('tr', { hasText: datasetCacheSchema }).first()
   await expect(newCacheRow).toBeVisible()
   await newCacheRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetCacheSchema)
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+
+  //Delete the second datamart
+  const secondCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
+  await expect(secondCacheRow).toBeVisible()
+  await secondCacheRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewCacheSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
-  // Then delete the parent dataset (datasetNewSchema)
-  const newSchemaRow = page.locator('tr', { hasText: datasetNewSchema }).first()
+
+  // Then delete the parent dataset (datasetSchema)
+  const newSchemaRow = page.locator('tr', { hasText: datasetSchema }).first()
   await expect(newSchemaRow).toBeVisible()
   await newSchemaRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
   // Enter dataset name to confirm deletion
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewSchema)
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetSchema)
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })
