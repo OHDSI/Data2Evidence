@@ -3,7 +3,6 @@ import { test, expect } from '../fixtures'
 const TEST_NAME = 'inclusion-report'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
-test.describe.configure({ retries: 3 })
 
 test(TEST_NAME, async ({ page }) => {
   test.slow()
@@ -130,6 +129,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await test.step('Verify attrition funnel chart screenshot', async () => {
     const funnelChart = dialog.locator('.funnel-chart')
+    await funnelChart.scrollIntoViewIfNeeded()
     await expect(funnelChart).toBeVisible()
     await expect(funnelChart).toHaveScreenshot()
   })
@@ -164,6 +164,7 @@ test(TEST_NAME, async ({ page }) => {
 
   await test.step('Verify updated attrition funnel chart screenshot', async () => {
     const funnelChart = dialog.locator('.funnel-chart')
+    await funnelChart.scrollIntoViewIfNeeded()
     await expect(funnelChart).toBeVisible()
     await expect(funnelChart).toHaveScreenshot()
   })
