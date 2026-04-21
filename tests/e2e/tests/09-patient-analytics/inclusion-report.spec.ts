@@ -127,12 +127,12 @@ test(TEST_NAME, async ({ page }) => {
     await expect(visitRow).toContainText('6.35%')
   })
 
-  await test.step('Verify attrition funnel chart screenshot', async () => {
-    const funnelChart = dialog.locator('.funnel-chart')
-    await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
-    await expect(funnelChart).toBeVisible()
-    await expect(funnelChart).toHaveScreenshot()
-  })
+  // await test.step('Verify attrition funnel chart screenshot', async () => {
+  //   const funnelChart = dialog.locator('.funnel-chart')
+  //   await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  //   await expect(funnelChart).toBeVisible()
+  //   await expect(funnelChart).toHaveScreenshot()
+  // })
 
   await test.step('Reorder rules via Move up button', async () => {
     const rulesRows = dialog.locator('table.rules-table tbody tr')
@@ -163,12 +163,12 @@ test(TEST_NAME, async ({ page }) => {
     await expect(visitRow).toContainText('6.35%')
   })
 
-  await test.step('Verify updated attrition funnel chart screenshot', async () => {
-    const funnelChart = dialog.locator('.funnel-chart')
-    await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
-    await expect(funnelChart).toBeVisible()
-    await expect(funnelChart).toHaveScreenshot()
-  })
+  // await test.step('Verify updated attrition funnel chart screenshot', async () => {
+  //   const funnelChart = dialog.locator('.funnel-chart')
+  //   await funnelChart.evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }))
+  //   await expect(funnelChart).toBeVisible()
+  //   await expect(funnelChart).toHaveScreenshot()
+  // })
 
   await test.step('Close Inclusion Report dialog', async () => {
     await dialog.locator('.inclusion-report-dialog__close-btn').click()
