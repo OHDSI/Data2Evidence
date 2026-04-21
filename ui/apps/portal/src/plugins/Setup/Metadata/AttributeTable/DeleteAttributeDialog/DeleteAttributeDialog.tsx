@@ -23,10 +23,9 @@ export const DeleteAttributeDialog: FC<DeleteAttributeDialogProps> = ({ open, on
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
-      setFeedback({});
       typeof onClose === "function" && onClose(type);
     },
-    [onClose, setFeedback]
+    [onClose]
   );
 
   const handleDelete = useCallback(async () => {
