@@ -8,11 +8,9 @@ RUN mkdir -p ./scripts
 COPY install_onnx.sh ./scripts
 COPY install_libchdb.sh ./scripts
 
-RUN echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \
-apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y \
     curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm \
-    && apt-get install -y -t testing libstdc++6 && \
-    rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
     cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
