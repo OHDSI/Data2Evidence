@@ -80,7 +80,7 @@ jobs:
 
   bld:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Temporarily run for all non-draft PRs
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     permissions:
       contents: read   # Required to check out code
@@ -175,7 +175,7 @@ jobs:
         run: |
 
           DOCKER_BUILD_PUSH_BOOL_STR=false
-          if [[ $GITHUB_EVENT_NAME == "push" ]] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ] || [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true]; then
+          if [[ $GITHUB_EVENT_NAME == "push" ]] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ] || ([ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true ] && [ $GITHUB_EVENT_NAME != "pull_request" ]); then
             DOCKER_BUILD_PUSH_BOOL_STR=true
           fi
 
