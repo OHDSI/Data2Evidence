@@ -169,6 +169,18 @@ async function ensureConcurrencyLimit(name: string, limitVar: string) {
 			} else {
 				logger.error(`Error updating concurrency limit ${name}: ${updateRes.status} ${updateRes.statusText}`);
 			}
+			// Reset active slots on startup to recover from corrupted state left by crashed workers
+			let resetRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/${existingId}/reset`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json"
+				},
+			});
+			if (resetRes.ok) {
+				logger.log(`Concurrency limit ${name} active slots reset successfully.`);
+			} else {
+				logger.error(`Error resetting concurrency limit ${name}: ${resetRes.status} ${resetRes.statusText}`);
+			}
 		} else {
 			// Create new
 			let createRes = await fetch(`${env.PREFECT_API_URL}/concurrency_limits/`, {
