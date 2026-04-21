@@ -82,6 +82,8 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
     [dispatch, openImportDialog]
   );
 
+  const mappings = conceptMappingState.csvData.data.filter((d) => d.status === "checked");
+
   const handleSave = useCallback(async () => {
     const databaseCode = selectedDataset?.databaseCode;
     const schemaName = selectedDataset?.schemaName;
@@ -99,20 +101,18 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
         return d.toISOString().slice(0, 10);
       };
 
-      const mappings = csvData.data
-        .filter((d) => d.status === "checked")
-        .map((row) => ({
-          source_code: row[sourceCode] ?? "",
-          source_concept_id: 0,
-          source_code_description: row[sourceName] ?? "",
-          target_concept_id: row.conceptId ?? 0,
-          target_vocabulary_id: row.system ?? "",
-          valid_start_date: toISODate(row.validStartDate),
-          valid_end_date: toISODate(row.validEndDate),
-          invalid_reason: row.validity ?? "",
-        }));
+      const parsedMappings = mappings.map((row) => ({
+        source_code: row[sourceCode] ?? "",
+        source_concept_id: 0,
+        source_code_description: row[sourceName] ?? "",
+        target_concept_id: row.conceptId ?? 0,
+        target_vocabulary_id: row.system ?? "",
+        valid_start_date: toISODate(row.validStartDate),
+        valid_end_date: toISODate(row.validEndDate),
+        invalid_reason: row.validity ?? "",
+      }));
 
-      const encoded = window.btoa(pako.deflate(JSON.stringify(mappings), { to: "string" }));
+      const encoded = window.btoa(pako.deflate(JSON.stringify(parsedMappings), { to: "string" }));
       await api.conceptMapping.saveConceptMappings(databaseCode, schemaName, csvData.name || "", encoded);
       setFeedback({
         type: "success",
@@ -174,7 +174,8 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
           disabled={
             !selectedDataset?.databaseCode ||
             !selectedDataset?.schemaName ||
-            conceptMappingState.csvData.data.length === 0
+            conceptMappingState.csvData.data.length === 0 ||
+            mappings.length === 0
           }
         />
       </div>

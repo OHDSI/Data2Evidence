@@ -4,10 +4,24 @@ import {
   SOURCE_TO_CONCEPT_MAP_COLUMNS,
 } from "../constants";
 
+function validateIdentifierForSchemaOrTableName(identifier: string): void {
+  if (!/^[A-Za-z_][A-Za-z0-9_]+$/.test(identifier)) {
+    throw new Error(`Invalid identifier: ${identifier}`);
+  }
+}
+
 class TrexConnection {
   private readonly conn: any;
 
   constructor(databaseCode: string, schemaName: string) {
+    try {
+      validateIdentifierForSchemaOrTableName(databaseCode);
+      validateIdentifierForSchemaOrTableName(schemaName);
+    } catch (err) {
+      console.error("Invalid identifier for database or schema name, ", err);
+      throw err;
+    }
+
     try {
       // @ts-ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
@@ -16,7 +30,7 @@ class TrexConnection {
         schemaName,
         schemaName,
         schemaName,
-        { duckdb: (e: unknown) => e }
+        { duckdb: (e: unknown) => e },
       );
     } catch (err) {
       console.error("Error getting trex connection, ", err);
@@ -34,7 +48,7 @@ class TrexConnection {
             return reject(err);
           }
           resolve({ rows: res, rowCount: res.length ?? 0 });
-        }
+        },
       );
     });
   }
@@ -46,7 +60,7 @@ class TrexConnection {
 
 export const getSourceToConceptMappings = async (
   databaseCode: string,
-  schemaName: string
+  schemaName: string,
 ) => {
   const client = new TrexConnection(databaseCode, schemaName);
   try {
@@ -65,15 +79,15 @@ export const saveSourceToConceptMappings = async (
   databaseCode: string,
   schemaName: string,
   sourceVocabularyId: string,
-  conceptMappings: string
+  conceptMappings: string,
 ) => {
   const client = new TrexConnection(databaseCode, schemaName);
   try {
     const parsedMappings = convertZlibBase64ToJson(conceptMappings).map(
-      (mapping) => ({
+      (mapping: any) => ({
         ...mapping,
         source_vocabulary_id: sourceVocabularyId,
-      })
+      }),
     );
 
     const columns = SOURCE_TO_CONCEPT_MAP_COLUMNS;
@@ -87,7 +101,7 @@ export const saveSourceToConceptMappings = async (
     const sql = `INSERT INTO ${schemaName}.${SOURCE_TO_CONCEPT_MAP_TABLE} (${columns.join(", ")}) VALUES ${valuePlaceholders}`;
 
     const params = parsedMappings.flatMap((row: any) =>
-      columns.map((col) => row[col] ?? null)
+      columns.map((col) => row[col] ?? null),
     );
 
     const result = await client.query(sql, params);
