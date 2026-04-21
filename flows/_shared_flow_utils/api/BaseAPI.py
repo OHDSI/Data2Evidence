@@ -1,7 +1,7 @@
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
-from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
+from _shared_flow_utils.api.PrefectAPI import GetAuthTokens
 
 class BaseAPI:
     def __init__(self):
@@ -27,8 +27,12 @@ class BaseAPI:
         return False if self.python_verify_ssl == 'false' else self.tls_internal_ca_cert.get()
 
 
-    def get_options(self) -> dict[str, str]:
-        bearer_token = f"Bearer {OpenIdAPI().get_client_credential_token()}"
+    def get_options(self, flow_run_id = None) -> dict[str, str]:
+
+        # Prefect task to get token from flow input
+        bearer_token = None
+        if not self.is_dev_env:
+            bearer_token = GetAuthTokens().get_auth_token(flow_run_id).get_secret_value()
         return {
             "Content-Type": "application/json",
             "Authorization": bearer_token if bearer_token else "Bearer <token>"

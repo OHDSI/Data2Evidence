@@ -4,11 +4,21 @@ from typing import Union
 from base64 import b64decode
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 class SupabaseStorageAPI(BaseAPI):
     def __init__(self):
         super().__init__()
         self.url = f"{self.get_service_route("dataflowStorage")}"
+
+
+    def get_options(self):
+        bearer_token = f"Bearer {OpenIdAPI().get_client_credential_token()}"
+        return {
+            "Content-Type": "application/json",
+            "Authorization": bearer_token
+        }
+
 
     def list_files(self, node_id: str) -> list[dict]:
         request_url = f"{self.url}list/file?nodeId={node_id}"
