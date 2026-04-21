@@ -8,11 +8,12 @@ import { ImportDialog } from "../components/ImportDialog/ImportDialog";
 import { MappingTable } from "../components/MappingTable/MappingTable";
 import { MappingDrawer } from "../components/MappingDrawer/MappingDrawer";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
-import { FormControl, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { FormControl, MenuItem, Select, SelectChangeEvent, Tabs, Tab } from "@mui/material";
 import { useTranslation } from "../hooks/use-translation";
 import { ConceptMappingState, csvData, Study } from "../types";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { i18nKeys } from "../Context/state";
+import { SavedMappingsTable } from "../components/SavedMappingsTable/SavedMappingsTable";
 import "./Overview.scss";
 
 interface OverviewProps {
@@ -44,6 +45,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
   const [isSaving, setIsSaving] = useState(false);
   const [selectedDataset, setSelectedDataset] = useState<Study>();
   const selectedDatasetId = selectedDataset?.id;
+  const [tabIndex, setTabIndex] = useState(0);
   const [showImportDialog, openImportDialog, closeImportDialog] = useDialogHelper(false);
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
           </Select>
         </FormControl>
         <Button
-          text="Save to Database"
+          text={getText(i18nKeys.OVERVIEW__SAVE_TO_DATABASE)}
           onClick={handleSave}
           loading={isSaving}
           disabled={
@@ -177,7 +179,14 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
         />
       </div>
 
-      <div className="testing">
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} sx={{ mt: 2, mb: 1 }}>
+          <Tab label={getText(i18nKeys.OVERVIEW__MAPPING_TAB)} />
+          <Tab label={getText(i18nKeys.OVERVIEW__SAVED_MAPPINGS_TAB)} />
+        </Tabs>
+      </div>
+
+      {tabIndex === 0 && (
         <div>
           {conceptMappingState.importData.data.length !== 0 && (
             <ImportDialog
@@ -195,7 +204,11 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
           {conceptMappingState.csvData.data.length !== 0 && <MappingTable selectedDatasetId={selectedDatasetId} />}
           <MappingDrawer selectedDatasetId={selectedDatasetId} />
         </div>
-      </div>
+      )}
+
+      {tabIndex === 1 && selectedDataset?.databaseCode && selectedDataset?.schemaName && (
+        <SavedMappingsTable databaseCode={selectedDataset.databaseCode} schemaName={selectedDataset.schemaName} />
+      )}
     </div>
   );
 };
