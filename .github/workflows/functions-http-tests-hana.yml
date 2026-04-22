@@ -304,7 +304,7 @@ jobs:
               -H 'content-type: application/json' \
               -H 'origin: https://localhost:41100' \
               -H 'referer: https://localhost:41100/d2e/portal/no-access' \
-              --data-raw "{\"userId\":\"$IDP_SUB\"}")
+              --data-raw "{\"userId\":\"$IDP_SUB\",\"sync\":true}")
           printf "%s\n" "$response"
           USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
           echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps

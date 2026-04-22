@@ -57,7 +57,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.USER_MGMT_ROLE_SOURCE === 'logto' || env.IDP_RELYING_PARTY === 'azure') {
+        if (env.IDP_RELYING_PARTY === 'azure') {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
