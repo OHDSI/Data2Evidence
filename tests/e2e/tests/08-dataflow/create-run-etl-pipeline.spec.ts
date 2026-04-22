@@ -176,7 +176,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('d4l-input').filter({ hasText: 'Description' }).getByPlaceholder(' ').click();
   await page.locator('d4l-input').filter({ hasText: 'Description' }).getByPlaceholder(' ').fill('testing');
   await page.getByText('def exec(myinput): return "').click();
-  await fillMonacoEditor('import json\n\ndef exec(myinput):\n data = {"name": "John", "age": 30}\njson_string = json.dumps(data)\nprint(json_string)\ndf = myinput.get("db_reader_node_0").result\ndf["source_description"] = df["source_description"].astype(str) + "."\nreturn df');
+  await fillMonacoEditor('import json\n\ndef exec(myinput):\n data = {"name": "John", "age": 30}\njson_string = json.dumps(data)\nprint(json_string)\ndf = myinput.get("db_reader_node_0").result\ndf["source_description"] = df["source_description"].astype(str) + append_text\nreturn df');
 
   // Ensure python node is edited
   await page.getByRole('button', { name: 'Apply' }).click();
@@ -294,7 +294,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(runningButton).toBeDisabled();
 
   // Click on the only button inside the "Cancel run" div
-  const cancelButton = page.locator('div[aria-label="Cancel run"] button');
+  const cancelButton = page.getByLabel('Cancel run').getByRole('button')
+  // Wait for 2 seconds to ensure the cancel run button is visible
+  await page.waitForTimeout(6000);
   await cancelButton.click();
 
   // Ensure runningPanel is hidden
@@ -359,4 +361,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('list')).toContainText('Version #1')
   await expect(page.getByRole('list')).toContainText('DE Testing')
   await page.getByRole('button', { name: 'close' }).click()
+
+  //Clean up - delete flow
+  await page.getByLabel('Delete flow').getByRole('button').click()
+  await page.getByRole('textbox').click()
+  await page.getByRole('textbox').fill('ETL - Test Stable Nodes_DE')
+  await page.getByRole('button', { name: 'Delete' }).click()
 });
