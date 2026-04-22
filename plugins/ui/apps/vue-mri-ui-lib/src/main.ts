@@ -26,10 +26,12 @@ import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 import { applyTheme } from './utils/ThemeManager'
+import { createPortalContextStore } from './stores/portalContext'
+import type { PortalContextState } from './types/portal-props'
 
 let app: Component
 const portalAPI = getPortalAPI()
-const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+const isLocal = portalAPI?.isLocal === true
 import './styles/themes/_main.scss'
 
 if (isLocal) {
@@ -50,6 +52,25 @@ if (isLocal) {
 const pinia = createPinia()
 app.use(store)
 app.use(pinia)
+
+const portalContext: PortalContextState = {
+  getToken: portalAPI?.getToken || (async () => localStorage.getItem('msaltoken') || ''),
+  datasetId: portalAPI?.studyId || 'dev-dataset',
+  releaseId: portalAPI?.releaseId || 'dev-release',
+  tenantId: 'dev-tenant',
+  username: portalAPI?.username || 'dev-user',
+  idpUserId: 'dev-idp',
+  locale: portalAPI?.locale || 'en',
+  features: portalAPI?.features || [],
+  featuresLoading: portalAPI?.featuresLoading ?? false,
+  qeSvcUrl: portalAPI?.qeSvcUrl,
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: portalAPI?.REACT_APP_PUBLIC_WEBAPI_PROXY_URL,
+  REACT_APP_USE_PUBLIC_WEBAPI_PROXY: portalAPI?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY,
+  REACT_APP_PUBLIC_WEBAPI_DATASOURCE: portalAPI?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE,
+  debug: portalAPI?.debug,
+}
+createPortalContextStore(portalContext, pinia)
+
 app.use(vuetify)
 app.component('app-label', appLabelVue)
 app.component('app-tag-input', appTagInputVue)

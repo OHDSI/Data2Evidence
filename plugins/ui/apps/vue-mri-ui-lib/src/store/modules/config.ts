@@ -2,7 +2,7 @@
 import ChartConfigService from '../../lib/ChartConfigService'
 import MriFrontEndConfig from '../../lib/MriFrontEndConfig'
 import * as types from '../mutation-types'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import { useNotificationStore } from '../../stores/notifications'
 
 let chartConfigServiceInstance
@@ -150,11 +150,11 @@ const actions = {
     })
   },
   setDataset({ commit }, dataset) {
-    const datasetId = getPortalAPI().studyId
+    const datasetId = usePortalContext().datasetId
     commit(types.SET_SELECTED_DATASET, { id: datasetId })
   },
   setDatasetReleaseId({ commit }) {
-    const releaseId = getPortalAPI().releaseId
+    const releaseId = usePortalContext().releaseId
     commit(types.SET_SELECTED_DATASET_RELEASE_ID, releaseId)
   },
 }
