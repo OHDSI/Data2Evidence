@@ -9,7 +9,7 @@ COPY install_onnx.sh ./scripts
 COPY install_libchdb.sh ./scripts
 
 RUN echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \
-apt-get update && apt-get install -y \
+apt-get update && apt-get install -y --no-install-recommends \
     curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm \
     && apt-get install -y -t testing libstdc++6 && \
     rm -rf /var/lib/apt/lists/*
