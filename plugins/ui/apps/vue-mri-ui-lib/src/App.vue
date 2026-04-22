@@ -2,7 +2,8 @@
   <div id="app" class="mri-app-vue-container">
     <NotificationStack />
     <splashScreen v-if="getInitialLoad" />
-    <patientanalytics v-show="!getInitialLoad" />
+    <AtlasView v-else-if="atlasStore.showAtlas" />
+    <patientanalytics v-else />
   </div>
 </template>
 
@@ -14,6 +15,8 @@ import SplashScreen from './components/SplashScreen.vue'
 import NotificationStack from './components/NotificationStack.vue'
 import { useDeepLink } from './composables/useDeepLink'
 import CohortUrlCodec from './utils/CohortUrlCodec'
+import AtlasView from './views/AtlasView.vue'
+import { useAtlasStore } from './stores/atlas'
 
 export default {
   name: 'app',
@@ -21,6 +24,7 @@ export default {
   data() {
     return {
       showDialog: false,
+      atlasStore: useAtlasStore(),
     }
   },
   created() {
@@ -105,6 +109,7 @@ export default {
     configSelection,
     SplashScreen,
     NotificationStack,
+    AtlasView,
   },
 }
 </script>

@@ -234,7 +234,6 @@ import cohortComparisonDialog from './CohortComparisonDialog.vue'
 import messageBox from './MessageBox.vue'
 import addCohort from './AddCohort.vue'
 import cohortListDialog from './CohortListDialog.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
 import * as types from '../store/mutation-types'
 import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
@@ -242,11 +241,15 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+import { useAtlasStore } from '../stores/atlas'
+import { usePortalContext } from '../composables/usePortalContext'
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
     return {
+      atlasStore: useAtlasStore(),
+      portalContext: usePortalContext(),
       maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
@@ -311,10 +314,10 @@ export default {
       return this.getCanDatasetMaterializeCohorts
     },
     bookmarksDisplay() {
-      return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+      return this.getDisplayBookmarks(this.showSharedBookmarks, this.portalContext.username)
     },
     isLocal() {
-      return getPortalAPI().isLocal
+      return false
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
@@ -433,7 +436,7 @@ export default {
       }
 
       // Check if the new name is already taken
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       for (const bookmark of this.getBookmarks) {
         if (
           username === bookmark.user_id &&
@@ -583,7 +586,7 @@ export default {
       this.reset()
     },
     checkCohortName(bookmarkName, suffix = '') {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       let uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
       for (const bookmark of this.getBookmarks) {
         if (username === bookmark.user_id && bookmark.bookmarkname === uniqueName) {
@@ -671,7 +674,7 @@ export default {
     openAtlasLink() {
       if (this.useAtlasLite) {
         // Existing behavior: open atlas-lite
-        getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
+        this.atlasStore.openAtlas('/#/cohortdefinitions')
       } else if (this.usePaAtlas) {
         // New behavior: create empty Atlas bookmark for pa-atlas
         this.openNewAtlasBookmark()

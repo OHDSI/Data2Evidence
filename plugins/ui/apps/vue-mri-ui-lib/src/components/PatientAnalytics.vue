@@ -176,7 +176,6 @@ import MessageBox from './MessageBox.vue'
 import MessageToast from './MessageToast.vue'
 import SplashScreen from './SplashScreen.vue'
 import ResizeObserver from './ResizeObserver.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
@@ -252,7 +251,7 @@ export default {
     },
   },
   mounted() {
-    this.isLocal = 'isLocal' in getPortalAPI()
+    this.isLocal = false
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },

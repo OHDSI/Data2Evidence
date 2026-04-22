@@ -16,9 +16,12 @@ import { onErrorCaptured } from 'vue'
 import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
 import { getBookmarkType, canModifyBookmark } from '../utils/BookmarkUtils'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { useAtlasStore } from '../stores/atlas'
+import { usePortalContext } from '../composables/usePortalContext'
 
 const store = useStore()
+const atlasStore = useAtlasStore()
+const portalContext = usePortalContext()
 
 const {
   getText,
@@ -38,10 +41,9 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-
 const isLocal = getPortalAPI()?.isLocal || false
 // Get current username from JWT token for ownership checks
-const currentUsername = computed(() => getPortalAPI()?.username || '')
+const currentUsername = computed(() => portalContext.username || '')
 
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
@@ -264,7 +266,7 @@ const openAtlasLink = (id: number) => {
   if (selection.toString().length > 0) {
     return
   }
-  getPortalAPI()?.toggleAtlas(true, `/#/cohortdefinition/${id}`)
+  atlasStore.openAtlas(`/#/cohortdefinition/${id}`)
 }
 
 const getBookmarkCardClass = (bookmarkDisplay: any) => {

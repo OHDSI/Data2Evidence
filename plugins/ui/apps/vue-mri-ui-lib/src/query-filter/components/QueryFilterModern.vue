@@ -25,8 +25,8 @@ import { getTagInputTexts } from '../utils/ConceptSetHelpers'
 import { useConceptSets } from '../composables/useConceptSets'
 import { useDatasetId } from '../composables/useDatasetId'
 import { useUserRole } from '../../composables/useUserRole'
+import { usePortalContext } from '../../composables/usePortalContext'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
-import { getPortalAPI } from '../../utils/PortalUtils'
 import ButtonMaterial from './ButtonMaterial.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
@@ -67,6 +67,7 @@ interface TerminologyEventProps {
 
 const store = useStore()
 const { canShare } = useUserRole()
+const portalContext = usePortalContext()
 
 const showDebug = ref(false)
 
@@ -91,8 +92,7 @@ const POLLING_INTERVAL_MS = 2000
 
 // Check if running in Atlas mode (standalone mode)
 const isAtlas = computed(() => {
-  const portalAPI = getPortalAPI()
-  return portalAPI?.isLocal === true
+  return false
 })
 
 // Max length for cohort names - no limit in Atlas mode, 40 chars in D2E Portal mode
@@ -190,8 +190,7 @@ const hasExceededLength = computed(() => {
 })
 
 const debug = computed(() => {
-  const portalAPI = getPortalAPI()
-  return portalAPI?.debug
+  return portalContext.debug
 })
 
 // Action bar computed properties
@@ -934,8 +933,7 @@ const saveAtlasCohort = async () => {
     const atlasExpression = convertToAtlasFormat()
 
     // Get current user info
-    const portalAPI = getPortalAPI()
-    const username = portalAPI?.username || 'system'
+    const username = portalContext.username || 'system'
     const currentDatasetId = getDatasetId()
     if (!currentDatasetId) {
       return
@@ -1491,4 +1489,3 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
 // Import existing styles for backward compatibility
 @use '../styles/QueryFilter';
 </style>
-

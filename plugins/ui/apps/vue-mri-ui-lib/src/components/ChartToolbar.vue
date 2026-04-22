@@ -182,7 +182,7 @@ import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 
 function getBookmarkKey(bookmark) {
   if (!bookmark) {
@@ -219,6 +219,7 @@ export default {
     const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
 
     return {
+      portalContext: usePortalContext(),
       chartConfig: [],
       disableCensoring: true,
       unHideIcon: '',
@@ -311,11 +312,10 @@ export default {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isWizardFeatureEnabled() {
-      const portalAPI = getPortalAPI()
-      if (!portalAPI?.features) {
+      if (!this.portalContext?.features) {
         return false
       }
-      return portalAPI.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
+      return this.portalContext.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
     },
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
