@@ -144,6 +144,46 @@ describe('StackBarChart selection handling', () => {
     expect(Plotly.react).toHaveBeenCalled()
   })
 
+  it('resets to default state when plotly_selected has no selected points', async () => {
+    const wrapper = mountComponent()
+
+    const handlers: Record<string, () => void> = {}
+    const fakePlotElement = {
+      clientWidth: 800,
+      on: vi.fn((event: string, cb: () => void) => {
+        handlers[event] = cb
+      }),
+    }
+
+    Object.defineProperty((wrapper.vm as any).$el, 'querySelector', {
+      value: vi.fn(() => fakePlotElement),
+    })
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          name: 'Group One',
+          meta: { fullName: 'Group One' },
+          selectedpoints: [],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [{ id: 'grp.id' }], values: ['Alpha'] }],
+        },
+      ],
+      tickvals: ['Alpha'],
+      ticktext: ['Alpha'],
+      ticktextFull: ['Alpha'],
+    }
+    ;(wrapper.vm as any).setupPlotly()
+
+    handlers.plotly_selected()
+
+    const afterEmptySelection = getLastSelectionPayload()
+    expect(afterEmptySelection.selection).toEqual([])
+    expect(Plotly.react).toHaveBeenCalled()
+    const reactTraces = (Plotly.react as any).mock.calls.at(-1)?.[1]
+    expect(reactTraces[0].selectedpoints).toBeNull()
+  })
+
   it('uses relayout only on reset when no active selection exists', async () => {
     const wrapper = mountComponent()
 
@@ -152,7 +192,6 @@ describe('StackBarChart selection handling', () => {
       axisType: 'category',
       traces: [
         {
-          selectedpoints: [],
         },
       ],
       tickvals: ['A'],
