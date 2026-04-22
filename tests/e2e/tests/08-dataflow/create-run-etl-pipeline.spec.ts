@@ -200,6 +200,13 @@ test(TEST_NAME, async ({ page }) => {
   await py2tableNode.click();
   await expect(py2tableNode).toMatchAriaSnapshot(`- text: Describe the task of node py2table_node_0`);
 
+  // Add another node after py2table node with text `SQLStableRun SQL in a database`
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('SQLStableRun SQL in a database').click();
+  const sqlNodeTestId = await getNodeTestIdByLabel('sql_node_0');
+  const sqlNode = page.getByTestId(sqlNodeTestId);
+  await expect(sqlNode).toMatchAriaSnapshot(`- text: Describe the task of node sql_node_0`);
+
   await page.getByRole('button', { name: 'Add node' }).click();
   await page.getByText('Database writerStableWrite').click();
   const dbWriterNodeTestId = await getNodeTestIdByLabel('db_writer_node_0');
@@ -208,12 +215,14 @@ test(TEST_NAME, async ({ page }) => {
 
   await moveNodeByLabel('db_reader_node_0', -360, 20);
   await moveNodeByLabel('test_python_node', -100, 20);
-  await moveNodeByLabel('py2table_node_0', 0, 20);
-  await moveNodeByLabel('db_writer_node_0', 360, 20);
+  await moveNodeByLabel('py2table_node_0', 100, 20);
+  await moveNodeByLabel('sql_node_0', 250, 20);
+  await moveNodeByLabel('db_writer_node_0', 400, 20);
 
   await connectNodesByLabel('db_reader_node_0', 'test_python_node');
   await connectNodesByLabel('test_python_node', 'py2table_node_0');
-  await connectNodesByLabel('py2table_node_0', 'db_writer_node_0');
+  await connectNodesByLabel('py2table_node_0', 'sql_node_0');
+  await connectNodesByLabel('sql_node_0', 'db_writer_node_0');
 
   // Edit nodes after they are moved and connected
   // Edit db_reader_node
@@ -222,7 +231,7 @@ test(TEST_NAME, async ({ page }) => {
   const dbReaderDropdown = page.getByRole('combobox').first();
   await dbReaderDropdown.click();
   await page.getByRole('option', { name: 'demo_database - postgres', exact: true }).click();
-  await fillMonacoEditor('select * from "demo_cdm"."cdm_source"');
+  await fillMonacoEditor('select * from "demo_cdm"."cdm_source" limit 1');
   await page.getByRole('button', { name: 'Apply' }).click();
 
   // Edit py2table_node
@@ -234,12 +243,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'JSON Path' }).fill('$');
   await page.getByRole('button', { name: 'Apply' }).click();
 
+  // Edit nodes after they are moved and connected
+  // Edit sql_node_0
+  await sqlNode.hover();
+  await sqlNode.locator('.node__setting').first().click();
+  await fillMonacoEditor('select * from py2table_node_0');
+  await page.getByRole('button', { name: 'Apply' }).click();
+
   // Edit db_writer_node
   await dbWriterNode.hover();
   await dbWriterNode.locator('.node__setting').first().click();
   const dbWriterDataframeCombobox = page.getByTestId('select').first();
   await dbWriterDataframeCombobox.click();
-  await page.getByRole('option', { name: 'py2table_node_0' }).click();
+  await page.getByRole('option', { name: 'sql_node_0' }).click();
   const dbWriterDatabaseCombobox = page
     .locator('.MuiFormControl-root')
     .filter({ has: page.getByText('Database', { exact: true }) })
