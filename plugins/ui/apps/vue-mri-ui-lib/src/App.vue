@@ -11,13 +11,11 @@ import { mapActions, mapGetters } from 'vuex'
 import configSelection from './components/ConfigSelection.vue'
 import patientanalytics from './components/PatientAnalytics.vue'
 import SplashScreen from './components/SplashScreen.vue'
-import store from './store'
 import NotificationStack from './components/NotificationStack.vue'
 import { useDeepLink } from './composables/useDeepLink'
 import CohortUrlCodec from './utils/CohortUrlCodec'
 
 export default {
-  store,
   name: 'app',
   props: {},
   data() {

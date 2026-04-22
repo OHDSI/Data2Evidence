@@ -4,6 +4,7 @@ import type { PluginOption, UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 
 // https://vitejs.dev/config/
@@ -12,6 +13,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
   const isBuild = command === 'build'
+  const isServe = command === 'serve'
 
   // Parse navigation items for client routes (matching webpack config)
   const navigationItems = JSON.parse(env.VITE_NAVIGATION_ITEMS || '[]')
@@ -35,6 +37,7 @@ export default defineConfig(({ command, mode }): UserConfig => {
     logLevel: 'info',
 
     plugins: [
+      isBuild && cssInjectedByJsPlugin(),
       vue({
         template: {
           transformAssetUrls,
@@ -58,8 +61,8 @@ export default defineConfig(({ command, mode }): UserConfig => {
         }),
       // Replace %VITE_*% placeholders in HTML with env values
       htmlEnvPlugin(env),
-      // Generate assets.json plugin (matching HtmlWebpackPlugin behavior)
-      generateAssetsJsonPlugin(env.VITE_HOST || ''),
+      // Generate assets.json only for serve/dev flow
+      isServe && generateAssetsJsonPlugin(env.VITE_HOST || ''),
     ] as PluginOption[],
 
     // Expose VITE_ prefixed env variables to the client
@@ -123,21 +126,24 @@ export default defineConfig(({ command, mode }): UserConfig => {
       minify: isProduction,
       // Copy public folder contents to outDir
       copyPublicDir: true,
+      ...(isBuild
+        ? {
+            lib: {
+              entry: path.resolve(__dirname, 'src/lifecycles.ts'),
+              fileName: () => 'lifecycles.js',
+              formats: ['system'] as const,
+            },
+          }
+        : {}),
       rollupOptions: {
         // import-map-overrides is provided by portal, don't bundle it
         external: ['import-map-overrides'],
-        // Use main.ts as entry point instead of index.html
-        // This prevents Vite from inlining scripts from index.html that assume DOM elements exist
-        // index.html is only used for local development, portal provides its own container
-        input: {
-          main: path.resolve(__dirname, 'src/main.ts'),
-        },
         output: {
           // Map externals to global variables
           globals: {
             'import-map-overrides': 'importMapOverrides',
           },
-          entryFileNames: 'js/[name]-[hash].js',
+          entryFileNames: isBuild ? 'lifecycles.js' : 'js/[name]-[hash].js',
           chunkFileNames: 'js/[name]-[hash].js',
           assetFileNames: assetInfo => {
             const name = assetInfo.names?.[0] || assetInfo.name || ''
