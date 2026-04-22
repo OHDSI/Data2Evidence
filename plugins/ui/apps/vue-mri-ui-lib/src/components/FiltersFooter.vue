@@ -180,7 +180,7 @@ import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -194,8 +194,9 @@ export default {
   },
   setup() {
     const store = useStore()
+    const portalContext = usePortalContext()
     const { canShare } = useUserRole()
-    return { canShare }
+    return { canShare, portalContext }
   },
   data() {
     return {
@@ -251,7 +252,7 @@ export default {
       return filtercardCount >= this.maxFiltercardCount
     },
     isNotUserSharedBookmark() {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       return this.getActiveBookmark.shared && username !== this.getActiveBookmark.user_id
     },
   },
@@ -301,7 +302,7 @@ export default {
           return
         }
 
-        const username = getPortalAPI().username
+        const username = this.portalContext.username
 
         // For updates without a new name, use the existing bookmark name
         const bookmarkName = this.cohortName.length > 0 ? this.cohortName : activeBookmark.bookmarkname

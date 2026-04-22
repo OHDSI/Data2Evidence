@@ -1,6 +1,5 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
-import { getPortalAPI } from './PortalUtils'
 import { NavigationItem } from '@/types/navigation'
 
 // Setup all import maps
@@ -56,14 +55,14 @@ function registerNavigationApps() {
           app: () => window.System.import(item.appName).then((module: any) => module.default || module),
           activeWhen: location => item.autoMount || location.pathname === item.route,
           customProps: () => {
-            const portalAPI = getPortalAPI()
+            const searchParams = new URLSearchParams(window.location.search)
             return {
               containerId: `single-spa-application:${item.appName}`,
-              getToken: portalAPI?.getToken,
-              username: portalAPI?.username,
-              datasetId: portalAPI?.studyId,
-              locale: portalAPI?.locale,
-              isAtlas: portalAPI?.isLocal || false,
+              getToken: async () => localStorage.getItem('msaltoken') || '',
+              username: 'dev-user',
+              datasetId: searchParams.get('datasetId') || 'dev-dataset',
+              locale: 'en',
+              isAtlas: window.location.hostname === 'localhost',
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }
@@ -116,4 +115,3 @@ function initializeApps() {
 }
 
 export { initializeApps, navigateToRoute }
-

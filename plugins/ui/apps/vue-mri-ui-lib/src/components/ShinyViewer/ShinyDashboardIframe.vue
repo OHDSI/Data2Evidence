@@ -25,7 +25,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useStore } from 'vuex'
-import { getPortalAPI } from '@/utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 const props = defineProps<{
   datasetId: string
@@ -45,7 +45,7 @@ const tokenSent = ref(false)
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-const portalAPI = getPortalAPI()
+const portalContext = usePortalContext()
 
 const iframeUrl = computed(() => {
   if (!props.wizardConfig?.dashboardType) {
@@ -84,7 +84,7 @@ onUnmounted(() => {
 
 async function fetchAuthToken() {
   try {
-    const token = await portalAPI.getToken()
+    const token = await portalContext.getToken()
     if (token) {
       bearerToken.value = token
     } else {

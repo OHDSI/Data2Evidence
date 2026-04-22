@@ -125,7 +125,7 @@ import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '../../composables/usePortalContext'
 
 export default {
   name: 'SaveCohortModal',
@@ -150,7 +150,9 @@ export default {
     },
   },
   data() {
+    const portalContext = usePortalContext()
     return {
+      portalContext,
       cohortName: this.generateDefaultName(),
       cohortDescription: '',
       cohortNameValidationState: 'valid' as 'valid' | 'empty' | 'invalid' | 'duplicate',
@@ -275,7 +277,7 @@ export default {
         return false
       }
 
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const isDuplicate = this.getBookmarks.some(
         bookmark =>
           bookmark.user_id === username &&
@@ -359,7 +361,7 @@ export default {
 
       const bookmarkName = this.isNewCohort ? this.cohortName.trim() : activeBookmark?.bookmarkname
 
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
 
       if (!bookmark) {
@@ -373,7 +375,7 @@ export default {
 
     async saveBookmark() {
       const activeBookmark = this.getActiveBookmark
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const bookmarkData = this.getBookmarksData
       const selectedDataset = this.getSelectedDataset
 

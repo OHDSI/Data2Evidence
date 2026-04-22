@@ -1,15 +1,16 @@
 import axios, { AxiosRequestConfig } from 'axios'
-import { getPortalAPI } from '@/utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
-const portalAPI = getPortalAPI()
-const BASE_URL = portalAPI?.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
-
-const client = axios.create({ baseURL: BASE_URL })
+export const client = axios.create()
 
 client.interceptors.request.use(
   async config => {
-    if (portalAPI) {
-      const token = await portalAPI.getToken()
+    const portalContext = usePortalContext()
+    const baseUrl = portalContext.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    config.baseURL = baseUrl
+
+    if (portalContext?.getToken) {
+      const token = await portalContext.getToken()
       config.headers.Authorization = `Bearer ${token}`
     }
     return config

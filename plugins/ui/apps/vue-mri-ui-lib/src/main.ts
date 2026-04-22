@@ -7,7 +7,6 @@ import App from './App.vue'
 import RootLayout from './RootLayout.vue'
 import { createPinia } from 'pinia'
 import { createStore } from './store'
-import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
 import { initializeComponents } from './utils/ComponentRegistry'
 import { applyTheme } from './utils/ThemeManager'
@@ -16,8 +15,8 @@ import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/re
 import type { PortalContextState } from './types/portal-props'
 
 let app: Component
-const portalAPI = getPortalAPI()
-const isLocal = portalAPI?.isLocal === true
+const isLocal = window.location.hostname === 'localhost'
+const searchParams = new URLSearchParams(window.location.search)
 import './styles/themes/_main.scss'
 
 if (isLocal) {
@@ -40,20 +39,20 @@ app.use(pinia)
 app.use(createStore())
 
 const portalContext: PortalContextState = {
-  getToken: portalAPI?.getToken || (async () => localStorage.getItem('msaltoken') || ''),
-  datasetId: portalAPI?.studyId || 'dev-dataset',
-  releaseId: portalAPI?.releaseId || 'dev-release',
+  getToken: async () => localStorage.getItem('msaltoken') || '',
+  datasetId: searchParams.get('datasetId') || 'dev-dataset',
+  releaseId: searchParams.get('releaseId') || 'dev-release',
   tenantId: 'dev-tenant',
-  username: portalAPI?.username || 'dev-user',
+  username: 'dev-user',
   idpUserId: 'dev-idp',
-  locale: portalAPI?.locale || 'en',
-  features: portalAPI?.features || [],
-  featuresLoading: portalAPI?.featuresLoading ?? false,
-  qeSvcUrl: portalAPI?.qeSvcUrl,
-  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: portalAPI?.REACT_APP_PUBLIC_WEBAPI_PROXY_URL,
-  REACT_APP_USE_PUBLIC_WEBAPI_PROXY: portalAPI?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY,
-  REACT_APP_PUBLIC_WEBAPI_DATASOURCE: portalAPI?.REACT_APP_PUBLIC_WEBAPI_DATASOURCE,
-  debug: portalAPI?.debug,
+  locale: 'en',
+  features: [],
+  featuresLoading: false,
+  qeSvcUrl: import.meta.env.VITE_API_BASE_URL,
+  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: undefined,
+  REACT_APP_USE_PUBLIC_WEBAPI_PROXY: undefined,
+  REACT_APP_PUBLIC_WEBAPI_DATASOURCE: undefined,
+  debug: import.meta.env.DEV,
 }
 createPortalContextStore(portalContext, pinia)
 

@@ -17,6 +17,7 @@ import { useDeepLink } from './composables/useDeepLink'
 import CohortUrlCodec from './utils/CohortUrlCodec'
 import AtlasView from './views/AtlasView.vue'
 import { useAtlasStore } from './stores/atlas'
+import { usePortalContext } from './composables/usePortalContext'
 
 export default {
   name: 'app',
@@ -25,6 +26,7 @@ export default {
     return {
       showDialog: false,
       atlasStore: useAtlasStore(),
+      portalContext: usePortalContext(),
     }
   },
   created() {
@@ -35,8 +37,8 @@ export default {
     this.setLocale()
 
     const datasetChangeHandler = () => {
-      this.setDataset()
-      this.setDatasetReleaseId()
+      this.setDataset(this.portalContext.datasetId)
+      this.setDatasetReleaseId(this.portalContext.releaseId)
       this.$store.commit('RESET_DATASET_CACHE')
       // Update the config in state before doing further queries
       this.requestMriConfig()
@@ -47,18 +49,6 @@ export default {
           console.error('[App] Config reload on dataset change failed', e)
         })
     }
-    const listenerInfo = { type: 'alp-dataset-change', app: 'patient-analytics', listener: datasetChangeHandler }
-    if (!window.d2eListeners) {
-      window.d2eListeners = {
-        'alp-dataset-change': [listenerInfo],
-      }
-    } else if (!window.d2eListeners['alp-dataset-change']) {
-      window.d2eListeners['alp-dataset-change'] = [listenerInfo]
-    } else {
-      window.d2eListeners['alp-dataset-change'].push(listenerInfo)
-    }
-    window.addEventListener('alp-dataset-change', datasetChangeHandler)
-
     // Bind shareCohortDefinition to window for manual testing
     this.bindShareCohortDefinition()
 
