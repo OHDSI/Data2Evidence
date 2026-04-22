@@ -7,7 +7,7 @@ enum StrategusDataset {
     DIALECT = "postgres",
 }
 
-function getDummyDataset() {
+export function getDummyDataset() {
     const datasetInput = {
             id: "dummy-dataset-id",
             type: StrategusDataset.TYPE,
