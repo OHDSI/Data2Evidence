@@ -262,8 +262,8 @@ test(TEST_NAME, async ({ page }) => {
 
   // Run flow
   await page.locator('button.run-flow-button').click();
-  const runningPanel = page.locator('div[aria-label="Running"]');
-  const runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  let runningPanel = page.locator('div[aria-label="Running"]');
+  let runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
   await expect(runningButton).toBeVisible();
   await expect(runningButton).toBeDisabled();
   await expect(runningPanel).toBeHidden({ timeout: 25000 });
@@ -284,4 +284,79 @@ test(TEST_NAME, async ({ page }) => {
   // Check if the content with 'data-mode-id="plaintext"' contains 'error: false'
   const plainTextContent = page.locator('[data-mode-id="plaintext"]');
   await expect(plainTextContent).toContainText('"error": false');
+  await page.getByRole('button', { name: 'close' }).click();
+
+  //Run flow again without making any changes to ensure stable nodes can be run multiple times
+  await page.locator('button.run-flow-button').click();
+  runningPanel = page.locator('div[aria-label="Running"]');
+  runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  await expect(runningButton).toBeVisible();
+  await expect(runningButton).toBeDisabled();
+
+  // Click on the only button inside the "Cancel run" div
+  const cancelButton = page.locator('div[aria-label="Cancel run"] button');
+  await cancelButton.click();
+
+  // Ensure runningPanel is hidden
+  await expect(runningPanel).toBeHidden({ timeout: 2000 });
+
+  // Ensure run flow button is visible
+  const runFlowButton = page.locator('button.run-flow-button');
+  await expect(runFlowButton).toBeVisible();
+
+  // Ensure viewOutput buttons for all nodes are not visible
+  for (const nodeLabel of nodes) {
+    const node = getNodeByLabel(nodeLabel);
+    const viewOutputButton = node.locator('button', { hasText: 'View Output' });
+    await expect(viewOutputButton).toBeHidden();
+  }
+
+  // Click the button to add variables
+  const variablesMainButton_append = page.getByLabel('Variables').getByRole('button');
+  await variablesMainButton_append.click();
+
+  // Verify 'Key' and 'Value' fields are visible under 'Variables'
+  const variablesSection_new = page.locator('.flow-variables-drawer__variables');
+  await expect(variablesSection_new).toBeVisible();
+  await expect(variablesSection_new.locator('label:has-text("Key")')).toBeVisible();
+  await expect(variablesSection_new.locator('label:has-text("Value")')).toBeVisible();
+
+  // Fill the textarea with placeholder 'Enter variable value'
+  await page.locator('textarea[placeholder="Enter variable value"]').fill('.');
+
+  //Apply changes
+  await page.getByRole('button', { name: 'Apply' }).click();
+
+  //Run flow before saving the changes
+  await page.locator('button.run-flow-button').click();
+  
+  // Save dataflow
+  await page.getByRole('textbox', { name: 'Describe your changes' }).click();
+  await page.getByRole('textbox', { name: 'Describe your changes' }).fill('Update variable value for testing');
+  await page.getByRole('button', { name: 'Save' }).click();
+
+  //Verify the flow is running with the updated variable value
+  runningPanel = page.locator('div[aria-label="Running"]');
+  runningButton = runningPanel.locator('button.run-flow-button.run-flow-button--running');
+  await expect(runningButton).toBeVisible();
+  await expect(runningButton).toBeDisabled();
+
+  // Verify "View Output" buttons for all nodes
+  const nodes_new = ['db_reader_node_0', 'test_python_node', 'py2table_node_0', 'db_writer_node_0'];
+  for (const nodeLabel of nodes_new) {
+    const node = getNodeByLabel(nodeLabel);
+    await expect(node).toBeVisible();
+    const viewOutputButton = node.locator('button', { hasText: 'View Output' });
+    await expect(viewOutputButton).toBeVisible();
+  }
+
+  //Click on view history button and verify the latest run has the comment 'Update variable value for testing'
+  await page.getByLabel('Show version history').getByRole('button').click()
+  await expect(page.getByRole('list')).toContainText('Version #3')
+  await expect(page.getByRole('list')).toContainText('Update variable value for testing')
+  await expect(page.getByRole('list')).toContainText('Version #2')
+  await expect(page.getByRole('list')).toContainText('ETL - Test Stable Nodes_DE for testing')
+  await expect(page.getByRole('list')).toContainText('Version #1')
+  await expect(page.getByRole('list')).toContainText('DE Testing')
+  await page.getByRole('button', { name: 'close' }).click()
 });
