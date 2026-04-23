@@ -533,6 +533,29 @@ export class DatasetCommandService {
     }
   }
 
+  async updateDatabaseCode(datasetId: string, databaseCode: string) {
+    const currDataset = await this.datasetRepo.getDataset(datasetId);
+
+    if (!currDataset) {
+      throw new HttpException(400, `Dataset with id ${datasetId} not found`);
+    }
+
+    const dataset: Partial<Dataset> = {
+      ...currDataset,
+      databaseCode,
+    };
+
+    const entityMgr = (this.datasetRepo as any).manager as EntityManager;
+
+    await this.datasetRepo.updateDataset(
+      entityMgr,
+      datasetId,
+      this.addOwner(dataset),
+    );
+
+    return { id: datasetId };
+  }
+
   async updateDatasetAttribute(datasetAttributeDto: IDatasetAttributeDto) {
     const updateAttributeFn = async (
       _entityMgr: EntityManager,

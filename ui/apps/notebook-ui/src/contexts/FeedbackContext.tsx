@@ -1,4 +1,5 @@
-import React, { createContext, FC, ReactNode, useCallback, useContext, useState } from "react";
+import React, { createContext, FC, ReactNode, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useTranslation, i18nKeys } from "./TranslationContext";
 
 export interface Feedback {
   type?: "error" | "success";
@@ -16,15 +17,36 @@ interface FeedbackContextValue {
 
 const FeedbackContext = createContext<FeedbackContextValue | undefined>(undefined);
 
-export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [feedback, setFeedbackState] = useState<Feedback>({});
+const AUTO_CLOSE_SUCCESS_MS = 5000;
 
-  const setFeedback = useCallback((feedback: Feedback) => {
-    setFeedbackState(feedback);
-  }, []);
+export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
+  const { getText } = useTranslation();
+  const [feedback, setFeedbackState] = useState<Feedback>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearFeedback = useCallback(() => {
     setFeedbackState({});
+  }, []);
+
+  const setFeedback = useCallback((feedback: Feedback) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setFeedbackState(feedback);
+    const delay = feedback.autoClose ?? (feedback.type === "success" ? AUTO_CLOSE_SUCCESS_MS : undefined);
+    if (delay !== undefined) {
+      timerRef.current = setTimeout(() => {
+        setFeedbackState({});
+        timerRef.current = null;
+      }, delay);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, []);
 
   const getFeedback = useCallback(() => {
@@ -34,10 +56,10 @@ export const FeedbackProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const setGenericErrorFeedback = useCallback(() => {
     setFeedback({
       type: "error",
-      message: "An error has occurred.",
-      description: "Please try again. To report the error, please contact support.",
+      message: getText(i18nKeys.GENERAL__ERROR_OCCURRED),
+      description: getText(i18nKeys.GENERAL__ERROR_CONTACT_SUPPORT),
     });
-  }, [setFeedback]);
+  }, [setFeedback, getText]);
 
   return (
     <FeedbackContext.Provider value={{ setFeedback, clearFeedback, getFeedback, setGenericErrorFeedback }}>

@@ -282,11 +282,25 @@ export class TrexDAO {
     conceptIds: number[],
     dcResultsSchemaName: string
   ): Promise<IConceptRecordCount[]> {
+    if (conceptIds.length === 0) {
+      return [];
+    }
     if (dcResultsSchemaName === "") {
       return [];
     }
+
+    // Validate all IDs are finite integers before interpolation into SQL
+    for (const id of conceptIds) {
+      if (!Number.isFinite(id) || !Number.isInteger(id)) {
+        throw new Error(
+          `getConceptRecordCount: invalid concept ID "${id}" — must be a finite integer`
+        );
+      }
+    }
+
     try {
       // Sql referenced from OHDSI WebAPI CDMCacheRepository.java
+      // IDs are validated as integers above — safe to interpolate (no string user input)
       const sql = `
         select concept_id AS CONCEPT_ID, record_count AS RECORD_COUNT, descendant_record_count AS DESCENDANT_RECORD_COUNT, person_count AS PERSON_COUNT, descendant_person_count AS DESCENDANT_PERSON_COUNT
         from ${dcResultsSchemaName}.achilles_result_concept_count

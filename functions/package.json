@@ -337,6 +337,7 @@
           "PG__DIALECT": "postgresql",
           "LOCAL_DEBUG": "false",
           "isHttpTestRun": "${isHttpTestRun}",
+          "HTTPTEST_DB_DIALECT": "${HTTPTEST_DB_DIALECT}",
           "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
         },
         "parquet-export": {
@@ -348,7 +349,6 @@
           "ANALYTICS_SVC__PORT": 41102,
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "LOCAL_DEBUG": "false",
-          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
@@ -382,6 +382,7 @@
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
           "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
           "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
+          "USER_MGMT__ROLE_SOURCE": "${USER_MGMT__ROLE_SOURCE}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
@@ -488,8 +489,7 @@
           "PG_SCHEMA": "files_manager"
         },
         "terminology-svc": {
-          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
-          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}"
+          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}"
         },
         "perseus": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -773,7 +773,6 @@
           "gateway.external.dashboards.read"
         ],
         "TENANT_VIEWER": [
-          "PA.DatasetOverview.svc",
           "usermgmt.group.read",
           "usermgmt.me",
           "usermgmt.studyAccessRequest.add",
@@ -817,6 +816,7 @@
           "gateway.terminology.conceptSet.update",
           "gateway.terminology.conceptSet.delete",
           "gateway.terminology.concept.count.read",
+          "gateway.terminology.concept.ids.read",
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
@@ -861,7 +861,10 @@
           "filesmanager.delete",
           "whiteRabbit.post",
           "portal.userArtifact.write",
-          "portal.dataset.systemAdmin.read"
+          "portal.dataset.systemAdmin.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete"
         ],
         "STUDY_WRITE_DQD_RESEARCHER": [
           "rD2E.jupyter.kernel.flowRun.add",
@@ -1068,12 +1071,6 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/population/studies/patientcount",
-          "scopes": [
-            "PA.DatasetOverview.svc"
-          ]
-        },
-        {
           "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
           "scopes": [
             "PA.svc"
@@ -1116,16 +1113,6 @@
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/pa-config-svc/wizards/config$",
-          "scopes": [
-            "PAConfig.svc"
-          ],
-          "httpMethods": [
-            "PUT",
-            "DELETE"
           ]
         },
         {
@@ -1418,7 +1405,7 @@
             "portal.dataset.read"
           ],
           "httpMethods": [
-            "GET"          
+            "GET"
           ]
         },
         {
@@ -2183,6 +2170,15 @@
           "path": "^/terminology/concept/count(.*)",
           "scopes": [
             "gateway.terminology.concept.count.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/ids(.*)",
+          "scopes": [
+            "gateway.terminology.concept.ids.read"
           ],
           "httpMethods": [
             "GET"

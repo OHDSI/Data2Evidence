@@ -51,7 +51,14 @@ import DropDownMenu from './DropDownMenu.vue'
 
 export default {
   name: 'axisMenuButton',
-  props: ['dimensionIndex', 'parentContainer'],
+  props: {
+    dimensionIndex: {},
+    parentContainer: {},
+    beforeSelect: {
+      type: Function,
+      default: null,
+    },
+  },
   data() {
     return {
       axismenuData: [],
@@ -202,11 +209,23 @@ export default {
         this.closeAxisMenu()
       }
     },
-    handleClick({ action, filterCardId, key, attributeId, filterCardConfigPath, attributeConfigPath }) {
+    async handleClick({ action, filterCardId, key, attributeId, filterCardConfigPath, attributeConfigPath }) {
+      if (action === 'clear') {
+        this.clearSelection()
+        this.closeAxisMenu()
+        return
+      }
+
+      // For actions that set an axis value, check with the parent first
+      if (this.beforeSelect && (action === 'addexisting' || action === 'addnew')) {
+        const proceed = await this.beforeSelect()
+        if (!proceed) {
+          this.closeAxisMenu()
+          return
+        }
+      }
+
       switch (action) {
-        case 'clear':
-          this.clearSelection()
-          break
         case 'addnew':
           this.addNewFilterCardAndConstraint({
             attributeConfigPath,
@@ -231,7 +250,6 @@ export default {
             filterCardId,
             key,
           })
-
           break
         default:
           throw new Error(`${action} is not supported`)

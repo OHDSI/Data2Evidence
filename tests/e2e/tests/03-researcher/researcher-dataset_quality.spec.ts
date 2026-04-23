@@ -13,8 +13,7 @@ test('Researcher portal, data quality stats', async ({ page }) => {
     .click()
 
   await page.getByRole('tab', { name: 'Data Quality' }).click()
-  // Check for corrected pass percentage - value may vary slightly based on CDM version
-  await expect(page.getByTestId('card-content')).toContainText(
+  await expect(page.getByTestId('corrected-pass-percentage-note')).toContainText(
     /Corrected pass percentage for NA and Errors: 9[45]% \(\d+\/\d+\)\./
   )
 })

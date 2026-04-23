@@ -2,8 +2,9 @@ import React, { FC, useEffect, useState, useMemo, useCallback } from "react";
 import classNames from "classnames";
 import ReactMarkdown from "react-markdown";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@mui/material";
 import { Loader } from "@portal/components";
-import { useOverviewDescription, usePublicDatasets } from "../../../hooks";
+import { useOverviewDescription, usePublicDatasets, useHeaderImage } from "../../../hooks";
 import { config } from "../../../config/index";
 import { useTranslation } from "../../../contexts";
 import noStudyImg from "../../shared/StudyOverview/images/no-study.png";
@@ -24,6 +25,7 @@ export const PublicOverview: FC = () => {
   const [refetch, setRefetch] = useState(0);
   const [datasets, loading, error] = usePublicDatasets(searchText, refetch);
   const [overviewDescription] = useOverviewDescription(true);
+  const [headerImage, headerImageLoading] = useHeaderImage();
 
   useEffect(() => {
     if (datasets && datasets.length === 0) {
@@ -81,7 +83,15 @@ export const PublicOverview: FC = () => {
       <HomeHeader searchKeyword={searchString} onSearchEnter={handleSearchEnter} onSearchChange={handleSearchChange} />
       <div className="public-overview__banner">
         <div className="public-overview__banner-content">
-          <img alt="Illustration" src={`${env.PUBLIC_URL}/assets/landing-page-illustration.svg`} />
+          {headerImageLoading ? (
+            <Skeleton variant="rectangular" width={320} height={214} sx={{ flexShrink: 0, borderRadius: 1 }} />
+          ) : (
+            <img
+              className="public-overview__banner-image"
+              alt="Illustration"
+              src={headerImage || `${env.PUBLIC_URL}/assets/landing-page-illustration.svg`}
+            />
+          )}
           <div className="public-overview__banner-title">
             <div className="public-overview__banner-title-text">Data2Evidence</div>
             <div className="public-overview__banner-description">

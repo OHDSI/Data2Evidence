@@ -79,6 +79,142 @@ sap.ui.define([
             this.onNewConfigImported,
             this
         );
+
+        if (this._oWizardsConfigDialog) {
+            this._oWizardsConfigDialog.destroy();
+            this._oWizardsConfigDialog = null;
+        }
+
+    };
+
+    DetailsTabController.prototype.onEditWizardsConfig = function () {
+        var oDialog = this._getOrCreateWizardsConfigDialog();
+        if (!oDialog) {
+            return;
+        }
+
+        this._setWizardsEditorDefaults();
+        oDialog.open();
+    };
+
+    DetailsTabController.prototype.onCancelWizardsConfig = function () {
+        if (this._oWizardsConfigDialog) {
+            this._oWizardsConfigDialog.close();
+        }
+    };
+
+    DetailsTabController.prototype.onWizardsJsonLiveChange = function () {
+        var oEditorModel = this._getWizardsEditorModel();
+        if (oEditorModel) {
+            oEditorModel.setProperty("/valueState", sap.ui.core.ValueState.None);
+            oEditorModel.setProperty("/errorText", "");
+        }
+    };
+
+    DetailsTabController.prototype.onSaveWizardsConfig = function () {
+        var oEditorModel = this._getWizardsEditorModel();
+        var oValidationResult = this._parseAndValidateWizardsConfig(oEditorModel.getProperty("/jsonText"));
+
+        if (!oValidationResult.isValid) {
+            oEditorModel.setProperty("/valueState", sap.ui.core.ValueState.Error);
+            oEditorModel.setProperty("/errorText", ConfigUtils.getText(oValidationResult.messageKey));
+            return;
+        }
+
+        var oAnalyticsModel = this._getAnalyticsModel();
+        var sBindingPath = this.getView().getBindingContext("analyticsModel").getPath();
+        oAnalyticsModel.setProperty(sBindingPath + "/config/wizardsConfig", oValidationResult.value);
+
+        if (this._oWizardsConfigDialog) {
+            this._oWizardsConfigDialog.close();
+        }
+    };
+
+    DetailsTabController.prototype._getOrCreateWizardsConfigDialog = function () {
+        if (this._oWizardsConfigDialog) {
+            return this._oWizardsConfigDialog;
+        }
+
+        try {
+            this._oWizardsConfigDialog = sap.ui.xmlfragment(
+                this.getView().getId(),
+                "hc.mri.pa.config.ui.views.WizardsConfigEditor",
+                this
+            );
+            this.getView().addDependent(this._oWizardsConfigDialog);
+            this._oWizardsConfigDialog.setModel(this.getView().getModel("i18n"), "i18n");
+            this._oWizardsConfigDialog.setModel(new JSONModel({
+                jsonText: "",
+                valueState: sap.ui.core.ValueState.None,
+                errorText: ""
+            }), "wizardsEditorModel");
+        } catch (error) {
+            MessageBox.error(ConfigUtils.getText("MRI_PA_CFG_WIZARDS_CONFIG_ERROR_DIALOG_LOAD"));
+            return null;
+        }
+
+        return this._oWizardsConfigDialog;
+    };
+
+    DetailsTabController.prototype._setWizardsEditorDefaults = function () {
+        var oEditorModel = this._getWizardsEditorModel();
+        var oAnalyticsModel = this._getAnalyticsModel();
+        var sBindingPath = this.getView().getBindingContext("analyticsModel").getPath();
+        var oCurrentWizardsConfig = oAnalyticsModel.getProperty(sBindingPath + "/config/wizardsConfig");
+        var oValueToEdit = oCurrentWizardsConfig || this._getDefaultWizardsConfig();
+
+        oEditorModel.setProperty("/jsonText", JSON.stringify(oValueToEdit, null, 2));
+        oEditorModel.setProperty("/valueState", sap.ui.core.ValueState.None);
+        oEditorModel.setProperty("/errorText", "");
+    };
+
+    DetailsTabController.prototype._getDefaultWizardsConfig = function () {
+        return {
+            wizards: []
+        };
+    };
+
+    DetailsTabController.prototype._getAnalyticsModel = function () {
+        return this.getView().getBindingContext("analyticsModel").getModel();
+    };
+
+    DetailsTabController.prototype._getWizardsEditorModel = function () {
+        if (!this._oWizardsConfigDialog) {
+            return null;
+        }
+
+        return this._oWizardsConfigDialog.getModel("wizardsEditorModel");
+    };
+
+    DetailsTabController.prototype._parseAndValidateWizardsConfig = function (sJsonText) {
+        var oValue;
+        try {
+            oValue = JSON.parse(sJsonText);
+        } catch (error) {
+            return {
+                isValid: false,
+                messageKey: "MRI_PA_CFG_WIZARDS_CONFIG_ERROR_INVALID_JSON"
+            };
+        }
+
+        if (!oValue || typeof oValue !== "object" || Array.isArray(oValue)) {
+            return {
+                isValid: false,
+                messageKey: "MRI_PA_CFG_WIZARDS_CONFIG_ERROR_INVALID_STRUCTURE"
+            };
+        }
+
+        if (!Array.isArray(oValue.wizards)) {
+            return {
+                isValid: false,
+                messageKey: "MRI_PA_CFG_WIZARDS_CONFIG_ERROR_MISSING_WIZARDS"
+            };
+        }
+
+        return {
+            isValid: true,
+            value: oValue
+        };
     };
 
     DetailsTabController.prototype.onNewConfigImported = function (sChannelId, sEventId, oEventData) {
@@ -492,6 +628,9 @@ sap.ui.define([
             }
             if (oldConfig.panelOptions.hasOwnProperty("inclusionReport")) {
                 newConfig.panelOptions.inclusionReport = oldConfig.panelOptions.inclusionReport;
+            }
+            if (oldConfig.panelOptions.hasOwnProperty("intersectViewInclusionReport")) {
+                newConfig.panelOptions.intersectViewInclusionReport = oldConfig.panelOptions.intersectViewInclusionReport;
             }
         }
 

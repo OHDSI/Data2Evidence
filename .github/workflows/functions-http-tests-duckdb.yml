@@ -1,20 +1,34 @@
-name: d2e-functions/pa Run HTTP tests
+name: HTTP Tests DuckDB
+
 permissions:
   contents: read
 
 on:
+  workflow_dispatch: # Allow manual triggering
   pull_request:
     types: [opened, ready_for_review, reopened, synchronize]
   merge_group:
   push:
     branches:
       - develop
-  workflow_dispatch:
+
+env:
+  VERSION: develop
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+  PGUSER: postgres
+  PGPASSWORD: mypass
+  PGHOST: localhost
+  PGPORT: 15432
+  PGDATABASE: postgres
+  TESTSCHEMA: demo_cdm
+  isTestEnv: "true"
+  isHttpTestRun: "true"
+  HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
   pick_runner:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
     steps:
@@ -23,7 +37,7 @@ jobs:
 
   check_file_changes:
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' ||  contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
     steps:
@@ -47,33 +61,16 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
-              - ".github/workflows/functions-http-tests.yml"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
+              - ".github/workflows/functions-http-tests-duckdb.yml"
 
-  run-http-tests:
+  demosetup:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
     timeout-minutes: 80
-    env:
-      TESTSCHEMA: HTTP_${{github.run_id}}
-      isTestEnv: "true"
-      isHttpTestRun: "true"
-      HANASERVER: localhost # az-hn-db/SG_FQDN
-      HANASERVER_INT: hana
-      HDIPORT: 39041 # az-hn-db/DB Port
-      HDIPW: TestPW1234 # az-hn-db/Admin password
-      HDIUSER: SYSTEM # az-hn-db/Admin user
-      TESTPORT: 39041 # az-hn-db/DB Port
-      TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
-      PROJECT_NAME: alp
-      CADDY__CONFIG: ./deploy/caddy-config
-      ENV_TYPE: local
-      DOTENV_FILE: .env.local
-      D2E_RESOURCE_LIMIT: 1.0
-
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -91,98 +88,176 @@ jobs:
           docker-images: true
           swap-storage: true
 
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          clean: false
-
-      - name: Print env vars
-        run: |
-          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
-          echo "HDIPORT: ${HDIPORT}"
-          echo "HDIPW: ${HDIPW}"
-          echo "HDIUSER: ${HDIUSER}"
-          echo "HANASERVER: ${HANASERVER}"
-          echo "isHttpTestRun: ${isHttpTestRun}"
-          echo "isTestEnv: ${isTestEnv:-false}"
-          echo "TESTSCHEMA: ${TESTSCHEMA}"
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "18.20.4"
 
       - name: npm install
         if: success() || failure()
         run: |
           npm install
 
+      # - name: Patch seed config for e2e tests
+      #   run: node ./scripts/patch-seed-for-e2e.js
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
         run: |
-          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+          grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
 
-      - name: Initialise HANA
+      - uses: dorny/paths-filter@v3
+        id: file_changes
+        with:
+          initial-fetch-depth: 1
+          filters: |
+            flow_base:
+              - "flows/base/**"
+            flow_i2b2:
+              - "flows/i2b2/**"
+            flow_data_management:
+              - "flows/data_management/**"
+            ui: 
+              - "ui/**"
+
+      - name: Build Flow base docker image
+        if: steps.file_changes.outputs.flow_base == 'true' || contains(github.base_ref, 'release/')
+        id: build_flow_base_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+        
+      - name: Build i2b2 docker image
+        if: steps.file_changes.outputs.flow_i2b2 == 'true' || contains(github.base_ref, 'release/')
+        id: build_i2b2_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
+
+      - name: Build data management docker image
+        if: steps.file_changes.outputs.flow_data_management == 'true' || contains(github.base_ref, 'release/')
+        id: build_dm_image
+        run: |
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
+
+      - name: Build docker images
         if: success() || failure()
-        id: inithana
+        id: pull
         run: |
-          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
-      - name: Remove empty lines, replace ; within the query with a place holder
+      - name: Prune images
+        if: always()
+        id: prune
         run: |
-          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
-          grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
-          echo >> $DOTENV_FILE
-          echo "USE_TREX_DB_CONN=false" >> $DOTENV_FILE
-          echo "NODE_ENV=production" >> $DOTENV_FILE
+          docker buildx prune -af
 
-      - name: Build system services
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
 
-      - name: Manipulate configuration
+      - name: Logs
+        if: success() || failure()
         run: |
-          yq -i '.networks.alp.external=true' docker-compose.yml
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Create network for external to use
+      - name: Setup HTTP Test Env
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupHTTPTestEnv
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setuphttptestenv
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Get dataset Id
         run: |
-          docker network inspect alp > /dev/null || docker network create alp
-
-      - name: Start system services
+          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
+          echo "$resDataset"
+          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
+          echo "$resDatasetDetail"
+          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
+          echo "$resTrexDB"
+          export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type = 'omop'" 2>/dev/null | head -1 | xargs)
+          echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
+          # echo "Update database id"
+          # docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "update trex.db set id = 'postgres' where host = 'demodb' and port = 5432 and name = 'postgres' and dialect = 'postgres'"
+          # export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
+          # echo "$resTrexDB"
+      - name: Logs
+        if: success() || failure()
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
-          echo "Waiting 160 secs for services to start..."
-          sleep 160
-          echo "Trex Health check..."
-          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
-          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
-          for i in $(seq 1 60); do
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
-              echo "webapi-init completed successfully"
-              break
-            fi
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
-              echo "webapi-init failed!"
-              docker logs ${PROJECT_NAME:-alp}-webapi-init || true
-              exit 1
-            fi
-            echo "Waiting for webapi-init... ($i/60)"
-            sleep 5
-          done
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions -p 41100 start
+
+      - name: Wait for services to be ready to avoid mounting race condition
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
+        run: sleep 10
 
       - name: Check status of docker containers
         run: |
           docker ps -a
 
-      - name: Setup Test DB
-        run: |
-          yarn --prefer-offline
-          yarn inittestdb
-
       - name: Login to logto and get Bearer token and sub
         run: |
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
           # Get sign in page
           response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
           printf "%s\n" "$response"
@@ -311,104 +386,68 @@ jobs:
           echo "USER_MGMT_ID:"
           echo $USER_MGMT_ID
 
-      - name: Seed db credentials
+      - name: Check status of docker containers
         run: |
-          echo "Seed db credentials"
-          export ENCSALT=salt
-          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
-          echo $ENCRYPTED_CREDS
-          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-          curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/d2e/trex/db/' \
-              --header 'Referer: https://localhost:41100/sign-in' \
-              --header 'accept: application/json, text/plain, */*' \
-              --header 'Content-Type: application/json' \
-              --header "authorization: Bearer $BEARER_TOKEN" \
-              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
+          docker ps -a
 
-
-      - name: Seed dummy dataset
+      - name: Check PG DB connection
         run: |
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
-          ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+          sudo apt install -y postgresql-client
+          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+          psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
 
-          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
-          ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
-
-      # Restart is required for alp-trex container after seeding database credentials into the db table
-      - name: Restart alp-trex service
+      - name: Setup Test DB
         run: |
-          docker container restart alp-trex
-          echo "Waiting 120 secs for alp-trex to restart..."
-          sleep 120
-          # Health check
-          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
-
-      - name: Assign and verify researcher assigned to user
-        run: |
-          curl --max-time 100 --fail -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
-              -H 'accept: application/json, text/plain, */*' \
-              -H "authorization: Bearer $BEARER_TOKEN" \
-              -H 'content-type: application/json' \
-              -H 'origin: https://localhost:41100' \
-              -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
-              --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
-
-          curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
-          -H 'accept: application/json, text/plain, */*' \
-          -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
-          -H 'content-type: application/json' \
-          -H 'origin: https://localhost:41100' \
-          -H "authorization: Bearer $BEARER_TOKEN"
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+          yarn --prefer-offline
+          yarn inittestdb-pg
 
       - name: Install dependencies in backend integration tests
         run: |
-          cd ./tests/backend_integration_tests
+          cd ./tests/backend_integration_tests/pg
           yarn
 
+      - name: Set env vars for HTTP tests
+        run: |
+          echo "PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))" >> $GITHUB_ENV
+          echo "PGPORT=${PGPORT}" >> $GITHUB_ENV
+          echo "PGUSER=${PGUSER}" >> $GITHUB_ENV
+          echo "PGHOST=${PGHOST}" >> $GITHUB_ENV
+          echo "TESTSCHEMA=${TESTSCHEMA}" >> $GITHUB_ENV
+          echo "HDIPORT=${PGPORT}" >> $GITHUB_ENV
+          echo "HDIPW=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))" >> $GITHUB_ENV
+          echo "HDIUSER=${PGUSER}" >> $GITHUB_ENV
+          echo "HANASERVER=${PGHOST}" >> $GITHUB_ENV
+          echo "PGDATABASE=${PGDATABASE}" >> $GITHUB_ENV
+          echo "isHttpTestRun=${isHttpTestRun}" >> $GITHUB_ENV
+          echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
+          echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
+
       - name: Run HTTP tests
-        working-directory: ./tests/backend_integration_tests
-        run: yarn test-specs --test_schema_name=$TESTSCHEMA
+        working-directory: ./tests/backend_integration_tests/pg
+        run: |
+            echo "HDIPORT: ${HDIPORT}"
+            echo "HDIPW: ${HDIPW}"
+            echo "HDIUSER: ${HDIUSER}"
+            echo "HANASERVER: ${HANASERVER}"
+            echo "PGDATABASE: ${PGDATABASE}"
+            echo "isHttpTestRun: ${isHttpTestRun}"
+            echo "isTestEnv: ${isTestEnv:-false}"
+            echo "TESTSCHEMA: ${TESTSCHEMA}"
+            echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
+            yarn test-specs --test_schema_name=$TESTSCHEMA
 
-      - name: print logs for alp-dataflow-gen-1
-        if: ${{ always() || cancelled() || failure() }}
+      - name: Logs
+        if: success() || failure()
         run: |
-          docker logs alp-dataflow-gen-1 -t
-      - name: print logs for alp-dataflow-gen-worker
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-dataflow-gen-worker -t
-      - name: print logs for alp-logto-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-1 -t
-      - name: print logs for alp-minerva-postgres-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-postgres-1 -t
-      - name: print logs for alp-supabase-storage-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-supabase-storage-1 -t
-      - name: print logs for trex
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-trex -t
-      - name: print logs for alp-minerva-pg-mgmt-init-1
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-pg-mgmt-init-1 -t
-      - name: print logs for alp-logto-post-init
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-post-init-1 -t
-      - name: print logs for hana
-        if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs hana -t
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
-      - name: Remove Test DB
-        if: ${{ always() || cancelled() || failure() }}
-        run: yarn removetestdb
+      - name: Stop d2e services
+        if: success() || failure()
+        id: stop
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
 
       - name: Prune system
         if: always()

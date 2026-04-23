@@ -17,7 +17,7 @@ class PortalUserArtifactAPI:
 
         # Get service token via client credentials
         openid_api = OpenIdAPI()
-        service_token = openid_api.getClientCredentialToken()
+        service_token = openid_api.get_client_credential_token()
         logger.info("PortalUserArtifactAPI: Service token obtained")
 
         # Get service route

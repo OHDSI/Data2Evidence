@@ -63,9 +63,21 @@ export enum ConfigTypes {
   HYBRID_SEARCH = "hybrid-search",
   DATAFLOW_GIT_CONFIG = "dataflow-git-config",
   NOTEBOOK_GIT_CONFIG = "notebook-git-config",
+  HEADER_IMAGE = "header-image",
+  DATA_QUALITY_DESCRIPTION = "data-quality-description",
+  DATA_QUALITY_DESCRIPTION_DISPLAY = "data-quality-description-display",
 }
 
-export const PUBLIC_CONFIG_TYPES = [ConfigTypes.OVERVIEW_DESCRIPTION];
+export const PUBLIC_CONFIG_TYPES = [
+  ConfigTypes.OVERVIEW_DESCRIPTION,
+  ConfigTypes.HEADER_IMAGE,
+  ConfigTypes.TERMS_OF_USE,
+  ConfigTypes.TERMS_OF_USE_DISPLAY,
+  ConfigTypes.PRIVACY_POLICY,
+  ConfigTypes.PRIVACY_POLICY_DISPLAY,
+  ConfigTypes.IMPRINT,
+  ConfigTypes.IMPRINT_DISPLAY,
+];
 
 // Secret config types to be redacted
 export const SECRET_CONFIG_TYPES = [];

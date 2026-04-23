@@ -23,14 +23,6 @@ export class ConfigController {
     );
   }
 
-  @Get(":type")
-  async getConfigByType(@Param("type") type: string) {
-    const config = await this.configService.getRedactedConfigValuesByTypes([
-      type,
-    ]);
-    return { type, value: config[type] || null };
-  }
-
   @Get("public/types")
   async getPublicConfigValuesByTypes(@Query("types") types: string) {
     return await this.configService.getPublicConfigValuesByTypes(
@@ -54,6 +46,14 @@ export class ConfigController {
   @Get("secret/:type")
   async getSecretConfigByType(@Param("type") type: string) {
     const config = await this.configService.getConfigValuesByTypes([type]);
+    return { type, value: config[type] || null };
+  }
+
+  @Get(":type")
+  async getConfigByType(@Param("type") type: string) {
+    const config = await this.configService.getRedactedConfigValuesByTypes([
+      type,
+    ]);
     return { type, value: config[type] || null };
   }
 

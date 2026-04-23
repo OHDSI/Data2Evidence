@@ -2,7 +2,7 @@ import { StackedBarchartEndpoint } from "../../mri/endpoint/StackedBarchartEndpo
 import { PatientCountEndpoint } from "../../mri/endpoint/PatientCountEndpoint";
 import { PatientListEndpoint } from "../../mri/endpoint/PatientListEndpoint";
 import { InclusionReportEndpoint } from "../../mri/endpoint/InclusionReportEndpoint";
-import { getUser, EnvVarUtils } from "@alp/alp-base-utils";
+import { getUser, EnvVarUtils, QueryObject } from "@alp/alp-base-utils";
 import { IMRIRequest } from "../../types";
 
 import { DBError as dbe } from "@alp/alp-base-utils";
@@ -24,114 +24,6 @@ let _stripDbgInfo = (result) => {
 };
 let _processResult = (result) =>
     result && !sqlReturnOn ? _stripDbgInfo(result) : result;
-/**
- * Retrieves list of patient count for each study
- * @param req
- * @param res
- * @param next
- */
-export async function populationStudyQuery(req: IMRIRequest, res, next) {
-    const { analyticsConnection } = req.dbConnections;
-    const user = getUser(req);
-    const language = user.lang;
-    let filterBase64: string = req.query.mriquery;
-    let releaseDate: string = req.query.releaseDate;
-
-    const timestamp = new Date().valueOf();
-    console.log(`time-analytics-svc-populationStudyQuery-${timestamp}`);
-    console.time(`time-analytics-svc-populationStudyQuery-${timestamp}`);
-
-    try {
-        let body = filterBase64
-            ? convertZlibBase64ToJson(filterBase64)
-            : null || req.body;
-
-        if (typeof body === "string") {
-            body = JSON.parse(body);
-        }
-
-        let bookmarkInputStr = JSON.stringify(body);
-
-        body.language = language;
-        // Ensure that the requested studies are valid
-        const acceptedStudies = req.studiesDbMetadata.studies;
-        const isInputStudiesAccepted = body.studies.every((id) =>
-            acceptedStudies.some((obj) => {
-                return obj.id === id;
-            })
-        );
-        if (!isInputStudiesAccepted) {
-            throw new Error("(In populationStudyQuery) Bad study ids input");
-        }
-
-        analyticsConnection.setCurrentUserToDbSession(
-            user.userObject.userId,
-            async (err, data) => {
-                if (err) {
-                    return console.error(err);
-                }
-                analyticsConnection.setTemporalSystemTimeToDbSession(
-                    releaseDate,
-                    async (err, data) => {
-                        if (err) {
-                            return console.error(err);
-                        }
-                        try {
-                            const datasetIds = body.studies;
-                            function _sendResult(err, result) {
-                                if (err) {
-                                    return res.status(500).send(
-                                        MRIEndpointErrorHandler({
-                                            err,
-                                            language,
-                                        })
-                                    );
-                                }
-                                console.timeEnd(
-                                    `time-analytics-svc-populationStudyQuery-${timestamp}`
-                                );
-                                res.status(200).send(result);
-                            }
-
-                            if (body.filter) {
-                                new PatientCountEndpoint(analyticsConnection)
-                                    .processMultipleStudyRequest(
-                                        req,
-                                        datasetIds,
-                                        bookmarkInputStr,
-                                        language
-                                    )
-                                    .then((res) => _sendResult(null, res))
-                                    .catch((err) => _sendResult(err, null));
-                            } else {
-                                new PatientCountEndpoint(analyticsConnection)
-                                    .processMultipleStudyRequest(
-                                        req,
-                                        datasetIds,
-                                        body,
-                                        language
-                                    )
-                                    .then((res) => _sendResult(null, res))
-                                    .catch((err) => _sendResult(err, null));
-                            }
-                        } catch (err) {
-                            console.timeEnd(
-                                `time-query-svc-populationStudyQuery-${timestamp}`
-                            );
-                            return res
-                                .status(500)
-                                .send(
-                                    MRIEndpointErrorHandler({ err, language })
-                                );
-                        }
-                    }
-                );
-            }
-        );
-    } catch (err) {
-        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
-    }
-}
 
 /**
  * Retrieves list of cohort definitions
@@ -169,7 +61,7 @@ export async function populationQuery(req: IMRIRequest, res, next) {
         }
 
         analyticsConnection.setCurrentUserToDbSession(
-            user.userObject.userId,
+            user.getEmail() || user.getUser(),
             async (err, data) => {
                 if (err) {
                     return console.error(err);
@@ -247,6 +139,8 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                             console.time(
                                 `time-analytics-svc-populationQuery-${timestamp}`
                             );
+
+                            await _setDBSpecificSettings(req);
                             switch (dataFormat) {
                                 case "csv":
                                     switch (chartType) {
@@ -390,6 +284,46 @@ export async function populationQuery(req: IMRIRequest, res, next) {
                                                 );
 
                                             break;
+                                        case "selectiveinclusionreport":
+                                            const selectiveInclusionReportBody =
+                                                body.filter
+                                                    ? body
+                                                    : bookmarkInputStr;
+                                            // Parse optional ruleOrder query parameter for drag-and-drop reordering
+                                            // ruleOrder is sent as a plain JSON array (e.g. [2,0,1])
+                                            let ruleOrder: number[] | undefined;
+                                            if (req.query.ruleOrder) {
+                                                try {
+                                                    ruleOrder = JSON.parse(
+                                                        decodeURIComponent(
+                                                            req.query
+                                                                .ruleOrder as string
+                                                        )
+                                                    );
+                                                } catch (e) {
+                                                    // Ignore invalid ruleOrder
+                                                }
+                                            }
+                                            new InclusionReportEndpoint(
+                                                analyticsConnection
+                                            )
+                                                .processRequestForSelectiveInclusionReport(
+                                                    req,
+                                                    configId,
+                                                    configVersion,
+                                                    datasetId,
+                                                    selectiveInclusionReportBody,
+                                                    language,
+                                                    ruleOrder
+                                                )
+                                                .then((res) =>
+                                                    _sendResult(null, res)
+                                                )
+                                                .catch((err) =>
+                                                    _sendResult(err, null)
+                                                );
+
+                                            break;
                                         default:
                                             next(
                                                 new Error(
@@ -418,5 +352,38 @@ export async function populationQuery(req: IMRIRequest, res, next) {
         );
     } catch (err) {
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
+async function _setDefaultNullOrder(req: IMRIRequest) {
+    console.info(
+        `[population._setDefaultNullOrder] Setting default NULL order in DuckDB ....`
+    );
+
+    return new Promise((resolve, reject) => {
+        QueryObject.QueryObject.format(
+            `SET default_null_order = 'NULLS_FIRST'`
+        ).executeQuery(req.dbConnections.analyticsConnection, (err, result) => {
+            // console.log(`[population._setDefaultNullOrder]err: ${JSON.stringify(err)}`);
+            // console.log(`[population._setDefaultNullOrder]result: ${JSON.stringify(result)}`);
+            if (err) {
+                console.error(err);
+                return reject(err);
+            }
+            return resolve(result);
+        });
+    });
+}
+
+async function _setDBSpecificSettings(req: IMRIRequest) {
+    // ONLY FOR DUCKDB HTTP TESTS
+    // changing the duckdb default behaviour of sorting NULL values at the bottom
+    const HTTPTEST_DB_DIALECT = Deno.env.get("HTTPTEST_DB_DIALECT");
+    if (
+        (envVarUtils.isTestEnv() || envVarUtils.isHttpTestRun()) &&
+        HTTPTEST_DB_DIALECT &&
+        HTTPTEST_DB_DIALECT === "duckdb"
+    ) {
+        await _setDefaultNullOrder(req);
     }
 }

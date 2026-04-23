@@ -349,6 +349,14 @@ EOF
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/setupdemo.mjs" -n "$ENVFILE"
         PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
         ;;
+    setuphttptestenv)
+        source "$ENVFILE"
+        $node_modules_path/scripts/cli.sh patchdemodb -n "$ENVFILE"
+        database_host=${PROJECT_NAME:-d2e}-demodb
+        setup_zx_cmd
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/setuphttptestenv.mjs" -n "$ENVFILE"
+        PORT=$PORT $ZX_CMD "$node_modules_path/scripts/check-setupdemo-flow.mjs" -n "$ENVFILE"
+        ;;
     setupdemohana)
         source "$ENVFILE"
         setup_zx_cmd

@@ -1,5 +1,6 @@
 // tslint:disable:no-shadowed-variable
 import axios from 'axios'
+import { useNotificationStore } from '../../stores/notifications'
 import { denormalize, normalize, schema } from 'normalizr'
 import BMGetChartableCards from '../../lib/ifr/BMGetChartableCards'
 import BooleanContainers from '../../lib/ifr/BooleanContainers'
@@ -19,6 +20,39 @@ import QueryString from '../../utils/QueryString'
 import { VariantValidator } from '../../utils/VariantValidator'
 import * as types from '../mutation-types'
 import Plotly from '../../lib/CustomPlotly'
+import moment from 'moment'
+
+const parseDrilldownDateValue = (value: unknown): Date | null => {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return value
+  }
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    return null
+  }
+
+  const parsedMoment = moment(value, ['YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601], true)
+  if (parsedMoment.isValid()) {
+    return parsedMoment.toDate()
+  }
+
+  const fallbackDate = new Date(value)
+  return isNaN(fallbackDate.getTime()) ? null : fallbackDate
+}
+
+const normalizeConstraintDateForDisplay = (value: unknown, constraintType: string): string | Date | unknown => {
+  const parsedDate = parseDrilldownDateValue(value)
+  if (!parsedDate) {
+    return value
+  }
+
+  if (constraintType === 'time') {
+    return DateUtils.toStartOfDay(parsedDate)
+  }
+
+  const localDate = DateUtils.toLocalDate(parsedDate)
+  return localDate
+}
 
 const omit = (obj, ...keysToOmit) =>
   Object.keys(obj)
@@ -489,14 +523,10 @@ const getters = {
     if (constraint && constraint.props) {
       const prop = constraint.props
       if (prop.fromDate && prop.fromDate.value) {
-        constraint.props.fromDate.value = DateUtils.toLocalDate(prop.fromDate.value)
+        constraint.props.fromDate.value = normalizeConstraintDateForDisplay(prop.fromDate.value, constraint.props.type)
       }
       if (prop.toDate && prop.toDate.value) {
-        constraint.props.toDate.value = DateUtils.toLocalDate(prop.toDate.value)
-
-        if (constraint.props.type === 'time') {
-          constraint.props.toDate.value = DateUtils.toStartOfDay(constraint.props.toDate.value)
-        }
+        constraint.props.toDate.value = normalizeConstraintDateForDisplay(prop.toDate.value, constraint.props.type)
       }
     }
     return constraint
@@ -712,7 +742,7 @@ const actions = {
 
       // reset all the axes that use any filtercard(s) in the current boolFilterContainer
       dispatch('resetAxes')
-      dispatch('setToastMessage', {
+      useNotificationStore().setToastMessage({
         text: getters.getText('MRI_PA_NEW_FILTERCARD_NOTIFICATION', getters.getFilterCard(filterCardObj.id).props.name),
       })
       resolve(filterCardObj.id)
@@ -974,8 +1004,8 @@ const actions = {
 
     const hasReleaseDate = !!rootGetters.getSelectedDatasetVersion?.releaseDate
 
-    // Compress all keys except datasetId
-    const compress = Object.keys(params).filter(e => e !== 'datasetId')
+    // Compress all keys except datasetId and ruleOrder
+    const compress = Object.keys(params).filter(e => e !== 'datasetId' && e !== 'ruleOrder')
     const urlWithQuerystring = QueryString({
       url,
       queryString: {
@@ -1102,12 +1132,14 @@ const actions = {
           rootGetters.getMriFrontendConfig.getAttributeByPath(oData.id).getType() === 'time' ||
           rootGetters.getMriFrontendConfig.getAttributeByPath(oData.id).getType() === 'datetime'
         ) {
-          if (DateUtils.isDate(oData.value)) {
-            const temp = oData.value
+          const parsedDate = parseDrilldownDateValue(oData.value)
+
+          if (parsedDate) {
+            const temp = parsedDate
 
             if (!fromDate) {
-              fromDate = oData.value
-              toDate = oData.value
+              fromDate = parsedDate
+              toDate = parsedDate
             } else {
               if (fromDate > temp) {
                 fromDate = temp

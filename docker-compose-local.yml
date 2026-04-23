@@ -25,12 +25,12 @@ services:
       - ./services/trex/deno.json:/usr/src/deno.json
       # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
-      RUST_LOG: info
-      RUST_BACKTRACE: full
-      TREX_DEBUG_GC: 0
+      RUST_LOG: ${RUST_LOG:-info}
+      RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
+      TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "storage", "fhir"]}'
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-notebook-plugin", "d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
@@ -90,6 +90,10 @@ services:
       - 41120:41120
     environment:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
+  alp-dataflow-gen-worker:
+    build:
+      context: ./services/alp-dataflow-gen-worker
+      dockerfile: Dockerfile
 
   alp-logto:
     build:

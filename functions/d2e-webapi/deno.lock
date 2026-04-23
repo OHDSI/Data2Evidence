@@ -9,7 +9,6 @@
     "npm:axios@^1.7.9": "1.13.2",
     "npm:fastify-type-provider-zod@^4.0.2": "4.0.2_fastify@5.4.0_zod@3.25.76",
     "npm:fastify@^5.2.1": "5.4.0",
-    "npm:pg@^8.13.1": "8.16.3",
     "npm:zod@3.25.76": "3.25.76"
   },
   "jsr": {
@@ -412,6 +411,7 @@
         "package-json-from-dist",
         "path-scurry"
       ],
+      "deprecated": true,
       "bin": true
     },
     "gopd@1.2.0": {
@@ -535,53 +535,6 @@
         "minipass"
       ]
     },
-    "pg-cloudflare@1.2.7": {
-      "integrity": "sha512-YgCtzMH0ptvZJslLM1ffsY4EuGaU0cx4XSdXLRFae8bPP4dS5xL1tNB3k2o/N64cHJpwU7dxKli/nZ2lUa5fLg=="
-    },
-    "pg-connection-string@2.9.1": {
-      "integrity": "sha512-nkc6NpDcvPVpZXxrreI/FOtX3XemeLl8E0qFr6F2Lrm/I8WOnaWNhIPK2Z7OHpw7gh5XJThi6j6ppgNoaT1w4w=="
-    },
-    "pg-int8@1.0.1": {
-      "integrity": "sha512-WCtabS6t3c8SkpDBUlb1kjOs7l66xsGdKpIPZsg4wR+B3+u9UAum2odSsF9tnvxg80h4ZxLWMy4pRjOsFIqQpw=="
-    },
-    "pg-pool@3.10.1_pg@8.16.3": {
-      "integrity": "sha512-Tu8jMlcX+9d8+QVzKIvM/uJtp07PKr82IUOYEphaWcoBhIYkoHpLXN3qO59nAI11ripznDsEzEv8nUxBVWajGg==",
-      "dependencies": [
-        "pg"
-      ]
-    },
-    "pg-protocol@1.10.3": {
-      "integrity": "sha512-6DIBgBQaTKDJyxnXaLiLR8wBpQQcGWuAESkRBX/t6OwA8YsqP+iVSiond2EDy6Y/dsGk8rh/jtax3js5NeV7JQ=="
-    },
-    "pg-types@2.2.0": {
-      "integrity": "sha512-qTAAlrEsl8s4OiEQY69wDvcMIdQN6wdz5ojQiOy6YRMuynxenON0O5oCpJI6lshc6scgAY8qvJ2On/p+CXY0GA==",
-      "dependencies": [
-        "pg-int8",
-        "postgres-array",
-        "postgres-bytea",
-        "postgres-date",
-        "postgres-interval"
-      ]
-    },
-    "pg@8.16.3": {
-      "integrity": "sha512-enxc1h0jA/aq5oSDMvqyW3q89ra6XIIDZgCX9vkMrnz5DFTw/Ny3Li2lFQ+pt3L6MCgm/5o2o8HW9hiJji+xvw==",
-      "dependencies": [
-        "pg-connection-string",
-        "pg-pool",
-        "pg-protocol",
-        "pg-types",
-        "pgpass"
-      ],
-      "optionalDependencies": [
-        "pg-cloudflare"
-      ]
-    },
-    "pgpass@1.0.5": {
-      "integrity": "sha512-FdW9r/jQZhSeohs1Z3sI1yxFQNFvMcnmfuj4WBMUTxOrAyLMaTcE1aAMBiTlbMNaXvBCQuVi0R7hd8udDSP7ug==",
-      "dependencies": [
-        "split2"
-      ]
-    },
     "pino-abstract-transport@2.0.0": {
       "integrity": "sha512-F63x5tizV6WCh4R6RHyi2Ml+M70DNRXt/+HANowMflpgGFMAym/VKm6G7ZOQRjqN7XbGxK1Lg9t6ZrtzOaivMw==",
       "dependencies": [
@@ -607,21 +560,6 @@
         "thread-stream"
       ],
       "bin": true
-    },
-    "postgres-array@2.0.0": {
-      "integrity": "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="
-    },
-    "postgres-bytea@1.0.1": {
-      "integrity": "sha512-5+5HqXnsZPE65IJZSMkZtURARZelel2oXUEO8rH83VS/hxH5vv1uHquPg5wZs8yMAfdv971IU+kcPUczi7NVBQ=="
-    },
-    "postgres-date@1.0.7": {
-      "integrity": "sha512-suDmjLVQg78nMK2UZ454hAG+OAW+HQPZ6n++TNDUX+L0+uUlLywnoxJKDou51Zm+zTCjrCl0Nq6J9C5hP9vK/Q=="
-    },
-    "postgres-interval@1.2.0": {
-      "integrity": "sha512-9ZhXKM/rw350N1ovuWHbGxnGh/SNJ4cnxHiM0rxE4VN41wsg8P8zWn9hv/buK00RP4WvlOyr/RBDiptyxVbkZQ==",
-      "dependencies": [
-        "xtend"
-      ]
     },
     "process-warning@4.0.1": {
       "integrity": "sha512-3c2LzQ3rY9d0hc1emcsHhfT9Jwz0cChib/QN89oME2R451w5fy3f0afAhERFZAwrbDU43wk12d0ORBpDVME50Q=="
@@ -765,9 +703,6 @@
         "strip-ansi@7.1.2"
       ]
     },
-    "xtend@4.0.2": {
-      "integrity": "sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ=="
-    },
     "yaml@2.8.2": {
       "integrity": "sha512-mplynKqc1C2hTVYxd0PU2xQAc22TI1vShAYGksCCfxbn/dFwnHTNi1bvYsBTkhdUNtGIf5xNOg938rrSSYvS9A==",
       "bin": true
@@ -790,7 +725,6 @@
       "npm:axios@^1.7.9",
       "npm:fastify-type-provider-zod@^4.0.2",
       "npm:fastify@^5.2.1",
-      "npm:pg@^8.13.1",
       "npm:zod@3.25.76"
     ]
   }
