@@ -7,14 +7,18 @@ import ReactMarkdown from "react-markdown";
 
 export const LegalCard: FC = () => {
   const { getText, i18nKeys } = useTranslation();
-  const [configs, loading] = useConfigsByTypes([
-    ConfigTypes.TERMS_OF_USE,
-    ConfigTypes.TERMS_OF_USE_DISPLAY,
-    ConfigTypes.PRIVACY_POLICY,
-    ConfigTypes.PRIVACY_POLICY_DISPLAY,
-    ConfigTypes.IMPRINT,
-    ConfigTypes.IMPRINT_DISPLAY,
-  ]);
+  const [configs, loading] = useConfigsByTypes(
+    [
+      ConfigTypes.TERMS_OF_USE,
+      ConfigTypes.TERMS_OF_USE_DISPLAY,
+      ConfigTypes.PRIVACY_POLICY,
+      ConfigTypes.PRIVACY_POLICY_DISPLAY,
+      ConfigTypes.IMPRINT,
+      ConfigTypes.IMPRINT_DISPLAY,
+    ],
+    0,
+    true
+  );
 
   const [tabs, setTabs] = useState<ConfigTypes[]>([]);
   const [tabValue, setTabValue] = useState<ConfigTypes>();

@@ -30,10 +30,10 @@
           :disabled="!canOpenDashboard"
         />
       </div>
-      <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
+      <div class="attritionButton" v-if="getActiveBookmark && enableInclusionReport">
         <VButton @click="openInclusionReportModal">{{ getText('MRI_PA_INCLUSION_REPORT_BUTTON') }}</VButton>
       </div>
-      <div class="d-flex">
+      <div class="d-flex iconActionButton">
         <template v-for="chart in chartConfig" :key="chart.name">
           <chartButton
             @clickEv="switchChart(chart)"

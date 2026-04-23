@@ -122,8 +122,12 @@ export class TransformationService {
       name: dataflowDto.name,
       type: "datatransformation-flow",
     };
-    const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
 
+    if (await this.checkCanvasNameExists(dataflowDto.name, dataflowDto.id || undefined)) {
+      throw new Error(`Dataflow with name '${dataflowDto.name}' already exists`);
+    }
+
+    const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
     console.log(`createCanvas with canvas id: ${id}`);
     let version = 1;
     if (dataflowDto.id) {
@@ -164,6 +168,21 @@ export class TransformationService {
       revisionId: graphEntity.id,
       version: graphEntity.version,
     };
+  }
+
+  async checkCanvasNameExists(name: string, excludeId?: string | undefined): Promise<boolean> {
+    const existingCanvasQuery = this.canvasRepo
+      .createQueryBuilder("canvas")
+      .select("canvas.id")
+      .where("canvas.type = :type", { type: "datatransformation-flow" })
+      .andWhere("LOWER(canvas.name) = LOWER(:name)", { name });
+
+    if (excludeId) {
+      existingCanvasQuery.andWhere("canvas.id != :id", { id: excludeId });
+    }
+
+    const existingCanvas = await existingCanvasQuery.getOne();
+    return !!existingCanvas;
   }
 
   async deleteCanvas(id: string, token: string) {

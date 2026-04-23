@@ -120,7 +120,7 @@ class StrategusResultsStorageAPI(BaseAPI):
         """
         request_url = f"{self.url}/download?studyId={study_id}&fileName={filename}"
         
-        headers = self.get_options(flow_run_id)
+        headers = self.get_options()
         
         response = requests.get(
             request_url,

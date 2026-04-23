@@ -28,6 +28,7 @@ class BaseAPI:
 
 
     def get_options(self, flow_run_id = None) -> dict[str, str]:
+
         # Prefect task to get token from flow input
         bearer_token = None
         if not self.is_dev_env:

@@ -18,7 +18,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in getCanvasList: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -29,7 +29,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in getCanvasById: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -41,7 +41,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in getGraph: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -56,7 +56,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in deleteCanvas: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
@@ -71,7 +71,7 @@ export class DataTransformationController {
       return res.status(200).send(result);
     } catch (error) {
       console.error("Error in getResultsById: ", error);
-      return res.status(500).send({ message: "Internal Server Error" });
+      return res.status(500).send({ message: error.message });
     }
   }
 
