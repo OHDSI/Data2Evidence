@@ -1,34 +1,6 @@
 <template>
   <div class="stackbar-wrapper">
     <div class="stackbar-chart-area">
-      <div class="stackbar-toolbar">
-        <select v-model="barDisplayMode" @change="renderChart()" class="bar-mode-select">
-          <option value="stack">Stacked</option>
-          <option value="overlay">Overlay</option>
-          <option value="partialOverlay">Partial Overlay</option>
-          <option value="partialOverlaySolid">Partial Overlay (Solid)</option>
-          <option value="outline">Outline</option>
-          <option value="distribution">Distribution Curves</option>
-        </select>
-
-        <label class="distribution-overlay-label">
-          <input type="checkbox" v-model="showDistributionOverlay" @change="renderChart()" />
-          Distribution Curve
-        </label>
-
-        <label class="bar-gap-label">
-          Gap
-          <input
-            v-model.number="barGap"
-            type="number"
-            min="0"
-            max="1"
-            step="0.05"
-            class="bar-gap-input"
-            @change="renderChart()"
-          />
-        </label>
-      </div>
       <div class="stackbar-container" id="stacked-chart"></div>
     </div>
     <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
@@ -43,6 +15,9 @@ import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
+import { applyById } from './StackBarModes/modes'
+
+const DEFAULT_BAR_GAP = 0.3
 
 let stackBarChart
 
@@ -65,9 +40,6 @@ export default {
       debounceId: 0,
       layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
       resizeObserver: null,
-      barDisplayMode: 'stack',
-      barGap: 0.3,
-      showDistributionOverlay: false,
     }
   },
   created() {
@@ -276,6 +248,12 @@ export default {
     colorAxisIndex() {
       this.renderChart()
     },
+    getBarDisplayMode() {
+      this.renderChart()
+    },
+    getShowDistributionOverlay() {
+      this.renderChart()
+    },
   },
   computed: {
     ...mapGetters([
@@ -293,6 +271,8 @@ export default {
       'processResponse',
       'getChartProperty',
       'getAllAxes',
+      'getBarDisplayMode',
+      'getShowDistributionOverlay',
     ]),
 
     legendTraces() {
@@ -494,149 +474,12 @@ export default {
     applyBarDisplayMode(traces, layout) {
       if (!traces || !traces.length) return
       const colorway = Object.values(Constants.ChartColorway)
-      const n = traces.length
-
-      switch (this.barDisplayMode) {
-        case 'overlay':
-          layout.barmode = 'overlay'
-          traces.forEach(trace => {
-            trace.marker = {
-              ...trace.marker,
-              opacity: 0.3,
-            }
-          })
-          break
-
-        case 'partialOverlay':
-          layout.barmode = 'overlay'
-          if (n > 1) {
-            const barWidth = (1 - this.barGap) * 0.68
-            const offsetStep = (barWidth * 0.5) / (n - 1)
-            const groupSpan = (n - 1) * offsetStep + barWidth
-            traces.forEach((trace, i) => {
-              trace.width = barWidth
-              trace.offset = i * offsetStep - groupSpan / 2
-              trace.marker = {
-                ...trace.marker,
-                opacity: 0.5,
-              }
-            })
-          }
-          break
-
-        case 'partialOverlaySolid':
-          layout.barmode = 'overlay'
-          if (n > 1) {
-            const barWidthSolid = (1 - this.barGap) * 0.68
-            const offsetStepSolid = (barWidthSolid * 0.5) / (n - 1)
-            const groupSpanSolid = (n - 1) * offsetStepSolid + barWidthSolid
-            traces.forEach((trace, i) => {
-              trace.width = barWidthSolid
-              trace.offset = i * offsetStepSolid - groupSpanSolid / 2
-            })
-          }
-          break
-
-        case 'outline':
-          layout.barmode = 'overlay'
-          // Assign outline colors based on original trace index
-          traces.forEach((trace, i) => {
-            trace.marker = {
-              ...trace.marker,
-              color: 'rgba(0,0,0,0)',
-              line: {
-                color: colorway[i % colorway.length],
-                width: 2,
-              },
-            }
-          })
-          // Sort traces so taller bars render last (on top in Plotly),
-          // ensuring the taller bar's outline color is visible in overlap regions
-          traces.sort((a, b) => {
-            const maxA = Math.max(...(a.y || [0]).map(Number))
-            const maxB = Math.max(...(b.y || [0]).map(Number))
-            return maxA - maxB
-          })
-          break
-
-        case 'distribution': {
-          layout.barmode = 'overlay'
-          const gaussian = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
-          const numCategories = traces[0]?.y?.length || 0
-
-          if (numCategories > 1) {
-            // Capture original category labels before replacing traces
-            const origX = traces[0]?.x || []
-            const categoryLabels = Array.isArray(origX[0])
-              ? origX[0].map((_, ci) => origX.map(level => level[ci]).join(' / '))
-              : origX.map(String)
-
-            const numPoints = Math.max(200, numCategories * 20)
-            const xMin = -0.5
-            const xMax = numCategories - 0.5
-            const step = (xMax - xMin) / (numPoints - 1)
-            const xGrid = Array.from({ length: numPoints }, (_, i) => xMin + i * step)
-
-            const kdeTraces = []
-            traces.forEach((trace, i) => {
-              const yVals = (trace.y || []).map(Number)
-              const totalWeight = yVals.reduce((s, v) => s + v, 0)
-              if (totalWeight === 0) return
-
-              const wMean = yVals.reduce((s, v, idx) => s + v * idx, 0) / totalWeight
-              const wVariance = yVals.reduce((s, v, idx) => s + v * (idx - wMean) ** 2, 0) / totalWeight
-              const stdDev = Math.sqrt(wVariance) || 1
-              const bandwidth = 1.06 * stdDev * Math.pow(totalWeight, -0.2)
-
-              const density = xGrid.map(x => {
-                let sum = 0
-                yVals.forEach((weight, idx) => {
-                  sum += weight * gaussian((x - idx) / bandwidth)
-                })
-                return sum / (totalWeight * bandwidth)
-              })
-
-              const maxDensity = Math.max(...density)
-              const maxY = Math.max(...yVals)
-              const scale = maxDensity > 0 ? maxY / maxDensity : 1
-              const scaledDensity = density.map(d => d * scale)
-
-              kdeTraces.push({
-                x: xGrid,
-                y: scaledDensity,
-                type: 'scatter',
-                mode: 'lines',
-                name: trace.name,
-                meta: trace.meta,
-                line: { color: colorway[i % colorway.length], width: 2 },
-                fill: 'tozeroy',
-                fillcolor: colorway[i % colorway.length] + '30',
-                showlegend: trace.showlegend,
-                hoverinfo: 'skip',
-              })
-            })
-
-            traces.length = 0
-            kdeTraces.forEach(t => traces.push(t))
-
-            // Switch x-axis to linear with category labels as ticks
-            layout.xaxis.type = 'linear'
-            layout.xaxis.tickvals = categoryLabels.map((_, i) => i)
-            layout.xaxis.ticktext = categoryLabels
-            layout.xaxis.range = [xMin, xMax]
-            layout.xaxis.autorange = false
-            delete layout.xaxis.labelalias
-            layout.yaxis.rangemode = 'nonnegative'
-          }
-          break
-        }
-
-        default:
-          // 'stack' — keep default barmode from Constants
-          break
-      }
-
-      layout.bargap = this.barGap
+      const modeApply = applyById[this.getBarDisplayMode] || applyById.stack
+      modeApply(traces, layout, {
+        showDistributionOverlay: this.getShowDistributionOverlay,
+        barGap: DEFAULT_BAR_GAP,
+        colorway,
+      })
     },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
@@ -705,79 +548,6 @@ export default {
         }
 
         this.applyBarDisplayMode(this.chartData.traces, freshLayout)
-
-        if (this.showDistributionOverlay && this.barDisplayMode !== 'distribution') {
-          const colorway = Object.values(Constants.ChartColorway)
-          const originalTraces = this.chartData.traces.filter(t => t.showlegend !== false)
-          const numCategories = originalTraces[0]?.y?.length || 0
-
-          if (numCategories > 1) {
-            const gaussian = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
-            const numPoints = Math.max(200, numCategories * 20)
-            const xMin = -0.5
-            const xMax = numCategories - 0.5
-            const step = (xMax - xMin) / (numPoints - 1)
-            const xGrid = Array.from({ length: numPoints }, (_, i) => xMin + i * step)
-
-            originalTraces.forEach((trace, i) => {
-              const yVals = (trace.y || []).map(Number)
-              const totalWeight = yVals.reduce((s, v) => s + v, 0)
-              if (totalWeight === 0) return
-
-              // Weighted mean and std dev for Silverman's bandwidth
-              const wMean = yVals.reduce((s, v, idx) => s + v * idx, 0) / totalWeight
-              const wVariance = yVals.reduce((s, v, idx) => s + v * (idx - wMean) ** 2, 0) / totalWeight
-              const stdDev = Math.sqrt(wVariance) || 1
-              const bandwidth = 1.06 * stdDev * Math.pow(totalWeight, -0.2)
-
-              // Compute KDE
-              const density = xGrid.map(x => {
-                let sum = 0
-                yVals.forEach((weight, idx) => {
-                  sum += weight * gaussian((x - idx) / bandwidth)
-                })
-                return sum / (totalWeight * bandwidth)
-              })
-
-              // Scale density to match bar heights
-              const maxDensity = Math.max(...density)
-              const maxY = Math.max(...yVals)
-              const scale = maxDensity > 0 ? maxY / maxDensity : 1
-              const scaledDensity = density.map(d => d * scale)
-
-              this.chartData.traces.push({
-                x: xGrid,
-                y: scaledDensity,
-                type: 'scatter',
-                mode: 'lines',
-                line: {
-                  color: colorway[i % colorway.length],
-                  width: 2,
-                },
-                xaxis: 'x2',
-                showlegend: false,
-                hoverinfo: 'skip',
-              })
-            })
-
-            // Overlaid secondary x-axis aligned to category indices
-            freshLayout.xaxis2 = {
-              overlaying: 'x',
-              range: [xMin, xMax],
-              showgrid: false,
-              showticklabels: false,
-              zeroline: false,
-              visible: false,
-              anchor: 'y',
-              autorange: false,
-            }
-            // Lock the primary x-axis range to prevent it from shifting
-            freshLayout.xaxis.autorange = true
-            freshLayout.xaxis.constrain = 'domain'
-            // Prevent y-axis from showing sub-zero padding
-            freshLayout.yaxis.rangemode = 'nonnegative'
-          }
-        }
 
         Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
 
@@ -872,48 +642,6 @@ export default {
   flex: 1;
   min-width: 0;
   height: 100%;
-}
-.stackbar-toolbar {
-  flex-shrink: 0;
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.bar-mode-select {
-  font-size: 12px;
-  height: 24px;
-  padding: 0 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-.distribution-overlay-label {
-  font-size: 12px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 0;
-  cursor: pointer;
-}
-.bar-gap-label {
-  font-size: 12px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 0;
-}
-.bar-gap-input {
-  width: 50px;
-  height: 24px;
-  font-size: 12px;
-  padding: 0 4px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
 }
 .stackbar-container {
   flex: 1;

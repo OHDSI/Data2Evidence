@@ -35,7 +35,15 @@
       </div>
       <div class="d-flex iconActionButton">
         <template v-for="chart in chartConfig" :key="chart.name">
+          <BarDisplayModeMenu
+            v-if="chart.name === 'stacked'"
+            :chart="chart"
+            :activeChart="getActiveChart"
+            :title="getText(chart.tooltip)"
+            @switch-chart="switchChart(chart)"
+          ></BarDisplayModeMenu>
           <chartButton
+            v-else
             @clickEv="switchChart(chart)"
             :name="chart.name"
             :icon="chart.icon"
@@ -170,6 +178,7 @@
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
 import ChartButton from './ChartButton.vue'
+import BarDisplayModeMenu from './BarDisplayModeMenu.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import patientCount from './PatientCount.vue'
 import Constants from '../utils/Constants'
@@ -521,6 +530,7 @@ export default {
   },
   components: {
     ChartButton,
+    BarDisplayModeMenu,
     DropDownMenu,
     icon,
     patientCount,

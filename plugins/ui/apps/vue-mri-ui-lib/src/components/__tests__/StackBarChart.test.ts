@@ -56,6 +56,9 @@ const getters = {
   sortProperty: () => ({ props: { value: null } }),
   processResponse: () => chartData => chartData,
   getChartProperty: () => () => ({ props: { active: true } }),
+  getAllAxes: () => [],
+  getBarDisplayMode: () => 'stack',
+  getShowDistributionOverlay: () => false,
 }
 
 const getLastSelectionPayload = () => selectionAction.mock.calls.at(-1)?.[1]

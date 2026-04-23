@@ -44,6 +44,10 @@ const state = {
   fireRequestHeld: false,
   // tracks whether the right pane has ever been opened (used to avoid double setFireRequest on bookmark load)
   rightPaneMounted: false,
+
+  // stacked bar chart display mode and overlay toggle
+  barDisplayMode: 'stack',
+  showDistributionOverlay: false,
 }
 
 // Cancel tokens
@@ -94,6 +98,8 @@ const getters = {
   getFireRequest: modulestate => modulestate.fireRequest,
   isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
   isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
+  getBarDisplayMode: modulestate => modulestate.barDisplayMode,
+  getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
 }
 
 // actions
@@ -359,6 +365,12 @@ const actions = {
     dispatch('setIFRState', { ifr: initialIFR })
     dispatch('setupChartDefaults')
   },
+  setBarDisplayMode({ commit }, modeId: string) {
+    commit(types.SET_BAR_DISPLAY_MODE, modeId)
+  },
+  setShowDistributionOverlay({ commit }, value: boolean) {
+    commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, value)
+  },
 }
 
 // mutations
@@ -406,6 +418,12 @@ const mutations = {
   },
   [types.SET_RIGHT_PANE_MOUNTED](modulestate, value: boolean) {
     modulestate.rightPaneMounted = value
+  },
+  [types.SET_BAR_DISPLAY_MODE](modulestate, modeId: string) {
+    modulestate.barDisplayMode = modeId
+  },
+  [types.SET_SHOW_DISTRIBUTION_OVERLAY](modulestate, value: boolean) {
+    modulestate.showDistributionOverlay = value
   },
 }
 
