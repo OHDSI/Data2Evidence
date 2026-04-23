@@ -41,7 +41,7 @@
   },
   "optionalDependencies": {
     "fast-csv": "5.0.2",
-    "hdb": "0.19.12",
+    "hdb": "2.27.1",
     "pg": "8.16.3",
     "pg-format": "1.0.4"
   },

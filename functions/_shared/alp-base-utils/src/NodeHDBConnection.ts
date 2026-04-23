@@ -372,7 +372,7 @@ export class NodeHDBConnection implements ConnectionInterface {
         } else {
           //Run bulk insert statement in chunks as hdb-node module will hang if doing bulk insert on large amounts of rows
           const rowCount: number = parameters.length;
-          const chunkSize: number = 50000;
+          const chunkSize: number = 10000;
           const chunkCount: number = Math.ceil(rowCount / chunkSize);
 
           for (let j = 0; j < chunkCount; j++) {

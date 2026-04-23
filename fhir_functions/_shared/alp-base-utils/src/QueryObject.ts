@@ -430,7 +430,7 @@ export class QueryObject {
 
       for (let i = 0; i < columnAliasList.length; i++) {
         const shortenColumnAlias = columnAliasList[i].split(".").pop();
-        query = query.replace(
+        query = query.replaceAll(
           columnAliasList[i],
           `"${shortenColumnAlias.toLowerCase()}`,
         );
