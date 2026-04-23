@@ -1,4 +1,5 @@
 import { Response } from "express";
+import { promisify } from "node:util";
 import { MriConfigConnection } from "@alp/alp-config-utils";
 import {
     IMRIRequest,
@@ -241,7 +242,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 await cohortEndpoint.streamCohortToDb(
                     cohort.id,
                     cohort,
-                    queryResponse.queryObject
+                    queryResponse.queryObject,
+                    { datasetId: req.selectedstudyDbMetadata.id,
+                      token: req.headers.authorization,
+                      dbCredential: req.dbCredentials.studyAnalyticsCredential
+                    }
                 );
             } else {
                 await cohortEndpoint.saveCohortToDb(
@@ -264,7 +269,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                 await cohortEndpoint.streamCohortToDb(
                     cohortDefinitionId,
                     cohort,
-                    queryResponse.queryObject
+                    queryResponse.queryObject,
+                    { datasetId: req.selectedstudyDbMetadata.id,
+                      token: req.headers.authorization,
+                      dbCredential: req.dbCredentials.studyAnalyticsCredential
+                    }
                 );
             } else {
                 await cohortEndpoint.saveCohortToDb(
@@ -463,6 +472,53 @@ export async function deleteCohort(req: IMRIRequest, res: Response) {
     }
 }
 
+export async function materializeCohort(req: IMRIRequest, res: Response) {
+    try {
+        const cohortDefinitionId = req.body.cohortDefinitionId;
+        const datasetId = req.body.datasetId;
+        const batchData = JSON.parse(req.body.batchData);
+        const count = Number(req.body.count);
+        console.log("Batch data length:", batchData.length);
+        console.log("Requests count:", count);
+
+        const analyticsConnection = getCohortAnalyticsConnection(req);
+
+        const insertCohortQueryInBatches = `INSERT INTO cdmsynpuf.COHORT 
+                                                            (COHORT_DEFINITION_ID, SUBJECT_ID, COHORT_START_DATE, COHORT_END_DATE) VALUES 
+                                                            (6, ?, ?, ?)`;
+        const bulkInsert = promisify(analyticsConnection.executeBulkInsert.bind(analyticsConnection));
+        let start = 0, end = batchData.length >= 5000 ? 5000 : batchData.length;
+        let inserts = [];
+        while (start < batchData.length) {
+            inserts.push(bulkInsert(
+                insertCohortQueryInBatches,
+                batchData.slice(start, end)
+            ));
+            // inserts.push([start, end]);
+            start = end;
+            end = batchData.length >= (end + 5000) ? (end + 5000) : batchData.length;
+        }
+
+        if (start === end) {
+            inserts.push(bulkInsert(
+                insertCohortQueryInBatches,
+                batchData.slice(start, end)
+            ));
+        }
+
+        console.log(`Total batches to insert: ${inserts.length}`);
+
+        await Promise.allSettled(inserts)
+
+        analyticsConnection.close();
+        res.status(200).send({ message: "Cohort materialized successfully" });
+    } catch (err) {
+        logger.error(err);
+        res.status(500).send(MRIEndpointErrorHandler({ err, language }));
+    }
+}
+
+        
 export async function checkIfSchemaCanMaterializeCohort(
     req: IMRIRequest,
     res: Response
