@@ -143,15 +143,7 @@ export interface IFormattedBookmark {
   version: string | null
   user_id: string
   shared: boolean
-  cohortDefinitionId?: number | undefined
   paConfigId?: string | undefined
-}
-export interface IFormattedMaterializedCohort {
-  id: number
-  patientCount: number
-  cohortDefinitionName: string
-  createdOn: string
-  description: string
 }
 
 export interface IAtlasCohortDefinition {
@@ -179,5 +171,4 @@ export interface IFormattedAtlasCohortDefinition {
 export interface IFrontendBookmark {
   schemaName: string
   bookmarks: IFormattedBookmark[]
-  materializedCohorts: IFormattedMaterializedCohort[]
 }
