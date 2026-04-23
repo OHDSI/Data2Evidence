@@ -54,9 +54,18 @@ test(TEST_NAME, async ({ page }) => {
       throw new Error(`Could not resolve node handles for ${sourceLabel} -> ${targetLabel}`);
     }
 
-    await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2);
+    const sourceCenterX = sourceBox.x + sourceBox.width / 2;
+    const sourceCenterY = sourceBox.y + sourceBox.height / 2;
+    const targetCenterX = targetBox.x + targetBox.width / 2;
+    const targetCenterY = targetBox.y + targetBox.height / 2;
+
+    // Hover over the source handle to ensure it's active before dragging
+    await page.mouse.move(sourceCenterX, sourceCenterY);
+    await page.waitForTimeout(300);
     await page.mouse.down();
-    await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, { steps: 20 });
+    // Move in small steps away from source first to avoid accidentally picking up the node
+    await page.mouse.move(sourceCenterX + 10, sourceCenterY, { steps: 5 });
+    await page.mouse.move(targetCenterX, targetCenterY, { steps: 30 });
     await page.mouse.up();
   };
 
