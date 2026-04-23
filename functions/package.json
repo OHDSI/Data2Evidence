@@ -74,6 +74,14 @@
       ],
       "api": [
         {
+          "source": "/python-calculator",
+          "service": "python-calculator"
+        },
+        {
+          "source": "/calculator",
+          "service": "calculator"
+        },
+        {
           "source": "/gateway/dashboard",
           "service": "kpi-dashboard"
         },
@@ -632,6 +640,10 @@
           "nifimgmt.userAdmin"
         ],
         "ALP_SYSTEM_ADMIN": [
+          "python-calculator.read",
+          "python-calculator.write",
+          "calculator.read",
+          "calculator.write",
           "PAConfig.ui",
           "PAConfig.svc",
           "PAConfig.svc/read",
@@ -798,6 +810,10 @@
           "d2e.webapi.public"
         ],
         "RESEARCHER": [
+          "python-calculator.read",
+          "python-calculator.write",
+          "calculator.read",
+          "calculator.write",
           "PA.svc",
           "PAConfig.svc/read",
           "CDWConfig.svc/read",
@@ -893,6 +909,26 @@
         ]
       },
       "scopes": [
+        {
+          "path": "^/python-calculator/(.*)",
+          "scopes": ["python-calculator.read", "python-calculator.write"],
+          "httpMethods": ["GET", "POST"]
+        },
+        {
+          "path": "^/python-calculator",
+          "scopes": ["python-calculator.read", "python-calculator.write"],
+          "httpMethods": ["GET", "POST"]
+        },
+        {
+          "path": "^/calculator/(.*)",
+          "scopes": ["calculator.read"],
+          "httpMethods": ["GET"]
+        },
+        {
+          "path": "^/calculator",
+          "scopes": ["calculator.read"],
+          "httpMethods": ["GET"]
+        },
         {
           "path": "^/gateway/dashboard/(.*)",
           "scopes": [
