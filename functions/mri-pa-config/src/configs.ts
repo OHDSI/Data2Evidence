@@ -17,6 +17,17 @@ const Env = z
     __MRI_SAC_EXTENSION: z.string().optional(),
     TLS__INTERNAL__KEY: z.string().optional(),
     TLS__INTERNAL__CRT: z.string().optional(),
+    SERVICE_ROUTES: z
+      .string()
+      .transform((str, ctx): z.infer<ReturnType<typeof z.object>> => {
+        try {
+          return JSON.parse(str);
+        } catch (_e) {
+          ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+          return z.never();
+        }
+      })
+      .optional(),
 
     LOCAL_DEBUG: z.string(),
     isHttpTestRun: z.string().optional(),
@@ -81,7 +92,7 @@ if (result.success === false) {
   throw new Error(`Service Failed to Start!! ${JSON.stringify(result)}`);
 }
 
-const env = _env as z.infer<typeof Env>;
+const env = result.data;
 const envVarUtils = new EnvVarUtils(_env);
 
 export { env, envVarUtils };
