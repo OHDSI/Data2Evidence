@@ -3,23 +3,20 @@ import {
   DBConnectionUtil as dbConnectionUtil,
   Logger,
   healthCheckMiddleware,
-  Constants,
   User,
   Connection,
   getUser,
   utils,
-  QueryObject as qo,
 } from "@alp/alp-base-utils";
-
-const QueryObject = qo.QueryObject;
 import * as xsenv from "@sap/xsenv";
 import express from "express";
 import { MRIConfig } from "./config/config";
 import { ConfigFacade as MriConfigFacade } from "./config/ConfigFacade";
-import { IRequest, IDBCredentialsType } from "./types";
+import { IDBCredentialsType, IRequest } from "./types";
 import { configDefaultValues } from "../cfg/pa/configDefaultValues.ts"
 import https from "https";
 import fs from "node:fs";
+declare const Trex: any;
 const log = Logger.CreateLogger("mri-config-log");
 
 let credentials;
@@ -50,6 +47,24 @@ const getConnections = async ({
   return {
     db,
   };
+};
+
+const invokeConfigFacade = async ({
+  facade,
+  request,
+}: {
+  facade: MriConfigFacade;
+  request: Record<string, unknown>;
+}) => {
+  return await new Promise<any>((resolve, reject) => {
+    facade.invokeService(request, (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
 };
 
 function initRoutes() {
@@ -190,135 +205,93 @@ function initRoutes() {
     res.json(configDefaultValues)
   });
 
-  // Wizards config endpoints
-  const WIZARDS_CONFIG_ID = "wizards-config";
-  const WIZARDS_CONFIG_VERSION = "1";
-  const WIZARDS_CONFIG_TYPE = "WIZARDS";
-
-  app.get("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const { db } = req.dbConnections;
-
-    const query = QueryObject.format(
-      `SELECT "Data" FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
-    );
-
-    query.executeQuery(db, (err, result) => {
-      if (err) {
-        log.error("Error fetching wizards config:", err);
-        return res.status(500).json({ error: "Failed to fetch wizards config" });
-      }
-
-      if (!result || !result.data || result.data.length === 0) {
-        return res.status(200).json({ wizards: [] });
-      }
-
-      try {
-        const data = JSON.parse(result.data[0].Data);
-        return res.status(200).json(data);
-      } catch (parseErr) {
-        log.error("Error parsing wizards config:", parseErr);
-        return res.status(500).json({ error: "Failed to parse wizards config" });
-      }
-    });
-  });
-
-  app.put("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const user = getUser(req);
-    const { db } = req.dbConnections;
-    const configData = req.body;
-
-    if (!configData || !configData.wizards) {
-      return res.status(400).json({ error: "Invalid config format. Expected { wizards: [...] }" });
+  const getDatasetPaConfigId = async ({
+    datasetId,
+    authToken,
+  }: {
+    datasetId: string;
+    authToken?: string;
+  }): Promise<string | null> => {
+    const portalBaseUrl = env.SERVICE_ROUTES?.portalServer;
+    if (!portalBaseUrl) {
+      throw new Error("Portal Server URL is not configured");
     }
 
-    const dataJson = JSON.stringify(configData);
-    const username = user.getUser();
-    const now = new Date();
+    const portalApi = Trex.tokioChannel("d2e-functions/portal");
+    const url = `${portalBaseUrl}/dataset?datasetId=${encodeURIComponent(datasetId)}`;
+    const options = authToken
+      ? {
+          headers: {
+            Authorization: authToken,
+          },
+        }
+      : undefined;
 
-    // Check if config exists
-    const checkQuery = QueryObject.format(
-      `SELECT "Id" FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
+    const result = await portalApi.get(url, options);
+    const dataset = result?.data;
+    if (!dataset) {
+      return null;
+    }
+
+    return dataset.paConfigId || dataset.pa_config_id || null;
+  };
+
+  app.get("/pa-config-svc/wizards/config", (req: IRequest, res) => {
+    const reqAny = req as any;
+    const user = getUser(reqAny);
+    const language = user.lang;
+    const datasetId = (reqAny.query?.datasetId || "").toString().trim();
+
+    if (!datasetId) {
+      return res.status(400).json({ error: "datasetId is required" });
+    }
+
+    const mriConfig = new MRIConfig(
+      req.dbConnections.db,
+      user,
+      fs,
+      reqAny.headers?.authorization,
     );
 
-    checkQuery.executeQuery(db, (err, result) => {
-      if (err) {
-        log.error("Error checking existing config:", err);
-        return res.status(500).json({ error: "Failed to check existing config" });
-      }
-
-      const exists = result && result.data && result.data.length > 0;
-
-      if (exists) {
-        const updateQuery = QueryObject.format(
-          `UPDATE "ConfigDbModels_Config" SET "Data" = %s, "Modifier" = %s, "Modified" = %t WHERE "Id" = %s AND "Version" = %s`,
-          dataJson,
-          username,
-          now,
-          WIZARDS_CONFIG_ID,
-          WIZARDS_CONFIG_VERSION
-        );
-
-        updateQuery.executeUpdate(db, (updateErr) => {
-          if (updateErr) {
-            log.error("Error updating wizards config:", updateErr);
-            return res.status(500).json({ error: "Failed to update wizards config" });
-          }
-          db.commit();
-          return res.status(200).json({ success: true, message: "Config updated" });
-        });
-      } else {
-        const insertQuery = QueryObject.format(
-          `INSERT INTO "ConfigDbModels_Config" ("Id", "Version", "Status", "Name", "Type", "Creator", "Created", "Modifier", "Modified", "Data") VALUES (%s, %s, %s, %s, %s, %s, %t, %s, %t, %s)`,
-          WIZARDS_CONFIG_ID,
-          WIZARDS_CONFIG_VERSION,
-          "A",
-          "Wizards Configuration",
-          WIZARDS_CONFIG_TYPE,
-          username,
-          now,
-          username,
-          now,
-          dataJson
-        );
-
-        insertQuery.executeUpdate(db, (insertErr) => {
-          if (insertErr) {
-            log.error("Error inserting wizards config:", insertErr);
-            return res.status(500).json({ error: "Failed to create wizards config" });
-          }
-          db.commit();
-          return res.status(201).json({ success: true, message: "Config created" });
-        });
-      }
-    });
-  });
-
-  app.delete("/pa-config-svc/wizards/config", (req: IRequest, res) => {
-    const { db } = req.dbConnections;
-
-    const deleteQuery = QueryObject.format(
-      `DELETE FROM "ConfigDbModels_Config" WHERE "Id" = %s AND "Version" = %s`,
-      WIZARDS_CONFIG_ID,
-      WIZARDS_CONFIG_VERSION
+    const facade = new MriConfigFacade(
+      req.dbConnections.db,
+      mriConfig,
+      isTestEnvironment,
+      fs,
     );
 
-    deleteQuery.executeUpdate(db, (err, linesEffected) => {
-      if (err) {
-        log.error("Error deleting wizards config:", err);
-        return res.status(500).json({ error: "Failed to delete wizards config" });
-      }
-      db.commit();
+    getDatasetPaConfigId({ datasetId, authToken: reqAny.headers?.authorization })
+      .then((paConfigId) => {
+        if (!paConfigId) {
+          return res.status(200).json({ wizards: [] });
+        }
 
-      if (linesEffected === 0) {
-        return res.status(404).json({ error: "Config not found" });
-      }
+        facade.invokeService(
+          {
+            action: "getConfig",
+            configId: paConfigId,
+            configVersion: "A",
+            language,
+          },
+          (getErr, configResult) => {
+            if (getErr) {
+              log.enrichErrorWithRequestCorrelationID(getErr, reqAny);
+              log.error(getErr);
+              return res.status(500).json({ error: "Failed to fetch wizards config" });
+            }
 
-      return res.status(200).json({ success: true, message: "Config deleted" });
-    });
+            const wizards = configResult?.config?.wizardsConfig?.wizards;
+            return res.status(200).json({
+              wizards: Array.isArray(wizards) ? wizards : [],
+            });
+          },
+        );
+      })
+      .catch((err) => {
+        log.enrichErrorWithRequestCorrelationID(err, reqAny);
+        log.error(err);
+        return res.status(500).json({ error: "Failed to resolve dataset PA config" });
+      });
   });
 
   app.use((err, req, res, next) => {

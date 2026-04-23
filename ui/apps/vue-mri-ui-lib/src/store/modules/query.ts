@@ -46,11 +46,11 @@ const normalizeConstraintDateForDisplay = (value: unknown, constraintType: strin
     return value
   }
 
-  const localDate = DateUtils.toLocalDate(parsedDate)
   if (constraintType === 'time') {
-    return DateUtils.displayDateFormat(localDate)
+    return DateUtils.toStartOfDay(parsedDate)
   }
 
+  const localDate = DateUtils.toLocalDate(parsedDate)
   return localDate
 }
 
