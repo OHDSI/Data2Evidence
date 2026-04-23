@@ -73,7 +73,7 @@ export class PortalAPI {
   async getDatasetByToken(tokenStudyCode: string) {
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/dataset/by-token?tokenDatasetCode=${encodeURIComponent(tokenStudyCode)}`;
+      const url = `${this.baseURL}/dataset?tokenDatasetCode=${encodeURIComponent(tokenStudyCode)}`;
       const result = await this.channel.get(url, options);
       return result.data;
     } catch (error) {

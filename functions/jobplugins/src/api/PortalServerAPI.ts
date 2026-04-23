@@ -46,7 +46,7 @@ export class PortalServerAPI {
 
   async getDatasetByToken(tokenStudyCode: string) {
     try {
-      const url = `${this.baseURL}/dataset/by-token`;
+      const url = `${this.baseURL}/dataset`;
       const queryParams = new URLSearchParams({ tokenDatasetCode: tokenStudyCode });
       const options = this.createOptions("GET");
       const result = await this.channel.get(

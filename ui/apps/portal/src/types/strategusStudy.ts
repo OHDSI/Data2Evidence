@@ -19,7 +19,7 @@ export interface NetworkStrategusStudy {
   createdAt: string;
   updatedAt: string;
   datasetId: string;
-  tokenStudyCode: string;
+  tokenStudyCode: string | null;
 }
 
 export enum StrategusStudyType {

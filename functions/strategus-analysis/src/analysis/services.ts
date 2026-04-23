@@ -21,7 +21,8 @@ export default class StrategusAnalysisService {
                 try {
                     const dataset = await portalAPI.getDataset(analysis.datasetId);
                     return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
-                } catch {
+                } catch (error) {
+                    console.error(`Failed to resolve tokenStudyCode for analysis ${analysis.id} (datasetId: ${analysis.datasetId}):`, error);
                     return { ...analysis, tokenStudyCode: null };
                 }
             })
@@ -39,7 +40,8 @@ export default class StrategusAnalysisService {
             const portalAPI = new PortalAPI(token);
             const dataset = await portalAPI.getDataset(analysis.datasetId);
             return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
-        } catch {
+        } catch (error) {
+            console.error(`Failed to resolve tokenStudyCode for study ${studyId} (datasetId: ${analysis.datasetId}):`, error);
             return { ...analysis, tokenStudyCode: null };
         }
     }
