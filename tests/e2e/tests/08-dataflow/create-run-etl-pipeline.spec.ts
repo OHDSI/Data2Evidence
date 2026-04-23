@@ -230,6 +230,9 @@ test(TEST_NAME, async ({ page }) => {
   await moveNodeByLabel('sql_node_0', 360, 20);
   await moveNodeByLabel('db_writer_node_0', 600, 20);
 
+  // Wait for the canvas to settle after all node moves before connecting
+  await page.waitForTimeout(1000);
+
   await connectNodesByLabel('db_reader_node_0', 'test_python_node');
   await connectNodesByLabel('test_python_node', 'py2table_node_0');
   await connectNodesByLabel('py2table_node_0', 'sql_node_0');
