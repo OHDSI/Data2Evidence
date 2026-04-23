@@ -38,8 +38,8 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isLocal = computed(() => getPortalAPI()?.isLocal)
 
+const isLocal = getPortalAPI()?.isLocal || false
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => getPortalAPI()?.username || '')
 
@@ -143,7 +143,11 @@ const totalPages = computed(() => {
   return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
-const paginatedBookmarks = computed(() => {
+const paginatedBookmarks = computed(() => {  
+  if (!isLocal) {
+    return bookmarksDisplaySorted.value
+  }
+
   const start = (currentPage.value - 1) * Number(itemsPerPage.value)
   const end = start + Number(itemsPerPage.value)
   return bookmarksDisplaySorted.value.slice(start, end)
@@ -521,7 +525,9 @@ onErrorCaptured((err, instance, info) => {
                   <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.description }}</div>
                 </div>
                 <div style="display: flex">
-                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px; white-space: nowrap;">Cohort Name:</div>
+                  <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px; white-space: nowrap">
+                    Cohort Name:
+                  </div>
                   <div class="ui-light-text" style="overflow: hidden; text-overflow: ellipsis">
                     {{ bookmarkDisplay.cohortDefinition.cohortDefinitionName }}
                   </div>
@@ -585,7 +591,9 @@ onErrorCaptured((err, instance, info) => {
 
           <div
             :class="`icon-button ${
-              ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts ? '' : 'icon-button-disabled'
+              ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
+                ? ''
+                : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click.stop="addCohort(bookmarkDisplay)"
