@@ -23,7 +23,7 @@ app.use((req, res, next) => {
     return;
   }
 
-  if (req.client?.authorized) {
+  if (req.socket?.authorized) {
     next();
     return;
   }
