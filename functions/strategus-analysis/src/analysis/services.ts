@@ -41,7 +41,7 @@ export default class StrategusAnalysisService {
             const dataset = await portalAPI.getDataset(analysis.datasetId);
             return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
         } catch (error) {
-            console.error(`Failed to resolve tokenStudyCode for study ${studyId} (datasetId: ${analysis.datasetId}):`, error);
+            console.error(`Failed to resolve tokenStudyCode for study`, error);
             return { ...analysis, tokenStudyCode: null };
         }
     }
