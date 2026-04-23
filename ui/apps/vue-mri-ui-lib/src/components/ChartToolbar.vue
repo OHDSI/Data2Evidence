@@ -30,10 +30,10 @@
           :disabled="!canOpenDashboard"
         />
       </div>
-      <div class="dashboardButton" v-if="getActiveBookmark && enableInclusionReport">
+      <div class="attritionButton" v-if="getActiveBookmark && enableInclusionReport">
         <VButton @click="openInclusionReportModal">{{ getText('MRI_PA_INCLUSION_REPORT_BUTTON') }}</VButton>
       </div>
-      <div class="d-flex">
+      <div class="d-flex iconActionButton">
         <template v-for="chart in chartConfig" :key="chart.name">
           <chartButton
             @clickEv="switchChart(chart)"
@@ -156,8 +156,10 @@
             :cache-key="inclusionReportCacheKey"
             generation-status="complete"
             :fetch-inclusion-report="fetchInclusionReport"
+            :fetch-attrition-report="fetchAttritionReportFn"
             :show-person-event-switch="false"
             :filter-card-details="inclusionReportFilterCardDetails"
+            :show-intersect-view="enableIntersectViewInclusionReport"
           />
         </div>
       </div>
@@ -229,14 +231,18 @@ export default {
       showSaveCohortModal: false,
       showInclusionReportModal: false,
       inclusionReportCache: null,
+      fetchAttritionReportFn: null as ((ruleOrder?: number[]) => Promise<any>) | null,
     }
   },
   watch: {
-    getHasAssignedConfig(val) {
-      if (val) {
-        this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-        this.refreshPatientCount()
-      }
+    getHasAssignedConfig: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
+          this.refreshPatientCount()
+        }
+      },
     },
     getActiveChart() {
       this.refreshPatientCount()
@@ -250,13 +256,15 @@ export default {
       }
     },
   },
+  created() {
+    this.fetchAttritionReportFn = (ruleOrder?: number[]) => this.fetchSelectiveInclusionReport(ruleOrder)
+  },
   mounted() {
     try {
       this.$nextTick(() => {
         window.addEventListener('click', this.closeSubMenu)
       })
       this.chartConfig = this.visibleChartTypes(this.getAllChartConfigs)
-      this.refreshPatientCount()
       this.loadValuesForAttributePath({
         attributePathUid: 'conceptSets',
         searchQuery: '',
@@ -330,6 +338,9 @@ export default {
         (filter: any) => getAdvanceTimeFilterFormatted(filter, this.getFilterCard, this.getText)
       )
     },
+    enableIntersectViewInclusionReport() {
+      return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.intersectViewInclusionReport
+    },
   },
   methods: {
     ...mapActions([
@@ -344,7 +355,6 @@ export default {
       'fireBookmarkQuery',
       'fireQuery',
       'onAddCohortOkButtonPress',
-      'setToastMessage',
       'ajaxAuth',
       'addFilterCard',
       'addFilterCardConstraint',
@@ -470,10 +480,6 @@ export default {
       this.showSaveCohortModal = false
     },
 
-    openDashboardModal() {
-      this.handleOpenDashboard()
-    },
-
     closeDashboardModal() {
       this.showDashboardModal = false
     },
@@ -498,6 +504,18 @@ export default {
       }).then(result => {
         this.inclusionReportCache = { mriquery, result }
         return result
+      })
+    },
+    fetchSelectiveInclusionReport(ruleOrder?: number[]) {
+      const mriquery = JSON.stringify(this.getBookmarksData)
+      const datasetId = this.getBookmarksData.datasetId
+      const params: Record<string, any> = { mriquery, datasetId }
+      if (ruleOrder) {
+        params.ruleOrder = JSON.stringify(ruleOrder)
+      }
+      return this.fireQuery({
+        url: '/analytics-svc/api/services/population/json/selectiveinclusionreport',
+        params,
       })
     },
   },

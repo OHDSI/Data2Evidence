@@ -349,7 +349,6 @@
           "ANALYTICS_SVC__PORT": 41102,
           "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
           "LOCAL_DEBUG": "false",
-          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}",
           "USE_EXTENSION_FOR_COHORT_CREATION": "false",
           "isTestEnv": "${isTestEnv}",
           "local": "${local}",
@@ -490,8 +489,7 @@
           "PG_SCHEMA": "files_manager"
         },
         "terminology-svc": {
-          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
-          "USE_TREX_DB_CONN": "${USE_TREX_DB_CONN:-true}"
+          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}"
         },
         "perseus": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -775,7 +773,6 @@
           "gateway.external.dashboards.read"
         ],
         "TENANT_VIEWER": [
-          "PA.DatasetOverview.svc",
           "usermgmt.group.read",
           "usermgmt.me",
           "usermgmt.studyAccessRequest.add",
@@ -819,6 +816,7 @@
           "gateway.terminology.conceptSet.update",
           "gateway.terminology.conceptSet.delete",
           "gateway.terminology.concept.count.read",
+          "gateway.terminology.concept.ids.read",
           "gateway.terminology.concept.filterOptions.read",
           "gateway.terminology.concept.recommended.read",
           "gateway.terminology.concept.hierarchy.read",
@@ -1070,12 +1068,6 @@
           ]
         },
         {
-          "path": "^/analytics-svc/api/services/population/studies/patientcount",
-          "scopes": [
-            "PA.DatasetOverview.svc"
-          ]
-        },
-        {
           "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
           "scopes": [
             "PA.svc"
@@ -1118,16 +1110,6 @@
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/pa-config-svc/wizards/config$",
-          "scopes": [
-            "PAConfig.svc"
-          ],
-          "httpMethods": [
-            "PUT",
-            "DELETE"
           ]
         },
         {
@@ -2185,6 +2167,15 @@
           "path": "^/terminology/concept/count(.*)",
           "scopes": [
             "gateway.terminology.concept.count.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/ids(.*)",
+          "scopes": [
+            "gateway.terminology.concept.ids.read"
           ],
           "httpMethods": [
             "GET"

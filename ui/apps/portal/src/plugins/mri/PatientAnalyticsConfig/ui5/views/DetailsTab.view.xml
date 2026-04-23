@@ -18,5 +18,7 @@
         <Text text="{analyticsModel>meta/creator}" />
         <Label text="{i18n>MRI_PA_CFG_DETAILS_NOTES}" />
         <TextArea rows="8" value="{analyticsModel>config/configInformations/note}" width="100%" />
+        <Label text="{i18n>MRI_PA_CFG_WIZARDS_CONFIG_LABEL}" />
+        <Button text="{i18n>MRI_PA_CFG_BUTTON_EDIT_WIZARDS_JSON}" press="onEditWizardsConfig" />
     </f:SimpleForm>
 </mvc:View>

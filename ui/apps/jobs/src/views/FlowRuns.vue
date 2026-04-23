@@ -53,7 +53,7 @@
 
             <template v-if="flowRunCount > 0">
               <FlowRunList
-                :selected="selectedFlowRuns"
+                v-model:selected="selectedFlowRuns"
                 :selectable="flowRunsAreSelectable"
                 :flow-runs="flowRuns"
               />

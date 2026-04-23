@@ -171,3 +171,27 @@ export const formatBigPositiveNumber = (value: number): string => {
   const formatted = value / 1_000;
   return formatted % 1 === 0 ? `${formatted}K` : `${formatted.toFixed(1)}K`;
 };
+
+/**
+ * Creates a tooltip formatter function from an ECharts string template.
+ * The `{c}` placeholder in the template is replaced with a number formatted
+ * with thousands separators (e.g. 1234567 → "1,234,567").
+ * @param template - ECharts tooltip string template (e.g. "Age: {b}<br />People: {c}")
+ * @returns A formatter function suitable for ECharts tooltip.formatter
+ */
+export const createTooltipFormatter = (template: string): ((params: any) => string) => {
+  return (params: any) => {
+    const param = Array.isArray(params) ? params[0] : params;
+    const name = String(param?.name ?? param?.axisValue ?? "");
+    const rawValue = param?.value;
+    const value =
+      typeof rawValue === "number"
+        ? rawValue.toLocaleString("en-US", { maximumFractionDigits: 10 })
+        : String(rawValue ?? "");
+    return template
+      .replace(/{a}/g, String(param?.seriesName ?? ""))
+      .replace(/{b}/g, name)
+      .replace(/{c}/g, value)
+      .replace(/{d}/g, String(param?.percent ?? ""));
+  };
+};

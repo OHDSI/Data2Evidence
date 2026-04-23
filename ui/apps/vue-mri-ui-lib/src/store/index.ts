@@ -11,7 +11,6 @@ import genomics from './modules/genomics'
 import i18n from './modules/i18n'
 import km from './modules/km'
 import loading from './modules/loading'
-import notifications from './modules/notifications'
 import patientList from './modules/patientList'
 import pcount from './modules/pcount'
 import query from './modules/query'
@@ -37,7 +36,6 @@ export default createStore({
     i18n,
     km,
     loading,
-    notifications,
     patientList,
     pcount,
     query,

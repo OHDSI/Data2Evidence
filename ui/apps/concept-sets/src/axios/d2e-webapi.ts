@@ -24,6 +24,8 @@ export class D2eWebapi {
     standardConcept: string[],
     validity: string[],
     signal?: AbortSignal,
+    sortBy?: string,
+    sortOrder?: string,
   ): Promise<IWebapiConcept[]> {
     const data = {
       QUERY: searchText,
@@ -36,6 +38,12 @@ export class D2eWebapi {
     const params = new URLSearchParams();
     params.append("page", String(page));
     params.append("rowsPerPage", String(rowsPerPage));
+    if (sortBy) {
+      params.append("sortBy", sortBy);
+    }
+    if (sortOrder) {
+      params.append("sortOrder", sortOrder);
+    }
 
     return request({
       baseURL: D2E_WEBAPI_BASE_URL,

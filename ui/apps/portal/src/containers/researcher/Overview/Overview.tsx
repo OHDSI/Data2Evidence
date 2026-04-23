@@ -2,8 +2,9 @@ import React, { FC, useMemo, useState, useCallback } from "react";
 import classNames from "classnames";
 import debounce from "lodash/debounce";
 import ReactMarkdown from "react-markdown";
+import { Skeleton } from "@mui/material";
 import { Loader } from "@portal/components";
-import { useDatasets, useOverviewDescription } from "../../../hooks";
+import { useDatasets, useOverviewDescription, useHeaderImage } from "../../../hooks";
 import { FEATURE_DATASET_FILTER, config } from "../../../config/index";
 import { DatasetFilters } from "./components/DatasetFilters";
 import { DatasetCard } from "../DatasetCard/DatasetCard";
@@ -25,6 +26,7 @@ export const Overview: FC = () => {
   const [refetch, setRefetch] = useState(0);
   const [datasets, loading, error] = useDatasets("researcher", searchText, filters, refetch);
   const [overviewDescription] = useOverviewDescription();
+  const [headerImage, headerImageLoading] = useHeaderImage();
 
   const RenderDatasets = useMemo(() => {
     const isEmpty = datasets.length === 0;
@@ -82,7 +84,15 @@ export const Overview: FC = () => {
       <HomeHeader searchKeyword={searchString} onSearchEnter={handleSearchEnter} onSearchChange={handleSearchChange} />
       <div className="overview__banner">
         <div className="overview__banner-content">
-          <img alt="Illustration" src={`${env.PUBLIC_URL}/assets/landing-page-illustration.svg`} />
+          {headerImageLoading ? (
+            <Skeleton variant="rectangular" width={320} height={214} sx={{ flexShrink: 0, borderRadius: 1 }} />
+          ) : (
+            <img
+              className="overview__banner-image"
+              alt="Illustration"
+              src={headerImage || `${env.PUBLIC_URL}/assets/landing-page-illustration.svg`}
+            />
+          )}
           <div className="overview__banner-title">
             <div className="overview__banner-title-text">Data2Evidence</div>
             <div className="overview__banner-description">

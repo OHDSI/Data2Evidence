@@ -1,24 +1,7 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
-// import { pluginMetadata } from "~/FlowApp";
-
-// self.MonacoEnvironment = {
-//   getWorkerUrl: function (moduleId, label) {
-//     const baseUrl = pluginMetadata?.data?.dataflowUiUrl || "/";
-//     if (label === "json") {
-//       return `${baseUrl}json.worker.js`;
-//     }
-//     if (label === "css" || label === "scss" || label === "less") {
-//       return `${baseUrl}css.worker.js`;
-//     }
-//     if (label === "html" || label === "handlebars" || label === "razor") {
-//       return `${baseUrl}html.worker.js`;
-//     }
-//     if (label === "typescript" || label === "javascript") {
-//       return `${baseUrl}ts.worker.js`;
-//     }
-//     return `${baseUrl}editor.worker.js`;
-//   },
-// };
+import "monaco-editor/esm/vs/basic-languages/sql/sql.contribution";
+import "monaco-editor/esm/vs/basic-languages/python/python.contribution";
+import "monaco-editor/esm/vs/basic-languages/r/r.contribution";
 
 export const DEFAULT_MONACO_OPTIONS: monaco.editor.IEditorConstructionOptions =
   {

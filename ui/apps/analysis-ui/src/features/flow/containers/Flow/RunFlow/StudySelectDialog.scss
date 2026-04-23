@@ -1,0 +1,16 @@
+@use '../../../../../theme/variables.scss' as *;
+
+.study-select-dialog {
+  &__content {
+    padding: 1.5em;
+  }
+
+  &__footer {
+    border-top: 1px solid $border-color;
+    padding: 1.5em;
+
+    &-actions {
+      justify-content: flex-end;
+    }
+  }
+}

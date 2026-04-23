@@ -13,6 +13,11 @@ const Ajax = axios.create({
 
 const XCSRF_TOKEN = 'x-csrf-token'
 
+async function clearNotificationsViaPinia() {
+  const { useNotificationStore } = await import('../../stores/notifications')
+  useNotificationStore().clearNotifications()
+}
+
 function authenticate() {
   return Ajax.get('/', {
     headers: { [XCSRF_TOKEN]: 'fetch' },
@@ -47,7 +52,7 @@ const actions = {
       .catch(error => commit(AUTHENTICATE_FAILURE, error))
   },
   ajaxAuth(
-    { dispatch, state, getters, commit },
+    { state, getters, commit },
     {
       method = 'post',
       url,
@@ -67,7 +72,7 @@ const actions = {
       url = `${import.meta.env.VITE_HOST}${url}`
     }
     return new Promise(async (resolve, reject) => {
-      dispatch('clearNotifications')
+      await clearNotificationsViaPinia()
       let headers = {}
       const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
       if (bearerToken != null) {
@@ -98,7 +103,7 @@ const actions = {
       }
     })
   },
-  ajaxFetchAuth({ dispatch, state, getters, commit }, { url, options }: any) {
+  ajaxFetchAuth({ state, getters, commit }, { url, options }: any) {
     const portalAPI = getPortalAPI()
 
     // [Portal] Different host if on local, url remains the same otherwise
@@ -109,7 +114,7 @@ const actions = {
     }
 
     return new Promise(async (resolve, reject) => {
-      dispatch('clearNotifications')
+      await clearNotificationsViaPinia()
       const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
       if (bearerToken != null) {
         if (!options.headers) {

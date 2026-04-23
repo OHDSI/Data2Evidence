@@ -846,7 +846,7 @@ export const i18n = {
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Import',
     MRI_PA_OPEN_DASHBOARD_TEXT: 'Open Dashboard',
     MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED: 'Dataset does not support dashboards',
-    MRI_PA_INCLUSION_REPORT_BUTTON: 'Inclusion Report',
+    MRI_PA_INCLUSION_REPORT_BUTTON: 'Attrition Plot',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: 'Attrition Plot',
     MRI_PA_INCLUSION_REPORT_CLOSE: 'Close',
     MRI_PA_INCLUSION_REPORT_BY_PERSON: 'By person',
@@ -879,6 +879,8 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Summary Statistics',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Total Persons',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Matches',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR:
+      'Attrition report update failed. Please contact your system administrator.',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Cohort Attribute',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
       'The cohorts listed here are those you created and those shared with you by other users.',
@@ -955,6 +957,13 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: 'Back to filtering',
     MRI_PA_BAR_CHART: 'Bar chart',
     MRI_PA_PATIENT_LIST: 'Patient list',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: 'Confirm Selection Change',
+    MRI_PA_CONFIRM_CLEAR_COLOR:
+      'Selecting this option will clear your current color selection. Do you want to proceed?',
+    MRI_PA_CONFIRM_CLEAR_STACKING:
+      'Selecting this option will clear your current stacking selection. Do you want to proceed?',
+    MRI_PA_BUTTON_CONFIRM: 'Confirm',
+    MRI_PA_SELECT_X_AXIS: 'Select an x-axis',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1829,7 +1838,7 @@ export const i18n = {
     MRI_PA_COMPARE_D2E_COHORT_TEXT: 'Vergleichen',
     MRI_PA_OPEN_DASHBOARD_TEXT: 'Dashboard öffnen',
     MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED: 'Dataset unterstützt keine Dashboards',
-    MRI_PA_INCLUSION_REPORT_BUTTON: 'Einschlussreport',
+    MRI_PA_INCLUSION_REPORT_BUTTON: 'Attritionsplot',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: 'Attritionsplot',
     MRI_PA_INCLUSION_REPORT_CLOSE: 'Schließen',
     MRI_PA_INCLUSION_REPORT_BY_PERSON: 'Nach Person',
@@ -1862,6 +1871,8 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: 'Zusammenfassende Statistiken',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: 'Gesamtpersonen',
     MRI_PA_INCLUSION_REPORT_MATCHES: 'Treffer',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR:
+      'Aktualisierung des Attritionsberichts fehlgeschlagen. Bitte wenden Sie sich an Ihren Systemadministrator.',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: 'Einfuhr',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: 'Attribut "Kohorte"',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT:
@@ -1940,6 +1951,13 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: 'Zurück zur Filterung',
     MRI_PA_BAR_CHART: 'Balkendiagramm',
     MRI_PA_PATIENT_LIST: 'Patientenliste',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: 'Auswahländerung bestätigen',
+    MRI_PA_CONFIRM_CLEAR_COLOR:
+      'Durch Auswahl dieser Option wird Ihre aktuelle farbauswahl gelöscht. Möchten Sie fortfahren?',
+    MRI_PA_CONFIRM_CLEAR_STACKING:
+      'Durch Auswahl dieser Option wird Ihre aktuelle stapelauswahl gelöscht. Möchten Sie fortfahren?',
+    MRI_PA_BUTTON_CONFIRM: 'Bestätigen',
+    MRI_PA_SELECT_X_AXIS: 'X-Achse auswählen',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2730,7 +2748,7 @@ export const i18n = {
     MRI_PA_COMPARE_D2E_COHORT_TEXT: '比较',
     MRI_PA_OPEN_DASHBOARD_TEXT: '打开仪表板',
     MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED: '数据集不支持仪表板',
-    MRI_PA_INCLUSION_REPORT_BUTTON: '纳入报告',
+    MRI_PA_INCLUSION_REPORT_BUTTON: '衰减图',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: '衰减图',
     MRI_PA_INCLUSION_REPORT_CLOSE: '关闭',
     MRI_PA_INCLUSION_REPORT_BY_PERSON: '按人',
@@ -2763,6 +2781,7 @@ export const i18n = {
     MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS: '摘要统计',
     MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS: '总人数',
     MRI_PA_INCLUSION_REPORT_MATCHES: '匹配数',
+    MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR: '衰减报告更新失败。请联系您的系统管理员。',
     MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT: '进口',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TITLE: '群属性',
     MRI_PA_COHORT_ATTRIBUTE_HELP_TEXT: '此处列出的群是您创建的群以及其他用户与您共享的群。',
@@ -2836,6 +2855,11 @@ export const i18n = {
     MRI_PA_BACK_TO_FILTERS: '返回过滤',
     MRI_PA_BAR_CHART: '条形图',
     MRI_PA_PATIENT_LIST: '患者名单',
+    MRI_PA_CONFIRM_SELECTION_CHANGE: '确认选择更改',
+    MRI_PA_CONFIRM_CLEAR_COLOR: '选择此选项将清除您当前的颜色选择。是否要继续？',
+    MRI_PA_CONFIRM_CLEAR_STACKING: '选择此选项将清除您当前的堆叠选择。是否要继续？',
+    MRI_PA_BUTTON_CONFIRM: '确认',
+    MRI_PA_SELECT_X_AXIS: '选择 X 轴',
   },
 }
 

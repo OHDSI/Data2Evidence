@@ -20,6 +20,7 @@ import appRangeVue from './lib/ui/app-range.vue'
 import appVariantRangeVue from './lib/ui/app-variant-range.vue'
 import appSingleSelect from './lib/ui/app-single-select.vue'
 import appTagInputVue from './lib/ui/app-tag-input.vue'
+import { createPinia } from 'pinia'
 import store from './store'
 import { getPortalAPI } from './utils/PortalUtils'
 import { initializeApps } from './utils/AppRegistry'
@@ -46,7 +47,9 @@ if (isLocal) {
   applyTheme('d2e')
 }
 
+const pinia = createPinia()
 app.use(store)
+app.use(pinia)
 app.use(vuetify)
 app.component('app-label', appLabelVue)
 app.component('app-tag-input', appTagInputVue)
