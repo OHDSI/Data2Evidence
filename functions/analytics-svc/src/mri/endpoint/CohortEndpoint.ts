@@ -13,7 +13,6 @@ import { pipeline } from "node:stream/promises";
 import { Transform } from "node:stream";
 import { promisify } from "node:util";
 import axios from "npm:axios";
-import http from "node:http";
 import https from "node:https";
 import fs from "node:fs";
 import { env } from "../../env";

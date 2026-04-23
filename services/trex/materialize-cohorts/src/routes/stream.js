@@ -63,14 +63,6 @@ router.post("/run-all", async (req, res) => {
     resultsSchema,
   };
 
-  const safeConfig = {
-    ...config,
-    password: config.password ? "***" : "",
-  };
-  console.log(
-    `Config for HANA connection and query execution: ${JSON.stringify(safeConfig)}`,
-  );
-
   if (
     !config.host ||
     !config.port ||
