@@ -100,6 +100,8 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create dataflow
   await page.getByRole('link', { name: 'ETL' }).click();
+  await page.waitForTimeout(2000); // Wait for 2 seconds to ensure the ETL page and elements are loaded
+
   const createFirstDataflow = page.getByText('Create your first dataflow').first();
   const hasCreateFirstDataflow = await createFirstDataflow
     .isVisible({ timeout: 3000 })
