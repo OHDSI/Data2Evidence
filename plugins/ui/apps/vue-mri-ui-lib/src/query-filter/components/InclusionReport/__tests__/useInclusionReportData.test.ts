@@ -1,5 +1,5 @@
 import { ref, reactive, nextTick } from 'vue'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { useInclusionReportData } from '../composables/useInclusionReportData'
 import type { InclusionReportResponse, AttritionApiResponse } from '@/query-filter/types/InclusionReportTypes'
 
@@ -320,19 +320,32 @@ describe('useInclusionReportData', () => {
 
   describe('watch effects', () => {
     it('resets data immediately and refetches when cacheKey changes', async () => {
-      const fetchFn = vi.fn().mockResolvedValue(makeInclusionReport())
+      const fetchFn = vi.fn().mockResolvedValueOnce(makeInclusionReport())
       const options = makeOptions({ fetchInclusionReport: fetchFn })
       const { fetchInclusionReportInternal, inclusionReportResponse } = useInclusionReportData(options, ref('PERSON'))
 
       await fetchInclusionReportInternal('cohort-1', 'source-1')
       expect(inclusionReportResponse.value).not.toBeNull()
 
+      // Use a deferred promise for the refetch so the transient reset state is
+      // observed deterministically before the fetch resolves and repopulates.
+      let resolveRefetch!: (value: InclusionReportResponse) => void
+      fetchFn.mockReturnValueOnce(
+        new Promise<InclusionReportResponse>(resolve => {
+          resolveRefetch = resolve
+        })
+      )
+
       // Changing cacheKey triggers watch → resetData() + refetch
       options.cacheKey = 'key-2'
       await nextTick()
-      // Reset happens synchronously inside the watch callback before the async fetch resolves
+      // Reset happens synchronously inside the watch callback; refetch is still pending.
       expect(inclusionReportResponse.value).toBeNull()
-      await vi.waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(2))
+      expect(fetchFn).toHaveBeenCalledTimes(2)
+
+      // Resolve the in-flight refetch and confirm state is repopulated.
+      resolveRefetch(makeInclusionReport())
+      await vi.waitFor(() => expect(inclusionReportResponse.value).not.toBeNull())
     })
 
     it('refetches with the new sourceKey when sourceKey changes', async () => {

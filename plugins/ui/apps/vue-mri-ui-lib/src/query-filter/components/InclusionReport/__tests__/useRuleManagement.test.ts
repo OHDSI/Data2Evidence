@@ -1,4 +1,4 @@
-import { ref, nextTick } from 'vue'
+import { ref } from 'vue'
 import axios from 'axios'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useRuleManagement } from '../composables/useRuleManagement'
@@ -39,7 +39,8 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
 
   it('happy path: fetches and updates draggableAttritionStats', async () => {
     const mockResponse = createMockAttritionResponse()
-    const fetchAttritionReport = vi.fn().mockResolvedValue(mockResponse)
+    const deferred = createDeferred<AttritionApiResponse>()
+    const fetchAttritionReport = vi.fn().mockReturnValue(deferred.promise)
 
     const { draggableAttritionStats, isReorderLoading, handleDragEnd } = useRuleManagement(
       inclusionReportResponse,
@@ -48,15 +49,16 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
       fetchAttritionReport
     )
 
-    // Trigger via handleDragEnd (which calls fetchAndUpdateAttritionStats internally)
-    // handleDragEnd is async (awaits nextTick), so we need to await it and flush nextTick
-    handleDragEnd()
-    await nextTick()
+    // handleDragEnd awaits nextTick then fires fetchAndUpdateAttritionStats (fire-and-forget).
+    // Awaiting handleDragEnd flushes nextTick; the deferred keeps the fetch pending so
+    // isReorderLoading is deterministically true before we resolve.
+    await handleDragEnd()
 
-    // Should be loading after nextTick resolves
     expect(isReorderLoading.value).toBe(true)
+    expect(fetchAttritionReport).toHaveBeenCalledTimes(1)
 
-    // Wait for the promise to resolve
+    // Resolve deterministically and wait for the finally block to flip loading back.
+    deferred.resolve(mockResponse)
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
     })
@@ -64,7 +66,6 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
     expect(draggableAttritionStats.value).toHaveLength(2)
     expect(draggableAttritionStats.value[0].id).toBe(0)
     expect(draggableAttritionStats.value[0].name).toBe('Rule A')
-    expect(fetchAttritionReport).toHaveBeenCalledTimes(1)
     // ruleOrder is derived from draggableAttritionStats (empty before first fetch)
     // signal should have been passed as second argument
     expect(fetchAttritionReport.mock.calls[0][0]).toEqual([])
@@ -96,16 +97,14 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
     )
 
     // First call
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
     expect(isReorderLoading.value).toBe(true)
 
     // Second call – should abort the first
     const response2 = createMockAttritionResponse({
       attritionStats: [{ id: 10, name: 'New Rule', isExclude: false, cumulativeCountSatisfying: 50 }],
     })
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
 
     // isReorderLoading should still be true (newest request is in flight)
     expect(isReorderLoading.value).toBe(true)
@@ -135,8 +134,7 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
       fetchAttritionReport
     )
 
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
 
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
@@ -148,7 +146,7 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('sets errorMessage from axios response data when available', async () => {
+  it('falls back to the generic error message even when axios response.data.errorMessage is present', async () => {
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const axiosError = Object.assign(new Error('Request failed'), {
       response: { data: { errorMessage: 'Backend validation failed' } },
@@ -162,13 +160,14 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
       fetchAttritionReport
     )
 
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
 
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
     })
 
+    // Backend-provided messages are intentionally not surfaced to users; the generic
+    // fallback is shown instead.
     expect(errorMessage.value).toBe('Attrition report update failed. Please contact your system administrator.')
 
     consoleErrorSpy.mockRestore()
@@ -189,8 +188,7 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
       mockGetText
     )
 
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
 
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
@@ -221,16 +219,14 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
     )
 
     // First call – should error
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
     })
     expect(errorMessage.value).toBe('Attrition report update failed. Please contact your system administrator.')
 
     // Second call – should succeed and clear errorMessage
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
     })
@@ -251,8 +247,7 @@ describe('useRuleManagement – fetchAndUpdateAttritionStats', () => {
       fetchAttritionReport
     )
 
-    handleDragEnd()
-    await nextTick()
+    await handleDragEnd()
 
     await vi.waitFor(() => {
       expect(isReorderLoading.value).toBe(false)
