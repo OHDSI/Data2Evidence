@@ -71,6 +71,7 @@ const Env = z
         DB_SVC__PATH: z.string().optional(),
         DB_SVC__PORT: z.string().optional(),
         IS_AUDIT_LOG_ENABLED: z.string().optional(),
+        ANALYTICS_HANA_STREAMING_ENABLED: z.string(),
         ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: z
             .string()
             .transform((str, ctx) => parseJsonTransform(str, ctx)),

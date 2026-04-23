@@ -1,5 +1,7 @@
 FROM node:24.15-trixie-slim
 
+RUN apt-get update && apt-get install -y curl
+
 WORKDIR /app
 
 COPY services/materialize-cohorts/package.json ./package.json

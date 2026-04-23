@@ -151,7 +151,8 @@ services:
         "docker-logs": "http://${PROJECT_NAME:-d2e}-logging-1:8080",
         "supabaseStorage": "http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
-        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat"
+        "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
+        "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -259,8 +260,9 @@ services:
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
       ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: '${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{"hana": 10000}}'
-      TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
-      RUST_LOG: ${RUST_LOG:-info}
+      ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
+      # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
+      # RUST_LOG: ${RUST_LOG:-info}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1

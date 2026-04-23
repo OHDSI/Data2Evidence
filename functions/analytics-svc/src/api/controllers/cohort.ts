@@ -186,7 +186,7 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         }
 
         //Currently streaming is only supported for Hana
-        const stream = req.dbCredentials.studyAnalyticsCredential.dialect.toLowerCase() === "hana"
+        const stream = req.dbCredentials.studyAnalyticsCredential.dialect.toLowerCase() === "hana" && env.ANALYTICS_HANA_STREAMING_ENABLED === "true";
 
         const querySvcParams = {
             queryParams: {
@@ -230,32 +230,15 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             )
         )[0];
 
+        let cohortDefinitionId;
         if (existingMaterializedCohort) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
-            cohort.id = existingMaterializedCohort.id;
-            await cohortEndpoint.updateCohortDefinitionToDb(cohort);
+            cohortDefinitionId = existingMaterializedCohort.id;
+            await cohortEndpoint.updateCohortDefinitionToDb({...cohort, id: cohortDefinitionId});
 
             // Remove existing records from cohort table before saving cohort to db
-            await cohortEndpoint.deleteCohortFromDb(cohort.id);
-            if (stream) {
-                await cohortEndpoint.streamCohortToDb(
-                    cohort.id,
-                    cohort,
-                    queryResponse.queryObject,
-                    { datasetId: req.selectedstudyDbMetadata.id,
-                      token: req.headers.authorization,
-                      dbCredential: req.dbCredentials.studyAnalyticsCredential
-                    }
-                );
-            } else {
-                await cohortEndpoint.saveCohortToDb(
-                    cohort.id,
-                    cohort,
-                    queryResponse.queryObject
-                );
-            }
-            
+            await cohortEndpoint.deleteCohortFromDb(cohortDefinitionId);
         } else {
             // Else if there is no existing materialized cohort
             // Save cohort definition to db and query cohort definition id for newly created cohort definition
@@ -263,9 +246,11 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             await cohortEndpoint.saveCohortDefinitionToDb(cohort);
 
             // Get cohort definition id from cohort object
-            const cohortDefinitionId =
+            cohortDefinitionId =
                 await cohortEndpoint.queryCohortDefinitionId(cohort);
-            if (stream) {
+        }
+
+        if (stream) {
                 await cohortEndpoint.streamCohortToDb(
                     cohortDefinitionId,
                     cohort,
@@ -282,7 +267,6 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                     queryResponse.queryObject
                 );
             }
-        }
 
         res.status(200).send(`Cohort successfully materialized`);
     } catch (err) {

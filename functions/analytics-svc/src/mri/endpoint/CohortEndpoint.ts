@@ -505,8 +505,7 @@ export class CohortEndpoint {
             const translatedSql = this.connection.getTranslatedSql(preparedQuery.sql)
 
             const result = await axios.post(
-                            //`${env.SERVICE_ROUTES.trex}/_internal/test-batch-insert`,
-                            `https://localhost:3333/api/stream/run-all`, 
+                            `${env.SERVICE_ROUTES.materializeCohorts}/api/stream/run-all`,
                             {   datasetId: metadata.datasetId, 
                                 query: translatedSql,
                                 sqlQueryParameters: preparedQuery.placeholders,
