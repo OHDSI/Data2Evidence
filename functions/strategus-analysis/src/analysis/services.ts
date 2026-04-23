@@ -106,14 +106,16 @@ export default class StrategusAnalysisService {
         return { analysisId, message: "Analysis specification saved successfully." };
     }
 
-    async updateStrategusAnalysis(token: string, studyId: string, analysisSpec: string, databaseCode: string) {
+    async updateStrategusAnalysis(token: string, tokenStudyCode: string, analysisSpec: string, databaseCode: string) {
         this.token = token;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDatasetByToken(tokenStudyCode);
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
-            where: { studyId: studyId }
+            where: { datasetId: dataset.id }
         });
 
         if (!existingAnalysis) {
-            throw new Error("Study does not exist.")
+            throw new Error(`Study with token ${tokenStudyCode} does not exist.`);
         }
 
         existingAnalysis.analysisSpec = analysisSpec;
@@ -137,24 +139,6 @@ export default class StrategusAnalysisService {
         await this.strategusAnalysisRepository.save(existingAnalysis, this.addOwnerInfo(existingAnalysis));
 
         return { analysisId: existingAnalysis.id, message: "Analysis specification updated successfully." }
-    }
-
-    async updateAnalysisSpecByToken(token: string, tokenStudyCode: string, analysisSpec: string) {
-        this.token = token;
-        const portalAPI = new PortalAPI(token);
-        const dataset = await portalAPI.getDatasetByToken(tokenStudyCode);
-        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
-            where: { datasetId: dataset.id }
-        });
-
-        if (!existingAnalysis) {
-            throw new Error(`Study with token ${tokenStudyCode} does not exist.`);
-        }
-
-        existingAnalysis.analysisSpec = analysisSpec;
-        await this.strategusAnalysisRepository.save(this.addOwnerInfo(existingAnalysis, false));
-
-        return { analysisId: existingAnalysis.id, message: "Analysis specification saved successfully." };
     }
 
     async saveStudyAnalysisViewerCode(studyId: string, viewerCode: string) {

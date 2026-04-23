@@ -140,6 +140,7 @@ export class PrefectService {
       options["notebookName"],
       json_graph["analysisSpecification"],
       databaseCode,
+      options["mode"],
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(
