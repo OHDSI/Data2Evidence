@@ -21,8 +21,7 @@ router.post("/run-all", async (req, res) => {
     dbCredential = {},
   } = req.body || {};
 
-  console.log(`cohortDefinitionId ${cohortDefinitionId}`);
-  console.log(`Dataset ID ${datasetId}`);
+  console.log(`Processing cohortDefinitionId ${cohortDefinitionId} for dataset ${datasetId}`);
   // console.log(`Query ${query}`);
   // console.log(`sqlQueryParameters ${JSON.stringify(sqlQueryParameters)}`);
   // console.log(`dbCredential ${JSON.stringify(dbCredential)}`);
@@ -38,7 +37,7 @@ router.post("/run-all", async (req, res) => {
                             .keys(dbCredential)
                             .filter((key) => key.startsWith("SESSIONVARIABLE:"))
                             .reduce((acc, curr, currentIndex) => {
-                                console.log(`Processing session variable ${curr} with value ${dbCredential[curr]}`);
+                                // console.log(`Processing session variable ${curr} with value ${dbCredential[curr]}`);
                                 if (currentIndex > 0) {
                                   acc += ";";
                                 }
