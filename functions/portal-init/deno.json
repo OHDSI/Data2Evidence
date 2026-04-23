@@ -11,6 +11,7 @@
     "typeorm": "npm:typeorm@^0.3.28",
     "pg": "npm:pg@^8.20.0",
     "uuid": "npm:uuid@9.0.1",
+    "zod": "npm:zod@3.25.76",
     "http": "node:http",
     "fs": "node:fs",
     "path": "node:path",
