@@ -88,14 +88,19 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
             excludePatientIds
         );
 
-        // Get count of all cohort definitions based on filter column for pagination
-        let cohortDefinitionCount =
-            await cohortEndpoint.queryCohortDefinitionCount({
-                [filterColumn]:
-                    filterColumn === "SYNTAX"
-                        ? JSON.parse(filterValue)
-                        : filterValue,
-            });
+        let cohortDefinitionCount;
+        if (limit && Number(limit) > 0) {
+            // Get count of all cohort definitions based on filter column for pagination
+            cohortDefinitionCount =
+                await cohortEndpoint.queryCohortDefinitionCount({
+                    [filterColumn]:
+                        filterColumn === "SYNTAX"
+                            ? JSON.parse(filterValue)
+                            : filterValue,
+                });
+        } else {
+            cohortDefinitionCount = result.length;
+        }
 
         res.status(200).send({ data: result, cohortDefinitionCount });
     } catch (err) {

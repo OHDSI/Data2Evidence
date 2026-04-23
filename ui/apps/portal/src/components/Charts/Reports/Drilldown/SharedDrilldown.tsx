@@ -183,7 +183,12 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
               <Loader text={getText(i18nKeys.SHARED_DRILLDOWN__LOADER, [sourceKey, selectedConcept?.id || ""])} />
             </div>
           )}
-          <TreeMapChartTable title={title ?? sourceKey} data={data} setSelectedConcept={setSelectedConcept} />
+          <TreeMapChartTable
+            title={title ?? sourceKey}
+            data={data}
+            setSelectedConcept={setSelectedConcept}
+            loading={isloadingDrilldownData}
+          />
         </div>
       )}
 
