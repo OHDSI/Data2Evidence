@@ -302,7 +302,7 @@ describe('mapAttritionApiResponseToStats', () => {
     expect(result[1].percentExcluded).toBe('20.00%') // 1.0 - 0.8 = 0.2
   })
 
-  it('handles zero baseCount without divide-by-zero: all percentages are 0.00%', () => {
+  it('handles zero baseCount without divide-by-zero: percentSatisfying is 0.00% while pctDiff and percentExcluded fall back to 100.00%', () => {
     const response: AttritionApiResponse = {
       summary: { baseCount: 0, finalCount: 0, lostCount: 0, percentMatched: '0.00%' },
       attritionStats: [{ id: 0, name: 'Rule A', isExclude: false, cumulativeCountSatisfying: 0 }],
