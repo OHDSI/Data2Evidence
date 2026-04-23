@@ -16,6 +16,7 @@ export const useDatasetResources = (
       const response = await api.systemPortal.getResources(datasetId);
       setResources(response?.resources || []);
     } catch (error: any) {
+      setResources([]);
       if ("message" in error) {
         setError({ message: error.message });
       }

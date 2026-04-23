@@ -82,7 +82,9 @@ export const SaveAttributeDialog: FC<SaveAttributeDialogProps> = ({ open, onClos
         }
         setFeedback({
           type: "success",
-          message: getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
+          message: isEditMode
+            ? getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__EDIT_SUCCESS)
+            : getText(i18nKeys.SAVE_ATTRIBUTE_DIALOG__SUCCESS),
           autoClose: 6000,
         });
         setRefetch((refetch) => refetch + 1);

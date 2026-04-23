@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.4
 
-FROM debian:bookworm-slim AS base
+FROM debian:trixie-slim AS base
 
 ENV ONNXRUNTIME_VERSION=1.20.1
 
@@ -8,12 +8,9 @@ RUN mkdir -p ./scripts
 COPY install_onnx.sh ./scripts
 COPY install_libchdb.sh ./scripts
 
-RUN apt-get update && apt-get install -y npm
-
-RUN echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \ 
-    apt-get update && apt-get install -y  curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm && \ 
-    apt-get install -y -t testing libstdc++6 && \ 
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
     cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
