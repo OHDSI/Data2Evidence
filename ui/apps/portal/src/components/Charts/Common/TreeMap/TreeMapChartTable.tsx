@@ -11,6 +11,7 @@ interface TreeMapChartTableProps {
   title: string;
   data: any;
   setSelectedConcept: (value: { id: string; name: string } | null) => void;
+  loading?: boolean;
 }
 
 enum TreeMapChartTab {
@@ -24,7 +25,7 @@ const hasSimpleFormatData = (data: any[]) => {
   return "COUNTVALUE" in data[0] && "CONCEPTNAME" in data[0];
 };
 
-const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelectedConcept }) => {
+const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelectedConcept, loading }) => {
   const { getText, i18nKeys } = useTranslation();
   const [treeMapChartData, setTreeMapChartData] = useState<any[]>([]);
   const [treeMapTableData, setTreeMapTableData] = useState<any[]>([]);
@@ -106,7 +107,7 @@ const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelecte
         <Tab label={getText(i18nKeys.TREE_MAP_CHART_TABLE__LABEL_TABLE)}></Tab>
       </Tabs>
       {tabValue === TreeMapChartTab.TreeMap && (
-        <TreeMapChart data={treeMapChartData} title={title} setSelectedConcept={setSelectedConcept} />
+        <TreeMapChart data={treeMapChartData} title={title} setSelectedConcept={setSelectedConcept} loading={loading} />
       )}
       {tabValue === TreeMapChartTab.Table && (
         <TreeMapTable data={treeMapTableData} setSelectedConcept={setSelectedConcept} isSimpleFormat={isSimple} />
