@@ -9,7 +9,7 @@ const randomString = Math.random().toString(36).substring(2, 10)
 test(TEST_NAME, async ({ page }) => {
   test.setTimeout(360 * 1000)
   // Sign in
-  await page.goto('https://localhost:41100/d2e/portal/')
+  await page.goto('/d2e/portal'')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
