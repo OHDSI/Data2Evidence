@@ -62,8 +62,4 @@ COPY ./logto ./logto
 
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
-COPY ./materialize-cohorts /usr/src/materialize-cohorts
-
-RUN cd /usr/src/materialize-cohorts
-
 CMD ["npm", "run", "start"]
