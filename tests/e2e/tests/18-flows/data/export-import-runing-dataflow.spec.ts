@@ -3,8 +3,20 @@ import fs from 'fs/promises'
 import path from 'path'
 
 let exportedFilePath = ''
+let createdDataflowName = ''
 
-test.afterEach(async () => {
+test.afterEach(async ({ page }) => {
+  if (createdDataflowName) {
+    try {
+      await page.getByLabel('Delete flow').getByRole('button').click({ timeout: 3000 })
+      await page.getByRole('textbox').fill(createdDataflowName)
+      await page.getByRole('button', { name: 'Delete' }).click()
+    } catch {
+      // best-effort cleanup — flow may have already been deleted by the test
+    }
+    createdDataflowName = ''
+  }
+
   if (exportedFilePath) {
     await fs
       .access(exportedFilePath)
@@ -29,25 +41,22 @@ test('export-import-dataflow', async ({ page }) => {
   })
 
   await test.step('Create a new dataflow with a python node', async () => {
-    // Go to ETL and create new flow
     await page.getByRole('link', { name: 'ETL' }).click()
 
     // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
-    try {
-      // First try to find "Create your first dataflow" button (when no flows exist)
-      await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 3000 })
-      await page.getByRole('button', { name: 'Create your first dataflow' }).click()
-    } catch {
-      // If that fails, look for "Create new dataflow" button (when flows already exist)
-      await page.getByLabel('Create new dataflow').getByRole('button').click({ timeout: 3000 })
+    const firstFlowBtn = page.getByRole('button', { name: 'Create your first dataflow' })
+    if (await firstFlowBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await firstFlowBtn.click()
+    } else {
+      await page.getByLabel('Create new dataflow').getByRole('button').click()
     }
-    await page.waitForTimeout(500) // Wait for the create dialog to appear
-
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible()
     await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
     await page.getByRole('textbox', { name: 'Comment' }).fill('Test export import flow')
     await expect(page.getByRole('button', { name: 'Create' })).toBeVisible()
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Create' })).not.toBeVisible()
+    createdDataflowName = dataflowName
   })
 
   await test.step('Export the flow', async () => {
@@ -58,7 +67,9 @@ test('export-import-dataflow', async ({ page }) => {
 
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    const saveDialog = page.getByRole('dialog')
+    await expect(saveDialog).toBeVisible()
+    await saveDialog.getByRole('button', { name: 'Save' }).click()
 
     // Export the flow
     const downloadPromise = page.waitForEvent('download')
@@ -88,26 +99,28 @@ test('export-import-dataflow', async ({ page }) => {
       await page.keyboard.press('Escape')
     }
     await expect(page.locator('[role="dialog"]:visible')).toHaveCount(0, { timeout: 5000 })
-    await nodeTitle.click({ force: true })
-    await page.waitForTimeout(500)
-
     // Hover to reveal edit button, then click it
     await nodeTitle.hover()
-    await page.waitForTimeout(300)
-    await page.locator('.node__header > div:nth-child(3)').click()
+    const editBtn = page.locator('.node__setting')
+    await expect(editBtn).toBeVisible()
+    await editBtn.click()
 
-    await page.locator('.view-lines > div:nth-child(4)').click()
-    await page.getByRole('textbox', { name: 'Editor content;Press Alt+F1' }).press('ControlOrMeta+a')
-    await page
-      .getByRole('textbox', { name: 'Editor content;Press Alt+F1' })
-      .fill(
-        'def exec(myinput):\n  return "This is test python node exec function"\ndef test_exec(myinput):\n  return "This is test_exec function"'
-      )
+    const editor = page.getByRole('textbox', { name: 'Editor content;Press Alt+F1' })
+    await editor.focus()
+    const importedCode = await editor.inputValue()
+    expect(importedCode).toContain('def exec(myinput):')
+
+    await editor.press('ControlOrMeta+a')
+    await editor.fill(
+      'def exec(myinput):\n  return "This is test python node exec function"\ndef test_exec(myinput):\n  return "This is test_exec function"'
+    )
 
     await page.getByRole('button', { name: 'Apply' }).click()
     // Run the imported flow
     await page.getByLabel('Run flow').getByRole('button').click()
-    await page.getByRole('dialog').getByRole('button', { name: 'Save' }).click()
+    const runSaveDialog = page.getByRole('dialog')
+    await expect(runSaveDialog).toBeVisible()
+    await runSaveDialog.getByRole('button', { name: 'Save' }).click()
 
     // Open node output and verify result
     // Find the RF node container that wraps the python_node_0 title and click its output button
@@ -116,13 +129,5 @@ test('export-import-dataflow', async ({ page }) => {
     await rfNodeContainer.getByTestId('button').click()
     await expect(page.getByText('"length": 38')).toBeVisible()
     await page.getByRole('button', { name: 'close' }).click()
-  })
-
-  await test.step('Clean up - delete the imported flow', async () => {
-    // Open flow settings
-    await page.getByLabel('Delete flow').getByRole('button').click({ timeout: 3000 })
-    await page.getByRole('textbox').fill(dataflowName)
-    await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByRole('combobox', { name: dataflowName })).not.toBeVisible()
   })
 })
