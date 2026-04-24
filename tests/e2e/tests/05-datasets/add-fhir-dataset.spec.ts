@@ -39,6 +39,11 @@ test(TEST_NAME, async ({ page }) => {
     await fhirServerCheckbox.click()
   }
   await expect(fhirServerCheckbox).toBeChecked()
+  const saveFeatureFlagButton = page
+    .locator('div.alp-button__container[data-testid="button-container"]')
+    .getByRole('button', { name: 'Save', exact: true })
+  await saveFeatureFlagButton.scrollIntoViewIfNeeded()
+  await saveFeatureFlagButton.click()
   await expect(page).toHaveScreenshot()
 
   // Cleanup if the datasets already exist
