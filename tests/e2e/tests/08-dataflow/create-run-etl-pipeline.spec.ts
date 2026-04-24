@@ -132,7 +132,7 @@ test(TEST_NAME, async ({ page }) => {
   // Wait for the Python node to be visible with a 5-second timeout
   const isPythonNodeVisible = await pythonNodeCheck.isVisible({ timeout: 5000 }).catch(() => false);
   // Wait for the timeout and then check if the Python node is visible
-  await page.waitForTimeout(5000);
+  await page.waitForTimeout(2000);
   const isPythonNodeVisible2 = await pythonNodeCheck.isVisible();
   if (!isPythonNodeVisible2) {
     await page.getByRole('button', { name: 'Add node' }).click();
@@ -228,7 +228,7 @@ test(TEST_NAME, async ({ page }) => {
   await moveNodeByLabel('test_python_node', -100, 20);
   await moveNodeByLabel('py2table_node_0', 100, 20);
   await moveNodeByLabel('sql_node_0', 360, 20);
-  await moveNodeByLabel('db_writer_node_0', 600, 20);
+  await moveNodeByLabel('db_writer_node_0', 700, 20);
 
   // Wait for the canvas to settle after all node moves before connecting
   await page.waitForTimeout(1000);
@@ -309,7 +309,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Verify "View Output" button output for db_writer_node_0
   await dbWriterNode.locator('button', { hasText: 'View Output' }).click();
-  await page.waitForTimeout(3000); // Wait for 3 seconds for the panel to open
+  await page.waitForTimeout(1000); // Wait for 3 seconds for the panel to open
 
   // Check if the content with 'data-mode-id="plaintext"' contains 'error: false'
   const plainTextContent = page.locator('[data-mode-id="plaintext"]');
@@ -326,7 +326,7 @@ test(TEST_NAME, async ({ page }) => {
   // Click on the only button inside the "Cancel run" div
   const cancelButton = page.getByLabel('Cancel run').getByRole('button')
   // Wait for 2 seconds to ensure the cancel run button is visible
-  await page.waitForTimeout(6000);
+  await page.waitForTimeout(2000);
   await cancelButton.click();
 
   // Ensure runningPanel is hidden
