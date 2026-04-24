@@ -34,6 +34,7 @@ test(TEST_NAME, async ({ page }) => {
     .click()
 
   const fhirServerCheckbox = await page.getByText('Fhir server')
+  await fhirServerCheckbox.scrollIntoViewIfNeeded()
   if (!(await fhirServerCheckbox.isChecked())) {
     await fhirServerCheckbox.click()
   }
