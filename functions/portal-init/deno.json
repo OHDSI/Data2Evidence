@@ -8,12 +8,8 @@
     "emitDecoratorMetadata": true
   },
   "imports": {
-    "typeorm": "npm:typeorm@^0.3.20",
-    "typeorm-extension": "npm:typeorm-extension@3.6.3",
-    "pg": "npm:pg@^8.4.2",
-    "reflect-metadata": "npm:reflect-metadata@0.2.2",
-    "class-validator": "npm:class-validator@0.14.1",
-    "class-transformer": "npm:class-transformer@0.5.1",
+    "typeorm": "npm:typeorm@^0.3.28",
+    "pg": "npm:pg@^8.20.0",
     "uuid": "npm:uuid@9.0.1",
     "zod": "npm:zod@3.25.76",
     "http": "node:http",
