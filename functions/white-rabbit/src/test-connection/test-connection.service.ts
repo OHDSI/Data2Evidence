@@ -36,9 +36,6 @@ export class TestConnectionService {
     const dbm = Trex.databaseManager();
     const databaseCredentials =
       dbm.getDatabaseCredentials() as IDatabaseCredential[];
-    this.logger.info(
-      `databaseCredentials: ${JSON.stringify(databaseCredentials)}`,
-    );
 
     const dbCredential = databaseCredentials.find(
       (db) => db.code === request.databaseCode,
@@ -53,8 +50,6 @@ export class TestConnectionService {
     const readCred = dbCredential.credentials.find(
       (c) => c.userScope === "Read",
     );
-
-    this.logger.info(`readCred: ${JSON.stringify(readCred)}`);
 
     if (!readCred) {
       return this.buildCanNotConnectResponse(
