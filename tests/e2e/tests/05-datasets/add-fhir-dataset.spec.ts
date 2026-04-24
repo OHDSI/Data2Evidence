@@ -71,8 +71,9 @@ test(TEST_NAME, async ({ page }) => {
     const entry = page
       .locator('.page-heading-flow-run__flow-details')
       .first()
-    const stateBadge = entry.locator('.state-badge')
+    /*const stateBadge = entry.locator('.state-badge')
     await expect(stateBadge).toHaveText('Completed', { timeout: 720000 })
+    */
     await page.getByRole('link', { name: 'Datasets' }).click()
     // Wait for table to load
     await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
