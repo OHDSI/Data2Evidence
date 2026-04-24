@@ -32,7 +32,7 @@
     "async": "npm:async",
     "bcryptjs": "npm:bcryptjs",
     "pako": "npm:pako@1.0.11",
-    "hdb": "npm:hdb@0.19.12",
+    "hdb": "npm:hdb@2.27.1",
     "base64": "jsr:@std/encoding/base64",
     "../_shared/alp-base-utils/src/PostgresConnection": "../_shared/alp-base-utils/src/PostgresConnection.ts",
     "../_shared/alp-base-utils/src/EnvVarUtils": "../_shared/alp-base-utils/src/EnvVarUtils.ts",

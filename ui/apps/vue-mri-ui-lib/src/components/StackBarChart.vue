@@ -379,7 +379,8 @@ export default {
       }
 
       const hasSelection = this.hasTraceSelectedPoints()
-      if (!hasSelection) {
+      const hasSelectionState = this.chartData?.traces?.some(trace => Array.isArray(trace?.selectedpoints))
+      if (!hasSelection && !hasSelectionState) {
         if (resetAxes) {
           Plotly.relayout(targetElement, {
             'xaxis.autorange': true,
@@ -576,6 +577,11 @@ export default {
             selectedCount++
           })
         })
+        if (selectedCount === 0) {
+          this.clearSelectionState()
+          return
+        }
+
         this.setChartSelection({ selection: selectedData })
 
         // Persist selection across Plotly react
