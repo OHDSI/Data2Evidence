@@ -10,7 +10,6 @@ import express from "express";
 import helmet from "helmet";
 import path from "path";
 import * as xsenv from "@sap/xsenv";
-//import * as swagger from "@chezearth/swagger-node-runner";
 import noCacheMiddleware from "./middleware/NoCache";
 import timerMiddleware from "./middleware/Timer";
 import os from "node:os";
