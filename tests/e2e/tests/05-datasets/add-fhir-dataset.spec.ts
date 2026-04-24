@@ -39,6 +39,7 @@ test(TEST_NAME, async ({ page }) => {
     await fhirServerCheckbox.click()
   }
   await expect(fhirServerCheckbox).toBeChecked()
+  await expect(page).toHaveScreenshot()
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
