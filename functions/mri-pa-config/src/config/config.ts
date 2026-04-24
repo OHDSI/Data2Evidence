@@ -176,7 +176,11 @@ export class MRIConfig {
     }
 
     public saveConfig(configId, configName, config, dependentConfig, language, callback: connLib.CallBackInterface) {
-        this._saveConfig(configId, this.VERSION.INACTIVE, configName, config, dependentConfig, language, callback);
+        try {
+            this._saveConfig(configId, this.VERSION.INACTIVE, configName, config, dependentConfig, language, callback);
+        } catch (err) {
+            callback(err, null);
+        }
     }
 
     public deleteConfig(configId, configVersion, callback: connLib.CallBackInterface) {
@@ -204,6 +208,13 @@ export class MRIConfig {
             if (!config) {
                 return callback(new Error("MRI_PA_CFG_ERROR_CONFIG_NO_TO_ACTIVATE"), null);
             }
+
+            try {
+                this._validateWizardsConfig(config);
+            } catch (err) {
+                return callback(err, null);
+            }
+
             // validate the config before activating
             this.validateConfig(config, dependentConfig, (err, validationResult) => {
                 if (err) {
@@ -746,6 +757,7 @@ export class MRIConfig {
     }
 
     private _saveConfig(configId, configVersion, configName, config, dependentConfig, lang, callback: connLib.CallBackInterface) {
+        this._validateWizardsConfig(config);
         config = this.formatter.trimConfigForSaving(config);
 
         let saveResult: any = {};
@@ -780,6 +792,23 @@ export class MRIConfig {
                 callback(null, saveResult);
             }
         });
+    }
+
+    private _validateWizardsConfig(config) {
+        if (!config || !Object.prototype.hasOwnProperty.call(config, "wizardsConfig")) {
+            return;
+        }
+
+        const wizardsConfig = config.wizardsConfig;
+        const isPlainObject =
+            wizardsConfig !== null
+            && typeof wizardsConfig === "object"
+            && !Array.isArray(wizardsConfig)
+            && Object.getPrototypeOf(wizardsConfig) === Object.prototype;
+
+        if (!isPlainObject) {
+            throw new Error("MRI_PA_CFG_ERROR_WIZARDS_CONFIG_MUST_BE_PLAIN_OBJECT");
+        }
     }
 
     private _loadDefaultValues() {

@@ -13,6 +13,7 @@ vi.mock('@/store', () => ({
 import queryModule from '@/store/modules/query'
 import * as types from '@/store/mutation-types'
 import KeyCounter from '@/lib/utils/KeyCounter'
+import DateUtils from '@/utils/DateUtils'
 
 function buildMockMriFrontendConfig(
   filterCards: Record<string, { name: string; attributes: Array<{ key: string; type: string; name: string }> }> = {}
@@ -118,6 +119,51 @@ describe('store - query', () => {
             toDateValue: expect.any(Date),
           })
         )
+      })
+
+      it('keeps selected calendar day for time drilldown values', () => {
+        const dispatch = vi.fn()
+        const context = {
+          rootGetters: {
+            getMriFrontendConfig: {
+              getAttributeByPath: () => ({
+                getType: () => 'time',
+              }),
+            },
+          },
+          getters: {
+            getPlotlyElement: null,
+          },
+          dispatch,
+        }
+
+        queryModule.actions.drilldown(context as any, {
+          aSelectedData: [
+            {
+              id: 'patient.attributes.admission_date',
+              value: '1976-02-21',
+            },
+            {
+              id: 'patient.attributes.admission_date',
+              value: '1976-03-20',
+            },
+          ],
+        })
+
+        expect(dispatch).toHaveBeenCalledWith(
+          'updateDateConstraintValue',
+          expect.objectContaining({
+            constraintId: 'patient.attributes.admission_date',
+            fromDateValue: expect.any(Date),
+            toDateValue: expect.any(Date),
+          })
+        )
+
+        const payload = dispatch.mock.calls.find(([action]) => action === 'updateDateConstraintValue')?.[1]
+        expect(payload.fromDateValue).toBeInstanceOf(Date)
+        expect(payload.toDateValue).toBeInstanceOf(Date)
+        expect(DateUtils.displayDateFormat(payload.fromDateValue)).toBe('1976-02-21')
+        expect(DateUtils.displayDateFormat(payload.toDateValue)).toBe('1976-03-20')
       })
     })
 
@@ -468,7 +514,7 @@ describe('store - query', () => {
         expect(constraint.props.toDate.value).toBeInstanceOf(Date)
       })
 
-      it('returns YYYY-MM-DD strings for time constraints after reload normalization', () => {
+      it('returns Date objects for time constraints after reload normalization', () => {
         const state = {
           model: {
             entities: {
@@ -488,8 +534,161 @@ describe('store - query', () => {
 
         const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.admission_date')
 
-        expect(constraint.props.fromDate.value).toBe('2025-09-30')
-        expect(constraint.props.toDate.value).toBe('2025-09-30')
+        expect(constraint.props.fromDate.value).toBeInstanceOf(Date)
+        expect(constraint.props.toDate.value).toBeInstanceOf(Date)
+      })
+
+      it('preserves calendar day for YYYY-MM-DD time constraints', () => {
+        const state = {
+          model: {
+            entities: {
+              constraints: {
+                'patient.attributes.admission_date': {
+                  id: 'patient.attributes.admission_date',
+                  props: {
+                    type: 'time',
+                    fromDate: { value: '1983-03-31' },
+                    toDate: { value: '2026-04-17' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.admission_date')
+
+        const fromDate = constraint.props.fromDate.value as Date
+        const toDate = constraint.props.toDate.value as Date
+        expect(fromDate).toBeInstanceOf(Date)
+        expect(toDate).toBeInstanceOf(Date)
+        expect(fromDate.getFullYear()).toBe(1983)
+        expect(fromDate.getMonth()).toBe(2)
+        expect(fromDate.getDate()).toBe(31)
+        expect(toDate.getFullYear()).toBe(2026)
+        expect(toDate.getMonth()).toBe(3)
+        expect(toDate.getDate()).toBe(17)
+      })
+
+      it('does not apply toLocalDate conversion for time ISO constraints', () => {
+        const toLocalDateSpy = vi.spyOn(DateUtils, 'toLocalDate')
+        const state = {
+          model: {
+            entities: {
+              constraints: {
+                'patient.attributes.admission_date': {
+                  id: 'patient.attributes.admission_date',
+                  props: {
+                    type: 'time',
+                    fromDate: { value: '1976-02-20T16:00:00.000Z' },
+                    toDate: { value: '1976-03-19T16:00:00.000Z' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const constraint = queryModule.getters.getConstraint(state as any)('patient.attributes.admission_date')
+        expect(constraint.props.fromDate.value).toBeInstanceOf(Date)
+        expect(constraint.props.toDate.value).toBeInstanceOf(Date)
+        expect(toLocalDateSpy).not.toHaveBeenCalled()
+
+        toLocalDateSpy.mockRestore()
+      })
+    })
+
+    describe('getBookmarkFromIFR', () => {
+      it('serializes manually-added time constraints (_absTime) with date expressions', () => {
+        const constraintId = 'patient.interactions.condition.1._absTime'
+        const state = {
+          model: {
+            result: 'bc-root',
+            entities: {
+              boolContainers: {
+                'bc-root': {
+                  props: {
+                    boolfiltercontainers: ['bfc-1'],
+                  },
+                },
+              },
+              boolFilterContainers: {
+                'bfc-1': {
+                  props: {
+                    filterCards: ['patient.interactions.condition.1'],
+                  },
+                },
+              },
+              filterCards: {
+                'patient.interactions.condition.1': {
+                  props: {
+                    key: 'patient.interactions.condition',
+                    name: 'Condition Occurrence',
+                    index: 1,
+                    instanceId: 'patient.interactions.condition.1',
+                    inactive: false,
+                    isEntry: false,
+                    isExit: false,
+                    excludeFilter: false,
+                    layout: {
+                      advancedTimeLayout: {
+                        props: {
+                          timeFilterModel: {
+                            timeFilters: [],
+                          },
+                          timeFilterTitle: '',
+                          showPreviousDefinition: false,
+                        },
+                      },
+                    },
+                    constraints: [constraintId],
+                  },
+                },
+              },
+              constraints: {
+                [constraintId]: {
+                  props: {
+                    attrKey: '_absTime',
+                    attributePath: 'patient.interactions.condition.attributes.startdate',
+                    instanceId: constraintId,
+                    type: 'time',
+                    fromDate: { value: '2025-09-01' },
+                    toDate: { value: '2025-09-30' },
+                  },
+                },
+              },
+            },
+          },
+        }
+
+        const getters = {
+          getBoolContainerRoot: () => state.model.result,
+          getBoolContainer: (id: string) => state.model.entities.boolContainers[id],
+          getBoolFilterContainer: (id: string) => state.model.entities.boolFilterContainers[id],
+          getFilterCard: (id: string) => state.model.entities.filterCards[id],
+          getFilterCardConstraints: (filterCardId: string) =>
+            state.model.entities.filterCards[filterCardId].props.constraints.map(
+              id => state.model.entities.constraints[id]
+            ),
+        }
+
+        const rootGetters = {
+          getHasAssignedConfig: true,
+          getMriFrontendConfig: {
+            getPaConfigId: () => 'cfg-id',
+            getPaConfigVersion: () => 'A',
+            getFilterCardByPath: () => ({
+              getConfigPath: () => 'patient.interactions.condition',
+            }),
+          },
+          getText: (key: string) => key,
+        }
+
+        const ifr = queryModule.getters.getIFR(state as any, getters as any, {} as any, rootGetters as any)
+        const bookmark = queryModule.getters.getBookmarkFromIFR(state as any, { getIFR: ifr } as any)
+
+        expect(JSON.stringify(bookmark)).toContain('2025-09-01')
+        expect(JSON.stringify(bookmark)).toContain('2025-09-30')
       })
     })
   })

@@ -43,6 +43,7 @@
 /services/alp-db-management                          @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/envConverter                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/mri-db                                     @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/services/materialize-cohorts                        @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/trex                                       @p-hoffmann
 /tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann

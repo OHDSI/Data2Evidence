@@ -125,7 +125,8 @@ const {
 
 const { funnelChartRef, downloadFunnelChart, downloadFunnelChartCSV } = useFunnelChart(
   inclusionReportResponse,
-  draggableAttritionStats
+  draggableAttritionStats,
+  getText
 )
 
 const { treemapChartRef, disposeTreemap, downloadTreemapImage, downloadTreemapCSV } = useTreemapChart(
@@ -133,7 +134,8 @@ const { treemapChartRef, disposeTreemap, downloadTreemapImage, downloadTreemapCS
   checkedRulesIds,
   allAnyOption,
   passedFailedOption,
-  selectedVisualization
+  selectedVisualization,
+  getText
 )
 
 // Event handlers

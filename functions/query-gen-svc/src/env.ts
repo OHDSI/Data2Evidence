@@ -4,6 +4,7 @@ import { object, z } from "zod";
 const Env = z
     .object({
         SQL_RETURN_ON: z.string(),
+        HANA_HINT: z.string().optional(),
         LOCAL_DEBUG: z.string(),
         NODE_ENV: z.string().optional(),
         PORT: z
