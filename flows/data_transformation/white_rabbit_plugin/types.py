@@ -16,7 +16,6 @@ class WhiteRabbitRunType(str, Enum):
 
 class CSVSettingsType(BaseModel):
     delimiter: str = ','
-    # Add other CSV-specific settings as needed
 
 
 class WhiteRabbitDataType(BaseModel):
@@ -25,21 +24,10 @@ class WhiteRabbitDataType(BaseModel):
 
     # For scanning CSV files
     settings: Optional[CSVSettingsType] = None
-    files: Optional[list[str]] = None
 
     # For scanning source database
-    database_code: Optional[str] = None
-    tables_to_scan: Optional[str] = None # Comma-separated list of tables to scan
-
-    # Todo: Remove when switching to database code
-    port: Optional[str] = None
-    schema: Optional[str] = None
-    server: Optional[str] = None
-    database: Optional[str] = None
-    password: Optional[str] = None
-    data_type: Optional[str] = None
-    user_name: Optional[str] = None
-    server_location: Optional[str] = None
+    databaseCode: Optional[str] = None
+    tables_to_scan: str = "*" # Comma-separated list of tables to scan
 
     class Config:
         extra = "allow"
@@ -81,7 +69,7 @@ class INISettings(BaseModel):
     @property
     def working_folder(self) -> str:
         if self.scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
-            return WHITERABBIT_CSV_DIR
+           return WHITERABBIT_CSV_DIR
         return WHITERABBIT_DIR_PATH
     
     @property
@@ -96,7 +84,12 @@ class INISettings(BaseModel):
         elif self.scan_type == WhiteRabbitRunType.SCAN_REPORT_DB:
             if not self.data_type:
                 raise ValueError(f"data_type is required for scan type {self.scan_type}")
-            return self.data_type
+            db_type_mapping = {
+                "postgres": "PostgreSQL",
+            }
+            if self.data_type.lower() not in db_type_mapping:
+                raise ValueError(f"Unsupported database dialect: {self.data_type}. Supported dialects: {list(db_type_mapping.keys())}")
+            return db_type_mapping[self.data_type.lower()]
         else:
             raise ValueError(f"Unsupported scan type: {self.scan_type}")
 

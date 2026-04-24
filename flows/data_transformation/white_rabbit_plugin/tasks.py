@@ -33,26 +33,23 @@ def create_white_rabbit_settings(scan_type: WhiteRabbitRunType, scan_settings: d
     match scan_type:
         case WhiteRabbitRunType.SCAN_REPORT_DB: 
 
-            # Todo: Use database code
-            # database_credentials = DBDao(use_cache_db=False,
-            #                              database_code=scan_settings.database_code)
+            database_credentials = DBDao(use_cache_db=False,
+                                         database_code=scan_settings.databaseCode).tenant_configs
             
-            # ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB,
-            #                           server_location=f"{database_credentials.host}:{database_credentials.port}/{database_credentials.databaseName}",
-            #                           user_name=database_credentials.readUser,
-            #                           password=database_credentials.readPassword,
-            #                           database_name=database_credentials.schema,
-            #                           data_type=database_credentials.dialect,
-            #                           tables_to_scan=scan_settings.tables_to_scan or "*"
-            #                           )
-
-            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB, **scan_settings.model_dump())
+            ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_DB,
+                                      server_location=f"{database_credentials.host}:{database_credentials.port}/{database_credentials.databaseName}",
+                                      user_name=database_credentials.readUser,
+                                      password=database_credentials.readPassword.get_secret_value(),
+                                      schema=scan_settings.schema,
+                                      data_type=database_credentials.dialect,
+                                      tables_to_scan=scan_settings.tables_to_scan or "*"
+                                      )
         
         case WhiteRabbitRunType.SCAN_REPORT_FILES:
             table_names = scan_settings.files
             ini_content = INISettings(scan_type=WhiteRabbitRunType.SCAN_REPORT_FILES,
                                       delimiter=scan_settings.settings.delimiter,
-                                      tables_to_scan=",".join(table_names),
+                                      tables_to_scan="*" # Scan all csv files in the working directory
                                       )
 
     config["settings"] = ini_content.dump_settings_json()
@@ -85,8 +82,11 @@ def create_scan_report(config_ini_path: str, scan_report_path: str) -> str:
     '''
     logger = get_run_logger()
 
+    command = f"{WHITERABBIT_BIN_PATH}/whiteRabbit -ini {config_ini_path} 2>&1 | tee /tmp/java_log.txt"
+    logger.info(f"Running command: {command}")
+
     ShellOperation(
-        commands=[f"{WHITERABBIT_BIN_PATH}/whiteRabbit -ini {config_ini_path} 2>&1 | tee /tmp/java_log.txt"]).run()
+        commands=[command]).run()
 
     if not Path(scan_report_path).is_file():
         logger.error(f"File {scan_report_path} does not exist.")
@@ -147,22 +147,25 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
 
 
 @task(log_prints=True)
-def download_files_from_supabase_storage(node_id: str, filenames: list[str], supabase_api: SupabaseStorageAPI) -> bool:
+def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseStorageAPI) -> bool:
     '''
     Downloads multiple CSV files from Supabase Storage using the provided node ID and filenames.
     Saves the files to the WHITERABBIT_CSV_DIR directory.
     '''
     logger = get_run_logger()
-    logger.info(f"Downloading {len(filenames)} files from Supabase Storage for node ID: {node_id}")
-
-    downloaded_files = []
+    files_uploaded = supabase_api.list_files(node_id)
+    csv_files = [file for file in files_uploaded if file.get('type') == 'CSV']
     
-    for filename in filenames:
-        logger.debug(f"Downloading file: {filename}")
+    logger.info(f"Downloading {len(csv_files)} CSV files from Supabase Storage for node ID: {node_id}")
+    
+    downloaded_files = []  
+
+    for file in csv_files:
+        filename = file["name"]
+        logger.info(f"Downloading file: {filename}")
         supabase_api.download_file_to_path(node_id, filename, WHITERABBIT_CSV_DIR)
         downloaded_files.append(filename)
         logger.info(f"Successfully downloaded and saved file: {filename}")
-
 
     logger.info(f"Successfully downloaded {len(downloaded_files)} files")
     return True
