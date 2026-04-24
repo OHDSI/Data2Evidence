@@ -74,7 +74,8 @@ test(TEST_NAME, async ({ page }) => {
     await expect(node).toBeVisible();
 
     const dragHandle = node.locator('.node__drag').first();
-    const dragBox = (await dragHandle.boundingBox()) ?? (await node.boundingBox());
+    await expect(dragHandle).toBeVisible();
+    const dragBox = await dragHandle.boundingBox();
 
     if (!dragBox) {
       throw new Error(`Could not resolve draggable area for node '${nodeLabel}'`);
@@ -85,7 +86,8 @@ test(TEST_NAME, async ({ page }) => {
 
     await page.mouse.move(startX, startY);
     await page.mouse.down();
-    await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 20 });
+    await page.mouse.move(startX + 8, startY + 8, { steps: 5 });
+    await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 25 });
     await page.mouse.up();
   };
 
@@ -98,7 +100,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.keyboard.insertText(content);
   };
 
-  await page.goto('/d2e/portal');
+  await page.goto('https://localhost:41100/d2e/portal/');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
@@ -223,6 +225,10 @@ test(TEST_NAME, async ({ page }) => {
   const dbWriterNodeTestId = await getNodeTestIdByLabel('db_writer_node_0');
   const dbWriterNode = page.getByTestId(dbWriterNodeTestId);
   await expect(dbWriterNode).toMatchAriaSnapshot(`- text: Describe the task of node db_writer_node_0`);
+
+  await page.keyboard.press('Escape');
+  await page.locator('.react-flow__pane').first().click({ position: { x: 30, y: 30 } });
+  await page.waitForTimeout(300);
 
   await moveNodeByLabel('db_reader_node_0', -360, 20);
   await moveNodeByLabel('test_python_node', -100, 20);
