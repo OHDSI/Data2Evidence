@@ -216,7 +216,7 @@ jobs:
       - name: Publish
         env:
           CI: ${{ matrix.NPM != 'bun' }}
-          SHOULD_PUBLISH: true
+          SHOULD_PUBLISH: ${{ github.ref_name == 'develop' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
