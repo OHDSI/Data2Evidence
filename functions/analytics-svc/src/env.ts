@@ -1,5 +1,14 @@
 import { object, z } from "zod";
 
+const parseJsonTransform = (str, ctx): z.infer<ReturnType<typeof object>> => {
+                try {
+                    return JSON.parse(str);
+                } catch (e) {
+                    ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+                    return z.never();
+                }
+            }
+
 const Env = z
     .object({
         ALP_GATEWAY_OAUTH__URL: z.string(),
@@ -62,16 +71,13 @@ const Env = z
         DB_SVC__PATH: z.string().optional(),
         DB_SVC__PORT: z.string().optional(),
         IS_AUDIT_LOG_ENABLED: z.string().optional(),
+        ANALYTICS_HANA_STREAMING_ENABLED: z.string(),
+        ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: z
+            .string()
+            .transform((str, ctx) => parseJsonTransform(str, ctx)),
         SERVICE_ROUTES: z
             .string()
-            .transform((str, ctx): z.infer<ReturnType<typeof object>> => {
-                try {
-                    return JSON.parse(str);
-                } catch (e) {
-                    ctx.addIssue({ code: "custom", message: "Invalid JSON" });
-                    return z.never();
-                }
-            }),
+            .transform((str, ctx) => parseJsonTransform(str, ctx)),
 
         // TODO: Add types for database credentials
         DATABASE_CREDENTIALS: z.unknown(),

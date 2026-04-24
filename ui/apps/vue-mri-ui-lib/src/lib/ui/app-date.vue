@@ -226,23 +226,6 @@ const datePickerProps = computed(() => ({
     : false,
 }))
 
-// Watch for prop changes
-watch(
-  () => props.date,
-  newDate => {
-    updateInternalValue(newDate)
-  },
-  { immediate: true }
-)
-
-watch(
-  internalValue,
-  newValue => {
-    updateDisplayValue(newValue)
-  },
-  { immediate: true }
-)
-
 // Methods
 const updateInternalValue = (date: Date | string | null) => {
   if (date instanceof Date && !isNaN(date.getTime())) {
@@ -274,8 +257,34 @@ const updateDisplayValue = (value: Date | string | null) => {
   }
 }
 
+// Watch for prop changes
+watch(
+  () => props.date,
+  newDate => {
+    updateInternalValue(newDate)
+  },
+  { immediate: true }
+)
+
+watch(
+  internalValue,
+  newValue => {
+    updateDisplayValue(newValue)
+  },
+  { immediate: true }
+)
+
 const onValueUpdate = (value: Date | string | null) => {
   const normalizedValue = normalizeValue(value)
+
+  const hasHydratedSourceDate =
+    (props.date instanceof Date && !isNaN(props.date.getTime())) ||
+    (typeof props.date === 'string' && props.date.trim() !== '' && parseDateString(props.date) !== null)
+
+  if (!isActive.value && normalizedValue === null && hasHydratedSourceDate && internalValue.value instanceof Date) {
+    return
+  }
+
   internalValue.value = normalizedValue
 
   if (normalizedValue) {

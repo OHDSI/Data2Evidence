@@ -9,6 +9,13 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
+import { pipeline } from "node:stream/promises";
+import { Transform } from "node:stream";
+import { promisify } from "node:util";
+import axios from "npm:axios";
+import https from "node:https";
+import fs from "node:fs";
+import { env } from "../../env";
 
 const logger = CreateLogger("analytics-log");
 
@@ -462,6 +469,64 @@ export class CohortEndpoint {
             );
             const rowCount = await this.executeCohortQuery(insertQuery, true);
             return rowCount;
+        } catch (err) {
+            logger.error(
+                `Failed to insert cohort with data: ${JSON.stringify(cohort)}`
+            );
+            // Cleanup previously inserted cohort definition and cohort rows
+            await this.deleteCohortDefinitionFromDb(cohortDefinitionId);
+            await this.deleteCohortFromDb(cohortDefinitionId);
+            throw err;
+        }
+    }
+
+    public async streamCohortToDb(
+        cohortDefinitionId: number,
+        cohort: CohortType,
+        queryObject: QueryObjectType,
+        metadata: {datasetId: string, token: string, dbCredential: any},
+    ) {
+         try {
+            const partialInsertQuery = QueryObject.formatDict(
+                queryObject.queryString,
+                { cohortDefinitionId }
+            );
+            const insertQuery = new QueryObject(
+                this.replaceSchemaAliasWithCohortSchema(
+                    partialInsertQuery.queryString
+                ),
+                [
+                    ...queryObject.parameterPlaceholders,
+                    ...partialInsertQuery.parameterPlaceholders,
+                ]
+            );
+            
+            const preparedQuery = insertQuery._prepareQuery();
+            const translatedSql = this.connection.getTranslatedSql(preparedQuery.sql)
+
+            const result = await axios.post(
+                            `${env.SERVICE_ROUTES.materializeCohorts}/api/stream/run-all`,
+                            {   datasetId: metadata.datasetId, 
+                                query: translatedSql,
+                                sqlQueryParameters: preparedQuery.placeholders,
+                                cohortDefinitionId,
+                                resultsSchema: this.schemaName,
+                                databaseCode: metadata.dbCredential.code,
+                                dbCredential: metadata.dbCredential
+                            }, 
+                            { headers: { 
+                                "Content-Type": "application/json",
+                                Authorization: metadata.token }, 
+                              httpsAgent: new https.Agent({ 
+                                    keepAlive: true,
+                                    cert: fs.readFileSync('/usr/src/cert/client.crt'),
+                                    key: fs.readFileSync('/usr/src/cert/client.key'),
+                                    ca: fs.readFileSync('/usr/src/cert/ca.crt'),
+                                    rejectUnauthorized: true
+                                }),
+                            })
+
+            return result.data.processedRows;
         } catch (err) {
             logger.error(
                 `Failed to insert cohort with data: ${JSON.stringify(cohort)}`

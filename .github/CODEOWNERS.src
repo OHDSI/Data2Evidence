@@ -43,6 +43,7 @@
 /services/alp-db-management                          @data2evidence/data
 /services/envConverter                               @data2evidence/analyze
 /services/mri-db                                     @data2evidence/analyze
+/services/materialize-cohorts                        @data2evidence/analyze
 /services/trex                                       @data2evidence/trex
 /tests                                               @data2evidence/analyze
 /ui                                                  @data2evidence/integrate
