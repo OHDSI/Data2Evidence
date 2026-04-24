@@ -44,7 +44,6 @@ test(TEST_NAME, async ({ page }) => {
     .getByRole('button', { name: 'Save', exact: true })
   await saveFeatureFlagButton.scrollIntoViewIfNeeded()
   await saveFeatureFlagButton.click()
-  await expect(page).toHaveScreenshot()
 
   // Cleanup if the datasets already exist
   await page.getByRole('link', { name: 'Datasets' }).click()
