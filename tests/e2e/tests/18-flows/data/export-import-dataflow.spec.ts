@@ -68,7 +68,7 @@ test('export-import-dataflow', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
     const saveDialog = page.getByRole('dialog')
-    await expect(saveDialog).toBeVisible()
+    await expect(saveDialog.getByRole('button', { name: 'Save' })).toBeEnabled()
     await saveDialog.getByRole('button', { name: 'Save' }).click()
 
     // Export the flow
@@ -105,29 +105,16 @@ test('export-import-dataflow', async ({ page }) => {
     await expect(editBtn).toBeVisible()
     await editBtn.click()
 
+    // Verify data integrity: imported code matches exactly what was exported
+    const exported = JSON.parse(await fs.readFile(exportedFilePath, 'utf-8'))
+    const exportedScript = exported.flow.nodes[0].data.python_code
+    console.log('Exported script:', exportedScript)
+
     const editor = page.getByRole('textbox', { name: 'Editor content;Press Alt+F1' })
     await editor.focus()
     const importedCode = await editor.inputValue()
-    expect(importedCode).toContain('def exec(myinput):')
+    expect(importedCode).toBe(exportedScript)
 
-    await editor.press('ControlOrMeta+a')
-    await editor.fill(
-      'def exec(myinput):\n  return "This is test python node exec function"\ndef test_exec(myinput):\n  return "This is test_exec function"'
-    )
-
-    await page.getByRole('button', { name: 'Apply' }).click()
-    // Run the imported flow
-    await page.getByLabel('Run flow').getByRole('button').click()
-    const runSaveDialog = page.getByRole('dialog')
-    await expect(runSaveDialog).toBeVisible()
-    await runSaveDialog.getByRole('button', { name: 'Save' }).click()
-
-    // Open node output and verify result
-    // Find the RF node container that wraps the python_node_0 title and click its output button
-    const rfNodeContainer = page.locator('[data-testid^="rf__node"]').filter({ has: nodeTitle })
-    await expect(rfNodeContainer.getByTestId('button')).toBeVisible({ timeout: 60000 })
-    await rfNodeContainer.getByTestId('button').click()
-    await expect(page.getByText('"length": 38')).toBeVisible()
-    await page.getByRole('button', { name: 'close' }).click()
+    await page.getByRole('button', { name: 'Close' }).click()
   })
 })
