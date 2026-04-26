@@ -4,10 +4,7 @@
 # Based on WebAPI 3.0-dev with all trex dependencies installed
 #
 
-# TEMP: local build for OIDC branch manual testing
-# Original pinned image (restore when done):
-# FROM ghcr.io/ohdsi/webapi@sha256:f46522d23716fb20f2f94be47f639bfa120e438f229d41a482abe7a00740743e AS base
-FROM ghcr.io/ohdsi/webapi:local-openid-test AS base
+FROM ghcr.io/ohdsi/webapi@sha256:32a0a9ca7bd50d934903ab873f041c777502b5d5e27ff46c23753407d003ed6d AS base
 
 USER root
 
