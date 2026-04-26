@@ -157,7 +157,7 @@ export default async (req: IMRIRequest, res, next) => {
                 datasetId = getDatasetIdFromRequest();
             }
             const studyMetadata: StudyDbMetadata =
-                req.studiesDbMetadata.studies.find((o) => o.id === datasetId);
+                req.studiesDbMetadata.studies.find((o) => o.id === datasetId || o.tokenStudyCode === datasetId);
             // Set req.selectedstudyDbMetadata if it does not already exist
             if (!req.selectedstudyDbMetadata) {
                 req.selectedstudyDbMetadata = studyMetadata;
