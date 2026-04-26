@@ -176,3 +176,32 @@ services:
     environment:
       - DOZZLE_ENABLE_SHELL=${DOZZLE_ENABLE_SHELL:-false}
       - DOZZLE_ENABLE_ACTIONS=true
+
+  materialize-cohorts:
+    profiles:
+      - materialize-cohorts
+    networks:
+      alp:
+        priority: 20
+    command: npm run start
+    hostname: ${PROJECT_NAME:-d2e}-materialize-cohorts
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-materialize-cohorts:${DOCKER_TAG_NAME:-develop}
+    build:
+      context: .
+      dockerfile: ./services/materialize-cohorts/Dockerfile
+    volumes:
+      - services/materialize-cohorts/PKI/server.key:/app/PKI/server.key
+      - services/materialize-cohorts/PKI/server.crt:/app/PKI/server.crt
+      - services/materialize-cohorts/PKI/ca.crt:/app/PKI/ca.crt
+    environment:
+      PORT: 3333
+      API_MTLS_ENABLED: ${MATERIALIZE_COHORTS_API_MTLS_ENABLED:-true}
+      API_TLS_KEY_PATH: ${MATERIALIZE_COHORTS_API_TLS_KEY_PATH:-/app/PKI/server.key}
+      API_TLS_CERT_PATH: ${MATERIALIZE_COHORTS_API_TLS_CERT_PATH:-/app/PKI/server.crt}
+      API_TLS_CA_PATH: ${MATERIALIZE_COHORTS_API_TLS_CA_PATH:-/app/PKI/ca.crt}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsSk https://127.0.0.1:3333/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
