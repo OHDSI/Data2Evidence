@@ -4,7 +4,10 @@
 # Based on WebAPI 3.0-dev with all trex dependencies installed
 #
 
-FROM ghcr.io/ohdsi/webapi@sha256:f46522d23716fb20f2f94be47f639bfa120e438f229d41a482abe7a00740743e AS base
+# TEMP: local build for OIDC branch manual testing
+# Original pinned image (restore when done):
+# FROM ghcr.io/ohdsi/webapi@sha256:f46522d23716fb20f2f94be47f639bfa120e438f229d41a482abe7a00740743e AS base
+FROM ghcr.io/ohdsi/webapi:local-openid-test AS base
 
 USER root
 
@@ -101,7 +104,7 @@ RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
 # Remove old trexsql-ext JAR and conflicting WebAPI trexsql classes (now provided by the new JAR)
 # Nested JARs must use ZIP_STORED (no compression) for Spring Boot's nested jar loader
 RUN cd /var/lib/ohdsi/webapi && \
-    curl -sL https://github.com/p-hoffmann/trexsql-ext/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar -o /tmp/trexsql-new.jar && \
+    curl -fsSL https://github.com/p-hoffmann/trexsql-ext/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar -o /tmp/trexsql-new.jar && \
     zip -d WebAPI.jar "BOOT-INF/lib/trexsql-ext-*" "BOOT-INF/classes/org/ohdsi/webapi/trexsql/*" && \
     mkdir -p /tmp/webapi-patch/BOOT-INF/lib && \
     cp /tmp/trexsql-new.jar /tmp/webapi-patch/BOOT-INF/lib/trexsql-ext-v${TREXSQL_EXT_VERSION}.jar && \

@@ -130,9 +130,10 @@ services:
       SPRING_FLYWAY_PASSWORD: ${PG_SUPER_PASSWORD}
       SPRING_FLYWAY_SCHEMAS: webapi
       SPRING_FLYWAY_TABLE: flyway_schema_history
-      SPRING_FLYWAY_BASELINE_VERSION: "3.0.0"
       SPRING_FLYWAY_PLACEHOLDERS_OHDSISCHEMA: webapi
-      FLYWAY_BASELINE_VERSION: "3.0.0"
+      # No SPRING_FLYWAY_BASELINE_VERSION: on an empty schema Flyway baselines at v1
+      # and applies all migrations, including the early ones that create cc_* tables.
+      # Existing installs already have history rows so this is a no-op for them.
       # Security configuration
       SECURITY_PROVIDER: AtlasRegularSecurity
       SECURITY_ORIGIN: "*"
@@ -143,7 +144,7 @@ services:
       SECURITY_AUTH_JDBC_ENABLED: "true"
       SECURITY_AUTH_WINDOWS_ENABLED: "false"
       SECURITY_AUTH_KERBEROS_ENABLED: "false"
-      SECURITY_AUTH_OPENID_ENABLED: "true"
+      SECURITY_AUTH_OIDC_ENABLED: "true"
       SECURITY_AUTH_FACEBOOK_ENABLED: "false"
       SECURITY_AUTH_GITHUB_ENABLED: "false"
       SECURITY_AUTH_GOOGLE_ENABLED: "false"
@@ -158,22 +159,22 @@ services:
       SECURITY_DB_DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       SECURITY_DB_DATASOURCE_AUTHENTICATIONQUERY: "SELECT password, email AS firstname, NULL AS middlename, email AS lastname FROM webapi_security.security WHERE email = ?"
       # OpenID Connect configuration (Logto)
+      # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
+      SECURITY_AUTH_OIDC_CLIENTID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
+      SECURITY_AUTH_OIDC_APISECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
       # Use Caddy's internal HTTP port (8080) for metadata discovery - avoids TLS issues
-      SECURITY_OID_CLIENTID: ${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}
-      SECURITY_OID_APISECRET: ${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}
-      SECURITY_OID_URL: "http://${PROJECT_NAME:-d2e}-caddy:8080/oidc/.well-known/openid-configuration"
+      SECURITY_AUTH_OIDC_URL: "http://${PROJECT_NAME:-d2e}-caddy:8080/oidc/.well-known/openid-configuration"
       # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
-      SECURITY_OID_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc"
-      SECURITY_OID_SKIPSSLVALIDATION: "false"
-      SECURITY_OID_REDIRECTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/#/welcome"
-      SECURITY_OID_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc/session/end"
-      # Extra OIDC scopes to get profile and email claims
-      SECURITY_OID_EXTRASCOPES: "profile email"
-      # API resource identifier for token audience validation (Logto access tokens use this as audience)
-      SECURITY_OID_APIRESOURCE: "https://alp-default"
+      SECURITY_AUTH_OIDC_EXTERNALURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc"
+      SECURITY_AUTH_OIDC_LOGOUTURL: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/oidc/session/end"
+      # Role claim in the ID token (Logto emits `roles` when the roles feature is enabled for the app)
+      SECURITY_AUTH_OIDC_ROLESCLAIM: "roles"
+      # NOTE: scopes `openid profile email` are added by default by the new WebAPI; extraScopes no longer required
       # OAuth callback URLs - must use external URL for browser redirects
-      SECURITY_OAUTH_CALLBACK_API: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback"
-      SECURITY_OAUTH_CALLBACK_UI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/#/welcome"
+      # NOTE: callback path now includes /openid segment (Spring oauth2Login convention).
+      # The Logto app's redirect URI must be updated to end with /user/oauth/callback/openid
+      SECURITY_AUTH_OAUTH_CALLBACK_API: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/WebAPI/user/oauth/callback"
+      SECURITY_AUTH_OAUTH_CALLBACK_UI: "https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:${CADDY_PORT:-${PORT:-443}}/atlas/#/welcome"
       # TrexSQL configuration
       # PG__ vars needed by trex (npm start) for database connection
       PG__DB_NAME: alp
@@ -184,6 +185,10 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
+      # Activates TrexSQLAutoConfiguration in trexsql-ext, which calls Trexsql/init.
+      # When TREX_INIT is set, init() starts the Trexas (port 33001) + PgWire servers
+      # in-process via the DuckDB extension, so WebAPI's JVM runs trex — no separate container.
+      TREXSQL_ENABLED: "true"
       TREX_INIT: |-
         {
           "tlsCert": "/usr/src/cert/cert.pem",
@@ -261,7 +266,9 @@ services:
       LOGTO__D2E_SVC__CLIENT_SECRET: ${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}
       LOGTO__D2E_DATA__CLIENT_ID: ${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}
       LOGTO__D2E_DATA__CLIENT_SECRET: ${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}
-      LOGTO__ISSUER: http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc
+      # Must equal the iss claim Logto stamps into tokens (= Logto's ENDPOINT + /oidc).
+      # Used by trex-TS authn middleware (JWKS URL) and portal config (iss validation).
+      LOGTO__ISSUER: http://${PROJECT_NAME:-d2e}-caddy:8080/oidc
       LOGTO__RESOURCE_API: https://alp-default
       LOGTO__SCOPE: ${LOGTO__SCOPE:-openid offline_access profile email}
       LOGTO__SVC_CLIENT_ID: ${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}
@@ -501,7 +508,10 @@ services:
             uri strip_prefix /d2e/logto
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001 {
               import ${PROXY_HEADERS_MODE:-proxy_headers_default}
-              # Always pass external hostname so Logto returns external URLs in OIDC discovery
+              # Host + X-Forwarded-* make Logto (TRUST_PROXY_HEADER=true) emit external URLs
+              # for browser-facing endpoints (authorize/sign-in). The issuer claim itself is
+              # sourced from Logto's ENDPOINT env var (internal http://alp-caddy:8080), which
+              # lets WebAPI's Spring OAuth2 client validate iss without TLS/DNS gymnastics.
               header_up Host ${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
               transport http {
                 read_buffer 8192
@@ -755,7 +765,7 @@ services:
       # LOGTO__DISABLE_BASIC_AUTH: ${LOGTO__DISABLE_BASIC_AUTH:-true}
       # LOGTO__CUSTOM_JWT: '{"environmentVariables": {"clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}"}, "script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  const clientId = environmentVariables?.clientId || \"\";\n  const clientSecret = environmentVariables?.clientSecret || \"\";\n  const tenantId = environmentVariables?.tenantId || \"\";\n  const refreshToken = extra.thirdPartyRefreshToken || \"\";\n\n  const tokenEndpoint = `https://login.microsoftonline.com/$${tenantId}/oauth2/v2.0/token`;\n\n  const params =\n    `client_id=$${encodeURIComponent(clientId)}` +\n    `&client_secret=$${encodeURIComponent(clientSecret)}` +\n    `&refresh_token=$${encodeURIComponent(refreshToken)}` +\n    `&grant_type=refresh_token` +\n    `&scope=openid`;\n\n  let thirdPartyToken = extra.thirdPartyToken;\n  let thirdPartyRefreshToken = refreshToken;\n  try {\n    const response = await fetch(tokenEndpoint, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/x-www-form-urlencoded\" },\n      body: params,\n    });\n\n    if (!response.ok) {\n      const responseBody = await response.text();\n      throw new Error(`Error refreshing token: $${response.statusText}: $${responseBody}: $${params}`);\n    }\n\n    const data = await response.json();\n    thirdPartyToken = data.id_token;\n    thirdPartyRefreshToken = data.refresh_token;\n  } catch (error) {}\n\n  const email = context.user?.primaryEmail || \"\";\n\n  const scopes = [];\n\n  for (const role of context.user.roles || []) {\n    for (const scope of role.scopes || []) {\n      scopes.push(scope.name);\n    }\n  }\n\n  return { thirdPartyToken, thirdPartyRefreshToken, email, roles: scopes };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
       LOGTO__CUSTOM_JWT: '{"script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  const scopes = [];\n\n  for (const role of context.user.roles || []) {\n    for (const scope of role.scopes || []) {\n      scopes.push(scope.name);\n    }\n  }\n\n  return { roles: scopes };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}, "environmentVariables": {}}'
-      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}", "secret": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}", "secret": "${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}", "secret": "${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}", "secret": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}", "secret": "${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}", "secret": "${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/WebAPI/user/oauth/callback/openid","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
       LOGTO__RESOURCE: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
       LOGTO__USER: '{"username":"admin","initialPassword":"Updatepassword12345"}'
       LOGTO__ROLES: '[{"name":"role.systemadmin","description":"System admin","type":"User"},{"name":"role.useradmin","description":"User admin","type":"User"},{"name":"role.dashboardviewer","description":"Dashboard viewer","type":"User"},{"name":"role.viewer","description":"Viewer","type":"User"},{"name":"role.jobrunner","description":"Job runner","type":"User"},{"name":"role.studyresultsreader","description":"Study results reader","type":"User"},{"name":"role.etlmappingcontributor","description":"ETL mapping contributor","type":"User"}]'
@@ -808,7 +818,11 @@ services:
       # ADMIN_ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3002 # Enable if need to access admin console
       # ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
-      ENDPOINT: https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}
+      # ENDPOINT is the server-side base URL Logto stamps into token iss/discovery issuer (stable identity).
+      # It must be reachable by backend services (e.g. WebAPI) that validate iss by fetching discovery.
+      # Browser-visible URLs are derived per-request via TRUST_PROXY_HEADER=true + X-Forwarded-* from Caddy,
+      # so users still see https://localhost:41100/... for sign-in/authorize.
+      ENDPOINT: http://${PROJECT_NAME:-d2e}-caddy:8080
       LOGTO_API_M2M_CLIENT_ID: ${LOGTO_API_M2M_CLIENT_ID}
       LOGTO_API_M2M_CLIENT_SECRET: ${LOGTO_API_M2M_CLIENT_SECRET}
       LOGTO_ROLES_AZ_GROUPS_MAPPING: ${LOGTO_ROLES_AZ_GROUPS_MAPPING:-{"role.systemadmin":"37b5364a-348c-494f-b67f-a59a40e52ab7","role.useradmin":"90597adc-92af-4649-8151-68c3b7feb66c","role.dashboardviewer":"50a3b140-21eb-46dd-9d81-61a77cbc81f5"}}
