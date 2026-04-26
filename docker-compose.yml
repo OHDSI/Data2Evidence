@@ -1186,10 +1186,11 @@ services:
     volumes:
       - ./services/atlas-db-init:/scripts:ro
     environment:
-      PGHOST: alp-minerva-postgres
-      PGUSER: postgres
+      PGHOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
+      PGPORT: ${PG_PORT:-5432}
+      PGUSER: ${PG_SUPER_USER:-postgres}
       PGPASSWORD: ${PG_SUPER_PASSWORD}
-      PGDATABASE: alp
+      PGDATABASE: ${PG_DB_NAME:-alp}
     command: >
       sh -c '
         echo "Waiting for logto.users table...";

@@ -21,12 +21,14 @@ export const createLogger = (className = ''): Logger => {
     [LOG_LEVEL.OFF]: 'error',
   }
   const envLevel = env.PORTAL_SERVER_LOG_LEVEL
+  const isOff = envLevel === LOG_LEVEL.OFF || envLevel === 'off'
   const level = typeof envLevel === 'string'
     ? envLevel
     : logLevelMap[envLevel as number] || 'info'
 
   return createWinstonLogger({
     level,
+    silent: isOff,
     format: format.json(),
     transports: [
       new transports.Console({

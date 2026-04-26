@@ -101,7 +101,7 @@ function extractToken(c: Context): string | null {
         return cookie.split("=")[1];
       } else if (cookie.startsWith("fhirtoken=")) {
         const val = cookie.split("=")[1];
-        return val.split(" ")[1];
+        return val.split(" ")[1] || null;
       }
     }
   }

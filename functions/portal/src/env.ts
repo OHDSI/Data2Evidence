@@ -93,13 +93,20 @@ export const getDbCredentialsByCode = (databaseCode: string): {
       const readCred = cred.credentials?.find(c => c.userScope === 'Read')
         || cred.credentials?.[0];
 
+      if (!readCred?.username || !readCred?.password) {
+        console.warn(
+          `No usable database credentials found for code "${databaseCode}".`,
+        );
+        return null;
+      }
+
       return {
         host: cred.host,
         port: cred.port,
         database: cred.name,
         dialect: cred.dialect === 'postgres' ? 'postgresql' : cred.dialect,
-        username: readCred?.username || '',
-        password: readCred?.password || '',
+        username: readCred.username,
+        password: readCred.password,
       };
     }
   }
