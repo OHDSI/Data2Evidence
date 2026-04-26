@@ -1,10 +1,14 @@
 import { query, body } from "express-validator";
 
 export const GetConceptMappingDto = () => [
-  query("datasetId")
-    .isUUID()
+  query("databaseCode")
+    .isString()
     .notEmpty()
-    .withMessage("datasetId is required and must be a valid UUID"),
+    .withMessage("databaseCode is required"),
+  query("schemaName")
+    .isString()
+    .notEmpty()
+    .withMessage("schemaName is required"),
 ];
 
 export const ConceptMappingDto = () => [
