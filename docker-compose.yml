@@ -75,10 +75,7 @@ x-envs:
 services:
   # OHDSI WebAPI for Atlas3 (with trex dependencies)
   trex:
-    build:
-      context: ./services/trex
-      dockerfile: Dockerfile.v2
-    image: trex-webapi:latest
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
