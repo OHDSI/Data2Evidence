@@ -15,6 +15,7 @@ from .flowutils import get_node_list, get_incoming_edges, install_r_packages_fro
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
+from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from .table1 import Table1Generator
 
 
@@ -290,17 +291,16 @@ def drop_strategus_results(options):
     """
     Drops the Strategus results from the database.
     """
-    datasetId = options.get('datasetId', None)
     study_id = options.get('studyId', None)
     database_code = options.get('databaseCode', None)
-    if(not datasetId):
-       raise Exception('DatasetId is missing')
+    if(not study_id):
+        raise Exception('StudyId is missing')
+
     if(not database_code):
        raise Exception('Database code is missing')
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
-        'dataset_id': datasetId,
         'study_id': study_id
     })
 
