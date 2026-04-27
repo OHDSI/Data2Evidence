@@ -343,7 +343,7 @@ export default {
       }
 
       // item for Advanced Time Filter
-      // Advance Time filter is not support if filter is in exclusion tab
+      // Advance Time filter is not supported if filter is in exclusion tab
       if (!this.isExcluded) {
         menu.push({
           text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
