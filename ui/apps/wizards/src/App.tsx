@@ -2,35 +2,9 @@ import { useState, useEffect, useMemo } from "react";
 import { PortalProps } from "./types/portal";
 import { WizardProvider } from "./context/WizardContext";
 import { WizardShell } from "./components/WizardShell";
-import { WizardConfigEditor } from "./components/WizardConfigEditor";
-import { useWizardContext } from "./context/WizardContext";
-
-declare global {
-  interface Window {
-    openWizardConfigEditor?: () => void;
-  }
-}
 
 function AppContent() {
-  const [editorOpen, setEditorOpen] = useState(false);
-  const { portalProps } = useWizardContext();
-
-  useEffect(() => {
-    window.openWizardConfigEditor = () => {
-      setEditorOpen(true);
-    };
-
-    return () => {
-      delete window.openWizardConfigEditor;
-    };
-  }, []);
-
-  return (
-    <>
-      <WizardShell />
-      <WizardConfigEditor isOpen={editorOpen} onClose={() => setEditorOpen(false)} datasetId={portalProps.datasetId} />
-    </>
-  );
+  return <WizardShell />;
 }
 
 export default function App(props: PortalProps) {

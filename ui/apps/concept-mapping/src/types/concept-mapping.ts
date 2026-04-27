@@ -44,4 +44,7 @@ export type ConceptMappingState = {
   selectedData: { [key: string]: string };
   columnMapping: columnMappingType;
   filters: filters;
+  databaseCode?: string;
+  schemaName?: string;
+  sourceVocabularyId?: string;
 };

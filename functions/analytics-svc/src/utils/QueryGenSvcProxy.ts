@@ -20,6 +20,7 @@ export async function generateQuery(
     } else if (payload.configParams?.datasetId) {
         payload["datasetId"] = payload.configParams.datasetId;
     }
+    payload["dialect"] = req.dbCredentials.studyAnalyticsCredential.dialect;
     const data = JSON.stringify(payload);
 
     const accessToken = req.headers.authorization;

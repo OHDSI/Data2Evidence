@@ -85,6 +85,7 @@
           :text="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
           :title="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
           classes="button--block"
+          :disabled="chartBusy"
         />
       </div>
     </div>
