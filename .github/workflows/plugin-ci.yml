@@ -238,6 +238,8 @@ jobs:
               SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
               if [ "$SIZE" -gt "$MAX_SIZE" ]; then
                 echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+                echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+                echo "- :x: **$PACK_FILE** — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)" >> "$GITHUB_STEP_SUMMARY"
                 FAILED=1
               else
                 echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
