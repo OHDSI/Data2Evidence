@@ -223,9 +223,28 @@ jobs:
           if [[ $SHOULD_PUBLISH == true ]]; then
             npm publish
           else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }} 
+            FAILED=0
+            MAX_SIZE=$((500 * 1024 * 1024))
+            shopt -s nullglob
+            TGZ_FILES=(*.tgz)
+            if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+              echo "ERROR: no .tgz files found after pack"
+              exit 1
+            fi
+            for PACK_FILE in "${TGZ_FILES[@]}"; do
+              SIZE=$(wc -c < "$PACK_FILE")
+              SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+                echo "FAIL  $PACK_FILE — ${SIZE_MB}MB (exceeds 500MB Azure limit)"
+                FAILED=1
+              else
+                echo "OK  $PACK_FILE — ${SIZE_MB}MB"
+              fi
+            done
+            exit $FAILED
           fi
-
+          
   success:
     needs: build
     runs-on: ubuntu-latest
