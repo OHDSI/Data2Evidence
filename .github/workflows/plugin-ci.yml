@@ -225,7 +225,7 @@ jobs:
           else
             ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
             FAILED=0
-            MAX_SIZE_MIB=1 # TODO: restore to 500 after testing
+            MAX_SIZE_MIB=500
             MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
             shopt -s nullglob
             TGZ_FILES=(*.tgz)
@@ -239,7 +239,6 @@ jobs:
               if [ "$SIZE" -gt "$MAX_SIZE" ]; then
                 echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
                 echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
-                echo "- :x: **$PACK_FILE** — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)" >> "$GITHUB_STEP_SUMMARY"
                 FAILED=1
               else
                 echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
