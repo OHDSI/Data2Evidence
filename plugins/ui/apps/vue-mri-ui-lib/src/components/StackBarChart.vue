@@ -408,12 +408,7 @@ export default {
         this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
       }
 
-      if (!targetElement || !this.chartData?.traces) {
-        return
-      }
-
-      const layout = this.buildPlotlyLayout(resetAxes)
-      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
+      this.reactWithCurrentMode(targetElement, { resetAxes })
     },
     setupAxes() {
       this.disableAllAxesandProperties()
@@ -481,6 +476,12 @@ export default {
         colorway,
       })
     },
+    reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
+      if (!targetElement || !this.chartData?.traces) return
+      const layout = this.buildPlotlyLayout(resetAxes)
+      this.applyBarDisplayMode(this.chartData.traces, layout)
+      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
+    },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
         const data = JSON.parse(JSON.stringify(this.chartData))
@@ -505,7 +506,6 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-        const freshLayout = this.buildPlotlyLayout()
 
         // Apply x-axis category coloring if a color axis is selected
         if (this.colorAxisIndex != null && this.chartData.traces) {
@@ -547,9 +547,7 @@ export default {
           delete this.chartData.colorLegend
         }
 
-        this.applyBarDisplayMode(this.chartData.traces, freshLayout)
-
-        Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
+        this.reactWithCurrentMode()
 
         // Resize chart after DOM updates to account for legend space
         this.$nextTick(() => {
@@ -613,8 +611,7 @@ export default {
         const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
         this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
 
-        const selectionLayout = this.buildPlotlyLayout()
-        Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
+        this.reactWithCurrentMode()
       }
 
       const deselectionUpdate = () => {

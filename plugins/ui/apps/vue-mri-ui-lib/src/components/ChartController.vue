@@ -16,6 +16,10 @@
           :selectedAxis="colorAxisIndex"
           @colorAxisSelected="onColorAxisSelected"
         ></xAxisColorButton>
+        <barDisplayModeAxisButton
+          v-if="getActiveChart === 'stacked'"
+          :parentContainer="$refs.axisContainer"
+        ></barDisplayModeAxisButton>
         <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
         <sortMenuButton v-if="displaySort"></sortMenuButton>
         <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
@@ -67,6 +71,7 @@ import appButton from '../lib/ui/app-button.vue'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import XAxisColorButton from './XAxisColorButton.vue'
+import BarDisplayModeAxisButton from './BarDisplayModeAxisButton.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import PatientListContainer from './PatientListContainer.vue'
 import SacChart from './SACChart.vue'
@@ -287,6 +292,7 @@ export default {
     AxisMenuButton,
     DropDownMenu,
     XAxisColorButton,
+    BarDisplayModeAxisButton,
     LoadingAnimation,
     SortMenuButton,
     CohortEntryExit,

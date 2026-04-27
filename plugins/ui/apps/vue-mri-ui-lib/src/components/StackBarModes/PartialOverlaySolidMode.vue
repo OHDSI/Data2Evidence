@@ -1,9 +1,9 @@
 <template>
   <div class="stackbar-mode-option" :class="{ active }">
     <div class="stackbar-mode-option__row" @click="$emit('select')">
-      <span class="stackbar-mode-option__label">Partial Overlay (Solid)</span>
+      <span class="stackbar-mode-option__label">Overlapping Bar Chart</span>
     </div>
-    <label v-if="active" class="stackbar-mode-option__sub" @click.stop>
+    <label class="stackbar-mode-option__sub" @click.stop>
       <input
         type="checkbox"
         :checked="showDistributionOverlay"
@@ -19,7 +19,7 @@ import { appendDistributionOverlay } from '../helpers/computeDistributionKDE'
 
 export const meta = {
   id: 'partialOverlaySolid',
-  label: 'Partial Overlay (Solid)',
+  label: 'Overlapping Bar Chart',
   hasDistributionOverlay: true,
 }
 
@@ -59,27 +59,31 @@ export default {
 
 <style scoped>
 .stackbar-mode-option {
-  font-size: 12px;
   user-select: none;
 }
 .stackbar-mode-option__row {
-  padding: 6px 12px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 8px;
   cursor: pointer;
+  white-space: nowrap;
 }
 .stackbar-mode-option__row:hover {
-  background: #f0f0f0;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-ui-highlight);
 }
 .stackbar-mode-option.active .stackbar-mode-option__row {
-  background: #e6f2ff;
-  font-weight: 600;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 .stackbar-mode-option__sub {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px 6px 24px;
+  height: 28px;
+  padding: 0 8px 0 24px;
   cursor: pointer;
-  background: #f7fbff;
+  color: var(--color-ui-darkest-text);
 }
 .stackbar-mode-option__sub input {
   margin: 0;

@@ -1,13 +1,13 @@
 <template>
   <div class="stackbar-mode-option" :class="{ active }" @click="$emit('select')">
-    <span class="stackbar-mode-option__label">Stacked</span>
+    <span class="stackbar-mode-option__label">Stacked Bar Chart</span>
   </div>
 </template>
 
 <script lang="ts">
 export const meta = {
   id: 'stack',
-  label: 'Stacked',
+  label: 'Stacked Bar Chart',
   hasDistributionOverlay: false,
 }
 
@@ -32,16 +32,19 @@ export default {
 
 <style scoped>
 .stackbar-mode-option {
-  padding: 6px 12px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 8px;
   cursor: pointer;
-  font-size: 12px;
+  white-space: nowrap;
   user-select: none;
 }
 .stackbar-mode-option:hover {
-  background: #f0f0f0;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-ui-highlight);
 }
 .stackbar-mode-option.active {
-  background: #e6f2ff;
-  font-weight: 600;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 </style>

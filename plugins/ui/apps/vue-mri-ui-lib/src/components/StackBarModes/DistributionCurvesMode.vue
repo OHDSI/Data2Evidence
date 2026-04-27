@@ -1,6 +1,6 @@
 <template>
   <div class="stackbar-mode-option" :class="{ active }" @click="$emit('select')">
-    <span class="stackbar-mode-option__label">Distribution Curves</span>
+    <span class="stackbar-mode-option__label">Kernel Density Plot</span>
   </div>
 </template>
 
@@ -9,7 +9,7 @@ import { computeKDE } from '../helpers/computeDistributionKDE'
 
 export const meta = {
   id: 'distribution',
-  label: 'Distribution Curves',
+  label: 'Kernel Density Plot',
   hasDistributionOverlay: false,
 }
 
@@ -41,7 +41,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
       if (!kde) return null
       return {
         x: xGrid,
-        y: kde.scaledDensity,
+        y: kde.density,
         type: 'scatter',
         mode: 'lines',
         name: trace.name,
@@ -63,6 +63,9 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
   layout.xaxis.ticktext = categoryLabels
   layout.xaxis.range = [xMin, xMax]
   layout.xaxis.autorange = false
+  layout.xaxis.zeroline = false
+  layout.xaxis.tickson = 'labels'
+  delete layout.xaxis.dividercolor
   delete layout.xaxis.labelalias
   layout.yaxis.rangemode = 'nonnegative'
 }
@@ -78,16 +81,19 @@ export default {
 
 <style scoped>
 .stackbar-mode-option {
-  padding: 6px 12px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 8px;
   cursor: pointer;
-  font-size: 12px;
+  white-space: nowrap;
   user-select: none;
 }
 .stackbar-mode-option:hover {
-  background: #f0f0f0;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-ui-highlight);
 }
 .stackbar-mode-option.active {
-  background: #e6f2ff;
-  font-weight: 600;
+  color: var(--color-ui-darkest-text);
+  background-color: var(--color-mri-dropdown-list-item-selected);
 }
 </style>

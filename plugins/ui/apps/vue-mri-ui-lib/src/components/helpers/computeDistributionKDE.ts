@@ -6,7 +6,7 @@ type KDEOptions = {
 
 type KDEResult = {
   xGrid: number[]
-  perTrace: Array<{ scaledDensity: number[] } | null>
+  perTrace: Array<{ density: number[]; scaledDensity: number[] } | null>
 }
 
 const gaussian = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
@@ -44,7 +44,7 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
     const scale = maxDensity > 0 ? maxY / maxDensity : 1
     const scaledDensity = density.map(d => d * scale)
 
-    return { scaledDensity }
+    return { density, scaledDensity }
   })
 
   return { xGrid, perTrace }
