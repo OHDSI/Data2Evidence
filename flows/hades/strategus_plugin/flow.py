@@ -15,7 +15,6 @@ from .flowutils import get_node_list, get_incoming_edges, install_r_packages_fro
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
-from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
 from .table1 import Table1Generator
 
 
