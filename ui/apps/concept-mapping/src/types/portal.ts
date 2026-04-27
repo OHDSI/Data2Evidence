@@ -5,5 +5,7 @@ export interface StudyDetail {
 
 export interface Study {
   id: string;
+  databaseCode: string;
+  schemaName: string;
   studyDetail?: StudyDetail;
 }

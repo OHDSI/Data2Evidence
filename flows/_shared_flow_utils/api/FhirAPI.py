@@ -8,18 +8,19 @@ class FhirAPI(BaseAPI):
         super().__init__()
         self.url = self.get_service_route("fhirGateway")
         self.logger = get_run_logger()
-        self.auth = OpenIdAPI()
-    def get_headers(self):
-        token = self.auth.getClientCredentialToken()
+
+    def get_options(self):
+        bearer_token = f"Bearer {OpenIdAPI().get_client_credential_token()}"
         return {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "Authorization": bearer_token
         }
+    
     def post(self, study_token: str, resource_type: str, resource):
         url = f"{self.url}project/{study_token}/{resource_type}"
         result = requests.post(
             url,
-            headers=self.get_headers(),
+            headers=self.get_options(),
             verify=self.get_verify_value(),
             json=resource
         )
@@ -33,7 +34,7 @@ class FhirAPI(BaseAPI):
         url = f"{self.url}superadmin/{resource_type}{query}"
         result = requests.get(
             url,
-            headers=self.get_headers(),
+            headers=self.get_options(),
             verify=self.get_verify_value()
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):

@@ -74,16 +74,6 @@ export class InternalFilterRepresentation implements Request {
         };
         traverse(this.__request.matchAny, []);
 
-        // TODO: hack for no x-axis. Should be fixed.
-        // if there is no y axis, then this must be patient list.
-        if (
-            matchAnyCombined.length === 1 &&
-            this.__request.axes.filter((i) => i.axis === "y").length > 0 &&
-            this.__request.axes.filter((i) => i.axis === "x").length === 0
-        ) {
-            matchAnyCombined.push(matchAnyCombined[0]);
-        }
-
         let requests: ParserContainer[] =
             this.__request.matchAny.length > 0
                 ? matchAnyCombined.map((e, i) =>
