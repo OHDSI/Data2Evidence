@@ -38,7 +38,7 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isLocal = computed(() => getPortalAPI()?.isLocal)
+const isAtlas = computed(() => getPortalAPI()?.isAtlas === true)
 
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => getPortalAPI()?.username || '')
@@ -550,7 +550,7 @@ onErrorCaptured((err, instance, info) => {
           "
         >
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -566,7 +566,7 @@ onErrorCaptured((err, instance, info) => {
             />
           </div>
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) && canModify(bookmarkDisplay)
                 ? ''
@@ -599,7 +599,7 @@ onErrorCaptured((err, instance, info) => {
           </div>
 
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['M', 'A+M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -628,7 +628,7 @@ onErrorCaptured((err, instance, info) => {
 
     <!-- Pagination Footer -->
     <div
-      v-if="isLocal && props.bookmarksDisplay.length > 0"
+      v-if="isAtlas && props.bookmarksDisplay.length > 0"
       style="
         position: fixed;
         bottom: 0;
