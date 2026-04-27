@@ -14,6 +14,7 @@ import { HighlightText } from "../../../components";
 import { Study } from "../../../types";
 import { DatasetAttribute } from "../../../constant";
 import { useActiveDataset, useTranslation, useUser } from "../../../contexts";
+import { formatNumber } from "../../../utils";
 import "./DatasetCard.scss";
 
 interface DatasetCardProps {
@@ -135,7 +136,7 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
         <div className="dataset-card__attributes">
           <div className="dataset-card__attribute">
             <UsersIcon />
-            {getText(i18nKeys.DATASET_CARD__PATIENT_COUNT)}: {patientCount || 0}
+            {getText(i18nKeys.DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || '0'}
           </div>
           <div className="dataset-card__attribute">
             <CalendarIcon />

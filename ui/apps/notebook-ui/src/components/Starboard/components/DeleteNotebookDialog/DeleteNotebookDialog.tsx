@@ -31,7 +31,7 @@ const DeleteNotebookDialog: FC<DeleteNotebookDialogProps> = ({ notebook, open, o
       <div className="delete-notebook-dialog__content">
         <div>{getText(i18nKeys.DELETE_NOTEBOOK_DIALOG__CONFIRM)}:</div>
         <div>
-          {notebook?.name ? <strong>&quot;{notebook.name}&quot;</strong> : <strong>&quot;Untitled&quot;</strong>}?
+          {notebook?.name ? <strong>&quot;{notebook.name}&quot;</strong> : <strong>&quot;{getText(i18nKeys.GENERAL__UNTITLED)}&quot;</strong>}?
         </div>
       </div>
       <Divider />

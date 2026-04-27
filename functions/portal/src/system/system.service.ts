@@ -26,9 +26,9 @@ export class SystemService {
 
       const plugins = await response.json();
       const systemAdminPlugins = JSON.parse(plugins).systemadmin || [];
-      const enabledFeatures = systemAdminPlugins.filter(p => p.enabled || false);
-      return enabledFeatures.map(f => {
-        return { feature: f.featureFlag, enabled: f.enabled };
+      const visiblePlugins = systemAdminPlugins.filter(p => (p.visible ?? p.enabled) || false);
+      return visiblePlugins.map(f => {
+        return { feature: f.featureFlag, visible: f.visible ?? f.enabled };
       });
     } catch (err) {
       this.logger.error(`Error while loading plugin config: ${err}`);

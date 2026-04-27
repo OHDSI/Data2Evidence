@@ -8,6 +8,7 @@ import { MRIEndpointResultType } from "../../types";
 import * as utilsLib from "@alp/alp-base-utils";
 import { bookmarkToIFRBackend } from "../../utils/formatter/BookmarkFormatter";
 import { updateIfrWithConcepts } from "../../utils/formatter/ConceptSetToConceptConverter";
+import { env } from "../../env";
 
 const log = utilsLib.Logger.CreateLogger("query-gen-log");
 const { utils } = utilsLib;
@@ -28,13 +29,11 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         const queryParams = body.queryParams;
         // log.debug(`Input params:\n${JSON.stringify(queryParams)}`);
 
-        const { configId, configVersion, datasetId, queryType, insert } =
+        const { configId, configVersion, datasetId, queryType, insert, stream } =
             body.queryParams;
-
+        const dialect = body.dialect;
         let ifrRequest = queryParams.ifrRequest;
-
         const language = "en"; //(queryParams.language) ?  queryParams.language : "en";
-
         const pluginOptionalParams = {
             insert,
             createCohort: true,
@@ -90,42 +89,43 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             userSpecificSettings,
             placeholderMap,
             pluginOptionalParams,
-            censoringThreshold
+            censoringThreshold,
         ).generateQuery();
 
         let queryString;
         if (config.panelOptions.cohortEntryExit) {
             queryString = `
-                INSERT
-                    INTO 
-                    ${placeholderMap["@COHORT"]} (COHORT_DEFINITION_ID,
-                    SUBJECT_ID,
-                    COHORT_START_DATE,
-                    COHORT_END_DATE)
-                WITH cohortdata AS (
-                    SELECT 
-                    "pTable".${placeholderMap["@PATIENT.PATIENT_ID"]} AS SUBJECT_ID,
-                    %(cohortDefinitionId)f AS COHORT_DEFINITION_ID,
-                    "entry" AS COHORT_START_DATE,
-                    "exit" AS COHORT_END_DATE 
-                ${queryResponse.queryObject.queryString}
-                ) 
-                SELECT
-                    COHORT_DEFINITION_ID,
-                    SUBJECT_ID,
-                    COHORT_START_DATE,
-                    COHORT_END_DATE
-                FROM
-                    cohortdata;
-                `;
+                        WITH cohortdata AS (
+                            SELECT 
+                            "pTable".${placeholderMap["@PATIENT.PATIENT_ID"]} AS SUBJECT_ID,
+                            %(cohortDefinitionId)f AS COHORT_DEFINITION_ID,
+                            "entry" AS COHORT_START_DATE,
+                            "exit" AS COHORT_END_DATE 
+                        ${queryResponse.queryObject.queryString}
+                        ) 
+                        SELECT
+                            COHORT_DEFINITION_ID,
+                            SUBJECT_ID,
+                            COHORT_START_DATE,
+                            COHORT_END_DATE
+                        FROM
+                            cohortdata
+                        `;
+            if (!stream) {
+                    queryString = `
+                        INSERT
+                            INTO 
+                            ${placeholderMap["@COHORT"]} (COHORT_DEFINITION_ID,
+                            SUBJECT_ID,
+                            COHORT_START_DATE,
+                            COHORT_END_DATE)
+                        ${queryString}`;
+            } else {
+                queryString = appendDialectSpecificQueries(queryString, dialect); //Currently the hint is applied to Hana and is applied only in streaming use cases.
+            }
+
         } else {
             queryString = `
-                INSERT
-                    INTO
-                    $$SCHEMA$$.COHORT (COHORT_DEFINITION_ID,
-                    SUBJECT_ID,
-                    COHORT_START_DATE,
-                    COHORT_END_DATE)
                 WITH cohortdata AS (
                     SELECT 
                     "pTable".${placeholderMap["@PATIENT.PATIENT_ID"]} AS SUBJECT_ID,
@@ -147,9 +147,25 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                 FROM
                     cohortdata
                 JOIN
-                    obsdata ON cohortdata.SUBJECT_ID = obsdata.PATIENT_ID;
+                    obsdata ON cohortdata.SUBJECT_ID = obsdata.PATIENT_ID
                 `;
+
+                if (!stream) {
+                    queryString = `
+                        INSERT
+                            INTO
+                            ${placeholderMap["@COHORT"]} (COHORT_DEFINITION_ID,
+                            SUBJECT_ID,
+                            COHORT_START_DATE,
+                            COHORT_END_DATE)
+                        ${queryString}`;
+                } else {
+                    queryString = appendDialectSpecificQueries(queryString, dialect); //Currently the hint is applied to Hana and is applied only in streaming use cases.
+                }
         }
+
+        //TODO: Split the parameterPlaceholders accordingly
+
         const response = {
             queryObject: {
                 queryString,
@@ -174,6 +190,18 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         );
     }
 }
+
+function appendDialectSpecificQueries(query: string, dialect: string): string {
+        switch (dialect) {
+            case "hana":
+                if (env.HANA_HINT) {
+                    query = `${query} WITH HINT(${env.HANA_HINT})`;
+                }
+                break;
+            default:
+        }
+        return query;
+    }
 
 function getCensoringThreshold(config: any): string {
     // TODO: discuss where the censoring threshold should be stored

@@ -6,7 +6,7 @@ import ChartContainer from "./ChartContainer";
 import { chartColors } from "./chartColors";
 import ZoomPlusIcon from "./icons/zoom-plus.svg";
 import "./LineChart.scss";
-import { getAxisNameGap } from "../util";
+import { getAxisNameGap, createTooltipFormatter } from "../util";
 
 interface LineChartProps {
   lineChartXAxisData: any[];
@@ -46,7 +46,10 @@ const LineChart: FC<LineChartProps> = ({
 
     tooltip: {
       trigger: "axis",
-      formatter: lineChartFormatConfig?.tooltipFormat,
+      formatter:
+        typeof lineChartFormatConfig?.tooltipFormat === "string"
+          ? createTooltipFormatter(lineChartFormatConfig.tooltipFormat)
+          : lineChartFormatConfig?.tooltipFormat,
       axisPointer: {
         type: "cross",
       },

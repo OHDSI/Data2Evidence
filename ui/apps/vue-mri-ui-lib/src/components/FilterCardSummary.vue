@@ -85,6 +85,7 @@
           :text="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
           :title="getText('MRI_PA_FILTER_SUMMARY_COPY_SQL')"
           classes="button--block"
+          :disabled="chartBusy"
         />
       </div>
     </div>
@@ -96,17 +97,24 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
+import { useNotificationStore } from '../stores/notifications'
 import appButton from '../lib/ui/app-button.vue'
 import icon from '../lib/ui/app-icon.vue'
 import appLabel from '../lib/ui/app-label.vue'
 import bsBadge from '../lib/ui/bs-badge.vue'
 import messageBox from './MessageBox.vue'
 import CreateCohortDefinitionDialog from './CreateCohortDefinitionDialog.vue'
+import { getAttributeName, getAdvanceTimeFilterFormatted } from '../utils/filterCardUtils'
 
 export default {
   name: 'filterCardSummary',
   props: ['unloadBookmarkEv', 'chartBusy'],
+  setup() {
+    return {
+      notificationStore: useNotificationStore(),
+    }
+  },
   data() {
     return {
       bookmarks: [],
@@ -170,7 +178,7 @@ export default {
                   attributes.content[iii].constraints.content &&
                   attributes.content[iii].constraints.content.length > 0
                 ) {
-                  const name = this.getAttributeName(attributes.content[iii].configPath, 'list')
+                  const name = getAttributeName(attributes.content[iii].configPath, this.getMriFrontendConfig, 'list')
                   const visibleConstraints = []
                   const constraints = attributes.content[iii].constraints
                   for (let iv = 0; iv < constraints.content.length; iv += 1) {
@@ -206,7 +214,9 @@ export default {
               }
               const advanceTimeFilter = boolContainers[i].content[ii].advanceTimeFilter
               for (let iii = 0; advanceTimeFilter && iii < advanceTimeFilter.filters.length; iii += 1) {
-                visibleAdvanceTime.push(this.getAdvanceTimeFilterFormatted(advanceTimeFilter.filters[iii]))
+                visibleAdvanceTime.push(
+                  getAdvanceTimeFilterFormatted(advanceTimeFilter.filters[iii], this.getFilterCard, this.getText)
+                )
               }
               const filterCardObj = {
                 visibleAdvanceTime,
@@ -239,7 +249,6 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setToastMessage']),
     unloadBookmark() {
       this.$emit('unloadFilterCardSummaryEv')
     },
@@ -256,84 +265,12 @@ export default {
     async onClickCopySql() {
       const content = this.getResponse()?.data?.sql || ''
       await navigator.clipboard.writeText(content)
-      this.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_COPIED') })
+      this.notificationStore.setToastMessage({ text: this.getText('MRI_PA_FILTER_SUMMARY_SQL_COPIED') })
     },
     onClickCreateCohortDefinition() {
       this.showCohortDefinitionDownloadDialog = true
     },
-    getAdvanceTimeFilterFormatted(filter) {
-      let str = ''
-      const filterCardName = this.getFilterCard(filter.value).props.name
-      const { after_before, other, operator } = filter
-      if (filter.this === 'overlap') {
-        str = this.getOriginSelectionOption(filter.this) + ' ' + filterCardName
-      } else {
-        str =
-          '<b>' +
-          this.getOriginSelectionOption(filter.this) +
-          ' ' +
-          operator +
-          '</b> ' +
-          this.getText('MRI_PA_TEMPORAL_FILTER_DAYS') +
-          ' <b>' +
-          this.getTargetSelectionOption(after_before, other) +
-          '</b> ' +
-          this.getText('MRI_PA_TEMPORAL_FILTER_OF') +
-          ' <b>' +
-          filterCardName +
-          '</b>'
-      }
-      return str
-    },
-    getOriginSelectionOption(val) {
-      const originSelectionOptions = [
-        { key: 'startdate', text: this.getText('MRI_PA_TEMPORAL_FILTER_START') },
-        { key: 'enddate', text: this.getText('MRI_PA_TEMPORAL_FILTER_END') },
-        { key: 'overlap', text: this.getText('MRI_PA_TEMPORAL_FILTER_OVERLAP') },
-      ]
-      const o = originSelectionOptions.find(option => option.key === val)
-      return o ? o.text : val
-    },
-    getTargetSelectionOption(afterBefore, other) {
-      const targetSelectionOptions = [
-        {
-          key: 'before_start',
-          text: this.getText('MRI_PA_TEMPORAL_FILTER_BEFORE_START'),
-        },
-        {
-          key: 'after_start',
-          text: this.getText('MRI_PA_TEMPORAL_FILTER_AFTER_START'),
-        },
-        {
-          key: 'before_end',
-          text: this.getText('MRI_PA_TEMPORAL_FILTER_BEFORE_END'),
-        },
-        {
-          key: 'after_end',
-          text: this.getText('MRI_PA_TEMPORAL_FILTER_AFTER_END'),
-        },
-      ]
-      const o = targetSelectionOptions.find(option => option.key === afterBefore + '_' + other)
-      return o ? o.text : afterBefore + '_' + other
-    },
-    getAttributeName(attributeId, type) {
-      /* Note: This is the current Implementation of Bookmark Rendering. */
-      const attributePath = attributeId.split('.')
-      if (attributePath.length > 3 && type !== 'list') {
-        const attributePathEnd1 = attributePath.pop()
-        const attributePathEnd2 = attributePath.pop()
-        attributePath.pop()
-        attributePath.push(attributePathEnd2)
-        attributePath.push(attributePathEnd1)
-      }
-      const attributeConfigPath = attributePath.join('.')
-      const mriFrontEndConfig = this.getMriFrontendConfig
-      const attribute = mriFrontEndConfig.getAttributeByPath(attributeConfigPath)
-      if (attribute && attribute.oInternalConfigAttribute && attribute.oInternalConfigAttribute.name) {
-        return attribute.oInternalConfigAttribute.name
-      }
-      return attributeId
-    },
+
     isDisplayBadge(filterCard) {
       return this.displayShowCohortEntryExit && (filterCard.isEntry || filterCard.isExit)
     },
@@ -359,8 +296,9 @@ export default {
 <style scoped>
 .sql-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0 10px;
 }
 
 .sql-actions .download-sql,
@@ -369,6 +307,7 @@ export default {
   justify-content: center;
   align-items: center;
   flex: 1;
+  margin: 0;
 }
 
 .filter-card-badge {

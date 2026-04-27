@@ -79,19 +79,19 @@ jobs:
               - "ui/**"
 
       - name: Build Flow base docker image
-        if: steps.file_changes.outputs.flow_base == 'true'
+        if: steps.file_changes.outputs.flow_base == 'true' || contains(github.base_ref, 'release/')
         id: build_flow_base_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
 
       - name: Build i2b2 docker image
-        if: steps.file_changes.outputs.flow_i2b2 == 'true'
+        if: steps.file_changes.outputs.flow_i2b2 == 'true' || contains(github.base_ref, 'release/')
         id: build_i2b2_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
 
       - name: Build data management docker image
-        if: steps.file_changes.outputs.flow_data_management == 'true'
+        if: steps.file_changes.outputs.flow_data_management == 'true' || contains(github.base_ref, 'release/')
         id: build_dm_image
         run: |
           docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
@@ -176,12 +176,12 @@ jobs:
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: UI Setup bun
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.2.23
       - name: UI Build
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         working-directory: ./ui
         env:
           CI: false
@@ -194,11 +194,11 @@ jobs:
           [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
 
       - name: UI docker-compose-local
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
-        if: ${{ steps.file_changes.outputs.flow_package_json == 'true' }}
+        if: steps.file_changes.outputs.flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
           sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
@@ -209,7 +209,7 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
 
       - name: Wait for d2e-ui plugin to be installed
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           echo "Waiting for d2e-ui plugin to be installed..."
           max_attempts=60
@@ -233,10 +233,27 @@ jobs:
           fi
 
       - name: UI Mounting build
-        if: ${{ steps.file_changes.outputs.ui == 'true' }}
+        if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
           docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+
+      - name: Wait for webapi-init to complete
+        run: |
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -qE "Exited \([1-9]"; then
+              echo "webapi-init failed!"
+              docker logs d2e-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
 
       - name: Build e2e Docker image
         run: |

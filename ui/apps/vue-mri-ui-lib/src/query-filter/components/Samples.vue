@@ -492,5 +492,5 @@ const getGenderFromId = (conceptId: number) => {
 </script>
 
 <style lang="scss" scoped>
-@import '../styles/Samples.scss';
+@use '../styles/Samples.scss';
 </style>

@@ -2,18 +2,21 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import React, { ChangeEvent, FC, useCallback, useEffect } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
+import FormHelperText from "@mui/material/FormHelperText";
 import { Box, TextInput } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
 import { useGetDatabasesQuery } from "~/features/flow/slices";
 import {
   markStatusAsDraft,
   selectNodeById,
+  selectNodes,
   setNode,
 } from "~/features/flow/reducers";
 import { NodeState } from "~/features/flow/types";
+import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { SelectSource } from "../../SelectSource/SelectSource";
@@ -27,6 +30,10 @@ export interface DbWriterDrawerProps extends Omit<NodeDrawerProps, "children"> {
 
 interface FormData extends DbWriterNodeData {}
 
+interface FormError {
+  name: { duplicate: boolean };
+}
+
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
@@ -34,6 +41,10 @@ const EMPTY_FORM_DATA: FormData = {
   schemaname: "",
   dataframe: "",
   dbtablename: "",
+};
+
+const EMPTY_FORM_ERROR: FormError = {
+  name: { duplicate: false },
 };
 
 export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
@@ -48,6 +59,8 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
+  const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
+  const allNodes = useSelector(selectNodes);
 
   useEffect(() => {
     if (node.data) {
@@ -68,6 +81,11 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   }, [node.data]);
 
   const handleOk = useCallback(() => {
+    if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
+      setFormError({ name: { duplicate: true } });
+      return;
+    }
+    setFormError(EMPTY_FORM_ERROR);
     const updated: NodeState<DbWriterNodeData> = {
       ...nodeState,
       data: formData,
@@ -76,10 +94,15 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
     dispatch(markStatusAsDraft());
 
     typeof onClose === "function" && onClose();
-  }, [formData]);
+  }, [formData, allNodes, node.id, nodeState, onClose]);
+
+  const handleClose = useCallback(() => {
+    setFormError(EMPTY_FORM_ERROR);
+    typeof onClose === "function" && onClose();
+  }, [onClose]);
 
   return (
-    <NodeDrawer {...props} onOk={handleOk} onClose={onClose}>
+    <NodeDrawer {...props} onOk={handleOk} onClose={handleClose}>
       <Box mb={4}>
         <TextInput
           label="Name"
@@ -88,6 +111,11 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
             onFormDataChange({ name: e.target.value })
           }
         />
+        {formError.name.duplicate && (
+          <FormHelperText error>
+            Duplicate node name exists, please use another name
+          </FormHelperText>
+        )}
       </Box>
       <Box mb={4}>
         <TextInput

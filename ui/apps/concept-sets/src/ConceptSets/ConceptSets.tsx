@@ -254,40 +254,48 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {pageData.map((row) => {
-                      return (
-                        <TableRow key={row.id}>
-                          <TableCell>{row.id}</TableCell>
-                          <TableCell>
-                            {row.name}
-                            {row.shared
-                              ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
-                              : ""}
-                          </TableCell>
-                          <TableCell>{row.createdDate}</TableCell>
-                          <TableCell>{row.modifiedDate}</TableCell>
-                          <TableCell>{row.userName}</TableCell>
-                          <TableCell>
-                            <IconButton
-                              startIcon={
-                                row.createdBy === userName ? (
-                                  <EditIcon />
-                                ) : (
-                                  <VisibilityOnIcon />
-                                )
-                              }
-                              onClick={() => handleAddAndEditConceptSet(row.id)}
-                            />
-                            {row.createdBy === userName && (
+                    {pageData.length > 0 ? (
+                      pageData.map((row) => {
+                        return (
+                          <TableRow key={row.id}>
+                            <TableCell>{row.id}</TableCell>
+                            <TableCell>
+                              {row.name}
+                              {row.shared
+                                ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
+                                : ""}
+                            </TableCell>
+                            <TableCell>{row.createdDate}</TableCell>
+                            <TableCell>{row.modifiedDate}</TableCell>
+                            <TableCell>{row.userName}</TableCell>
+                            <TableCell>
                               <IconButton
-                                startIcon={<DeleteIcon />}
-                                onClick={() => handleDeleteClick(row)}
+                                startIcon={
+                                  row.createdBy === userName ? (
+                                    <EditIcon />
+                                  ) : (
+                                    <VisibilityOnIcon />
+                                  )
+                                }
+                                onClick={() => handleAddAndEditConceptSet(row.id)}
                               />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                              {row.createdBy === userName && (
+                                <IconButton
+                                  startIcon={<DeleteIcon />}
+                                  onClick={() => handleDeleteClick(row)}
+                                />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          {getText(i18nKeys.CONCEPT_SETS__NO_CONCEPT_SETS)}
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

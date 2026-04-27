@@ -804,7 +804,7 @@ export const cdwFHIRConfigDuckdb = {
     },
     tableMapping: {
       "@QUESTIONNAIRERESPONSE": "$$SCHEMA$$.QuestionnaireResponse",
-      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[-36:]", // Take last 36 characters which is an UUID
+      "@QUESTIONNAIRERESPONSE.PATIENT_ID": "patient[9:]", // Skip first 9 characters which is a prefix `Patient/`
       "@PATIENT": '$$SCHEMA$$."Patient"',
       "@PATIENT.PATIENT_ID": "id",
       "@PATIENT.DOD": "deathDate",
@@ -970,6 +970,7 @@ export const paFHIRConfigDuckdb = {
           useRefValue: false,
           category: true,
           measure: true,
+          defaultBinSize: 10,
           filtercard: {
             initial: false,
             visible: true,
@@ -1209,8 +1210,11 @@ export const paFHIRConfigDuckdb = {
   chartOptions: {
     initialAttributes: {
       measures: ["patient.attributes.pcount"],
-      categories: ["patient.attributes.Age"],
-      stackCategory: ["patient.attributes.gendersourcevalue"],
+      categories: [
+        "patient.attributes.gendersourcevalue",
+        "patient.attributes.Age",
+      ],
+      stackCategory: [],
     },
     initialChart: "stacked",
     stacked: {
@@ -1281,5 +1285,6 @@ export const paFHIRConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
+    intersectViewInclusionReport: false,
   },
 };

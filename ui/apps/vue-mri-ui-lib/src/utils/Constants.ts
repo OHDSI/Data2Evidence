@@ -248,6 +248,14 @@ const PDFColorConstOpacity = [
   { originR: 160, originG: 115, originB: 150, newR: 217, newG: 199, newB: 213 },
 ]
 
+const ChartColorway = {
+  NAVY: '#000080',
+  ORANGE: '#f79409',
+  BLUE: '#3e92e0',
+  PINK: '#FB9F9D',
+  YELLOW: '#fcd34b',
+}
+
 const PlotlyFont = {
   color: '#000080',
   family: "'GT-America', sans-serif",
@@ -255,25 +263,9 @@ const PlotlyFont = {
 const PlotlyConsts = {
   layout: {
     barmode: 'stack',
-    bargap: 0.5,
+    bargap: 0.3,
     clickmode: 'event+select',
-    colorway: [
-      '#FDA2A2',
-      '#000E7E',
-      '#A2FDCD',
-      '#FF5E59',
-      '#CCDEF1',
-      '#2599A7',
-      '#FFC4AD',
-      '#999FCB',
-      '#EBF0C8',
-      '#CE7AEB',
-      '#69BBF6',
-      '#FDEEA2',
-      '#9215BC',
-      '#9FC5E8',
-      '#FFD9A5',
-    ],
+    colorway: Object.values(ChartColorway),
     dragmode: 'select',
     font: PlotlyFont,
     hoverlabel: {
@@ -292,6 +284,7 @@ const PlotlyConsts = {
       automargin: true,
       tickson: 'boundaries',
       ticks: 'outside',
+      tickangle: 'auto',
       dividercolor: 'rgba(0,0,0,0.3)',
       type: 'multicategory', // Dynamically toggled with "category" while converting data into Plotly traces
     },
@@ -333,6 +326,7 @@ export default {
   PlotlyConsts,
   AxisIcons,
   AxisId,
+  ChartColorway,
   CohortEntryExit,
   XAxisLabelMaxLength,
 }

@@ -37,6 +37,7 @@ export const publicURLs = [
     '^/system-portal/feature/list$',
     '^/system-portal/config/public/types.*$',
     '^/system-portal/config/public/overview-description$',
+    '^/system-portal/config/public/header-image$',
     '^/index.html$',
     '^/assets/.*$',
     '^/api/.*$',
@@ -75,7 +76,7 @@ export const env = {
     NODE_ENV: _env.NODE_ENV,
     _FORCE_CREATE: _env.WATCH_FUNCTIONS ? JSON.parse(_env.WATCH_FUNCTIONS) : false,
     WATCH: _env.WATCH ? JSON.parse(_env.WATCH) : {},
-    LOGTO_CLIENT_SECRET: _env.LOGTO__CLIENT_SECRET,
+    LOGTO_CLIENT_SECRET: _env.SECURITY_AUTH_OIDC_APISECRET,
     LOGTO_TOKEN_URL: _env.LOGTO__TOKEN_URL,
     LOGTO__ADMIN_SERVER__FQDN_URL: _env.LOGTO__ADMIN_SERVER__FQDN_URL,
     LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: _env.LOGTO__CLIENTID_PASSWORD__BASIC_AUTH,
@@ -126,5 +127,5 @@ export const env = {
     D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 
     CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1',
-    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1'
+    CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1',
 }

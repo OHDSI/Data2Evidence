@@ -1,18 +1,34 @@
 import path from "path";
-import { defineConfig } from "vite";
+import fs from "fs";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import basicSsl from "@vitejs/plugin-basic-ssl";
 
-// https://vitejs.dev/config/
+function copyStencilEntryFiles(): Plugin {
+  return {
+    name: "copy-stencil-entry-files",
+    writeBundle(options) {
+      const outDir = options.dir || "dist";
+      const d4lEsmDir = path.resolve(__dirname, "../../node_modules/@d4l/web-components-library/dist/esm");
+
+      if (!fs.existsSync(d4lEsmDir)) {
+        return;
+      }
+
+      const files = fs.readdirSync(d4lEsmDir);
+      const entryFiles = files.filter(f => f.endsWith(".entry.js"));
+
+      entryFiles.forEach(file => {
+        fs.copyFileSync(path.join(d4lEsmDir, file), path.join(outDir, file));
+      });
+    },
+  };
+}
+
 export default defineConfig(({ command, mode }) => {
   const isProduction = mode === "production";
   const isBuild = command === "build";
-  const entryFile = "lifecycles.tsx";
-
-  console.log("Production :", isProduction);
-  console.log("Build      :", isBuild);
-  console.log("Entry      :", entryFile);
 
   return {
     mode,
@@ -32,6 +48,7 @@ export default defineConfig(({ command, mode }) => {
         domains: ["localhost"],
         certDir: "./.devServer/cert",
       }),
+      copyStencilEntryFiles(),
     ],
     optimizeDeps: {
       include: ["react", "react-dom", "single-spa", "single-spa-react"],
@@ -78,9 +95,15 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 8082,
       cors: true,
+      https: false,
     },
     preview: {
       port: 8082,
+    },
+    test: {
+      globals: true,
+      environment: "jsdom",
+      setupFiles: ["./src/test/setup.ts"],
     },
   };
 });

@@ -41,21 +41,17 @@ def create_datamodel_parent_task(cdm_version: str,
             # Grant write cohort and cohort_definition table privileges to read role
             grant_cohort_write_privileges(schema_dao, cdm_schema, logger)
 
+        create_concept_recommended_table(schema_dao, cdm_schema, logger)
 
-        if cdm_schema != vocab_schema:
-
-            create_concept_recommended_table(schema_dao, cdm_schema, logger)
-
-            # Todo: Add insertion of cdm version to update flow
-            logger.info(f"Inserting dummy CDM Version '{cdm_version}'. Please update after loading vocabulary data.")
-            insert_cdm_version(
-                cdm_version=cdm_version,
-                dbdao=schema_dao,
-                cdm_schema=cdm_schema,
-                vocab_schema=vocab_schema,
-                use_placeholder_values=True
-            )
-
+        # Todo: Add insertion of cdm version to update flow
+        logger.info(f"Inserting dummy CDM Version '{cdm_version}'. Please update after loading vocabulary data.")
+        insert_cdm_version(
+            cdm_version=cdm_version,
+            dbdao=schema_dao,
+            cdm_schema=cdm_schema,
+            vocab_schema=vocab_schema,
+            use_placeholder_values=True
+        )
      
 @task(log_prints=True,
       task_run_name="create_cdm_tables-{schema_name}")

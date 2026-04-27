@@ -1,17 +1,25 @@
 <script setup lang="ts">
+import { useStore } from 'vuex'
 import type { Summary } from '@/query-filter/types/InclusionReportTypes'
 
 defineProps<{
   summary: Summary
 }>()
+
+const store = useStore()
+const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 </script>
 
 <template>
   <div class="summary-section">
-    <h4>Summary Statistics</h4>
+    <h4>{{ getText('MRI_PA_INCLUSION_REPORT_SUMMARY_STATISTICS') }}</h4>
     <div class="summary-data">
-      <p>Total Persons: {{ summary.baseCount }}</p>
-      <p>Matches: {{ summary.finalCount }} ({{ summary.percentMatched }})</p>
+      <p>{{ getText('MRI_PA_INCLUSION_REPORT_TOTAL_PERSONS') }}: {{ summary.baseCount.toLocaleString() }}</p>
+      <p>
+        {{ getText('MRI_PA_INCLUSION_REPORT_MATCHES') }}: {{ summary.finalCount.toLocaleString() }} ({{
+          summary.percentMatched
+        }})
+      </p>
     </div>
   </div>
 </template>

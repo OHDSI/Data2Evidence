@@ -11,11 +11,8 @@
   },
   "imports": {
     "typeorm": "npm:typeorm@0.3.20",
-    "pg": "npm:pg@^8.11.3",
-    "zod": "npm:zod@^3.23.8",
-    "reflect-metadata": "npm:reflect-metadata@^0.2.2",
-    "class-validator": "npm:class-validator@^0.14.0",
-    "class-transformer": "npm:class-transformer@^0.5.1",
+    "pg": "npm:pg@^8.20.0",
+    "zod": "npm:zod@^3.25.76",
     "path": "node:path",
     "crypto": "node:crypto",
     "buffer": "node:buffer",

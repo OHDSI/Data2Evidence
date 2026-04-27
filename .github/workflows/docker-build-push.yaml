@@ -48,13 +48,15 @@ jobs:
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   check_file_changes:
-    environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
+    environment: "github"
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    permissions:
+      contents: read   # Required to check out code
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
       rkernel: ${{ steps.file_changes.outputs.rkernel }}
-      jenv: ${{  job.environment }}
+      jenv: ${{ job.environment }}
     steps:
       - uses: actions/checkout@v4
 
@@ -78,8 +80,11 @@ jobs:
 
   bld:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    permissions:
+      contents: read   # Required to check out code
+      packages: write  # Required to push images to GHCR
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
       DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
@@ -130,7 +135,7 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
-            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
@@ -214,7 +219,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'merge_group'}}
+        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}

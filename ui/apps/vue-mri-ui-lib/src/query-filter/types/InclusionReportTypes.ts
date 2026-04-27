@@ -29,10 +29,35 @@ export interface TreemapNodeChildren {
   size: number
 }
 
+export interface FilterCardDetailAttribute {
+  name: string
+  visibleConstraints: string[]
+}
+
+export interface FilterCardDetail {
+  name: string
+  visibleAttributes: FilterCardDetailAttribute[]
+  visibleAdvanceTime: string[]
+  isExcluded: boolean
+}
+
+/** Each rule can have multiple filter cards (joined by OR) */
+export type RuleFilterCardDetails = FilterCardDetail[]
+
 export interface InclusionReportResponse {
   summary: Summary
   inclusionRuleStats: InclusionRuleStat[]
   treemapData: TreemapData | string
+}
+
+export interface AttritionApiResponse {
+  summary: Summary
+  attritionStats: Array<{
+    id: number
+    name: string
+    isExclude: boolean
+    cumulativeCountSatisfying: number
+  }>
 }
 
 /**

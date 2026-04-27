@@ -40,6 +40,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         const configId = queryParams.configId;
         const configVersion = queryParams.configVersion;
         const datasetId = queryParams.datasetId;
+        const dialect = body.dialect;
         const queryType = queryParams.queryType;
         const bookmarkInputStr = queryParams.bookmarkInputStr;
         let ifrRequest = queryParams.ifrRequest;
@@ -130,7 +131,8 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             userSpecificSettings,
             placeholderMap,
             pluginOptionalParams,
-            censoringThreshold
+            censoringThreshold,
+            dialect
         ).generateQuery();
 
         // set cdm config metadata
@@ -275,21 +277,29 @@ function enrichConfigWithBasicDataInteraction(
     // Update inclusionReportbasicDataConfig.attributes with patient attributes from config
     inclusionReportbasicDataConfig.attributes = config.patient.attributes;
 
-    // Count number of patient.interactions.basicdata filters
-    const ifrRequestWalker = utilsLib.getJsonWalkFunction(ifrRequest);
-    const attributes = ifrRequestWalker("**._attributes.content.*");
-    const countOfBasicDataFilters = attributes.filter((e) =>
-        /patient\.interactions\.basicdata[\d]/.test(e.obj._configPath)
-    ).length;
-
-    // For each basic data filter, add one `basicdata${index}` interaction to config
+    // Extract actual basicdata indices used in the request
     // NOTE: Separate patient.interaction.basicdata configs are required for each basicdata filter.
     // This is because query-gen-svc adds a `ON {filter_1_alias} != {filter_2_alias}` on the JOIN for filters that have the same configPath
+    // We extract the actual indices rather than generating sequential ones, because after
+    // ruleOrder reordering in the selective inclusion report, a subset of masks may only
+    // reference e.g. basicdata2 without basicdata1.
+    const ifrRequestWalker = utilsLib.getJsonWalkFunction(ifrRequest);
+    const attributes = ifrRequestWalker("**._attributes.content.*");
+    const basicDataIndices = new Set<number>();
+    attributes.forEach((e) => {
+        const match = e.obj._configPath.match(
+            /patient\.interactions\.basicdata(\d+)/
+        );
+        if (match) {
+            basicDataIndices.add(parseInt(match[1]));
+        }
+    });
+
     let additionalBasicDataInteractionConfig = {};
-    for (let i = 1; i < countOfBasicDataFilters + 1; i++) {
-        additionalBasicDataInteractionConfig[`basicdata${i}`] =
+    basicDataIndices.forEach((idx) => {
+        additionalBasicDataInteractionConfig[`basicdata${idx}`] =
             inclusionReportbasicDataConfig;
-    }
+    });
     config.patient.interactions = {
         ...config.patient.interactions,
         ...additionalBasicDataInteractionConfig,
@@ -300,7 +310,7 @@ function enrichConfigWithBasicDataInteraction(
         placeholder: "@PATIENT",
         attributeTables: [],
         hierarchy: false,
-        time: true,
+        time: false,
         oneToN: false,
         condition: false,
     });

@@ -17,16 +17,20 @@
     }
   }
 
-  &__back-header {
+  &__breadcrumb {
     display: flex;
     width: 100%;
     align-items: center;
     min-height: 60px;
+    padding: 0 16px;
     border-bottom: 1px solid var(--color-neutral-lighter);
 
-    > button {
-      line-height: 1;
-      margin-right: 10px;
+    .MuiBreadcrumbs-ol {
+      align-items: center;
+    }
+
+    button {
+      vertical-align: baseline;
     }
   }
 

@@ -167,6 +167,7 @@ const fetchInclusionReport = (cohortDefinitionId: string, sourceKey: string, mod
             :generation-status="generationStatus[activeDataset]"
             :patient-count="patientCounts?.[activeDataset]"
             :fetch-inclusion-report="fetchInclusionReport"
+            :show-intersect-view="true"
           />
           <h3 v-if="selectedView === 'analysis'">Analysis</h3>
           <Samples
@@ -182,5 +183,5 @@ const fetchInclusionReport = (cohortDefinitionId: string, sourceKey: string, mod
 </template>
 
 <style lang="scss" scoped>
-@import '../styles/ExecuteSidePanel.scss';
+@use '../styles/ExecuteSidePanel.scss';
 </style>

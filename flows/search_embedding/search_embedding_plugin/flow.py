@@ -2,6 +2,9 @@ import pandas as pd
 import os
 from transformers import AutoTokenizer, AutoModel
 import duckdb
+import torch
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -14,15 +17,20 @@ from _shared_flow_utils.dao.DBDao import DBDao, SupportedDatabaseDialects
 os.environ['plugin_name'] = 'search_embedding_plugin'
 
 # Define global variables for shared configurations
-STEP = 100
+STEP = 1024
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+if device == 'cpu':
+    torch.set_num_threads(max(1, (os.cpu_count() or 1) // 2))
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
-model = AutoModel.from_pretrained("Supabase/gte-small")
+model = AutoModel.from_pretrained("Supabase/gte-small").to(device).eval()
 tmp_embedding_table = 'tmp_embeddings'
 embedding_col_name = 'concept_name_embedding'
 index_col = 'embedding_cos_idx'
 
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
+    logger = get_run_logger()
+    logger.info(f'Device: {device} | PyTorch threads: {torch.get_num_threads()}')
     schema_name = options.schema_name
     database_code = options.database_code
     use_trex_connection = options.use_trex_connection
@@ -59,17 +67,33 @@ def create_embeddings_trex(dbdao, schema_name):
     create_tmp_embedding_table(dbdao, schema_name, tmp_embedding_table, embedding_cols)
 
     ## Generate embedding
-    for i in range(0, length, STEP):
-        concept_name = concept['concept_name'][i:i+STEP].tolist()
-        concept_id = concept['concept_id'][i:i+STEP].tolist()
-        embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
-        columns = list(embedding_cols.keys())
-        col_values = list(zip(concept_id, embeddings))    
-        ## Insert embedding into tmp embedding table
-        dbdao.batch_insert_values(schema_name, tmp_embedding_table, columns, col_values)
-        ## Monitoring embedding progress
-        percent = (i/STEP + 1)/(int(length / STEP) + (length % STEP > 0)) * 100
-        logger.info(f'{round(percent,2)} % completed')
+    columns = list(embedding_cols.keys())
+    total_batches = int(length / STEP) + (length % STEP > 0)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = None
+        for i in range(0, length, STEP):
+            concept_name = concept['concept_name'][i:i+STEP].tolist()
+            concept_id = concept['concept_id'][i:i+STEP].tolist()
+
+            t0 = time.time()
+            embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
+            embed_time = time.time() - t0
+
+            col_values = list(zip(concept_id, embeddings))
+
+            t1 = time.time()
+            if future is not None:
+                future.result()
+            insert_wait_time = time.time() - t1
+
+            future = executor.submit(dbdao.batch_insert_values, schema_name, tmp_embedding_table, columns, col_values)
+
+            percent = round((i // STEP + 1) / total_batches * 100, 2)
+            logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
+
+        if future is not None:
+            future.result()
     
     logger.info("***************** Insert embedding *****************")
     ## Add embedding column to concept table
@@ -99,7 +123,7 @@ def create_embeddings_duckdb(conn, schema_name):
     for i in range(0, length, STEP):
         concept_name = concept['concept_name'][i:i+STEP].tolist()
         concept_id = concept['concept_id'][i:i+STEP]
-        embeddings = embedding_concept_table(concept_name, tokenizer, model).tolist()
+        embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
         rst = pd.DataFrame({'concept_id':concept_id, 'embedding': embeddings})
         ## Insert embedding into tmp embedding table
         conn.execute(f"INSERT INTO {schema_name}.{tmp_embedding_table} SELECT concept_id, embedding FROM rst")
