@@ -223,11 +223,9 @@ jobs:
           if [[ $SHOULD_PUBLISH == true ]]; then
             npm publish
           else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }} 
-            cd ./flows/base/
-            dd if=/dev/zero of=data2evidence-d2e-flows-0.0.99.tgz bs=1M count=501
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
             FAILED=0
-            MAX_SIZE_MIB=500
+            MAX_SIZE_MIB=1 # TODO: restore to 500 after testing
             MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
             shopt -s nullglob
             TGZ_FILES=(*.tgz)
