@@ -19,7 +19,7 @@ import { appendDistributionOverlay } from '../helpers/computeDistributionKDE'
 
 export const meta = {
   id: 'overlay',
-  label: 'Overlay',
+  label: 'Overlapping Histogram',
   hasDistributionOverlay: true,
 }
 
@@ -31,7 +31,7 @@ type Ctx = {
 
 export function apply(traces: any[], layout: any, ctx: Ctx) {
   layout.barmode = 'overlay'
-  layout.bargap = ctx.barGap
+  layout.bargap = 0
   traces.forEach(trace => {
     trace.marker = {
       ...trace.marker,
