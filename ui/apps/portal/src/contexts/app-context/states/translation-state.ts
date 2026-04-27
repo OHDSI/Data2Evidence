@@ -173,6 +173,7 @@ export const i18nDefault = {
     CHANGE_MY_PASSWORD_DIALOG__DIALOG_TITLE: "Change password",
     CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_1: "Hide password",
     CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_2: "Show password",
+    CHANGE_MY_PASSWORD_DIALOG__OLD_PASSWORD_INCORRECT: "The current password is incorrect. Please check your input.",
     CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED: "Password updated",
     CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",
