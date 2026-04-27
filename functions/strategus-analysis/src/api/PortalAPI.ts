@@ -83,4 +83,16 @@ export class PortalAPI {
       throw new Error(`Error updating dataset. ${error}`);
     }
   }
+
+  async deleteDataset(datasetId: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset?datasetId=${datasetId}`;
+      const result = await this.channel.delete(url, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error deleting dataset ${datasetId}. ${error}`);
+      throw new Error(`Error deleting dataset ${datasetId}. ${error}`);
+    }
+  }
 }
