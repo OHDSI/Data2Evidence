@@ -25,3 +25,13 @@ export interface TemplateData {
   filename: string;
   content: string;
 }
+
+export interface StudyMetadata {
+  strategus_json: string;
+  description?: string;
+  email?: string;
+}
+
+export interface StudiesData {
+  [studyId: string]: StudyMetadata;
+}

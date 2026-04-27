@@ -104,6 +104,31 @@ export class GitService {
     return fs.readFileSync(filePath, "utf8");
   }
 
+  // For reading files at nested repo-relative paths (e.g. submodule content).
+  // Unlike readFile() which only allows flat filenames in the target dir,
+  // this accepts paths with '/' but still guards against traversal via '..'.
+  async readFileByPath(relativePath: string): Promise<string> {
+    await this.ensureRepositoryReady();
+
+    if (relativePath.includes("..")) {
+      throw new Error("Invalid path: traversal attempt detected");
+    }
+
+    const cleanPath = relativePath.replace(/^\.\//, "");
+    const fullPath = path.resolve(this.repoDir, cleanPath);
+    const resolvedRepoDir = path.resolve(this.repoDir);
+
+    if (!fullPath.startsWith(resolvedRepoDir + path.sep) && fullPath !== resolvedRepoDir) {
+      throw new Error("Invalid path: outside repository boundary");
+    }
+
+    if (!fs.existsSync(fullPath)) {
+      throw new Error(`File not found at path: ${relativePath}`);
+    }
+
+    return fs.readFileSync(fullPath, "utf8");
+  }
+
   async listFiles(filter?: RegExp): Promise<string[]> {
     await this.ensureRepositoryReady();
 
