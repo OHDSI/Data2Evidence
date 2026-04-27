@@ -71,8 +71,8 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "ui/**"
-              - "functions/**"
-              - "fhir_functions/**"
+              - "plugins/functions/**"
+              - "plugins/fhir_functions/**"
               - "services/trex/ext/**"
               - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
@@ -102,10 +102,10 @@ jobs:
           - PKGPATH: ./flows/data_transformation/
           - PKGPATH: ./ui
             NPM: bun
-          - PKGPATH: ./functions/
+          - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
-          - PKGPATH: ./fhir_functions/
+          - PKGPATH: ./plugins/fhir_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
             RUNNER: ubuntu-24.04
 

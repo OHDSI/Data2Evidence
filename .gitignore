@@ -21,8 +21,8 @@ run_ssh.sh
 *eszip
 **/.parcel-cache/
 !tests/e2e/package-lock.json
-!functions/package-lock.json
-!fhir_functions/package-lock.json
+!plugins/functions/package-lock.json
+!plugins/fhir_functions/package-lock.json
 
 pkg/*.tgz
 target

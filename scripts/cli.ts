@@ -238,7 +238,7 @@ class D2ECli {
       .description("Usage: d2e [OPTIONS] COMMAND")
       .option(
         "-d, --function-path <path>",
-        "[PATH] Development mode. [PATH] is the path to functions",
+        "[PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)",
       )
       .option("-e, --demo", "Include demo database")
       .option("-i, --dicom", "Include DICOM Server")
