@@ -27,6 +27,7 @@ class WhiteRabbitDataType(BaseModel):
 
     # For scanning source database
     databaseCode: Optional[str] = None
+    schema: Optional[str] = None # For source database schema, optional since not needed for scanning CSV files
     tables_to_scan: str = "*" # Comma-separated list of tables to scan
 
     class Config:
