@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "plugins": [],
+  "settings": {
+    "enableHotReload": false,
+    "loadTimeout": 30000,
+    "showLoadingIndicators": true,
+    "header": {
+      "showFeedbackButton": false,
+      "showLanguageSelector": false,
+      "showConfigButton": true,
+      "showUserMenu": true
+    }
+  }
+}

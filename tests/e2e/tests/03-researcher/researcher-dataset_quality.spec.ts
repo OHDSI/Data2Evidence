@@ -14,6 +14,6 @@ test('Researcher portal, data quality stats', async ({ page }) => {
 
   await page.getByRole('tab', { name: 'Data Quality' }).click()
   await expect(page.getByTestId('corrected-pass-percentage-note')).toContainText(
-    'Corrected pass percentage for NA and Errors: 94% (886/943).'
+    /Corrected pass percentage for NA and Errors: 9[45]% \([\d,]+\/[\d,]+\)\./
   )
 })

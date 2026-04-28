@@ -238,7 +238,7 @@ class D2ECli {
       .description("Usage: d2e [OPTIONS] COMMAND")
       .option(
         "-d, --function-path <path>",
-        "[PATH] Development mode. [PATH] is the path to functions",
+        "[PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)",
       )
       .option("-e, --demo", "Include demo database")
       .option("-i, --dicom", "Include DICOM Server")
@@ -514,7 +514,12 @@ class D2ECli {
   patch_demodb() {
     console.log("Patching demodb...");
     const database_host = `${this.PROJECT_NAME}-demodb`;
-    const command = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
+    // Create cohort table if it doesn't exist
+    const createCohortCmd = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
+    // Update CDM version to 5.4 - the broadsea-atlasdb uses CDM 5.4 schema
+    // (e.g., ADMITTED_FROM_CONCEPT_ID instead of ADMITTING_SOURCE_CONCEPT_ID)
+    // but may report version 5.3 in cdm_source
+    const updateCdmVersionCmd = `docker exec ${database_host} psql -h localhost -U postgres -c "UPDATE demo_cdm.cdm_source SET cdm_version = '5.4' WHERE cdm_version != '5.4' OR cdm_version IS NULL"`;
     try {
       const options: any = {
         stdio: "inherit",
@@ -523,7 +528,8 @@ class D2ECli {
       if (process.platform !== "win32") {
         options.shell = "/bin/bash";
       }
-      execSync(command, options);
+      execSync(createCohortCmd, options);
+      execSync(updateCdmVersionCmd, options);
     } catch (error) {
       console.error("Error running patch_demodb:", error);
     }
