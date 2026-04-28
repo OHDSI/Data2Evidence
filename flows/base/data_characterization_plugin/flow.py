@@ -333,7 +333,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 def drop_existing_achilles_tables(results_schema: str, dbdao):
     logger = get_run_logger()
     tables = [
-        "cohort",
+        # "cohort",
         "cohort_censor_stats",
         "cohort_inclusion",
         "cohort_inclusion_result",
