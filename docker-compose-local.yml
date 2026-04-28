@@ -14,8 +14,8 @@ services:
       - 33000:33000
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
-      - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
-      - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
+      - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
+      - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
       # - ./plugins/chat_functions:/usr/src/plugins/chat
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
@@ -23,7 +23,7 @@ services:
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
       - ./services/trex/core:/usr/src/core # For debugging trex with local code
       - ./services/trex/deno.json:/usr/src/deno.json
-      # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
+      # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
