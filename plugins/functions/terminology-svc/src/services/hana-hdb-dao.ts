@@ -17,6 +17,7 @@ import {
 import { env } from "../env.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
 import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
+import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
 function buildOrderByClause(
   sortBy: string | undefined,
@@ -36,11 +37,13 @@ export class HanaHDBDao {
   private readonly jwt: string;
   private readonly vocabSchemaName: string;
   private readonly databaseCode: string;
+  private readonly semanticRatio: number;
 
-  constructor(jwt: string, vocabSchemaName: string, databaseCode: string) {
+  constructor(jwt: string, vocabSchemaName: string, databaseCode: string, semanticRatio = 0) {
     this.jwt = jwt;
     this.vocabSchemaName = vocabSchemaName;
     this.databaseCode = databaseCode;
+    this.semanticRatio = semanticRatio;
     if (!jwt) {
       throw new Error("No token passed for HanaHDBDao!");
     }
@@ -76,10 +79,13 @@ export class HanaHDBDao {
     sortBy?: string,
     sortOrder?: string,
   ) {
+    const textEmbedding = this.semanticRatio > 0 && searchText !== ""
+      ? (await getGTEEmbedding(searchText)).join(",")
+      : "";
     const client = await this.getHanaHDBConnection();
     try {
       const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
-        this.getHanaFtsBaseQuery(searchText, filters);
+        this.getHanaFtsBaseQuery(searchText, filters, [], textEmbedding);
       const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
 
       const conceptsSql = `
@@ -114,9 +120,12 @@ export class HanaHDBDao {
   }
 
   async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
+    const textEmbedding = this.semanticRatio > 0 && searchText !== ""
+      ? (await getGTEEmbedding(searchText)).join(",")
+      : "";
     const client = await this.getHanaHDBConnection();
     try {
-      const [baseQuery, baseParams] = this.getHanaFtsBaseQuery(searchText, filters);
+      const [baseQuery, baseParams] = this.getHanaFtsBaseQuery(searchText, filters, [], textEmbedding);
       const sql = `${baseQuery} select concept_id as id from fts`;
       const result = await this.asyncExec(client, sql, baseParams) as { ID: string }[];
       return result.map((row) => parseInt(row.ID));
@@ -129,10 +138,13 @@ export class HanaHDBDao {
   }
 
   async getConceptsCount(searchText = "", filters: Filters): Promise<number> {
+    const textEmbedding = this.semanticRatio > 0 && searchText !== ""
+      ? (await getGTEEmbedding(searchText)).join(",")
+      : "";
     const client = await this.getHanaHDBConnection();
     try {
       const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
-        this.getHanaFtsBaseQuery(searchText, filters);
+        this.getHanaFtsBaseQuery(searchText, filters, [], textEmbedding);
 
       const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = hanaFtsBaseQueryParams;
@@ -315,10 +327,10 @@ export class HanaHDBDao {
   private getHanaFtsBaseQuery = (
     searchText: string,
     filters: Filters,
-    columns: string[] = []
-  ): [string, string[]] => {
+    columns: string[] = [],
+    textEmbedding = "",
+  ): [string, (string | number)[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
-
     const columnsToSelect = columns.length === 0 ? "*" : columns.join(", ");
 
     if (searchText === "") {
@@ -334,13 +346,20 @@ export class HanaHDBDao {
         `,
         [],
       ];
-    } else {
+    }
+
+    const useHybrid = this.semanticRatio > 0 && textEmbedding !== "";
+    if (useHybrid) {
+      // Hybrid: combine FTS SCORE() with COSINE_SIMILARITY on stored embeddings.
+      // Rows are still filtered by CONTAINS for recall; the combined score re-ranks them.
       return [
         `
         with fts as (
           select
             ${columnsToSelect},
-            SCORE() as score
+            SCORE() as fts_score,
+            COALESCE(COSINE_SIMILARITY(concept_name_embedding, TO_REAL_VECTOR(?)), 0) as embd_score,
+            ((1 - ?) * SCORE() + ? * COALESCE(COSINE_SIMILARITY(concept_name_embedding, TO_REAL_VECTOR(?)), 0)) as score
           from
             ${this.vocabSchemaName}.concept
             WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
@@ -348,10 +367,25 @@ export class HanaHDBDao {
             order by score desc
           )
         `,
-        // Surround searchText with asteriks for greedy search
-        [`*${searchText}*`],
+        [textEmbedding, this.semanticRatio, this.semanticRatio, textEmbedding, `*${searchText}*`],
       ];
     }
+
+    return [
+      `
+      with fts as (
+        select
+          ${columnsToSelect},
+          SCORE() as score
+        from
+          ${this.vocabSchemaName}.concept
+          WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
+          ${filterWhereClause.replace("WHERE", "AND")}
+          order by score desc
+        )
+      `,
+      [`*${searchText}*`],
+    ];
   };
 
   private generateFilterWhereClause(filters: Filters): string {

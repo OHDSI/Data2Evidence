@@ -11,7 +11,21 @@ from prefect.logging import get_run_logger
 from prefect.variables import Variable
 
 from .types import *
-from .utils import *
+from .utils import (
+    embedding_concept_table,
+    check_duckdb_column_exists,
+    create_tmp_embedding_table,
+    add_embedding_column,
+    drop_embedding_index,
+    update_concept_embedding,
+    create_embedding_index,
+    resolve_duckdb_file_path,
+    DUCKDB_EXTENSIONS_FILEPATH,
+    create_hana_tmp_embedding_table,
+    batch_insert_hana_tmp,
+    add_embedding_column_hana,
+    merge_hana_embeddings,
+)
 from _shared_flow_utils.dao.DBDao import DBDao, SupportedDatabaseDialects
 
 os.environ['plugin_name'] = 'search_embedding_plugin'
@@ -35,15 +49,18 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     database_code = options.database_code
     use_trex_connection = options.use_trex_connection
     if use_trex_connection:
-        # -------------------- Trex connection to cache --------------------
+        # -------------------- Trex/HANA connection --------------------
         dbdao = DBDao(
             dialect=SupportedDatabaseDialects.TREX,
             use_cache_db=use_trex_connection,
             database_code=database_code,
         )
-        ## Vss extension is installed by default in trex, just need to load it
-        dbdao.execute_sql("LOAD vss")
-        create_embeddings_trex(dbdao, schema_name)
+        if dbdao.dialect == SupportedDatabaseDialects.HANA:
+            create_embeddings_hana(dbdao, schema_name)
+        else:
+            ## Vss extension is installed by default in trex, just need to load it
+            dbdao.execute_sql("LOAD vss")
+            create_embeddings_trex(dbdao, schema_name)
     else:
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
@@ -51,6 +68,53 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         with duckdb.connect(duckdb_file_path) as conn:
             conn.load_extension(vss_extension_path)
             create_embeddings_duckdb(conn, schema_name)
+
+@task(log_prints=True, task_run_name="embedding_concept_table_hana_{schema_name}.concept")
+def create_embeddings_hana(dbdao, schema_name):
+    logger = get_run_logger()
+    logger.info("***************** Start embedding (HANA) *****************")
+
+    import sqlalchemy as sqla
+    with dbdao.engine.connect() as conn:
+        result = conn.execute(sqla.text(f'SELECT CONCEPT_ID, CONCEPT_NAME FROM "{schema_name}".CONCEPT'))
+        concept = pd.DataFrame(result.fetchall(), columns=['concept_id', 'concept_name'])
+    length = len(concept)
+
+    create_hana_tmp_embedding_table(dbdao, schema_name, tmp_embedding_table)
+
+    total_batches = int(length / STEP) + (length % STEP > 0)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = None
+        for i in range(0, length, STEP):
+            concept_name = concept['concept_name'][i:i+STEP].tolist()
+            concept_id = concept['concept_id'][i:i+STEP].tolist()
+
+            t0 = time.time()
+            embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
+            embed_time = time.time() - t0
+
+            t1 = time.time()
+            if future is not None:
+                future.result()
+            insert_wait_time = time.time() - t1
+
+            future = executor.submit(batch_insert_hana_tmp, dbdao, schema_name, tmp_embedding_table, concept_id, embeddings)
+
+            percent = round((i // STEP + 1) / total_batches * 100, 2)
+            logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
+
+        if future is not None:
+            future.result()
+
+    logger.info("***************** Insert embedding (HANA) *****************")
+    existing_cols = [c.lower() for c in dbdao.get_columns(schema_name, 'CONCEPT')]
+    if embedding_col_name.lower() not in existing_cols:
+        add_embedding_column_hana(dbdao, schema_name, embedding_col_name)
+
+    merge_hana_embeddings(dbdao, schema_name, tmp_embedding_table, embedding_col_name)
+    dbdao.drop_table(schema_name, tmp_embedding_table)
+    logger.info("***************** HANA embedding complete *****************")
+
 
 @task(log_prints=True, task_run_name="embedding_concept_table_{schema_name}.concept")
 def create_embeddings_trex(dbdao, schema_name):
