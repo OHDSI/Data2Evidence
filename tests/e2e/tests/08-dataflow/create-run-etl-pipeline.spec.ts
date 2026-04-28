@@ -100,7 +100,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.keyboard.insertText(content);
   };
 
-  await page.goto('https://localhost:41100/d2e/portal');
+  await page.goto('/d2e/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
