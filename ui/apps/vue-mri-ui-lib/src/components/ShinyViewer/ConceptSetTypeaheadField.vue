@@ -181,19 +181,17 @@ function handleFocus() {
 }
 
 function updateDropdownPosition() {
-  nextTick(() => {
-    const input = inputRef.value
-    if (!input) return
+  const input = inputRef.value
+  if (!input) return
 
-    const rect = input.getBoundingClientRect()
-    dropdownStyle.value = {
-      position: 'fixed',
-      top: `${rect.bottom}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      'z-index': '9999',
-    }
-  })
+  const rect = input.getBoundingClientRect()
+  dropdownStyle.value = {
+    position: 'fixed',
+    top: `${rect.bottom}px`,
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    'z-index': '10002',
+  }
 }
 
 function handleInput() {
