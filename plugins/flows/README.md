@@ -77,8 +77,8 @@ This will produce a renv.lock file
 
 ## Developing a new flow
 ### Develop a new flow with a new folder
-1. Create a subfolder in `flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
-2. After developing flow, cd to `flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
+1. Create a subfolder in `plugins/flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
+2. After developing flow, cd to `plugins/flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
     - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`. 
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -90,7 +90,7 @@ This will produce a renv.lock file
 3. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
 
     PLUGINS_SEED_UPDATE: true
     ```
@@ -102,7 +102,7 @@ This will produce a renv.lock file
     - .github/workflows/flows-plugin-ci.yml
 
 ### Develop a new flow in an existing folder
-1. After developing flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
+1. After developing flow, cd to `plugins/flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
     - package_name: Any package.json name of choice e.g.`d2e-flows`.  This will be added to the pacakge.json name attribute.
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -114,7 +114,7 @@ This will produce a renv.lock file
 2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
 
     PLUGINS_SEED_UPDATE: true
     ```
@@ -131,7 +131,7 @@ The pipeline triggers the flow job first and subsequently sends the bearer token
 
 ## Modifying an existing flow
 ### Modify flow parameters
-1. After modifying flow, cd to `flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
+1. After modifying flow, cd to `plugins/flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
     - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
     - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
     - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
@@ -143,7 +143,7 @@ The pipeline triggers the flow job first and subsequently sends the bearer token
 2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
     ```
     volumes:
-        - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
 
     PLUGINS_SEED_UPDATE: true
     ```
