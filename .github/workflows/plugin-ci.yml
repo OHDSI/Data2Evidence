@@ -70,7 +70,7 @@ jobs:
               - "plugins/flows/**"
               - "package.json"
               - "docker-compose.yml"
-              - "ui/**"
+              - "plugins/ui/**"
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
               - "services/trex/ext/**"
@@ -100,7 +100,7 @@ jobs:
           - PKGPATH: ./plugins/flows/hades/
           - PKGPATH: ./plugins/flows/loyalty_score/
           - PKGPATH: ./plugins/flows/data_transformation/
-          - PKGPATH: ./ui
+          - PKGPATH: ./plugins/ui
             NPM: bun
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions

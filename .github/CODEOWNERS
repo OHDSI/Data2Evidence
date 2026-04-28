@@ -47,14 +47,14 @@
 /services/trex                                       @p-hoffmann
 /tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
-/ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/portal/src/plugins/mri                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui/apps/wizards                                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/portal/src/plugins/mri                      @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/portal/src/plugins/Researcher/ConceptSets   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/portal/src/plugins/Researcher/Terminology   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/concept-sets                                @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
+/plugins/ui/apps/wizards                                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /tests/e2e/tests/02-users                                     @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /tests/e2e/tests/03-researcher                                @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /tests/e2e/tests/04-attribute                                 @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
