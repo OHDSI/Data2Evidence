@@ -127,8 +127,8 @@ jobs:
               - "flows/i2b2/**"
             flow_data_management:
               - "flows/data_management/**"
-            ui: 
-              - "ui/**"
+            ui:
+              - "plugins/ui/**"
 
       - name: Build Flow base docker image
         if: steps.file_changes.outputs.flow_base == 'true' || contains(github.base_ref, 'release/')
