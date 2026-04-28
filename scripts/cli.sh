@@ -395,7 +395,7 @@ Commands:
   setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
 
 Options:
- -d, --function-path [PATH] Development mode. [PATH] is the path to functions
+ -d, --function-path [PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)
  -e, --demo                 Include demo database
  -i, --dicom                Include DICOM Server
  -j, --jupyter              Include jupyter
