@@ -287,10 +287,11 @@ jobs:
             --ipc=host \
             -v "$(pwd)/test-results:/work/test-results" \
             -v "$(pwd)/ctrf:/work/ctrf" \
+            -v "$(pwd)/tests:/work/tests" \
             -e D2E_BASE_URL=https://localhost:443 \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
-            d2e-e2e npm test
+            d2e-e2e npm test -- --update-snapshots --max-failures=0
 
       - name: Upload Error Context
         if: always() # Always run, even if the previous step fails
@@ -298,6 +299,14 @@ jobs:
         with:
           name: error-context
           path: tests/e2e/test-results/**/*
+
+      - name: Upload regenerated screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-snapshots
+          path: tests/e2e/tests/**/*-snapshots/**
+          if-no-files-found: warn
 
       - name: Logs
         if: success() || failure()
