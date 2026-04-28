@@ -37,13 +37,13 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "functions/_shared/alp-libs/nodejs/**"
-              - "functions/analytics-svc/**"
-              - "functions/bookmark-svc/**"
-              - "functions/cdw-svc/**"
-              - "functions/mri-pa-config/**"
-              - "functions/mri-pg-config/**"
-              - "functions/query-gen-svc/**"
+              - "plugins/functions/_shared/alp-libs/nodejs/**"
+              - "plugins/functions/analytics-svc/**"
+              - "plugins/functions/bookmark-svc/**"
+              - "plugins/functions/cdw-svc/**"
+              - "plugins/functions/mri-pa-config/**"
+              - "plugins/functions/mri-pg-config/**"
+              - "plugins/functions/query-gen-svc/**"
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
@@ -121,7 +121,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./plugins/functions init
 
       - name: Initialise HANA
         if: success() || failure()
@@ -139,12 +139,11 @@ jobs:
 
       - name: Build system services
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
           yq -i '.networks.alp.external=true' docker-compose.yml
-          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
       - name: Create network for external to use
         run: |
@@ -152,11 +151,25 @@ jobs:
 
       - name: Start system services
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 start
           echo "Waiting 160 secs for services to start..."
           sleep 160
           echo "Trex Health check..."
           curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
+              echo "webapi-init failed!"
+              docker logs ${PROJECT_NAME:-alp}-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
 
 
       - name: Check status of docker containers

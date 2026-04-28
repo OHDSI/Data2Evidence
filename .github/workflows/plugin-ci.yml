@@ -67,12 +67,12 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/**"
+              - "plugins/flows/**"
               - "package.json"
               - "docker-compose.yml"
               - "ui/**"
-              - "functions/**"
-              - "fhir_functions/**"
+              - "plugins/functions/**"
+              - "plugins/fhir_functions/**"
               - "services/trex/ext/**"
               - ".github/workflows/plugin-ci.yml"
               - ".github/workflows/flows-plugin-ci.yml"
@@ -93,19 +93,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PKGPATH: ./flows/base/
-          - PKGPATH: ./flows/i2b2/
-          - PKGPATH: ./flows/search_embedding/
-          - PKGPATH: ./flows/data_management/
-          - PKGPATH: ./flows/hades/
-          - PKGPATH: ./flows/loyalty_score/
-          - PKGPATH: ./flows/data_transformation/
+          - PKGPATH: ./plugins/flows/base/
+          - PKGPATH: ./plugins/flows/i2b2/
+          - PKGPATH: ./plugins/flows/search_embedding/
+          - PKGPATH: ./plugins/flows/data_management/
+          - PKGPATH: ./plugins/flows/hades/
+          - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./ui
             NPM: bun
-          - PKGPATH: ./functions/
+          - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
-          - PKGPATH: ./fhir_functions/
+          - PKGPATH: ./plugins/fhir_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
             RUNNER: ubuntu-24.04
 
