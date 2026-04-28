@@ -100,7 +100,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.keyboard.insertText(content);
   };
 
-  await page.goto('/d2e/portal');
+  await page.goto('https://localhost:41100/d2e/portal');
   await page.locator('input[name="identifier"]').click();
   await page.locator('input[name="identifier"]').fill('admin');
   await page.locator('input[name="password"]').click();
@@ -111,7 +111,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create dataflow
   await page.getByRole('link', { name: 'ETL' }).click();
-  await page.waitForTimeout(2000); // Wait for 2 seconds to ensure the ETL page and elements are loaded
+  await page.waitForTimeout(1000); // Wait for 1 second to ensure the ETL page and elements are loaded
 
   const createFirstDataflow = page.getByText('Create your first dataflow').first();
   const hasCreateFirstDataflow = await createFirstDataflow
@@ -128,20 +128,28 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Comment' }).fill('DE Testing');
   await page.getByRole('button', { name: 'Create' }).click();
 
-  // Check if 'PythonStableRun python code.' is not present, then click 'Add node' and the button with the same text
-  const pythonNodeText = 'PythonStableRun python code.';
-  const pythonNodeCheck = page.getByText(pythonNodeText);
-  // Wait for the Python node to be visible with a 5-second timeout
-  const isPythonNodeVisible = await pythonNodeCheck.isVisible({ timeout: 5000 }).catch(() => false);
-  // Wait for the timeout and then check if the Python node is visible
-  await page.waitForTimeout(2000);
-  const isPythonNodeVisible2 = await pythonNodeCheck.isVisible();
-  if (!isPythonNodeVisible2) {
+  // Check if 'Output SQL query as table.' is not present, then click 'Add node' and the button with the same text
+  const dbReaderNodeText = 'Output SQL query as table.';
+  const dbReaderNodeCheck = page.getByText(dbReaderNodeText);
+  // Wait for the db reader node to be visible with a 5-second timeout
+  const isDbReaderNodeVisible = await dbReaderNodeCheck.isVisible({ timeout: 5000 }).catch(() => false);
+  // Wait for the timeout and then check if the db reader node is visible
+  await page.waitForTimeout(1000);
+  const isDbReaderNodeVisible2 = await dbReaderNodeCheck.isVisible();
+  if (!isDbReaderNodeVisible2) {
     await page.getByRole('button', { name: 'Add node' }).click();
-    await page.getByText(pythonNodeText).click();
+    await page.getByText(dbReaderNodeText).click();
   } else {
-    await page.getByText(pythonNodeText).click();
+    await page.getByText(dbReaderNodeText).click();
   }
+
+  // Get db reader node reference
+  const dbReaderNode = getNodeByLabel('db_reader_node_0');
+  await expect(dbReaderNode).toBeVisible();
+
+  // Add python node
+  await page.getByRole('button', { name: 'Add node' }).click();
+  await page.getByText('Run python code.').click();
 
   // Click the button to add variables
   const variablesMainButton = page.getByLabel('Variables').getByRole('button');
@@ -198,30 +206,25 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('test_python_node').first().click();
   await page.getByText('test_python_node').first().click();
   await expect(page.locator('[id="single-spa-application\\:system-admin-plugin--flow-lifecycles-js"]')).toMatchAriaSnapshot(`- button "Add node"`);
-  await page.getByRole('button', { name: 'Add node' }).click();
-  await page.getByText('Output SQL query as table.').click();
 
-  // Get db reader node reference
-  const dbReaderNode = getNodeByLabel('db_reader_node_0');
-  await expect(dbReaderNode).toBeVisible();
-
-  await expect(page.locator('[id="single-spa-application\\:system-admin-plugin--flow-lifecycles-js"]')).toMatchAriaSnapshot(`- button "Add node"`);
+  //Add python 2 table node
   await page.getByRole('button', { name: 'Add node' }).click();
-  await page.getByText('Transform python object to').click();
+  await page.getByText('Transform python object to table').click();
   const py2tableNodeTestId = await getNodeTestIdByLabel('py2table_node_0');
   const py2tableNode = page.getByTestId(py2tableNodeTestId);
   await py2tableNode.click();
   await expect(py2tableNode).toMatchAriaSnapshot(`- text: Describe the task of node py2table_node_0`);
 
-  // Add another node after py2table node with text `SQLStableRun SQL in a database`
+  // Add SQL node
   await page.getByRole('button', { name: 'Add node' }).click();
-  await page.getByText('SQLStableRun SQL in a database').click();
+  await page.getByText('Run SQL in a database').click();
   const sqlNodeTestId = await getNodeTestIdByLabel('sql_node_0');
   const sqlNode = page.getByTestId(sqlNodeTestId);
   await expect(sqlNode).toMatchAriaSnapshot(`- text: Describe the task of node sql_node_0`);
 
+  // Add database writer node
   await page.getByRole('button', { name: 'Add node' }).click();
-  await page.getByText('Database writerStableWrite').click();
+  await page.getByText('Database writer').click();
   const dbWriterNodeTestId = await getNodeTestIdByLabel('db_writer_node_0');
   const dbWriterNode = page.getByTestId(dbWriterNodeTestId);
   await expect(dbWriterNode).toMatchAriaSnapshot(`- text: Describe the task of node db_writer_node_0`);
