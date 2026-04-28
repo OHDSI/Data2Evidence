@@ -3,6 +3,7 @@ import { EntityManager, In } from "npm:typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TransactionRunner } from "../../common/data-source/transaction-runner.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
+import { getDbCredentialsByCode } from "../../env.ts";
 import { createLogger } from "../../logger.ts";
 import { TenantService } from "../../tenant/tenant.service.ts";
 import {
@@ -15,6 +16,7 @@ import {
   IDatasetReleaseDto,
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
+import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
 import {
   DatasetAttributeRepository,
@@ -49,6 +51,7 @@ export class DatasetCommandService {
     private readonly datasetCodeRepo: DatasetCodeRepository,
     private readonly datasetCodeQueryRepo: DatasetCodeQueryRepository,
     private readonly requestContextService: RequestContextService,
+    private readonly webApiSourceService: WebApiSourceService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
@@ -111,7 +114,20 @@ export class DatasetCommandService {
 
       return result;
     };
-    return this.transactionRunner.run(createDatasetFn, datasetDto);
+    // First sync to WebAPI - fail fast if WebAPI is not accessible
+    await this.syncDatasetToWebApi({
+      id: datasetDto.id,
+      databaseCode: datasetDto.databaseCode,
+      dialect: datasetDto.dialect,
+      schemaName: datasetDto.schemaName,
+      vocabSchemaName: datasetDto.vocabSchemaName,
+      resultSchemaName: datasetDto.resultSchemaName,
+    }, datasetDto.detail);
+
+    // Then create dataset in database
+    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    return result;
   }
 
   async createRelease(datasetReleaseDto: IDatasetReleaseDto) {
@@ -152,10 +168,22 @@ export class DatasetCommandService {
         };
       }
     };
-    return this.transactionRunner.run(deleteDatasetFn, id);
+    const result = await this.transactionRunner.run(deleteDatasetFn, id);
+
+    // Delete from WebAPI (fire-and-forget, don't block dataset deletion)
+    const authToken = this.requestContextService.getOriginalToken();
+    if (authToken) {
+      this.webApiSourceService.deleteSourceForDataset(id, authToken)
+        .catch((err) => this.logger.error(`WebAPI delete failed for ${id}: ${err}`));
+    }
+
+    return result;
   }
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
+    // Cache/snapshot datasets do NOT create WebAPI sources - they use the source dataset's WebAPI source
+    // The TrexSQL cache is created for the source dataset, not for snapshots
+
     const createSnapshotFn = async (
       entityMgr: EntityManager,
       snapshotDto: IDatasetSnapshotDto,
@@ -318,7 +346,9 @@ export class DatasetCommandService {
 
       return newDatasetResult;
     };
-    return this.transactionRunner.run(createSnapshotFn, snapshotDto);
+
+    const result = await this.transactionRunner.run(createSnapshotFn, snapshotDto);
+    return result;
   }
 
   async updateDatasetDetailMetadata(
@@ -815,5 +845,46 @@ export class DatasetCommandService {
       (leftItems) =>
         !right.some((rightItems) => compareFunction(leftItems, rightItems)),
     );
+  }
+
+  private async syncDatasetToWebApi(
+    datasetInfo: {
+      id: string;
+      databaseCode: string;
+      dialect?: string;
+      schemaName?: string;
+      vocabSchemaName?: string;
+      resultSchemaName?: string;
+    },
+    detail: DatasetDetail | { name: string },
+  ): Promise<void> {
+    const dbCredentials = getDbCredentialsByCode(datasetInfo.databaseCode);
+    if (!dbCredentials) {
+      throw new HttpException(400, `No database credentials found for ${datasetInfo.databaseCode}`);
+    }
+
+    const authToken = this.requestContextService.getOriginalToken();
+    if (!authToken) {
+      throw new HttpException(401, "No auth token available for WebAPI sync");
+    }
+
+    const dataset = {
+      id: datasetInfo.id,
+      dialect: datasetInfo.dialect,
+      schemaName: datasetInfo.schemaName,
+      vocabSchemaName: datasetInfo.vocabSchemaName,
+      resultSchemaName: datasetInfo.resultSchemaName,
+    } as Dataset;
+
+    const detailEntity = "datasetId" in detail
+      ? detail as DatasetDetail
+      : { name: detail.name } as DatasetDetail;
+
+    try {
+      await this.webApiSourceService.syncSourceForDataset(dataset, detailEntity, dbCredentials, authToken);
+    } catch (err) {
+      this.logger.error(`WebAPI sync failed for ${datasetInfo.id}: ${err}`);
+      throw new HttpException(502, `Failed to create WebAPI source: ${err}`);
+    }
   }
 }

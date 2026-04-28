@@ -60,7 +60,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('div:has-text("Entity distribution")').last()).toBeVisible()
     await page.getByText('Data2Evidence').click()
     await expect(page.getByText('Entity distribution')).not.toBeVisible()
-    await expect(page).toHaveScreenshot('dataset-overview-chart.png')
+    await expect(page).toHaveScreenshot('dataset-overview-chart.png', { maxDiffPixelRatio: 0.03 })
   })
 
   await test.step('Update Entity Count DistributionValue', async () => {

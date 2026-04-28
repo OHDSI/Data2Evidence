@@ -2,6 +2,39 @@ import process from "node:process";
 
 const _env = Deno.env.toObject();
 
+// Database credential from Trex.databaseManager()
+interface ITrexDbCredential {
+  code: string;
+  host: string;
+  port: number;
+  name: string;
+  dialect: string;
+  credentials: Array<{
+    username: string;
+    password: string;
+    userScope: string;
+  }>;
+}
+
+const getDatabaseCredentialsFromTrex = (): ITrexDbCredential[] => {
+  try {
+    // @ts-ignore Trex is a global provided by the runtime
+    const dbm = Trex.databaseManager();
+    return dbm.getDatabaseCredentials() as ITrexDbCredential[];
+  } catch {
+    return [];
+  }
+};
+
+// Cache credentials at module load
+let _cachedDbCredentials: ITrexDbCredential[] | null = null;
+const getDbCredentials = (): ITrexDbCredential[] => {
+  if (_cachedDbCredentials === null) {
+    _cachedDbCredentials = getDatabaseCredentialsFromTrex();
+  }
+  return _cachedDbCredentials;
+};
+
 export const env = {
   SERVICE_ROUTES: process.env.SERVICE_ROUTES || "{}",
   NODE_ENV: _env.NODE_ENV,
@@ -44,3 +77,39 @@ export const env = {
 };
 
 export const services = JSON.parse(env.SERVICE_ROUTES);
+
+export const getDbCredentialsByCode = (databaseCode: string): {
+  host: string;
+  port: number | string;
+  database: string;
+  dialect: string;
+  username: string;
+  password: string;
+} | null => {
+  const credentials = getDbCredentials();
+
+  for (const cred of credentials) {
+    if (cred.code === databaseCode) {
+      const readCred = cred.credentials?.find(c => c.userScope === 'Read')
+        || cred.credentials?.[0];
+
+      if (!readCred?.username || !readCred?.password) {
+        console.warn(
+          `No usable database credentials found for code "${databaseCode}".`,
+        );
+        return null;
+      }
+
+      return {
+        host: cred.host,
+        port: cred.port,
+        database: cred.name,
+        dialect: cred.dialect === 'postgres' ? 'postgresql' : cred.dialect,
+        username: readCred.username,
+        password: readCred.password,
+      };
+    }
+  }
+
+  return null;
+};
