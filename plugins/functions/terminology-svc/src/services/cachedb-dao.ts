@@ -14,11 +14,14 @@ import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.t
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
-  hasSearchTerm: boolean
+  hasSearchTerm: boolean,
 ): string {
-  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  const defaultOrder = hasSearchTerm
+    ? "ORDER BY score DESC"
+    : "ORDER BY concept_name ASC";
   if (!sortBy) return defaultOrder;
-  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy))
+    return defaultOrder;
   if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
 
   const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
@@ -64,7 +67,11 @@ export class CachedbDAO {
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
-      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+      const orderByClause = buildOrderByClause(
+        sortBy,
+        sortOrder,
+        searchText !== "",
+      );
 
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
@@ -75,7 +82,11 @@ export class CachedbDAO {
       `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [...duckdbFtsBaseQueryParams, rowsPerPage, offset];
+      const conceptsSqlParams = [
+        ...duckdbFtsBaseQueryParams,
+        rowsPerPage,
+        offset,
+      ];
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -105,8 +116,11 @@ export class CachedbDAO {
         this.semanticRatio > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
-      const [baseQuery, baseParams] =
-        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+      const [baseQuery, baseParams] = this.getOptimizedSearchQuery(
+        searchText,
+        textEmbedding,
+        filters,
+      );
 
       const sql = `${baseQuery} select concept_id as id from fts`;
       const result = await client.query(sql, baseParams);
@@ -344,8 +358,8 @@ export class CachedbDAO {
         select 
           sem_fts_scores.${columnsToSelect},
           (
-            ${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from sem_fts_scores) + 
-            (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from sem_fts_scores)
+            ${this.semanticRatio} * COALESCE((select max(embd_score) from sem_fts_scores) - embd_score, 0) / NULLIF((select max(embd_score) from sem_fts_scores), 0) + 
+            (1-${this.semanticRatio}) * COALESCE(fts_score / NULLIF((select max(fts_score) from sem_fts_scores), 0), 0)
           ) as hybrid_score
         from 
           sem_fts_scores
@@ -451,15 +465,15 @@ export class CachedbDAO {
               ${filterWhereClause}
             ),
           search_scores as (
-            select 
+            select
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-              (
-                ${this.semanticRatio} * 
-                (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) + 
-                (1 - ${this.semanticRatio}) * 
-                fts_score / (select max(fts_score) from sem_fts_scores)
+              100 * (
+                ${this.semanticRatio} *
+                COALESCE((select max(embd_score) from sem_fts_scores) - embd_score, 0) / NULLIF((select max(embd_score) from sem_fts_scores), 0) +
+                (1 - ${this.semanticRatio}) *
+                COALESCE(fts_score / NULLIF((select max(fts_score) from sem_fts_scores), 0), 0)
               ) as search_score
-            from 
+            from
               sem_fts_scores
           )
         `;
