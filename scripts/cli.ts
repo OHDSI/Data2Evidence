@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.13.0-beta"; // Update this as needed
-  default_version: string = "0.13.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.15.0-beta"; // Update this as needed
+  default_version: string = "0.15.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -238,7 +238,7 @@ class D2ECli {
       .description("Usage: d2e [OPTIONS] COMMAND")
       .option(
         "-d, --function-path <path>",
-        "[PATH] Development mode. [PATH] is the path to functions",
+        "[PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)",
       )
       .option("-e, --demo", "Include demo database")
       .option("-i, --dicom", "Include DICOM Server")

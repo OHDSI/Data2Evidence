@@ -35,13 +35,13 @@ generate_lock() {
 }
 
 echo "Generating deno.lock files for functions..."
-for dir in "$ROOT_DIR"/functions/*/; do
+for dir in "$ROOT_DIR"/plugins/functions/*/; do
     [[ -d "$dir" ]] && generate_lock "$dir"
 done
 
 echo ""
 echo "Generating deno.lock files for fhir_functions..."
-for dir in "$ROOT_DIR"/fhir_functions/*/; do
+for dir in "$ROOT_DIR"/plugins/fhir_functions/*/; do
     [[ -d "$dir" ]] && generate_lock "$dir"
 done
 

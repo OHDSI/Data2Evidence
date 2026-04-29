@@ -75,10 +75,7 @@ x-envs:
 services:
   # OHDSI WebAPI for Atlas3 (with trex dependencies)
   trex:
-    build:
-      context: ./services/trex
-      dockerfile: Dockerfile.v2
-    image: trex-webapi:latest
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
@@ -585,9 +582,10 @@ services:
 
         # Enable if need to access admin console
         # http://localhost:3002 {
-        #   uri strip_prefix /d2e/logto
         #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
-        #     import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+        #     header_up Host {host}
+        #     header_up X-Forwarded-Proto http
+        #     header_up X-Forwarded-Port 3002
         #     transport http {
         #       read_buffer 8192
         #     }
@@ -603,6 +601,18 @@ services:
           handle @oidc {
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
           }
+
+          # Enable if need to access admin console
+          # @admin_api path /api/*
+          # handle @admin_api {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002
+          # }
+          
+          # @admin_auth path /sign-in* /sign-up* /consent* /forgot-password* /callback/* /social/*
+          # handle @admin_auth {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
+          # }
+
           respond 404
         }
 
@@ -621,6 +631,7 @@ services:
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
       # - 3002:3002 # Enable if need to access admin console
+      # - 8080:8080 # Enable if need to access admin console
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data

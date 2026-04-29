@@ -8,7 +8,7 @@ const path = require("path");
 
 const SEED_FILE = path.join(
   __dirname,
-  "../functions/mri-pg-config/src/db/seeds/03_Config.ts"
+  "../plugins/functions/mri-pg-config/src/db/seeds/03_Config.ts"
 );
 
 if (!fs.existsSync(SEED_FILE)) {
