@@ -87,7 +87,7 @@ export class PortalAPI {
   async deleteDataset(datasetId: string) {
     try {
       const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/dataset?datasetId=${datasetId}`;
+      const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(datasetId)}`;
       const result = await this.channel.delete(url, options);
       return result.data;
     } catch (error) {
