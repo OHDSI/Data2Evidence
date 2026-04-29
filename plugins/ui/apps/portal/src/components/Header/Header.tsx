@@ -74,7 +74,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {portalType === "public" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectPublicDataset />
               </li>
               <PublicStudyOverviewNav />
@@ -84,7 +83,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {isAuth && portalType === "researcher" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectDataset />
                 <SelectRelease />
               </li>
