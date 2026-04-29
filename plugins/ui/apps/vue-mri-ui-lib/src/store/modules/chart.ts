@@ -48,6 +48,8 @@ const state = {
   // stacked bar chart display mode and overlay toggle
   barDisplayMode: 'stack',
   showDistributionOverlay: false,
+  // saved X1 binsize prior to entering Kernel Density Plot mode (for restoration)
+  previousXAxisBinsize: null,
 }
 
 // Cancel tokens
@@ -365,8 +367,46 @@ const actions = {
     dispatch('setIFRState', { ifr: initialIFR })
     dispatch('setupChartDefaults')
   },
-  setBarDisplayMode({ commit }, modeId: string) {
+  setBarDisplayMode({ commit, dispatch, state, rootGetters }, modeId: string) {
+    const previousMode = state.barDisplayMode
+    const X1 = Constants.MRIChartDimensions.X1
+    let binsizeChanged = false
+
+    if (modeId === 'distribution' && previousMode !== 'distribution') {
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
+      const currentBinsize = xAxis?.props?.binsize ?? null
+      commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, currentBinsize)
+      if (currentBinsize !== 0) {
+        dispatch('setAxisValue', { id: X1, props: { binsize: 0 } })
+        binsizeChanged = true
+      }
+    } else if (previousMode === 'distribution' && modeId !== 'distribution') {
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
+      const currentBinsize = xAxis?.props?.binsize ?? null
+      let restoreBinsize = state.previousXAxisBinsize
+      if (restoreBinsize === null || restoreBinsize === undefined) {
+        const attributeId = xAxis?.props?.attributeId
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        if (attributeId && mriFrontendConfig) {
+          const attrCfg = mriFrontendConfig.getAttributeByPath(attributeId)
+          const defaultBin = attrCfg && attrCfg.getDefaultBinSize ? attrCfg.getDefaultBinSize() : undefined
+          restoreBinsize = defaultBin === undefined || defaultBin === null ? '' : defaultBin
+        } else {
+          restoreBinsize = ''
+        }
+      }
+      if (restoreBinsize !== currentBinsize) {
+        dispatch('setAxisValue', { id: X1, props: { binsize: restoreBinsize } })
+        binsizeChanged = true
+      }
+      commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)
+    }
+
     commit(types.SET_BAR_DISPLAY_MODE, modeId)
+
+    if (binsizeChanged) {
+      dispatch('setFireRequest')
+    }
   },
   setShowDistributionOverlay({ commit }, value: boolean) {
     commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, value)
@@ -424,6 +464,9 @@ const mutations = {
   },
   [types.SET_SHOW_DISTRIBUTION_OVERLAY](modulestate, value: boolean) {
     modulestate.showDistributionOverlay = value
+  },
+  [types.SET_PREVIOUS_X_AXIS_BINSIZE](modulestate, value) {
+    modulestate.previousXAxisBinsize = value
   },
 }
 

@@ -2,6 +2,9 @@ type KDEOptions = {
   numPoints?: number
   xMin?: number
   xMax?: number
+  // Optional kernel centers in data space, one per category. When omitted, integer
+  // indices [0..n-1] are used (legacy index-space behavior).
+  xPositions?: number[]
 }
 
 type KDEResult = {
@@ -9,14 +12,36 @@ type KDEResult = {
   perTrace: Array<{ density: number[]; scaledDensity: number[] } | null>
 }
 
+// Silverman's rule of thumb: bandwidth = 1.06 * stdDev * n^(-1/5)
+const SILVERMAN_FACTOR = 1.06
+const SILVERMAN_EXPONENT = -1 / 5
+// Bars are centered on integer indices, so the index-space axis extends a half bin past each end.
+const BAR_HALF_WIDTH = 0.5
+// Grid resolution heuristic: enough points for a smooth curve without over-sampling tiny histograms.
+const MIN_GRID_POINTS = 200
+const GRID_POINTS_PER_CATEGORY = 20
+
 const gaussian = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
 
 export function computeKDE(traces: Array<{ y?: Array<number | string> }>, options: KDEOptions = {}): KDEResult {
   const firstY = traces[0]?.y || []
   const numCategories = firstY.length
-  const xMin = options.xMin ?? -0.5
-  const xMax = options.xMax ?? numCategories - 0.5
-  const numPoints = options.numPoints ?? Math.max(200, numCategories * 20)
+  const positions =
+    options.xPositions && options.xPositions.length === numCategories
+      ? options.xPositions
+      : Array.from({ length: numCategories }, (_, i) => i)
+  const usingDataSpace = !!options.xPositions
+  const defaultMin = usingDataSpace ? Math.min(...positions) : -BAR_HALF_WIDTH
+  const defaultMax = usingDataSpace ? Math.max(...positions) : numCategories - BAR_HALF_WIDTH
+  const xMin = options.xMin ?? defaultMin
+  const xMax = options.xMax ?? defaultMax
+  const numPoints = options.numPoints ?? Math.max(MIN_GRID_POINTS, numCategories * GRID_POINTS_PER_CATEGORY)
+
+  // Average spacing between adjacent kernel centers — used as the std-dev fallback when all
+  // weight sits in a single bin (variance = 0). For integer positions this is 1, matching the
+  // previous behavior; for arbitrary positions it scales with the data.
+  const positionSpacing =
+    numCategories > 1 ? (positions[numCategories - 1] - positions[0]) / (numCategories - 1) : 1
 
   const step = numPoints > 1 ? (xMax - xMin) / (numPoints - 1) : 0
   const xGrid = Array.from({ length: numPoints }, (_, i) => xMin + i * step)
@@ -26,15 +51,16 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
     const totalWeight = yVals.reduce((s, v) => s + v, 0)
     if (totalWeight === 0) return null
 
-    const wMean = yVals.reduce((s, v, idx) => s + v * idx, 0) / totalWeight
-    const wVariance = yVals.reduce((s, v, idx) => s + v * (idx - wMean) ** 2, 0) / totalWeight
-    const stdDev = Math.sqrt(wVariance) || 1
-    const bandwidth = 1.06 * stdDev * Math.pow(totalWeight, -0.2)
+    const wMean = yVals.reduce((s, v, idx) => s + v * positions[idx], 0) / totalWeight
+    const wVariance = yVals.reduce((s, v, idx) => s + v * (positions[idx] - wMean) ** 2, 0) / totalWeight
+    const rawStdDev = Math.sqrt(wVariance)
+    const stdDev = rawStdDev > 0 ? rawStdDev : positionSpacing
+    const bandwidth = SILVERMAN_FACTOR * stdDev * Math.pow(totalWeight, SILVERMAN_EXPONENT)
 
     const density = xGrid.map(x => {
       let sum = 0
       yVals.forEach((weight, idx) => {
-        sum += weight * gaussian((x - idx) / bandwidth)
+        sum += weight * gaussian((x - positions[idx]) / bandwidth)
       })
       return sum / (totalWeight * bandwidth)
     })
@@ -59,8 +85,8 @@ export function appendDistributionOverlay(traces: any[], layout: any, colorway: 
   const numCategories = originalTraces[0]?.y?.length || 0
   if (numCategories <= 1) return
 
-  const xMin = -0.5
-  const xMax = numCategories - 0.5
+  const xMin = -BAR_HALF_WIDTH
+  const xMax = numCategories - BAR_HALF_WIDTH
   const { xGrid, perTrace } = computeKDE(originalTraces, { xMin, xMax })
 
   originalTraces.forEach((trace, i) => {

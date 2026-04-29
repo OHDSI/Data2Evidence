@@ -19,6 +19,20 @@ type Ctx = {
   colorway: string[]
 }
 
+// Try to interpret a 1D x-array as numeric positions. Returns null when the data is
+// multi-level or any value is not a finite number, so the caller can fall back to
+// index-space behavior for categorical data.
+function tryParseNumericPositions(origX: any[]): number[] | null {
+  if (!origX.length || Array.isArray(origX[0])) return null
+  const positions: number[] = []
+  for (const v of origX) {
+    const n = typeof v === 'number' ? v : parseFloat(String(v))
+    if (!Number.isFinite(n)) return null
+    positions.push(n)
+  }
+  return positions
+}
+
 export function apply(traces: any[], layout: any, ctx: Ctx) {
   layout.barmode = 'overlay'
   layout.bargap = ctx.barGap
@@ -31,9 +45,29 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
     ? origX[0].map((_: unknown, ci: number) => origX.map((level: any) => level[ci]).join(' / '))
     : origX.map(String)
 
-  const xMin = -0.5
-  const xMax = numCategories - 0.5
-  const { xGrid, perTrace } = computeKDE(traces, { xMin, xMax })
+  const xPositions = tryParseNumericPositions(origX)
+  let xMin: number
+  let xMax: number
+  let tickvals: number[]
+  let kdeOptions: { xMin: number; xMax: number; xPositions?: number[] }
+
+  if (xPositions && xPositions.length === numCategories) {
+    xMin = Math.min(...xPositions)
+    xMax = Math.max(...xPositions)
+    if (xMin === xMax) {
+      xMin -= 0.5
+      xMax += 0.5
+    }
+    tickvals = xPositions
+    kdeOptions = { xMin, xMax, xPositions }
+  } else {
+    xMin = -0.5
+    xMax = numCategories - 0.5
+    tickvals = categoryLabels.map((_: unknown, i: number) => i)
+    kdeOptions = { xMin, xMax }
+  }
+
+  const { xGrid, perTrace } = computeKDE(traces, kdeOptions)
 
   const kdeTraces = traces
     .map((trace, i) => {
@@ -59,7 +93,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
   kdeTraces.forEach(t => traces.push(t))
 
   layout.xaxis.type = 'linear'
-  layout.xaxis.tickvals = categoryLabels.map((_: unknown, i: number) => i)
+  layout.xaxis.tickvals = tickvals
   layout.xaxis.ticktext = categoryLabels
   layout.xaxis.range = [xMin, xMax]
   layout.xaxis.autorange = false
