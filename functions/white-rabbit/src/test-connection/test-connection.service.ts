@@ -57,16 +57,6 @@ export class TestConnectionService {
       );
     }
 
-    this.logger.info(
-      `creds: ${JSON.stringify({
-        host: dbCredential.host,
-        port: parseInt(dbCredential.port),
-        database: dbCredential.name,
-        user: readCred.username,
-        password: readCred.password,
-      })}`,
-    );
-
     const client = new pg.Client({
       host: dbCredential.host,
       port: parseInt(dbCredential.port),
