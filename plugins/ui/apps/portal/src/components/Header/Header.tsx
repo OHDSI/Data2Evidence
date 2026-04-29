@@ -1,6 +1,5 @@
 import React, { FC, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowCircleLeftIcon, IconButton } from "@portal/components";
 import { IPlugin, NavLink, Plugins } from "../../types";
 import MenuTab from "./MenuTab/MenuTab";
 import PublicStudyOverviewNav from "./PublicStudyOverviewNav/PublicStudyOverviewNav";
