@@ -1,0 +1,16 @@
+{
+  "name": "cohort-materializer-service",
+  "version": "1.0.0",
+  "description": "Express API to run HANA streaming batch inserts",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@sap/hana-client": "2.28.19",
+    "dotenv": "16.4.5",
+    "express": "5.2.1"
+  }
+}

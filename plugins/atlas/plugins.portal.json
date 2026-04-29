@@ -1,0 +1,24 @@
+{
+  "version": "1.0",
+  "plugins": [],
+  "settings": {
+    "enableHotReload": false,
+    "loadTimeout": 30000,
+    "showLoadingIndicators": true,
+    "theme": {
+      "primaryColor": "#000080",
+      "logoUrl": "/atlas/config/d2e2.svg",
+      "logoNavigateTo": "/cohorts"
+    },
+    "header": {
+      "showNavBar": false,
+      "showFeedbackButton": false,
+      "showLanguageSelector": false,
+      "showConfigButton": false,
+      "showUserMenu": false
+    },
+    "navigation": {
+      "enabledCoreItems": ["cohorts"]
+    }
+  }
+}
