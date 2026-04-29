@@ -29,10 +29,10 @@ import { applyTheme } from './utils/ThemeManager'
 
 let app: Component
 const portalAPI = getPortalAPI()
-const isLocal = 'isLocal' in portalAPI && portalAPI.isLocal === true
+const isAtlas = portalAPI?.isAtlas === true
 import './styles/themes/_main.scss'
 
-if (isLocal) {
+if (isAtlas) {
   app = createApp(RootLayout as unknown as Component)
   applyTheme('atlas')
 
