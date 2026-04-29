@@ -123,7 +123,6 @@ export default class StrategusAnalysisService {
     }
 
     async deleteStrategusAnalysis(token: string, studyId: string) {
-        this.token = token;
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });

@@ -128,13 +128,13 @@ export default class StrategusAnalysisRouter {
   private async deleteStrategusAnalysis(req: Request, res: Response) {
     try {
       const studyId = req.params.studyId;
-      const token = req.headers["authorization"];
       if (!studyId) {
         return res.status(400).json({
           message: "Missing required field: studyId",
         });
       }
 
+      const token = req.headers["authorization"];
       const result = await this.strategusAnalysisService.deleteStrategusAnalysis(
         token,
         studyId
