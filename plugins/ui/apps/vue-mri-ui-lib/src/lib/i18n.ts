@@ -964,6 +964,10 @@ export const i18n = {
       'Selecting this option will clear your current stacking selection. Do you want to proceed?',
     MRI_PA_BUTTON_CONFIRM: 'Confirm',
     MRI_PA_SELECT_X_AXIS: 'Select an x-axis',
+    MRI_PA_BAR_DISPLAY_MODE: 'Display mode',
+    MRI_PA_DISTRIBUTION_CURVE: 'Distribution Curve',
+    MRI_PA_CHART_TYPES: 'Chart Types',
+    MRI_PA_OVERLAY: 'Overlay',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1958,6 +1962,10 @@ export const i18n = {
       'Durch Auswahl dieser Option wird Ihre aktuelle stapelauswahl gelöscht. Möchten Sie fortfahren?',
     MRI_PA_BUTTON_CONFIRM: 'Bestätigen',
     MRI_PA_SELECT_X_AXIS: 'X-Achse auswählen',
+    MRI_PA_BAR_DISPLAY_MODE: 'Anzeigemodus',
+    MRI_PA_DISTRIBUTION_CURVE: 'Verteilungskurve',
+    MRI_PA_CHART_TYPES: 'Diagrammtypen',
+    MRI_PA_OVERLAY: 'Überlagerung',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2860,6 +2868,10 @@ export const i18n = {
     MRI_PA_CONFIRM_CLEAR_STACKING: '选择此选项将清除您当前的堆叠选择。是否要继续？',
     MRI_PA_BUTTON_CONFIRM: '确认',
     MRI_PA_SELECT_X_AXIS: '选择 X 轴',
+    MRI_PA_BAR_DISPLAY_MODE: '显示模式',
+    MRI_PA_DISTRIBUTION_CURVE: '分布曲线',
+    MRI_PA_CHART_TYPES: '图表类型',
+    MRI_PA_OVERLAY: '叠加',
   },
 }
 
