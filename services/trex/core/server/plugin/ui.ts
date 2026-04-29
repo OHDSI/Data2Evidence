@@ -4,8 +4,13 @@ import { Hono, Context } from "npm:hono";
 
 const portalRoutes = [
   "/portal/login",
+  "/portal/login-callback",
+  "/portal/no-access",
+  "/portal/researcher",
   "/portal/researcher/*",
+  "/portal/systemadmin",
   "/portal/systemadmin/*",
+  "/portal/public",
   "/portal/etl/*",
   "/portal/public/*",
 ];
@@ -16,22 +21,22 @@ function _addStatic(app: Hono, url: string, path: string) {
     url + "/*",
     serveStatic({
       root: path,
-      rewriteRequestPath: (path: string) => {
-        if (path == "/portal/login-callback") return "";
-        else return path.replace(new RegExp(`^${url}`), "");
-      },
-      onNotFound: (path: string, c: Context) => {
-        logger.log(`${path} is not found, you access ${c.req.path}`);
+      rewriteRequestPath: (reqPath: string) => {
+        if (reqPath == "/portal/login-callback") return "";
+        else return reqPath.replace(new RegExp(`^${url}`), "");
       },
     }),
   );
 }
 
 export function addPlugin(app: Hono, value: any, dir: string) {
+  const portalIndexPath = `${dir}resources/portal/index.html`;
+
   if (value.routes)
     value.routes.forEach((r: any) => {
       _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
     });
+
   // Redirect root to portal
   app.get("/", (c) => {
     return c.redirect(`/d2e/portal/`);
@@ -39,7 +44,16 @@ export function addPlugin(app: Hono, value: any, dir: string) {
 
   // Serve portal index.html for client-side routing
   portalRoutes.forEach((route) => {
-    app.use(route, serveStatic({ path: `${dir}resources/portal/index.html` }));
+    app.get(route, async (c: Context) => {
+      try {
+        const content = await Deno.readFile(portalIndexPath);
+        c.header('Content-Type', 'text/html; charset=utf-8');
+        return c.body(content);
+      } catch (e) {
+        logger.log(`Portal index.html not found at ${portalIndexPath}: ${e}`);
+        return c.text('Not Found', 404);
+      }
+    });
   });
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(

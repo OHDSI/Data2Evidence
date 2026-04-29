@@ -1,0 +1,169 @@
+# D2E Flows
+
+[![Docker Build](https://github.com/data2evidence/d2e-flows/actions/workflows/docker-build-push.yaml/badge.svg)](https://github.com/data2evidence/d2e-flows/actions/workflows/docker-build-push.yaml) &nbsp;&nbsp; [![build plugin](https://github.com/data2evidence/d2e-flows/actions/workflows/plugin-ci.yml/badge.svg)](https://github.com/data2evidence/d2e-flows/actions/workflows/plugin-ci.yml)
+
+## Local Development Setup for Python
+
+### Managing plugin dependencies with UV
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/). The easiest way is to 
+    ```
+    pip install uv==0.8.4
+    ```
+
+2. Navigate to the plugin group folder e.g. base, hades etc.
+    ```
+    cd base
+    ```
+
+3. If creating a new plugin group folder i.e. no existing `pyproject.toml` file, run
+    ```
+    uv init
+    ```
+    This will create a uv project with `pyproject.toml`, `.python-version`, `main.py` in the folder.
+
+    Add/remove dependencies with uv
+    ```
+    uv add 'prefect[shell,docker]==3.0.3'
+    uv add sqlalchemy-hana==2.2.0 --optional hana
+    uv remove pandas
+    ```
+    This will create install dependencies in a virtual environment, update the dependencies in `pyproject.toml`, and create a `uv.lock` file.
+
+4. If modifying an existing uv project in a plugin group folder i.e. has an existing `pyproject.toml` and `uv.lock`, run 
+    ```
+    uv sync --extra dev
+    ```
+    This will install base and dev dependencies in a virtual environment based on the `uv.lock file`. To install optional dependencies
+    ```
+    uv sync --extra hana 
+    ```
+    or 
+    ```
+    uv sync --all-groups
+    ```
+    Add/remove dependencies with uv
+    ```
+    uv add 'prefect[shell,docker]==3.0.3'
+    uv add sqlalchemy-hana==2.2.0 --optional hana
+    uv add --dev uv==0.8.4
+    uv remove pandas
+    ```
+    This update the dependencies in `pyproject.toml` and the `uv.lock` file.
+
+5. (Optional) If working with flow plugins in base folder, create a [Personal Access Token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with **no scopes** to avoid rate limiting with downloading the OHDSI packages https://ohdsi.github.io/Hades/rSetup.html | section GitHub Personal Access Token. Export PAT as env 
+    ```
+    export GITHUB_PAT=<GITHUB_PAT>
+    ```
+
+### Linting and Formatters
+
+### Tests
+
+## Local Development Setup for R
+Creating a new `renv.lock` file
+```
+renv::init()
+renv::install('repo/package@v1.0.0', lock=TRUE)
+renv::install('giturl@branch', lock=TRUE)
+```
+
+Capture all installed packages
+```
+renv::settings$snapshot.type("all")
+renv::snapshot()
+```
+This will produce a renv.lock file
+
+
+## Developing a new flow
+### Develop a new flow with a new folder
+1. Create a subfolder in `plugins/flows` with its own `Dockerfile`, `__init__.py`, and `requirements.txt`.
+2. After developing flow, cd to `plugins/flows` and run the command below to generate a package.json in the root of that subfolder. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder.
+    - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`. 
+    - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
+    ```
+    python flowinit.py --help
+    python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
+    ```
+3. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
+    ```
+    volumes:
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
+    ```
+4. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag. 
+5. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+6. To run the flow locally, edit the deployment and change the image to the local image.
+7. Add Dockerfile to Github Actions to test build.
+    - .github/workflows/flows-docker-build-push.yaml
+    - .github/workflows/flows-plugin-ci.yml
+
+### Develop a new flow in an existing folder
+1. After developing flow, cd to `plugins/flows` and run the command below. Package name and entrypoint are compulsory arguments.  This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
+    - package_name: Any package.json name of choice e.g.`d2e-flows`.  This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
+    - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
+    ```
+    python flowinit.py --help
+    python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
+    ```
+2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
+    ```
+    volumes:
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
+    ```
+3. Navigate to subfolder   and run `yarn build` to build the image locally. The image will have the local tag. 
+4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+5. To run the flow locally, edit the deployment and change the image to the local image.
+
+### Developing a flow which needs authentication token
+The pipeline triggers the flow job first and subsequently sends the bearer token to the running flow job, for testing flows that requires bearer token.
+
+- Replace `deployment_id`, `parameters`, and `bearer_token` from jobs portal.
+- Run the following pipeline below.
+`python -m docs.tests.flowauth`
+
+## Modifying an existing flow
+### Modify flow parameters
+1. After modifying flow, cd to `plugins/flows` and run the command below. Package name and entrypoint are compulsory arguments. This will modify the package.json in the subfolder. If there is an existing `package.json`, the name will not be overwritten.
+    - package_name: Any package.json name of choice e.g.`d2e-flows`. This will be added to the pacakge.json name attribute.
+    - entrypoint: Flow entry point e.g. `path/to/flow.py:function`.
+    - plugin_type: Plugin type. Use 'datamodel' if plugin is a datamodel.
+    - -dm: Optional comma separated list of datamodels e.g. `datamodel1,datamodel2`.
+    ```
+    python flowinit.py --help
+    python flowinit.py [package_name] [entrypoint] [plugin_type] [-dm]
+    ```
+2. Mount the updated package.json to `trex` in `docker-compose-local.yml`and set `PLUGINS_SEED_UPDATE` to true.
+    ```
+    volumes:
+        - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json
+
+    PLUGINS_SEED_UPDATE: true
+    ```
+3. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag.
+4. Restart trex. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name. Check the updated parameters in Run > Quick Run.
+5. To run the flow locally, edit the deployment and change the image to the local image.
+
+
+### Modify code
+1. Navigate to subfolder and run `yarn build` to build the image locally. The image will have the local tag.
+2. In the Admin Portal, navigate to jobs. The deployment should be listed with the flow name.
+3. To run the flow locally, edit the deployment and change the image to the local image.
+
+
+## Pointing to the Prefect server on local
+1. Prefect server container must be running
+2. Create a new prefect profile
+    ```
+    prefect profile create test
+    prefect profile use test
+    ```
+3. Run `prefect config set PREFECT_API_URL='http://localhost:41120/d2e/api'` to point to Prefect server 
+4. Run `prefect --help` to see all commands

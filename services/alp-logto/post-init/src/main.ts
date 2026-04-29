@@ -197,10 +197,11 @@ async function main() {
     "users",
     headers
   );
+  // The Logto management API doesn't return `tenant_id` in the user listing,
+  // so guarding on it here would always falsy-fail and we would attempt to
+  // recreate the user on every restart, fail, and silently skip USER-ROLES.
   const userExists = fetchExistingUsers.find(
-    (existingUser: any) =>
-      existingUser.username === user.username &&
-      existingUser.tenant_id === "default"
+    (existingUser: any) => existingUser.username === user.username
   );
   let logtoAdminUser = userExists || (await create("users", headers, user));
 

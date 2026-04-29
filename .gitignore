@@ -21,8 +21,8 @@ run_ssh.sh
 *eszip
 **/.parcel-cache/
 !tests/e2e/package-lock.json
-!functions/package-lock.json
-!fhir_functions/package-lock.json
+!plugins/functions/package-lock.json
+!plugins/fhir_functions/package-lock.json
 
 pkg/*.tgz
 target
@@ -44,12 +44,12 @@ liquibase
 data2evidence-cli-*.tgz
 
 
-flows/.DS_Store
-flows/venv
-flows/**/__pycache__
-flows/.env
-flows/**/*private*
-flows/**/.env*
+plugins/flows/.DS_Store
+plugins/flows/venv
+plugins/flows/**/__pycache__
+plugins/flows/.env
+plugins/flows/**/*private*
+plugins/flows/**/.env*
 
 ui/resources/*
 !ui/resources/img
