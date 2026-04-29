@@ -595,7 +595,6 @@
           "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
-          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }

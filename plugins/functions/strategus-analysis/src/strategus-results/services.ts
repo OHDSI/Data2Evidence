@@ -7,6 +7,7 @@ import {
 import { services } from "../env.ts";
 import { env } from "../env.ts";
 import dataSource from "../db/datasource.ts";
+import { PortalServerAPI } from "./api/PortalServerAPI.ts";
 
 interface IKernelModel extends Kernel.IModel {
   id: string;
@@ -40,13 +41,14 @@ export const startStrategusResultsViewer = async (
     const strategusAnalysisObj = await strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
+    const studyDataset = await new PortalServerAPI(token).getDataset(datasetId);
     const moduleConfig = await createShinyModuleConfig(strategusAnalysisObj);
 
     const r_code = viewerCode
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__SQL__DBNAME}?preferQueryMode=simple&autocommit=true`
+        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${studyDataset?.databaseName}?preferQueryMode=simple&autocommit=true`
       )
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
