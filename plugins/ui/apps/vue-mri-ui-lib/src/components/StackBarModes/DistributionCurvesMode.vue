@@ -73,6 +73,36 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
     .map((trace, i) => {
       const kde = perTrace[i]
       if (!kde) return null
+
+      const origCustomdata = trace.customdata || []
+      const counts = trace.y || []
+      const perPointCustomdata = xGrid.map((gx: number) => {
+        let nearestIdx = 0
+        let nearestDist = Infinity
+        for (let k = 0; k < tickvals.length; k++) {
+          const d = Math.abs(gx - tickvals[k])
+          if (d < nearestDist) {
+            nearestDist = d
+            nearestIdx = k
+          }
+        }
+        return {
+          ...(origCustomdata[nearestIdx] || {}),
+          count: counts[nearestIdx],
+        }
+      })
+
+      const orig = trace.hovertemplate || ''
+      const marker = ': <b>%{y:,}</b>'
+      const yIdx = orig.indexOf(marker)
+      let hoverTemplate: string
+      if (yIdx >= 0) {
+        const prefix = orig.slice(0, yIdx + marker.length).replace('%{y:,}', '%{customdata.count:,}')
+        hoverTemplate = prefix + '<br>Density: <b>%{y:.4f}</b><extra></extra>'
+      } else {
+        hoverTemplate = '%{x}<br>Density: <b>%{y:.4f}</b><extra></extra>'
+      }
+
       return {
         x: xGrid,
         y: kde.density,
@@ -84,7 +114,8 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
         fill: 'tozeroy',
         fillcolor: ctx.colorway[i % ctx.colorway.length] + '30',
         showlegend: trace.showlegend,
-        hoverinfo: 'skip',
+        customdata: perPointCustomdata,
+        hovertemplate: hoverTemplate,
       }
     })
     .filter((t): t is NonNullable<typeof t> => t !== null)
