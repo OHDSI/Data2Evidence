@@ -270,6 +270,9 @@ jobs:
           export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
           echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV # Make available to subsequent github actions steps
 
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV # Used to refresh the access token after role assignment
+
           echo "BEARER TOKEN:"
           echo $BEARER_TOKEN
           # Get the idp sub
@@ -304,7 +307,7 @@ jobs:
               -H 'content-type: application/json' \
               -H 'origin: https://localhost:41100' \
               -H 'referer: https://localhost:41100/d2e/portal/no-access' \
-              --data-raw "{\"userId\":\"$IDP_SUB\"}")
+              --data-raw "{\"userId\":\"$IDP_SUB\",\"sync\":true}")
           printf "%s\n" "$response"
           USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
           echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
@@ -359,6 +362,25 @@ jobs:
           -H 'content-type: application/json' \
           -H 'origin: https://localhost:41100' \
           -H "authorization: Bearer $BEARER_TOKEN"
+
+      - name: Refresh bearer token to pick up researcher role
+        run: |
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --data-urlencode 'grant_type=refresh_token' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode "refresh_token=$REFRESH_TOKEN")
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+
+          echo "REFRESHED BEARER TOKEN:"
+          echo $BEARER_TOKEN
 
       - name: Install dependencies in backend integration tests
         run: |

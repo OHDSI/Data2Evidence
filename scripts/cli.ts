@@ -181,8 +181,7 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      // TODO: enable this on next PR
-      // USER_MGMT__ROLE_SOURCE: `logto`,
+      USER_MGMT__ROLE_SOURCE: `logto`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
@@ -1142,7 +1141,7 @@ class D2ECli {
     this.program
       .command("setuphttptestenv")
       .description(
-        "Load d2e services. Requires d2e init and d2e setup to be run."
+        "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
@@ -1152,7 +1151,7 @@ class D2ECli {
     this.program
       .command("getbearertoken")
       .description(
-        "Load d2e services. Requires d2e init and d2e setup to be run."
+        "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
