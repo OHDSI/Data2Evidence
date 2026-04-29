@@ -64,8 +64,13 @@ const getters = {
 const getLastSelectionPayload = () => selectionAction.mock.calls.at(-1)?.[1]
 
 describe('StackBarChart selection handling', () => {
-  const mountComponent = () => {
-    const store = createStore({ actions, getters })
+  const mountComponent = (barDisplayMode = 'stack', showDistributionOverlay = false) => {
+    const customGetters = {
+      ...getters,
+      getBarDisplayMode: () => barDisplayMode,
+      getShowDistributionOverlay: () => showDistributionOverlay,
+    }
+    const store = createStore({ actions, getters: customGetters })
     const pinia = createPinia()
 
     return shallowMount(StackBarChart as any, {
@@ -253,5 +258,101 @@ describe('StackBarChart selection handling', () => {
       'Very Long Label A': 'Very Long...',
       'Very Long Label B': 'Very Long...',
     })
+  })
+
+  const wireSelectionHandlers = (wrapper: ReturnType<typeof shallowMount>) => {
+    const handlers: Record<string, () => void> = {}
+    const fakePlotElement = {
+      clientWidth: 800,
+      on: vi.fn((event: string, cb: () => void) => {
+        handlers[event] = cb
+      }),
+    }
+    Object.defineProperty((wrapper.vm as any).$el, 'querySelector', {
+      value: vi.fn(() => fakePlotElement),
+    })
+    return { handlers, fakePlotElement }
+  }
+
+  const lastReactArgs = () => (Plotly.react as any).mock.calls.at(-1)
+
+  it('preserves overlay barmode and trace opacity through selection', async () => {
+    const wrapper = mountComponent('overlay')
+    const { handlers } = wireSelectionHandlers(wrapper)
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          name: 'A',
+          meta: { fullName: 'A' },
+          selectedpoints: [0],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).setupPlotly()
+
+    handlers.plotly_selected()
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(layout.bargap).toBe(0)
+    expect(traces[0].marker.opacity).toBe(0.3)
+  })
+
+  it('preserves partialOverlaySolid mode through selection with multiple traces', async () => {
+    const wrapper = mountComponent('partialOverlaySolid')
+    const { handlers } = wireSelectionHandlers(wrapper)
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          name: 'A',
+          meta: { fullName: 'A' },
+          selectedpoints: [0],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+        {
+          name: 'B',
+          meta: { fullName: 'B' },
+          selectedpoints: [],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).setupPlotly()
+
+    handlers.plotly_selected()
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(traces[0].width).toBeGreaterThan(0)
+    expect(typeof traces[0].offset).toBe('number')
+    expect(traces[1].width).toBeGreaterThan(0)
+    expect(typeof traces[1].offset).toBe('number')
+    expect(traces[0].offset).not.toBe(traces[1].offset)
+  })
+
+  it('preserves overlay barmode through clearSelectionState with active selection', async () => {
+    const wrapper = mountComponent('overlay')
+    const fakePlotElement = { id: 'plot' }
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          selectedpoints: [0],
+          x: ['A'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).clearSelectionState({ plotElement: fakePlotElement, resetAxes: true })
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(traces[0].marker.opacity).toBe(0.3)
   })
 })
