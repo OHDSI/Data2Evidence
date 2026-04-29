@@ -33,11 +33,20 @@ import "./ScanDataDialog.scss";
 
 export type CloseDialogType = "success" | "cancelled";
 
+export interface ScanMetadata {
+  dataType: string;
+  databaseCode?: string;
+  schemaName?: string;
+  fileName?: string;
+  delimiter?: string;
+}
+
 interface ScanDataDialogProps {
   open: boolean;
   onClose?: (type: CloseDialogType) => void;
   nodeId: string;
   setScanId: (id: string) => void;
+  setScanMetadata: (metadata: ScanMetadata) => void;
 }
 
 const EMPTY_DBCONNECTION_FORM_DATA = {
@@ -73,11 +82,12 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   onClose,
   nodeId,
   setScanId,
+  setScanMetadata,
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [availableTables, setAvailableTables] = useState<string[]>([]);
   const [selectedTables, setSelectedTables] = useState<string[]>([]);
-  const [dataType, setDataType] = useState("");
+  const [dataType, setInternalDataType] = useState("");
   const [loading, setLoading] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [delimiter, setDelimiter] = useState(DELIMITERS[0].value);
@@ -96,7 +106,8 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
   const [createDBScanReport] = useCreateDBScanReportMutation();
   const [createScanReport] = useCreateScanReportMutation();
 
-  const { data: databases = [], isLoading: isLoadingDatabases } = useGetDatabasesQuery();
+  const { data: databases = [], isLoading: isLoadingDatabases } =
+    useGetDatabasesQuery();
 
   useEffect(() => {
     return () => {
@@ -121,8 +132,18 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
           uploadedFiles.map((file) => uploadNodeCsvFile({ file, nodeId })),
         );
         await scanData();
+        setScanMetadata({
+          dataType: "csv",
+          fileName: uploadedFiles.map((f) => f.name).join(", "),
+          delimiter,
+        });
       } else {
         await scanDBData();
+        setScanMetadata({
+          dataType: "postgresql",
+          databaseCode: dbConnectionForm.databaseCode,
+          schemaName: dbConnectionForm.schema,
+        });
       }
       handleClose("success");
     } catch (err: any) {
@@ -130,12 +151,20 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [selectedTables, dataType, uploadedFiles, nodeId]);
+  }, [
+    selectedTables,
+    dataType,
+    uploadedFiles,
+    nodeId,
+    delimiter,
+    dbConnectionForm,
+    setScanMetadata,
+  ]);
 
   const handleDataTypeChange = useCallback(
     (event: SelectChangeEvent<string>) => {
       handleClear();
-      setDataType(event.target.value);
+      setInternalDataType(event.target.value);
     },
     [dataType],
   );
@@ -191,7 +220,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
 
   const handleClear = useCallback(() => {
     if (dataType === "csv") {
-      setDataType("");
+      setInternalDataType("");
       setSelectedTables([]);
       setAvailableTables([]);
       setUploadedFiles([]);
@@ -371,7 +400,10 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
                     <Select
                       value={dbConnectionForm.databaseCode}
                       onChange={(e: SelectChangeEvent<string>) =>
-                        setDbConnectionForm((prev) => ({ ...prev, databaseCode: e.target.value }))
+                        setDbConnectionForm((prev) => ({
+                          ...prev,
+                          databaseCode: e.target.value,
+                        }))
                       }
                       disabled={isLoadingDatabases}
                     >
@@ -392,7 +424,10 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({
                       label="Schema Name"
                       value={dbConnectionForm.schema}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                        setDbConnectionForm((prev) => ({ ...prev, schema: e.target.value }))
+                        setDbConnectionForm((prev) => ({
+                          ...prev,
+                          schema: e.target.value,
+                        }))
                       }
                       variant="standard"
                     />
