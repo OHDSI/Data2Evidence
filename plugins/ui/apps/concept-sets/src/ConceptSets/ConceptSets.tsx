@@ -75,7 +75,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
         if (a.name > b.name) return 1;
         return 0;
       };
-      setData(response.sort(sortFn));
+      setData([...response].sort(sortFn));
     } catch (e) {
       console.error(e);
       setFeedback({
@@ -86,14 +86,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    getText,
-    setFeedback,
-    i18nKeys.CONCEPT_SETS__ERROR,
-    i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION,
-    datasetId,
-    userName,
-  ]);
+  }, [getText, setFeedback, datasetId, userName]);
 
   useEffect(() => {
     fetchData();
@@ -139,14 +132,6 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     fetchData();
   }, [fetchData]);
 
-  const updateSearchResult = useCallback(
-    (keyword: string) => {
-      if (keyword === searchText) return;
-      setSearchText(keyword);
-    },
-    [searchText],
-  );
-
   const filteredData = useMemo(
     () =>
       data.filter((row) =>
@@ -180,19 +165,23 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
         accessorKey: "createdDate",
         header: getText(i18nKeys.CONCEPT_SETS__CREATED),
         size: 130,
-        Cell: ({ row }) =>
-          row.original.createdDate
-            ? new Date(row.original.createdDate).toLocaleDateString()
-            : "",
+        Cell: ({ row }) => {
+          const d = row.original.createdDate;
+          if (!d) return "";
+          const [y, m, day] = d.split("-").map(Number);
+          return new Date(y, m - 1, day).toLocaleDateString();
+        },
       },
       {
         accessorKey: "modifiedDate",
         header: getText(i18nKeys.CONCEPT_SETS__UPDATED),
         size: 130,
-        Cell: ({ row }) =>
-          row.original.modifiedDate
-            ? new Date(row.original.modifiedDate).toLocaleDateString()
-            : "",
+        Cell: ({ row }) => {
+          const d = row.original.modifiedDate;
+          if (!d) return "";
+          const [y, m, day] = d.split("-").map(Number);
+          return new Date(y, m - 1, day).toLocaleDateString();
+        },
       },
       {
         accessorKey: "userName",
@@ -270,6 +259,18 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     },
     enableTopToolbar: false,
   });
+
+  const updateSearchResult = useCallback(
+    (keyword: string) => {
+      if (keyword === searchText) return;
+      setSearchText(keyword);
+    },
+    [searchText],
+  );
+
+  useEffect(() => {
+    table.resetPagination();
+  }, [searchText]);
 
   if (!datasetId) return <Loader />;
 
