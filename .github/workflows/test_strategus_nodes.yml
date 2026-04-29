@@ -27,7 +27,7 @@ jobs:
         with:
           filters: |
             has_strategus_changes:
-              - 'flows/hades/strategus_plugin/**'
+              - 'plugins/flows/hades/strategus_plugin/**'
 
       - name: Determine condition to run
         env:
@@ -39,4 +39,4 @@ jobs:
         if: env.WF_RUN == 'true'
         run: |
           docker pull --platform linux/amd64 ghcr.io/ohdsi/d2e/flow-hades:develop
-          docker compose -f ./flows/hades/strategus_plugin/dc-local.yml up
+          docker compose -f ./plugins/flows/hades/strategus_plugin/dc-local.yml up

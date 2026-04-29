@@ -87,10 +87,10 @@ COPY services/enterprise-gateway/kernels/R_ohdsi_docker/server_listener.py /usr/
 
 # GITHUB_PAT authentication for OHDSI remotes::install_github
 COPY --from=builder .Renviron .
-COPY ./flows/hades/renv.lock ./flows/build/.Rprofile ./flows/build/install_and_verify_r_packages.R /app/
+COPY ./plugins/flows/hades/renv.lock ./plugins/flows/build/.Rprofile ./plugins/flows/build/install_and_verify_r_packages.R /app/
 
 # Copy R scripts and drivers
-COPY --chown=jovyan:user ./flows/drivers /app/inst/drivers
+COPY --chown=jovyan:user ./plugins/flows/drivers /app/inst/drivers
 COPY --chown=jovyan:user ./services/enterprise-gateway/r-strategus-lib/rD2E /app/rD2E
 
 # Packages from https://packagemanager.posit.co/cran/__linux__/noble/2025-09-22/src/contrib/PACKAGES
