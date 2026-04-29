@@ -66,7 +66,7 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/**"
+              - "plugins/flows/**"
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
@@ -74,8 +74,8 @@ jobs:
               - "./services/enterprise-gateway/CustomKernelManager/**"
               - "./services/enterprise-gateway/kernels/**"
               - "./services/enterprise-gateway/r-strategus-lib/**"
-              - "./flows/hades/renv.lock"
-              - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
+              - "./plugins/flows/hades/renv.lock"
+              - "./plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
               - ".github/workflows/docker-build-push.yaml"
 
   bld:
@@ -98,26 +98,26 @@ jobs:
       matrix:
         include:
           - AZ_REG_REPOSITORY: d2e/flow-base
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/base/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/i2b2/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-search-embedding
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/search_embedding/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/search_embedding/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-management
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_management/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_management/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/loyalty_score/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-hades
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/hades/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/hades/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-transformation
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_transformation/Dockerfile
           - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
