@@ -85,8 +85,10 @@ class INISettings(BaseModel):
         elif self.scan_type == WhiteRabbitRunType.SCAN_REPORT_DB:
             if not self.data_type:
                 raise ValueError(f"data_type is required for scan type {self.scan_type}")
+            
             db_type_mapping = {
                 "postgres": "PostgreSQL",
+                "postgresql": "PostgreSQL",
             }
             if self.data_type.lower() not in db_type_mapping:
                 raise ValueError(f"Unsupported database dialect: {self.data_type}. Supported dialects: {list(db_type_mapping.keys())}")
