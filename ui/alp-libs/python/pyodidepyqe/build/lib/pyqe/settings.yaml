@@ -1,0 +1,2 @@
+feature-flags:
+  azure-identity: true
