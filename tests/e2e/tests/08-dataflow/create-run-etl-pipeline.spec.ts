@@ -26,11 +26,12 @@ test(TEST_NAME, async ({ page }) => {
     const sourceNode = getNodeByLabel(sourceLabel);
     const targetNode = getNodeByLabel(targetLabel);
 
-    await expect(sourceNode).toBeVisible();
-    await expect(targetNode).toBeVisible();
+    await expect(sourceNode).toBeVisible({ timeout: 5000 });
+    await expect(targetNode).toBeVisible({ timeout: 5000 });
 
     await sourceNode.scrollIntoViewIfNeeded();
     await targetNode.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(200);
 
     const sourceNodeTestId = await getNodeTestIdByLabel(sourceLabel);
     const targetNodeTestId = await getNodeTestIdByLabel(targetLabel);
@@ -44,14 +45,23 @@ test(TEST_NAME, async ({ page }) => {
       .locator(`.react-flow__handle[data-nodeid="${targetNodeId}"][data-handlepos="left"]`)
       .first();
 
-    await expect(sourceHandle).toBeVisible();
-    await expect(targetHandle).toBeVisible();
+    await expect(sourceHandle).toBeVisible({ timeout: 5000 });
+    await expect(targetHandle).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(200);
 
-    const sourceBox = await sourceHandle.boundingBox();
-    const targetBox = await targetHandle.boundingBox();
+    let sourceBox = await sourceHandle.boundingBox();
+    let targetBox = await targetHandle.boundingBox();
+    
+    let retries = 3;
+    while ((!sourceBox || !targetBox) && retries > 0) {
+      await page.waitForTimeout(300);
+      sourceBox = await sourceHandle.boundingBox();
+      targetBox = await targetHandle.boundingBox();
+      retries--;
+    }
 
     if (!sourceBox || !targetBox) {
-      throw new Error(`Could not resolve node handles for ${sourceLabel} -> ${targetLabel}`);
+      throw new Error(`Could not resolve node handles for ${sourceLabel} -> ${targetLabel} after retries`);
     }
 
     const sourceCenterX = sourceBox.x + sourceBox.width / 2;
@@ -67,6 +77,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.mouse.move(sourceCenterX + 10, sourceCenterY, { steps: 5 });
     await page.mouse.move(targetCenterX, targetCenterY, { steps: 30 });
     await page.mouse.up();
+    await page.waitForTimeout(200);
   };
 
   const moveNodeByLabel = async (nodeLabel: string, deltaX: number, deltaY: number) => {
