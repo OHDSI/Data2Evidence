@@ -18,6 +18,7 @@ class NodeType(str, Enum):
     CONCEPTMAPPING = "concept_mapping_node"
     SUBFLOW = "subflow"
     TRANSFORMFHIRDATA = "transform_fhir_data_node"
+    FHIRMAPPINGWRITER = "fhir_mapping_writer_node"
 
 class DataflowUITraceConfigType(BaseModel):
     trace_db: str

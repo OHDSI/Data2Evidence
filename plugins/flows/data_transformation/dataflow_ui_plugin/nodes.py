@@ -34,6 +34,31 @@ from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE, STDOUT
 
+
+def _ensure_mapping_schema(database_code: str) -> None:
+    schema = f"{database_code}_fhir_mapping"
+    dao = DBDao(use_cache_db=True, database_code=database_code)
+
+    if not dao.check_schema_exists(schema):
+        dao.create_schema(schema)
+
+    dao.create_table(schema, "data_source", {
+        "id":                 "SERIAL PRIMARY KEY",
+        "fhir_resource_type": "VARCHAR NOT NULL",
+        "fhir_resource_id":   "VARCHAR NOT NULL",
+        "omop_table_name":    "VARCHAR NOT NULL",
+        "omop_id":            "VARCHAR",
+        "flow_run_id":        "VARCHAR",
+    })
+
+    dao.create_table(schema, "fhir_omop_key_map", {
+        "id":              "SERIAL PRIMARY KEY",
+        "fhir_reference":  "VARCHAR NOT NULL UNIQUE",
+        "omop_table_name": "VARCHAR NOT NULL",
+        "omop_integer_id": "BIGINT",
+    })
+
+
 class Node:
     def __init__(self, name, node):
         self.id = node["id"]
@@ -60,6 +85,7 @@ class Result:
         self.task_run_id = str(task_run_context.get("id"))
         self.task_run_name = str(task_run_context.get("name"))
         self.flow_run_id = str(task_run_context.get("flow_run_id"))
+        self.lineage: list | None = None
 
 
     def serialize_result(self):
@@ -375,7 +401,7 @@ class TransformFhirDataNode(Node):
         omop_table = omop_transform_utils.omop_tables[target_structure_definition_url]
         return omop_table
 
-    def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
+    def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> tuple[pd.DataFrame | None, list]:
         if(input_fhir_df is None):
             raise Exception("Input FHIR Dataframe is None")
         elif self.structure_map is None:
@@ -393,6 +419,7 @@ class TransformFhirDataNode(Node):
         folder = "/app/flows/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
         target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
         transformed_omop = []
+        lineage_records = []
         if input_fhir_df is not None and "content" in input_fhir_df.columns:
             content_list = input_fhir_df["content"].tolist()
             fhir_resource = content_list if content_list else None
@@ -406,7 +433,7 @@ class TransformFhirDataNode(Node):
             raise Exception("Target Structure Definition URL is missing in structure map")
         elif not source_structure_definition:
             raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
-        elif not target_structure_definition:   
+        elif not target_structure_definition:
             raise Exception(f"Target Structure Definition not found for url: {target_structure_definition_url}")
         elif omop_table_name is None:
             raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
@@ -433,17 +460,23 @@ class TransformFhirDataNode(Node):
                         transformed_data = json.loads(stdout)
                         transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
                         transformed_omop.append(transformed_data)
+                        lineage_records.append({
+                            "fhir_resource_type": key.get("resourceType") if isinstance(key, dict) else None,
+                            "fhir_resource_id":   key.get("id") if isinstance(key, dict) else None,
+                            "omop_table_name":    omop_table_name,
+                            "omop_id":            str(transformed_data.get(f"{omop_table_name}_id", "")),
+                        })
                     except Exception as e:
                         raise e
             df = pd.json_normalize(transformed_omop)
         else:
             df = None
-        return df
+        return df, lineage_records
 
     def test(self, task_run_context) -> Result:
         try:
-            df = self.transform_fhir_data()
-            return Result(False,  df, self, task_run_context)
+            df, _ = self.transform_fhir_data()
+            return Result(False, df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -452,12 +485,13 @@ class TransformFhirDataNode(Node):
             df_to_write = _input[self.dataframe].result
             if df_to_write is None:
                 raise Exception("Input dataframe is None")
-            df = self.transform_fhir_data(df_to_write)
+            df, lineage_records = self.transform_fhir_data(df_to_write)
             if df is None:
                 raise Exception("Transformation resulted in empty dataframe")
             df = df.drop(columns=["meta.profile"], errors='ignore')
             df = df.drop(columns=["resourceType"], errors='ignore')
-            return Result(False,  df, self, task_run_context)
+            self._lineage = lineage_records
+            return Result(False, df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -740,6 +774,86 @@ class DataMappingNode(Node):
 @flow(name="generate-nodes",
       flow_run_name="generate-nodes-flowrun",
       log_prints=True)
+class FhirMappingWriterNode(Node):
+    """
+    Writes FHIR-to-OMOP lineage records to the mapping schema in the cache DB.
+
+    On first run it creates the schema and tables. On subsequent runs it queries
+    data_source for existing (fhir_resource_id, omop_table) pairs and only inserts
+    records that are not already present.
+    """
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.database_code = _node["database_code"]
+        self.source_node = _node["source_node"]
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
+        try:
+            source_result = _input.get(self.source_node)
+            if source_result is None:
+                raise Exception(f"Source node '{self.source_node}' not found in input")
+            lineage = getattr(source_result.node, "_lineage", None)
+            if not lineage:
+                return Result(False, 0, self, task_run_context)
+
+            _ensure_mapping_schema(self.database_code)
+            dao = DBDao(use_cache_db=True, database_code=self.database_code)
+            schema = f"{self.database_code}_fhir_mapping"
+
+            flow_run_id = str(task_run_context.get("flow_run_id"))
+
+            # Fetch existing (fhir_resource_id, omop_table_name) pairs to deduplicate on re-runs
+            existing_rows = dao.execute_sql(
+                f'SELECT fhir_resource_id, omop_table_name FROM "{schema}".data_source',
+                fetch=True
+            ) or []
+            existing = {(row[0], row[1]) for row in existing_rows}
+
+            new_records = [
+                row for row in lineage
+                if (row["fhir_resource_id"], row["omop_table_name"]) not in existing
+            ]
+
+            if new_records:
+                columns = ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "omop_id", "flow_run_id"]
+                values = [
+                    (
+                        row["fhir_resource_type"],
+                        row["fhir_resource_id"],
+                        row["omop_table_name"],
+                        row["omop_id"],
+                        flow_run_id,
+                    )
+                    for row in new_records
+                ]
+                dao.batch_insert_values(schema, "data_source", columns, values)
+
+            # Insert into fhir_omop_key_map — deduplicate on fhir_reference
+            existing_refs = dao.execute_sql(
+                f'SELECT fhir_reference FROM "{schema}".fhir_omop_key_map',
+                fetch=True
+            ) or []
+            existing_ref_set = {row[0] for row in existing_refs}
+
+            key_map_values = []
+            for row in lineage:
+                fhir_ref = f"{row['fhir_resource_type']}/{row['fhir_resource_id']}" \
+                    if row["fhir_resource_type"] and row["fhir_resource_id"] else None
+                if fhir_ref and fhir_ref not in existing_ref_set:
+                    key_map_values.append((fhir_ref, row["omop_table_name"]))
+
+            if key_map_values:
+                dao.batch_insert_values(
+                    schema, "fhir_omop_key_map",
+                    ["fhir_reference", "omop_table_name"],
+                    key_map_values,
+                )
+
+            return Result(False, len(new_records), self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
 def generate_nodes_flow(graph, sorted_nodes):
     for nodename in sorted_nodes:
         node = graph["nodes"][nodename]
@@ -798,6 +912,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = ConceptMappingNode(nodename, node)
         case NodeType.TRANSFORMFHIRDATA:
             nodeobj = TransformFhirDataNode(nodename, node)
+        case NodeType.FHIRMAPPINGWRITER:
+            nodeobj = FhirMappingWriterNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
