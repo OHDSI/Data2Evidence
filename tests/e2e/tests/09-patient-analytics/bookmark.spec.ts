@@ -5,10 +5,6 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
-// Per-run unique suffix so retries (and parallel/historic runs that left junk
-// behind) don't collide on bookmark / user names. Without this, a failure that
-// leaves "Test Another Patient List Saved Filters" or "testuserB" behind makes
-// every retry trip "name already exists" / duplicate-user errors.
 const RUN_ID = Date.now().toString(36)
 const NAME = {
   savedFilters: `Test Saved Filters ${RUN_ID}`,
@@ -18,11 +14,6 @@ const NAME = {
   testUserB: `testuserB_${RUN_ID}`
 }
 
-// After a fresh role grant in Logto, the JWT/portal nav can take a few seconds
-// to reflect the new dataset access. The dataset card renders without a
-// Cohorts link until then, and the bare click() will timeout at 20s
-// (actionTimeout). Re-open the dataset (which re-fetches the user's plugins)
-// until Cohorts appears.
 async function openDatasetCohorts(page) {
   const cohortsLink = page.getByRole('link', { name: 'Cohorts' })
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -32,7 +23,6 @@ async function openDatasetCohorts(page) {
       await cohortsLink.click()
       return
     } catch {
-      // Nav still doesn't have Cohorts — go back and re-select the dataset.
       await page.getByRole('link', { name: 'Dataset' }).click().catch(() => {})
     }
   }
@@ -381,12 +371,8 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
-    // Wait for the user dropdown to populate (alp-usermgmt API is async).
     await expect(page.getByRole('menuitem', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })
     await page.getByRole('menuitem', { name: NAME.testUserB }).click()
-    // Confirm the role assignment actually persisted by waiting for the user
-    // to appear in the access list before closing — closing too early was the
-    // race that left testuserB without dataset access at login time.
     await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })
     await page.getByTestId('dialog-close').click()
   })
@@ -482,7 +468,6 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: 'Viral sinusitis' })).not.toBeVisible()
   })
 
-  // Delete the test user so we don't leak Logto users across runs.
   await test.step('Delete testuserB', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
