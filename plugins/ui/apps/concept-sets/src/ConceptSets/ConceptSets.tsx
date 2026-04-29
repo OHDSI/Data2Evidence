@@ -1,25 +1,18 @@
-import React, {
-  ChangeEvent,
-  FC,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
-import TablePagination from "@mui/material/TablePagination";
+import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import SearchBar from "../components/SearchBar/SearchBar";
+import {
+  MaterialReactTable,
+  MRT_ColumnDef,
+  MRT_SortingState,
+  useMaterialReactTable,
+} from "material-react-table";
 import {
   Button,
   EditIcon,
   IconButton,
   Loader,
-  TableCell,
-  TablePaginationActions,
-  TableRow,
   VisibilityOnIcon,
 } from "@portal/components";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -27,7 +20,6 @@ import { api } from "../axios/api";
 import Terminology from "../Terminology/Terminology";
 import { ConceptSet } from "../Terminology/utils/types";
 import { TerminologyProps } from "../Terminology/Terminology";
-import SearchBar from "../components/SearchBar/SearchBar";
 import { useFeedback, usePortal, useTranslation } from "../hooks";
 import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
 import { i18nKeys } from "../context/state/translation-state";
@@ -47,9 +39,8 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   const { getText } = useTranslation();
   const { datasetId, userId, userName } = usePortal();
   const [isLoading, setIsLoading] = useState(false);
+  const [sorting, setSorting] = useState<MRT_SortingState>([]);
   const [searchText, setSearchText] = useState<string>("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
   const { setFeedback } = useFeedback();
   const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
@@ -60,21 +51,10 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
 
   const handleTabSelectionChange = async (
     _event: React.SyntheticEvent,
-    value: ConceptSetTab
+    value: ConceptSetTab,
   ) => {
     setTabValue(value);
   };
-
-  const updateSearchResult = useCallback(
-    (keyword: string) => {
-      if (keyword === searchText) {
-        return;
-      }
-      setSearchText(keyword);
-      setPage(0);
-    },
-    [searchText]
-  );
 
   const fetchData = useCallback(async () => {
     if (!datasetId) return;
@@ -83,16 +63,14 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
       setIsLoading(true);
 
       const response = (await api.d2eWebapi.getConceptSets(datasetId)).map(
-        mapd2eWebapiConceptSet
+        mapd2eWebapiConceptSet,
       );
       // Sort by name, with user's own concept sets first
       const sortFn = (a: ConceptSet, b: ConceptSet) => {
-        // User's own concept sets come first
         const aIsOwn = a.createdBy === userName;
         const bIsOwn = b.createdBy === userName;
         if (aIsOwn && !bIsOwn) return -1;
         if (!aIsOwn && bIsOwn) return 1;
-        // Then sort by name
         if (a.name < b.name) return -1;
         if (a.name > b.name) return 1;
         return 0;
@@ -140,26 +118,11 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
               isAtlas,
             },
           },
-        }
+        },
       );
       window.dispatchEvent(event);
     },
-    [fetchData, datasetId]
-  );
-
-  const handleRowsPerPageChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setRowsPerPage(Number(event.target.value) || 25);
-      setPage(0);
-    },
-    []
-  );
-
-  const handlePageChange = useCallback(
-    (_event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
-      setPage(page);
-    },
-    []
+    [fetchData, datasetId],
   );
 
   const handleDeleteClick = useCallback((conceptSet: ConceptSet) => {
@@ -176,15 +139,139 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     fetchData();
   }, [fetchData]);
 
-  const filteredData = data.filter((row) =>
-    row.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-  const pageData = filteredData.slice(
-    rowsPerPage * page,
-    rowsPerPage * (page + 1)
+  const updateSearchResult = useCallback(
+    (keyword: string) => {
+      if (keyword === searchText) return;
+      setSearchText(keyword);
+    },
+    [searchText],
   );
 
-  if (isLoading || !datasetId) return <Loader />;
+  const filteredData = useMemo(
+    () =>
+      data.filter((row) =>
+        row.name.toLowerCase().includes(searchText.toLowerCase()),
+      ),
+    [data, searchText],
+  );
+
+  const columns = useMemo<MRT_ColumnDef<ConceptSet>[]>(
+    () => [
+      {
+        accessorKey: "id",
+        header: getText(i18nKeys.CONCEPT_SETS__ID),
+        size: 80,
+        sortDescFirst: false,
+      },
+      {
+        accessorKey: "name",
+        header: getText(i18nKeys.CONCEPT_SETS__Name),
+        size: 260,
+        Cell: ({ row }) => (
+          <>
+            {row.original.name}
+            {row.original.shared
+              ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
+              : ""}
+          </>
+        ),
+      },
+      {
+        accessorKey: "createdDate",
+        header: getText(i18nKeys.CONCEPT_SETS__CREATED),
+        size: 130,
+        Cell: ({ row }) =>
+          row.original.createdDate
+            ? new Date(row.original.createdDate).toLocaleDateString()
+            : "",
+      },
+      {
+        accessorKey: "modifiedDate",
+        header: getText(i18nKeys.CONCEPT_SETS__UPDATED),
+        size: 130,
+        Cell: ({ row }) =>
+          row.original.modifiedDate
+            ? new Date(row.original.modifiedDate).toLocaleDateString()
+            : "",
+      },
+      {
+        accessorKey: "userName",
+        header: getText(i18nKeys.CONCEPT_SETS__AUTHOR),
+        size: 160,
+      },
+      {
+        accessorKey: "" as keyof ConceptSet,
+        id: "actions",
+        header: "",
+        size: 90,
+        enableSorting: false,
+        Cell: ({ row }) => (
+          <>
+            <IconButton
+              startIcon={
+                row.original.createdBy === userName ? (
+                  <EditIcon />
+                ) : (
+                  <VisibilityOnIcon />
+                )
+              }
+              onClick={() => handleAddAndEditConceptSet(row.original.id)}
+            />
+            {row.original.createdBy === userName && (
+              <IconButton
+                startIcon={<DeleteIcon />}
+                onClick={() => handleDeleteClick(row.original)}
+              />
+            )}
+          </>
+        ),
+      },
+    ],
+    [getText, userName, handleAddAndEditConceptSet, handleDeleteClick],
+  );
+
+  const table = useMaterialReactTable({
+    layoutMode: "grid",
+    columns,
+    data: filteredData,
+    localization: {
+      noRecordsToDisplay: getText(i18nKeys.CONCEPT_SETS__NO_CONCEPT_SETS),
+    },
+    initialState: { density: "compact" },
+    defaultColumn: {
+      enableGlobalFilter: false,
+      enableHiding: false,
+      enableSorting: true,
+      enableColumnFilter: false,
+      enableColumnActions: false,
+    },
+    enableStickyHeader: true,
+    enablePagination: true,
+    manualSorting: false,
+    onSortingChange: setSorting,
+    state: { sorting, isLoading },
+    muiTableBodyCellProps: {
+      sx: {
+        whiteSpace: "normal",
+        wordWrap: "break-word",
+        color: "#000080",
+        border: "none",
+      },
+    },
+    muiTableHeadCellProps: {
+      sx: {
+        backgroundColor: "#edf2f7",
+        padding: "6px",
+      },
+    },
+    muiTableContainerProps: { sx: { overflowY: "auto" } },
+    muiCircularProgressProps: {
+      sx: { color: "var(--color-primary, #000080)" },
+    },
+    enableTopToolbar: false,
+  });
+
+  if (!datasetId) return <Loader />;
 
   if (!userId) {
     return null;
@@ -231,93 +318,9 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
                   text={getText(i18nKeys.CONCEPT_SETS__ADD_CONCEPT_SET)}
                 />
               </div>
-              <TableContainer className="concept-sets__table">
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__ID)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__Name)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__CREATED)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__UPDATED)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__AUTHOR)}
-                      </TableCell>
-                      <TableCell></TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pageData.length > 0 ? (
-                      pageData.map((row) => {
-                        return (
-                          <TableRow key={row.id}>
-                            <TableCell>{row.id}</TableCell>
-                            <TableCell>
-                              {row.name}
-                              {row.shared
-                                ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
-                                : ""}
-                            </TableCell>
-                            <TableCell>{row.createdDate}</TableCell>
-                            <TableCell>{row.modifiedDate}</TableCell>
-                            <TableCell>{row.userName}</TableCell>
-                            <TableCell>
-                              <IconButton
-                                startIcon={
-                                  row.createdBy === userName ? (
-                                    <EditIcon />
-                                  ) : (
-                                    <VisibilityOnIcon />
-                                  )
-                                }
-                                onClick={() => handleAddAndEditConceptSet(row.id)}
-                              />
-                              {row.createdBy === userName && (
-                                <IconButton
-                                  startIcon={<DeleteIcon />}
-                                  onClick={() => handleDeleteClick(row)}
-                                />
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          {getText(i18nKeys.CONCEPT_SETS__NO_CONCEPT_SETS)}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {filteredData.length > 0 && (
-                <TablePagination
-                  component="div"
-                  count={filteredData.length}
-                  page={page}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleRowsPerPageChange}
-                  onPageChange={handlePageChange}
-                  ActionsComponent={TablePaginationActions}
-                  sx={{
-                    overflow: "visible",
-                    height: "52px",
-                    "& .MuiButtonBase-root:not(.Mui-disabled)": {
-                      color: "var(--color-primary, #000080)",
-                    },
-                  }}
-                />
-              )}
+              <div className="concept-sets__table">
+                <MaterialReactTable table={table} />
+              </div>
             </>
           )}
         </div>
