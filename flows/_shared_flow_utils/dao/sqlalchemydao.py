@@ -140,7 +140,6 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -197,7 +196,6 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            # column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)
