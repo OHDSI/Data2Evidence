@@ -178,7 +178,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   }, [searchText]);
 
   return (
-    <>
+    <div className="concept-sets__container">
       <div className="concept-sets__header">
         <div className="concept-sets__search">
           <SearchBar
@@ -196,6 +196,6 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
       <div className="concept-sets__table">
         <MaterialReactTable table={table} />
       </div>
-    </>
+    </div>
   );
 };
