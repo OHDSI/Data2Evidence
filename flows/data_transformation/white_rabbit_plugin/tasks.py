@@ -149,8 +149,8 @@ def generate_etl_word_document(input_file: str = "data.json", output_file: str =
 @task(log_prints=True)
 def download_files_from_supabase_storage(node_id: str, supabase_api: SupabaseStorageAPI) -> bool:
     '''
-    Downloads multiple CSV files from Supabase Storage using the provided node ID and filenames.
-    Saves the files to the WHITERABBIT_CSV_DIR directory.
+    Lists files in Supabase Storage for the provided node ID, filters them to CSV files,
+    and downloads all matching CSV files to the WHITERABBIT_CSV_DIR directory.
     '''
     logger = get_run_logger()
     files_uploaded = supabase_api.list_files(node_id)

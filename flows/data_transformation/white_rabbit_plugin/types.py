@@ -70,7 +70,7 @@ class INISettings(BaseModel):
     @property
     def working_folder(self) -> str:
         if self.scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
-           return WHITERABBIT_CSV_DIR
+            return WHITERABBIT_CSV_DIR
         return WHITERABBIT_DIR_PATH
     
     @property
