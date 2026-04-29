@@ -422,8 +422,8 @@ export default {
       this.setChartPropertyValue({
         id: Constants.MRIChartProperties.Sort,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '31px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-icons',
@@ -433,8 +433,8 @@ export default {
       this.setAxisValue({
         id: Constants.MRIChartDimensions.StackAttribute,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '150px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-icons',
@@ -446,8 +446,8 @@ export default {
       this.setAxisValue({
         id: Constants.MRIChartDimensions.Y,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '108px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-MRI-icons',
@@ -456,14 +456,13 @@ export default {
           active: true,
         },
       })
-      const iLevelHeight = 41
       for (let i = 0; i <= Constants.MRIChartDimensions.X2; i += 1) {
         this.setAxisValue({
           id: i,
           props: {
-            layoutLeft: '0px',
+            layoutLeft: '',
             layoutTop: '',
-            layoutBottom: `${20 + i * iLevelHeight}px`,
+            layoutBottom: '',
             icon: { 0: '', 1: '', 2: '' }[i],
             iconFamily: 'app-MRI-icons',
             isCategory: true,

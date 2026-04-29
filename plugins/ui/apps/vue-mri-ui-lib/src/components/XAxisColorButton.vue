@@ -1,5 +1,5 @@
 <template>
-  <div class="axis-menu-button-wrapper x-axis-dropdown-button" v-show="axisMenuData.length > 0">
+  <div class="axis-menu-button-wrapper x-axis-dropdown-button x-axis-color-button" v-show="axisMenuData.length > 0">
     <div class="iconWrapper">
       <label class="iconLabel">
         <svg
@@ -251,10 +251,4 @@ function resetSelection() {
 }
 </script>
 
-<style scoped>
-.x-axis-dropdown-button {
-  position: absolute;
-  left: 0px;
-  top: 192px;
-}
-</style>
+<style scoped></style>

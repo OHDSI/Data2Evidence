@@ -87,18 +87,18 @@ export default {
     },
     componentStyle() {
       const axisModel = this.axisModel
-      const result: any = {
-        position: 'absolute',
-      }
-      if (axisModel && axisModel.props) {
-        if (axisModel.props.layoutLeft) {
-          result.left = axisModel.props.layoutLeft
+      const props = axisModel && axisModel.props
+      const hasLayout = !!(props && (props.layoutLeft || props.layoutTop || props.layoutBottom))
+      const result: any = hasLayout ? { position: 'absolute' } : {}
+      if (hasLayout) {
+        if (props.layoutLeft) {
+          result.left = props.layoutLeft
         }
-        if (axisModel.props.layoutTop) {
-          result.top = axisModel.props.layoutTop
+        if (props.layoutTop) {
+          result.top = props.layoutTop
         }
-        if (axisModel.props.layoutBottom) {
-          result.bottom = axisModel.props.layoutBottom
+        if (props.layoutBottom) {
+          result.bottom = props.layoutBottom
         }
       }
       return result

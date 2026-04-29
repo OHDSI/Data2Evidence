@@ -171,11 +171,6 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.bar-display-mode-axis-button {
-  position: absolute;
-  left: 0px;
-  top: 232px;
-}
 .bar-display-mode-axis-button__toggle {
   display: inline-flex;
   align-items: center;

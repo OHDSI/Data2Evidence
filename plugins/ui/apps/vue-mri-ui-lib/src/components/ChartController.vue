@@ -4,25 +4,55 @@
     <div class="chartControllerContent">
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
-        <template v-for="(item, index) in getAllAxes" :key="index">
-          <axisMenuButton
-            v-if="item.props.active"
-            :dimensionIndex="index"
-            :beforeSelect="getBeforeSelectHandler(index)"
-          ></axisMenuButton>
-        </template>
-        <xAxisColorButton
-          :parentContainer="$refs.axisContainer"
-          :selectedAxis="colorAxisIndex"
-          @colorAxisSelected="onColorAxisSelected"
-        ></xAxisColorButton>
-        <barDisplayModeAxisButton
-          v-if="getActiveChart === 'stacked'"
-          :parentContainer="$refs.axisContainer"
-        ></barDisplayModeAxisButton>
-        <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
-        <sortMenuButton v-if="displaySort"></sortMenuButton>
-        <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
+        <div class="axis-group axis-group--top">
+          <barDisplayModeAxisButton
+            v-if="getActiveChart === 'stacked'"
+            :parentContainer="$refs.axisContainer"
+          ></barDisplayModeAxisButton>
+          <div class="axis-subgroup">
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.Y]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.Y"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.Y)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.StackAttribute]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.StackAttribute"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.StackAttribute)"
+            ></axisMenuButton>
+          </div>
+          <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
+        </div>
+        <div class="axis-group axis-group--bottom">
+          <div class="axis-subgroup">
+            <div class="sort-button">
+              <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
+              <sortMenuButton v-if="displaySort"></sortMenuButton>
+            </div>
+            <xAxisColorButton
+              :parentContainer="$refs.axisContainer"
+              :selectedAxis="colorAxisIndex"
+              @colorAxisSelected="onColorAxisSelected"
+            ></xAxisColorButton>
+          </div>
+          <div class="axis-subgroup">
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X2]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X2"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X2)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X1]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X1"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X1)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X3]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X3"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X3)"
+            ></axisMenuButton>
+          </div>
+        </div>
       </div>
       <div class="chartContainer">
         <loadingAnimation v-if="chartBusy"></loadingAnimation>
@@ -86,6 +116,7 @@ export default {
   props: ['shouldRerenderChart', 'showLeftPane', 'chartBusy'],
   data() {
     return {
+      Constants,
       response: {},
       showCensoring: false,
       showErrorLines: false,
