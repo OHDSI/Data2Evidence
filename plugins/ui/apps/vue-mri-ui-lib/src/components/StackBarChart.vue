@@ -284,6 +284,12 @@ export default {
       }
       return (this.chartData?.traces || []).filter(t => t.showlegend !== false)
     },
+    yAxisTitle() {
+      if (this.getBarDisplayMode === 'distribution') {
+        return 'Density'
+      }
+      return this.chartData?.measures?.[0]?.name || ''
+    },
     legendColorway() {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => item.color)
@@ -351,6 +357,7 @@ export default {
       const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       layout.showlegend = false
       layout.xaxis.type = this.chartData.axisType
+      layout.yaxis.title = { text: this.yAxisTitle }
 
       if (this.chartData?.axisType === 'category' && this.chartData?.tickvals && this.chartData?.ticktext) {
         const labelAlias = this.chartData.tickvals.reduce((acc, value, index) => {

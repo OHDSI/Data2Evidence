@@ -198,10 +198,7 @@ describe('StackBarChart selection handling', () => {
     const fakePlotElement = { id: 'plot' }
     ;(wrapper.vm as any).chartData = {
       axisType: 'category',
-      traces: [
-        {
-        },
-      ],
+      traces: [{}],
       tickvals: ['A'],
       ticktext: ['A'],
       ticktextFull: ['A'],
@@ -354,5 +351,43 @@ describe('StackBarChart selection handling', () => {
     const [, traces, layout] = lastReactArgs()
     expect(layout.barmode).toBe('overlay')
     expect(traces[0].marker.opacity).toBe(0.3)
+  })
+
+  it('sets y-axis title to selected measure name in non-KDP modes', async () => {
+    const wrapper = mountComponent('stack')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('Patient Count')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'Patient Count' })
+  })
+
+  it('sets y-axis title to "Density" when bar display mode is KDP', async () => {
+    const wrapper = mountComponent('distribution')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('Density')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'Density' })
+  })
+
+  it('falls back to empty y-axis title when no measure is available', async () => {
+    const wrapper = mountComponent('stack')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: '' })
   })
 })
