@@ -107,7 +107,7 @@ const styles: SxProps = {
     color: "#000080",
   },
   ".MuiInput-root": {
-    color: "var(--color-neutral)",
+    color: "#000080",
     "&::after, &:hover:not(.Mui-disabled)::before": {
       borderBottom: "2px solid #000080",
     },
