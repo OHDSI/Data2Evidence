@@ -77,7 +77,7 @@ export const i18nDefault = {
     ADD_STUDY_DIALOG__CACHE_DATASET_TYPE: "Cache dataset type",
     ADD_STUDY_DIALOG__CANCEL: "Cancel",
     ADD_STUDY_DIALOG__CDM_SCHEMA_OPTION: "CDM schema option",
-    ADD_STUDY_DIALOG__CREATE_FHIR: "Create FHIR server project",
+    ADD_STUDY_DIALOG__CREATE_FHIR: "Create FHIR dataset",
     ADD_STUDY_DIALOG__CREATE_NEW_SCHEMA: "Create new schema",
     ADD_STUDY_DIALOG__CUSTOM_DATA_MODEL_OPTION: "Custom data model option",
     ADD_STUDY_DIALOG__DATABASES: "Databases",
