@@ -57,25 +57,25 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.IDP_RELYING_PARTY !== 'azure') {
-          logger.error(`User "${sub}" or "${username}" does not exist`)
-          return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
-        }
+        if (env.IDP_RELYING_PARTY === 'azure') {
+          if (isSync) {
+            logger.info(`First time login for new user, create user: "${sub}"`)
+            const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
+            await userService.createUser(newUser)
+            userId = newUser.id
 
-        if (isSync) {
-          logger.info(`First time login for new user, create user: "${sub}"`)
-          const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
-          await userService.createUser(newUser)
-          userId = newUser.id
-
-          const tokenUser: ITokenUser = {
-            userId: newUser.id || '',
-            idpUserId: sub
+            const tokenUser: ITokenUser = {
+              userId: newUser.id || '',
+              idpUserId: sub
+            }
+            req.user = tokenUser
+            Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+          } else {
+            logger.error(`User "${sub}" or "${username}" does not exist for non-sync request`)
+            return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
           }
-          req.user = tokenUser
-          Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
         } else {
-          logger.error(`User "${sub}" or "${username}" does not exist for Azure and non-sync request`)
+          logger.error(`User "${sub}" or "${username}" does not exist`)
           return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
         }
       } else if (!user.idpUserId) {

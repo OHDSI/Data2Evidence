@@ -47,8 +47,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - PKGPATH: ./ui
-            APP_PATH: ./ui/apps/vue-mri-ui-lib
+          - PKGPATH: ./plugins/ui
+            APP_PATH: ./plugins/ui/apps/vue-mri-ui-lib
             NPM: yarn
 
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}

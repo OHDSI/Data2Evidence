@@ -283,7 +283,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir", "d2e-notebook-plugin"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -582,9 +582,10 @@ services:
 
         # Enable if need to access admin console
         # http://localhost:3002 {
-        #   uri strip_prefix /d2e/logto
         #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
-        #     import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+        #     header_up Host {host}
+        #     header_up X-Forwarded-Proto http
+        #     header_up X-Forwarded-Port 3002
         #     transport http {
         #       read_buffer 8192
         #     }
@@ -600,6 +601,18 @@ services:
           handle @oidc {
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
           }
+
+          # Enable if need to access admin console
+          # @admin_api path /api/*
+          # handle @admin_api {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002
+          # }
+          
+          # @admin_auth path /sign-in* /sign-up* /consent* /forgot-password* /callback/* /social/*
+          # handle @admin_auth {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
+          # }
+
           respond 404
         }
 
@@ -618,6 +631,7 @@ services:
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
       # - 3002:3002 # Enable if need to access admin console
+      # - 8080:8080 # Enable if need to access admin console
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data
