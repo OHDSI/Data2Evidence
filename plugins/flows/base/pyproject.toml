@@ -14,6 +14,7 @@ dependencies = [
     "openai==0.28",
     "pandas==2.2.2",
     "prefect[docker,shell]==3.0.3",
+    "prefect-shell==0.3.1",
     "psycopg2-binary==2.9.6",
     "pydantic==2.10.6",
     "pyjwt==2.12.0",

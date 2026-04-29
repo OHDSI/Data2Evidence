@@ -440,6 +440,7 @@ dependencies = [
     { name = "pandas" },
     { name = "pandasql" },
     { name = "prefect", extra = ["dask", "docker", "shell"] },
+    { name = "prefect-shell" },
     { name = "psycopg2-binary" },
     { name = "pyarrow" },
     { name = "pydantic" },
@@ -492,6 +493,7 @@ requires-dist = [
     { name = "pandasql", marker = "extra == 'white-rabbit'", specifier = "==0.7.3" },
     { name = "prefect", extras = ["dask"], marker = "extra == 'dataflow-ui'", specifier = "==3.0.3" },
     { name = "prefect", extras = ["dask", "docker", "shell"], specifier = "==3.0.3" },
+    { name = "prefect-shell", specifier = "==0.3.1" },
     { name = "psycopg2-binary", specifier = "==2.9.6" },
     { name = "pyarrow", specifier = "==22.0.0" },
     { name = "pydantic", specifier = "==2.10.6" },
@@ -1518,14 +1520,14 @@ wheels = [
 
 [[package]]
 name = "prefect-shell"
-version = "0.3.2"
+version = "0.3.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "prefect" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/73/34/a83fd379d41746e88360da1886d7d27670d9b474987ded0692141ae00603/prefect_shell-0.3.2.tar.gz", hash = "sha256:b59a60eed1e6b5e5e7d49e7a2261c5fbe962684ce26c92ef875db2fbe6349188", size = 16443, upload-time = "2026-02-03T19:50:05.652Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/62/b0451cde96825679ba9299c10a1c148c17e20873be62c839f2f64b9805e5/prefect_shell-0.3.1.tar.gz", hash = "sha256:48e6287789679a4e175118b1e77375668acbd7f0aae2f72f5d359da7cdef5e12", size = 14144, upload-time = "2024-11-15T17:16:42.704Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/26/2a0c792618ad8b882c815840df7e6f24cbe0a07978dfd38e4bfb3606696c/prefect_shell-0.3.2-py3-none-any.whl", hash = "sha256:a7ed7480fd3f5d79a7b72ac886d1607a202c964dd9f6fcd12fff24d9415a688c", size = 11700, upload-time = "2026-02-03T19:50:04.733Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/16/3e8c6e7c322464c9963b1bbf90cc0286dbd3789e4e251dc9c7a02f540224/prefect_shell-0.3.1-py3-none-any.whl", hash = "sha256:44bd65f659a803fbaa811732b2443bfef069eceefdef1f8a58f39a4defb3f5cf", size = 11097, upload-time = "2024-11-15T17:16:40.766Z" },
 ]
 
 [[package]]
