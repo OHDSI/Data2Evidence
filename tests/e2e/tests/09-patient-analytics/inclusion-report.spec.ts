@@ -22,9 +22,11 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Add Basic Data: Year of birth > 1950', async () => {
-    await page.locator('.appBasicFilterCard .bs-dropdown__trigger').first().click()
+    const basicCardTrigger = page.locator('.appBasicFilterCard .bs-dropdown__trigger').first()
+    await basicCardTrigger.click()
     await page.locator('.bs-dropdown__menu').getByText('Year of Birth', { exact: true }).click()
-    await page.keyboard.press('Escape')
+    await basicCardTrigger.click()
+    await expect(page.locator('.bs-dropdown__menu')).toHaveCount(0)
     await page.getByTitle('Basic Data - Year of Birth').click()
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').fill('>1950')
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').press('Enter')
