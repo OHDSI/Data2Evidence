@@ -21,10 +21,13 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
-  await test.step('Add Basic Data: Age > 60', async () => {
-    await page.getByTitle('Basic Data - Age').click()
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').fill('>60')
-    await page.getByTitle('Basic Data - Age').getByRole('textbox').press('Enter')
+  await test.step('Add Basic Data: Year of birth > 1950', async () => {
+    await page.locator('.appBasicFilterCard .bs-dropdown__trigger').first().click()
+    await page.locator('.bs-dropdown__menu').getByText('Year of Birth', { exact: true }).click()
+    await page.keyboard.press('Escape')
+    await page.getByTitle('Basic Data - Year of Birth').click()
+    await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').fill('>1950')
+    await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').press('Enter')
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
@@ -99,32 +102,32 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Verify SummaryTable and RulesTable content', async () => {
     await expect(dialog.getByText('Summary Statistics')).toBeVisible()
     await expect(dialog.getByText('Total Persons: 2,694')).toBeVisible()
-    await expect(dialog.getByText('Matches: 171 (6.35%)')).toBeVisible()
+    await expect(dialog.getByText('Matches: 199 (7.39%)')).toBeVisible()
 
     const rulesRows = dialog.locator('table.rules-table tbody tr')
     await expect(rulesRows).toHaveCount(4)
 
-    const ageRow = rulesRows.nth(0)
-    await expect(ageRow.locator('td.rule-name')).toContainText('Age')
-    await expect(ageRow.locator('td.rule-name')).toContainText('>60')
-    await expect(ageRow).toContainText('1,692')
-    await expect(ageRow).toContainText('62.81%')
-
-    const genderRow = rulesRows.nth(1)
+    const genderRow = rulesRows.nth(0)
     await expect(genderRow.locator('td.rule-name')).toContainText('Gender')
     await expect(genderRow.locator('td.rule-name')).toContainText('FEMALE')
-    await expect(genderRow).toContainText('855')
-    await expect(genderRow).toContainText('31.74%')
+    await expect(genderRow).toContainText('1,373')
+    await expect(genderRow).toContainText('50.97%')
+
+    const yobRow = rulesRows.nth(1)
+    await expect(yobRow.locator('td.rule-name')).toContainText('Year of Birth')
+    await expect(yobRow.locator('td.rule-name')).toContainText('>1950')
+    await expect(yobRow).toContainText('1,016')
+    await expect(yobRow).toContainText('37.71%')
 
     const conditionRow = rulesRows.nth(2)
     await expect(conditionRow.locator('td.rule-name')).toContainText('Condition Occurrence A')
-    await expect(conditionRow).toContainText('288')
-    await expect(conditionRow).toContainText('10.69%')
+    await expect(conditionRow).toContainText('291')
+    await expect(conditionRow).toContainText('10.80%')
 
     const visitRow = rulesRows.nth(3)
     await expect(visitRow.locator('td.rule-name')).toContainText('Visit A')
-    await expect(visitRow).toContainText('171')
-    await expect(visitRow).toContainText('6.35%')
+    await expect(visitRow).toContainText('199')
+    await expect(visitRow).toContainText('7.39%')
   })
 
   await test.step('Reorder rules via Move up button', async () => {
@@ -135,25 +138,25 @@ test(TEST_NAME, async ({ page }) => {
     await rulesRows.nth(2).getByTitle('Move up').click()
     await expect(dialog.locator('.reorder-loading-overlay')).not.toBeVisible({ timeout: 30000 })
 
-    const genderRow = rulesRows.nth(0)
-    await expect(genderRow.locator('td.rule-name')).toContainText('Gender')
-    await expect(genderRow).toContainText('1,373')
-    await expect(genderRow).toContainText('50.97%')
+    const yobRow = rulesRows.nth(0)
+    await expect(yobRow.locator('td.rule-name')).toContainText('Year of Birth')
+    await expect(yobRow).toContainText('1,983')
+    await expect(yobRow).toContainText('73.61%')
 
     const conditionRow = rulesRows.nth(1)
     await expect(conditionRow.locator('td.rule-name')).toContainText('Condition Occurrence A')
-    await expect(conditionRow).toContainText('424')
-    await expect(conditionRow).toContainText('15.74%')
+    await expect(conditionRow).toContainText('557')
+    await expect(conditionRow).toContainText('20.68%')
 
-    const ageRow = rulesRows.nth(2)
-    await expect(ageRow.locator('td.rule-name')).toContainText('Age')
-    await expect(ageRow).toContainText('288')
-    await expect(ageRow).toContainText('10.69%')
+    const genderRow = rulesRows.nth(2)
+    await expect(genderRow.locator('td.rule-name')).toContainText('Gender')
+    await expect(genderRow).toContainText('291')
+    await expect(genderRow).toContainText('10.80%')
 
     const visitRow = rulesRows.nth(3)
     await expect(visitRow.locator('td.rule-name')).toContainText('Visit A')
-    await expect(visitRow).toContainText('171')
-    await expect(visitRow).toContainText('6.35%')
+    await expect(visitRow).toContainText('199')
+    await expect(visitRow).toContainText('7.39%')
   })
 
   await test.step('Close Inclusion Report dialog', async () => {
