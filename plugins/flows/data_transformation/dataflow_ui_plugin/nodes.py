@@ -35,8 +35,8 @@ from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE, STDOUT
 
 
-def _ensure_mapping_schema(database_code: str) -> None:
-    schema = f"{database_code}_fhir_mapping"
+def _ensure_mapping_schema(database_code: str, schema_name: str) -> None:
+    schema = f"{database_code}_{schema_name}_fhir_mapping"
     dao = DBDao(use_cache_db=True, database_code=database_code)
 
     if not dao.check_schema_exists(schema):
@@ -51,12 +51,19 @@ def _ensure_mapping_schema(database_code: str) -> None:
         "flow_run_id":        "VARCHAR",
     })
 
-    dao.create_table(schema, "fhir_omop_key_map", {
-        "id":              "SERIAL PRIMARY KEY",
-        "fhir_reference":  "VARCHAR NOT NULL UNIQUE",
-        "omop_table_name": "VARCHAR NOT NULL",
-        "omop_integer_id": "BIGINT",
-    })
+    import psycopg2.sql as pg_sql
+    dao.execute_sql(pg_sql.SQL(
+        """
+        CREATE TABLE IF NOT EXISTS {schema}.fhir_omop_key_map (
+            id                SERIAL PRIMARY KEY,
+            fhir_id           VARCHAR NOT NULL,
+            fhir_resource_type VARCHAR NOT NULL,
+            omop_table_name   VARCHAR NOT NULL,
+            omop_id           VARCHAR,
+            UNIQUE (fhir_id, fhir_resource_type)
+        )
+        """
+    ).format(schema=pg_sql.Identifier(schema)))
 
 
 class Node:
@@ -373,6 +380,8 @@ class TransformFhirDataNode(Node):
         
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
+        print("Getting source structure definition from FHIR server...")
+        print(f"URL: {url}")
         query = f"?url={url}"
         response = fhir_api.get(resource_type="StructureDefinition", query=query)
         if(response):
@@ -771,9 +780,6 @@ class DataMappingNode(Node):
             return Result(False, target_table_dfs, self, task_run_context)
 
 
-@flow(name="generate-nodes",
-      flow_run_name="generate-nodes-flowrun",
-      log_prints=True)
 class FhirMappingWriterNode(Node):
     """
     Writes FHIR-to-OMOP lineage records to the mapping schema in the cache DB.
@@ -782,10 +788,10 @@ class FhirMappingWriterNode(Node):
     data_source for existing (fhir_resource_id, omop_table) pairs and only inserts
     records that are not already present.
     """
-    def __init__(self, name, _node):
-        super().__init__(name, _node)
-        self.database_code = _node["database_code"]
-        self.source_node = _node["source_node"]
+    def __init__(self, name, node):
+        super().__init__(name, node)
+        self.database_code = node["database_code"]
+        self.source_node = node["source_node"]
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
@@ -828,24 +834,24 @@ class FhirMappingWriterNode(Node):
                 ]
                 dao.batch_insert_values(schema, "data_source", columns, values)
 
-            # Insert into fhir_omop_key_map — deduplicate on fhir_reference
-            existing_refs = dao.execute_sql(
-                f'SELECT fhir_reference FROM "{schema}".fhir_omop_key_map',
+            # Insert into fhir_omop_key_map — deduplicate on (fhir_id, fhir_resource_type)
+            existing_key_rows = dao.execute_sql(
+                f'SELECT fhir_id, fhir_resource_type FROM "{schema}".fhir_omop_key_map',
                 fetch=True
             ) or []
-            existing_ref_set = {row[0] for row in existing_refs}
+            existing_key_set = {(row[0], row[1]) for row in existing_key_rows}
 
-            key_map_values = []
-            for row in lineage:
-                fhir_ref = f"{row['fhir_resource_type']}/{row['fhir_resource_id']}" \
-                    if row["fhir_resource_type"] and row["fhir_resource_id"] else None
-                if fhir_ref and fhir_ref not in existing_ref_set:
-                    key_map_values.append((fhir_ref, row["omop_table_name"]))
+            key_map_values = [
+                (row["fhir_resource_id"], row["fhir_resource_type"], row["omop_table_name"], row["omop_id"])
+                for row in lineage
+                if row["fhir_resource_id"] and row["fhir_resource_type"]
+                and (row["fhir_resource_id"], row["fhir_resource_type"]) not in existing_key_set
+            ]
 
             if key_map_values:
                 dao.batch_insert_values(
                     schema, "fhir_omop_key_map",
-                    ["fhir_reference", "omop_table_name"],
+                    ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
                     key_map_values,
                 )
 
@@ -854,6 +860,9 @@ class FhirMappingWriterNode(Node):
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
+@flow(name="generate-nodes",
+      flow_run_name="generate-nodes-flowrun",
+      log_prints=True)
 def generate_nodes_flow(graph, sorted_nodes):
     for nodename in sorted_nodes:
         node = graph["nodes"][nodename]
