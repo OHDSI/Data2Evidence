@@ -97,19 +97,19 @@ const EMPTY_FORM_DATA: FormData = {
 
 const styles: SxProps = {
   ".MuiInputLabel-root": {
-    color: "#000080",
+    color: "var(--color-primary)",
     "&.MuiInputLabel-shrink, &.Mui-focused": {
       color: "var(--color-neutral)",
     },
   },
   ".MuiInput-input:focus": {
     backgroundColor: "transparent",
-    color: "#000080",
+    color: "var(--color-primary)",
   },
   ".MuiInput-root": {
-    color: "#000080",
+    color: "var(--color-primary)",
     "&::after, &:hover:not(.Mui-disabled)::before": {
-      borderBottom: "2px solid #000080",
+      borderBottom: "2px solid var(--color-primary)",
     },
   },
 };
