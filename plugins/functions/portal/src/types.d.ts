@@ -60,6 +60,7 @@ export interface IDatasetDto {
   tenantId: string;
   databaseCode: string;
   schemaName: string;
+  dialect: DatabaseDialect;
   vocabSchemaName: string;
   resultsSchemaName: string;
   dataModel: string;

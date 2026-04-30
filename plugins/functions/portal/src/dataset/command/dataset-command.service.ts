@@ -68,6 +68,11 @@ export class DatasetCommandService {
           `Invalid tenantId ${datasetDto.tenantId} provided`,
         );
       }
+      // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
+      if (datasetDto.dialect === "hana") {
+        datasetDto.vocabSchemaName = datasetDto.vocabSchemaName?.toUpperCase();
+        datasetDto.resultsSchemaName = datasetDto.resultsSchemaName?.toUpperCase();
+      }
       const { detail, dashboards, attributes, tags, ...dataset } = datasetDto;
       const { id } = dataset;
 
@@ -413,10 +418,16 @@ export class DatasetCommandService {
 
     if (vocabSchemaName !== undefined) {
       dataset.vocabSchemaName = vocabSchemaName;
+      if (dataset.dialect === "hana") {
+        dataset.vocabSchemaName = dataset.vocabSchemaName?.toUpperCase();
+      }
     }
 
     if (resultsSchemaName !== undefined) {
       dataset.resultsSchemaName = resultsSchemaName;
+      if (dataset.dialect === "hana") {
+        dataset.resultsSchemaName = dataset.resultsSchemaName?.toUpperCase();
+      }
     }
 
     await this.datasetRepo.updateDataset(
