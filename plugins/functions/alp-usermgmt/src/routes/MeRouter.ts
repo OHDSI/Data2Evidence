@@ -69,25 +69,24 @@ export class MeRouter {
 
       this.logger.info(`Get user roles ${idpUserId}`)
 
-      const user = await this.userService.getUserByIdpUserId(idpUserId)
-      if (!user) {
-        this.logger.error(`IDP user ID ${idpUserId} not found`)
-        return res.status(400).send({ message: `IDP user ID ${idpUserId} not found` })
-      }
-
       try {
-        const groups = await this.userGroupService.getUserGroups(user?.id)
-
+        const metadata = await this.userGroupService.getUserGroupsMetadataByIdpUserId(idpUserId)
+        const roleMap = metadata.alpRoleMap
         const roles = {
-          systemRoles: groups.filter(g => g.tenantId == null).map(g => g.role),
-          tenantRoles: groups
-            .filter(g => g.tenantId != null && g.studyId == null)
-            .map(({ tenantId, role }) => ({ tenantId, role })),
-          datasetRoles: groups
-            .filter(g => g.tenantId != null && g.studyId != null)
-            .map(({ tenantId, studyId, role }) => ({ tenantId, datasetId: studyId, role }))
+          systemRoles: [
+            ...(roleMap.ALP_SYSTEM_ADMIN ? ['ALP_SYSTEM_ADMIN'] : []),
+            ...(roleMap.ALP_USER_ADMIN ? ['ALP_USER_ADMIN'] : []),
+            ...(roleMap.ALP_DASHBOARD_VIEWER ? ['ALP_DASHBOARD_VIEWER'] : []),
+            ...(roleMap.STUDY_WRITE_DQD_RESEARCHER ? ['STUDY_WRITE_DQD_RESEARCHER'] : []),
+            ...(roleMap.STUDY_RESULTS_READ_RESEARCHER ? ['STUDY_RESULTS_READ_RESEARCHER'] : []),
+            ...(roleMap.ETL_MAPPING_CONTRIBUTOR ? ['ETL_MAPPING_CONTRIBUTOR'] : [])
+          ],
+          tenantRoles: roleMap.TENANT_VIEWER.map(tenantId => ({ tenantId, role: 'TENANT_VIEWER' })),
+          datasetRoles: roleMap.STUDY_RESEARCHER.map(datasetId => ({
+            datasetId,
+            role: 'STUDY_RESEARCHER'
+          }))
         }
-
         return res.status(200).json(roles)
       } catch (err) {
         this.logger.error(`Error when getting user roles ${idpUserId}`)

@@ -6,6 +6,7 @@ import { ServiceName } from './enums/index.ts'
 import { UserArtifactRepository } from './repository/user-artifact.repository.ts'
 import { userArtifactValidator } from './validator/user-artifact.validator.ts';
 import { IUserArtifact } from '../../../_shared/user-artifacts/types.ts'
+import { createLogger } from '../logger.ts'
 
 export const ArtifactSequenceMapping = {
   [ServiceName.CONCEPT_SETS]: "concept_set_id_seq",
@@ -15,6 +16,7 @@ export const ArtifactSequenceMapping = {
 @Injectable({ scope: SCOPE.REQUEST })
 export class UserArtifactService {
   private readonly userId: string
+  private logger = createLogger('UserArtifactService')
 
   constructor(
     private readonly userArtifactRepository: UserArtifactRepository,
@@ -100,11 +102,19 @@ export class UserArtifactService {
 
   async updateServiceArtifactEntity(serviceName: ServiceName, updatedEntity: Record<string, any>): Promise<IUserArtifact> {
     const { id } = updatedEntity
-    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, id)
+    const parsedId = this.parseUserArtifactId(id)
+    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId)
 
     if (!userArtifact) {
       throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
     }
+
+    this.assertMutationAuthorized({
+      serviceName,
+      operation: 'update',
+      artifact: userArtifact,
+      artifactId: parsedId,
+    })
 
     const updatedServiceArtifact = await userArtifactValidator(serviceName, {
       id,
@@ -114,7 +124,7 @@ export class UserArtifactService {
 
     const updatedServiceArtifactColumn = this.removeIdFromUserArtifact(updatedServiceArtifact);
     const updatedUserArtifact = await this.userArtifactRepository.create({
-      id,
+      id: parsedId,
       serviceName,
       userId: this.userId,
       artifact: updatedServiceArtifactColumn,
@@ -140,23 +150,53 @@ export class UserArtifactService {
   }
 
   async deleteUserServiceArtifact(userId: string, serviceName: ServiceName, id: string): Promise<void> {
-    const userArtifact = await this.userArtifactRepository.findUserServiceArtifactByServiceArtifactId(userId, serviceName, id)
+    const parsedId = this.parseUserArtifactId(id)
 
-    if (!userArtifact) {
-      throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
+    if (serviceName === ServiceName.CONCEPT_SETS) {
+      const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId)
+
+      if (!userArtifact) {
+        throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
+      }
+
+      this.assertMutationAuthorized({
+        serviceName,
+        operation: 'delete',
+        artifact: userArtifact,
+        artifactId: parsedId,
+        routeUserId: userId,
+      })
+    } else {
+      const userArtifact = await this.userArtifactRepository.findUserServiceArtifactByServiceArtifactId(
+        userId,
+        serviceName,
+        parsedId,
+      )
+
+      if (!userArtifact) {
+        throw new HttpException(400, `Artifact with id ${id} not found in ${serviceName}`)
+      }
     }
 
-    await this.userArtifactRepository.deleteServiceArtifact(id, serviceName)
+    await this.userArtifactRepository.deleteServiceArtifact(parsedId, serviceName)
   }
 
   async deleteServiceArtifactEntity(serviceName: ServiceName, entityId: string): Promise<IUserArtifact | null> {
-    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, entityId)
+    const parsedId = this.parseUserArtifactId(entityId)
+    const userArtifact = await this.userArtifactRepository.findByServiceArtifactId(serviceName, parsedId)
 
     if (!userArtifact) {
       throw new HttpException(400, `Artifact with id ${entityId} not found in ${serviceName}`)
     }
 
-    await this.userArtifactRepository.deleteServiceArtifact(entityId, serviceName)
+    this.assertMutationAuthorized({
+      serviceName,
+      operation: 'delete',
+      artifact: userArtifact,
+      artifactId: parsedId,
+    })
+
+    await this.userArtifactRepository.deleteServiceArtifact(parsedId, serviceName)
   }
 
   getServiceArtifactSequenceNextval(
@@ -214,6 +254,13 @@ export class UserArtifactService {
       throw new HttpException(400, `Artifact not found: ${serviceName}/${id}`)
     }
 
+    this.assertMutationAuthorized({
+      serviceName,
+      operation: 'patch',
+      artifact,
+      artifactId: parsedId,
+    })
+
     // Strip id from partial data (id should not be patchable)
     const { id: _id, ...patchFields } = partialData;
 
@@ -239,5 +286,80 @@ export class UserArtifactService {
     // Remove id from user artifact
     const { id: _id, ...userArtifactEntity } = userArtifact;
     return userArtifactEntity;
+  }
+
+  private assertMutationAuthorized(context: {
+    serviceName: ServiceName
+    operation: 'update' | 'patch' | 'delete'
+    artifact: UserArtifactEntity
+    artifactId: string | number
+    routeUserId?: string
+  }): void {
+    if (context.serviceName !== ServiceName.CONCEPT_SETS) {
+      return
+    }
+    const requesterSub = this.normalizeId(this.userId)
+    const ownerUserId = this.normalizeId(context.artifact.userId)
+    const routeUserId = this.normalizeId(context.routeUserId)
+
+    if (!requesterSub) {
+      this.logMutationDenied({
+        serviceName: context.serviceName,
+        operation: context.operation,
+        artifactId: context.artifactId,
+        requesterSub,
+        ownerUserId,
+        routeUserId,
+        reason: 'missing_principal',
+      })
+      throw new HttpException(403, 'Forbidden')
+    }
+
+    if (routeUserId && routeUserId !== requesterSub) {
+      this.logMutationDenied({
+        serviceName: context.serviceName,
+        operation: context.operation,
+        artifactId: context.artifactId,
+        requesterSub,
+        ownerUserId,
+        routeUserId,
+        reason: 'route_user_mismatch',
+      })
+      throw new HttpException(403, 'Forbidden')
+    }
+
+    if (!ownerUserId || ownerUserId !== requesterSub) {
+      this.logMutationDenied({
+        serviceName: context.serviceName,
+        operation: context.operation,
+        artifactId: context.artifactId,
+        requesterSub,
+        ownerUserId,
+        routeUserId,
+        reason: 'owner_mismatch',
+      })
+      throw new HttpException(403, 'Forbidden')
+    }
+  }
+
+  private logMutationDenied(payload: {
+    serviceName: ServiceName
+    operation: 'update' | 'patch' | 'delete'
+    artifactId: string | number
+    requesterSub?: string
+    ownerUserId?: string
+    routeUserId?: string
+    reason: 'missing_principal' | 'owner_mismatch' | 'route_user_mismatch'
+  }): void {
+    this.logger.warn('artifact_mutation_denied', payload)
+  }
+
+  private normalizeId(value?: string): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined
+    }
+
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
   }
 }

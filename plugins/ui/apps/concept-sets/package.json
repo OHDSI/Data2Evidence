@@ -20,14 +20,14 @@
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@types/systemjs": "^6.1.1",
-    "@types/uuid": "^9.0.0",
+    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^4.3.1",
     "concurrently": "^9.2.1",
     "eslint": "^8.57.0",
     "jsdom": "^25.0.1",
     "typescript": "^5.2.2",
-    "vite": "^5.3.1",
+    "vite": "^6.4.2",
     "vite-plugin-css-injected-by-js": "^3.5.1",
     "vite-plugin-static-copy": "^3.1.6",
     "vitest": "^4.0.18"
@@ -39,7 +39,7 @@
     "@mui/icons-material": "^5.8.3",
     "@mui/material": "^5.8.3",
     "@portal/components": "^1.0.0",
-    "axios": "^0.27.2",
+    "axios": "^1.13.4",
     "classnames": "^2.5.1",
     "material-react-table": "^2.9.2",
     "react": "^18.2.0",
@@ -47,6 +47,6 @@
     "reactflow": "^11.11.4",
     "single-spa": "^6.0.3",
     "single-spa-react": "^6.0.2",
-    "uuid": "^9.0.0"
+    "uuid": "^14.0.0"
   }
 }

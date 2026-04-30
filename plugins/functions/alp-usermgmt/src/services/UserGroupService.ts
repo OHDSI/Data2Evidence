@@ -24,7 +24,23 @@ export class UserGroupService {
     private readonly logtoAPI: LogtoAPI
   ) {}
 
-  async getUserGroupsMetadata(userId: string, tenantId?: string, system?: string): Promise<UserGroupMetadata> {
+  async getUserGroupsMetadataByIdpUserId(
+    idpUserId: string,
+    tenantId?: string,
+    system?: string
+  ): Promise<UserGroupMetadata> {
+    if (env.USER_MGMT_ROLE_SOURCE === 'logto') {
+      return this.getUserGroupsMetadataFromLogto(idpUserId)
+    }
+
+    const user = await this.userService.getUserByIdpUserId(idpUserId)
+    if (!user) {
+      throw new Error(`IDP user ID ${idpUserId} not found`)
+    }
+    return this.getUserGroupsMetadata(user.id, tenantId, system)
+  }
+
+  private async getUserGroupsMetadata(userId: string, tenantId?: string, system?: string): Promise<UserGroupMetadata> {
     if (!userId) return {} as UserGroupMetadata
 
     const groups = await this.userGroupRepo.getGroupsByUser(userId, tenantId, system)
@@ -275,7 +291,7 @@ export class UserGroupService {
    * Get user groups metadata from Logto roles
    * Parses Logto role names to extract role type and tenant/study context
    */
-  async getUserGroupsMetadataFromLogto(idpUserId: string): Promise<UserGroupMetadata> {
+  private async getUserGroupsMetadataFromLogto(idpUserId: string): Promise<UserGroupMetadata> {
     const authHeader = Container.get<string>(CONTAINER_KEY.AUTHORIZATION_HEADER)
     const token = authHeader.replace('Bearer ', '')
     const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString())
@@ -293,8 +309,7 @@ export class UserGroupService {
       // TODO: remove deprecated roles
       alp_tenant_id: [env.APP_TENANT_ID],
       alp_role_tenant_admin: [env.APP_TENANT_ID],
-      alp_role_study_admin: [],
-      alp_role_study_mgr: []
+      alp_role_study_admin: []
     }
 
     const groups: string[] = []
@@ -361,8 +376,11 @@ export class UserGroupService {
       }
     }
 
+    const user = await this.userService.getUserByIdpUserId(idpUserId)
+    const userId = user?.id || idpUserId
+
     return {
-      userId: idpUserId,
+      userId,
       groups,
       alpRoleMap: {
         ALP_USER_ADMIN: roleMap.alp_role_user_admin,
@@ -374,8 +392,7 @@ export class UserGroupService {
         STUDY_RESULTS_READ_RESEARCHER: roleMap.alp_role_study_results_read_researcher,
         ETL_MAPPING_CONTRIBUTOR: roleMap.alp_role_etl_mapping_contributor,
         // TODO: remove deprecated roles
-        TENANT_ADMIN: roleMap.alp_role_tenant_admin,
-        STUDY_MANAGER: roleMap.alp_role_study_mgr
+        TENANT_ADMIN: roleMap.alp_role_tenant_admin
       },
       ...roleMap
     }

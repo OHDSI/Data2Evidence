@@ -37,6 +37,22 @@ export async function initTrex() {
     await ftsConn.execute("LOAD fts", []);
     logger.log(`Loaded FTS extension`);
 
+    // Attach the built-in cdw_config_svc validation schema so cdw-svc
+    // queries against datasetId="DEFAULT" can resolve `cdw_config_svc`.
+    // The old runtime did this lazily inside TrexDB's constructor; with
+    // @trex/pool worker connections share the catalog, so a one-shot
+    // ATTACH on the memory connection at startup is enough.
+    try {
+      const cdwConn = new Trex.TrexDB("memory");
+      await cdwConn.execute(
+        "ATTACH IF NOT EXISTS '/usr/src/cdw_data/built_in/cdw_config_svc_validation_schema' AS cdw_config_svc (READ_ONLY)",
+        [],
+      );
+      logger.log('Attached cdw_config_svc validation schema');
+    } catch (e) {
+      logger.error('Failed to attach cdw_config_svc validation schema:', e);
+    }
+
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
         const module = await import(`./routes/${r.name}`);
