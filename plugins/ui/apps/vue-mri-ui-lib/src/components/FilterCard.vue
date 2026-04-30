@@ -134,7 +134,7 @@
           <div class="col">
             <!-- advance time -->
             <advancedtime
-              v-if="displayAdvanceTime"
+              v-if="displayAdvanceTime && !isExcluded"
               :advancedTimeLayout="filterCardModel.props.layout.advancedTimeLayout"
               :filterCardId="id"
               :parentId="parentId"
@@ -343,10 +343,13 @@ export default {
       }
 
       // item for Advanced Time Filter
-      menu.push({
-        text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
-        key: 'advancedTime',
-      })
+      // Advance Time filter is not supported if filter is in exclusion tab
+      if (!this.isExcluded) {
+        menu.push({
+          text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
+          key: 'advancedTime',
+        })
+      }
 
       return menu
     },

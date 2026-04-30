@@ -40,7 +40,7 @@
     "@types/bcryptjs": "^2.4.2",
     "@types/jsonstream": "^0.8.30",
     "@types/passport-azure-ad": "^4.3.0",
-    "axios": "^0.21.2",
+    "axios": "^1.13.4",
     "bcryptjs": "^2.4.3",
     "hdb": "2.27.1",
     "pako": "1.0.11",

@@ -947,7 +947,7 @@
           ]
         },
         {
-          "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+",
           "scopes": [
             "jobplugins.flowRun.strategus.removeResults.add",
             "portal.dataset.read"
@@ -3015,6 +3015,15 @@
           "httpMethods": [
             "POST",
             "PUT"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]+$",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "DELETE"
           ]
         },
         {
