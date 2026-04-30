@@ -14,11 +14,11 @@ APP__TENANT_NAME:
   comment: Tenant Name
   publish: false
   type: string
-CADDY__ALP__ALIAS_PUBLIC_FQDN:
+CADDY__D2E__ALIAS_PUBLIC_FQDN:
   comment: Public FQDN Alias
   publish: false
   type: string
-CADDY__ALP__PUBLIC_FQDN:
+CADDY__D2E__PUBLIC_FQDN:
   comment: Public FQDN
   publish: true
   type: string
@@ -28,6 +28,10 @@ D2E_CPU_LIMIT:
   type: string
 D2E_MEMORY_LIMIT:
   comment: Dynamically Calculated Limit
+  publish: true
+  type: string
+D2E_DUCKDB_MEMORY_LIMIT:
+  comment: DuckDB in-process memory limit for heavy queries (e.g. Data Characterization). If unset, DuckDB uses its default. Example: 64G
   publish: true
   type: string
 D2E_SWAP_LIMIT:
@@ -91,27 +95,27 @@ LOGTO_API_M2M_CLIENT_SECRET:
   comment: Logto Api M2m Client Secret
   publish: true
   type: password
-LOGTO__ALP_APP__CLIENT_ID:
+LOGTO__D2E_APP__CLIENT_ID:
   comment: Logto Alp App Client Id
   publish: true
   type: string
-LOGTO__ALP_APP__CLIENT_SECRET:
+LOGTO__D2E_APP__CLIENT_SECRET:
   comment: Logto Alp App Client Secret
   publish: true
   type: password
-LOGTO__ALP_DATA__CLIENT_ID:
+LOGTO__D2E_DATA__CLIENT_ID:
   comment: Logto Alp Data Client Id
   publish: true
   type: string
-LOGTO__ALP_DATA__CLIENT_SECRET:
+LOGTO__D2E_DATA__CLIENT_SECRET:
   comment: Logto Alp Data Client Secret
   publish: true
   type: password
-LOGTO__ALP_SVC__CLIENT_ID:
+LOGTO__D2E_SVC__CLIENT_ID:
   comment: Logto Alp Svc Client Id
   publish: true
   type: string
-LOGTO__ALP_SVC__CLIENT_SECRET:
+LOGTO__D2E_SVC__CLIENT_SECRET:
   comment: Logto Alp Svc Client Secret
   publish: true
   type: password
@@ -172,15 +176,3 @@ TLS__INTERNAL__CRT:
 TLS__INTERNAL__KEY:
   comment: Internal Microservice TLS Communication Private
   publish: true
-USE_CACHEDB:
-  comment: boolean
-  publish: false
-  type: string
-USE_DUCKDB:
-  comment: USE_DUCKDB boolean
-  publish: false
-  type: string
-USE_DUCKDB_FTS:
-  comment: USE_DUCKDB_FTS boolean
-  publish: false
-  type: string

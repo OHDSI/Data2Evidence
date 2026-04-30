@@ -1,10 +1,10 @@
 #!/usr/bin/env zx
-
+$.verbose = false;  
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 
 if ( await $`[ -f .env.local ]` ) { 
-    dotenv.config({ path: '.env.local' });
+    dotenv.config({ path: '.env.local' , quiet: true });
 } else if ( await $`[ -f .env ]` ) { 
     dotenv.config({ path: '.env' });
 } else { 

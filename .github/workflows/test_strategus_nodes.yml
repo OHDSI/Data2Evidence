@@ -27,11 +27,11 @@ jobs:
         with:
           filters: |
             has_strategus_changes:
-              - 'flows/hades/strategus_plugin/**'
+              - 'plugins/flows/hades/strategus_plugin/**'
 
       - name: Determine condition to run
         env:
-          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains('release/', env.BRANCH_NAME) || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
+          SHOULD_WF_RUN: ${{ env.BRANCH_NAME == 'develop' || contains(env.BRANCH_NAME, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'merge_group' || steps.check_file_changed.outputs.has_strategus_changes == 'True' }}
         run: |
           echo WF_RUN=$SHOULD_WF_RUN | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
 
@@ -39,4 +39,4 @@ jobs:
         if: env.WF_RUN == 'true'
         run: |
           docker pull --platform linux/amd64 ghcr.io/ohdsi/d2e/flow-hades:develop
-          docker compose -f ./flows/hades/strategus_plugin/dc-local.yml up
+          docker compose -f ./plugins/flows/hades/strategus_plugin/dc-local.yml up

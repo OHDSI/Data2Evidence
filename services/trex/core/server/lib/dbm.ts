@@ -3,7 +3,7 @@ import pg from "npm:pg"
 import {Validator} from "npm:jsonschema"
 import { dbSchema } from './schema.ts';
 import { constants, privateDecrypt } from "node:crypto";
-import * as base64 from "jsr:@std/encoding/base64";
+//import * as base64 from "jsr:@std/encoding/base64";
 import {transformDBCredentials, PrefectAPI} from "../api/PrefectAPI.ts";
 
 export class DatabaseManager {
@@ -111,7 +111,7 @@ export class DatabaseManager {
         padding: constants.TREX_RSA_PKCS1_OAEP_SHA256_PADDING,
         oaepHash: "sha256",
       },
-      base64.decodeBase64(encryptedValue)
+      Uint8Array.from(atob(encryptedValue), (c) => c.charCodeAt(0))
   ));
   } catch(e) {
     console.log(e);

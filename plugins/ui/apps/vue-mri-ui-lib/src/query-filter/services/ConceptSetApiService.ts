@@ -1,0 +1,374 @@
+/**
+ * API service for concept set operations
+ */
+import { getPortalAPI } from '../../utils/PortalUtils'
+import { d2eWebapiService } from './D2eWebapiService'
+import type {
+  ConceptSetItemDisplay,
+  ConceptDetail,
+  ConceptSetDomainValues,
+  CreateConceptSetRequest,
+  ConceptSetDetail,
+  ConceptSetExpression,
+  ConceptSetExpressionItem,
+} from '../types/ConceptSetTypes'
+
+const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
+  const portalAPI = getPortalAPI()
+  const headers: Record<string, string> = {}
+
+  const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+  if (bearerToken != null) {
+    headers['Authorization'] = `Bearer ${bearerToken}`
+  }
+
+  if (datasetId) {
+    headers['datasetid'] = datasetId
+  }
+
+  return headers
+}
+
+// In-memory cache for concept set expressions with TTL
+interface CacheEntry {
+  promise: Promise<ConceptSetExpression>
+  timestamp: number
+}
+
+const conceptSetExpressionCache = new Map<string, CacheEntry>()
+const CACHE_TTL_MS = 10 * 1000 // 10 seconds
+
+// Helper to get cache key
+const getCacheKey = (datasetId: string, conceptSetId: string): string => {
+  return `${datasetId}:${conceptSetId}`
+}
+
+// Clear expired entries from cache
+const clearExpiredCache = () => {
+  const now = Date.now()
+  for (const [key, entry] of conceptSetExpressionCache.entries()) {
+    if (now - entry.timestamp > CACHE_TTL_MS) {
+      conceptSetExpressionCache.delete(key)
+    }
+  }
+}
+
+// Clear the entire cache (useful when dataset changes)
+export const clearConceptSetExpressionCache = () => {
+  conceptSetExpressionCache.clear()
+}
+
+export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept set API call')
+    return {
+      values: [],
+      isLoading: false,
+      loadedStatus: 'NO_RESULTS',
+    }
+  }
+
+  try {
+    const values = await d2eWebapiService.getConceptSets(datasetId)
+
+    const formattedValues = values.map(item => ({
+      value: String(item.id),
+      text: item.name,
+      display_value: item.name,
+      shared: item.shared || false,
+      userName: item.userName || item.createdBy || '',
+      createdDate: item.createdDate || '',
+      modifiedDate: item.modifiedDate || '',
+    }))
+
+    const loadedStatus = values.length === 0 ? 'NO_RESULTS' : 'HAS_RESULTS'
+
+    return {
+      values: formattedValues,
+      isLoading: false,
+      loadedStatus,
+    }
+  } catch (error) {
+    console.error('Error loading concept sets:', error)
+    return {
+      values: [],
+      isLoading: false,
+      loadedStatus: 'NO_RESULTS',
+    }
+  }
+}
+
+export const fetchConceptById = async (datasetId: string, conceptId: number): Promise<ConceptDetail | null> => {
+  try {
+    const data = await d2eWebapiService.getConceptById(conceptId, datasetId)
+    return Array.isArray(data) && data.length > 0 ? data[0] : null
+  } catch (error) {
+    console.error(`Error fetching concept by ID ${conceptId}:`, error)
+    return null
+  }
+}
+
+export const fetchConceptsByIds = async (
+  datasetId: string,
+  conceptIds: number[],
+  batchSize: number = 10
+): Promise<Map<number, ConceptDetail | null>> => {
+  const resultMap = new Map<number, ConceptDetail | null>()
+
+  for (let i = 0; i < conceptIds.length; i += batchSize) {
+    const batch = conceptIds.slice(i, i + batchSize)
+    console.log(
+      `Fetching concept details batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+        conceptIds.length / batchSize
+      )}: IDs ${batch.join(', ')}`
+    )
+
+    const batchPromises = batch.map(async conceptId => {
+      try {
+        const conceptDetail = await fetchConceptById(datasetId, conceptId)
+        return { conceptId, conceptDetail }
+      } catch (error) {
+        console.warn(`Failed to fetch concept details for ID ${conceptId}:`, error)
+        return { conceptId, conceptDetail: null }
+      }
+    })
+
+    const batchResults = await Promise.all(batchPromises)
+
+    for (const { conceptId, conceptDetail } of batchResults) {
+      resultMap.set(conceptId, conceptDetail)
+    }
+  }
+
+  return resultMap
+}
+
+const formatConceptForAtlas = (
+  conceptDetail: ConceptDetail,
+  conceptId: number,
+  conceptFlags?: { useMapped?: boolean; isExcluded?: boolean; useDescendants?: boolean }
+) => {
+  return {
+    concept: {
+      CONCEPT_CLASS_ID: conceptDetail.concept_class_id,
+      CONCEPT_CODE: conceptDetail.concept_code,
+      CONCEPT_ID: conceptDetail.concept_id || conceptId,
+      CONCEPT_NAME: conceptDetail.concept_name,
+      DOMAIN_ID: conceptDetail.domain_id,
+      INVALID_REASON: conceptDetail.invalid_reason || null,
+      INVALID_REASON_CAPTION: conceptDetail.invalid_reason ? 'Invalid' : 'Valid',
+      STANDARD_CONCEPT: conceptDetail.standard_concept,
+      STANDARD_CONCEPT_CAPTION:
+        conceptDetail.standard_concept === 'S'
+          ? 'Standard'
+          : conceptDetail.standard_concept === 'C'
+          ? 'Classification'
+          : 'Non-standard',
+      VOCABULARY_ID: conceptDetail.vocabulary_id,
+      VALID_START_DATE: conceptDetail.valid_start_date || '1970-01-01',
+      VALID_END_DATE: conceptDetail.valid_end_date || '2099-12-31',
+    },
+    isExcluded: conceptFlags?.isExcluded ?? false,
+    includeDescendants: conceptFlags?.useDescendants ?? true,
+    includeMapped: conceptFlags?.useMapped ?? true,
+  }
+}
+
+// Helper function to extract concept expression items
+const extractConceptExpression = async (
+  conceptSet: ConceptSetItemDisplay,
+  datasetId: string
+): Promise<ConceptSetExpressionItem[]> => {
+  try {
+    const expression = await getConceptSetExpression(datasetId, conceptSet.value)
+    return expression.items
+  } catch (error) {
+    console.error(`Error extracting concept expression for concept set ${conceptSet.value}:`, error)
+    return []
+  }
+}
+
+export const loadConceptSetDetails = async (selectedConceptSets: ConceptSetItemDisplay[], datasetId: string) => {
+  if (selectedConceptSets.length === 0) {
+    return {}
+  }
+
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
+    return {}
+  }
+
+  try {
+    const headers = await buildApiHeaders()
+    headers['Content-Type'] = 'application/json'
+
+    const detailsMap: { [key: string]: ConceptSetDetail[] } = {}
+
+    const allConceptIds: number[] = []
+    const conceptSetToExpressionItems: Record<string, ConceptSetExpressionItem[]> = {}
+
+    for (const conceptSet of selectedConceptSets) {
+      const conceptSetId = conceptSet.value
+      const expressionItems = await extractConceptExpression(conceptSet, datasetId)
+
+      if (expressionItems.length === 0) {
+        console.warn(`No concept IDs found for concept set ${conceptSetId}`)
+        conceptSetToExpressionItems[conceptSetId] = []
+      } else {
+        const limitedItems = expressionItems.slice(0, 20)
+        conceptSetToExpressionItems[conceptSetId] = limitedItems
+        const conceptIds = limitedItems.map(item => item.concept.CONCEPT_ID)
+        allConceptIds.push(...conceptIds)
+      }
+    }
+
+    if (allConceptIds.length === 0) {
+      console.log('No concept IDs to fetch across all concept sets')
+      return detailsMap
+    }
+
+    const uniqueConceptIds = [...new Set(allConceptIds)]
+    console.log(
+      `Fetching details for ${uniqueConceptIds.length} unique concepts across ${selectedConceptSets.length} concept sets`
+    )
+
+    const conceptDetailsMap = await fetchConceptsByIds(datasetId, uniqueConceptIds, 10)
+
+    for (const conceptSet of selectedConceptSets) {
+      const conceptSetId = conceptSet.value
+      const expressionItems = conceptSetToExpressionItems[conceptSetId]
+      const conceptDetails: ConceptSetDetail[] = []
+      if (expressionItems) {
+        for (const expressionItem of expressionItems) {
+          const conceptId = expressionItem.concept.CONCEPT_ID
+          const conceptDetail = conceptDetailsMap.get(conceptId)
+          if (conceptDetail) {
+            console.log(`Using cached concept detail for ID ${conceptId}:`, conceptDetail)
+
+            const conceptFlags = {
+              id: conceptId,
+              useMapped: expressionItem.includeMapped,
+              isExcluded: expressionItem.isExcluded,
+              useDescendants: expressionItem.includeDescendants,
+            }
+            const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
+            conceptDetails.push(formattedConcept)
+          }
+        }
+      }
+
+      detailsMap[conceptSetId] = conceptDetails
+    }
+
+    console.log('Loaded concept set details (Atlas format):', detailsMap)
+    return detailsMap
+  } catch (error) {
+    console.error('Error loading concept set details:', error)
+    return {}
+  }
+}
+
+export const loadSingleConceptSetDetails = async (
+  conceptSet: ConceptSetItemDisplay,
+  datasetId: string
+): Promise<ConceptSetDetail[]> => {
+  if (!datasetId) {
+    console.warn('Missing datasetId for concept details API call')
+    return []
+  }
+
+  try {
+    const headers = await buildApiHeaders()
+    headers['Content-Type'] = 'application/json'
+
+    const expressionItems = await extractConceptExpression(conceptSet, datasetId)
+
+    if (expressionItems.length === 0) {
+      console.warn(`No concept IDs found for concept set ${conceptSet.value}`)
+    }
+
+    const conceptDetails: ConceptSetDetail[] = []
+
+    const conceptIds = expressionItems.map(item => item.concept.CONCEPT_ID)
+    console.log(`Fetching details for concept set ${conceptSet.value}:`, conceptIds)
+
+    // Fetch all concepts in parallel batches instead of sequentially
+    const conceptDetailsMap = await fetchConceptsByIds(datasetId, conceptIds, 10)
+
+    for (const expressionItem of expressionItems) {
+      try {
+        const conceptId = expressionItem.concept.CONCEPT_ID
+        const conceptDetail = conceptDetailsMap.get(conceptId)
+        if (conceptDetail) {
+          const conceptFlags = {
+            id: conceptId,
+            useMapped: expressionItem.includeMapped,
+            isExcluded: expressionItem.isExcluded,
+            useDescendants: expressionItem.includeDescendants,
+          }
+          const formattedConcept = formatConceptForAtlas(conceptDetail, conceptId, conceptFlags)
+          conceptDetails.push(formattedConcept)
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch concept details for ID ${expressionItem.concept.CONCEPT_ID}:`, error)
+      }
+    }
+
+    return conceptDetails
+  } catch (error) {
+    console.error('Error loading single concept set details:', error)
+    return []
+  }
+}
+
+export const getConceptSetExpression = async (
+  datasetId: string,
+  conceptSetId: string
+): Promise<ConceptSetExpression> => {
+  const cacheKey = getCacheKey(datasetId, conceptSetId)
+
+  // Clear expired entries periodically
+  clearExpiredCache()
+
+  // Check if we have a cached promise (either pending or resolved)
+  const cached = conceptSetExpressionCache.get(cacheKey)
+  if (cached) {
+    console.log(`Using cached concept set expression for ID ${conceptSetId}`)
+    return cached.promise
+  }
+
+  // Create new promise and cache it immediately (deduplicates concurrent requests)
+  console.log(`Fetching concept set expression for ID ${conceptSetId}`)
+  const promise = d2eWebapiService.getConceptSetExpression(parseInt(conceptSetId, 10), datasetId)
+
+  conceptSetExpressionCache.set(cacheKey, {
+    promise,
+    timestamp: Date.now(),
+  })
+
+  try {
+    return await promise
+  } catch (error) {
+    // Remove from cache on error so it can be retried
+    conceptSetExpressionCache.delete(cacheKey)
+    console.error('Error fetching concept set expression:', error)
+    throw error
+  }
+}
+
+export const createConceptSet = async (
+  conceptSetData: CreateConceptSetRequest,
+  datasetId: string,
+  isAtlas: boolean
+): Promise<number> => {
+  if (!datasetId) {
+    throw new Error('Missing datasetId for concept set creation')
+  }
+
+  try {
+    return await d2eWebapiService.createConceptSet(conceptSetData, datasetId, isAtlas)
+  } catch (error) {
+    console.error('Error creating concept set:', error)
+    throw error
+  }
+}

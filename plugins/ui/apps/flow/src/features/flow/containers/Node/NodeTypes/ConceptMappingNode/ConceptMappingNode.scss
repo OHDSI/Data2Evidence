@@ -1,0 +1,11 @@
+@use "../../../../../../theme/variables.scss" as *;
+
+.concept-mapping-node {
+  background-color: white;
+}
+
+.concept-mapping-drawer {
+  .node-drawer__content {
+    padding: 0;
+  }
+}

@@ -1,0 +1,45 @@
+.run-strategus-study-dialog {
+  .run-strategus-study-dialog__content {
+    min-height: 100px;
+    margin: 40px 25px 0;
+    text-align: center;
+    color: var(--color-primary);
+  }
+
+  &-selector {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  &-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #000080;
+    margin: 0;
+  }
+
+  &-select {
+    .MuiOutlinedInput-root {
+      border-radius: 6px;
+
+      &:hover .MuiOutlinedInput-notchedOutline {
+        border-color: #000080;
+      }
+
+      &.Mui-focused .MuiOutlinedInput-notchedOutline {
+        border-color: #000080;
+      }
+    }
+  }
+  .button-group-actions {
+    display: flex;
+    justify-content: center;
+    margin: 24px 0;
+
+    .alp-button__container {
+      margin: 0 0 0 8px;
+      width: 247px;
+    }
+  }
+}

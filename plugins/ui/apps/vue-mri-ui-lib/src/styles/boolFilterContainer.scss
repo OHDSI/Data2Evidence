@@ -1,0 +1,23 @@
+.boolfiltercontainer {
+  width: 100%;
+  // add ghost class here
+  .boolfiltercontainer-content {
+    padding: 8px;
+
+    &.tinted {
+      margin: 8px 0;
+      background-color: var(--color-tab-bar-header-bg);
+    }
+  }
+  .btn-boolean-toggle:hover {
+      color: var(--color-mri-lightest-text);
+  }
+}
+
+.boolfiltercontainer.exclusion {
+  margin-top: 0px;
+  padding-top: 0px;
+  .btn-boolean-toggle {
+    display: none;
+  }
+}

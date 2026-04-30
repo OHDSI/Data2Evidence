@@ -14,7 +14,7 @@
       "localRoot": "${workspaceFolder}/services/trex",
       "resolveSourceMapLocations": [
         "${workspaceFolder}/service/trex**",
-        "${workspaceFolder}/functions/**",
+        "${workspaceFolder}/plugins/functions/**",
         "!**/node_modules/**"
       ],
       "type": "node"
@@ -48,21 +48,6 @@
         {
           "localRoot": "${workspaceFolder}/flows",
           "remoteRoot": "./flows"
-        }
-      ]
-    },
-    {
-      "name": "alp-cachedb",
-      "type": "debugpy",
-      "request": "attach",
-      "connect": {
-        "host": "localhost",
-        "port": 9235
-      },
-      "pathMappings": [
-        {
-          "localRoot": "${workspaceFolder}/services/cachedb/src",
-          "remoteRoot": "./src"
         }
       ]
     },

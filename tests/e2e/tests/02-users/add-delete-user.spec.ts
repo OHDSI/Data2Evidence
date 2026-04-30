@@ -1,12 +1,12 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'add-delete-user'
 const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled`)
 
 test(TEST_NAME, async ({ page }) => {
   // Sign in
-  await page.goto(`/portal`)
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -30,7 +30,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Show password' }).click()
   await page.getByRole('button', { name: 'Add' }).click()
   // Check if user is added
-  await page.waitForTimeout(10000)
+  await page.waitForTimeout(5000)
   await page.reload()
   await expect(page.getByRole('cell', { name: 'test_user' })).toBeVisible()
 
@@ -38,7 +38,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Delete' }).nth(1).click()
   await page.getByRole('button', { name: 'Yes, delete' }).click()
   // Check if user is deleted
+  await page.waitForTimeout(500)
   await page.reload()
-  await page.waitForTimeout(3000)
   await expect(page.getByRole('cell', { name: 'test_user' })).not.toBeVisible()
 })

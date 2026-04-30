@@ -1,0 +1,41 @@
+{
+  "cdmVersionRange": ">=5.0.0",
+  "ConceptSets": [],
+  "PrimaryCriteria": {
+    "CriteriaList": [
+      {
+        "DrugExposure": {}
+      }
+    ],
+    "ObservationWindow": {
+      "PriorDays": 0,
+      "PostDays": 0
+    },
+    "PrimaryCriteriaLimit": {
+      "Type": "All"
+    }
+  },
+  "QualifiedLimit": {
+    "Type": "All"
+  },
+  "ExpressionLimit": {
+    "Type": "All"
+  },
+  "InclusionRules": [],
+  "EndStrategy": {
+    "DateOffset": {
+      "DateField": "StartDate",
+      "Offset": 31
+    }
+  },
+  "CensoringCriteria": [
+    {
+      "ProcedureOccurrence": {}
+    }
+  ],
+  "CollapseSettings": {
+    "CollapseType": "ERA",
+    "EraPad": 0
+  },
+  "CensorWindow": {}
+}

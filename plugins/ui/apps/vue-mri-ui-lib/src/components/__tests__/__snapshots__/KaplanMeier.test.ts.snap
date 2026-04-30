@@ -1,0 +1,54 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`KaplanMeier.vue > sets the correct default data 1`] = `
+{
+  "allCurves": {},
+  "cachedRangeSliderValue": [
+    0,
+    0,
+  ],
+  "chartData": {},
+  "errorMessage": "",
+  "globalPValue": "",
+  "kmChartStyle": {},
+  "kmInterval": "",
+  "kmLogRankHelpArrowPosition": {
+    "left": "270px",
+  },
+  "kmLogRankHelpPopoverPosition": {
+    "right": "8px",
+  },
+  "kmUnit": "years",
+  "maxDataday": 0,
+  "maxDay": 0,
+  "minDay": 0,
+  "minProb": 0,
+  "rangeSliderValue": [
+    0,
+    0,
+  ],
+  "selection": [],
+  "series": [],
+  "showCensoring": false,
+  "showErrorLines": false,
+  "showKMLogRankHelpPopOver": false,
+  "showKMLogRankHelpPopOverHover": false,
+  "showKMLogRankHelpPopOverIcon": false,
+  "showKMStatisticsErrPopupForMoreCurves": false,
+  "showKMStatisticsErrPopupForOneCurve": false,
+  "showKMStatisticsPopup": false,
+  "showSubComponents": false,
+  "showTooltip": false,
+  "sliderFocus": false,
+  "sliderHoverState": false,
+  "sliderWidth": 0,
+  "tooltipCategories": [],
+  "tooltipFocusLeft": false,
+  "tooltipFocusRight": false,
+  "tooltipHoverState": false,
+  "tooltipMeasures": [],
+  "tooltipPosition": {},
+  "xScale": 0,
+  "yScale": 0,
+}
+`;

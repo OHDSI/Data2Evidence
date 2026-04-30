@@ -42,7 +42,6 @@ Object.defineProperty(axios, "post", {
           alp_role_study_researcher: ["dataset-1"],
           alp_role_system_admin: true,
           alp_role_user_admin: true,
-          alp_role_nifi_admin: true,
           alp_role_dashboard_viewer: true,
         },
       };
@@ -66,7 +65,6 @@ const createMockToken = (payload: Partial<IAppTokenPayload>) => {
       alp_role_study_researcher: ["dataset-1"],
       alp_role_system_admin: true,
       alp_role_user_admin: true,
-      alp_role_nifi_admin: true,
       alp_role_dashboard_viewer: true,
     },
     given_name: "Test",
@@ -157,7 +155,6 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1"],
         alp_role_system_admin: true,
         alp_role_user_admin: true,
-        alp_role_nifi_admin: true,
         alp_role_dashboard_viewer: true,
       },
     } as IAppTokenPayload;
@@ -209,7 +206,7 @@ Deno.test({
     assertEquals(adUser.mriScopes.includes("trex"), true);
     assertEquals(
       adUser.mriScopes.includes("portal.dataset.systemAdmin.read"),
-      true
+      true,
     );
     assertEquals(adUser.mriScopes.includes("portal.tenant.read"), true);
     assertEquals(user.isClientCredUser, true);
@@ -228,7 +225,7 @@ Deno.test({
     assertThrows(
       () => new MriUser(token, global.ROLE_SCOPES),
       Error,
-      "token has no userMgmtGroups"
+      "token has no userMgmtGroups",
     );
   },
 });
@@ -315,7 +312,6 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1", "dataset-1"], // Ensure dataset-1 is included
         alp_role_system_admin: true,
         alp_role_user_admin: false,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
       },
     });
@@ -392,7 +388,6 @@ Deno.test({
         alp_role_study_researcher: [],
         alp_role_system_admin: true,
         alp_role_user_admin: false,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
       },
     });
@@ -439,11 +434,9 @@ Deno.test({
         alpRoleMap: {
           ALP_USER_ADMIN: true,
           ALP_SYSTEM_ADMIN: true,
-          ALP_NIFI_ADMIN: false,
           ALP_DASHBOARD_VIEWER: false,
           TENANT_ADMIN: [],
           TENANT_VIEWER: ["tenant-1"],
-          STUDY_MANAGER: [],
           STUDY_RESEARCHER: ["dataset-1"],
         },
         alp_tenant_id: ["tenant-1"],
@@ -451,10 +444,8 @@ Deno.test({
         alp_role_study_researcher: ["dataset-1"],
         alp_role_system_admin: true,
         alp_role_user_admin: true,
-        alp_role_nifi_admin: false,
         alp_role_dashboard_viewer: false,
         alp_role_study_admin: [],
-        alp_role_study_mgr: [],
       },
     });
 

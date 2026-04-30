@@ -76,8 +76,7 @@ class SeedSource {
     }
   
     getMigration(migration: any)  {
-          return import(this.path+`${migration}`);
-          //return import(`./${this.path}/${migration}`);
+          return import(`/usr/src/core/server/plugin/${this.path}${migration}`);
     }
   }
 
@@ -132,6 +131,10 @@ export class KnexMigration {
     public async initalizeDataSource() {
         logger.log("Initializing DataSource...");
       try {
+        const schema = this.config.searchPath[0];
+        logger.log(`>>> Creating schema '${schema}' if not exists <<<`);
+        await this.k.raw(`CREATE SCHEMA IF NOT EXISTS "${schema}"`);
+
         if(this.migrations) {
             logger.log(">>> Running Migrations <<<");
             const migrationResult = await this.k.migrate.latest({ migrationSource: new MigrationSource(this.migrations, this.usejs) });

@@ -48,13 +48,15 @@ jobs:
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
   check_file_changes:
-    environment: "github" # ${{github.event_name == 'workflow_dispatch' && contains('release', github.ref_name) && 'dockerhub' || 'github'}}
+    environment: "github"
     runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' ||  contains('release/', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    permissions:
+      contents: read   # Required to check out code
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
     outputs:
       changes: ${{ steps.file_changes.outputs.src }}
       rkernel: ${{ steps.file_changes.outputs.rkernel }}
-      jenv: ${{  job.environment }}
+      jenv: ${{ job.environment }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,19 +66,25 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/**"
+              - "plugins/flows/**"
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
             rkernel:
+              - "./services/enterprise-gateway/CustomKernelManager/**"
+              - "./services/enterprise-gateway/kernels/**"
               - "./services/enterprise-gateway/r-strategus-lib/**"
-              - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
+              - "./plugins/flows/hades/renv.lock"
+              - "./plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
               - ".github/workflows/docker-build-push.yaml"
 
   bld:
     needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains('release', github.ref_name) || github.event_name == 'workflow_dispatch') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
+    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
     runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+    permissions:
+      contents: read   # Required to check out code
+      packages: write  # Required to push images to GHCR
     env:
       DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
       DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
@@ -90,29 +98,26 @@ jobs:
       matrix:
         include:
           - AZ_REG_REPOSITORY: d2e/flow-base
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-cohort-survival
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/cohort_survival/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/base/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/i2b2/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-search-embedding
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/search_embedding/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/search_embedding/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-management
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_management/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_management/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/loyalty_score/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-hades
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/hades/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/hades/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-transformation
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_transformation/Dockerfile
           - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
@@ -122,9 +127,6 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-logto-post-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-logto/post-init/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-logto/post-init
-          - AZ_REG_REPOSITORY: d2e-cachedb
-            DOCKER_BUILD_FILE_PATH: ./services/cachedb/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
           - AZ_REG_REPOSITORY: d2e-enterprise-gateway
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/enterprise-gateway
@@ -133,8 +135,14 @@ jobs:
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
-            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: .
+            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
+            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
+          - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
+            DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen-worker
+          - AZ_REG_REPOSITORY: d2e-supabase-storage
+            DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
 
     steps:
       - name: Free Disk Space (Ubuntu)
@@ -211,7 +219,7 @@ jobs:
 
       - name: Build and Push
         id: build-push
-        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains('release', github.ref_name) }}
+        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group'}}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
@@ -245,6 +253,14 @@ jobs:
   docker-success:
     needs: bld
     runs-on: ubuntu-latest
+    if: always()
+    env:
+      BUILD_JOB_STATUS: ${{ needs.bld.result }}
     steps:
       - name: Check
-        run: echo "Check"
+        run: |
+          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
+            exit 0
+          else
+            exit 1
+          fi

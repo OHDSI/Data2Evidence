@@ -1,0 +1,364 @@
+{
+    "ConceptSets": [],
+    "PrimaryCriteria": {
+        "CriteriaList": [
+            {
+                "ConditionOccurrence": {}
+            }
+        ],
+        "ObservationWindow": {
+            "PriorDays": 0,
+            "PostDays": 0
+        },
+        "PrimaryCriteriaLimit": {
+            "Type": "First"
+        }
+    },
+    "QualifiedLimit": {
+        "Type": "First"
+    },
+    "ExpressionLimit": {
+        "Type": "First"
+    },
+    "InclusionRules": [
+        {
+            "name": "test",
+            "expression": {
+                "Type": "ALL",
+                "CriteriaList": [
+                    {
+                        "Criteria": {
+                            "ConditionEra": {
+                                "DateAdjustment": {
+                                    "StartWith": "START_DATE",
+                                    "StartOffset": 1,
+                                    "EndWith": "END_DATE",
+                                    "EndOffset": 2
+                                },
+                                "EraStartDate": {
+                                    "Value": "2025-10-15",
+                                    "Op": "gte"
+                                },
+                                "EraEndDate": {
+                                    "Value": "2025-10-14",
+                                    "Extent": "2025-10-25",
+                                    "Op": "bt"
+                                },
+                                "EraLength": {
+                                    "Value": 5,
+                                    "Op": "lt"
+                                },
+                                "First": true
+                            }
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
+                        },
+                        "Occurrence": {
+                            "Type": 2,
+                            "Count": 1
+                        }
+                    },
+                    {
+                        "Criteria": {
+                            "VisitOccurrence": {
+                                "DateAdjustment": {
+                                    "StartWith": "END_DATE",
+                                    "StartOffset": 0,
+                                    "EndWith": "START_DATE",
+                                    "EndOffset": 0
+                                },
+                                "OccurrenceStartDate": {
+                                    "Value": "2025-10-15",
+                                    "Op": "eq"
+                                },
+                                "OccurrenceEndDate": {
+                                    "Value": "2025-10-29",
+                                    "Op": "gt"
+                                },
+                                "VisitLength": {
+                                    "Value": 4,
+                                    "Op": "lte"
+                                }
+                            }
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
+                        },
+                        "Occurrence": {
+                            "IsDistinct": true,
+                            "Type": 2,
+                            "Count": 5,
+                            "CountColumn": "VISIT_ID"
+                        }
+                    },
+                    {
+                        "Criteria": {
+                            "VisitDetail": {
+                                "VisitDetailStartDate": {
+                                    "Value": "2025-10-02",
+                                    "Op": "lt"
+                                },
+                                "VisitDetailEndDate": {
+                                    "Value": "2025-10-15",
+                                    "Op": "lte"
+                                },
+                                "VisitDetailLength": {
+                                    "Value": 3,
+                                    "Op": "eq"
+                                }
+                            }
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
+                        },
+                        "Occurrence": {
+                            "Type": 0,
+                            "Count": 1
+                        }
+                    },
+                    {
+                        "Criteria": {
+                            "Observation": {
+                                "CorrelatedCriteria": {
+                                    "Type": "ALL",
+                                    "CriteriaList": [
+                                        {
+                                            "Criteria": {
+                                                "PayerPlanPeriod": {}
+                                            },
+                                            "StartWindow": {
+                                                "Start": {
+                                                    "Coeff": -1
+                                                },
+                                                "End": {
+                                                    "Coeff": 1
+                                                },
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
+                                            },
+                                            "Occurrence": {
+                                                "Type": 2,
+                                                "Count": 1
+                                            }
+                                        },
+                                        {
+                                            "Criteria": {
+                                                "Specimen": {
+                                                    "Quantity": {
+                                                        "Value": 5,
+                                                        "Op": "gt"
+                                                    },
+                                                    "Age": {
+                                                        "Value": 6,
+                                                        "Op": "gte"
+                                                    }
+                                                }
+                                            },
+                                            "StartWindow": {
+                                                "Start": {
+                                                    "Coeff": -1
+                                                },
+                                                "End": {
+                                                    "Coeff": 1
+                                                },
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
+                                            },
+                                            "Occurrence": {
+                                                "Type": 2,
+                                                "Count": 1
+                                            }
+                                        },
+                                        {
+                                            "Criteria": {
+                                                "LocationRegion": {}
+                                            },
+                                            "StartWindow": {
+                                                "Start": {
+                                                    "Coeff": -1
+                                                },
+                                                "End": {
+                                                    "Coeff": 1
+                                                },
+                                                "UseEventEnd": false,
+                                                "UseIndexEnd": false
+                                            },
+                                            "Occurrence": {
+                                                "Type": 2,
+                                                "Count": 1
+                                            }
+                                        }
+                                    ],
+                                    "DemographicCriteriaList": [],
+                                    "Groups": []
+                                },
+                                "OccurrenceStartDate": {
+                                    "Value": "2025-10-14",
+                                    "Extent": "2025-10-16",
+                                    "Op": "!bt"
+                                },
+                                "ValueAsNumber": {
+                                    "Value": 5,
+                                    "Op": "lt"
+                                },
+                                "ValueAsString": {
+                                    "Text": "test",
+                                    "Op": "contains"
+                                }
+                            }
+                        },
+                        "StartWindow": {
+                            "Start": {
+                                "Coeff": -1
+                            },
+                            "End": {
+                                "Coeff": 1
+                            },
+                            "UseEventEnd": false,
+                            "UseIndexEnd": false
+                        },
+                        "Occurrence": {
+                            "Type": 2,
+                            "Count": 1
+                        }
+                    }
+                ],
+                "DemographicCriteriaList": [],
+                "Groups": [
+                    {
+                        "Type": "ALL",
+                        "CriteriaList": [
+                            {
+                                "Criteria": {
+                                    "ConditionOccurrence": {
+                                        "Age": {
+                                            "Value": 1,
+                                            "Extent": 2,
+                                            "Op": "bt"
+                                        }
+                                    }
+                                },
+                                "StartWindow": {
+                                    "Start": {
+                                        "Coeff": -1
+                                    },
+                                    "End": {
+                                        "Coeff": 1
+                                    },
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
+                                },
+                                "Occurrence": {
+                                    "Type": 2,
+                                    "Count": 1
+                                }
+                            },
+                            {
+                                "Criteria": {
+                                    "DrugExposure": {
+                                        "OccurrenceStartDate": {
+                                            "Value": "2025-10-18",
+                                            "Op": "lt"
+                                        },
+                                        "OccurrenceEndDate": {
+                                            "Value": "2025-10-22",
+                                            "Op": "lt"
+                                        },
+                                        "Refills": {
+                                            "Value": 2,
+                                            "Op": "lt"
+                                        },
+                                        "DaysSupply": {
+                                            "Value": 3,
+                                            "Op": "lte"
+                                        }
+                                    }
+                                },
+                                "StartWindow": {
+                                    "Start": {
+                                        "Coeff": -1
+                                    },
+                                    "End": {
+                                        "Coeff": 1
+                                    },
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
+                                },
+                                "Occurrence": {
+                                    "Type": 2,
+                                    "Count": 1
+                                }
+                            },
+                            {
+                                "Criteria": {
+                                    "ObservationPeriod": {
+                                        "PeriodStartDate": {
+                                            "Value": "2025-10-09",
+                                            "Op": "eq"
+                                        },
+                                        "PeriodEndDate": {
+                                            "Value": "2025-10-23",
+                                            "Op": "lt"
+                                        }
+                                    }
+                                },
+                                "StartWindow": {
+                                    "Start": {
+                                        "Coeff": -1
+                                    },
+                                    "End": {
+                                        "Coeff": 1
+                                    },
+                                    "UseEventEnd": false,
+                                    "UseIndexEnd": false
+                                },
+                                "Occurrence": {
+                                    "Type": 2,
+                                    "Count": 1
+                                }
+                            }
+                        ],
+                        "DemographicCriteriaList": [
+                            {
+                                "Age": {
+                                    "Value": 1,
+                                    "Extent": 4,
+                                    "Op": "!bt"
+                                }
+                            }
+                        ],
+                        "Groups": []
+                    }
+                ]
+            }
+        }
+    ],
+    "CensoringCriteria": [],
+    "CollapseSettings": {
+        "CollapseType": "ERA",
+        "EraPad": 0
+    },
+    "CensorWindow": {}
+}

@@ -1,0 +1,25 @@
+@use './mixins' as *;
+
+html,
+body,
+#app {
+  height: 100%;
+  scrollbar-width: thin;
+  font-family: $font-family-base;
+
+  .UiLbl {
+    color: var(--color-ui-light-text, #595757);
+  }
+
+  button {
+    @include mriFocusable;
+  }
+
+  .MriFocus {
+    @include mriFocusStyle;
+  }
+
+  .MriHilite {
+    @include mriHiliteStyle;
+  }
+}

@@ -1,0 +1,39 @@
+@use './mixins' as *;
+.advancedtime-filter {
+  .card-header {
+    color: var(--color-mri-header-text-dark);
+    min-height: 33px;
+    background-color: var(--color-mri-card-header-bg);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 8px;
+    padding-right: 10px;
+    font-size: 0.875rem;
+    font-weight: bold;
+    border-bottom: 1px solid var(--color-mri-card-header-border);
+
+    .app-icon {
+      color: var(--color-mri-header-text-dark);
+    }
+  }
+  .card-body {
+    padding: 12px 20px 12px 20px !important;
+    .app-single-select + label {
+      margin: 5px 15px;
+    }
+  }
+
+  .invalidFormat .sapMInputBaseInner:not(.sapMInputBaseReadonlyInner):not(.sapMInputBaseStateInner):focus,
+  .invalidFormat
+    .sapMInputBaseInner:not(.sapMInputBaseReadonlyInner):not(.sapMInputBaseStateInner):not(.sapMInputBaseDisabledInner):hover {
+    border-color: var(--color-mri-token-invalid-bg);
+  }
+
+  .input-days {
+    @include mriHoverable;
+    margin-bottom: 10px;
+    margin-top: 5px;
+    border-radius: 0px;
+    border-color: var(--color-mri-dropdown-border-light);
+  }
+}

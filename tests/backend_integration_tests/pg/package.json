@@ -1,0 +1,62 @@
+{
+  "name": "http-specs",
+  "version": "0.2.0",
+  "description": "HTTP based tests for the MRI backend",
+  "bin": "./run_specs.js",
+  "scripts": {
+    "test": "node_modules/.bin/nyc node_modules/.bin/mocha test",
+    "watch": "node_modules/.bin/mocha --watch -R min test",
+    "lint": "node_modules/.bin/eslint --quiet lib/",
+    "test_xml_output": "node_modules/.bin/mocha -R xunit test",
+    "jsdoc": "./node_modules/.bin/jsdoc -c conf.json",
+    "mock-portal-start": "node mock-alp-portal.js",
+    "test-specs": "envsubst < specs/environment.orig.json > specs/environment.json && node run_specs.js"
+  },
+  "repository": {
+    "type": "git"
+  },
+  "keywords": [
+    "tests",
+    "HTTP",
+    "integration"
+  ],
+  "author": "m.e.",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "eslint": "^2.13.1",
+    "jsdoc": "^3.4.0",
+    "nyc": "^8.3.2",
+    "sinon": "^1.17.3",
+    "sinon-chai": "^2.8.0"
+  },
+  "dependencies": {
+    "async": "^1.5.2",
+    "chai": "^3.5.0",
+    "chalk": "^1.1.3",
+    "pg": "8.16.3",
+    "minimist": "^1.2.8",
+    "mocha": "^2.4.5",
+    "mocha-jenkins-reporter": "^0.3.0",
+    "request": "2.88.2",
+    "underscore": "^1.13.7",
+    "pako": "1.0.11"
+  },
+  "resolutions": {
+    "lodash": "^4.17.21",
+    "minimatch": "^3.1.4",
+    "handlebars": "^4.7.9",
+    "ajv": "^6.12.6",
+    "braces": "^3.0.3",
+    "tough-cookie": "^4.1.4",
+    "form-data": "^4.0.4",
+    "qs": "^6.14.1",
+    "ms": "^2.1.3",
+    "debug": "^4.4.3",
+    "js-yaml": "^4.1.0",
+    "brace-expansion": "^1.1.12"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=18.20.4"
+  }
+}

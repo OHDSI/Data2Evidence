@@ -1,0 +1,14 @@
+@use './mixins' as *;
+
+.mri-focusable {
+  @include mriFocusable;
+}
+
+.mri-link-text {
+  cursor: pointer;
+  color: var(--color-link-text);
+}
+
+.mri-link-text:hover {
+  text-decoration-line: underline;
+}

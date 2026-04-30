@@ -197,10 +197,11 @@ async function main() {
     "users",
     headers
   );
+  // The Logto management API doesn't return `tenant_id` in the user listing,
+  // so guarding on it here would always falsy-fail and we would attempt to
+  // recreate the user on every restart, fail, and silently skip USER-ROLES.
   const userExists = fetchExistingUsers.find(
-    (existingUser: any) =>
-      existingUser.username === user.username &&
-      existingUser.tenant_id === "default"
+    (existingUser: any) => existingUser.username === user.username
   );
   let logtoAdminUser = userExists || (await create("users", headers, user));
 
@@ -222,7 +223,7 @@ async function main() {
     "*********************************** SCOPES **********************************************"
   );
   const fetchExistingResourceScopes: Array<Object> = await fetchExisting(
-    `resources/${resourceId}/scopes`,
+    `resources/${resourceId}/scopes?page_size=100`,
     headers
   );
   let logtoScopes: Array<LogtoScope> = [];
@@ -253,7 +254,7 @@ async function main() {
     "*********************************** ROLES **********************************************"
   );
   const fetchExistingRoles: Array<Object> = await fetchExisting(
-    "roles",
+    "roles?page_size=100",
     headers
   );
   let logtoRoles: Array<LogtoScope> = [];
@@ -355,20 +356,23 @@ async function main() {
     tenantId: "default",
     id: "default",
     branding: {
-      favicon: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/favicon.ico`,
-      logoUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal/assets/d2e.svg`,
+      favicon: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal/assets/favicon.ico`,
+      logoUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal/assets/d2e.svg`,
     },
     color: {
       primaryColor: "#000080",
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: `a[aria-label="Powered By Logto"] { display: none; }
+    customCss: process.env.LOGTO__CUSTOM_CSS || `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 80px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
-    unknownSessionRedirectUrl: `https://${process.env.CADDY__ALP__PUBLIC_FQDN}/portal`,
+    unknownSessionRedirectUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal`,
+    termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
+    privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
   };
+
   await update("sign-in-exp", headers, signinExperience);
   console.log(
     "*********************************************************************************\n"

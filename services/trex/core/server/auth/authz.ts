@@ -14,12 +14,13 @@ const PUBLIC_API_PATHS = [
 export const ROLES = {
   ALP_USER_ADMIN: "ALP_USER_ADMIN",
   ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
-  ALP_NIFI_ADMIN: "ALP_NIFI_ADMIN",
   ALP_DASHBOARD_VIEWER: "ALP_DASHBOARD_VIEWER",
   TENANT_VIEWER: "TENANT_VIEWER",
   RESEARCHER: "RESEARCHER",
   STUDY_RESEARCHER: "RESEARCHER",
   STUDY_WRITE_DQD_RESEARCHER: "STUDY_WRITE_DQD_RESEARCHER",
+  STUDY_RESULTS_READ_RESEARCHER: "STUDY_RESULTS_READ_RESEARCHER",
+  ETL_MAPPING_CONTRIBUTOR: "ETL_MAPPING_CONTRIBUTOR",
   VALIDATE_TOKEN_ROLE: "VALIDATE_TOKEN",
   ADMIN_DATA_READER_ROLE: "ADMIN_DATA_READER",
   BI_DATA_READER_ROLE: "BI_DATA_READER",
@@ -129,25 +130,28 @@ const buildUserFromToken = (
     if (userMgmtGroups.alp_role_system_admin === true) {
       roles.push(ROLES.ALP_SYSTEM_ADMIN);
     }
-    if (userMgmtGroups.alp_role_nifi_admin === true) {
-      roles.push(ROLES.ALP_NIFI_ADMIN);
-    }
     if (userMgmtGroups.alp_role_dashboard_viewer === true) {
       roles.push(ROLES.ALP_DASHBOARD_VIEWER);
     }
     if (userMgmtGroups.alp_role_study_write_dqd_researcher === true) {
       roles.push(ROLES.STUDY_WRITE_DQD_RESEARCHER);
     }
+    if (userMgmtGroups.alp_role_study_results_read_researcher === true) {
+      roles.push(ROLES.STUDY_RESULTS_READ_RESEARCHER);
+    }
     if (userMgmtGroups.alp_role_tenant_viewer?.length > 0) {
       roles.push(ROLES.TENANT_VIEWER);
     }
+    if (userMgmtGroups.alp_role_etl_mapping_contributor === true) {
+      roles.push(ROLES.ETL_MAPPING_CONTRIBUTOR);
+    }
     if (userMgmtGroups.alp_role_study_researcher?.length > 0) {
       //roles.push(ROLES.RESEARCHER)
-      for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
-        //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
-        //  break
-        //}
-      }
+      //for (const datasetId of userMgmtGroups.alp_role_study_researcher) {
+      //if (url.includes(datasetId) || url.includes('/system-portal/notebook') || url.includes('/terminology')) {
+      //  break
+      //}
+      //}
     }
   }
   const mriRoles: string[] = Array.from(roles);
@@ -273,7 +277,11 @@ export async function authz(c: Context, next: any) {
     let bearerToken = c.req.raw.headers.get("authorization");
     // Check for cookie if no token in authorization header
     // And for req with /fhir-server path, token is part of cookie
-    if (!bearerToken || bearerToken === "" || (bearerToken && originalUrl.startsWith("/fhir-server/"))) {
+    if (
+      !bearerToken ||
+      bearerToken === "" ||
+      (bearerToken && originalUrl.startsWith("/fhir-server/"))
+    ) {
       if (c.req.header("cookie")) {
         const cookies = c.req.header("cookie")?.split("; ");
         for (const cookie of cookies) {
@@ -288,13 +296,6 @@ export async function authz(c: Context, next: any) {
         }
       }
     }
-    if (!bearerToken && c.req.url) {
-      const requestUrl = new URL(c.req.url);
-      const urlToken = requestUrl.searchParams.get("token");
-      if (urlToken) {
-        bearerToken = `Bearer ${urlToken}`;
-      }
-    }
 
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
@@ -305,11 +306,20 @@ export async function authz(c: Context, next: any) {
       });
     }
 
-    const token = jwt.decode(bearerToken.split(" ")[1]); //as IToken
-    //const { client_id, grant_type } = token
-    const sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
-    const idpUserId = token["oid"] || sub;
+    let token: any;
+    let sub: string;
+    let idpUserId: string;
     let mriUserObj: any;
+
+    token = jwt.decode(bearerToken.split(" ")[1]);
+    if (!token) {
+      logger.error("authz: failed to decode token");
+      throw new HTTPException(401, {
+        res: new Response("Invalid token", { status: 401 }),
+      });
+    }
+    sub = token[env.GATEWAY_IDP_SUBJECT_PROP];
+    idpUserId = token["oid"] || sub;
 
     const match = global.REQUIRED_URL_SCOPES.find(
       ({ path, httpMethods }) =>

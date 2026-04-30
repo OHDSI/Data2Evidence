@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 import path from 'path'
 
 test('concept-mapping', async ({ page }) => {
   // Authentication
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Sign in' }).click()
@@ -19,7 +19,7 @@ test('concept-mapping', async ({ page }) => {
   // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
   try {
     // First try to find "Create your first dataflow" button (when no flows exist)
-    await page.waitForSelector('button:has-text("Create your first dataflow")', { timeout: 5000 })
+    await page.waitForSelector('button:has-text("Create your first dataflow")')
     await page.getByRole('button', { name: 'Create your first dataflow' }).click()
   } catch {
     // If that fails, look for "Create new dataflow" button (when flows already exist)
@@ -29,9 +29,9 @@ test('concept-mapping', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Comment' }).fill('Test concept mapping flow')
   await page.getByRole('button', { name: 'Create' }).click()
 
-  // Uncheck "Hide experimental" to show concept mapping node
-  await expect(page.getByText('Hide experimental')).toBeVisible()
-  await page.getByText('Hide experimental').click()
+  // Check "Show experimental" to show concept mapping node
+  await expect(page.getByText('Show experimental')).toBeVisible()
+  await page.getByText('Show experimental').click()
 
   // This timeout is necessary as clicking the concept mapping button too quickly seems to have an issue which causes the node not to be added. Remove this wait to see if the issue persists.
   await page.waitForTimeout(1500)
@@ -74,20 +74,24 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // First dropdown - Source code column (keep as Source)
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).first().click()
+  const sourceCodeGroup = page.getByText('Source code colum').locator('..')
+  const sourceCombo = sourceCodeGroup.locator('[role="combobox"]')
+  await expect(sourceCombo).toBeVisible()
+  await expect(sourceCombo).toBeEnabled()
+  await sourceCombo.click({ force: true })
   await page.getByRole('option', { name: 'Source' }).click()
 
   // Second dropdown - Source name column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Name', exact: true }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Name', exact: true }).click({ force: true })
 
   // Third dropdown - Source frequency column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Frequency' }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Frequency' }).click({ force: true })
 
   // Fourth dropdown - Additional info column
-  await page.locator('[role="button"]').filter({ hasText: 'Source' }).nth(1).click()
-  await page.getByRole('option', { name: 'Description' }).click()
+  await page.locator('[role="combobox"]').filter({ hasText: 'Source' }).nth(1).click()
+  await page.getByRole('option', { name: 'Description' }).click({ force: true })
 
   await page.waitForTimeout(1000) // Wait for dropdown to fully open
 
@@ -98,10 +102,10 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(3000)
 
   // Check if there's a table or any data visible
-  await expect(page.locator('table')).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('table')).toBeVisible()
 
   // Verify import was successful by checking for table presence
-  await expect(page.locator('table')).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('table')).toBeVisible()
 
   // Verify we have column headers (any headers indicate successful import)
   await expect(page.getByRole('columnheader').first()).toBeVisible()
@@ -110,7 +114,7 @@ test('concept-mapping', async ({ page }) => {
   await expect(page.getByRole('cell').first()).toBeVisible()
 
   // Click download CSV with timeout handling
-  const downloadPromise = page.waitForEvent('download', { timeout: 30000 })
+  const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download CSV' }).click()
   const download = await downloadPromise
 
@@ -134,5 +138,5 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // Verify the table is cleared - check that we're back to the file upload state
-  await expect(page.getByText('Click here to choose a file, or drop a file')).toBeVisible({ timeout: 10000 })
+  await expect(page.getByText('Click here to choose a file, or drop a file')).toBeVisible()
 })

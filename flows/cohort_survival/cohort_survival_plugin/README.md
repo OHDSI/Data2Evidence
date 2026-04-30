@@ -1,1 +1,0 @@
-# Cohort Survival Plugin

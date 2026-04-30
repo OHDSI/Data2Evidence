@@ -1,0 +1,44 @@
+const moduleNames = [
+  "mri/CDM",
+  "mri/PatientAnalyticsConfig",
+  "mri/PatientAnalytics",
+  "mri/Search",
+  "Researcher/KaplanMeier",
+  "Researcher/ShinyLive",
+  "SystemAdmin/StudyOverview",
+  "SystemAdmin/UserOverview",
+  "SystemAdmin/DQD",
+  "SystemAdmin/Jobs",
+  "SystemAdmin/AiModels",
+  "SystemAdmin/Athena",
+  "SystemAdmin/FlowOverview",
+  "SystemAdmin/StudyPage",
+  "SystemAdmin/D2ELogs",
+  "Cohort",
+  "Admin/Permissions",
+  "Admin/Configuration",
+  "Setup",
+  "Setup/AzureAD",
+  "Setup/Metadata",
+  "Setup/Feature",
+  "Setup/Db",
+  "Setup/OverviewDescription",
+  "Setup/TrexPlugins",
+  "Setup/DemoSetup",
+  "Setup/HybridSearch",
+  "Setup/GitConfig",
+];
+
+const modulePaths = moduleNames.reduce(
+  (acc, moduleName) => ({
+    ...acc,
+    [`plugins/${moduleName}/module`]: async () => await import(`./${moduleName}/module`),
+  }),
+  {}
+);
+
+const builtInPlugins: { [path: string]: any } = {
+  ...modulePaths,
+};
+
+export default builtInPlugins;

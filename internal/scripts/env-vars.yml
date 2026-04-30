@@ -32,22 +32,22 @@ LOGTO_API_M2M_CLIENT_SECRET:
 LOGTO__CLIENTID_PASSWORD__BASIC_AUTH:
   comment: generated
   type: base64 encoded
-LOGTO__ALP_APP__CLIENT_ID:
+LOGTO__D2E_APP__CLIENT_ID:
   comment: generated
   type: password
-LOGTO__ALP_APP__CLIENT_SECRET:
+LOGTO__D2E_APP__CLIENT_SECRET:
   comment: generated
   type: password
-LOGTO__ALP_SVC__CLIENT_ID:
+LOGTO__D2E_SVC__CLIENT_ID:
   comment: generated
   type: password
-LOGTO__ALP_SVC__CLIENT_SECRET:
+LOGTO__D2E_SVC__CLIENT_SECRET:
   comment: generated
   type: password
-LOGTO__ALP_DATA__CLIENT_ID:
+LOGTO__D2E_DATA__CLIENT_ID:
   comment: generated
   type: password
-LOGTO__ALP_DATA__CLIENT_SECRET:
+LOGTO__D2E_DATA__CLIENT_SECRET:
   comment: generated
   type: password
 MINIO__SECRET_KEY:

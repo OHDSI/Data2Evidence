@@ -1,4 +1,4 @@
-FROM elyra/enterprise-gateway:dev
+FROM elyra/enterprise-gateway:3.2.3
 
 USER root
 

@@ -19,10 +19,11 @@ import {
 } from "@logto/connector-kit";
 
 import {
-  scopes,
+  defaultScopes,
   defaultMetadata,
   defaultTimeout,
   graphAPIEndpoint,
+  graphAPIMemberOfEndpoint,
 } from "./constant.js";
 import type { AzureADConfig } from "./types.js";
 import {
@@ -32,13 +33,22 @@ import {
 } from "./types.js";
 
 const ENDPOINT = `http://localhost:${process.env.PORT}`;
+const RESEARCHER_ROLE_PREFIX = "role.researcher.";
+
+const parseScopes = (scopesConfig?: string): string[] => {
+  if (!scopesConfig || scopesConfig.trim() === "") {
+    return defaultScopes;
+  }
+  return scopesConfig.split(",").map((s) => s.trim()).filter(Boolean);
+};
 
 const getAuthorizationUri =
   (getConfig: GetConnectorConfig): GetAuthorizationUri =>
   async ({ state, redirectUri }) => {
     const config = await getConfig(defaultMetadata.id);
     validateConfig(config, azureADConfigGuard);
-    const { clientId, cloudInstance, tenantId } = config;
+    const { clientId, cloudInstance, tenantId, scopes: scopesConfig } = config;
+    const scopes = parseScopes(scopesConfig);
 
     const params = new URLSearchParams({
       client_id: clientId,
@@ -53,6 +63,8 @@ const getAuthorizationUri =
       path.join(cloudInstance, tenantId, "oauth2/authorize")
     ).toString();
 
+    console.log(`[AzureAD Connector] Authorization URI: ${`${authorityUri}?${params.toString()}`}`);
+
     return `${authorityUri}?${params.toString()}`;
   };
 
@@ -61,7 +73,8 @@ const getAccessToken = async (
   code: string,
   redirectUri: string
 ) => {
-  const { clientId, clientSecret, cloudInstance, tenantId } = config;
+  const { clientId, clientSecret, cloudInstance, tenantId, scopes: scopesConfig } = config;
+  const scopes = parseScopes(scopesConfig);
   try {
     const tokenUri = new URL(
       path.join(cloudInstance, tenantId, "oauth2/v2.0/token")
@@ -82,8 +95,10 @@ const getAccessToken = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Token exchange failed: ${JSON.stringify(errorData)}`);
+      const errorData: any = await response.json();
+      const errorMessage = `Token exchange failed: ${errorData.error_description || JSON.stringify(errorData)}`;
+      console.error(`[AzureAD Connector] ${errorMessage}`);
+      throw new ConnectorError(ConnectorErrorCodes.General, errorMessage);
     }
 
     const authResult = await response.json();
@@ -104,6 +119,30 @@ const getAccessToken = async (
   }
 };
 
+const getUserGroups = async (accessToken: string): Promise<string[]> => {
+  try {
+    const response = await got.get(graphAPIMemberOfEndpoint, {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      timeout: { request: defaultTimeout },
+    });
+
+    const data = JSON.parse(response.body);
+
+    // Filter for groups and extract IDs
+    const groups = data.value
+      .filter((item: any) => item["@odata.type"] === "#microsoft.graph.group")
+      .map((group: any) => group.id);
+
+    console.log(`User groups from Graph API: ${JSON.stringify(groups)}`);
+    return groups;
+  } catch (error) {
+    console.error("Error fetching user groups from Graph API:", error);
+    return []; // Fail silently - no roles will be assigned
+  }
+};
+
 const assignLogtoRolesByAzureGroups = async (
   idToken: string,
   accessToken: string
@@ -112,22 +151,35 @@ const assignLogtoRolesByAzureGroups = async (
   const decodedIdToken: any = jwtDecode(idToken);
   const decodedAccessToken: any = jwtDecode(accessToken);
 
-  // check groups and compare with env
-  const azureGroups = decodedIdToken["groups"];
+  // Fetch groups via Graph API instead of token claim
+  const azureGroups = await getUserGroups(accessToken);
   const rolesGroupMap = JSON.parse(process.env.LOGTO_ROLES_AZ_GROUPS_MAPPING!);
-  const eligibleLogtoRoles = Object.keys(rolesGroupMap).filter(
-    (role) => azureGroups.indexOf(rolesGroupMap[role]) > -1
+  const eligibleLogtoRoles = Object.keys(rolesGroupMap || {}).filter(
+    (role) => azureGroups?.indexOf(rolesGroupMap[role]) > -1
   );
+  console.log(`Eligible Logto roles based on Azure groups: ${JSON.stringify(eligibleLogtoRoles)}`);
 
   const oid = decodedIdToken["oid"];
   const name = decodedIdToken["name"];
   const email = decodedAccessToken["email"] || decodedAccessToken["upn"]; // For D4L & MS
   const logtoAPItoken: any = await getM2MLogtoAPIToken();
-  let logtoUserID: string = await getLogtoUserId(email, logtoAPItoken);
+  let logtoUserID: string = await getLogtoUserIdByEmail(email, logtoAPItoken);
 
   if (!logtoUserID) {
+    let username = (name || "").replace(/[^a-zA-Z0-9_]/g, "_");
+
+    // Verify if username is taken
+    const logtoUsersByName = await getLogtoUsersByName(username, logtoAPItoken);
+    if (logtoUsersByName?.length > 0) {
+      const revisedUsername = `${username}_${Date.now()}`;
+      console.warn(
+        `Username ${username} is already taken. Create Logto user with name: ${revisedUsername}`
+      );
+      username = revisedUsername;
+    }
+
     // Create user
-    const newUser = await addUser(decodedIdToken.name, email, logtoAPItoken);
+    const newUser = await addUser(name, username, email, logtoAPItoken);
     if (newUser?.id) {
       logtoUserID = newUser.id;
 
@@ -144,29 +196,34 @@ const assignLogtoRolesByAzureGroups = async (
     }
   }
 
-  const logtoRoles = await getLogtoRoles(logtoAPItoken);
+  // Fetch existing roles and ensure all eligible roles exist (create if missing)
+  let logtoRoles = await getLogtoRoles(logtoAPItoken);
+  logtoRoles = await ensureEligibleRolesExist(eligibleLogtoRoles, logtoRoles, logtoAPItoken);
   const userRoles = await getUserRoles(logtoUserID, logtoAPItoken);
   // console.log(`USER ${logtoUserID} ROLES ${JSON.stringify(userRoles)}`);
 
+  // Assign eligible roles the user doesn't have yet
   const toBeAssignedLogtoRoles = logtoRoles.filter(
     (role: any) =>
       eligibleLogtoRoles.includes(role.name) &&
-      !userRoles.some((userRole: any) => userRole.name.includes(role.name))
+      !userRoles.some((userRole: any) => userRole.name === role.name),
   );
   // console.log(`TO BE ASSIGNED LOGTO ROLES ${JSON.stringify(toBeAssignedLogtoRoles)}`);
-  toBeAssignedLogtoRoles.forEach(async (logtoRole: any) => {
+  for (const logtoRole of toBeAssignedLogtoRoles) {
     await assignRolesToUser(logtoRole.id, logtoUserID, logtoAPItoken);
-  });
+  }
 
+  // Remove only mapping-managed roles the user is no longer eligible for
+  const mappedRoleNames = Object.keys(rolesGroupMap);
   const toBeRemovedLogtoRoles = userRoles.filter(
     (role: any) =>
-      !eligibleLogtoRoles.includes(role.name) &&
-      !toBeAssignedLogtoRoles.includes(role.name)
+      mappedRoleNames.includes(role.name) &&
+      !eligibleLogtoRoles.includes(role.name),
   );
   // console.log(`TO BE REMOVED LOGTO ROLES ${JSON.stringify(toBeRemovedLogtoRoles)}`);
-  toBeRemovedLogtoRoles.forEach(async (logtoRole: any) => {
+  for (const logtoRole of toBeRemovedLogtoRoles) {
     await removeRolesFromUser(logtoRole.id, logtoUserID, logtoAPItoken);
-  });
+  }
 };
 
 const getM2MLogtoAPIToken = async () => {
@@ -196,11 +253,11 @@ const getM2MLogtoAPIToken = async () => {
   }
 };
 
-const getLogtoUserId = async (email: string, apiToken: string) => {
+const getLogtoUserIdByEmail = async (email: string, apiToken: string) => {
   try {
     const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
       searchParams: {
-        search: email,
+        ["search.primaryEmail"]: email,
       },
       headers: {
         authorization: `Bearer ${apiToken}`,
@@ -214,6 +271,32 @@ const getLogtoUserId = async (email: string, apiToken: string) => {
     // console.log(`Logto USER INFO ${JSON.stringify(httpResponse.body)}`);
 
     return JSON.parse(httpResponse.body)[0]?.id;
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const getLogtoUsersByName = async (username: string, apiToken: string) => {
+  try {
+    const httpResponse = await got.get(`${ENDPOINT}/api/users`, {
+      searchParams: {
+        ["search.username"]: username,
+        ["mode.username"]: "exact",
+      },
+      headers: {
+        authorization: `Bearer ${apiToken}`,
+      },
+      timeout: { request: defaultTimeout },
+      https: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    console.log(
+      `Logto USER INFO by username ${JSON.stringify(httpResponse.body)}`
+    );
+
+    return JSON.parse(httpResponse.body);
   } catch (e) {
     console.error(e);
   }
@@ -239,6 +322,183 @@ const getLogtoRoles = async (apiToken: string) => {
   }
 };
 
+const getDefaultResourceId = async (
+  apiToken: string,
+): Promise<string | undefined> => {
+  try {
+    const httpResponse = await got.get(`${ENDPOINT}/api/resources`, {
+      headers: {
+        authorization: `Bearer ${apiToken}`,
+      },
+      timeout: { request: defaultTimeout },
+      https: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const resources = JSON.parse(httpResponse.body);
+    const defaultResource = resources.find((r: any) => r.isDefault);
+    return defaultResource?.id;
+  } catch (e) {
+    console.error("Error fetching default resource:", e);
+  }
+};
+
+const createLogtoRole = async (
+  roleName: string,
+  apiToken: string,
+): Promise<any> => {
+  try {
+    console.log(`Creating Logto role: ${roleName}`);
+    const httpResponse = await got.post(`${ENDPOINT}/api/roles`, {
+      headers: {
+        authorization: `Bearer ${apiToken}`,
+        "content-type": "application/json",
+      },
+      json: {
+        name: roleName,
+        description: `Role: ${roleName}`,
+        type: "User",
+      },
+      timeout: { request: defaultTimeout },
+      https: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    return JSON.parse(httpResponse.body);
+  } catch (e) {
+    console.error(`Error creating role ${roleName}:`, e);
+  }
+};
+
+const ensureScopeForRole = async (
+  roleId: string,
+  scopeName: string,
+  resourceId: string,
+  apiToken: string,
+): Promise<void> => {
+  try {
+    console.log(`Ensuring scope ${scopeName} exists for role ${roleId}`);
+
+    // Find or create scope on the default resource
+    const scopesResponse = await got.get(
+      `${ENDPOINT}/api/resources/${resourceId}/scopes`,
+      {
+        headers: {
+          authorization: `Bearer ${apiToken}`,
+        },
+        timeout: { request: defaultTimeout },
+        https: {
+          rejectUnauthorized: false,
+        },
+      },
+    );
+
+    const existingScopes = JSON.parse(scopesResponse.body);
+    let scope = existingScopes.find((s: any) => s.name === scopeName);
+
+    if (!scope) {
+      console.log(`Creating scope ${scopeName} on resource ${resourceId}`);
+      const createScopeResponse = await got.post(
+        `${ENDPOINT}/api/resources/${resourceId}/scopes`,
+        {
+          headers: {
+            authorization: `Bearer ${apiToken}`,
+            "content-type": "application/json",
+          },
+          json: {
+            name: scopeName,
+            description: scopeName,
+          },
+          timeout: { request: defaultTimeout },
+          https: {
+            rejectUnauthorized: false,
+          },
+        },
+      );
+      scope = JSON.parse(createScopeResponse.body);
+    }
+
+    // Assign scope to role if not already assigned
+    const roleScopesResponse = await got.get(
+      `${ENDPOINT}/api/roles/${roleId}/scopes`,
+      {
+        headers: {
+          authorization: `Bearer ${apiToken}`,
+        },
+        timeout: { request: defaultTimeout },
+        https: {
+          rejectUnauthorized: false,
+        },
+      },
+    );
+
+    const existingRoleScopes = JSON.parse(roleScopesResponse.body);
+    const alreadyAssigned = existingRoleScopes.some(
+      (s: any) => s.id === scope.id,
+    );
+
+    if (!alreadyAssigned) {
+      console.log(`Assigning scope ${scopeName} to role ${roleId}`);
+      await got.post(`${ENDPOINT}/api/roles/${roleId}/scopes`, {
+        headers: {
+          authorization: `Bearer ${apiToken}`,
+          "content-type": "application/json",
+        },
+        json: {
+          scopeIds: [scope.id],
+        },
+        timeout: { request: defaultTimeout },
+        https: {
+          rejectUnauthorized: false,
+        },
+      });
+    }
+  } catch (e) {
+    console.error(`Error ensuring scope ${scopeName} for role ${roleId}:`, e);
+  }
+};
+
+const ensureEligibleRolesExist = async (
+  eligibleLogtoRoleNames: string[],
+  existingLogtoRoles: any[],
+  apiToken: string,
+): Promise<any[]> => {
+  const updatedRoles = [...existingLogtoRoles];
+  let resourceId: string | undefined;
+
+  for (const roleName of eligibleLogtoRoleNames) {
+    const roleExists = updatedRoles.some((r: any) => r.name === roleName);
+    if (roleExists) continue;
+
+    // Role does not exist -- create it
+    const newRole = await createLogtoRole(roleName, apiToken);
+    if (!newRole?.id) {
+      console.error(`Failed to create role ${roleName}, skipping`);
+      continue;
+    }
+
+    // For researcher roles, also create scope and assign to role
+    if (roleName.startsWith(RESEARCHER_ROLE_PREFIX)) {
+      if (!resourceId) {
+        resourceId = await getDefaultResourceId(apiToken);
+      }
+      if (resourceId) {
+        await ensureScopeForRole(newRole.id, roleName, resourceId, apiToken);
+      } else {
+        console.error(
+          `Default resource not found, cannot create scope for ${roleName}`,
+        );
+      }
+    }
+
+    updatedRoles.push(newRole);
+  }
+
+  return updatedRoles;
+};
+
 const getUserRoles = async (userId: string, apiToken: string) => {
   try {
     const httpResponse = await got.get(
@@ -262,7 +522,12 @@ const getUserRoles = async (userId: string, apiToken: string) => {
   }
 };
 
-const addUser = async (name: string, email: string, apiToken: string) => {
+const addUser = async (
+  name: string,
+  username: string,
+  email: string,
+  apiToken: string
+) => {
   try {
     const httpResponse = await got.post(`${ENDPOINT}/api/users`, {
       headers: {
@@ -271,7 +536,7 @@ const addUser = async (name: string, email: string, apiToken: string) => {
       json: {
         name,
         primaryEmail: email,
-        username: (name || "").replace(/[^a-zA-Z0-9_]/g, "_"),
+        username,
       },
       timeout: { request: defaultTimeout },
       https: {

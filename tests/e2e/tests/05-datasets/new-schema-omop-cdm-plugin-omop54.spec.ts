@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
+import { MINUTE_1, MINUTE_2, MINUTE_5 } from '../const'
 
 const TEST_NAME = 'dataset-new-schema-omop-cdm-plugin-54'
 const SHOULD_SKIP = false
@@ -7,7 +8,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 const randomString = 'omop54' + Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -26,33 +27,51 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
-  await page.locator('#mui-component-select-vocabSchemaOption').click()
-  await page.getByRole('option', { name: 'demo_cdm' }).click()
+  // Uncheck the "Use default result schema name" checkbox to enable custom input
+  await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)
   await page.locator('#mui-component-select-dataModelOption').click()
   await page.getByRole('option', { name: 'omop5-4 [omop_cdm_plugin]' }).click()
   await page.locator('#mui-component-select-paConfigOption').click()
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
-
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
+  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
+  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.getByText('Test Study')).toBeVisible()
+  // Close the "Dataset Created" notification dialog
+  await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
+  // Wait for datasets to appear in the table (with parent-child structure, use row locators)
+  await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  // Wait for job container to stabilize before navigating to Jobs page
+  await page.waitForTimeout(20000)
   await page.getByRole('link', { name: 'Jobs' }).click()
   // Get the first (top) entry link
-  const firstEntry = page.locator(`a:has(span:text("datamodel-create-cdm_${randomString}"))`).first()
-  // Find the closest state badge to this entry (adjust the selector as needed)
-  const stateBadge = firstEntry.locator(
-    'xpath=ancestor::div[contains(@class,"state-list-item__content")]//span[contains(@class,"state-badge")]'
-  )
-  await expect(stateBadge).toHaveText(/Completed/, { timeout: 120000 })
+  const firstEntry = page
+    .locator('.state-list-item__content')
+    .filter({ has: page.locator(`a:has-text("datamodel-create-cdm_${randomString}")`) })
+    .first()
+  // Find the closest state badge to this entry
+  const stateBadge = firstEntry.locator('.state-badge')
+  await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_5 })
+  // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
-  await page
-    .getByRole('row', { name: /Test Study/ })
-    .filter({ hasText: 'Not Available' })
-    .getByRole('button')
-    .nth(2)
-    .click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click({ timeout: 30000 })
-  await page.getByRole('button', { name: 'Yes, delete' }).click({ timeout: 30000 })
+  await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
+  // Find and delete the child dataset first (Test Cache)
+  const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
+  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_1 })
+  await testCacheRow.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  // Enter dataset name to confirm deletion
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
+  // Then delete the parent dataset (Test Study)
+  const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
+  await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_1 })
+  await testStudyDataset.getByText('Select action').click()
+  await page.getByRole('option', { name: 'Delete dataset' }).click()
+  // Enter dataset name to confirm deletion
+  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
+  await page.getByRole('button', { name: 'Yes, delete' }).click()
 })

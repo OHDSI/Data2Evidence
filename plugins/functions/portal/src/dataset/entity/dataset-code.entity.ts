@@ -1,0 +1,38 @@
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from "npm:typeorm";
+import { Audit } from "../../common/entity/audit.entity.ts";
+
+@Entity("dataset_code")
+@Unique(["datasetId", "type", "name"])
+export class DatasetCode extends Audit {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  type: string;
+
+  @Column()
+  code: string;
+
+  @Column()
+  name: string;
+
+  @Column({ nullable: true })
+  language?: string;
+
+  // Required for creation
+  @Column({ name: "dataset_id" })
+  datasetId: string;
+
+  @ManyToOne("Dataset", "code", {
+    onDelete: "CASCADE",
+  })
+  @JoinColumn({ name: "dataset_id" })
+  dataset: any;
+}

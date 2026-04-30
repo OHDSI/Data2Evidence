@@ -19,7 +19,10 @@ yarn-error.log
 run_ssh.sh
 .DS_Store
 *eszip
-
+**/.parcel-cache/
+!tests/e2e/package-lock.json
+!plugins/functions/package-lock.json
+!plugins/fhir_functions/package-lock.json
 
 pkg/*.tgz
 target
@@ -41,12 +44,12 @@ liquibase
 data2evidence-cli-*.tgz
 
 
-flows/.DS_Store
-flows/venv
-flows/**/__pycache__
-flows/.env
-flows/**/*private*
-flows/**/.env*
+plugins/flows/.DS_Store
+plugins/flows/venv
+plugins/flows/**/__pycache__
+plugins/flows/.env
+plugins/flows/**/*private*
+plugins/flows/**/.env*
 
 ui/resources/*
 !ui/resources/img
@@ -69,3 +72,5 @@ ui/**/library-parameters.json
 ui/**/*private*
 ui/.nx
 ui/pyqetest
+scripts/dist/
+scripts/create_users.mjs

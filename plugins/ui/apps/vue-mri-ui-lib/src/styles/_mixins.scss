@@ -1,0 +1,55 @@
+@use './mri-bootstrap-variables' as *;
+@forward './mri-bootstrap-variables';
+
+@mixin mriBaseStyle {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  font-weight: $font-weight-base;
+  line-height: $line-height-base;
+  color: $body-color;
+  text-align: left;
+  background-color: $body-bg;
+}
+
+@mixin mriHiliteStyle {
+  border: 1px solid var(--color-hover-border);
+}
+
+@mixin mriFocusStyle {
+  outline: 1px dotted var(--color-focus);
+  outline-offset: -3px;
+}
+
+@mixin mriHoverable {
+  &:hover {
+    @include mriHiliteStyle;
+  }
+}
+
+@mixin mriFocusable {
+  &:focus {
+    @include mriFocusStyle;
+  }
+
+  &:disabled:focus {
+    outline: none;
+  }
+}
+
+@mixin mriActionButtonHoverable {
+  &:hover {
+    background-color: var(--color-mri-button-hover-dark);
+    border-radius: 3.1px;
+    .icon,
+    .app-icon {
+      color: var(--color-mri-lightest-text);
+    }
+  }
+}
+
+@mixin mriTagFocus {
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-focus);
+  }
+}

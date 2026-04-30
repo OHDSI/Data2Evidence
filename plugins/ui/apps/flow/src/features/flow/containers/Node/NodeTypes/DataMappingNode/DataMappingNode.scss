@@ -1,0 +1,11 @@
+@use "../../../../../../theme/variables.scss" as *;
+
+.data-mapping-node {
+  background-color: white;
+}
+
+.data-mapping-drawer {
+  .node-drawer__content {
+    padding: 0;
+  }
+}

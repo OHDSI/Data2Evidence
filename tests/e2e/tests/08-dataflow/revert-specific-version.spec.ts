@@ -1,7 +1,10 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
+const TEST_NAME = 'dataflow-revert-specific-version'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test('test', async ({ page }) => {
-  await page.goto('/portal')
+test(TEST_NAME, async ({ page }) => {
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -27,5 +30,5 @@ test('test', async ({ page }) => {
   await page.getByLabel('Show version history').getByRole('button').click()
   await page.getByRole('button', { name: 'View' }).nth(1).click()
   await page.waitForTimeout(1000)
-  await expect(page.getByRole('button', { name: 'new_data_flow (Version #1)' })).toBeVisible()
+  await expect(page.getByRole('combobox', { name: 'new_data_flow (Version #1)' })).toBeVisible()
 })

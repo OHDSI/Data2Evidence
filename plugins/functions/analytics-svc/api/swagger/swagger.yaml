@@ -1,0 +1,1255 @@
+swagger: "2.0"
+info:
+  version: "3.0 - FP0"
+  title: Health for Clinical Research
+  description: .
+
+basePath: /analytics-svc/api/services/
+
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+paths:
+  /values/:
+    x-swagger-router-controller: values
+    get:
+      description: domain value service
+      operationId: values
+      parameters:
+        - name: attributePath
+          in: query
+          description: attribute path of values to retrieve
+          required: true
+          type: string
+        - name: attributeType
+          in: query
+          description: attribute type of values to retrieve
+          required: true
+          type: string
+        - name: configId
+          in: query
+          description: config Id to use
+          required: true
+          type: string
+        - name: configVersion
+          in: query
+          description: config version to use
+          required: true
+          type: string
+        - name: suggestionLimit
+          in: query
+          description: limit result to this number
+          required: false
+          type: number
+        - name: datasetId
+          in: query
+          description: study to use
+          required: true
+          type: string
+        - name: searchQuery
+          in: query
+          description: string to search
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /population/{dataFormat}/{chartType}:
+    x-swagger-router-controller: population
+    get:
+      description: Returns results of analytical queries to the frontend
+      operationId: populationQuery
+      produces:
+        - application/json
+        - application/pdf
+      parameters:
+        - name: chartType
+          in: path
+          description: Can be barchart, boxplot, kaplanmeier, genometable, patientcount or inclusionreport
+          required: true
+          type: string
+        - name: dataFormat
+          in: path
+          description: Can be PDF, JSON or CSV
+          required: true
+          type: string
+        - name: mriquery
+          in: query
+          type: string
+          description: Filtercard information in bookmark form. This is a binary string encoded in base64
+          required: true
+        - name: releaseDate
+          in: query
+          type: string
+          description: Timestamp of the selected dataset release date (in UTC format)
+          required: false
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AnalyticsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /patient:
+    x-swagger-router-controller: patient
+    get:
+      description: Returns results of analytical queries to the frontend
+      operationId: retrieveDatasetInFormat
+      produces:
+        - application/json
+        - application/zip
+      parameters: 
+        - name: dataFormat
+          in: query
+          type: string
+          description: defines format of results (json / zipped csv, defaults to json)
+        - name: query
+          in: query
+          type: string
+          description: Defines which entities should be returned
+        - name: mriquery
+          in: query
+          type: string
+          required: true
+          description: Patient Request body. This is a binary string encoded in base64
+        - name: releaseDate
+          in: query
+          type: string
+          description: Timestamp of the selected dataset release date (in UTC format)
+          required: false
+        - name: patientId
+          in: query
+          type: string
+          required: false
+          description: Patient ID
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/PatientResult"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /recontact/patient:
+    x-swagger-router-controller: patient
+    get: 
+      description: Returns a cohort of patients with psuedo IDs, meta data (filters)
+      operationId: getRecontactPatientList
+      produces: 
+        - application/text
+      parameters: 
+        - name: mriquery
+          in: query
+          type: string
+          required: true
+          description: Patient Request body. This is a binary string encoded in base64
+        - name: query
+          in: query
+          type: string
+          description: Defines which entities should be returned
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/RecontactPatientResult"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /summary/patient/{patientId}:
+    x-swagger-router-controller: patient
+    get: 
+      description: Returns a summary of patient
+      operationId: getPatientSummary
+      produces: 
+        - application/text
+      parameters: 
+        - name: mriquery
+          in: query
+          type: string
+          required: true
+          description: Patient Request body. This is a binary string encoded in base64
+        - name: query
+          in: query
+          type: string
+          description: Defines which entities should be returned
+        - name: patientId
+          required: true
+          in: path
+          type: string
+          description: patient id
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/RecontactPatientResult"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /datastream/patient:
+    x-swagger-router-controller: patient
+    get:
+      description: Returns dataset csv or parquet stream to the frontend
+      operationId: retrieveDatasetStream
+      produces:
+        - text/csv
+        - parquet
+      parameters: 
+        - name: mriquery
+          in: query
+          type: string
+          required: true
+          description: Patient Request body. This is a binary string encoded in base64
+        - name: dataFormat
+          in: query
+          type: string
+          description: defines format of results (parquet / csv, defaults to csv)
+        - name: returnOnlyPatientCount
+          in: query
+          type: string
+          description: If set to true, return only the patient count otherwise return the full patient list
+        - name: releaseDate
+          in: query
+          type: string
+          description: Timestamp of the selected dataset release date (in UTC format)
+          required: false
+        - name: cohortId
+          in: query
+          type: number
+          description: id of cohort, defaults to Null
+          required: false
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/PatientResultStream"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /patient/{patientId}:
+    x-swagger-router-controller: patient
+    get:
+      description: Get data for a single patient
+      operationId: getSinglePatientRoute
+      produces:
+        - application/json
+        - application/zip
+      parameters: 
+        - name: dataFormat
+          in: query
+          type: string
+          description: defines format of results. Defaults to json. Possible values are JSON, CSV
+        - name: interactionTypes
+          in: query
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+          description: a comma separated list of interaction types that will be returned as part of the result
+        - name: configId
+          required: true
+          in: query
+          type: string
+          description: cdm config id to use to retrieve data
+        - name: configVersion
+          required: true
+          in: query
+          type: string
+          description: cdm config version to use to retrieve data
+        - name: datasetId
+          required: true
+          in: query
+          type: string
+          description: study id
+        - name: patientId
+          required: true
+          in: path
+          type: string
+          description: patient id
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/PatientResult"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /patient/cohorts/compare/{chartType}:
+    x-swagger-router-controller: cohortCompare
+    get:
+      description: Returns datasets of the supplied cohort ids
+      produces:
+        - application/json
+      operationId: getmultiplecohortdata
+      parameters:
+        - name: chartType
+          required: true
+          in: path
+          type: string
+          description: possible values are barchart, boxplot, km
+        - name: ids
+          required: true
+          description: comma separated list of cohort ids
+          in: query
+          type: string
+        - name: xaxis
+          description: comma separated list of interaction attributes to retrieve
+          in: query
+          type: string
+        - name: yaxis
+          required: true
+          description: measure attributes
+          in: query
+          type: string
+        - name: configId
+          in: query
+          type: string
+          description: Configuration ID
+        - name: configVersion
+          in: query
+          type: string
+          description: Configuration Version
+        - name: kmstartevent
+          in: query
+          type: string
+          description: Start Interaction event for a Patient. Ex DOB, PTD
+        - name: kmeventofinterest
+          in: query
+          type: string
+          description: End Interaction event for a Patient. Ex DOD, Chemo
+        - name: kmstarteventocc
+          in: query
+          type: string
+          description: Which occurrence for start event. first or last?
+        - name: kmeventofinterestocc
+          in: query
+          type: string
+          description: Which occurrence for end event. first or last?
+        - name: datasetId
+          required: false
+          in: query
+          type: string
+          description: study to use
+      responses:
+        "200":
+          description: Data of 
+          schema:
+            $ref: "#/definitions/Error"
+  /standard-concept-ids:
+    x-swagger-router-controller: concept
+    get:
+      description: Retrieves standard concept ids based on provided concept code and vocabulary id
+      operationId: getStandardConcept
+      parameters:
+        - name: conceptCode
+          required: true
+          in: query
+          type: string
+          description: non-standard concept code
+        - name: vocabularyId
+          required: false
+          in: query
+          type: string
+          description: source vocabulary id
+      responses:
+        "200":
+          description: ConceptIds
+          schema:
+            $ref: "#/definitions/ConceptIds"
+        "403":
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /descendant-concepts:
+    x-swagger-router-controller: concept
+    get:
+      description: Retrieves descendant concept/s based on provided concept Id
+      operationId: getDescendantConcepts
+      parameters:
+        - name: conceptId
+          required: true
+          in: query
+          type: string
+          description: ancestor concept id
+      responses:
+        "200":
+          description: ConceptDescendants
+          schema:
+            $ref: "#/definitions/ConceptDescendants"
+        "403":
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /swagger:
+    x-swagger-pipe: swagger_raw
+  /customDBs/{schemaName}:
+    x-swagger-router-controller: customDBs
+    get:
+      description: Get table names inside the custom schemas
+      operationId: customDBTableNames
+      parameters:
+        - name: schemaName
+          in: path
+          description: schema name in database
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/TableNames"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /customDBs/{schemaName}/{tableName}:
+    x-swagger-router-controller: customDBs
+    get:
+      description: Get table data of the custom schema
+      operationId: customDBTable
+      parameters:
+        - name: schemaName
+          in: path
+          description: schema name in database
+          required: true
+          type: string
+        - name: tableName
+          in: path
+          description: table name in database
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            type: array
+            items:
+              type: object
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /parquet/{datasetId}/{tableName}:
+    x-swagger-router-controller: parquet
+    get:
+      description: Returns data parquet stream
+      operationId: retrieveParquetStream
+      produces:
+        - parquet
+      parameters:
+        - name: datasetId
+          in: path
+          description: datasetId that maps to schema name in database
+          required: true
+          type: string
+        - name: tableName
+          in: path
+          description: table name in database
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/ParquetResultStream"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error" 
+  /cohort:
+    x-swagger-router-controller: cohort
+    get:
+      description: Returns all cohorts in the study
+      operationId: getAllCohorts
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - name: offset
+          in: query
+          description: offset value for results
+          required: false
+          type: number
+        - name: limit
+          in: query
+          description: limit value for results
+          required: false
+          type: number
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/CohortListResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      description: Sends mriquery to patient analytics service to get list of patient from mriquery, extracts all patient ids, then creates cohort definition and cohort entries in database
+      operationId: createCohort
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohort
+          schema:
+            type: object
+            required:
+              - datasetId
+              - mriquery
+              - description
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              mriquery:
+                type: string
+                description: Filtercard information in bookmark form. This is a binary string encoded in base64
+              description:
+                type: string
+                description: Cohort Description
+              definitionTypeConceptId:
+                type: string
+                description: Cohort Definition Type Concept Id
+              subjectConceptId: 
+                type: number
+                description: Cohort Definition Subject Concept Id
+              syntax: 
+                type: string
+                description: Cohort Definition Syntax
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    delete:
+      description: Deletes a cohort with corresponding incoming cohortId
+      operationId: deleteCohort
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - name: cohortId
+          in: query
+          type: number
+          description: ID of cohort to be deleted from database
+          required: true
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /cohort/can-materialize-cohort:
+      x-swagger-router-controller: cohort
+      get:
+        description: Checks if the resultsSchema based on the datasetId is compatible for cohorts to be materialized
+        operationId: checkIfSchemaCanMaterializeCohort
+        produces:
+          - application/json
+        parameters:
+          - name: datasetId
+            in: query
+            description: Id of dataset
+            required: true
+            type: string
+        responses:
+          "200":
+            description: success
+            schema: 
+              type: boolean
+          default:
+            description: Error
+            schema:
+              $ref: "#/definitions/Error"
+  /cohort/{filterColumn}/{filterValue}:
+    x-swagger-router-controller: cohort
+    get:
+      description: Returns list of cohorts based on input filter column and value
+      operationId: getFilteredCohorts
+      produces:
+        - application/json
+      parameters:
+        - name: filterColumn
+          in: path
+          description: Filter column that maps to a column name in cohort definition table
+          required: true
+          type: string
+        - name: filterValue
+          in: path
+          description: Filter value to filter based on filter column
+          required: true
+          type: string      
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - name: offset
+          in: query
+          description: offset value for results
+          required: false
+          type: number
+        - name: limit
+          in: query
+          description: limit value for results
+          required: false
+          type: number
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/CohortListResponse"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /cohort-definition:
+    x-swagger-router-controller: cohort
+    get:
+      description: Get a cohort definition via cohort definition id
+      operationId: getCohortDefinition
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - name: cohortDefinitionId
+          in: query
+          description: Id of cohort definition
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      description: Saves cohort definition to db
+      operationId: createCohortDefinition
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohortDefinition
+          schema:
+            type: object
+            required:
+              - datasetId
+              - name
+              - description
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              name:
+                type: string
+                description: Cohort Name
+              description:
+                type: string
+                description: Cohort Description
+              definitionTypeConceptId:
+                type: string
+                description: Cohort Definition Type Concept Id
+              subjectConceptId: 
+                type: number
+                description: Cohort Definition Subject Concept Id
+              syntax: 
+                type: string
+                description: Cohort Definition Syntax
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    put:
+      description: Updates a cohort definition
+      operationId: updateCohortDefinition
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohortDefinition
+          schema:
+            type: object
+            required:
+              - datasetId
+              - cohortDefinitionId
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              cohortDefinitionId:
+                type: number
+                description: Cohort Definition Id
+              name:
+                type: string
+                description: Cohort Definition Name
+              description:
+                type: string
+                description: Cohort Definition Description
+              definitionTypeConceptId:
+                type: number
+                description: Cohort Definition Definition Type Concept Id
+              syntax:
+                type: string
+                description: Cohort Definition Syntax
+              subjectConceptId:
+                type: number
+                description: Cohort Definition Subject Concept Id
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /kaplan-meier:
+    x-swagger-router-controller: cohortSurvival
+    get:
+      description: Gets km graph data generated by data flow if available
+      operationId: getKmData
+      produces:
+        - application/json
+      parameters:
+        - name: flowRunId
+          in: query
+          description: ID of flow run used to generated the graph data
+          required: true
+          type: string
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+    post:
+      description: Create a dataflow run which does analysis for Kaplan Meier
+      operationId: analyzeCohortsKm
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: Id of dataset
+          required: true
+          type: string
+        - in: body
+          name: cohort
+          schema:
+            type: object
+            required:
+              - targetCohortId
+              - outcomeCohortId
+            properties:
+              targetCohortId: 
+                type: number
+                description: Target Cohort Id
+              outcomeCohortId: 
+                type: number
+                description: Outcome Cohort Id
+      
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}:
+    x-swagger-router-controller: dataCharacterization
+    get:
+      description: Returns the results for data characterization run 
+      operationId: getDataCharacterizationResult
+      produces:
+        - application/json
+      parameters:
+        - name: databaseCode
+          in: path
+          description: Database code
+          required: true
+          type: string
+        - name: vocabSchema
+          in: path
+          description: vocab schema of study
+          required: true
+          type: string
+        - name: resultsSchema
+          in: path
+          description: Data characterization schema name
+          required: true
+          type: string
+        - name: sourceKey
+          in: path
+          description: Value corresponding to data characterization result report type
+          required: true
+          type: string
+        - name: datasetId
+          in: query
+          description: Dataset ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/DataCharacterizationResult"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /data-characterization/{databaseCode}/{vocabSchema}/{resultsSchema}/{sourceKey}/{conceptId}:
+    x-swagger-router-controller: dataCharacterization
+    get:
+      description: Returns the drilldown results for data characterization run 
+      operationId: getDataCharacterizationDrilldownResult
+      produces:
+        - application/json
+      parameters:
+        - name: databaseCode
+          in: path
+          description: Database code
+          required: true
+          type: string
+        - name: vocabSchema
+          in: path
+          description: vocab schema of study
+          required: true
+          type: string
+        - name: resultsSchema
+          in: path
+          description: Data characterization schema name
+          required: true
+          type: string
+        - name: sourceKey
+          in: path
+          description: Value corresponding to data characterization result report type
+          required: true
+          type: string
+        - name: conceptId
+          in: path
+          description: Value corresponding to data characterization result conceptId used for drilldown results
+          required: true
+          type: string
+        - name: datasetId
+          in: query
+          description: Dataset ID
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/DataCharacterizationDrilldownResult"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /dataset-filter/filter-scopes:
+    x-swagger-router-controller: datasetFilter
+    get:
+      description: Returns dataset filter
+      operationId: getFilterScopes
+      produces:
+        - application/json
+      parameters:
+        - name: datasetsWithSchema
+          in: query
+          type: string
+          required: true
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/AnalyticsResponse"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /dataset-filter/database-schema-filter:
+    x-swagger-router-controller: datasetFilter
+    get:
+      description: Returns database schema filter results
+      operationId: getDatabaseSchemaFilterResults
+      produces:
+        - application/json
+      parameters:
+        - name: datasetsWithSchema
+          in: query
+          type: string
+          required: true
+        - name: filterParams
+          in: query
+          type: string
+          required: true
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/AnalyticsResponse"
+        default: 
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /alpdb/cdmversion:
+    x-swagger-router-controller: dbsvc
+    get:
+      description: Get CDM Version
+      operationId: getCDMVersion
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: ID of dataset
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/CDMVersion"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /alpdb/schema/exists:
+    x-swagger-router-controller: dbsvc
+    get:
+      description: Check if schema exists
+      operationId: checkIfSchemaExists
+      produces:
+        - application/json
+      parameters:
+        - name: dialect
+          in: query
+          description: Dialect of database (Hana or Postgres)
+          required: true
+          type: string
+        - name: databaseCode
+          in: query
+          description: Database code
+          required: true
+          type: string
+        - name: schemaName
+          in: query
+          description: Name of schema to check for
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema: 
+            type: boolean
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /alpdb/metadata/schemasnapshot:
+    x-swagger-router-controller: dbsvc
+    get:
+      description: Get schema metadata for snapshot
+      operationId: getSnapshotSchemaMetadata
+      produces:
+        - application/json
+      parameters:
+        - name: datasetId
+          in: query
+          description: ID of dataset
+          required: true
+          type: string
+      responses:
+        "200":
+          description: success
+          schema:
+            $ref: "#/definitions/SchemaMetadataResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+  /generate-cohort-definition:
+    x-swagger-router-controller: cohort
+    post:
+      description: Generates the cohort definition from mriquery
+      operationId: generateCohortDefinition
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: cohort
+          schema:
+            type: object
+            required:
+              - datasetId
+              - mriquery
+            properties:
+              datasetId:
+                type: string
+                description: Id of dataset
+              mriquery:
+                type: string
+                description: Filtercard information in bookmark form. This is a binary string encoded in base64
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: string
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/Error"
+
+definitions:
+  AnalyticsResponse:
+    type: object
+    properties:
+      data:
+        type: object
+        description: response object
+        properties:
+          categories:
+            type: array
+            items:
+              $ref: '#/definitions/Category'
+          data:
+            type: array
+            items:
+              type: object
+            description: items in this array contains properties that are selected in the UI
+          measures:
+            type: array
+            items:
+              $ref: '#/definitions/Measure'
+  Measure:
+    type: object
+    properties:
+      group:
+        type: integer
+        description: grouping
+      id:
+        type: string
+        description: y-axis identifier
+      name:   
+        type: string
+        description: ui friendly y-axis name
+      type:   
+        type: string
+        description: data type of the y-axis data
+      value:   
+        type: string
+        description: property name for the y-axis data     
+  Category:
+    type: object
+    properties:
+      axis:
+        type: integer 
+        description: index in the x-axis
+      id:
+        type: string
+        description: x-axis identifier
+      name:   
+        type: string
+        description: ui friendly x-axis name
+      order:   
+        type: string
+        description: sorting order
+        enum:
+         - ASC
+         - DESC
+      type:   
+        type: string
+        description: data type of the x-axis data
+      value:   
+        type: string
+        description: property name for the x-axis data
+  PatientResult:
+    type: object
+    description: Response object when querying from patient endpoint
+    properties:
+      data:
+        type: array
+        items:
+          type: object
+        description: an array of patients containing its attributes and interactions
+      totalPatientCount:
+        type: integer
+        format: int32 
+        description: number of guarded patients
+  RecontactPatientResult: 
+    type: string
+    description: Response object when querying getRecontactPatientList endpoint      
+  PatientResultStream:
+    type: object
+    description: Response a single csv stream from either a patient or interaction dataset when querying from patient endpoint
+  Axis:
+    type: object
+    description: definition of the axis
+    properties:
+      attributeId:
+        type: string
+        description: attribute used in axis
+      categoryId:
+        type: string
+        description: axis name
+  Concept:
+    properties:
+      conceptId:
+        type: string
+      conceptCode:
+        type: string
+      conceptName:
+        type: string
+  ConceptIds:
+    properties:
+        descendants:
+          type: array
+          items:
+            $ref: "#/definitions/Concept"
+          description: an array of concept ids
+  ConceptDescendants:
+    properties:
+      descendants:
+        type: array
+        items:
+          $ref: "#/definitions/Concept"
+        description: an array of descendant concepts
+  TableNames:
+    properties:
+      descendants:
+        type: array
+        items:
+          type: string
+  UserStudies:
+    type: object
+    description: Response object when querying from userStudies endpoint
+    properties:
+      studies:
+        type: array
+        items:
+          type: object
+        description: an array of studies containing its id and name
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string
+  ParquetResultStream:
+    type: object
+    description: parquet response stream when querying from parquet endpoint
+  DataCharacterizationResult:
+    type: object
+    description: Data Characterization results based on sourceKey provided
+  DataCharacterizationDrilldownResult:
+    type: object
+    description: Data Characterization drilldown results based on sourceKey and conceptId provided
+  CohortResponse:
+    type: object
+    description: Cohort belonging to the study
+    required: [id, patientIds, name, description, creationTimestamp]
+    properties:
+      id:
+        type: string
+        description: Unique identifies for a cohort
+      patientIds:
+        type: array
+        description: Array of patient IDs belonging to cohort
+        items:
+          type: string
+      name:
+        type: string
+        description: Name of cohort
+      description:
+        type: string
+        description: Description of cohort
+      creationTimestamp:
+        type: string
+        description: Indicates when the cohort was created
+  CohortListResponse:
+    type: array
+    description: Array of cohorts
+    items:
+      $ref: "#/definitions/CohortResponse"
+  DataModels:
+    type: object
+    description: Response object of data models
+  CDMVersion:
+    type: string
+    description: OMOP CDM Version 
+  SchemaMetadataResponse:
+      type: object
+      description: Response object when retrieving schema metadata for snapshot

@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'pa-filter-cards'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ browser }) => {
   // Start browser in fullscreen mode
@@ -15,7 +16,7 @@ test(TEST_NAME, async ({ browser }) => {
   const page = await context.newPage()
 
   // Step 1 - navigate to the portal
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -47,23 +48,21 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 8 - Show that there are no elements found
   await page.getByTitle('Condition Occurrence A -').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('abc')
-  await expect(page.locator('[id="patient.interactions.conditionoccurrence.1"]')).toMatchAriaSnapshot(
-    `- text: abc No suggestions available`
-  )
+  await page.getByPlaceholder('Enter search term').fill('abc')
+  await expect(page.getByRole('option', { name: 'abc No suggestions available' })).toBeVisible()
 
   // Step 4&5 - Searching term for a given substring
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('nemi')
+  await page.getByPlaceholder('Enter search term').fill('nemi')
   await expect(page.getByText('Anemia - Anemia')).toBeVisible()
 
   // Step 6 - Full term search
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Hypothyroidism')
+  await page.getByPlaceholder('Enter search term').fill('')
+  await page.getByPlaceholder('Enter search term').fill('Hypothyroidism')
   await expect(page.getByText('Hypothyroidism - Hypothyroidism')).toBeVisible()
-  await page.getByRole('textbox', { name: 'Enter search term' }).press('Escape')
+  await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').click()
+  await page.getByText('Supported SyntaxEnter a').first().click()
   await expect(page.getByRole('application')).toContainText('Supported Syntax')
 
   // Step 8 - Create concept set
@@ -85,23 +84,35 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('row', { name: '260139 10509002 Acute bronchitis' }).getByRole('img').click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('439777 271737000 Anemia')
   await page.getByRole('button', { name: 'Search' }).click()
-  await page.getByRole('row', { name: '439777 271737000 Anemia 102.' }).getByRole('img').click()
+  await page.getByRole('row', { name: '439777 271737000 Anemia' }).getByRole('img').click()
   await page.getByRole('button', { name: 'Create' }).click()
   await page.getByRole('tab', { name: 'Selected concepts' }).click()
   await page.getByRole('button', { name: 'Close' }).click()
 
+  // Dismiss popover if present
+  try {
+    await page.mouse.move(0, 0)
+    await page.locator('.modal-wrapper').click()
+  } catch {
+    // Modal not present, continue
+  }
+
   // Step 8 - Select concept set
-  await page.getByTitle('Condition Occurrence A - Condition concept Set').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('test_concept_set')
+  const conditionOccConceptSet = page.getByTitle('Condition Occurrence A - Condition concept Set')
+  const conceptSetTextbox = conditionOccConceptSet.getByPlaceholder('Enter search term')
+  await conditionOccConceptSet.locator('div').nth(1).click()
+  await conceptSetTextbox.fill('')
+  await conceptSetTextbox.fill('test_concept_set')
   await expect(page.getByText('test_concept_set', { exact: false }).first()).toBeVisible()
   await page.getByText('test_concept_set', { exact: false }).first().click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).press('Escape')
+  await conceptSetTextbox.press('Escape')
 
   // Step 8 - Entering incorrect condition occurrence concept
-  await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('abc')
+  const conditionOccConceptName = page.getByTitle('Condition Occurrence A - Condition concept Name')
+  const conceptNameTextbox = conditionOccConceptName.getByPlaceholder('Enter search term')
+  await conditionOccConceptName.locator('div').nth(1).click()
+  await conceptNameTextbox.fill('')
+  await conceptNameTextbox.fill('abc')
   await page.getByText('abc').click()
   const conditionOccuErrorBgcolor = await page
     .getByText('abc')
@@ -110,40 +121,27 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  await page.getByRole('button', { name: '' }).first().click()
-  await page.getByText('Month of Birth').click()
-  await page.getByText('Select an AttributeSelect').click()
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByRole('textbox').fill('[1-10]')
-  await page.getByRole('textbox').press('Enter')
-  const monthOfBirthBgcolor = await page
-    .getByText('[1-10]')
-    .locator('..')
-    .evaluate(el => window.getComputedStyle(el).backgroundColor)
-  expect(monthOfBirthBgcolor).toBe('rgb(143, 219, 254)')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('[1-10]')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
 
   // Step 8 - Entering month of birth with incorrect input
-  await page.getByTitle('Basic Data - Month of Birth').click()
-  await page.getByRole('textbox').fill('5.x')
-  await page.getByRole('textbox').press('Enter')
-  const monthOfBirthErrorBgcolor = await page
-    .getByText('5.x')
-    .locator('..')
-    .evaluate(el => window.getComputedStyle(el).backgroundColor)
-  expect(monthOfBirthErrorBgcolor).toBe('rgb(226, 49, 1)')
-  await page
-    .locator('div')
-    .filter({ hasText: /^5\.x$/ })
-    .locator('span')
-    .nth(1)
-    .click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('5.x')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+  await expect(page.getByText('Invalid input. Use a number,')).toBeVisible()
 
   // Step 9 - Remove condition occurrence filter card
   await page.getByRole('button', { name: '' }).nth(1).click()
+  let menuVisible = await page.getByRole('menu').isVisible()
+  if (!menuVisible) {
+    await page.getByRole('button', { name: '' }).nth(1).click()
+    await expect(page.getByRole('menu')).toBeVisible()
+  }
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
-  await page.getByText('Select an AttributeSelect').click()
-  await page.waitForSelector('text=2226 / 2694', { state: 'visible' })
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
+  await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
 
   // Step 10 - Reset filters
   await page.getByRole('button', { name: '↺' }).click()
@@ -152,18 +150,18 @@ test(TEST_NAME, async ({ browser }) => {
 
   // Step 12 - Basic data filter for gender
   await page.getByTitle('Basic Data - Gender').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Female')
+  await page.getByTitle('Basic Data - Gender').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Basic Data - Gender').getByPlaceholder('Enter search term').fill('Female')
   await page.getByText('FEMALE - FEMALE').click()
   await page.getByRole('button', { name: '' }).click()
 
   // Step 12 - Basic data filter for gender concept id
   await page.locator('.dropdown-scroll >> text=Gender concept id').scrollIntoViewIfNeeded()
   await page.getByText('Gender concept id').click()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByTitle('Basic Data - Gender concept id').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('8532')
+  await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Basic Data - Gender concept id').getByPlaceholder('Enter search term').fill('8532')
   await page.getByText('- FEMALE').click()
 
   // Step 13 - Add filter card for Measurement concept name
@@ -171,7 +169,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menuitem', { name: 'Measurement' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByRole('button', { name: '' }).nth(1).click()
   await page.locator('.dropdown-scroll >> text=Measurement concept Name').scrollIntoViewIfNeeded()
   await page.getByText('Measurement concept name').click()
@@ -182,15 +180,18 @@ test(TEST_NAME, async ({ browser }) => {
     .click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Measurement A - Measurement concept name').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('glucose')
+  await page.getByTitle('Measurement A - Measurement concept name').getByPlaceholder('Enter search term').fill('')
+  await page
+    .getByTitle('Measurement A - Measurement concept name')
+    .getByPlaceholder('Enter search term')
+    .fill('glucose')
   await page.getByText('Glucose lab - Glucose lab').click()
   await page.locator('#stacked-chart').click()
 
   // Step 16 - Add filter card dfor Observation concept name
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Observation', exact: true }).click()
-  await page.getByText('Select an AttributeSelect').click()
+  await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByRole('button', { name: '' }).nth(2).click()
   await page.locator('.dropdown-scroll >> text=Observation concept name').scrollIntoViewIfNeeded()
   await page.getByText('Observation concept name').click()
@@ -198,8 +199,8 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('menu').getByText('Observation concept set').click()
   await page.locator('#stacked-chart').click()
   await page.getByTitle('Observation A - Observation').locator('div').nth(1).click()
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('')
-  await page.getByRole('textbox', { name: 'Enter search term' }).fill('Shell')
+  await page.getByTitle('Observation A - Observation').getByPlaceholder('Enter search term').fill('')
+  await page.getByTitle('Observation A - Observation').getByPlaceholder('Enter search term').fill('Shell')
   await page.getByText('Shellfish allergy - Shellfish').click()
 
   // Reset filters

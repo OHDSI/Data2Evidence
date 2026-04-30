@@ -2,47 +2,63 @@ import { serveStatic } from "npm:hono/deno";
 import { env, global, logger } from "../env.ts";
 import { Hono, Context } from "npm:hono";
 
+const portalRoutes = [
+  "/portal/login",
+  "/portal/login-callback",
+  "/portal/no-access",
+  "/portal/researcher",
+  "/portal/researcher/*",
+  "/portal/systemadmin",
+  "/portal/systemadmin/*",
+  "/portal/public",
+  "/portal/etl/*",
+  "/portal/public/*",
+];
+
 function _addStatic(app: Hono, url: string, path: string) {
   logger.log(url + "   " + path);
   app.use(
     url + "/*",
     serveStatic({
       root: path,
-      rewriteRequestPath: (path: string) => {
-        if (path == "/portal/login-callback") return "";
-        else return path.replace(new RegExp(`^${url}`), "");
+      rewriteRequestPath: (reqPath: string) => {
+        if (reqPath == "/portal/login-callback") return "";
+        else return reqPath.replace(new RegExp(`^${url}`), "");
       },
-      onNotFound: (path: string, c: Context) => {
-        logger.log(`${path} is not found, you access ${c.req.path}`);
-      },
-    })
+    }),
   );
 }
 
 export function addPlugin(app: Hono, value: any, dir: string) {
+  const portalIndexPath = `${dir}resources/portal/index.html`;
+
   if (value.routes)
     value.routes.forEach((r: any) => {
       _addStatic(app, `${r.source}`, `${dir}${r.target}/`);
     });
+
+  // Redirect root to portal
   app.get("/", (c) => {
-    return c.redirect(`/portal/`);
+    return c.redirect(`/d2e/portal/`);
   });
-  app.use(
-    "/portal/login",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
-  app.use(
-    "/portal/researcher/*",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
-  app.use(
-    "/portal/systemadmin/*",
-    serveStatic({ path: `${dir}resources/portal/index.html` })
-  );
+
+  // Serve portal index.html for client-side routing
+  portalRoutes.forEach((route) => {
+    app.get(route, async (c: Context) => {
+      try {
+        const content = await Deno.readFile(portalIndexPath);
+        c.header('Content-Type', 'text/html; charset=utf-8');
+        return c.body(content);
+      } catch (e) {
+        logger.log(`Portal index.html not found at ${portalIndexPath}: ${e}`);
+        return c.text('Not Found', 404);
+      }
+    });
+  });
   if (value.uiplugins) {
     global.PLUGINS_JSON = updatePluginJson(
       JSON.parse(global.PLUGINS_JSON),
-      value.uiplugins
+      value.uiplugins,
     );
     logger.log(global.PLUGINS_JSON);
   }
@@ -82,7 +98,7 @@ export function mergeChildren(existingItem: any, incomingItem: any): void {
       // Update existing child with incoming properties
       Object.assign(
         existingChildrenByRoute.get(incomingChild.route),
-        incomingChild
+        incomingChild,
       );
     } else {
       // Add new child to existing children array
@@ -160,6 +176,6 @@ export function updatePluginJson(plugins: any, uiPlugins: any): string {
   // Convert to string and replace any placeholders
   return JSON.stringify(plugins).replace(
     /\$\$FQDN\$\$/g,
-    env.CADDY__ALP__PUBLIC_FQDN
+    env.CADDY__ALP__PUBLIC_FQDN,
   );
 }

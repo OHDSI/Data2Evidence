@@ -1,0 +1,59 @@
+import { RouteGuardExecutioner, createWorkspaceRouteRecords } from '@prefecthq/prefect-ui-library'
+import { RouteRecordRaw, createRouter, createWebHistory, RouteComponent } from 'vue-router'
+import { routes, NamedRoute, AppRouteLocation, AppRouteRecord } from '@/router/routes'
+import AppRouterView from '@/views/AppRouterView.vue'
+import Sidebar from '@/components/Sidebar.vue'
+
+const workspaceRoutes = createWorkspaceRouteRecords({
+  artifact: () => import('@/views/Artifact.vue'),
+  artifactKey: () => import('@/views/ArtifactKey.vue'),
+  artifacts: () => import('@/views/Artifacts.vue'),
+  deployment: () => import('@/views/Deployment.vue'),
+  deployments: () => import('@/views/Deployments.vue'),
+  deploymentEdit: () => import('@/views/DeploymentEdit.vue'),
+  deploymentFlowRunCreate: () => import('@/views/FlowRunCreate.vue'),
+  flows: () => import('@/views/Flows.vue'),
+  flow: () => import('@/views/Flow.vue'),
+  runs: () => import('@/views/FlowRuns.vue'),
+  flowRun: () => import('@/views/FlowRun.vue'),
+  taskRun: () => import('@/views/TaskRun.vue'),
+  blocks: () => import('@/views/Blocks.vue'),
+  blocksCatalog: () => import('@/views/BlocksCatalog.vue'),
+  blocksCatalogView: () => import('@/views/BlocksCatalogView.vue'),
+  blockCreate: () => import('@/views/BlocksCatalogCreate.vue'),
+  block: () => import('@/views/BlockView.vue'),
+  blockEdit: () => import('@/views/BlockEdit.vue'),
+  variables: () => import('@/views/Variables.vue')
+})
+
+const routeRecords: AppRouteRecord[] = [
+  {
+    name: 'root',
+    path: '/',
+    redirect: routes.runs(),
+    components: { default: AppRouterView, sidebar: Sidebar },
+    children: workspaceRoutes as AppRouteRecord[]
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: '404',
+    component: (): RouteComponent => import('@/views/404.vue')
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory('/d2e/portal/systemadmin/jobs'),
+  routes: routeRecords as RouteRecordRaw[]
+})
+
+router.beforeEach(async (to, from) => {
+  return await RouteGuardExecutioner.before(to, from)
+})
+
+router.afterEach((to, from) => {
+  return RouteGuardExecutioner.after(to, from)
+})
+
+export default router
+export { routes }
+export type { NamedRoute, AppRouteLocation, AppRouteRecord }

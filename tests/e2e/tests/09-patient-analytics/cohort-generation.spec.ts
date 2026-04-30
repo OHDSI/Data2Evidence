@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'cohort-generation'
 const SHOULD_SKIP = true
@@ -13,7 +13,7 @@ test('cohort-generation', async ({ page }) => {
   // AUTHENTICATION SECTION
   // ========================
   // Navigate to the D2E portal login page
-  await page.goto('/portal')
+  await page.goto('/d2e/portal')
 
   // Fill in admin credentials and sign in
   await page.locator('input[name="identifier"]').click()
@@ -64,7 +64,7 @@ test('cohort-generation', async ({ page }) => {
   await page.getByRole('textbox').press('Enter')
 
   // Verify that age filter results in 2223 patients
-  await expect(page.locator('#pane-right')).toContainText('2223')
+  await expect(page.locator('#pane-right')).toContainText('2,223')
 
   // ========================
   // CONDITION OCCURRENCE FILTER

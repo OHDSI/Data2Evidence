@@ -1,0 +1,101 @@
+<script lang="ts">
+export default {
+  name: 'QueryFilterNestedCriteria',
+}
+</script>
+
+<script setup lang="ts">
+import { computed } from 'vue'
+import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
+import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
+import type { QueryFilterGroup, QueryFilterEvent } from '../types/QueryFilterTypes'
+
+export interface NestedCriteria {
+  id: string
+  criteriaType: 'ALL' | 'ANY' | 'AT_LEAST' | 'AT_MOST'
+  criteriaCount?: number
+  events: QueryFilterEvent[]
+}
+
+interface Props {
+  nestedCriteria: NestedCriteria
+  conceptSets?: ConceptSetItemDisplay[]
+  conceptSetDomainValues?: ConceptSetDomainValues
+  conceptSetTexts?: Record<string, string>
+  datasetId?: string | null
+  readonly?: boolean
+  hideHeader?: boolean
+  readonlyTitle?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  conceptSets: () => [],
+  readonly: false,
+  hideHeader: false,
+  readonlyTitle: false,
+})
+
+const emit = defineEmits<{
+  'update:nestedCriteria': [criteria: NestedCriteria]
+  'remove-nested': []
+  'concept-set-action': [action: any]
+  'search-change': [searchQuery: string]
+}>()
+
+// Convert NestedCriteria to QueryFilterGroup format
+const groupData = computed<QueryFilterGroup>({
+  get: () => {
+    const result = {
+      id: props.nestedCriteria.id,
+      title: props.hideHeader ? '' : 'Nested Criteria',
+      description: '',
+      criteriaType: props.nestedCriteria.criteriaType,
+      criteriaCount: props.nestedCriteria.criteriaCount,
+      events: props.nestedCriteria.events,
+    }
+    return result
+  },
+  set: (value: QueryFilterGroup) => {
+    const updatedCriteria: NestedCriteria = {
+      id: value.id,
+      criteriaType: value.criteriaType,
+      criteriaCount: value.criteriaCount,
+      events: value.events,
+    }
+    emit('update:nestedCriteria', updatedCriteria)
+  },
+})
+
+// Handle group updates from QueryFilterCriteriaGroup
+const handleGroupUpdate = (updatedGroup: QueryFilterGroup) => {
+  groupData.value = updatedGroup
+}
+
+// Handle group removal
+const handleGroupRemove = () => {
+  emit('remove-nested')
+}
+</script>
+
+<template>
+  <div class="query-filter-nested-criteria">
+    <!-- Use QueryFilterCriteriaGroup recursively for consistency -->
+    <QueryFilterCriteriaGroup
+      :group="groupData"
+      :group-index="0"
+      :concept-sets="conceptSets"
+      :concept-set-domain-values="
+        conceptSetDomainValues || { values: [], isLoading: false, loadedStatus: 'NO_RESULTS' }
+      "
+      :concept-set-texts="conceptSetTexts || {}"
+      :dataset-id="datasetId || null"
+      :readonly="readonly"
+      :hide-header="hideHeader"
+      :readonly-title="readonlyTitle"
+      @update-group="handleGroupUpdate"
+      @remove-group="handleGroupRemove"
+      @search-change="(searchQuery: string) => $emit('search-change', searchQuery)"
+      @concept-set-action="action => $emit('concept-set-action', action)"
+    />
+  </div>
+</template>
