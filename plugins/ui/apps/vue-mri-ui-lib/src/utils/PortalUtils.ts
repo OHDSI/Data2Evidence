@@ -12,7 +12,7 @@ export const getPortalAPI = (): {
   features?: Feature[]
   featuresLoading?: boolean
   locale?: string
-  isLocal?: boolean
+  isAtlas?: boolean
   debug?: boolean
   REACT_APP_PUBLIC_WEBAPI_PROXY_URL?: string
   REACT_APP_USE_PUBLIC_WEBAPI_PROXY?: string

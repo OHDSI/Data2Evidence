@@ -8,8 +8,8 @@
     "local-codegen": "playwright codegen --ignore-https-errors https://localhost:443"
   },
   "devDependencies": {
-    "@playwright/test": "1.52.0",
-    "playwright": "1.52.0",
+    "@playwright/test": "1.55.1",
+    "playwright": "1.55.1",
     "playwright-ctrf-json-reporter": "0.0.22"
   },
   "dependencies": {

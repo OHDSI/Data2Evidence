@@ -21,12 +21,14 @@ const cleanupOverwriteValues = (
 
 export const processForComposeCdwSvc = (
   databaseValues: CombinedEnv
-): HanaConfig[] => {
-  let values: HanaConfig[] = [];
+): CombinedEnv => {
+  const values: CombinedEnv = [];
   for (const value of databaseValues) {
     if (value.type === "HANA") {
       value.values = _.merge(value.values, value.cdwSvcValues);
       cleanupOverwriteValues(value);
+      values.push(value);
+    } else {
       values.push(value);
     }
   }
