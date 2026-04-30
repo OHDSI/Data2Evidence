@@ -34,6 +34,7 @@ export const i18nDefault = {
     ACTION_SELECTOR__CREATE_DATA_MART: "Create data mart",
     ACTION_SELECTOR__CREATE_RELEASE: "Create release",
     ACTION_SELECTOR__DELETE_DATASET: "Delete dataset",
+    ACTION_SELECTOR__DELETE_STUDY: "Delete study",
     ACTION_SELECTOR__DOWNLOAD_STRATEGUS_RESULTS: "Download strategus results",
     ACTION_SELECTOR__MANAGE_DASHBOARD: "Manage dashboard",
     ACTION_SELECTOR__MANAGE_RESULT_VIEWER: "Manage result viewer",
@@ -430,6 +431,15 @@ export const i18nDefault = {
     DELETE_STUDY_DIALOG__WARNING_CHILDREN:
       "Warning: This dataset has {0} cache dataset{1}. Deleting this dataset will also delete all its cache datasets.",
     DELETE_STUDY_DIALOG__YES_DELETE: "Yes, delete",
+    DELETE_STRATEGUS_STUDY_DIALOG__CANCEL: "Cancel",
+    DELETE_STRATEGUS_STUDY_DIALOG__CONFIRM: "Are you sure you want to delete this study",
+    DELETE_STRATEGUS_STUDY_DIALOG__CONFIRM_INSTRUCTION:
+      "This action cannot be undone. Please enter the study ID to confirm deletion.",
+    DELETE_STRATEGUS_STUDY_DIALOG__ENTER_STUDY_ID: "Enter study ID to confirm",
+    DELETE_STRATEGUS_STUDY_DIALOG__ENTER_EXACT_STUDY_ID: "Please enter the exact study ID",
+    DELETE_STRATEGUS_STUDY_DIALOG__ERROR: 'Failed to delete study "{0}"',
+    DELETE_STRATEGUS_STUDY_DIALOG__TITLE: "Delete Strategus study",
+    DELETE_STRATEGUS_STUDY_DIALOG__YES_DELETE: "Yes, delete",
     DELETE_TAG_DIALOG__CANCEL: "Cancel",
     DELETE_TAG_DIALOG__CONFIRM_1: "Are you sure you want to delete the following",
     DELETE_TAG_DIALOG__CONFIRM_2: "Tag",
