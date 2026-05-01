@@ -387,6 +387,7 @@ export const vocabulary: FastifyPluginAsyncZod = async function (app) {
         sortOrder
       );
 
+      console.log("DEBUG searchConcept result:", JSON.stringify(result));
       res.send(result);
     }
   );

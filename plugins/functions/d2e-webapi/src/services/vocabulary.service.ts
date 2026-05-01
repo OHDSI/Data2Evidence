@@ -33,6 +33,12 @@ import {
   runWithConcurrencyLimit,
 } from "../helpers/count-sort.ts";
 
+const safeDateParse = (value: unknown): string | number => {
+  if (value == null || value === "") return "";
+  const ts = Date.parse(String(value));
+  return Number.isFinite(ts) ? ts : "";
+};
+
 export const getVocabularySourceInfo = async (
   token: string,
   datasetId: string
@@ -118,8 +124,8 @@ export const getConceptsFromIdentifiers = async (
       STANDARD_CONCEPT_CAPTION: _getStandardConceptCaption(
         concept.STANDARD_CONCEPT
       ),
-      VALID_START_DATE: Date.parse(concept.VALID_START_DATE),
-      VALID_END_DATE: Date.parse(concept.VALID_END_DATE),
+      VALID_START_DATE: safeDateParse(concept.VALID_START_DATE),
+      VALID_END_DATE: safeDateParse(concept.VALID_END_DATE),
     };
   });
 
@@ -302,8 +308,8 @@ export const searchConcept = async (
         DOMAIN_ID: c.DOMAIN_ID,
         VOCABULARY_ID: c.VOCABULARY_ID,
         CONCEPT_CLASS_ID: c.CONCEPT_CLASS_ID,
-        VALID_START_DATE: Date.parse(c.VALID_START_DATE),
-        VALID_END_DATE: Date.parse(c.VALID_END_DATE),
+        VALID_START_DATE: safeDateParse(c.VALID_START_DATE),
+        VALID_END_DATE: safeDateParse(c.VALID_END_DATE),
         SCORE: undefined,
       }));
   }
@@ -337,8 +343,8 @@ export const searchConcept = async (
       DOMAIN_ID: concept.domainId,
       VOCABULARY_ID: concept.system,
       CONCEPT_CLASS_ID: concept.conceptClassId,
-      VALID_START_DATE: Date.parse(concept.validStartDate),
-      VALID_END_DATE: Date.parse(concept.validEndDate),
+      VALID_START_DATE: safeDateParse(concept.validStartDate),
+      VALID_END_DATE: safeDateParse(concept.validEndDate),
       SCORE: concept.score,
     };
   });
@@ -367,8 +373,8 @@ export const getConceptById = async (
     DOMAIN_ID: concept.domain_id,
     VOCABULARY_ID: concept.vocabulary_id,
     CONCEPT_CLASS_ID: concept.concept_class_id,
-    VALID_START_DATE: Date.parse(concept.valid_start_date),
-    VALID_END_DATE: Date.parse(concept.valid_end_date),
+    VALID_START_DATE: safeDateParse(concept.valid_start_date),
+    VALID_END_DATE: safeDateParse(concept.valid_end_date),
   };
   return mappedResults;
 };
@@ -396,8 +402,8 @@ export const getMappedConcepts = async (
       DOMAIN_ID: concept.domain_id,
       VOCABULARY_ID: concept.vocabulary_id,
       CONCEPT_CLASS_ID: concept.concept_class_id,
-      VALID_START_DATE: Date.parse(concept.valid_start_date as string),
-      VALID_END_DATE: Date.parse(concept.valid_end_date as string),
+      VALID_START_DATE: safeDateParse(concept.valid_start_date as string),
+      VALID_END_DATE: safeDateParse(concept.valid_end_date as string),
     };
   });
   return mappedResults;
@@ -475,8 +481,8 @@ export const getRelatedConceptsFromIdentifier = async (
         DOMAIN_ID: relatedConcept.domain_id,
         VOCABULARY_ID: relatedConcept.vocabulary_id,
         CONCEPT_CLASS_ID: relatedConcept.concept_class_id,
-        VALID_START_DATE: Date.parse(relatedConcept.valid_start_date),
-        VALID_END_DATE: Date.parse(relatedConcept.valid_end_date),
+        VALID_START_DATE: safeDateParse(relatedConcept.valid_start_date),
+        VALID_END_DATE: safeDateParse(relatedConcept.valid_end_date),
         RELATIONSHIPS: [
           {
             RELATIONSHIP_NAME: relatedConcept.relationship_name,
