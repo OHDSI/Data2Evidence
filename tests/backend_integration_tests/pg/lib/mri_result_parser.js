@@ -47,7 +47,13 @@ api.createNonValidatedMriResultParser = function (response, body) {
         'fields!'
     )
   })
-  var dataTree = _buildDataTree(sortedCategories, sortedMeasures, data)
+  var dataTree
+  try {
+    dataTree = _buildDataTree(sortedCategories, sortedMeasures, data)
+  } catch (e) {
+    console.log('[MRI_PARSER_DEBUG] _buildDataTree threw; categories=' + JSON.stringify(sortedCategories) + ' measures=' + JSON.stringify(sortedMeasures) + ' data=' + JSON.stringify(data))
+    throw e
+  }
   var statusCode = response.statusCode
   var noDataReason = null
   if (typeof body.noDataReason !== 'undefined') {
