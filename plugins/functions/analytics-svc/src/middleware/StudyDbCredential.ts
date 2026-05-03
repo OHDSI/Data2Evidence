@@ -110,8 +110,8 @@ export default async (req: IMRIRequest, res, next) => {
         }
 
         // Add database pool related configs to studyAnalyticsCredential
-        studyAnalyticsCredential.max = env.PG__MIN_POOL;
-        studyAnalyticsCredential.min = env.PG__MAX_POOL;
+        studyAnalyticsCredential.max = env.PG__MAX_POOL;
+        studyAnalyticsCredential.min = env.PG__MIN_POOL;
         studyAnalyticsCredential.idleTimeoutMillis = env.PG__IDLE_TIMEOUT_IN_MS;
 
         req.dbCredentials = {
