@@ -23,16 +23,21 @@ export default async (req: IMRIRequest, res, next) => {
     };
 
     const getDatasetIdFromRequest = (): string => {
-        // Try to find datasetId from request query
-        // If not found, try to find from request body
-        // If still not found, return empty string
         if (req.query.datasetId) {
             return req.query.datasetId.toString();
         } else if (req.body.datasetId) {
             return req.body.datasetId.toString();
-        } else {
-            return "";
         }
+        const jsonSeg = req.url.match(/%7B[^/?#]+%7D/i);
+        if (jsonSeg) {
+            try {
+                const decoded = JSON.parse(decodeURIComponent(jsonSeg[0]));
+                if (decoded?.datasetId) return String(decoded.datasetId);
+            } catch {
+                // not JSON, ignore
+            }
+        }
+        return "";
     };
 
     const addPAConfigIdToReq = (studyMetadata): void => {

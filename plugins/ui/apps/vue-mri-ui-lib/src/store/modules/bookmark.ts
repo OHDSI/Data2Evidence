@@ -169,7 +169,8 @@ const getters = {
       // cohort definitions with bookmark
       materializedCohorts.forEach(cohortDefinition => {
         // displayBookmarkDateFormat expects ISO String
-        cohortDefinition.createdOn = new Date(cohortDefinition.createdOn).toISOString()
+        const parsed = new Date(cohortDefinition.createdOn)
+        cohortDefinition.createdOn = isNaN(parsed.getTime()) ? '' : parsed.toISOString()
         // check bookmark exists, if yes, should use the bookmark name
         const bookmark = bookmarks.find(
           bookmark =>
