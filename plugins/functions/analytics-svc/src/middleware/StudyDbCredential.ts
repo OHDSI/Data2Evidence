@@ -28,13 +28,24 @@ export default async (req: IMRIRequest, res, next) => {
         } else if (req.body.datasetId) {
             return req.body.datasetId.toString();
         }
-        const jsonSeg = req.url.match(/%7B[^/?#]+%7D/i);
-        if (jsonSeg) {
-            try {
-                const decoded = JSON.parse(decodeURIComponent(jsonSeg[0]));
-                if (decoded?.datasetId) return String(decoded.datasetId);
-            } catch {
-                // not JSON, ignore
+        // URL-encoded JSON path segment (e.g. /cohort/SYNTAX/%7B"datasetId":"..."%7D).
+        // Bounded indexOf-based extraction avoids ReDoS from a polynomial regex.
+        const url = req.url;
+        const pathEnd = url.search(/[?#]/);
+        const path = pathEnd === -1 ? url : url.slice(0, pathEnd);
+        const start = path.indexOf("%7B");
+        if (start !== -1) {
+            const end = path.indexOf("%7D", start + 3);
+            if (end !== -1) {
+                const segment = path.slice(start, end + 3);
+                if (segment.length <= 4096) {
+                    try {
+                        const decoded = JSON.parse(decodeURIComponent(segment));
+                        if (decoded?.datasetId) return String(decoded.datasetId);
+                    } catch {
+                        // not JSON, ignore
+                    }
+                }
             }
         }
         return "";

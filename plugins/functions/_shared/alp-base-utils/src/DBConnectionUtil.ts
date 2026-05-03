@@ -37,34 +37,10 @@ export class DBConnectionUtil {
                             logger.info(`Schema set to: ${credentials.schema}`);
                         });
                     });
-                    DBConnectionUtil.pool.on("error", (err: any, client) => {
-                        const pool = DBConnectionUtil.pool as any;
-                        logger.error(
-                            `[PG_POOL_ERROR] message="${err?.message}" ` +
-                            `code="${err?.code}" errno="${err?.errno}" syscall="${err?.syscall}" ` +
-                            `address="${err?.address}" port="${err?.port}" ` +
-                            `pool_total=${pool?.totalCount} pool_idle=${pool?.idleCount} pool_waiting=${pool?.waitingCount} ` +
-                            `client_processID=${(client as any)?.processID}`
-                        );
-                        if (err?.stack) {
-                            logger.error(`[PG_POOL_ERROR] stack: ${err.stack}`);
-                        }
-                        if (client && typeof client.release === "function") {
-                            try {
-                                client.release(true);
-                            } catch (releaseErr) {
-                                logger.error(`[PG_POOL_ERROR] client.release(true) threw: ${releaseErr}`);
-                            }
-                        }
+                    DBConnectionUtil.pool.on("error", (err: any) => {
+                        logger.error(err);
                     });
-                    DBConnectionUtil.pool.on("remove", (client: any) => {
-                        const pool = DBConnectionUtil.pool as any;
-                        logger.info(
-                            `[PG_POOL_REMOVE] processID=${client?.processID} ` +
-                            `pool_total=${pool?.totalCount} pool_idle=${pool?.idleCount} pool_waiting=${pool?.waitingCount}`
-                        );
-                    });
-                    
+
 
                     NodeCleanup((_, eventType) => {
                             if (DBConnectionUtil.pool) {
