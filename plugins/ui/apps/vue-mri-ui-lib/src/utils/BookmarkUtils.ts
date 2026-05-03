@@ -97,16 +97,12 @@ export const processBookmarksData = (data: ICombinedCohortDefnitionListItem[], p
     }
   }
 
-  const safeIso = (v: unknown): string => {
-    const d = new Date(v as any)
-    return isNaN(d.getTime()) ? '' : d.toISOString()
-  }
   const formatRawAtlasCohortDefinition = (acd: ICohortDefinition) => {
     return {
       id: acd.id,
       name: acd.name,
-      createdOn: safeIso(acd.createdDate),
-      updatedOn: safeIso(acd.modifiedDate || acd.createdDate),
+      createdOn: new Date(acd.createdDate).toISOString(),
+      updatedOn: new Date(acd.modifiedDate || acd.createdDate).toISOString(),
       ...(acd.createdBy && { username: acd.createdBy }),
       ...(acd.cohortDefinitionId && { cohortDefinitionId: acd.cohortDefinitionId }),
     }

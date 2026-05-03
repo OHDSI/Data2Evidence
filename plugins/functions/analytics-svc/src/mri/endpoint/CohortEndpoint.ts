@@ -181,15 +181,15 @@ export class CohortEndpoint {
         excludePatientIds?: boolean
     ) {
         const baseQueryString = `
-            SELECT
+            SELECT 
                 cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
                 cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
-                CAST(cd.COHORT_INITIATION_DATE AS VARCHAR) AS "COHORT_INITIATION_DATE",
+                cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
                 COUNT(DISTINCT c.SUBJECT_ID) AS "count"
             FROM ${this.schemaName}.COHORT_DEFINITION cd
-            LEFT JOIN ${this.schemaName}.COHORT c
+            LEFT JOIN ${this.schemaName}.COHORT c 
                 ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
         `;
 
@@ -328,7 +328,7 @@ export class CohortEndpoint {
             DEFINITION_TYPE_CONCEPT_ID,
             COHORT_DEFINITION_SYNTAX,
             SUBJECT_CONCEPT_ID,
-            CAST(COHORT_INITIATION_DATE AS VARCHAR) AS COHORT_INITIATION_DATE
+            COHORT_INITIATION_DATE
         FROM
             ${this.schemaName}.COHORT_DEFINITION
         WHERE

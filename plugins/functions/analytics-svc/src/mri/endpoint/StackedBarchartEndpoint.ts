@@ -75,8 +75,6 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                     querySvcParams
                 );
                 let finalQueryObject = queryResponse.queryObject;
-                console.log("[MRI_DEBUG][StackedBarchartEndpoint] generated SQL:\n" + finalQueryObject.queryString);
-                console.log("[MRI_DEBUG][StackedBarchartEndpoint] params: " + JSON.stringify(finalQueryObject.parameterPlaceholders));
                 let nql: QueryObject = new QueryObject(
                     finalQueryObject.queryString,
                     finalQueryObject.parameterPlaceholders,
@@ -94,16 +92,8 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
 
                 let qeCallback = (err, result: MRIEndpointResultType) => {
                     if (err) {
-                        console.log("[MRI_DEBUG][StackedBarchartEndpoint] executeQuery error: " + (err && err.message ? err.message : err));
                         reject(err);
                         return;
-                    }
-                    try {
-                        const preview = (result && result.data ? result.data.slice(0, 20) : []);
-                        console.log("[MRI_DEBUG][StackedBarchartEndpoint] raw row count: " + (result && result.data ? result.data.length : 0));
-                        console.log("[MRI_DEBUG][StackedBarchartEndpoint] raw rows (first 20): " + JSON.stringify(preview));
-                    } catch (e) {
-                        console.log("[MRI_DEBUG][StackedBarchartEndpoint] failed to log raw rows: " + e);
                     }
 
                     result.measures = measures;

@@ -484,8 +484,8 @@ const _formatMaterializedCohort = (
   id: cohortDefinition.id,
   patientCount: cohortDefinition.patientCount,
   cohortDefinitionName: cohortDefinition.name,
-  createdOn: cohortDefinition.creationTimestamp?.toString() ?? "",
-  description: cohortDefinition.description ?? "",
+  createdOn: cohortDefinition.creationTimestamp.toString(),
+  description: cohortDefinition.description,
   ...(includeSyntax && { syntax: cohortDefinition.syntax }),
 });
 
