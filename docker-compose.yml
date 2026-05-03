@@ -30,10 +30,10 @@ x-envs:
     ## Flag to display executed Knex queries in log
     PG__DEBUG: ${PG_DEBUG:-1}
     PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-    PG__MAX_POOL: 10
-    PG__MIN_POOL: 0
+    PG__MAX_POOL: ${PG__MAX_POOL:-3}
+    PG__MIN_POOL: ${PG__MIN_POOL:-1}
     PG__PORT: ${PG_PORT:-5432}
-    PG__IDLE_TIMEOUT_IN_MS: 1000
+    PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp
