@@ -134,7 +134,7 @@ export class PostgresConnection implements ConnectionInterface {
         }
         client.query(translatedSql, params, (err, result) => {
           if (err) {
-            release(true); // destroy broken client
+            release(true);
             if (_isTransientPgError(err) && attemptNo < 1) {
               logger.error(`[PG_RETRY] query failed (transient), retrying once: ${err?.message}`);
               return setTimeout(() => attempt(attemptNo + 1), 50);

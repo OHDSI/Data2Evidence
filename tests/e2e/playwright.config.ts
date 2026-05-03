@@ -18,7 +18,8 @@ export default defineConfig({
     headless: true,
     ignoreHTTPSErrors: true,
     screenshot: 'only-on-failure', // Take screenshot of page if test fails
-    video: 'retain-on-failure'
+    video: 'retain-on-failure',
+    trace: 'on'
   },
   retries: process.env.CI ? 0 : 0, // retry failed tests once
   reporter: [

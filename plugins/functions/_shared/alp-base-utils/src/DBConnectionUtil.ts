@@ -38,8 +38,6 @@ export class DBConnectionUtil {
                         });
                     });
                     DBConnectionUtil.pool.on("error", (err: any, client) => {
-                        // Verbose diagnostic: surface enough context to root-cause "Connection terminated"
-                        // events that aren't logged by the pg server.
                         const pool = DBConnectionUtil.pool as any;
                         logger.error(
                             `[PG_POOL_ERROR] message="${err?.message}" ` +
