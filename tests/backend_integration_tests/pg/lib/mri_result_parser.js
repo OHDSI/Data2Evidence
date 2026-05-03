@@ -52,6 +52,19 @@ api.createNonValidatedMriResultParser = function (response, body) {
     dataTree = _buildDataTree(sortedCategories, sortedMeasures, data)
   } catch (e) {
     console.log('[MRI_PARSER_DEBUG] _buildDataTree threw; categories=' + JSON.stringify(sortedCategories) + ' measures=' + JSON.stringify(sortedMeasures) + ' data=' + JSON.stringify(data))
+    if (body && body.debug) {
+      try {
+        console.log('[MRI_PARSER_DEBUG] backend SQL:\n' + body.debug.sql)
+        console.log('[MRI_PARSER_DEBUG] backend params: ' + JSON.stringify(body.debug.params))
+        if (body.debug.FAST) {
+          console.log('[MRI_PARSER_DEBUG] backend FAST: ' + JSON.stringify(body.debug.FAST))
+        }
+      } catch (logErr) {
+        console.log('[MRI_PARSER_DEBUG] failed dumping body.debug: ' + logErr)
+      }
+    } else {
+      console.log('[MRI_PARSER_DEBUG] body.debug is absent — server-side responseDbgInfo not populated')
+    }
     throw e
   }
   var statusCode = response.statusCode
