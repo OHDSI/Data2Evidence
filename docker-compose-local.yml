@@ -74,7 +74,7 @@ services:
           "perseus": false,
           "white-rabbit": false,
           "strategus-analysis": false,
-          "mcp-server": false,
+          "mcp-server": false
         }
 
   alp-caddy:
