@@ -351,11 +351,17 @@ export class QueryGenSvc {
             ? `LIMIT %(limit)l OFFSET %(offset)l`
             : "";
 
-        // Split the cohort SQL into its CTE (WITH) clause and body so the
-        // WITH can be hoisted to the top of the final statement instead of
-        // emitted inside the inner subquery. HANA rejects nested WITH in
-        // parenthesized subqueries; DuckDB tolerates either shape. Both
-        // engines accept top-level WITH. See issue #2234.
+        // For the patient list path (insertIntoTempTable, !createCohort) we
+        // split the cohort SQL into its CTE (WITH) clause and body so the
+        // WITH can be hoisted between INSERT INTO and SELECT. HANA rejects
+        // both nested WITH (inside parens) and `WITH ... INSERT INTO ...`,
+        // but accepts `INSERT INTO target WITH cte AS (...) SELECT ...`.
+        // DuckDB accepts all three shapes. The createCohort path is wrapped
+        // by the cohort controller into a `WITH cohortdata AS (SELECT ...)`
+        // envelope, so leave its body untouched (a hoist there would put
+        // WITH between SELECT columns and FROM, which is invalid SQL). See
+        // issue #2234.
+        const useHoist = !createCohort && !cohortId;
         const { withClause, subquery } = cohortId
             ? {
                   withClause: "",
@@ -364,24 +370,33 @@ export class QueryGenSvc {
                       cohortId
                   ),
               }
-            : (() => {
+            : useHoist
+            ? (() => {
                   const parts = Utils.getContextSQLParts(nql, "patient");
                   return { withClause: parts.withClause, subquery: parts.body };
-              })();
+              })()
+            : { withClause: "", subquery: Utils.getContextSQL(nql, "patient") };
 
         // For cohort creation, start of the query is added in the cohort controller
         // as QueryObject.formatDict() will not work with insufficient parameters
         // but we want the values to be sent back and populated in analytics svc.
-        const startOfQuery = createCohort
+        // For other paths we split INSERT INTO from the SELECT so the WITH
+        // clause can land between them (HANA-friendly placement).
+        const intoPart =
+            !createCohort && insertIntoTempTable
+                ? `INSERT INTO ${this.uniquePatientTempTableName}`
+                : ``;
+        const selectPart = createCohort
             ? ``
             : insertIntoTempTable
-            ? `INSERT INTO ${this.uniquePatientTempTableName} SELECT "pTable".*`
+            ? `SELECT "pTable".*`
             : `SELECT "pTable".${confHelper.getColumn(
                   this.settings.getFactTablePlaceholder() + ".PATIENT_ID"
               )}`;
 
-        const sql = `${withClause}
-                ${startOfQuery}
+        const sql = `${intoPart}
+                ${withClause}
+                ${selectPart}
                         FROM (
                             SELECT ${
                                 createCohort
