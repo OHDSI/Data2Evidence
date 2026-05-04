@@ -1,29 +1,30 @@
 export const _env = Deno.env.toObject();
 export let global = {
-  REQUIRED_URL_SCOPES: [
-    {
-      path: "^/trex/plugins(.*)",
-      scopes: ["trex"],
-    },
-    {
-      path: "^/trex/db(.*)",
-      scopes: ["trex"],
-    },
-    {
+    REQUIRED_URL_SCOPES: [{
+      "path": "^/trex/plugins(.*)",
+      "scopes": [
+        "trex"
+      ]
+    },{
+      "path": "^/trex/db(.*)",
+      "scopes": [
+        "trex"
+      ]
+    },{
+      "path": "^/trex/log",
+      "scopes": [
+        "trex.log.write"
+      ]
+    },{
       path: "^/fhir-server/(.*)",
       scopes: ["trex", "gateway.fhir.forward"],
+    }],
+    ROLE_SCOPES: {
+      "ALP_SYSTEM_ADMIN": ['trex'],
+      "TENANT_VIEWER": ['trex.log.write']
     },
-    {
-      path: "^/trex/log",
-      scopes: ["trex.log.write"],
-    },
-  ],
-  ROLE_SCOPES: {
-    ALP_SYSTEM_ADMIN: ["trex", "gateway.fhir.forward"],
-    TENANT_VIEWER: ["trex.log.write"],
-  },
-  PLUGINS_JSON: "{}",
-};
+    PLUGINS_JSON: "{}"
+}
 
 export let logger = {
   log: (c: any) => console.log(`\x1b[32m${c}\x1b[0m`),

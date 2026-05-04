@@ -9,8 +9,7 @@ import { addRoutes as addDBMRoutes } from "./routes/dbm.ts"
 import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
-import { authn } from "./auth/authn.ts";
-import { authz } from "./auth/authz.ts";
+import { authn } from "./auth/authn.ts"
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -71,6 +70,22 @@ export async function initTrex() {
         logger.error(`Failed to load FHIR extension: ${e.message}`);
     }
 
+    // Attach the built-in cdw_config_svc validation schema so cdw-svc
+    // queries against datasetId="DEFAULT" can resolve `cdw_config_svc`.
+    // The old runtime did this lazily inside TrexDB's constructor; with
+    // @trex/pool worker connections share the catalog, so a one-shot
+    // ATTACH on the memory connection at startup is enough.
+    try {
+      const cdwConn = new Trex.TrexDB("memory");
+      await cdwConn.execute(
+        "ATTACH IF NOT EXISTS '/usr/src/cdw_data/built_in/cdw_config_svc_validation_schema' AS cdw_config_svc (READ_ONLY)",
+        [],
+      );
+      logger.log('Attached cdw_config_svc validation schema');
+    } catch (e) {
+      logger.error('Failed to attach cdw_config_svc validation schema:', e);
+    }
+
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
         const module = await import(`./routes/${r.name}`);
@@ -82,6 +97,43 @@ export async function initTrex() {
     addPluginRoutes(app);
     addPortalRoutes(app);
     addLogRoutes(app);
+
+    // Proxy WebAPI requests with Logto token exchange
+    app.all('/WebAPI/*', authn, async (c) => {
+        const url = new URL(c.req.url);
+        const targetUrl = `http://localhost:8080${url.pathname}${url.search}`;
+
+        const headers = new Headers(c.req.raw.headers);
+        headers.delete('host');
+
+        const webApiToken = c.get("webApiToken");
+        if (webApiToken) {
+            headers.set("Authorization", `Bearer ${webApiToken}`);
+        }
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: c.req.method,
+                headers: headers,
+                body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
+                // @ts-ignore - duplex is needed for streaming request bodies
+                duplex: 'half',
+                redirect: 'manual',
+            });
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+            });
+        } catch (e) {
+            logger.error(`WebAPI proxy error: ${e}`);
+            return new Response(JSON.stringify({ error: 'WebAPI proxy error' }), {
+                status: 502,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    });
 
     await Plugins.initPlugins(app);
     logger.log("Added plugins");
