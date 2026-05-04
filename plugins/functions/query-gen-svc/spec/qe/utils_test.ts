@@ -57,6 +57,24 @@ describe("Utils.formMultipleEntryExitParts (issue #2234)", () => {
         expect(secondWith).toBe(-1);
     });
 
+    it("preserves both PEE and non-PEE clauses when iteration order is non-PEE first (EC-1)", () => {
+        // Pre-fix the assignment-vs-concat accumulator dropped the non-PEE
+        // text whenever PEE was iterated last. Verify the WITH chain now
+        // contains both clauses regardless of iteration order.
+        const peeQO = makeQO("SELECT pid, MIN(d) AS entry, MAX(d) AS exit FROM PEE_source");
+        const pr0QO = makeQO('SELECT "patient.attributes.pcount.0" FROM cohort_source');
+
+        const { withClause } = Utils.formMultipleEntryExitParts([pr0QO, peeQO]);
+
+        expect(withClause).toContain("PatientRequestEntryExit AS");
+        expect(withClause).toContain("PatientRequest0 AS");
+        // PEE must still be the first CTE so the non-PEE wrapper that
+        // references PatientRequestEntryExit can resolve it.
+        const peeIdx = withClause.indexOf("PatientRequestEntryExit AS");
+        const pr0Idx = withClause.indexOf("PatientRequest0 AS");
+        expect(peeIdx).toBeLessThan(pr0Idx);
+    });
+
     it("merges parameter placeholders from all contextList items into the body", () => {
         const peePlaceholder = { key: "{pee-key}", value: "pee-val", type: "text" };
         const pr0Placeholder = { key: "{pr0-key}", value: "pr0-val", type: "text" };

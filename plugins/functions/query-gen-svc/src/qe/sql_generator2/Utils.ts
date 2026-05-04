@@ -82,23 +82,37 @@ export class Utils {
     public static formMultipleEntryExitParts(
         localContextList: QueryObject[]
     ): { withClause: string; body: QueryObject } {
-        let count = 0;
+        // Two-pass build: collect the PEE clause and non-PEE clauses
+        // independently, then assemble a single WITH chain. The previous
+        // implementation used a single accumulator that was assigned (not
+        // appended to) on PEE iterations, which silently dropped any
+        // non-PEE clauses that happened to be iterated before PEE. Order
+        // is no longer load-bearing here. See issue #2234 (EC-1).
         const name = "PatientRequest";
         const parsSet = new Set<string>();
-        let withClause: any = [];
+        let peeClause = "";
+        const nonPeeClauses: string[] = [];
+        let count = 0;
+
         localContextList.forEach((queryObject) => {
             if (queryObject.queryString.indexOf("PEE") > -1) {
-                withClause = `WITH PatientRequestEntryExit AS ${
+                peeClause = `PatientRequestEntryExit AS ${
                     this.wrapBrackets(queryObject).queryString
-                } `;
+                }`;
             } else {
-                withClause += `, ${name}${count} AS ( ${queryObject.queryString} ) `;
+                nonPeeClauses.push(
+                    `${name}${count} AS ( ${queryObject.queryString} )`
+                );
                 count++;
             }
             queryObject.parameterPlaceholders.forEach((p) =>
                 parsSet.add(p)
             );
         });
+
+        const withClause = `WITH ${[peeClause, ...nonPeeClauses]
+            .filter(Boolean)
+            .join(" , ")} `;
         let unionQuery = "";
         for (let i = 0; i < count; i++) {
             if (i === 0) {
@@ -157,7 +171,7 @@ export class Utils {
             [...Array.from(parsSet)],
             true
         );
-        return { withClause: String(withClause), body };
+        return { withClause, body };
     }
 
     static wrapBrackets(qo: QueryObject) {

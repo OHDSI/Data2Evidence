@@ -146,6 +146,20 @@ export class QueryGenSvc {
                     entityQueryMap,
                     ifrRequest: this.ifrRequest,
                 };
+                const isPluginPatientList =
+                    this.queryType === "plugin" &&
+                    this.pluginOptionalParams?.insert &&
+                    !this.pluginOptionalParams?.createCohort;
+                if (isPluginPatientList) {
+                    this.logPluginPatientListDebug(
+                        "queryObject",
+                        finalResults.queryObject.queryString
+                    );
+                    this.logPluginPatientListDebug(
+                        "pCountQueryObject",
+                        finalResults.pCountQueryObject.queryString
+                    );
+                }
                 resolve(finalResults);
             } catch (err) {
                 logger.error(err);
@@ -266,17 +280,41 @@ export class QueryGenSvc {
             "population",
             "PatientCount"
         );
-        let patientContextIdentifier = Utils.hasMultiRequest(nql)
-            ? "PatientRequests"
-            : "PatientRequest0";
+        // Pick the wrapper CTE name carefully. With entry/exit on, the WITH
+        // chain we emit already contains a PatientRequest0 CTE (added by
+        // formMultipleEntryExitParts). If hasMultiRequest is also false,
+        // patientContextIdentifier would default to "PatientRequest0" too —
+        // which would declare PatientRequest0 twice in the same WITH chain
+        // and produce an SQL parse error. Use a distinct name for that
+        // collision case and patch the pCountquery's references to match.
+        // See issue #2234 (EC-2).
+        const hasMulti = Utils.hasMultiRequest(nql);
+        let patientContextIdentifier: string;
+        if (patientWith && !hasMulti) {
+            patientContextIdentifier = "PatientRequestsResult";
+            // Clone before mutating so we don't leak text-replacement into
+            // any cached/shared QueryObject reference.
+            pCountquery = new QueryObject(
+                pCountquery.queryString.replace(
+                    /\bPatientRequest0\b/g,
+                    patientContextIdentifier
+                ),
+                pCountquery.parameterPlaceholders,
+                pCountquery.sqlReturnOn
+            );
+        } else {
+            patientContextIdentifier = hasMulti
+                ? "PatientRequests"
+                : "PatientRequest0";
+        }
         let dict = {
             subquery,
             pCountquery,
         };
         // patientWith, when non-empty, looks like:
         //   "WITH PatientRequestEntryExit AS (...) , PatientRequest0 AS (...) "
-        // We append our own CTE (PatientRequests / PatientRequest0) into
-        // that WITH chain instead of opening a new nested WITH.
+        // We append our own CTE into that WITH chain instead of opening a
+        // new nested WITH.
         const sql = patientWith
             ? `${patientWith} , ${patientContextIdentifier} AS ( %(subquery)Q ) %(pCountquery)Q`
             : `WITH ${patientContextIdentifier} AS ( %(subquery)Q ) %(pCountquery)Q`;
@@ -290,6 +328,35 @@ export class QueryGenSvc {
             parameterPlaceholders: qo.parameterPlaceholders,
             sqlReturnOn: qo.sqlReturnOn,
         };
+    }
+
+    private logPluginPatientListDebug(
+        queryName: string,
+        queryString?: string
+    ) {
+        if (!queryString) {
+            logger.info(
+                `[PLUGIN_PATIENT_LIST_SQL_DEBUG] ${queryName}: empty query string`
+            );
+            return;
+        }
+        const cteNames = Array.from(
+            queryString.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s+AS\s*\(/g),
+            (match) => match[1]
+        );
+        const cteCounts = new Map<string, number>();
+        cteNames.forEach((name) => {
+            cteCounts.set(name, (cteCounts.get(name) || 0) + 1);
+        });
+        const duplicateCtes = Array.from(cteCounts.entries())
+            .filter(([, count]) => count > 1)
+            .map(([name, count]) => `${name}(${count})`);
+
+        logger.info(
+            `[PLUGIN_PATIENT_LIST_SQL_DEBUG] ${queryName} ctes=[${cteNames.join(
+                ", "
+            )}] duplicateCtes=[${duplicateCtes.join(", ") || "none"}] sql=${queryString}`
+        );
     }
 
     private appendChartSpecificQueries(
