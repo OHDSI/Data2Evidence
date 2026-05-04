@@ -211,10 +211,10 @@
             "route": "cohorts"
           },
           {
-            "visible": true,
+            "visible": false,
             "type": "app",
             "featureFlag": "starboard",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
             "pluginPath": "/resources/notebook-ui/lifecycles.js",
@@ -265,11 +265,11 @@
             "visible": false
           },
           {
-            "name": "Dashboard",
+            "name": "Dashboards",
             "route": "shiny-live",
             "pluginPath": "plugins/Researcher/ShinyLive/module",
             "featureFlag": "shinyLive",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "requiredRoles": [
               "RESEARCHER"
             ],
