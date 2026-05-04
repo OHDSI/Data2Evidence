@@ -255,7 +255,12 @@ export class QueryGenSvc {
         if (this.queryType !== "plugin") {
             return null;
         }
-        let subquery = Utils.getContextSQL(nql, "patient");
+        // Get the patient context as separate WITH clause + body so we can
+        // graft any entry/exit CTEs into the OUTER WITH list rather than
+        // nesting WITH inside another WITH (HANA forbids nested CTEs). See
+        // issue #2234.
+        const { withClause: patientWith, body: subquery } =
+            Utils.getContextSQLParts(nql, "patient");
         let pCountquery = Utils.getContextSQL(
             nql,
             "population",
@@ -268,7 +273,13 @@ export class QueryGenSvc {
             subquery,
             pCountquery,
         };
-        let sql = `WITH ${patientContextIdentifier} AS ( %(subquery)Q ) %(pCountquery)Q`;
+        // patientWith, when non-empty, looks like:
+        //   "WITH PatientRequestEntryExit AS (...) , PatientRequest0 AS (...) "
+        // We append our own CTE (PatientRequests / PatientRequest0) into
+        // that WITH chain instead of opening a new nested WITH.
+        const sql = patientWith
+            ? `${patientWith} , ${patientContextIdentifier} AS ( %(subquery)Q ) %(pCountquery)Q`
+            : `WITH ${patientContextIdentifier} AS ( %(subquery)Q ) %(pCountquery)Q`;
         let qo = QueryObject.formatDict(sql, dict);
         return this.serializeQueryObject(qo);
     }
