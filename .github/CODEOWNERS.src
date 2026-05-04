@@ -46,7 +46,7 @@
 /services/materialize-cohorts                        @data2evidence/analyze
 /services/trex                                       @data2evidence/trex
 /tests                                               @data2evidence/analyze
-/ui                                                  @data2evidence/integrate
+/plugins/ui                                                  @data2evidence/integrate
 /plugins/ui/alp-libs                                         @data2evidence/analyze
 /plugins/ui/apps/mri-pa-ui                                   @data2evidence/analyze
 /plugins/ui/apps/vue-mri-ui-lib                              @data2evidence/analyze

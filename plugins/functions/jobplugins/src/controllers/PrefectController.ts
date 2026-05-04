@@ -111,12 +111,12 @@ export class PrefectController {
 
   private async removeAnalysisResultsSchema(req: Request, res: Response) {
     try {
-      const { id: studyId, datasetid: datasetId } = req.params;
+      const { id: studyId } = req.params;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
       const flowrunId = await this.prefectService.removeAnalysisResultsSchema(
         token,
-        { studyId, datasetId },
+        { studyId },
       );
       return res
         .status(200)
@@ -183,7 +183,7 @@ export class PrefectController {
       this.createAnalaysisRunByJupyterKernel.bind(this),
     );
     this.router.delete(
-      "/flow-run/strategus/remove-results-schema/:id/:datasetid",
+      "/flow-run/strategus/remove-results-schema/:id",
       this.removeAnalysisResultsSchema.bind(this),
     );
     // Admin-only endpoints for uploading/dropping results from storage

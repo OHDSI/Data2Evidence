@@ -39,6 +39,11 @@ export const dataSourceOptions: DataSourceOptions & SeederOptions = {
   schema: _env.PG_SCHEMA,
   ssl,
   poolSize: parseInt(_env.PG__MAX_POOL) || 10,
+  extra: {
+    max: parseInt(_env.PG__MAX_POOL) || 10,
+    min: parseInt(_env.PG__MIN_POOL) || 0,
+    idleTimeoutMillis: parseInt(_env.PG__IDLE_TIMEOUT_IN_MS) || 30000,
+  },
   entities: [
     Config,
     DatasetAttributeConfig,
