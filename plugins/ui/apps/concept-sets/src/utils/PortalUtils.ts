@@ -12,7 +12,7 @@ export const getPortalAPI = (): {
   features?: Feature[];
   featuresLoading?: boolean;
   locale?: string;
-  isLocal?: boolean;
+  isAtlas?: boolean;
   debug?: boolean;
   toggleAtlas?(val: boolean, path: string): void;
   REACT_APP_PUBLIC_WEBAPI_PROXY_URL?: string;

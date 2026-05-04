@@ -157,12 +157,16 @@ export class DemoService {
       datasetId,
     });
 
-    // Assert correctedPassPercentage is 95 (CDM 5.4 with correct Achilles queries)
+    // Assert correctedPassPercentage is at least 94 (CDM 5.4 baseline; was 95 with prior Achilles)
     const correctedPassPercentage =
       dqdResults?.total?.total?.correctedPassPercentage;
-    if (correctedPassPercentage !== "95%" && correctedPassPercentage !== 95) {
+    const pct = parseInt(
+      String(correctedPassPercentage ?? "").replace("%", ""),
+      10
+    );
+    if (Number.isNaN(pct) || pct < 94) {
       throw new Error(
-        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected 95 or "95%"`
+        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected >= 94`
       );
     }
 

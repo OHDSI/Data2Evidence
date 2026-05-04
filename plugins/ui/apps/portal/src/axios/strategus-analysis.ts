@@ -48,6 +48,14 @@ export class StrategusAnalysis {
     });
   }
 
+  public deleteStrategusAnalysis(studyId: string): Promise<{ message: string; analysisId: string }> {
+    return request({
+      baseURL: STRATEGUS_ANALYSIS_URL,
+      url: `/${studyId}`,
+      method: "DELETE",
+    });
+  }
+
   public getStudyViewerTemplates(): Promise<StrategusResultViewerTemplateData[]> {
     return request({
       baseURL: STRATEGUS_TEMPLATE_URL,

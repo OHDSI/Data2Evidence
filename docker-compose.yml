@@ -30,10 +30,10 @@ x-envs:
     ## Flag to display executed Knex queries in log
     PG__DEBUG: ${PG_DEBUG:-1}
     PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-    PG__MAX_POOL: 10
-    PG__MIN_POOL: 0
+    PG__MAX_POOL: ${PG__MAX_POOL:-1}
+    PG__MIN_POOL: ${PG__MIN_POOL:-1}
     PG__PORT: ${PG_PORT:-5432}
-    PG__IDLE_TIMEOUT_IN_MS: 1000
+    PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp
@@ -182,6 +182,7 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
+      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
       # Activates TrexSQLAutoConfiguration in trexsql-ext, which calls Trexsql/init.
       # When TREX_INIT is set, init() starts the Trexas (port 33001) + PgWire servers
       # in-process via the DuckDB extension, so WebAPI's JVM runs trex — no separate container.
@@ -283,7 +284,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir"]}'
+      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir", "d2e-notebook-plugin"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
@@ -336,7 +337,7 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
-      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-usermgmt}
+      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-logto}
       CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
@@ -582,9 +583,10 @@ services:
 
         # Enable if need to access admin console
         # http://localhost:3002 {
-        #   uri strip_prefix /d2e/logto
         #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
-        #     import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+        #     header_up Host {host}
+        #     header_up X-Forwarded-Proto http
+        #     header_up X-Forwarded-Port 3002
         #     transport http {
         #       read_buffer 8192
         #     }
@@ -600,6 +602,18 @@ services:
           handle @oidc {
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
           }
+
+          # Enable if need to access admin console
+          # @admin_api path /api/*
+          # handle @admin_api {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002
+          # }
+          
+          # @admin_auth path /sign-in* /sign-up* /consent* /forgot-password* /callback/* /social/*
+          # handle @admin_auth {
+          #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
+          # }
+
           respond 404
         }
 
@@ -618,6 +632,7 @@ services:
     ports:
       - ${CADDY_PORT:-${PORT:-443}}:443
       # - 3002:3002 # Enable if need to access admin console
+      # - 8080:8080 # Enable if need to access admin console
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     volumes:
       - caddy:/data
