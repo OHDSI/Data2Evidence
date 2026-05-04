@@ -146,20 +146,6 @@ export class QueryGenSvc {
                     entityQueryMap,
                     ifrRequest: this.ifrRequest,
                 };
-                const isPluginPatientList =
-                    this.queryType === "plugin" &&
-                    this.pluginOptionalParams?.insert &&
-                    !this.pluginOptionalParams?.createCohort;
-                if (isPluginPatientList) {
-                    this.logPluginPatientListDebug(
-                        "queryObject",
-                        finalResults.queryObject.queryString
-                    );
-                    this.logPluginPatientListDebug(
-                        "pCountQueryObject",
-                        finalResults.pCountQueryObject.queryString
-                    );
-                }
                 resolve(finalResults);
             } catch (err) {
                 logger.error(err);
@@ -328,35 +314,6 @@ export class QueryGenSvc {
             parameterPlaceholders: qo.parameterPlaceholders,
             sqlReturnOn: qo.sqlReturnOn,
         };
-    }
-
-    private logPluginPatientListDebug(
-        queryName: string,
-        queryString?: string
-    ) {
-        if (!queryString) {
-            logger.info(
-                `[PLUGIN_PATIENT_LIST_SQL_DEBUG] ${queryName}: empty query string`
-            );
-            return;
-        }
-        const cteNames = Array.from(
-            queryString.matchAll(/\b([A-Za-z_][A-Za-z0-9_]*)\s+AS\s*\(/g),
-            (match) => match[1]
-        );
-        const cteCounts = new Map<string, number>();
-        cteNames.forEach((name) => {
-            cteCounts.set(name, (cteCounts.get(name) || 0) + 1);
-        });
-        const duplicateCtes = Array.from(cteCounts.entries())
-            .filter(([, count]) => count > 1)
-            .map(([name, count]) => `${name}(${count})`);
-
-        logger.info(
-            `[PLUGIN_PATIENT_LIST_SQL_DEBUG] ${queryName} ctes=[${cteNames.join(
-                ", "
-            )}] duplicateCtes=[${duplicateCtes.join(", ") || "none"}] sql=${queryString}`
-        );
     }
 
     private appendChartSpecificQueries(
