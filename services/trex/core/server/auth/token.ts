@@ -26,19 +26,18 @@ export const getClientCredentialsToken = async () => {
 }
 
 export const exchangeToken = async (params: URLSearchParams) => {
-  let tokenUrl: string | undefined, clientSecret: string | undefined, resource: string | undefined
+  let tokenUrl: string | undefined, resource: string | undefined
   if (authType === 'logto') {
-    clientSecret = env.LOGTO_CLIENT_SECRET
     tokenUrl = env.LOGTO_TOKEN_URL
     resource = env.LOGTO_RESOURCE_API
   }
 
-  if (!params.has('client_secret') && clientSecret) {
-    params.append('client_secret', clientSecret)
-  }
-
   if (!params.has('resource') && resource) {
     params.append('resource', resource)
+  }
+
+  if (!params.has('client_secret') && env.LOGTO_CLIENT_SECRET) {
+    params.append('client_secret', env.LOGTO_CLIENT_SECRET)
   }
 
   if (!tokenUrl) {

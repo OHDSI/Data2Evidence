@@ -68,33 +68,33 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             flow_base:
-              - "flows/base/**"
+              - "plugins/flows/base/**"
             flow_i2b2:
-              - "flows/i2b2/**"
+              - "plugins/flows/i2b2/**"
             flow_data_management:
-              - "flows/data_management/**"
+              - "plugins/flows/data_management/**"
             flow_package_json:
-              - "flows/base/package.json"
-            ui: 
-              - "ui/**"
+              - "plugins/flows/base/package.json"
+            ui:
+              - "plugins/ui/**"
 
       - name: Build Flow base docker image
         if: steps.file_changes.outputs.flow_base == 'true' || contains(github.base_ref, 'release/')
         id: build_flow_base_image
         run: |
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./flows
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./plugins/flows/base/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-base:develop ./plugins/flows
 
       - name: Build i2b2 docker image
         if: steps.file_changes.outputs.flow_i2b2 == 'true' || contains(github.base_ref, 'release/')
         id: build_i2b2_image
         run: |
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./flows
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./plugins/flows/i2b2/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-i2b2:develop ./plugins/flows
 
       - name: Build data management docker image
         if: steps.file_changes.outputs.flow_data_management == 'true' || contains(github.base_ref, 'release/')
         id: build_dm_image
         run: |
-          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./flows
+          docker build --build-arg GIT_COMMIT_ARG=${{ github.sha }} --build-arg BUILD_TYPE=OSS --build-arg GITHUB_PAT=${{ secrets.GITHUB_TOKEN }} --file ./plugins/flows/data_management/Dockerfile --platform linux/amd64 --attest type=provenance,disabled=true --tag ghcr.io/ohdsi/d2e/flow-data-management:develop ./plugins/flows
 
       - name: Build docker images
         if: success() || failure()
@@ -140,6 +140,17 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
+      - name: Wait for d2e-trex healthy
+        if: success() || failure()
+        run: |
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
+            echo "[$i] d2e-trex health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -147,7 +158,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 1
+          max_attempts: 2
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemo
@@ -191,7 +202,7 @@ jobs:
           bun-version: 1.2.23
       - name: UI Build
         if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
-        working-directory: ./ui
+        working-directory: ./plugins/ui
         env:
           CI: false
         run: |
@@ -205,11 +216,11 @@ jobs:
       - name: UI docker-compose-local
         if: steps.file_changes.outputs.ui == 'true' || contains(github.base_ref, 'release/')
         run: |
-          sed -i 's|# - ./ui/resources:/usr/src/local-resources|- ./ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
         if: steps.file_changes.outputs.flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
-          sed -i 's|# - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
+          sed -i 's|# - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
       - name: Restart d2e services
         if: success() || failure()
@@ -246,6 +257,23 @@ jobs:
         run: |
           docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+
+      - name: Wait for webapi-init to complete
+        run: |
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -qE "Exited \([1-9]"; then
+              echo "webapi-init failed!"
+              docker logs d2e-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
 
       - name: Build e2e Docker image
         run: |

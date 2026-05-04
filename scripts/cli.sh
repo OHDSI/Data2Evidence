@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -o errexit
 
-version=0.13.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.13.0-beta
+version=0.15.0 #default/base version
+LATEST_DOCKER_TAG_NAME=0.15.0-beta
 
 
 cmd=""
@@ -233,7 +233,11 @@ EOF
     patchdemodb)
         source "$ENVFILE"
         database_host=${PROJECT_NAME:-d2e}-demodb
+        # Create cohort table if it doesn't exist
         docker exec $database_host psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"
+        # Update CDM version to 5.4 - the broadsea-atlasdb uses CDM 5.4 schema
+        # (e.g., ADMITTED_FROM_CONCEPT_ID instead of ADMITTING_SOURCE_CONCEPT_ID)
+        docker exec $database_host psql -h localhost -U postgres -c "UPDATE demo_cdm.cdm_source SET cdm_version = '5.4' WHERE cdm_version != '5.4' OR cdm_version IS NULL"
         ;;
     init)
         if [[ -n "${init_choice:-}" ]]; then
@@ -391,7 +395,7 @@ Commands:
   setupdemo   Load d2e services. Requires d2e init and d2e setup to be run.
 
 Options:
- -d, --function-path [PATH] Development mode. [PATH] is the path to functions
+ -d, --function-path [PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)
  -e, --demo                 Include demo database
  -i, --dicom                Include DICOM Server
  -j, --jupyter              Include jupyter

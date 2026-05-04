@@ -31,13 +31,13 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "functions/_shared/alp-libs/nodejs/**"
-              - "functions/analytics-svc/**"
-              - "functions/bookmark-svc/**"
-              - "functions/cdw-svc/**"
-              - "functions/mri-pa-config/**"
-              - "functions/mri-pg-config/**"
-              - "functions/query-gen-svc/**"
+              - "plugins/functions/_shared/alp-libs/nodejs/**"
+              - "plugins/functions/analytics-svc/**"
+              - "plugins/functions/bookmark-svc/**"
+              - "plugins/functions/cdw-svc/**"
+              - "plugins/functions/mri-pa-config/**"
+              - "plugins/functions/mri-pg-config/**"
+              - "plugins/functions/query-gen-svc/**"
               - "services/mri-db/**"
               - ".github/workflows/functions-mri-tests.yml"
 
