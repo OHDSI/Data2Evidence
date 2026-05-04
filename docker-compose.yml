@@ -231,7 +231,7 @@ services:
         "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
-        "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333"
+        "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
         "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server",
         "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway"
