@@ -19,7 +19,10 @@ export async function addPlugin(app: Hono, value: any, dir: any) {
             logger.info(`Loaded plugin ${value.name}: ${r}`);
             const cred = await (await DatabaseManager.get()).getCredentialsDecrypted();
             if(value.name == 'pgwire') {
-                r = await conn.execute(`SELECT start_pgwire_server('0.0.0.0', 5433, '${process.env.TREX__SQL__PASSWORD}', '${btoa(JSON.stringify(cred))}')`, []);
+                r = await conn.execute(
+                    `SELECT start_pgwire_server('0.0.0.0', 5433, ?, ?)`,
+                    [process.env.TREX__SQL__PASSWORD, btoa(JSON.stringify(cred))],
+                );
                 logger.info(`Started pgwire server: ${r}`);
             }
         } else {
