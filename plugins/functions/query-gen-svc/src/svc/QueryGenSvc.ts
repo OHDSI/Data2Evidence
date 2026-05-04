@@ -351,12 +351,23 @@ export class QueryGenSvc {
             ? `LIMIT %(limit)l OFFSET %(offset)l`
             : "";
 
-        const subquery = cohortId
-            ? QueryObject.format(
-                  `SELECT SUBJECT_ID AS "patient.attributes.pcount.0" FROM $$SCHEMA$$.COHORT WHERE COHORT_DEFINITION_ID = %s`,
-                  cohortId
-              )
-            : Utils.getContextSQL(nql, "patient");
+        // Split the cohort SQL into its CTE (WITH) clause and body so the
+        // WITH can be hoisted to the top of the final statement instead of
+        // emitted inside the inner subquery. HANA rejects nested WITH in
+        // parenthesized subqueries; DuckDB tolerates either shape. Both
+        // engines accept top-level WITH. See issue #2234.
+        const { withClause, subquery } = cohortId
+            ? {
+                  withClause: "",
+                  subquery: QueryObject.format(
+                      `SELECT SUBJECT_ID AS "patient.attributes.pcount.0" FROM $$SCHEMA$$.COHORT WHERE COHORT_DEFINITION_ID = %s`,
+                      cohortId
+                  ),
+              }
+            : (() => {
+                  const parts = Utils.getContextSQLParts(nql, "patient");
+                  return { withClause: parts.withClause, subquery: parts.body };
+              })();
 
         // For cohort creation, start of the query is added in the cohort controller
         // as QueryObject.formatDict() will not work with insufficient parameters
@@ -369,7 +380,8 @@ export class QueryGenSvc {
                   this.settings.getFactTablePlaceholder() + ".PATIENT_ID"
               )}`;
 
-        const sql = `${startOfQuery}
+        const sql = `${withClause}
+                ${startOfQuery}
                         FROM (
                             SELECT ${
                                 createCohort
