@@ -1,7 +1,6 @@
 // tslint:disable:no-shadowed-variable
 import QueryString from '../../utils/QueryString'
 import * as types from '../mutation-types'
-import { stripEntryExitFromCards } from './helpers/stripEntryExit'
 
 interface IResultDefinition {
   selected_attributes: any
@@ -96,7 +95,7 @@ const getters = {
       const request = { ...state.request }
       request.cohortDefinition = {
         ...request.cohortDefinition,
-        cards: stripEntryExitFromCards(cards),
+        cards,
         configData: {
           configId: configMetadata.id,
           configVersion: configMetadata.version,
