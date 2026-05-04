@@ -102,10 +102,15 @@ export class Utils {
         let unionQuery = "";
         for (let i = 0; i < count; i++) {
             if (i === 0) {
+                // PatientRequestEntryExit is referenced UNQUOTED to match the
+                // unquoted CTE declaration in the WITH chain. HANA stores
+                // unquoted identifiers in upper case, so a quoted reference
+                // ("PatientRequestEntryExit") would fail to resolve against
+                // the upper-cased CTE name. See issue #2234.
                 unionQuery = `SELECT
                         "PatientListRequests"."patient.attributes.pcount.0" AS "patient.attributes.pcount.0",
-                        "PatientRequestEntryExit"."entry" AS "entry",
-                        "PatientRequestEntryExit"."exit" AS "exit"
+                        PatientRequestEntryExit."entry" AS "entry",
+                        PatientRequestEntryExit."exit" AS "exit"
                         FROM (SELECT * FROM ${name}${i}`;
             } else {
                 unionQuery += ` UNION SELECT * FROM ${name}${i}`;
@@ -143,8 +148,8 @@ export class Utils {
             }
         });
 
-        unionQuery += `) AS "PatientListRequests" INNER JOIN "PatientRequestEntryExit"
-        ON "PatientListRequests"."patient.attributes.pcount.0" = "PatientRequestEntryExit"."patient.attributes.pid"
+        unionQuery += `) AS "PatientListRequests" INNER JOIN PatientRequestEntryExit
+        ON "PatientListRequests"."patient.attributes.pcount.0" = PatientRequestEntryExit."patient.attributes.pid"
         ${orderByQuery}`;
 
         const body = new QueryObject(

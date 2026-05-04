@@ -30,6 +30,18 @@ describe("Utils.formMultipleEntryExitParts (issue #2234)", () => {
         expect(body.queryString).toContain("PatientRequest0");
     });
 
+    it("references PatientRequestEntryExit UNQUOTED to match the unquoted CTE declaration (HANA case-sensitivity)", () => {
+        const peeQO = makeQO("SELECT pid, MIN(d) AS entry, MAX(d) AS exit FROM PEE_source");
+        const pr0QO = makeQO('SELECT "patient.attributes.pcount.0" FROM cohort_source');
+
+        const { body } = Utils.formMultipleEntryExitParts([peeQO, pr0QO]);
+
+        // The declaration in the WITH chain is unquoted (PatientRequestEntryExit),
+        // so HANA folds it to upper case. Quoted references would fail to bind.
+        expect(body.queryString).not.toContain('"PatientRequestEntryExit"');
+        expect(body.queryString).toContain("PatientRequestEntryExit");
+    });
+
     it("does not nest a WITH inside parentheses (HANA-incompatible shape)", () => {
         const peeQO = makeQO("SELECT pid, MIN(d) AS entry, MAX(d) AS exit FROM PEE_source");
         const pr0QO = makeQO('SELECT "patient.attributes.pcount.0" FROM cohort_source');
