@@ -564,7 +564,6 @@ class ConceptMappingNode(Node):
 class WhiteRabbitNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
-        self.node_id = _node["id"]
         self.scan_metadata = _node["scanMetadata"]
     
     def test(self, task_run_context) -> Result:
@@ -573,7 +572,7 @@ class WhiteRabbitNode(Node):
     def task(self, task_run_context) -> Result:
         try:
             scan_metadata = self.scan_metadata
-            scan_metadata["node_id"] = self.node_id
+            scan_metadata["node_id"] = self.id
             return Result(False,  scan_metadata, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
