@@ -1,38 +1,17 @@
-import React, {
-  ChangeEvent,
-  FC,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableHead from "@mui/material/TableHead";
-import TableContainer from "@mui/material/TableContainer";
-import TablePagination from "@mui/material/TablePagination";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import {
-  Button,
-  EditIcon,
-  IconButton,
-  Loader,
-  TableCell,
-  TablePaginationActions,
-  TableRow,
-  VisibilityOnIcon,
-} from "@portal/components";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { Loader } from "@portal/components";
 import { api } from "../axios/api";
 import Terminology from "../Terminology/Terminology";
 import { ConceptSet } from "../Terminology/utils/types";
 import { TerminologyProps } from "../Terminology/Terminology";
-import SearchBar from "../components/SearchBar/SearchBar";
 import { useFeedback, usePortal, useTranslation } from "../hooks";
 import { mapd2eWebapiConceptSet } from "../Terminology/utils/d2eWebapiMappers";
 import { i18nKeys } from "../context/state/translation-state";
 import "./ConceptSets.scss";
 import ConceptSetDeleteDialog from "./ConceptSetDeleteDialog";
+import { ConceptSetsTable } from "./ConceptSetsTable";
 
 enum ConceptSetTab {
   ConceptSearch = "ConceptSearch",
@@ -47,9 +26,6 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   const { getText } = useTranslation();
   const { datasetId, userId, userName } = usePortal();
   const [isLoading, setIsLoading] = useState(false);
-  const [searchText, setSearchText] = useState<string>("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(25);
   const { setFeedback } = useFeedback();
   const [data, setData] = useState<ConceptSet[]>([]);
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
@@ -60,21 +36,10 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
 
   const handleTabSelectionChange = async (
     _event: React.SyntheticEvent,
-    value: ConceptSetTab
+    value: ConceptSetTab,
   ) => {
     setTabValue(value);
   };
-
-  const updateSearchResult = useCallback(
-    (keyword: string) => {
-      if (keyword === searchText) {
-        return;
-      }
-      setSearchText(keyword);
-      setPage(0);
-    },
-    [searchText]
-  );
 
   const fetchData = useCallback(async () => {
     if (!datasetId) return;
@@ -83,21 +48,18 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
       setIsLoading(true);
 
       const response = (await api.d2eWebapi.getConceptSets(datasetId)).map(
-        mapd2eWebapiConceptSet
+        mapd2eWebapiConceptSet,
       );
-      // Sort by name, with user's own concept sets first
       const sortFn = (a: ConceptSet, b: ConceptSet) => {
-        // User's own concept sets come first
         const aIsOwn = a.createdBy === userName;
         const bIsOwn = b.createdBy === userName;
         if (aIsOwn && !bIsOwn) return -1;
         if (!aIsOwn && bIsOwn) return 1;
-        // Then sort by name
         if (a.name < b.name) return -1;
         if (a.name > b.name) return 1;
         return 0;
       };
-      setData(response.sort(sortFn));
+      setData([...response].sort(sortFn));
     } catch (e) {
       console.error(e);
       setFeedback({
@@ -108,14 +70,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    getText,
-    setFeedback,
-    i18nKeys.CONCEPT_SETS__ERROR,
-    i18nKeys.CONCEPT_SETS__ERROR_DESCRIPTION,
-    datasetId,
-    userName,
-  ]);
+  }, [getText, setFeedback, datasetId, userName]);
 
   useEffect(() => {
     fetchData();
@@ -123,43 +78,24 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
 
   const handleAddAndEditConceptSet = useCallback(
     (conceptSetId?: number) => {
-      if (!datasetId) {
-        return;
-      }
+      if (!datasetId) return;
       const event = new CustomEvent<{ props: TerminologyProps }>(
         "alp-terminology-open",
         {
           detail: {
             props: {
               selectedConceptSetId: conceptSetId,
-              onClose: () => {
-                fetchData();
-              },
+              onClose: () => fetchData(),
               mode: "CONCEPT_SET",
               selectedDatasetId: datasetId,
               isAtlas,
             },
           },
-        }
+        },
       );
       window.dispatchEvent(event);
     },
-    [fetchData, datasetId]
-  );
-
-  const handleRowsPerPageChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setRowsPerPage(Number(event.target.value) || 25);
-      setPage(0);
-    },
-    []
-  );
-
-  const handlePageChange = useCallback(
-    (_event: React.MouseEvent<HTMLButtonElement> | null, page: number) => {
-      setPage(page);
-    },
-    []
+    [fetchData, datasetId],
   );
 
   const handleDeleteClick = useCallback((conceptSet: ConceptSet) => {
@@ -176,19 +112,9 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
     fetchData();
   }, [fetchData]);
 
-  const filteredData = data.filter((row) =>
-    row.name.toLowerCase().includes(searchText.toLowerCase())
-  );
-  const pageData = filteredData.slice(
-    rowsPerPage * page,
-    rowsPerPage * (page + 1)
-  );
+  if (!datasetId) return <Loader />;
 
-  if (isLoading || !datasetId) return <Loader />;
-
-  if (!userId) {
-    return null;
-  }
+  if (!userId) return null;
 
   return (
     <>
@@ -216,109 +142,13 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
           )}
 
           {tabValue == ConceptSetTab.ConceptSets && (
-            <>
-              <div className="concept-sets__header">
-                <div className="concept-sets__search">
-                  <SearchBar
-                    keyword={searchText}
-                    onEnter={updateSearchResult}
-                    width={"480px"}
-                  />
-                </div>
-                <Button
-                  variant="contained"
-                  onClick={() => handleAddAndEditConceptSet()}
-                  text={getText(i18nKeys.CONCEPT_SETS__ADD_CONCEPT_SET)}
-                />
-              </div>
-              <TableContainer className="concept-sets__table">
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__ID)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__Name)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__CREATED)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__UPDATED)}
-                      </TableCell>
-                      <TableCell>
-                        {getText(i18nKeys.CONCEPT_SETS__AUTHOR)}
-                      </TableCell>
-                      <TableCell></TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {pageData.length > 0 ? (
-                      pageData.map((row) => {
-                        return (
-                          <TableRow key={row.id}>
-                            <TableCell>{row.id}</TableCell>
-                            <TableCell>
-                              {row.name}
-                              {row.shared
-                                ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
-                                : ""}
-                            </TableCell>
-                            <TableCell>{row.createdDate}</TableCell>
-                            <TableCell>{row.modifiedDate}</TableCell>
-                            <TableCell>{row.userName}</TableCell>
-                            <TableCell>
-                              <IconButton
-                                startIcon={
-                                  row.createdBy === userName ? (
-                                    <EditIcon />
-                                  ) : (
-                                    <VisibilityOnIcon />
-                                  )
-                                }
-                                onClick={() => handleAddAndEditConceptSet(row.id)}
-                              />
-                              {row.createdBy === userName && (
-                                <IconButton
-                                  startIcon={<DeleteIcon />}
-                                  onClick={() => handleDeleteClick(row)}
-                                />
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          {getText(i18nKeys.CONCEPT_SETS__NO_CONCEPT_SETS)}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              {filteredData.length > 0 && (
-                <TablePagination
-                  component="div"
-                  count={filteredData.length}
-                  page={page}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleRowsPerPageChange}
-                  onPageChange={handlePageChange}
-                  ActionsComponent={TablePaginationActions}
-                  sx={{
-                    overflow: "visible",
-                    height: "52px",
-                    "& .MuiButtonBase-root:not(.Mui-disabled)": {
-                      color: "var(--color-primary, #000080)",
-                    },
-                  }}
-                />
-              )}
-            </>
+            <ConceptSetsTable
+              data={data}
+              isLoading={isLoading}
+              userName={userName}
+              onAddEdit={handleAddAndEditConceptSet}
+              onDelete={handleDeleteClick}
+            />
           )}
         </div>
       </div>
