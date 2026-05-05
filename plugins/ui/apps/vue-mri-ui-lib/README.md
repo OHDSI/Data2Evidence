@@ -29,9 +29,20 @@ Vite optimized production build:
 yarn build              # Standard production build
 yarn build:local        # Build with localhost host
 yarn build:mock         # Build with mock data
+yarn build:watch        # Build in watch mode (for local single-spa dev)
 ```
 
 **Note:** Commit built files after running build commands.
+
+### Serve lifecycles for local single-spa development
+
+To develop with import map overrides (loading the app inside the portal instead of standalone):
+
+```
+yarn dev
+```
+
+This starts a watch build + preview server on `http://localhost:41000`, serving `lifecycles.js` for the portal's import map to consume.
 
 ### Lints and fixes files
 
@@ -118,6 +129,61 @@ yarn start:mock                  # Start mock server (port 3131)
 ```
 
 The mock server provides sample data without requiring backend services.
+
+### Single-Spa Development with Import Map Overrides
+
+To develop the vue-mri app loaded inside the portal (as a single-spa microfrontend) instead of standalone on port 8081:
+
+**1. Start the lifecycles server:**
+
+```bash
+yarn dev
+```
+
+This serves `lifecycles.js` on `http://localhost:41000/lifecycles.js` with watch mode (auto-rebuilds on changes).
+
+**2. Start the portal:**
+
+```bash
+cd plugins/ui/apps/portal
+yarn start
+```
+
+**3. Enable import map overrides UI:**
+
+In the portal browser tab, open DevTools console and run:
+
+```javascript
+localStorage.setItem('devtools', 'true');
+location.reload();
+```
+
+This shows the "Import Map Overrides" panel (bottom-right corner of the portal).
+
+**4. Override the plugin URL:**
+
+In the import map overrides panel:
+- Find the vue-mri plugin entry (e.g., `plugins/mri/PatientAnalytics/module` or the custom path configured in `REACT_APP_PLUGINS`)
+- Override it to point to: `http://localhost:41000/lifecycles.js`
+
+**Note:** The preview server serves over HTTP. If the portal loads over HTTPS, you may see a mixed content warning. In Chrome, go to `chrome://flags/#block-insecure-private-network-requests` and set it to **Disabled** for local development.
+
+**5. Navigate to the plugin route:**
+
+Go to `/d2e/portal/researcher/cohort` (or wherever the plugin is registered) to see your local changes.
+
+**How it works:**
+
+- The portal uses `systemjs` to load plugin modules
+- `import-map-overrides` intercepts module resolution and redirects to your local server
+- `ResearcherStudyPluginRenderer` registers the app with `registerSingleSpaApp()` which calls `System.import()`
+- The override makes `System.import()` fetch from `localhost:41000` instead of the built-in path
+
+**Troubleshooting:**
+
+- **Mixed content warnings:** The preview server serves over HTTP while the portal uses HTTPS. Disable `block-insecure-private-network-requests` in Chrome flags for local development
+- **Module not loading:** Check the browser console for `[singleSpaRegistry]` debug logs showing the resolved URL
+- **Props not passing:** The portal passes `customProps` (datasetId, getToken, etc.) — verify they appear in the vue-mri app's `handleInstance()` callback
 
 ## Tech Stack
 
