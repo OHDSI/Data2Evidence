@@ -215,6 +215,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await navigateToCohorts(page)
 
+  await expect(page.getByRole('status').filter({ hasText: 'Content is loading' })).not.toBeVisible({ timeout: 60000 })
+
   // Rename cohort
   await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click({ force: true })
   await expect(page.locator('#pane-left')).toContainText('Rename Saved Filter')

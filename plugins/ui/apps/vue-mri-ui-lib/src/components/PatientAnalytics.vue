@@ -203,7 +203,6 @@ export default {
         bmkId: '',
       },
       isStudyMenuOpen: true,
-      isLocal: false,
       portalSidebarWidth: document.querySelector('.information__studies')?.clientWidth || 0,
       shouldRerenderChart: false,
       showChartAndListModal: false,
@@ -251,7 +250,6 @@ export default {
     },
   },
   mounted() {
-    this.isLocal = false
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },

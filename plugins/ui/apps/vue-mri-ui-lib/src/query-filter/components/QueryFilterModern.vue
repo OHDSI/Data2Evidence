@@ -67,7 +67,7 @@ interface TerminologyEventProps {
 
 const store = useStore()
 const { canShare } = useUserRole()
-const portalContext = usePortalContext()
+const isAtlas = computed(() => getPortalAPI()?.isAtlas === true)
 
 const showDebug = ref(false)
 
@@ -89,11 +89,6 @@ const isLoadingCohortInfo = ref(false)
 const generationStatus = ref<Record<string, 'idle' | 'pending' | 'complete' | 'failed'>>({})
 let pollingInterval: ReturnType<typeof setInterval> | null = null
 const POLLING_INTERVAL_MS = 2000
-
-// Check if running in Atlas mode (standalone mode)
-const isAtlas = computed(() => {
-  return false
-})
 
 // Max length for cohort names - no limit in Atlas mode, 40 chars in D2E Portal mode
 const maxLength = computed(() => {

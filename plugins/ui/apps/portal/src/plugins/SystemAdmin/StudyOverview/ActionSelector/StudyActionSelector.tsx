@@ -10,6 +10,7 @@ interface ActionSelectorProps {
   study: NetworkStrategusStudy;
   handleRunStrategusStudy: (study: NetworkStrategusStudy) => void;
   handleCleanupStrategusStudy: (study: NetworkStrategusStudy) => void;
+  handleDeleteStrategusStudy: (study: NetworkStrategusStudy) => void;
   handleManageStrategusResultViewer: (study: NetworkStrategusStudy) => void;
   handleUploadStrategusResults: (study: NetworkStrategusStudy) => void;
   handleDownloadStrategusResults: (study: NetworkStrategusStudy) => void;
@@ -47,6 +48,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
   study,
   handleRunStrategusStudy,
   handleCleanupStrategusStudy,
+  handleDeleteStrategusStudy,
   handleManageStrategusResultViewer,
   handleUploadStrategusResults,
   handleDownloadStrategusResults,
@@ -62,6 +64,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
       { name: getText(i18nKeys.ACTION_SELECTOR__PERMISSIONS), value: "permissions" },
       { name: getText(i18nKeys.ACTION_SELECTOR__UPLOAD_STRATEGUS_RESULTS), value: "upload" },
       { name: getText(i18nKeys.ACTION_SELECTOR__DOWNLOAD_STRATEGUS_RESULTS), value: "download" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__DELETE_STUDY), value: "delete" },
     ],
     [getText, i18nKeys]
   );
@@ -87,6 +90,9 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
         case "download":
           handleDownloadStrategusResults(study);
           break;
+        case "delete":
+          handleDeleteStrategusStudy(study);
+          break;
         default:
           break;
       }
@@ -95,6 +101,7 @@ const StudyActionSelector: FC<ActionSelectorProps> = ({
       study,
       handleRunStrategusStudy,
       handleCleanupStrategusStudy,
+      handleDeleteStrategusStudy,
       handleManageStrategusResultViewer,
       handleUploadStrategusResults,
       handleDownloadStrategusResults,

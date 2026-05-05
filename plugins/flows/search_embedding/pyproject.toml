@@ -11,11 +11,11 @@ dependencies = [
     "prefect[docker,shell]==3.0.3",
     "psycopg2-binary==2.9.6",
     "pydantic==2.10.6",
-    "pyjwt==2.10.1",
+    "pyjwt==2.12.0",
     "sqlalchemy==2.0.38",
-    "torch==2.6.0",
+    "torch==2.8.0",
     "tqdm==4.66.4",
-    "transformers==4.44.2",
+    "transformers==5.0.0rc3",
 ]
 
 [project.optional-dependencies]
@@ -23,7 +23,7 @@ hana = []
 
 [dependency-groups]
 dev = [
-    "pytest==8.4.1",
+    "pytest==9.0.3",
     "ruff==0.12.7",
-    "uv==0.8.4",
+    "uv==0.11.6",
 ]

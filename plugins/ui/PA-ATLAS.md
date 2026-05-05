@@ -1,6 +1,6 @@
 # PA-Atlas Documentation
 
-**Version:** 2.0 | **Last Updated:** 2025-10-09
+**Version:** 2.1 | **Last Updated:** 2026-04-27
 **Audience:** Developers working with PA-Atlas cohort builder
 
 ## Table of Contents
@@ -90,10 +90,11 @@ interface PortalProps {
   username: string;
   datasetId: string;
   locale: string;
-  releaseId?: string;
-  qeSvcUrl?: string;
+  isAtlas: boolean; // from portalAPI.isAtlas
 }
 ```
+
+Mode note: `portalAPI.isAtlas` is the runtime mode flag.
 
 **3. WebAPI Service**: Both apps call `/d2e-webapi/*` endpoints (concept sets, cohorts, vocabulary)
 
@@ -219,8 +220,13 @@ Component: [QueryFilterEntryExit.vue:147-230](apps/vue-mri-ui-lib/src/query-filt
 
 **Development** (`vite serve`):
 
-- MRI standalone mode is started from `src/main.ts`.
-- Local context values are seeded into Pinia `portalContext` (dataset/release/user/token defaults), and can be overridden by query params such as `datasetId` and `releaseId`.
+```javascript
+portalAPI = {
+  isAtlas: true, // Enable Atlas standalone mode
+  studyId: "...", // Dataset ID
+  debug: false, // Show debug panels
+};
+```
 
 **Atlas Criteria Config** ([atlas-config.json](apps/vue-mri-ui-lib/src/query-filter/config/atlas-config.json)): Defines criteria types/attributes. **Must match OHDSI circe-be Java field names** (camelCase). Example: `visitLength`, `eraLength`, `age`, `gender`
 

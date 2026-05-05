@@ -140,6 +140,17 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
 
+      - name: Wait for d2e-trex healthy
+        if: success() || failure()
+        run: |
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
+            echo "[$i] d2e-trex health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -147,7 +158,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 1
+          max_attempts: 2
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemo
