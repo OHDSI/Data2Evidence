@@ -8,19 +8,19 @@ import { createStore } from './store'
 import vuetify from './plugins/vuetify'
 import { createPortalContextStore, usePortalContextStore } from './stores/portalContext'
 import { installDatasetChangeWatcher } from './bootstrap/datasetWatcher'
+import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
 import { applyTheme } from './utils/ThemeManager'
 
 let watcherStop: (() => void) | null = null
+let propsListenerStop: (() => void) | null = null
 
 const toPortalContextProps = (props: Partial<PortalContextState>): PortalContextState => ({
   getToken: props.getToken || (async () => ''),
   datasetId: props.datasetId || '',
   releaseId: props.releaseId || '',
-  tenantId: props.tenantId || '',
   username: props.username || '',
-  idpUserId: props.idpUserId || '',
   locale: props.locale || 'en',
   features: props.features || [],
   featuresLoading: props.featuresLoading ?? false,
@@ -54,6 +54,10 @@ const lifecycles = singleSpaVue({
     registerDirectivesAndComponents(app)
 
     watcherStop = installDatasetChangeWatcher(portalContextStore, vuexStore)
+    propsListenerStop = installPortalPropsListener(portalContextStore, {
+      expectedAppId: (props as any)?.appId,
+      expectedContainerId: (props as any)?.containerId,
+    })
 
     if (import.meta.env.VITE_DEBUG !== 'true') {
       app.config.errorHandler = () => null
@@ -72,5 +76,7 @@ export const update = async (props: Partial<PortalContextState>) => {
 export const unmount = async (props: unknown) => {
   await lifecycles.unmount(props as any)
   watcherStop?.()
+  propsListenerStop?.()
   watcherStop = null
+  propsListenerStop = null
 }

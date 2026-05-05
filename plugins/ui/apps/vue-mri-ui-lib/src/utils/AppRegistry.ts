@@ -1,6 +1,7 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
 import { NavigationItem } from '@/types/navigation'
+import { getPortalContextBootstrap, resolveStandaloneAppCustomProps } from '@/bootstrap/portalContextBootstrap'
 
 // Setup all import maps
 function setupImportMaps() {
@@ -56,12 +57,14 @@ function registerNavigationApps() {
           activeWhen: location => item.autoMount || location.pathname === item.route,
           customProps: () => {
             const searchParams = new URLSearchParams(window.location.search)
+            const bootstrap = getPortalContextBootstrap()
+            const contextProps = resolveStandaloneAppCustomProps(searchParams, import.meta.env, bootstrap)
             return {
               containerId: `single-spa-application:${item.appName}`,
-              getToken: async () => localStorage.getItem('msaltoken') || '',
-              username: 'dev-user',
-              datasetId: searchParams.get('datasetId') || 'dev-dataset',
-              locale: 'en',
+              getToken: contextProps.getToken,
+              username: contextProps.username,
+              datasetId: contextProps.datasetId,
+              locale: contextProps.locale,
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }

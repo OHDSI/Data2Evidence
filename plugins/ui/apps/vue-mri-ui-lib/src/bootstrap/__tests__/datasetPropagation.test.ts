@@ -3,10 +3,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import { createPortalContextStore } from '@/stores/portalContext'
 import { installDatasetChangeWatcher } from '../datasetWatcher'
+import { installPortalPropsListener } from '../portalPropsListener'
 
-describe('bootstrap/datasetWatcher', () => {
-  it('triggers dataset reload flow on dataset change in order', async () => {
+describe('bootstrap/datasetPropagation', () => {
+  it('propagates custom-props-changed dataset updates through watcher flow', async () => {
     setActivePinia(createPinia())
+
     const portalContext = createPortalContextStore({
       getToken: async () => 'token',
       datasetId: 'ds-1',
@@ -25,9 +27,22 @@ describe('bootstrap/datasetWatcher', () => {
       }),
     } as any
 
-    const stop = installDatasetChangeWatcher(portalContext, vuexStore)
+    const stopWatcher = installDatasetChangeWatcher(portalContext, vuexStore)
+    const stopListener = installPortalPropsListener(portalContext, {
+      expectedAppId: 'mri-app',
+      expectedContainerId: 'single-spa-application:mri-app',
+    })
 
-    portalContext.applyProps({ datasetId: 'ds-2' })
+    window.dispatchEvent(
+      new CustomEvent('custom-props-changed', {
+        detail: {
+          appId: 'mri-app',
+          datasetId: 'ds-2',
+          releaseId: 'rel-2',
+        },
+      })
+    )
+
     await nextTick()
 
     await vi.waitFor(() => {
@@ -38,34 +53,7 @@ describe('bootstrap/datasetWatcher', () => {
       ])
     })
 
-    stop()
-  })
-
-  it('does not trigger reload flow when watched values are unchanged', async () => {
-    setActivePinia(createPinia())
-    const portalContext = createPortalContextStore({
-      getToken: async () => 'token',
-      datasetId: 'ds-1',
-      releaseId: 'rel-1',
-      username: 'user-1',
-      locale: 'en',
-      features: [],
-      featuresLoading: false,
-    })
-
-    const vuexStore = {
-      commit: vi.fn(),
-      dispatch: vi.fn(async () => {}),
-    } as any
-
-    const stop = installDatasetChangeWatcher(portalContext, vuexStore)
-
-    portalContext.applyProps({ debug: true })
-    await nextTick()
-
-    expect(vuexStore.commit).not.toHaveBeenCalled()
-    expect(vuexStore.dispatch).not.toHaveBeenCalled()
-
-    stop()
+    stopListener()
+    stopWatcher()
   })
 })

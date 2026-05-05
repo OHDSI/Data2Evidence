@@ -13,6 +13,7 @@ import { applyTheme } from './utils/ThemeManager'
 import { createPortalContextStore } from './stores/portalContext'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
+import { getPortalContextBootstrap, resolvePortalContextProps } from './bootstrap/portalContextBootstrap'
 
 let app: Component
 const searchParams = new URLSearchParams(window.location.search)
@@ -38,22 +39,8 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(createStore())
 
-const portalContext: PortalContextState = {
-  getToken: async () => localStorage.getItem('msaltoken') || '',
-  datasetId: searchParams.get('datasetId') || 'dev-dataset',
-  releaseId: searchParams.get('releaseId') || 'dev-release',
-  tenantId: 'dev-tenant',
-  username: 'dev-user',
-  idpUserId: 'dev-idp',
-  locale: 'en',
-  features: [],
-  featuresLoading: false,
-  qeSvcUrl: import.meta.env.VITE_API_BASE_URL,
-  REACT_APP_PUBLIC_WEBAPI_PROXY_URL: undefined,
-  REACT_APP_USE_PUBLIC_WEBAPI_PROXY: undefined,
-  REACT_APP_PUBLIC_WEBAPI_DATASOURCE: undefined,
-  debug: import.meta.env.DEV,
-}
+const bootstrap = getPortalContextBootstrap()
+const portalContext: PortalContextState = resolvePortalContextProps(searchParams, import.meta.env, bootstrap)
 createPortalContextStore(portalContext, pinia)
 
 app.use(vuetify)

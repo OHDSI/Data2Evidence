@@ -54,20 +54,19 @@
     <span class="plugin-container"></span>
 
     <script type="module">
-      // Initialize portalAPI with Vite environment variables
+      // Initialize portal context bootstrap with Vite environment variables
       const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
       const defaultDatasource = import.meta.env.VITE_DEFAULT_DATASOURCE || 'SYNPUF1K'
       const features = import.meta.env.VITE_FEATURES ? JSON.parse(import.meta.env.VITE_FEATURES) : []
 
-      // Set portalAPI immediately with values from environment
-      document.querySelector('.plugin-container').portalAPI = {
+      // Set portal context bootstrap immediately with values from environment
+      window.__MRI_PORTAL_CONTEXT__ = {
         qeSvcUrl: import.meta.env.VITE_QE_SVC_URL || 'https://localhost:8081',
-        studyId: import.meta.env.VITE_DATASET_ID || '',
+        datasetId: import.meta.env.VITE_DATASET_ID || '',
         releaseId: '',
         async getToken() {
           return localStorage.getItem('msaltoken')
         },
-        isAtlas,
         features: features,
         featuresLoading: false,
         username: import.meta.env.VITE_USERNAME || 'admin',
@@ -91,9 +90,9 @@
         logoutContainer.appendChild(logoutBtn)
       }
 
-      console.log('PortalAPI initialized with default datasource:', defaultDatasource)
+      console.log('Portal context initialized with default datasource:', defaultDatasource)
 
-      // Fetch datasource dynamically when in standalone mode and update portalAPI
+      // Fetch datasource dynamically when in standalone mode and update portal context
       if (isAtlas) {
         ;(async function () {
           try {
@@ -105,9 +104,9 @@
               const sources = await response.json()
               if (sources && sources.length > 0 && sources[0].sourceKey) {
                 const datasource = sources[0].sourceKey
-                // Update the datasource in portalAPI
-                document.querySelector('.plugin-container').portalAPI.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
-                console.log('PortalAPI datasource updated to:', datasource)
+                // Update the datasource in portal context
+                window.__MRI_PORTAL_CONTEXT__.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
+                console.log('Portal context datasource updated to:', datasource)
               }
             }
           } catch (error) {
