@@ -42,7 +42,7 @@ To develop with import map overrides (loading the app inside the portal instead 
 yarn dev
 ```
 
-This starts a watch build + preview server on `http://localhost:41000`, serving `lifecycles.js` for the portal's import map to consume.
+This starts a watch build + preview server on `http://localhost:8085`, serving `lifecycles.js` for the portal's import map to consume.
 
 ### Lints and fixes files
 
@@ -140,7 +140,7 @@ To develop the vue-mri app loaded inside the portal (as a single-spa microfronte
 yarn dev
 ```
 
-This serves `lifecycles.js` on `http://localhost:41000/lifecycles.js` with watch mode (auto-rebuilds on changes).
+This serves `lifecycles.js` on `http://localhost:8085/lifecycles.js` with watch mode (auto-rebuilds on changes).
 
 **2. Start the portal:**
 
@@ -163,10 +163,10 @@ This shows the "Import Map Overrides" panel (bottom-right corner of the portal).
 **4. Override the plugin URL:**
 
 In the import map overrides panel:
-- Find the vue-mri plugin entry (e.g., `plugins/mri/PatientAnalytics/module` or the custom path configured in `REACT_APP_PLUGINS`)
-- Override it to point to: `http://localhost:41000/lifecycles.js`
+- Find the vue-mri plugin entry (e.g., `/mri/lifecycles.js`)
+- Override it to point to: `http://localhost:8085/lifecycles.js`
 
-**Note:** The preview server serves over HTTP. If the portal loads over HTTPS, you may see a mixed content warning. In Chrome, go to `chrome://flags/#block-insecure-private-network-requests` and set it to **Disabled** for local development.
+**Note:** The local Vue MRI override is served over HTTP for parity with the working `concept-sets` import-override flow. The portal still runs on HTTPS at `https://localhost:41100`.
 
 **5. Navigate to the plugin route:**
 
@@ -177,11 +177,12 @@ Go to `/d2e/portal/researcher/cohort` (or wherever the plugin is registered) to 
 - The portal uses `systemjs` to load plugin modules
 - `import-map-overrides` intercepts module resolution and redirects to your local server
 - `ResearcherStudyPluginRenderer` registers the app with `registerSingleSpaApp()` which calls `System.import()`
-- The override makes `System.import()` fetch from `localhost:41000` instead of the built-in path
+- The override makes `System.import()` fetch from `http://localhost:8085` instead of the built-in path
 
 **Troubleshooting:**
 
-- **Mixed content warnings:** The preview server serves over HTTP while the portal uses HTTPS. Disable `block-insecure-private-network-requests` in Chrome flags for local development
+- **Certificate warnings on portal:** Trust the portal certificate at `https://localhost:41100`
+- **Override still not loading:** Open `http://localhost:8085/lifecycles.js` directly and confirm it loads without TLS errors
 - **Module not loading:** Check the browser console for `[singleSpaRegistry]` debug logs showing the resolved URL
 - **Props not passing:** The portal passes `customProps` (datasetId, getToken, etc.) — verify they appear in the vue-mri app's `handleInstance()` callback
 

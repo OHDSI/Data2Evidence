@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite'
-import type { PluginOption, UserConfig } from 'vite'
+import type { PluginOption } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
@@ -8,12 +8,13 @@ import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }): UserConfig => {
+export default defineConfig(({ command, mode }) => {
   // Load env files with VITE_ prefix (Vite's default behavior)
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
   const isBuild = command === 'build'
   const isServe = command === 'serve'
+  const isPreview = process.argv.includes('preview')
 
   // Parse navigation items for client routes (matching webpack config)
   const navigationItems = JSON.parse(env.VITE_NAVIGATION_ITEMS || '[]')
@@ -212,7 +213,8 @@ export default defineConfig(({ command, mode }): UserConfig => {
     },
 
     preview: {
-      port: 8081,
+      port: 8085,
+      ...(isPreview ? { https: false as any } : {}),
     },
 
     optimizeDeps: {
