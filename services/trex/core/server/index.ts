@@ -53,6 +53,35 @@ export async function initTrex() {
       logger.error('Failed to attach cdw_config_svc validation schema:', e);
     }
 
+    // Pre-attach a DuckDB cache file for every HANA-dialect dataset so 3-part
+    // names "<code>"."<schema>"."<table>" resolve in pgwire sessions. Postgres
+    // and BigQuery datasets get their cache catalog from the Rust-side
+    // `trexdbm.setCredentials` bootstrap (using postgres_scanner / bigquery
+    // extensions). HANA has no DuckDB scanner extension, so we attach the
+    // cache file ourselves here. ATTACH on a missing path creates the file
+    // in read-write mode under Trex's process — which has write permission
+    // to /usr/src/data/cache (created in the Trex Dockerfile).
+    try {
+      const dbm = await DatabaseManager.get();
+      const datasets = await dbm.getCredentialsDecrypted();
+      const hanaConn = new Trex.TrexDB("memory");
+      for (const ds of datasets) {
+        if (ds.dialect !== "hana") continue;
+        const cacheFile = `/usr/src/data/cache/${ds.code}.db`;
+        try {
+          await hanaConn.execute(
+            `ATTACH IF NOT EXISTS '${cacheFile}' AS "${ds.code}"`,
+            [],
+          );
+          logger.log(`Attached HANA cache for '${ds.code}' at ${cacheFile}`);
+        } catch (e) {
+          logger.error(`Failed to attach HANA cache for '${ds.code}': ${e}`);
+        }
+      }
+    } catch (e) {
+      logger.error(`Failed to enumerate HANA datasets for cache attach: ${e}`);
+    }
+
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
         const module = await import(`./routes/${r.name}`);
