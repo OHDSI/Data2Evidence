@@ -1,5 +1,4 @@
 import { env } from "./configs";
-import https from "https";
 import {
   getUser,
   Logger,
@@ -77,15 +76,7 @@ export const main = () => {
     next(err);
   });
 
-  const server = https.createServer(
-    {
-      key: env.TLS__INTERNAL__KEY,
-      cert: env.TLS__INTERNAL__CRT,
-    },
-    app
-  );
-
-  server.listen(port);
+  app.listen(port);
   log.info(
     `🚀 CDW Config Application started successfully!. Server listening on port ${port}`
   );

@@ -14,7 +14,6 @@ import { MRIConfig } from "./config/config";
 import { ConfigFacade as MriConfigFacade } from "./config/ConfigFacade";
 import { IDBCredentialsType, IRequest } from "./types";
 import { configDefaultValues } from "../cfg/pa/configDefaultValues.ts"
-import https from "https";
 import fs from "node:fs";
 declare const Trex: any;
 const log = Logger.CreateLogger("mri-config-log");
@@ -304,15 +303,7 @@ function initRoutes() {
 
   app.use("/check-readiness", healthCheckMiddleware);
 
-  const server = https.createServer(
-    {
-      key: env.TLS__INTERNAL__KEY,
-      cert: env.TLS__INTERNAL__CRT,
-    },
-    app
-  );
-
-  server.listen(port);
+  app.listen(port);
 
   log.info(
     `🚀 MRI PA Config started successfully!. Server listening on port ${port}`
