@@ -46,7 +46,7 @@
 /services/materialize-cohorts                        @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /services/trex                                       @p-hoffmann
 /tests                                               @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
-/ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/plugins/ui                                                  @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /plugins/ui/alp-libs                                         @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /plugins/ui/apps/mri-pa-ui                                   @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd
 /plugins/ui/apps/vue-mri-ui-lib                              @brandantck @jerome-ng @LSriragavan @khairul-syazwan @satish-a0 @p-hoffmann @maggie-li-yd

@@ -30,10 +30,10 @@ x-envs:
     ## Flag to display executed Knex queries in log
     PG__DEBUG: ${PG_DEBUG:-1}
     PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
-    PG__MAX_POOL: 10
-    PG__MIN_POOL: 0
+    PG__MAX_POOL: ${PG__MAX_POOL:-1}
+    PG__MIN_POOL: ${PG__MIN_POOL:-1}
     PG__PORT: ${PG_PORT:-5432}
-    PG__IDLE_TIMEOUT_IN_MS: 1000
+    PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
     PG__FHIR_DB_NAME: alp
@@ -182,6 +182,7 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
+      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
       # Activates TrexSQLAutoConfiguration in trexsql-ext, which calls Trexsql/init.
       # When TREX_INIT is set, init() starts the Trexas (port 33001) + PgWire servers
       # in-process via the DuckDB extension, so WebAPI's JVM runs trex — no separate container.
@@ -336,7 +337,7 @@ services:
       INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}
-      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-usermgmt}
+      USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-logto}
       CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}

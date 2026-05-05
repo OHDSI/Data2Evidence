@@ -15,6 +15,7 @@ export default class StrategusAnalysisRouter {
     this.router.get("/:studyId", this.getStrategusAnalysis.bind(this));
     this.router.get("/", this.getAllStrategusAnalysis.bind(this));
     this.router.post("/code", this.saveStudyAnalysisViewerCode.bind(this));
+    this.router.delete("/:studyId", this.deleteStrategusAnalysis.bind(this));
   }
 
   private async getAllStrategusAnalysis(req: Request, res: Response) {
@@ -120,6 +121,33 @@ export default class StrategusAnalysisRouter {
       console.error("Error saving strategus analysis specification:", error);
       res.status(500).json({
         message: `An error occurred while saving the analysis specification: ${error.message}`,
+      });
+    }
+  }
+
+  private async deleteStrategusAnalysis(req: Request, res: Response) {
+    try {
+      const studyId = req.params.studyId;
+      if (!studyId) {
+        return res.status(400).json({
+          message: "Missing required field: studyId",
+        });
+      }
+
+      const token = req.headers["authorization"];
+      const result = await this.strategusAnalysisService.deleteStrategusAnalysis(
+        token,
+        studyId
+      );
+
+      res.status(200).json({
+        message: result.message,
+        analysisId: result.analysisId,
+      });
+    } catch (error) {
+      console.error("Error deleting strategus analysis specification:", error);
+      res.status(500).json({
+        message: `An error occurred while deleting the analysis specification: ${error.message}`,
       });
     }
   }
