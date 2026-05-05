@@ -13,12 +13,10 @@ import { applyTheme } from './utils/ThemeManager'
 import { createPortalContextStore } from './stores/portalContext'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
-import { getPortalAPI } from './utils/PortalUtils'
 
 let app: Component
 const searchParams = new URLSearchParams(window.location.search)
-const portalAPI = getPortalAPI()
-const isAtlas = portalAPI?.isAtlas === true
+const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 import './styles/themes/_main.scss'
 
 if (isAtlas) {

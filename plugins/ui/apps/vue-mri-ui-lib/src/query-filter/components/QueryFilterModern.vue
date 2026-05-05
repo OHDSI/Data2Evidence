@@ -67,7 +67,7 @@ interface TerminologyEventProps {
 
 const store = useStore()
 const { canShare } = useUserRole()
-const isAtlas = computed(() => getPortalAPI()?.isAtlas === true)
+const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 
 const showDebug = ref(false)
 
@@ -92,12 +92,12 @@ const POLLING_INTERVAL_MS = 2000
 
 // Max length for cohort names - no limit in Atlas mode, 40 chars in D2E Portal mode
 const maxLength = computed(() => {
-  return isAtlas.value ? undefined : 40
+  return isAtlas ? undefined : 40
 })
 
 // Initialize selectedDatasetForGeneration based on mode
 const initializeDatasetSelection = () => {
-  if (isAtlas.value) {
+  if (isAtlas) {
     // In Atlas mode, will be set when sources are fetched
     if (availableSources.value.length > 0) {
       selectedDatasetForGeneration.value = availableSources.value[0].sourceKey
@@ -382,7 +382,7 @@ onMounted(async () => {
   initializeComponent()
 
   // Fetch sources when in Atlas mode
-  if (isAtlas.value) {
+  if (isAtlas) {
     try {
       const sources = await d2eWebapiService.getSources()
       availableSources.value = sources
@@ -428,7 +428,7 @@ watch(
         conceptSetsFromCriteria,
         nextTick,
         selectedConceptSets,
-        isAtlas.value
+        isAtlas
       )
 
       // Fetch cohort info after loading cohort definition
@@ -1017,7 +1017,7 @@ const fetchCohortInfo = async (cohortDefinitionId: number) => {
     isLoadingCohortInfo.value = true
     console.log('Fetching cohort info for cohort definition ID:', cohortDefinitionId)
     // Use selected dataset from dropdown in Atlas mode, or portal dataset in portal mode
-    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    const datasetId = isAtlas ? selectedDatasetForGeneration.value : getDatasetId()
     if (!datasetId) {
       console.error('Missing datasetId for fetching cohort info')
       return
@@ -1134,7 +1134,7 @@ const generateCohort = async () => {
     isGeneratingCohort.value = true
     patientCount.value = null
     // Use selected source in Atlas mode, or portal datasetId in portal mode
-    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    const datasetId = isAtlas ? selectedDatasetForGeneration.value : getDatasetId()
     generationStatus.value[datasetId] = 'pending'
 
     // Get the active bookmark
@@ -1162,7 +1162,7 @@ const generateCohort = async () => {
   } catch (error) {
     console.error('Error generating cohort:', error)
     patientCount.value = null
-    const datasetId = isAtlas.value ? selectedDatasetForGeneration.value : getDatasetId()
+    const datasetId = isAtlas ? selectedDatasetForGeneration.value : getDatasetId()
     generationStatus.value[datasetId] = 'failed'
     isGeneratingCohort.value = false
   }

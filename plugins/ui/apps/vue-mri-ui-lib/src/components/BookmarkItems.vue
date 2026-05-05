@@ -22,6 +22,7 @@ import { usePortalContext } from '../composables/usePortalContext'
 const store = useStore()
 const atlasStore = useAtlasStore()
 const portalContext = usePortalContext()
+const isAtlasStandalone = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 
 const {
   getText,
@@ -41,7 +42,7 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isAtlas = getPortalAPI()?.isLocal || false
+const isAtlas = isAtlasStandalone
 
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => portalContext.username || '')

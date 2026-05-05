@@ -62,7 +62,6 @@ function registerNavigationApps() {
               username: 'dev-user',
               datasetId: searchParams.get('datasetId') || 'dev-dataset',
               locale: 'en',
-              isAtlas: window.location.hostname === 'localhost',
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }

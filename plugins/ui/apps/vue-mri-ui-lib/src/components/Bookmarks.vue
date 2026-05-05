@@ -317,7 +317,7 @@ export default {
       return this.getDisplayBookmarks(this.showSharedBookmarks, this.portalContext.username)
     },
     isAtlas() {
-      return getPortalAPI()?.isAtlas === true
+      return import.meta.env.VITE_STANDALONE_ATLAS === 'true'
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
