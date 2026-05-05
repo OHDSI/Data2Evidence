@@ -7,7 +7,15 @@ interface SingleSpaAppContainerProps {
   appName: string;
 }
 
-const wrapperStyle: React.CSSProperties = { position: "relative", width: "100%", height: "100%" };
+const wrapperStyle: React.CSSProperties = {
+  position: "relative",
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+  minHeight: 0,
+};
 
 const loaderContainerStyle: React.CSSProperties = {
   position: "absolute",
@@ -23,6 +31,10 @@ const containerStyle: React.CSSProperties = {
   width: "100%",
   height: "100%",
   position: "relative",
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+  minHeight: 0,
 };
 
 export const SingleSpaAppContainer: React.FC<SingleSpaAppContainerProps> = ({ appName }) => {
