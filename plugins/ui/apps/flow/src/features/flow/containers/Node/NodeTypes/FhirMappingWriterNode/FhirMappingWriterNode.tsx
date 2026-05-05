@@ -10,6 +10,7 @@ import { TargetHandle } from "../../CustomHandle/CustomHandle";
 
 export interface FhirMappingWriterNodeData extends NodeDataState {
   database_code: string;
+  schema_name: string;
   source_node: string;
 }
 

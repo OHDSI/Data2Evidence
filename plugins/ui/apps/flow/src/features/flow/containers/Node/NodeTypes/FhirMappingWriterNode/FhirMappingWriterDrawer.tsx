@@ -38,6 +38,7 @@ const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
   database_code: "",
+  schema_name: "",
   source_node: "",
 };
 
@@ -66,6 +67,7 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
         name: node.data.name,
         description: node.data.description,
         database_code: node.data.database_code,
+        schema_name: node.data.schema_name,
         source_node: node.data.source_node,
       });
     } else {
@@ -144,6 +146,15 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
             ))}
           </Select>
         </FormControl>
+      </Box>
+      <Box mb={4}>
+        <TextInput
+          label="Schema"
+          value={formData.schema_name}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ schema_name: e.target.value })
+          }
+        />
       </Box>
     </NodeDrawer>
   );
