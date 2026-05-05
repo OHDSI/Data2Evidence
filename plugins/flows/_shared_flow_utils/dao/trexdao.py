@@ -18,11 +18,10 @@ from _shared_flow_utils.dao.daobase import DialectDrivers
 class TrexDao(DaoBase):
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
     ):
-        super().__init__(use_cache_db, database_code, user_type)
+        super().__init__(database_code, user_type)
 
     @property
     def dialect(self):

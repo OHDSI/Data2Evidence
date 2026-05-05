@@ -58,20 +58,17 @@ class DialectDrivers(BaseModel):
 
 class DaoBase(ABC):
     path_to_driver = "/app/inst/drivers"
-    use_cache_db: bool = False
     database_code: str
     user_type: Optional[UserType] = UserType.ADMIN_USER
 
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER
     ):
         secret_block = Secret.load("database-credentials").get()
         if secret_block is None:
             raise ValueError("'DATABASE_CREDENTIALS' secret block is undefined!")
-        self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
 
@@ -91,25 +88,6 @@ class DaoBase(ABC):
     @property
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
         return self.__extract_database_credentials()
-
-    # def cachedb_tenant_configs(
-    #     self, schema_name: str, vocab_schema_name: str
-    # ) -> DBCredentialsType | CacheDBCredentialsType:
-    #     database_credentials = self.__extract_database_credentials()
-    #     if self.use_cache_db:
-    #         database_credentials.dialect = SupportedDatabaseDialects.DUCKDB.value
-    #         database_credentials.databaseName = self.__create_cachedb_db_name(
-    #             database_credentials, schema_name, vocab_schema_name
-    #         )
-    #         database_credentials.adminUser = database_credentials.readUser = (
-    #             "Bearer " + OpenIdAPI().getClientCredentialToken()
-    #         )
-    #         database_credentials.adminPassword = database_credentials.readPassword = (
-    #             "Qwerty"
-    #         )
-    #         database_credentials.host = Variable.get("cachedb_host")
-    #         database_credentials.port = Variable.get("cachedb_port")
-    #         return CacheDBCredentialsType(**database_credentials.model_dump())
 
     # --- Create methods ---
 
@@ -305,17 +283,6 @@ class DaoBase(ABC):
 
         return base_url, connect_args
 
-    def create_cachedb_connection_url(
-        self,
-        database_name: str = None,
-        user: str = None,
-        password: str = None,
-        host: str = None,
-        port: int = None,
-    ) -> str:
-        # postgresql used for all trex connections
-        base_url = f"postgresql://{user}:{password}@{host}:{port}/{database_name}"
-        return base_url
 
     def get_r_database_connector_connection_string(
         self,

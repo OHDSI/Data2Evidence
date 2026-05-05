@@ -31,7 +31,3 @@ class PhenotypeOptionsType(BaseModel):
                     raise ValueError(f'{field} is required when materialize=False')
         
         return self
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False

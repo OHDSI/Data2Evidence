@@ -47,7 +47,7 @@ def create_results_cache_flow(options: CreateCacheOptions):
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
 
-    dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)
+    dbdao = DBDao(database_code=options.database_code)
     db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
@@ -145,11 +145,10 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     database_code = options.database_code
     schema_to_copy = options.schema_name
-    use_cache_db = options.use_cache_db
 
     cdw_db = "cdw_config_svc_validation_schema"
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code)
 
     check_supported_dialects(dbdao.dialect)
 

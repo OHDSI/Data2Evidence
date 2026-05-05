@@ -16,8 +16,3 @@ class MimicOMOPOptionsType(BaseModel):
     overwrite_schema: bool = False
     chunk_size: int = 5000
     flow_action_type: FlowActionType
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
-    

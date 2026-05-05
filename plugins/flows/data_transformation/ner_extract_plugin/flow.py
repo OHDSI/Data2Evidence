@@ -21,9 +21,8 @@ def ner_extract_plugin(options: NerExtractOptions):
     schema_name = options.schema_name
     note_table = options.note_table
     note_nlp_table = options.note_nlp_table
-    use_cache_db = options.use_cache_db
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code)
 
     with dbdao.ibis_connect() as conn:
         logger.info("Loading Notes")

@@ -35,14 +35,13 @@ def create_datamodel(options: OmopCDMPluginOptions):
     logger = get_run_logger()
 
     database_code = options.database_code
-    use_cache_db = options.use_cache_db
     schema = options.schema_name.upper()
     results_schema = options.results_schema.upper()
     load_csvs = options.load_csvs
     data_model = options.data_model
     cdm_version = options.cdm_version
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code)
 
     logger.info(f"Creating OMOP CDM schema '{schema}' in database '{database_code}'..")
     create_schema_task(dbdao, schema)

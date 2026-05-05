@@ -38,7 +38,6 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         # -------------------- Trex connection to cache --------------------
         dbdao = DBDao(
             dialect=SupportedDatabaseDialects.TREX,
-            use_cache_db=use_trex_connection,
             database_code=database_code,
         )
         ## Vss extension is installed by default in trex, just need to load it

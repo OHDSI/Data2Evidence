@@ -39,10 +39,8 @@ def i2b2_plugin(options: i2b2PluginType):
 def create_i2b2_dataset_flow(options: i2b2PluginType):
     database_code = options.database_code
     schema_name = options.schema_name
-    use_cache_db = options.use_cache_db
 
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+    dbdao = DBDao(database_code)
     # Create schema if there is no existing schema first
     create_schema_task(dbdao, schema_name)
 
@@ -79,7 +77,6 @@ def setup_and_create_datamodel(tag_name: str,
 def update_dataset_metadata_flow(options: i2b2PluginType):
     logger = get_run_logger()
     dataset_list = options.datasets
-    use_cache_db = options.use_cache_db
 
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
@@ -88,7 +85,7 @@ def update_dataset_metadata_flow(options: i2b2PluginType):
             f"Successfully fetched {len(dataset_list)} datasets from portal")
 
         for dataset in dataset_list:
-            get_and_update_attributes(dataset, use_cache_db)
+            get_and_update_attributes(dataset)
 
 
 @task(log_prints=True)
@@ -177,7 +174,7 @@ def create_metadata_table(dbdao: DBDao, schema_name: str, tag_name: str, version
 
 
 @task(log_prints=True)
-def get_and_update_attributes(dataset: dict, use_cache_db: bool):
+def get_and_update_attributes(dataset: dict):
     logger = get_run_logger()
 
     try:
@@ -189,8 +186,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         missing_key = ke.args[0]
         logger.error(f"'{missing_key} not found in dataset'")
     else:
-        dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+        dbdao = DBDao(database_code=database_code)
         portal_server_api = PortalServerAPI()
 
         # check if schema exists

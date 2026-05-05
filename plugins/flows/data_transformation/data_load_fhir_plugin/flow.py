@@ -18,12 +18,10 @@ def data_load_fhir_plugin(options: DataloadOptions):
     logger = get_run_logger()
     files = options.files
     truncate_tables = options.truncate_tables
-    use_cache_db = options.use_cache_db
     dataset_token = options.dataset_token
     try:
         fhir_database_code = Variable.get("fhir_database_code")
-        dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=fhir_database_code)
+        dbdao = DBDao(database_code=fhir_database_code)
         fhir_tables_all = set()
         for incoming_file in files:
             if(truncate_tables):

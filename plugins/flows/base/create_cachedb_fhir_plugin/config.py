@@ -9,7 +9,6 @@ class CreateDuckdbDatabaseFileType(BaseModel):
     # tokenStudyCode of the dataset – used to look up fhir_project_id via the portal API.
     studyCode: str
     fhirProjectId: Optional[str] = None
-    use_cache_db: bool = False
 
     @property
     def database_code(self) -> str:

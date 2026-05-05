@@ -12,10 +12,6 @@ class CalculateConfig(BaseModel):
     coeff_table_name: Optional[str]
     loyalty_cohort_table_name: str  # Table name to store the loyalty score result
 
-    @property
-    def use_cache_db(self) -> str:
-        return False
-
 class RetrainConfig(BaseModel):
     schema_name: str
     database_code: str
@@ -24,10 +20,6 @@ class RetrainConfig(BaseModel):
     return_years: int = 1
     test_ratio: float = 0.2
     retraincoeff_table_name: str
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
 
 class LoyaltyPluginType(BaseModel):
     config: Union[CalculateConfig, RetrainConfig]

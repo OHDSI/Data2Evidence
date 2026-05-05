@@ -34,10 +34,6 @@ class OmopCDMPluginOptions(BaseModel):
     datasets: Optional[List] = None
 
     @property
-    def use_cache_db(self) -> str:
-        return False
-
-    @property
     def cdm_version(self) -> str | None:
         if self.data_model:
             return self.data_model[-3:].replace("-", ".")
