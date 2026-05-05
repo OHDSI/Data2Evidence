@@ -11,7 +11,7 @@ import { installDatasetChangeWatcher } from './bootstrap/datasetWatcher'
 import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
 import type { PortalContextState } from './types/portal-props'
-import { applyTheme } from './utils/ThemeManager'
+import { applyAppTheme } from './bootstrap/themeBootstrap'
 
 let watcherStop: (() => void) | null = null
 let propsListenerStop: (() => void) | null = null
@@ -40,7 +40,7 @@ const lifecycles = singleSpaVue({
   },
   async handleInstance(app: any, props: PortalContextState) {
     await initGlobalsOnce()
-    applyTheme('d2e')
+    applyAppTheme('d2e')
 
     const pinia = createPinia()
     app.use(pinia)
