@@ -30,9 +30,59 @@ from .types import (NodeType,
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
 from .fhirutils.utils import omop_transform_utils
+import psycopg2.sql as pg_sql
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE
+
+
+def _ensure_mapping_schema(database_code: str, schema_name: str) -> None:
+    schema = f"{database_code}_{schema_name}_fhir_mapping"
+    dao = DBDao(use_cache_db=True, database_code=database_code)
+
+    if not dao.check_schema_exists(schema):
+        dao.create_schema(schema)
+
+    dao.execute_sql(pg_sql.SQL(
+        """
+        CREATE TABLE IF NOT EXISTS {schema}.data_source (
+            id                 SERIAL PRIMARY KEY,
+            fhir_resource_type VARCHAR NOT NULL,
+            fhir_resource_id   VARCHAR NOT NULL,
+            omop_table_name    VARCHAR NOT NULL,
+            omop_id            VARCHAR,
+            flow_run_id        VARCHAR,
+            transformed_at     TIMESTAMP DEFAULT NOW()
+        )
+        """
+    ).format(schema=pg_sql.Identifier(schema)))
+
+    dao.execute_sql(pg_sql.SQL(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS data_source_fhir_resource_id_omop_table_name_idx
+        ON {schema}.data_source (fhir_resource_id, omop_table_name)
+        """
+    ).format(schema=pg_sql.Identifier(schema)))
+
+    dao.execute_sql(pg_sql.SQL(
+        """
+        CREATE TABLE IF NOT EXISTS {schema}.fhir_omop_key_map (
+            id                 SERIAL PRIMARY KEY,
+            fhir_id            VARCHAR NOT NULL,
+            fhir_resource_type VARCHAR NOT NULL,
+            omop_table_name    VARCHAR NOT NULL,
+            omop_id            VARCHAR,
+            transformed_at     TIMESTAMP DEFAULT NOW()
+        )
+        """
+    ).format(schema=pg_sql.Identifier(schema)))
+
+    dao.execute_sql(pg_sql.SQL(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+        ON {schema}.fhir_omop_key_map (fhir_id, fhir_resource_type)
+        """
+    ).format(schema=pg_sql.Identifier(schema)))
 
 
 
@@ -738,6 +788,69 @@ class DataMappingNode(Node):
 
 
 
+class FhirMappingWriterNode(Node):
+    """
+    Writes FHIR resource identifiers to the fhir_mapping schema (cache DB).
+    omop_id is left null and filled in by a downstream Python node after the OMOP insert.
+    Schema: {database_code}_{schema_name}_fhir_mapping
+    Re-runs are idempotent — duplicate records are silently skipped.
+    """
+    def __init__(self, name, node):
+        super().__init__(name, node)
+        self.database_code = node["database_code"]
+        self.schema_name = node["schema_name"]
+        self.omop_table_name = node["omop_table_name"]
+        self.fhir_node = node["fhir_node"]
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
+        try:
+            fhir_result = _input.get(self.fhir_node)
+            if fhir_result is None:
+                raise Exception(f"FHIR source node '{self.fhir_node}' not found in input")
+
+            fhir_df = fhir_result.result
+            if fhir_df is None or fhir_df.empty:
+                return Result(False, 0, self, task_run_context)
+
+            flow_run_id = str(task_run_context.get("flow_run_id"))
+
+            records = []
+            for fhir_content in fhir_df["content"]:
+                key = json.loads(fhir_content) if isinstance(fhir_content, str) else fhir_content
+                records.append({
+                    "fhir_resource_type": key.get("resourceType"),
+                    "fhir_resource_id":   key.get("id"),
+                })
+
+            _ensure_mapping_schema(self.database_code, self.schema_name)
+            schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
+            dao = DBDao(use_cache_db=True, database_code=self.database_code)
+
+            dao.batch_insert_values(
+                schema, "data_source",
+                ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "flow_run_id"],
+                [(r["fhir_resource_type"], r["fhir_resource_id"], self.omop_table_name, flow_run_id) for r in records],
+                on_conflict="ON CONFLICT DO NOTHING",
+            )
+
+            km_values = [
+                (r["fhir_resource_id"], r["fhir_resource_type"], self.omop_table_name)
+                for r in records
+                if r["fhir_resource_id"] and r["fhir_resource_type"]
+            ]
+            if km_values:
+                dao.batch_insert_values(
+                    schema, "fhir_omop_key_map",
+                    ["fhir_id", "fhir_resource_type", "omop_table_name"],
+                    km_values,
+                    on_conflict="ON CONFLICT DO NOTHING",
+                )
+
+            return Result(False, len(records), self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
 @flow(name="generate-nodes",
       flow_run_name="generate-nodes-flowrun",
       log_prints=True)
@@ -799,6 +912,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = ConceptMappingNode(nodename, node)
         case NodeType.TRANSFORMFHIRDATA:
             nodeobj = TransformFhirDataNode(nodename, node)
+        case NodeType.FHIRMAPPINGWRITER:
+            nodeobj = FhirMappingWriterNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())
