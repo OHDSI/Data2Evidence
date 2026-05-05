@@ -1,9 +1,9 @@
 <template>
   <div id="app" class="mri-app-vue-container">
     <NotificationStack />
+    <AtlasView v-if="atlasStore.showAtlas" />
+    <patientanalytics v-show="!getInitialLoad" />
     <splashScreen v-if="getInitialLoad" />
-    <AtlasView v-else-if="atlasStore.showAtlas" />
-    <patientanalytics v-else />
   </div>
 </template>
 
