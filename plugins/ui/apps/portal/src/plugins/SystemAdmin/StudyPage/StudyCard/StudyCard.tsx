@@ -271,14 +271,14 @@ export const StudyCard: FC<StudyCardProps> = ({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
 
-      if (isCleaningUp || !selectedDatasetId || !study.id) {
+      if (isCleaningUp || !study.id) {
         return;
       }
 
       setIsCleaningUp(true);
 
       try {
-        await api.dataflow.createCleanUpStudySchemaRun(study.id, selectedDatasetId);
+        await api.dataflow.createCleanUpStudySchemaRun(study.id);
 
         setFeedback({
           type: "success",
@@ -296,7 +296,7 @@ export const StudyCard: FC<StudyCardProps> = ({
         setIsCleaningUp(false);
       }
     },
-    [selectedDatasetId, setFeedback, study]
+    [setFeedback, study, isCleaningUp, getText]
   );
 
   const handleCodeSave = useCallback(
@@ -421,7 +421,7 @@ export const StudyCard: FC<StudyCardProps> = ({
               text={
                 isCleaningUp ? getText(i18nKeys.STUDY_CARD__CLEANING_UP) : getText(i18nKeys.STUDY_CARD__CLEANUP_STUDY)
               }
-              disabled={!selectedDatasetId}
+              disabled={isCleaningUp}
               variant="text"
             />
           </div>

@@ -50,6 +50,7 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
+              - "tests/backend_integration_tests/**"
               - ".github/workflows/functions-http-tests-hana.yml"
 
   run-http-tests:
