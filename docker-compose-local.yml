@@ -27,7 +27,6 @@ services:
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
-      TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage", "d2e-notebook-plugin"]}
