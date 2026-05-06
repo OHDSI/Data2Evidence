@@ -283,6 +283,7 @@ export default {
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
       bookmarkBodyOffset: 0,
+      headerResizeObserver: null as ResizeObserver | null,
     }
   },
   watch: {
@@ -348,11 +349,13 @@ export default {
   mounted() {
     this.$nextTick(() => {
       this.updateBookmarkBodyOffset()
+      this.setupBookmarkLayoutObserver()
     })
     window.addEventListener('resize', this.updateBookmarkBodyOffset)
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.updateBookmarkBodyOffset)
+    this.teardownBookmarkLayoutObserver()
   },
   methods: {
     ...mapActions([
@@ -725,6 +728,36 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
+    },
+    setupBookmarkLayoutObserver() {
+      if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+        return
+      }
+
+      this.teardownBookmarkLayoutObserver()
+
+      this.headerResizeObserver = new ResizeObserver(() => {
+        this.updateBookmarkBodyOffset()
+      })
+
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      if (headerEl) {
+        this.headerResizeObserver.observe(headerEl)
+      }
+
+      if (breakEl) {
+        this.headerResizeObserver.observe(breakEl)
+      }
+    },
+    teardownBookmarkLayoutObserver() {
+      if (!this.headerResizeObserver) {
+        return
+      }
+
+      this.headerResizeObserver.disconnect()
+      this.headerResizeObserver = null
     },
     updateBookmarkBodyOffset() {
       const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
