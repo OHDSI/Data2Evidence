@@ -102,6 +102,7 @@ jobs:
           - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
             NPM: bun
+            NODE_VERSION: "20.x"
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
@@ -137,7 +138,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
       - name: Setup bun
@@ -196,21 +197,21 @@ jobs:
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
           scope: "@data2evidence"
       - name: Use Node.js - OSS Release
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
           scope: "@data2evidence"
       - name: Use Node.js - Project
         uses: actions/setup-node@v4
         if: env.NPM_ARTIFACT_TYPE == 'Project'
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/ms/npm/registry/"
           scope: "@data2evidence"
       - name: Publish
