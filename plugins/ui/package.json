@@ -215,10 +215,10 @@
             "route": "cohorts"
           },
           {
-            "visible": true,
+            "visible": false,
             "type": "app",
             "featureFlag": "starboard",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
             "pluginPath": "/resources/notebook-ui/lifecycles.js",
@@ -233,15 +233,15 @@
           {
             "visible": true,
             "type": "app",
-            "featureFlag": "webrnotebook",
+            "featureFlag": "notebook",
             "defaultEnabled": true,
-            "name": "WebR Notebooks",
+            "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
             "pluginPath": "/resources/notebook/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
-            "route": "webrnotebook",
+            "route": "notebook",
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
@@ -285,11 +285,11 @@
             "visible": false
           },
           {
-            "name": "Dashboard",
+            "name": "Dashboards",
             "route": "shiny-live",
             "pluginPath": "plugins/Researcher/ShinyLive/module",
             "featureFlag": "shinyLive",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "requiredRoles": [
               "RESEARCHER"
             ],
