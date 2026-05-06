@@ -11,36 +11,6 @@
     "build:dev": "vite build --mode=development",
     "build:watch": "vite build --mode=development --watch"
   },
-  "trex": {
-    "ui": {
-      "routes": [
-        {
-          "source": "/resources/notebook",
-          "target": "/resources/notebook"
-        }
-      ],
-      "uiplugins": {
-        "researcher": [
-          {
-            "visible": true,
-            "defaultEnabled": true,
-            "type": "app",
-            "featureFlag": "notebook",
-            "name": "Notebooks",
-            "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
-            "pluginPath": "/resources/notebook/lifecycles.js",
-            "requiredRoles": [
-              "RESEARCHER"
-            ],
-            "route": "webrnotebook",
-            "data": {
-              "uiFilesUrl": "https://$$FQDN$$/"
-            }
-          }
-        ]
-      }
-    }
-  },
   "dependencies": {
     "@nlux/react": "^2.17.1",
     "@nlux/themes": "^2.17.1",
