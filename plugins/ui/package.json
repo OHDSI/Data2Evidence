@@ -58,6 +58,10 @@
           "target": "/resources/notebook-ui"
         },
         {
+          "source": "/resources/notebook",
+          "target": "/resources/notebook"
+        },
+        {
           "source": "/resources/analysis-ui",
           "target": "/resources/analysis-ui"
         },
@@ -222,6 +226,22 @@
               "RESEARCHER"
             ],
             "route": "starboard",
+            "data": {
+              "uiFilesUrl": "https://$$FQDN$$/"
+            }
+          },
+          {
+            "visible": true,
+            "type": "app",
+            "featureFlag": "webrnotebook",
+            "defaultEnabled": true,
+            "name": "WebR Notebooks",
+            "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
+            "pluginPath": "/resources/notebook/lifecycles.js",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "webrnotebook",
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
