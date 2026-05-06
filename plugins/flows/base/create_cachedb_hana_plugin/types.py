@@ -3,12 +3,8 @@ from typing import Optional
 from typing_extensions import Self
 
 from pydantic import BaseModel, Field, model_validator
-
-
 class HanaCacheFlowAction(str, Enum):
     CREATE_HANA_CACHE = "create_hana_cache"
-
-
 class CreateHanaCacheOptions(BaseModel):
     flow_action_type: HanaCacheFlowAction = Field(alias="flowActionType")
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
@@ -26,7 +22,13 @@ class CreateHanaCacheOptions(BaseModel):
                 f"Missing required fields for {self.flow_action_type}: {', '.join(missing)}"
             )
         return self
-
     class Config:
         use_enum_values = True
         validate_by_name = True
+    
+    @property
+    def use_trex_connection(self) -> bool:
+        """
+        Whether to use the TREX sql connection or direct database connection.
+        """
+        return True

@@ -13,6 +13,7 @@ from prefect.variables import Variable
 from .types import *
 from .utils import *
 from _shared_flow_utils.dao.DBDao import DBDao, SupportedDatabaseDialects
+from _shared_flow_utils.dao.trexdao import TrexDao
 
 os.environ['plugin_name'] = 'search_embedding_plugin'
 
@@ -23,7 +24,6 @@ if device == 'cpu':
     torch.set_num_threads(max(1, (os.cpu_count() or 1) // 2))
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
 model = AutoModel.from_pretrained("Supabase/gte-small").to(device).eval()
-tmp_embedding_table = 'tmp_embeddings'
 embedding_col_name = 'concept_name_embedding'
 index_col = 'embedding_cos_idx'
 
@@ -41,9 +41,12 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             use_cache_db=use_trex_connection,
             database_code=database_code,
         )
-        ## Vss extension is installed by default in trex, just need to load it
-        dbdao.execute_sql("LOAD vss")
-        create_embeddings_trex(dbdao, schema_name)
+        if dbdao.dialect == SupportedDatabaseDialects.HANA:
+            create_embeddings_hana(dbdao, use_trex_connection, database_code, schema_name)
+        else:
+            ## Vss extension is installed by default in trex, just need to load it before use
+            dbdao.execute_sql("LOAD vss")
+            create_embeddings_cache(dbdao, schema_name)
     else:
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
@@ -52,64 +55,68 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             conn.load_extension(vss_extension_path)
             create_embeddings_duckdb(conn, schema_name)
 
+@task(log_prints=True, task_run_name="embedding_concept_table_hana_{schema_name}.concept")
+def create_embeddings_hana(dbdao_hana, use_trex_connection, database_code, schema_name):
+    """
+    HANA flow: read concept_id/concept_name from the HANA source via SQLAlchemy,
+    then write (concept_id, concept_name_embedding) into the DuckDB cache via
+    a Trex pgwire connection. Mirrors `create_cachedb_file_plugin/copy.py` —
+    HANA is the read side, the cache is the write side.
+    """
+    import sqlalchemy as sqla
+    from psycopg2 import sql as pg_sql
+
+    logger = get_run_logger()
+    logger.info("***************** Start embedding (HANA -> cache) *****************")
+
+    # 1. Read concept_id, concept_name from HANA
+    with dbdao_hana.engine.connect() as conn:
+        result = conn.execute(sqla.text(
+            f'SELECT CONCEPT_ID, CONCEPT_NAME FROM "{schema_name}".CONCEPT'
+        ))
+        concept = pd.DataFrame(result.fetchall(), columns=['concept_id', 'concept_name'])
+
+    # 2. Create embedding and write to cache via Trex connection
+    cache_dao = TrexDao(use_cache_db=use_trex_connection, database_code=database_code)
+    cache_dao.execute_sql("LOAD vss")
+    
+    embedding_cols = {'concept_id': 'INTEGER', embedding_col_name: 'FLOAT[384]'}
+    embedding_table = 'concept_embeddings'
+    batch_embedding_concept_table(concept, tokenizer, model, device, cache_dao, schema_name, embedding_table, embedding_cols)
+
+    # 3. HNSW index on the embedding column
+    cache_dao.execute_sql(pg_sql.SQL(
+        "SET hnsw_enable_experimental_persistence=TRUE; "
+        "CREATE INDEX IF NOT EXISTS {index_col} ON {schema}.{table} "
+        "USING HNSW ({col}) WITH (metric = 'cosine');"
+    ).format(
+        index_col=pg_sql.Identifier(index_col),
+        schema=pg_sql.Identifier(schema_name),
+        table=pg_sql.Identifier(embedding_table),
+        col=pg_sql.Identifier(embedding_col_name),
+    ))
+    logger.info("***************** HANA embedding cache complete *****************")
+
+
 @task(log_prints=True, task_run_name="embedding_concept_table_{schema_name}.concept")
-def create_embeddings_trex(dbdao, schema_name):
+def create_embeddings_cache(dbdao, schema_name):
     logger = get_run_logger()
     logger.info("***************** Start embedding *****************")
     
     ## Load concept table
     concept = dbdao.execute_sql(f'SELECT concept_id, concept_name FROM {schema_name}.concept', fetch=True)
     concept = pd.DataFrame(concept, columns=['concept_id','concept_name'])
-    length = len(concept)
-    
-    ## Create tmp embedding table
     embedding_cols = {'concept_id':'int', 'vec':'FLOAT[384]'}
-    create_tmp_embedding_table(dbdao, schema_name, tmp_embedding_table, embedding_cols)
-
-    ## Generate embedding
-    columns = list(embedding_cols.keys())
-    total_batches = int(length / STEP) + (length % STEP > 0)
-
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        future = None
-        for i in range(0, length, STEP):
-            concept_name = concept['concept_name'][i:i+STEP].tolist()
-            concept_id = concept['concept_id'][i:i+STEP].tolist()
-
-            t0 = time.time()
-            embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
-            embed_time = time.time() - t0
-
-            col_values = list(zip(concept_id, embeddings))
-
-            t1 = time.time()
-            if future is not None:
-                future.result()
-            insert_wait_time = time.time() - t1
-
-            future = executor.submit(dbdao.batch_insert_values, schema_name, tmp_embedding_table, columns, col_values)
-
-            percent = round((i // STEP + 1) / total_batches * 100, 2)
-            logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
-
-        if future is not None:
-            future.result()
+    tmp_embedding_table = 'tmp_embeddings'
+    batch_embedding_concept_table(concept, tokenizer, model, device, dbdao, schema_name, tmp_embedding_table, embedding_cols)
     
     logger.info("***************** Insert embedding *****************")
     ## Add embedding column to concept table
-    if embedding_col_name not in dbdao.get_columns(schema_name, 'concept'):
-        add_embedding_column(dbdao, schema_name, embedding_col_name)
+    insert_embeddings(dbdao, schema_name, tmp_embedding_table, 'concept')
 
-    ## Copy embedding column from intermediate table to concept table, must drop vss index (if exist) before update embedding column
-    drop_embedding_index(dbdao, schema_name, index_col)
-    update_concept_embedding(dbdao, schema_name, tmp_embedding_table, embedding_col_name)
-    dbdao.drop_table(schema_name, tmp_embedding_table, cascade=True)
-    
-    ## Create vss index on embedding column
-    create_embedding_index(dbdao, schema_name, embedding_col_name, index_col)
     
 @task(log_prints=True, task_run_name="embedding_concept_table_duckdb")
-def create_embeddings_duckdb(conn, schema_name):
+def create_embeddings_duckdb(conn, schema_name, tmp_embedding_table='tmp_embeddings'):
     logger = get_run_logger()
     logger.info("***************** Start embedding *****************")
     concept = conn.execute(f'SELECT concept_id, concept_name FROM "{schema_name}".concept').fetchnumpy()
@@ -149,3 +156,50 @@ def create_embeddings_duckdb(conn, schema_name):
 
     conn.execute("SET hnsw_enable_experimental_persistence=TRUE;")
     conn.execute(f"CREATE INDEX {index_col} ON \"{schema_name}\".concept USING HNSW ({embedding_col_name}) WITH (metric = 'cosine')")
+
+def batch_embedding_concept_table(concept, tokenizer, model, device, dbdao, schema_name, tmp_embedding_table, embedding_cols):
+    logger = get_run_logger()
+    length = len(concept)
+    ## Create tmp embedding table
+    create_tmp_embedding_table(dbdao, schema_name, tmp_embedding_table, embedding_cols)
+
+    ## Generate embedding
+    columns = list(embedding_cols.keys())
+    total_batches = int(length / STEP) + (length % STEP > 0)
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        future = None
+        for i in range(0, length, STEP):
+            concept_name = concept['concept_name'][i:i+STEP].tolist()
+            concept_id = concept['concept_id'][i:i+STEP].tolist()
+
+            t0 = time.time()
+            embeddings = embedding_concept_table(concept_name, tokenizer, model, device).tolist()
+            embed_time = time.time() - t0
+
+            col_values = list(zip(concept_id, embeddings))
+
+            t1 = time.time()
+            if future is not None:
+                future.result()
+            insert_wait_time = time.time() - t1
+
+            future = executor.submit(dbdao.batch_insert_values, schema_name, tmp_embedding_table, columns, col_values)
+
+            percent = round((i // STEP + 1) / total_batches * 100, 2)
+            logger.info(f'{percent} % completed | embed: {embed_time:.2f}s | wait_for_insert: {insert_wait_time:.2f}s')
+
+        if future is not None:
+            future.result()
+            
+def insert_embeddings(dbdao, schema_name, tmp_embedding_table, table_name):
+    if embedding_col_name not in dbdao.get_columns(schema_name, table_name):
+        add_embedding_column(dbdao, schema_name, embedding_col_name)
+
+    ## Copy embedding column from intermediate table to concept table, must drop vss index (if exist) before update embedding column
+    drop_embedding_index(dbdao, schema_name, index_col)
+    update_concept_embedding(dbdao, schema_name, tmp_embedding_table, embedding_col_name)
+    dbdao.drop_table(schema_name, tmp_embedding_table, cascade=True)
+    
+    ## Create vss index on embedding column
+    create_embedding_index(dbdao, schema_name, embedding_col_name, index_col)
