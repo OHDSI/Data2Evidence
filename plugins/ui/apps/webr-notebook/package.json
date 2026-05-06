@@ -28,6 +28,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-basic-ssl": "^1.1.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "postcss-prefix-selector": "^2.1.1",
     "sass": "^1.98.0",
     "tailwindcss": "^4.1.18",
     "typescript": "~5.9.3",

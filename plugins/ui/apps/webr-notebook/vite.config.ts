@@ -87,7 +87,20 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, '../../node_modules/react-notebook/src'),
     },
-    dedupe: ['react', 'react-dom'],
+    dedupe: [
+      'react',
+      'react-dom',
+      '@codemirror/state',
+      '@codemirror/view',
+      '@codemirror/language',
+      '@codemirror/commands',
+      '@codemirror/search',
+      '@codemirror/autocomplete',
+      '@codemirror/lint',
+      '@lezer/common',
+      '@lezer/highlight',
+      '@lezer/lr',
+    ],
   },
   worker: {
     format: 'es',

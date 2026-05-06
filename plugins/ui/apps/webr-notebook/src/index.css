@@ -1,4 +1,7 @@
-@import "tailwindcss";
+@layer base, theme, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
 
 @import "react-notebook/style.css";
 
@@ -77,5 +80,58 @@
   .notebook-card *::after {
     box-sizing: border-box;
     border-color: var(--color-border);
+  }
+
+  /* Margin/list resets so component layouts behave (Tailwind preflight equivalents) */
+  .notebook-card h1,
+  .notebook-card h2,
+  .notebook-card h3,
+  .notebook-card h4,
+  .notebook-card h5,
+  .notebook-card h6,
+  .notebook-card p,
+  .notebook-card pre,
+  .notebook-card blockquote,
+  .notebook-card dl,
+  .notebook-card dd,
+  .notebook-card hr,
+  .notebook-card figure {
+    margin: 0;
+  }
+
+  /* Heading sizing reset — .prose restores typographic hierarchy where needed */
+  .notebook-card h1,
+  .notebook-card h2,
+  .notebook-card h3,
+  .notebook-card h4,
+  .notebook-card h5,
+  .notebook-card h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+
+  .notebook-card ol,
+  .notebook-card ul,
+  .notebook-card menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .notebook-card a {
+    color: inherit;
+    text-decoration: inherit;
+  }
+
+  .notebook-card img,
+  .notebook-card svg,
+  .notebook-card video,
+  .notebook-card canvas,
+  .notebook-card audio,
+  .notebook-card iframe,
+  .notebook-card embed,
+  .notebook-card object {
+    display: block;
+    vertical-align: middle;
   }
 }
