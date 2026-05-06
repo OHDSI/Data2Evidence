@@ -21,7 +21,7 @@
         <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
       </div>
       <div class="chartContainer">
-        <loadingAnimation v-if="chartBusy"></loadingAnimation>
+        <loadingAnimation v-if="showChartLoadingAnimation"></loadingAnimation>
         <stackBarChart
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
@@ -141,7 +141,11 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getActiveBookmark',
+      'getDatasetReloadInProgress',
     ]),
+    showChartLoadingAnimation() {
+      return this.chartBusy && !this.getDatasetReloadInProgress
+    },
     stackAttributeHasSelection() {
       const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
       return !!(axis?.props?.filterCardId && axis?.props?.key)
