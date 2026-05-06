@@ -177,6 +177,7 @@ export default defineConfig(({ command, mode }) => {
             const url = req.url || ''
             // Strip query string for path matching
             const path = url.split('?')[0] || ''
+            const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
 
             // Serve Vite's client scripts directly
             if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
@@ -186,6 +187,11 @@ export default defineConfig(({ command, mode }) => {
             // Let Vite handle index.html natively (don't route through proxy)
             if (path === '/' || path === '' || path === '/index.html') {
               return url
+            }
+
+            // Always proxy Atlas app and assets to backend
+            if (isAtlasAsset) {
+              return null
             }
 
             // Serve static assets from public folder
