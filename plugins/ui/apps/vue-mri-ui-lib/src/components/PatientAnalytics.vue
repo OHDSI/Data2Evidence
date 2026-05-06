@@ -30,25 +30,27 @@
                 </ul>
               </div>
             </div>
-            <bookmarks
-              @unloadBookmarkEv="toggleCohorts"
-              @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-              :init-bookmark-id="querystring.bmkId"
-              v-if="getMriFrontendConfig && displayCohorts"
-            ></bookmarks>
+            <div class="pane-left-content">
+              <bookmarks
+                @unloadBookmarkEv="toggleCohorts"
+                @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
+                :init-bookmark-id="querystring.bmkId"
+                v-if="getMriFrontendConfig && displayCohorts"
+              ></bookmarks>
 
-            <filters
-              ref="filtersRef"
-              v-if="!showQueryFilter && !displayCohorts"
-              v-bind:class="{ hidden: displayCohorts }"
-            ></filters>
+              <filters
+                ref="filtersRef"
+                v-if="!showQueryFilter && !displayCohorts"
+                v-bind:class="{ hidden: displayCohorts }"
+              ></filters>
 
-            <QueryFilter
-              v-else-if="showQueryFilter"
-              ref="queryFilterRef"
-              :atlas-data="atlasDataForQueryFilter"
-              :key="atlasDataForQueryFilter?.id || 'new-cohort'"
-            />
+              <QueryFilter
+                v-else-if="showQueryFilter"
+                ref="queryFilterRef"
+                :atlas-data="atlasDataForQueryFilter"
+                :key="atlasDataForQueryFilter?.id || 'new-cohort'"
+              />
+            </div>
           </div>
         </pane>
 

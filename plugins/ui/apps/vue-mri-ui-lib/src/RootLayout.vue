@@ -57,7 +57,6 @@ export default {
   min-height: 0;
 
   > main {
-    height: calc(100% - 56px);
     display: flex;
     flex-direction: column;
     flex: 1;

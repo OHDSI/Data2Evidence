@@ -118,7 +118,7 @@
     />
 
     <div class="bookmark-content">
-      <div class="bookmark-content__header">
+      <div class="bookmark-content__header" ref="bookmarkHeaderRef">
         <div class="bookmark-content__header-title" v-if="!isAtlas">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
           <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isAtlas"></Button>
@@ -152,29 +152,31 @@
         </div>
       </div>
 
-      <div class="bookmark-content__break" />
+      <div class="bookmark-content__break" ref="bookmarkBreakRef" />
 
-      <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
-        <d4l-spinner />
-      </div>
-      <div v-else>
-        <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
-          {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+      <div class="bookmark-content__body" :style="bookmarkBodyStyle">
+        <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
+          <d4l-spinner />
         </div>
-        <div v-else class="bookmark-content__list">
-          <BookmarkItems
-            :bookmarksDisplay="bookmarksDisplay"
-            :compareCohortsSelectionList="aSelBookmarkList"
-            :useQueryFilterForAtlas="usePaAtlas"
-            :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
-            @onSelectBookmark="onSelectBookmark"
-            @renameBookmark="renameBookmark"
-            @deleteBookmark="deleteBookmark"
-            @addCohort="addCohort"
-            @openDataQualityDialog="openDataQualityDialog"
-            @loadBookmarkCheck="loadBookmarkCheck"
-            @loadAtlasBookmark="loadAtlasBookmark"
-          />
+        <div v-else>
+          <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
+            {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+          </div>
+          <div v-else class="bookmark-content__list">
+            <BookmarkItems
+              :bookmarksDisplay="bookmarksDisplay"
+              :compareCohortsSelectionList="aSelBookmarkList"
+              :useQueryFilterForAtlas="usePaAtlas"
+              :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
+              @onSelectBookmark="onSelectBookmark"
+              @renameBookmark="renameBookmark"
+              @deleteBookmark="deleteBookmark"
+              @addCohort="addCohort"
+              @openDataQualityDialog="openDataQualityDialog"
+              @loadBookmarkCheck="loadBookmarkCheck"
+              @loadAtlasBookmark="loadAtlasBookmark"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -280,6 +282,7 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
+      bookmarkBodyOffset: 0,
     }
   },
   watch: {
@@ -287,6 +290,11 @@ export default {
       if (this.initBookmarkId !== '') {
         this.loadBookmark(this.initBookmarkId, null)
       }
+    },
+    isBookmarksLoading() {
+      this.$nextTick(() => {
+        this.updateBookmarkBodyOffset()
+      })
     },
   },
   computed: {
@@ -331,6 +339,20 @@ export default {
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
     },
+    bookmarkBodyStyle() {
+      return {
+        top: `${this.bookmarkBodyOffset}px`,
+      }
+    },
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.updateBookmarkBodyOffset()
+    })
+    window.addEventListener('resize', this.updateBookmarkBodyOffset)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateBookmarkBodyOffset)
   },
   methods: {
     ...mapActions([
@@ -703,6 +725,24 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
+    },
+    updateBookmarkBodyOffset() {
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      let offset = 0
+      if (headerEl) {
+        offset += headerEl.offsetHeight
+      }
+
+      if (breakEl) {
+        const breakStyles = getComputedStyle(breakEl)
+        const marginTop = Number.parseFloat(breakStyles.marginTop || '0') || 0
+        const marginBottom = Number.parseFloat(breakStyles.marginBottom || '0') || 0
+        offset += breakEl.offsetHeight + marginTop + marginBottom
+      }
+
+      this.bookmarkBodyOffset = Math.max(offset, 0)
     },
     loadBookmarks() {
       this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })

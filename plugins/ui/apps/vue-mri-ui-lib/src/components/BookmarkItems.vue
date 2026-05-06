@@ -321,11 +321,6 @@ onErrorCaptured((err, instance, info) => {
       display: flex;
       flex-direction: column;
       height: 100%;
-      margin-left: 1rem;
-      margin-right: 1rem;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      width: calc(100% - 30px);
     "
   >
     <!-- Bookmarks Grid -->
@@ -339,8 +334,7 @@ onErrorCaptured((err, instance, info) => {
         overflow-y: auto;
         scrollbar-width: thin;
         gap: 10px;
-        padding: 10px;
-        padding-bottom: 80px;
+        padding: 1rem;
       "
     >
       <div

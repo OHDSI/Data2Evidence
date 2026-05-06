@@ -10,7 +10,6 @@ import { createPortalContextStore, usePortalContextStore } from './stores/portal
 import { installDatasetChangeWatcher } from './bootstrap/datasetWatcher'
 import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
-import { applyMountContainerLayout } from './bootstrap/mountContainerLayout'
 import type { PortalContextState } from './types/portal-props'
 import { applyAppTheme } from './bootstrap/themeBootstrap'
 
@@ -34,6 +33,7 @@ const toPortalContextProps = (props: Partial<PortalContextState>): PortalContext
 
 const lifecycles = singleSpaVue({
   createApp,
+  replaceMode: true,
   appOptions: {
     render() {
       return h(App)
@@ -42,7 +42,6 @@ const lifecycles = singleSpaVue({
   async handleInstance(app: any, props: PortalContextState) {
     await initGlobalsOnce()
     applyAppTheme('d2e')
-    applyMountContainerLayout((props as any)?.containerId)
 
     const pinia = createPinia()
     app.use(pinia)

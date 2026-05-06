@@ -44,6 +44,19 @@
       }
     }
   }
+  #pane-left {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
+    .pane-left-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
   #pane-right {
     display: flex;
     flex-direction: column;
