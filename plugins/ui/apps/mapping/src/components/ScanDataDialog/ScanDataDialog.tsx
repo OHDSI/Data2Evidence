@@ -6,6 +6,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import React, { FC, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../axios/api";
+import request from "../../axios/request";
 import { AppContext } from "../../contexts/AppContext";
 import { ScanDataDBConnectionForm } from "../../types/scanDataDialog";
 import { ConnectionErrorDialog } from "../ConnectionErrorDialog/ConnectionErrorDialog";
@@ -19,17 +20,8 @@ interface ScanDataDialogProps {
   setScanId: (id: string) => void;
 }
 
-const DEFAULT_PORTS = {
-  postgresql: 5432,
-};
-
 const EMPTY_DBCONNECTION_FORM_DATA = {
-  data_type: "",
-  server: "",
-  port: 0,
-  database: "",
-  user_name: "",
-  password: "",
+  databaseCode: "",
   schema: "",
 };
 
@@ -72,14 +64,23 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { nodeId } = useContext(AppContext);
 
+  const [databases, setDatabases] = useState<{ id: string; code: string; name: string; dialect: string }[]>([]);
+  const [isLoadingDatabases, setIsLoadingDatabases] = useState(false);
+
   useEffect(() => {
-    if (dataType) {
-      setDbConnectionForm((prevForm) => ({
-        ...prevForm,
-        port: DEFAULT_PORTS[dataType as keyof typeof DEFAULT_PORTS] || 0,
-      }));
-    }
-  }, [dataType]);
+    const fetchDatabases = async () => {
+      setIsLoadingDatabases(true);
+      try {
+        const res = await request({ url: "trex/db/", method: "GET" });
+        setDatabases(res);
+      } catch (err) {
+        console.error("Failed to fetch databases", err);
+      } finally {
+        setIsLoadingDatabases(false);
+      }
+    };
+    fetchDatabases();
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -123,7 +124,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     (event: SelectChangeEvent<string>) => {
       handleClear();
       setDataType(event.target.value);
-      setDbConnectionForm({ ...dbConnectionForm, data_type: event.target.value });
     },
     [dataType]
   );
@@ -139,14 +139,6 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
 
   const handleDelimiterChange = useCallback((event: SelectChangeEvent<string>) => {
     setDelimiter(event.target.value as string);
-  }, []);
-
-  const handlePostgresFormChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
-    setDbConnectionForm((prevForm) => ({
-      ...prevForm,
-      [name]: value,
-    }));
   }, []);
 
   const handleTestConnection = useCallback(async () => {
@@ -236,7 +228,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
     try {
       setLoading(true);
       if (canConnect) {
-        const response = await api.whiteRabbit.createDBScanReport(dbConnectionForm, selectedTables);
+        const response = await api.whiteRabbit.createDBScanReport(dbConnectionForm, selectedTables, nodeId);
         const flowRunId = response.flowRunId;
         setScanId(flowRunId);
       } else {
@@ -251,16 +243,7 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
   const fileNames = useMemo(() => uploadedFiles.map((file) => file.name).join(", "), [uploadedFiles]);
 
   const isFormValid = (formData: ScanDataDBConnectionForm) => {
-    const optionalSchemadata_type = ["mysql", "ms access"];
-    return Object.entries(formData)
-      .filter(([key]) => key !== "httppath") // Exclude 'httppath'
-      .every(([key, value]) => {
-        // If data_type is 'mysql', allow 'schema' to be empty
-        if (optionalSchemadata_type.includes(formData.data_type) && key === "schema") {
-          return true;
-        }
-        return value !== "" && value !== null && value !== undefined;
-      });
+    return formData.databaseCode !== "" && formData.schema !== "";
   };
 
   return (
@@ -319,63 +302,32 @@ export const ScanDataDialog: FC<ScanDataDialogProps> = ({ open, onClose, setScan
               {dataType !== "csv" && (
                 <>
                   <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                    <TextField
-                      name="server"
-                      label="Server Location"
-                      value={dbConnectionForm.server}
-                      onChange={handlePostgresFormChange}
-                      variant="standard"
-                    />
+                    <InputLabel>Database</InputLabel>
+                    <Select
+                      value={dbConnectionForm.databaseCode}
+                      onChange={(e: SelectChangeEvent<string>) =>
+                        setDbConnectionForm((prev) => ({ ...prev, databaseCode: e.target.value }))
+                      }
+                      disabled={isLoadingDatabases}
+                    >
+                      {databases.map((db) => (
+                        <MenuItem key={db.code} value={db.code}>
+                          {db.code} - {db.dialect}
+                        </MenuItem>
+                      ))}
+                    </Select>
                   </FormControl>
                   <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
                     <TextField
-                      name="port"
-                      label="Port"
-                      value={dbConnectionForm.port}
-                      onChange={handlePostgresFormChange}
-                      variant="standard"
-                      type="number"
-                    />
-                  </FormControl>
-                  <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                    <TextField
-                      name="user_name"
-                      label="User Name"
-                      value={dbConnectionForm.user_name}
-                      onChange={handlePostgresFormChange}
+                      name="schema"
+                      label="Schema Name"
+                      value={dbConnectionForm.schema}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setDbConnectionForm((prev) => ({ ...prev, schema: e.target.value }))
+                      }
                       variant="standard"
                     />
                   </FormControl>
-                  <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                    <TextField
-                      name="password"
-                      label="Password"
-                      value={dbConnectionForm.password}
-                      onChange={handlePostgresFormChange}
-                      variant="standard"
-                      type="password"
-                    />
-                  </FormControl>
-                  <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                    <TextField
-                      name="database"
-                      label="Database Name"
-                      value={dbConnectionForm.database}
-                      onChange={handlePostgresFormChange}
-                      variant="standard"
-                    />
-                  </FormControl>
-                  {dataType !== "mysql" && dataType !== "ms access" && (
-                    <FormControl fullWidth variant="standard" className="scan-data-dialog__form-control">
-                      <TextField
-                        name="schema"
-                        label="Schema Name"
-                        value={dbConnectionForm.schema}
-                        onChange={handlePostgresFormChange}
-                        variant="standard"
-                      />
-                    </FormControl>
-                  )}
                   <Button onClick={handleClear}>Clear all</Button>
                 </>
               )}
