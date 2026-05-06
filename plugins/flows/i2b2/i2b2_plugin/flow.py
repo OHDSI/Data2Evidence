@@ -40,7 +40,7 @@ def create_i2b2_dataset_flow(options: i2b2PluginType):
     database_code = options.database_code
     schema_name = options.schema_name
 
-    dbdao = DBDao(database_code)
+    dbdao = DBDao(database_code=database_code)
     # Create schema if there is no existing schema first
     create_schema_task(dbdao, schema_name)
 
