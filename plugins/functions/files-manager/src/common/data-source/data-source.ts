@@ -30,6 +30,12 @@ export const dataSourceOptions: DataSourceOptions = {
   ssl,
   logging: getLogLevels(),
   entities: [UserData, BlobData],
+  extra: {
+    max: parseInt(Deno.env.get("PG__MAX_POOL") || "") || 10,
+    min: parseInt(Deno.env.get("PG__MIN_POOL") || "") || 0,
+    idleTimeoutMillis:
+      parseInt(Deno.env.get("PG__IDLE_TIMEOUT_IN_MS") || "") || 30000,
+  },
 };
 
 const dataSource = new DataSource(dataSourceOptions);

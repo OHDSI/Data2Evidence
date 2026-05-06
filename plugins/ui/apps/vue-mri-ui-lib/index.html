@@ -55,7 +55,7 @@
 
     <script type="module">
       // Initialize portalAPI with Vite environment variables
-      const isLocal = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
+      const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
       const defaultDatasource = import.meta.env.VITE_DEFAULT_DATASOURCE || 'SYNPUF1K'
       const features = import.meta.env.VITE_FEATURES ? JSON.parse(import.meta.env.VITE_FEATURES) : []
 
@@ -67,7 +67,7 @@
         async getToken() {
           return localStorage.getItem('msaltoken')
         },
-        isLocal: isLocal,
+        isAtlas,
         features: features,
         featuresLoading: false,
         username: import.meta.env.VITE_USERNAME || 'admin',
@@ -81,7 +81,7 @@
       }
 
       // Conditionally add logout button if not in standalone mode
-      if (!isLocal) {
+      if (!isAtlas) {
         const logoutContainer = document.getElementById('logout-container')
         const logoutBtn = document.createElement('button')
         logoutBtn.id = 'mriBtnLogout'
@@ -93,8 +93,8 @@
 
       console.log('PortalAPI initialized with default datasource:', defaultDatasource)
 
-      // Fetch datasource dynamically when in local mode and update portalAPI
-      if (isLocal) {
+      // Fetch datasource dynamically when in standalone mode and update portalAPI
+      if (isAtlas) {
         ;(async function () {
           try {
             const token = localStorage.getItem('msaltoken')
@@ -123,4 +123,3 @@
     <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
   </body>
 </html>
-

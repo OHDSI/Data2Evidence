@@ -106,9 +106,13 @@ export const mapd2eWebapiConceptSet = (
     id: conceptSet.id,
     shared: conceptSet.shared,
     createdBy: conceptSet.createdBy.name,
-    createdDate: new Date(conceptSet.createdDate).toLocaleDateString(),
+    createdDate: conceptSet.createdDate
+      ? new Date(conceptSet.createdDate).toISOString().split("T")[0]
+      : undefined,
     modifiedBy: conceptSet.modifiedBy.name,
-    modifiedDate: new Date(conceptSet.modifiedDate).toLocaleDateString(),
+    modifiedDate: conceptSet.modifiedDate
+      ? new Date(conceptSet.modifiedDate).toISOString().split("T")[0]
+      : undefined,
     userName: conceptSet.createdBy.name,
   };
 };
