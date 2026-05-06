@@ -1,5 +1,5 @@
 {
-  "name": "@data2evidence/d2e-notebook-plugin",
+  "name": "webr-notebook",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -18,7 +18,7 @@
     "concurrently": "^9.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-notebook": "git+https://github.com/OHDSI/trex-notebook.git#develop",
+    "react-notebook": "git+https://github.com/hengxian-jiang/notebook-1.git#feat/lib-build",
     "single-spa-react": "^6.0.2"
   },
   "devDependencies": {
