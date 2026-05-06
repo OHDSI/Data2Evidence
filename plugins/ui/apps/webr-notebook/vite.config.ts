@@ -85,7 +85,7 @@ export default defineConfig({
       
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '../../../../notebook/src'),
+      '@': path.resolve(__dirname, '../../node_modules/react-notebook/src'),
     },
     dedupe: ['react', 'react-dom'],
   },

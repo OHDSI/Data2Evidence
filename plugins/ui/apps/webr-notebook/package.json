@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit && vite build",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "dev": "concurrently --kill-others \"bun build:watch\" \"bun preview\"",
     "preview": "vite preview --mode=development",
     "build:dev": "vite build --mode=development",
@@ -47,6 +48,7 @@
     "concurrently": "^9.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-notebook": "git+https://github.com/OHDSI/trex-notebook.git#develop",
     "single-spa-react": "^6.0.2"
   },
   "devDependencies": {

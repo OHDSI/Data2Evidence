@@ -20,10 +20,6 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["../../../../notebook/src/*"]
-    }
   },
-  "include": ["src", "../../../../notebook/src"]
+  "include": ["src"]
 }

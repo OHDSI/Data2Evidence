@@ -9,7 +9,7 @@ import {
   WebRKernel,
   createEmptyNotebook,
   serializeIpynb,
-} from '@/index'
+} from 'react-notebook/src/index'
 import * as notebookApi from '../api/notebook-api'
 import type { NotebookRecord } from '../types'
 import { parseNotebookContent } from '../utils/starboard'
