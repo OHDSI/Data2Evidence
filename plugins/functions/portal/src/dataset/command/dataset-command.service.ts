@@ -3,7 +3,7 @@ import { EntityManager, In } from "npm:typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TransactionRunner } from "../../common/data-source/transaction-runner.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
-import { getDbCredentialsByCode } from "../../env.ts";
+import { getDbCredentialsByCode, toUpperCaseIfHana } from "../../env.ts";
 import { createLogger } from "../../logger.ts";
 import { TenantService } from "../../tenant/tenant.service.ts";
 import {
@@ -57,6 +57,11 @@ export class DatasetCommandService {
   }
 
   async createDataset(datasetDto: IDatasetDto) {
+    
+    // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
+    datasetDto.vocabSchemaName = toUpperCaseIfHana(datasetDto.vocabSchemaName, datasetDto.dialect);
+    datasetDto.resultsSchemaName = toUpperCaseIfHana(datasetDto.resultsSchemaName, datasetDto.dialect);
+
     const createDatasetFn = async (
       entityMgr: EntityManager,
       datasetDto: IDatasetDto,
@@ -67,11 +72,6 @@ export class DatasetCommandService {
           400,
           `Invalid tenantId ${datasetDto.tenantId} provided`,
         );
-      }
-      // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
-      if (datasetDto.dialect === "hana") {
-        datasetDto.vocabSchemaName = datasetDto.vocabSchemaName?.toUpperCase();
-        datasetDto.resultsSchemaName = datasetDto.resultsSchemaName?.toUpperCase();
       }
       const { detail, dashboards, attributes, tags, ...dataset } = datasetDto;
       const { id } = dataset;
@@ -417,17 +417,11 @@ export class DatasetCommandService {
     };
 
     if (vocabSchemaName !== undefined) {
-      dataset.vocabSchemaName = vocabSchemaName;
-      if (dataset.dialect === "hana") {
-        dataset.vocabSchemaName = dataset.vocabSchemaName?.toUpperCase();
-      }
+      dataset.vocabSchemaName = toUpperCaseIfHana(vocabSchemaName, dataset.dialect);
     }
 
     if (resultsSchemaName !== undefined) {
-      dataset.resultsSchemaName = resultsSchemaName;
-      if (dataset.dialect === "hana") {
-        dataset.resultsSchemaName = dataset.resultsSchemaName?.toUpperCase();
-      }
+      dataset.resultsSchemaName = toUpperCaseIfHana(resultsSchemaName, dataset.dialect);
     }
 
     await this.datasetRepo.updateDataset(
