@@ -3,7 +3,7 @@
     <NotificationStack />
     <AtlasView v-if="atlasStore.showAtlas" />
     <patientanalytics v-show="!getInitialLoad" />
-    <splashScreen v-if="getInitialLoad" />
+    <splashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
   </div>
 </template>
 
@@ -35,20 +35,6 @@ export default {
   },
   mounted() {
     this.setLocale()
-
-    const datasetChangeHandler = () => {
-      this.setDataset(this.portalContext.datasetId)
-      this.setDatasetReleaseId(this.portalContext.releaseId)
-      this.$store.commit('RESET_DATASET_CACHE')
-      // Update the config in state before doing further queries
-      this.requestMriConfig()
-        .then(() => {
-          this.setFireRequest()
-        })
-        .catch(e => {
-          console.error('[App] Config reload on dataset change failed', e)
-        })
-    }
     // Bind shareCohortDefinition to window for manual testing
     this.bindShareCohortDefinition()
 
@@ -56,7 +42,10 @@ export default {
     this.processDeepLinkIfPresent()
   },
   computed: {
-    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad']),
+    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad', 'getDatasetReloadInProgress']),
+    showSplashScreen() {
+      return this.getInitialLoad || this.getDatasetReloadInProgress
+    },
   },
   methods: {
     ...mapActions([

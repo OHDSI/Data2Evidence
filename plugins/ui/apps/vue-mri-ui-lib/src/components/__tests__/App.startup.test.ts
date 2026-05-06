@@ -5,6 +5,12 @@ import { vi } from 'vitest'
 import { usePortalContextStore } from '../../stores/portalContext'
 import { useAtlasStore } from '../../stores/atlas'
 
+vi.mock('../../composables/useDeepLink', () => ({
+  useDeepLink: () => ({
+    processDeepLink: () => Promise.resolve(),
+  }),
+}))
+
 vi.mock('../../components/PatientAnalytics.vue', () => ({
   default: {
     name: 'patientanalytics',
@@ -38,11 +44,12 @@ describe('App startup', () => {
     setActivePinia(createPinia())
   })
 
-  const createVuexStore = () =>
+  const createVuexStore = ({ initialLoad = true, datasetReloadInProgress = false } = {}) =>
     createStore({
       getters: {
         getConfigSelectionDialogState: () => ({ show: false }),
-        getInitialLoad: () => true,
+        getInitialLoad: () => initialLoad,
+        getDatasetReloadInProgress: () => datasetReloadInProgress,
       },
       actions: {
         requestMriConfig: () => Promise.resolve(),
@@ -75,6 +82,30 @@ describe('App startup', () => {
     const wrapper = mount(App as any, {
       global: {
         plugins: [pinia, createVuexStore()],
+      },
+    })
+
+    expect(wrapper.find('patientanalytics').exists()).toBe(true)
+    expect(wrapper.find('splashscreen').exists()).toBe(true)
+  })
+
+  it('shows splash during dataset reload after initial load', async () => {
+    const pinia = createPinia()
+    setActivePinia(pinia)
+
+    const atlasStore = useAtlasStore()
+    atlasStore.closeAtlas()
+
+    const portalContext = usePortalContextStore()
+    portalContext.applyProps({
+      datasetId: 'dataset-1',
+      releaseId: 'release-1',
+    })
+
+    const App = (await import('../../App.vue')).default
+    const wrapper = mount(App as any, {
+      global: {
+        plugins: [pinia, createVuexStore({ initialLoad: false, datasetReloadInProgress: true })],
       },
     })
 

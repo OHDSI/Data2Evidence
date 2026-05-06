@@ -1,5 +1,6 @@
 import type { Store } from 'vuex'
 import type { usePortalContextStore } from '@/stores/portalContext'
+import { SET_DATASET_RELOAD_IN_PROGRESS } from '@/store/mutation-types'
 
 type PortalContextLike = ReturnType<typeof usePortalContextStore>
 
@@ -18,8 +19,17 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
     previousDatasetId = datasetId
     previousReleaseId = releaseId
 
-    vuexStore.commit('RESET_DATASET_CACHE')
-    await vuexStore.dispatch('requestMriConfig')
-    vuexStore.dispatch('setFireRequest')
+    vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: true })
+    try {
+      await vuexStore.dispatch('setDataset', datasetId)
+      await vuexStore.dispatch('setDatasetReleaseId', releaseId)
+      vuexStore.commit('RESET_DATASET_CACHE')
+      await vuexStore.dispatch('requestMriConfig')
+      await vuexStore.dispatch('setFireRequest')
+    } catch (error) {
+      console.error('[datasetWatcher] Config reload on dataset change failed', error)
+    } finally {
+      vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: false })
+    }
   })
 }

@@ -4,6 +4,7 @@ import { nextTick } from 'vue'
 import { createPortalContextStore } from '@/stores/portalContext'
 import { installDatasetChangeWatcher } from '../datasetWatcher'
 import { installPortalPropsListener } from '../portalPropsListener'
+import { SET_DATASET_RELOAD_IN_PROGRESS } from '@/store/mutation-types'
 
 describe('bootstrap/datasetPropagation', () => {
   it('propagates custom-props-changed dataset updates through watcher flow', async () => {
@@ -47,9 +48,13 @@ describe('bootstrap/datasetPropagation', () => {
 
     await vi.waitFor(() => {
       expect(calls).toEqual([
+        `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
+        'dispatch:setDataset',
+        'dispatch:setDatasetReleaseId',
         'commit:RESET_DATASET_CACHE',
         'dispatch:requestMriConfig',
         'dispatch:setFireRequest',
+        `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
       ])
     })
 
