@@ -1,7 +1,6 @@
-@layer base, theme, utilities;
+@import "tailwindcss";
 
-@import "tailwindcss/theme.css" layer(theme);
-@import "tailwindcss/utilities.css" layer(utilities);
+@import "react-notebook/style.css";
 
 @plugin "@tailwindcss/typography";
 
