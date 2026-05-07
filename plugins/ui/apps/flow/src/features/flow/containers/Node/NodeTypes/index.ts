@@ -15,7 +15,7 @@ import { NodeChoiceAttr, NodeTag, NodeType, NodeTypeChoice } from "./type";
 import { ConceptMappingNode } from "./ConceptMappingNode/ConceptMappingNode";
 import { WhiteRabbitNode } from "./WhiteRabbitNode/WhiteRabbitNode";
 import { TransformDataNode } from "./TransformNode/TransformDataNode";
-import { FhirMappingWriterNode } from "./FhirMappingWriterNode/FhirMappingWriterNode";
+import { FhirMappingNode } from "./FhirMappingNode/FhirMappingNode";
 
 export const NODE_TYPES: {
   [key in NodeType]: ComponentType<NodeProps<any>>;
@@ -33,7 +33,7 @@ export const NODE_TYPES: {
   subflow: GroupNode,
   white_rabbit_node: WhiteRabbitNode,
   transform_fhir_data_node: TransformDataNode,
-  fhir_mapping_writer_node: FhirMappingWriterNode,
+  fhir_mapping_node: FhirMappingNode,
 };
 
 export const NODE_COLORS: {
@@ -52,7 +52,7 @@ export const NODE_COLORS: {
   subflow: "#999fcb",
   white_rabbit_node: "#999fcb",
   transform_fhir_data_node: "#999fcb",
-  fhir_mapping_writer_node: "#999fcb",
+  fhir_mapping_node: "#999fcb",
 };
 
 export const NodeChoiceMap: { [key in NodeTypeChoice]: NodeChoiceAttr } = {
@@ -141,7 +141,7 @@ test_exec <- function(myinput) {
     tag: NodeTag.Experimental,
     defaultData: {},
   },
-  fhir_mapping_writer_node: {
+  fhir_mapping_node: {
     title: "FHIR Mapping Writer",
     description: "Write FHIR-to-OMOP lineage to the mapping schema.",
     tag: NodeTag.Experimental,
@@ -149,7 +149,8 @@ test_exec <- function(myinput) {
       database_code: "",
       schema_name: "",
       omop_table_name: "",
-      fhir_node: "",
+      fhir_resource_type: "",
+      write_key_map: true,
     },
   },
   file_node: {

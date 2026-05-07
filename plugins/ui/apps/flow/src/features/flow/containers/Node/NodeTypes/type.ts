@@ -12,7 +12,7 @@ export type NodeType =
   | "subflow"
   | "white_rabbit_node"
   | "transform_fhir_data_node"
-  | "fhir_mapping_writer_node";
+  | "fhir_mapping_node";
 
 export type NodeTypeChoice = Exclude<Exclude<NodeType, "start">, "subflow">;
 

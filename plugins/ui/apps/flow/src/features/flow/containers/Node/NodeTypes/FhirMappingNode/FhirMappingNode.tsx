@@ -5,18 +5,19 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { HandleIOType } from "../type";
-import { FhirMappingWriterDrawer } from "./FhirMappingWriterDrawer";
+import { FhirMappingDrawer } from "./FhirMappingDrawer";
 import { TargetHandle } from "../../CustomHandle/CustomHandle";
 
-export interface FhirMappingWriterNodeData extends NodeDataState {
+export interface FhirMappingNodeData extends NodeDataState {
   database_code: string;
   schema_name: string;
   omop_table_name: string;
-  fhir_node: string;
+  fhir_resource_type: string;
+  write_key_map: boolean;
 }
 
-export const FhirMappingWriterNode = (
-  node: NodeProps<FhirMappingWriterNodeData>
+export const FhirMappingNode = (
+  node: NodeProps<FhirMappingNodeData>
 ) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
@@ -24,7 +25,7 @@ export const FhirMappingWriterNode = (
 
   return (
     <>
-      <NodeLayout<FhirMappingWriterNodeData>
+      <NodeLayout<FhirMappingNodeData>
         className="db-writer-node"
         name={data.name}
         onSettingClick={openSetting}
@@ -38,7 +39,7 @@ export const FhirMappingWriterNode = (
       >
         {data.description}
       </NodeLayout>
-      <FhirMappingWriterDrawer
+      <FhirMappingDrawer
         node={node}
         title="Configure FHIR Mapping Writer"
         className="db-writer-drawer"

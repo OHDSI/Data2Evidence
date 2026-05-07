@@ -6,7 +6,7 @@ import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react"
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import FormHelperText from "@mui/material/FormHelperText";
-import { Box, TextInput } from "@portal/components";
+import { Box, Checkbox, TextInput } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
 import { useGetDatabasesQuery } from "~/features/flow/slices";
 import {
@@ -19,16 +19,15 @@ import { NodeState } from "~/features/flow/types";
 import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import { SelectSource } from "../../SelectSource/SelectSource";
-import { FhirMappingWriterNodeData } from "./FhirMappingWriterNode";
+import { FhirMappingNodeData } from "./FhirMappingNode";
 
-export interface FhirMappingWriterDrawerProps
+export interface FhirMappingDrawerProps
   extends Omit<NodeDrawerProps, "children"> {
-  node: NodeProps<FhirMappingWriterNodeData>;
+  node: NodeProps<FhirMappingNodeData>;
   onClose: () => void;
 }
 
-interface FormData extends FhirMappingWriterNodeData {}
+interface FormData extends FhirMappingNodeData {}
 
 interface FormError {
   name: { duplicate: boolean };
@@ -40,14 +39,15 @@ const EMPTY_FORM_DATA: FormData = {
   database_code: "",
   schema_name: "",
   omop_table_name: "",
-  fhir_node: "",
+  fhir_resource_type: "",
+  write_key_map: true,
 };
 
 const EMPTY_FORM_ERROR: FormError = {
   name: { duplicate: false },
 };
 
-export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
+export const FhirMappingDrawer: FC<FhirMappingDrawerProps> = ({
   node,
   onClose,
   ...props
@@ -70,7 +70,8 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
         database_code: node.data.database_code,
         schema_name: node.data.schema_name,
         omop_table_name: node.data.omop_table_name,
-        fhir_node: node.data.fhir_node,
+        fhir_resource_type: node.data.fhir_resource_type,
+        write_key_map: node.data.write_key_map ?? true,
       });
     } else {
       setFormData({ ...EMPTY_FORM_DATA });
@@ -83,7 +84,7 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
       return;
     }
     setFormError(EMPTY_FORM_ERROR);
-    const updated: NodeState<FhirMappingWriterNodeData> = {
+    const updated: NodeState<FhirMappingNodeData> = {
       ...nodeState,
       data: formData,
     };
@@ -123,12 +124,12 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
         />
       </Box>
       <Box mb={4}>
-        <SelectSource
-          nodeId={node.id}
-          sourceOptions={null}
-          label="FHIR source node"
-          value={formData.fhir_node}
-          onChange={(fhir_node: string) => onFormDataChange({ fhir_node })}
+        <TextInput
+          label="FHIR resource type"
+          value={formData.fhir_resource_type}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ fhir_resource_type: e.target.value })
+          }
         />
       </Box>
       <Box mb={4}>
@@ -164,6 +165,15 @@ export const FhirMappingWriterDrawer: FC<FhirMappingWriterDrawerProps> = ({
           value={formData.omop_table_name}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ omop_table_name: e.target.value })
+          }
+        />
+      </Box>
+      <Box mb={4}>
+        <Checkbox
+          label="Write FHIR-OMOP key mapping"
+          checked={formData.write_key_map}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ write_key_map: e.target.checked })
           }
         />
       </Box>

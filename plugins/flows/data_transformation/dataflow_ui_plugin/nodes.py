@@ -14,6 +14,7 @@ from asyncio import iscoroutine, run
 
 import pandas as pd
 from pandas.api.types import is_list_like, is_dict_like
+import sqlalchemy as sql
 
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
@@ -32,57 +33,85 @@ from .nodeutils.csvutils import convert_csv_to_dataframe
 from .fhirutils.utils import omop_transform_utils
 import psycopg2.sql as pg_sql
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE
 
 
-def _ensure_mapping_schema(database_code: str, schema_name: str) -> None:
+def _ensure_mapping_schema(database_code: str, schema_name: str, dao: DBDao = None, use_cache_db: bool = True) -> None:
     schema = f"{database_code}_{schema_name}_fhir_mapping"
-    dao = DBDao(use_cache_db=True, database_code=database_code)
+    if dao is None:
+        dao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
 
     if not dao.check_schema_exists(schema):
         dao.create_schema(schema)
 
-    dao.execute_sql(pg_sql.SQL(
-        """
-        CREATE TABLE IF NOT EXISTS {schema}.data_source (
-            id                 SERIAL PRIMARY KEY,
-            fhir_resource_type VARCHAR NOT NULL,
-            fhir_resource_id   VARCHAR NOT NULL,
-            omop_table_name    VARCHAR NOT NULL,
-            omop_id            VARCHAR,
-            flow_run_id        VARCHAR,
-            transformed_at     TIMESTAMP DEFAULT NOW()
-        )
-        """
-    ).format(schema=pg_sql.Identifier(schema)))
+    if hasattr(dao, "execute_sql"):
+        dao.execute_sql(pg_sql.SQL(
+            """
+            CREATE TABLE IF NOT EXISTS {schema}.data_source (
+                fhir_resource_type VARCHAR NOT NULL,
+                fhir_resource_id   VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                flow_run_id        VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+            """
+        ).format(schema=pg_sql.Identifier(schema)))
 
-    dao.execute_sql(pg_sql.SQL(
-        """
-        CREATE UNIQUE INDEX IF NOT EXISTS data_source_fhir_resource_id_omop_table_name_idx
-        ON {schema}.data_source (fhir_resource_id, omop_table_name)
-        """
-    ).format(schema=pg_sql.Identifier(schema)))
 
-    dao.execute_sql(pg_sql.SQL(
-        """
-        CREATE TABLE IF NOT EXISTS {schema}.fhir_omop_key_map (
-            id                 SERIAL PRIMARY KEY,
-            fhir_id            VARCHAR NOT NULL,
-            fhir_resource_type VARCHAR NOT NULL,
-            omop_table_name    VARCHAR NOT NULL,
-            omop_id            VARCHAR,
-            transformed_at     TIMESTAMP DEFAULT NOW()
-        )
-        """
-    ).format(schema=pg_sql.Identifier(schema)))
+        dao.execute_sql(pg_sql.SQL(
+            """
+            CREATE TABLE IF NOT EXISTS {schema}.fhir_omop_key_map (
+                fhir_id            VARCHAR NOT NULL,
+                fhir_resource_type VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+            """
+        ).format(schema=pg_sql.Identifier(schema)))
 
-    dao.execute_sql(pg_sql.SQL(
-        """
-        CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
-        ON {schema}.fhir_omop_key_map (fhir_id, fhir_resource_type)
-        """
-    ).format(schema=pg_sql.Identifier(schema)))
+        dao.execute_sql(pg_sql.SQL(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+            ON {schema}.fhir_omop_key_map (fhir_id, fhir_resource_type)
+            """
+        ).format(schema=pg_sql.Identifier(schema)))
+    else:
+        escaped_schema = schema.replace('"', '""')
+        engine = dao.engine
+        with engine.begin() as connection:
+            connection.execute(sql.text(
+                f'''
+                CREATE TABLE IF NOT EXISTS "{escaped_schema}".data_source (
+                    fhir_resource_type VARCHAR NOT NULL,
+                    fhir_resource_id   VARCHAR NOT NULL,
+                    omop_table_name    VARCHAR NOT NULL,
+                    omop_id            VARCHAR,
+                    flow_run_id        VARCHAR,
+                    transformed_at     TIMESTAMP DEFAULT NOW()
+                )
+                '''
+            ))
+            connection.execute(sql.text(
+                f'''
+                CREATE TABLE IF NOT EXISTS "{escaped_schema}".fhir_omop_key_map (
+                    fhir_id            VARCHAR NOT NULL,
+                    fhir_resource_type VARCHAR NOT NULL,
+                    omop_table_name    VARCHAR NOT NULL,
+                    omop_id            VARCHAR,
+                    transformed_at     TIMESTAMP DEFAULT NOW()
+                )
+                '''
+            ))
+            connection.execute(sql.text(
+                f'''
+                CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+                ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type)
+                '''
+            ))
 
 
 
@@ -396,6 +425,37 @@ class TransformFhirDataNode(Node):
         super().__init__(name, _node)
         self.structure_map = _node["structure_map"]
         self.dataframe = _node["dataframe"]
+
+    def _expand_list_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        expanded_rows = []
+
+        for _, row in df.iterrows():
+            row_dict = row.to_dict()
+            list_lengths = [len(value) for value in row_dict.values() if isinstance(value, list)]
+
+            if not list_lengths:
+                expanded_rows.append(row_dict)
+                continue
+
+            max_len = max(list_lengths)
+            for index in range(max_len):
+                expanded_row = {}
+                for column, value in row_dict.items():
+                    if isinstance(value, list):
+                        if not value:
+                            expanded_row[column] = None
+                        elif len(value) == 1:
+                            expanded_row[column] = value[0]
+                        else:
+                            expanded_row[column] = value[index] if index < len(value) else None
+                    else:
+                        expanded_row[column] = value
+                expanded_rows.append(expanded_row)
+
+        if not expanded_rows:
+            return df.iloc[0:0].copy()
+
+        return pd.DataFrame(expanded_rows)
         
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
@@ -486,6 +546,26 @@ class TransformFhirDataNode(Node):
                     transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
                     transformed_omop.append(transformed_data)
             df = pd.json_normalize(transformed_omop)
+            df = self._expand_list_columns(df)
+            data_columns = [col for col in df.columns if col != "meta.profile"]
+            if data_columns:
+                non_empty_mask = df[data_columns].notna().any(axis=1)
+                filtered_count = int((~non_empty_mask).sum())
+                if filtered_count:
+                    print(f"Filtered {filtered_count} empty transformed rows")
+                df = df.loc[non_empty_mask].reset_index(drop=True)
+            print(f"FHIR Transform completed successfully")
+            print(f"Transformed DataFrame shape: {df.shape}")
+            print("Transformed DataFrame dtypes:")
+            print(df.dtypes.to_string())
+            print("Transformed DataFrame rows:")
+            with pd.option_context(
+                "display.max_rows", None,
+                "display.max_columns", None,
+                "display.width", None,
+                "display.max_colwidth", None,
+            ):
+                print(df.to_string(index=False))
         else:
             df = None
         return df
@@ -611,7 +691,6 @@ class ConceptMappingNode(Node):
             return Result(False,  concept_mapping_df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-
 
 class DataMappingNode(Node):
     def __init__(self, name, _node):
@@ -786,67 +865,105 @@ class DataMappingNode(Node):
         else:
             return Result(False, target_table_dfs, self, task_run_context)
 
-
-
-class FhirMappingWriterNode(Node):
+class FhirMappingNode(Node):
     """
-    Writes FHIR resource identifiers to the fhir_mapping schema (cache DB).
-    omop_id is left null and filled in by a downstream Python node after the OMOP insert.
+    Runs after DbWriter. Queries {omop_table_name}_source_value and {omop_table_name}_id
+    from the OMOP table, then upserts the FHIR→OMOP lineage into the fhir_mapping schema.
+    Re-runs are idempotent via ON CONFLICT DO UPDATE.
     Schema: {database_code}_{schema_name}_fhir_mapping
-    Re-runs are idempotent — duplicate records are silently skipped.
     """
     def __init__(self, name, node):
         super().__init__(name, node)
         self.database_code = node["database_code"]
         self.schema_name = node["schema_name"]
         self.omop_table_name = node["omop_table_name"]
-        self.fhir_node = node["fhir_node"]
+        self.fhir_resource_type = node["fhir_resource_type"]
+        self.write_key_map = node.get("write_key_map", True)
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
-            fhir_result = _input.get(self.fhir_node)
-            if fhir_result is None:
-                raise Exception(f"FHIR source node '{self.fhir_node}' not found in input")
+            mapping_schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
+            omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
+            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
+            _ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
 
-            fhir_df = fhir_result.result
-            if fhir_df is None or fhir_df.empty:
-                return Result(False, 0, self, task_run_context)
-
+            source_value_col = f"{self.omop_table_name}_source_value"
+            omop_id_col = f"{self.omop_table_name}_id"
             flow_run_id = str(task_run_context.get("flow_run_id"))
 
-            records = []
-            for fhir_content in fhir_df["content"]:
-                key = json.loads(fhir_content) if isinstance(fhir_content, str) else fhir_content
-                records.append({
-                    "fhir_resource_type": key.get("resourceType"),
-                    "fhir_resource_id":   key.get("id"),
-                })
+            escaped_schema = self.schema_name.replace('"', '""')
+            escaped_table = self.omop_table_name.replace('"', '""')
+            escaped_source_value_col = source_value_col.replace('"', '""')
+            escaped_omop_id_col = omop_id_col.replace('"', '""')
 
-            _ensure_mapping_schema(self.database_code, self.schema_name)
-            schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
-            dao = DBDao(use_cache_db=True, database_code=self.database_code)
+            omop_rows_df = pd.read_sql_query(
+                sql.text(
+                    f'''SELECT "{escaped_source_value_col}" AS fhir_id, "{escaped_omop_id_col}" AS omop_id
+                        FROM "{escaped_schema}"."{escaped_table}"
+                        WHERE "{escaped_source_value_col}" IS NOT NULL'''
+                ),
+                omop_dao.engine,
+            )
+            omop_rows = list(omop_rows_df.itertuples(index=False, name=None))
 
-            dao.batch_insert_values(
-                schema, "data_source",
-                ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "flow_run_id"],
-                [(r["fhir_resource_type"], r["fhir_resource_id"], self.omop_table_name, flow_run_id) for r in records],
-                on_conflict="ON CONFLICT DO NOTHING",
+            if not omop_rows:
+                return Result(False, {"inserted": 0, "updated": 0}, self, task_run_context)
+
+            data_source_values = [
+                {
+                    "fhir_resource_type": self.fhir_resource_type,
+                    "fhir_resource_id": str(fhir_id),
+                    "omop_table_name": self.omop_table_name,
+                    "omop_id": str(omop_id),
+                    "flow_run_id": flow_run_id,
+                }
+                for fhir_id, omop_id in omop_rows
+            ]
+
+            key_map_values = [
+                {
+                    "fhir_id": str(fhir_id),
+                    "fhir_resource_type": self.fhir_resource_type,
+                    "omop_table_name": self.omop_table_name,
+                    "omop_id": str(omop_id),
+                }
+                for fhir_id, omop_id in omop_rows
+            ]
+
+            mapping_dao.batch_insert_values(
+                mapping_schema,
+                "data_source",
+                ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "omop_id", "flow_run_id"],
+                [
+                    (
+                        row["fhir_resource_type"],
+                        row["fhir_resource_id"],
+                        row["omop_table_name"],
+                        row["omop_id"],
+                        row["flow_run_id"],
+                    )
+                    for row in data_source_values
+                ],
             )
 
-            km_values = [
-                (r["fhir_resource_id"], r["fhir_resource_type"], self.omop_table_name)
-                for r in records
-                if r["fhir_resource_id"] and r["fhir_resource_type"]
-            ]
-            if km_values:
-                dao.batch_insert_values(
-                    schema, "fhir_omop_key_map",
-                    ["fhir_id", "fhir_resource_type", "omop_table_name"],
-                    km_values,
-                    on_conflict="ON CONFLICT DO NOTHING",
+            if self.write_key_map:
+                mapping_dao.batch_insert_values(
+                    mapping_schema,
+                    "fhir_omop_key_map",
+                    ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
+                    [
+                        (
+                            row["fhir_id"],
+                            row["fhir_resource_type"],
+                            row["omop_table_name"],
+                            row["omop_id"],
+                        )
+                        for row in key_map_values
+                    ],
+                    on_conflict="ON CONFLICT (fhir_id, fhir_resource_type) DO NOTHING",
                 )
 
-            return Result(False, len(records), self, task_run_context)
+            return Result(False, {"inserted": len(omop_rows), "updated": len(omop_rows)}, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -912,8 +1029,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = ConceptMappingNode(nodename, node)
         case NodeType.TRANSFORMFHIRDATA:
             nodeobj = TransformFhirDataNode(nodename, node)
-        case NodeType.FHIRMAPPINGWRITER:
-            nodeobj = FhirMappingWriterNode(nodename, node)
+        case NodeType.FHIRMAPPING:
+            nodeobj = FhirMappingNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())

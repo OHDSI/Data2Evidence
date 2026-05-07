@@ -6,7 +6,7 @@ import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { HandleIOType } from "../type";
 import { DbWriterDrawer } from "./DbWriterDrawer";
-import { TargetHandle } from "../../CustomHandle/CustomHandle";
+import { SourceHandle, TargetHandle } from "../../CustomHandle/CustomHandle";
 import "./DbWriterNode.scss";
 
 export interface DbWriterNodeData extends NodeDataState {
@@ -33,7 +33,9 @@ export const DbWriterNode = (node: NodeProps<DbWriterNodeData>) => {
         LeftHandle={
           <TargetHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />
         }
-        RightHandle={null}
+        RightHandle={
+          <SourceHandle ioType={HandleIOType.Any} nodeId={node.id} />
+        }
       >
         {data.description}
       </NodeLayout>
