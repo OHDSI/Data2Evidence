@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!-- For local development only, production uses another index.html in the resources folder. -->
+<html lang="en">
+  <head>
+    <title>Atlas</title>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="importmap-type" content="systemjs-importmap" />
+    <link rel="icon" type="image/x-icon" href="/favicon-atlas.ico" />
+    <script nonce="__NONCE__">
+      window.ENV_DATA = typeof __ENV_DATA__ !== 'undefined' ? __ENV_DATA__ : {}
+    </script>
+    <!--
+      AUTH_CONFIG must be a regular script (not type="module") so it runs synchronously
+      before authenticate.js. Vite replaces %VITE_*% placeholders during serve/build.
+    -->
+    <script nonce="__NONCE__">
+      window.AUTH_CONFIG = {
+        useMockServer: '%VITE_STANDALONE_ATLAS%' === 'true',
+        redirectUrl: '%VITE_REDIRECT_URL%' || 'https://localhost:8081',
+        clientId: '%VITE_CLIENT_ID%' || '',
+        authority: '%VITE_AUTHORITY%' || 'https://localhost:41100',
+        issuer: '%VITE_ISSUER%' || 'https://localhost:8081/oidc',
+        authEndpoint: '%VITE_AUTH_ENDPOINT%' || 'https://localhost:8081/oidc/auth',
+        tokenEndpoint: '%VITE_TOKEN_ENDPOINT%' || 'https://localhost:8081/oauth/token',
+        endSessionEndpoint: '%VITE_END_SESSION_ENDPOINT%' || 'https://localhost:8081/oidc/session/end',
+        revocationEndpoint: '%VITE_REVOCATION_ENDPOINT%' || 'https://localhost:8081/oidc/token/revocation'
+      }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/oidc-client-ts@latest/dist/browser/oidc-client-ts.min.js"></script>
+    <script type="text/javascript" src="/authenticate.js"></script>
+    <script type="text/javascript" src="/system.min.js"></script>
+  </head>
+  <body style="margin: 0px; display: flex; flex-direction: column">
+    <div id="logout-container"></div>
+
+    <!-- Uncomment the Portal Header when developing without single-spa -->
+    <!-- <div
+      style="
+        width: 100vw;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 10;
+        box-shadow: 0 0.5px 8px 0 #acaba8;
+      "
+    >
+      <div>PORTAL HEADER</div>
+    </div> -->
+    <div class="vue-main" style="height: calc(100%)"></div>
+    <span class="plugin-container"></span>
+
+    <script type="module">
+      // Initialize portalAPI with Vite environment variables
+      const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
+      const defaultDatasource = import.meta.env.VITE_DEFAULT_DATASOURCE || 'SYNPUF1K'
+      const features = import.meta.env.VITE_FEATURES ? JSON.parse(import.meta.env.VITE_FEATURES) : []
+
+      // Set portalAPI immediately with values from environment
+      document.querySelector('.plugin-container').portalAPI = {
+        qeSvcUrl: import.meta.env.VITE_QE_SVC_URL || 'https://localhost:8081',
+        studyId: import.meta.env.VITE_DATASET_ID || '',
+        releaseId: '',
+        async getToken() {
+          return localStorage.getItem('msaltoken')
+        },
+        isAtlas,
+        features: features,
+        featuresLoading: false,
+        username: import.meta.env.VITE_USERNAME || 'admin',
+        locale: import.meta.env.VITE_LOCALE || 'en',
+        debug: import.meta.env.VITE_DEBUG === 'true',
+
+        // DEMO
+        // REACT_APP_PUBLIC_WEBAPI_PROXY_URL: 'http://localhost:3001', // only used when different url from website url
+        REACT_APP_USE_PUBLIC_WEBAPI_PROXY: 'true',
+        REACT_APP_PUBLIC_WEBAPI_DATASOURCE: defaultDatasource,
+      }
+
+      // Conditionally add logout button if not in standalone mode
+      if (!isAtlas) {
+        const logoutContainer = document.getElementById('logout-container')
+        const logoutBtn = document.createElement('button')
+        logoutBtn.id = 'mriBtnLogout'
+        logoutBtn.onclick = () => window.logoutfn?.()
+        logoutBtn.style.cssText = 'float: left; position: absolute; top: 0; right: 0; z-index: 100'
+        logoutBtn.textContent = 'logout'
+        logoutContainer.appendChild(logoutBtn)
+      }
+
+      console.log('PortalAPI initialized with default datasource:', defaultDatasource)
+
+      // Fetch datasource dynamically when in standalone mode and update portalAPI
+      if (isAtlas) {
+        ;(async function () {
+          try {
+            const token = localStorage.getItem('msaltoken')
+            const response = await fetch('/d2e-webapi/source/sources', {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            })
+            if (response.ok) {
+              const sources = await response.json()
+              if (sources && sources.length > 0 && sources[0].sourceKey) {
+                const datasource = sources[0].sourceKey
+                // Update the datasource in portalAPI
+                document.querySelector('.plugin-container').portalAPI.REACT_APP_PUBLIC_WEBAPI_DATASOURCE = datasource
+                console.log('PortalAPI datasource updated to:', datasource)
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to fetch datasource, using default:', error)
+          }
+        })()
+      }
+    </script>
+
+    <!-- Vite entry point -->
+    <script type="module" src="/src/main.ts"></script>
+
+    <import-map-overrides-full show-when-local-storage="devtools"></import-map-overrides-full>
+  </body>
+</html>

@@ -31,8 +31,8 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.13.0-beta"; // Update this as needed
-  default_version: string = "0.13.0"; // Update this as needed default/base version
+  LATEST_DOCKER_TAG_NAME: string = "0.15.0-beta"; // Update this as needed
+  default_version: string = "0.15.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
@@ -181,8 +181,7 @@ class D2ECli {
       SUPABASE_STORAGE_JWT_SECRET: `${this.SUPABASE_STORAGE_JWT_SECRET}`,
       SUPABASE_STORAGE_JWT_TOKEN: `${this.SUPABASE_STORAGE_JWT_TOKEN}`,
       PROJECT_NAME: `${this.PROJECT_NAME}`,
-      // TODO: enable this on next PR
-      // USER_MGMT__ROLE_SOURCE: `logto`,
+      USER_MGMT__ROLE_SOURCE: `logto`,
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
@@ -238,7 +237,7 @@ class D2ECli {
       .description("Usage: d2e [OPTIONS] COMMAND")
       .option(
         "-d, --function-path <path>",
-        "[PATH] Development mode. [PATH] is the path to functions",
+        "[PATH] Development mode. [PATH] is the path to the functions plugin (e.g. ./plugins/functions)",
       )
       .option("-e, --demo", "Include demo database")
       .option("-i, --dicom", "Include DICOM Server")
@@ -514,7 +513,12 @@ class D2ECli {
   patch_demodb() {
     console.log("Patching demodb...");
     const database_host = `${this.PROJECT_NAME}-demodb`;
-    const command = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
+    // Create cohort table if it doesn't exist
+    const createCohortCmd = `docker exec ${database_host} psql -h localhost -U postgres -c "SET search_path TO demo_cdm; CREATE TABLE IF NOT EXISTS cohort (cohort_definition_id integer NOT NULL,subject_id integer NOT NULL,cohort_start_date DATE NOT NULL,cohort_end_date DATE NOT NULL)"`;
+    // Update CDM version to 5.4 - the broadsea-atlasdb uses CDM 5.4 schema
+    // (e.g., ADMITTED_FROM_CONCEPT_ID instead of ADMITTING_SOURCE_CONCEPT_ID)
+    // but may report version 5.3 in cdm_source
+    const updateCdmVersionCmd = `docker exec ${database_host} psql -h localhost -U postgres -c "UPDATE demo_cdm.cdm_source SET cdm_version = '5.4' WHERE cdm_version != '5.4' OR cdm_version IS NULL"`;
     try {
       const options: any = {
         stdio: "inherit",
@@ -523,7 +527,8 @@ class D2ECli {
       if (process.platform !== "win32") {
         options.shell = "/bin/bash";
       }
-      execSync(command, options);
+      execSync(createCohortCmd, options);
+      execSync(updateCdmVersionCmd, options);
     } catch (error) {
       console.error("Error running patch_demodb:", error);
     }
@@ -690,7 +695,7 @@ class D2ECli {
     }
   }
 
-  syncroles() {
+  syncRoles(): { ok: boolean } {
     console.log("Syncing roles...");
     dotenvConfig({ path: this.ENVFILE });
     this.load_env_variables();
@@ -703,33 +708,25 @@ class D2ECli {
     });
     if (syncrolesProc.error) {
       console.error("Failed to run script:", syncrolesProc.error);
-      process.exit(1);
+      return { ok: false };
     }
     if (syncrolesProc.status !== 0) {
       console.error(`syncroles exited with code ${syncrolesProc.status}`);
-      process.exit(1);
+      return { ok: false };
     }
-
-    console.log("Restarting services...");
-    dotenvConfig({ path: this.ENVFILE });
-    const { cmd, env } = this.build_docker_command(
-      this.program.opts(),
-      "start",
-    );
-    console.log(`Executing command: ${cmd}`);
-    const proc = spawn(cmd, {
-      stdio: "inherit",
-      shell: true,
-      env: env,
-    });
-    proc.on("close", (code) => {
-      if (code === 0) {
-        console.log("Process completed successfully.");
-      } else {
-        console.log(`Process exited with code ${code}`);
-      }
-    });
+    return { ok: true };
   }
+
+  needsSyncRoles(): boolean {
+    if (!fs.existsSync(this.ENVFILE)) return false;
+    const env = fs.readFileSync(this.ENVFILE, "utf-8");
+    return !/^USER_MGMT__ROLE_SOURCE=logto\s*$/m.test(env);
+  }
+
+  isFullStart(opts: CliOptions): boolean {
+    return !opts.services || opts.services.length === 0;
+  }
+
   async pull_image(imageName: string, tagName: string): Promise<void> {
     const fullImageName = `${this.DOCKER_IMAGE_PREFIX}${imageName}:${tagName}`;
     const cmd_pull = `docker pull --platform linux/amd64 ${fullImageName}`;
@@ -821,10 +818,24 @@ class D2ECli {
           env: env,
         });
         proc.on("close", (code) => {
-          if (code === 0) {
-            console.log("Process completed successfully.");
-          } else {
+          if (code !== 0) {
             console.log(`Process exited with code ${code}`);
+            return;
+          }
+          console.log("Process completed successfully.");
+
+          if (!this.isFullStart(this.program.opts())) return;
+          if (!this.needsSyncRoles()) return;
+
+          console.log(
+            "Detected pending one-time role migration. Running syncroles...",
+          );
+          const r = this.syncRoles();
+          if (!r.ok) {
+            console.warn(
+              "Auto role sync failed. Services are running, but login may be broken " +
+                "until you run `d2e syncroles` manually.",
+            );
           }
         });
       });
@@ -1136,7 +1147,7 @@ class D2ECli {
     this.program
       .command("setuphttptestenv")
       .description(
-        "Load d2e services. Requires d2e init and d2e setup to be run."
+        "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
@@ -1146,7 +1157,7 @@ class D2ECli {
     this.program
       .command("getbearertoken")
       .description(
-        "Load d2e services. Requires d2e init and d2e setup to be run."
+        "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
@@ -1181,7 +1192,8 @@ class D2ECli {
       .command("syncroles")
       .description("Sync usermgmt roles to Logto (one-time migration)")
       .action(async () => {
-        this.syncroles();
+        const r = this.syncRoles();
+        if (!r.ok) process.exit(1);
       });
     const update_tag = this.program
       .command("updatetag")

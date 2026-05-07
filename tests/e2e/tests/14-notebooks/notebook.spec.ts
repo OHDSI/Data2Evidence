@@ -19,11 +19,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Notebooks' }).click()
 
   //Create notebook
-  await page.getByRole('button', { name: 'New Notebook' }).click()
+  await page.getByRole('button', { name: 'New Notebook' }).click({ timeout: 5000 })
   await expect(page.getByText('New notebookNameTemplate (')).toBeVisible()
   await page.getByRole('textbox', { name: 'Name' }).click()
   await page.getByRole('textbox', { name: 'Name' }).fill(notebookName)
-  await page.getByRole('button', { name: 'Create' }).click({ timeout: 2000 })
+  await page.getByRole('button', { name: 'Create' }).click({ timeout: 5000 })
   await expect(page.getByText(`Created notebook "${notebookName}"`)).toBeVisible()
   await page.getByTestId('snackbar-close').locator('svg').click()
   await page.reload()

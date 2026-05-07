@@ -8,6 +8,16 @@ import { proxy } from "npm:hono/proxy";
 
 import { STATUS_CODE } from "https://deno.land/std/http/status.ts";
 
+const eszipCache = new Map<string, Uint8Array>();
+
+async function readEszipCached(eszipPath: string): Promise<Uint8Array> {
+  const cached = eszipCache.get(eszipPath);
+  if (cached) return cached;
+  const bytes = await Deno.readFile(eszipPath);
+  eszipCache.set(eszipPath, bytes);
+  return bytes;
+}
+
 function substituteEnvVars(input: string): string {
   let result = input;
   let maxIterations = 10;
@@ -188,7 +198,7 @@ async function _callInit(
     fnEnv in xenv ? xenv[fnEnv] : {},
     {
       SERVICE_ROUTES: env.SERVICE_ROUTES,
-      TREX_FUNCTION_PATH: `/usr/src/${dir}`,
+      TREX_FUNCTION_PATH: dir.startsWith('/') ? dir : `${Deno.cwd()}/${dir}`,
     }
   );
   const _myenv = Object.keys(myenv).map((k) => [
@@ -214,8 +224,17 @@ async function _callInit(
     },
   };
   if (eszip) {
-    logger.log(`ESZIP ${dir}${eszip} %%% ${options["importMapPath"]}`);
-    options["maybeEszip"] = await Deno.readFile(`${dir}${eszip}`);
+    const eszipPath = `${dir}${eszip}`;
+    try {
+      const cached = eszipCache.has(eszipPath);
+      if (!cached) {
+        logger.log(`Loading eszip: ${eszipPath}`);
+      }
+      options["maybeEszip"] = await readEszipCached(eszipPath);
+    } catch (e) {
+      logger.error(`Failed to read eszip file ${eszipPath}: ${e}`);
+      return; // Skip this plugin if eszip file is missing
+    }
   }
   try {
     const worker = await Trex.userWorkers.create(options);
@@ -248,7 +267,7 @@ async function _callWorker(
     {
       SERVICE_ROUTES: env.SERVICE_ROUTES,
       DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY,
-      TREX_FUNCTION_PATH: `/usr/src/${dir}`,
+      TREX_FUNCTION_PATH: dir.startsWith('/') ? dir : `${Deno.cwd()}/${dir}`,
     }
   );
   const _myenv = Object.keys(myenv).map((k) => [
@@ -277,8 +296,20 @@ async function _callWorker(
     },
   };
   if (fncfg.eszip) {
-    logger.log(`ESZIP ${dir}${fncfg.eszip} %%% ${options["importMapPath"]}`);
-    options["maybeEszip"] = await Deno.readFile(`${dir}${fncfg.eszip}`);
+    const eszipPath = `${dir}${fncfg.eszip}`;
+    try {
+      const cached = eszipCache.has(eszipPath);
+      if (!cached) {
+        logger.log(`Loading eszip: ${eszipPath}`);
+      }
+      options["maybeEszip"] = await readEszipCached(eszipPath);
+    } catch (e) {
+      logger.error(`Failed to read eszip file ${eszipPath}: ${e}`);
+      return new Response(JSON.stringify({ error: `Plugin eszip not found: ${eszipPath}` }), {
+        status: 500,
+        headers,
+      });
+    }
   }
   try {
     const worker = await Trex.userWorkers.create(options);

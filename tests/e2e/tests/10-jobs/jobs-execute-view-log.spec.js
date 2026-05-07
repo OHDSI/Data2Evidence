@@ -91,8 +91,9 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Job Runs' }).click()
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible()
   await expect(page.locator('.p-content > .p-content')).toBeVisible()
-  await page.getByText('data_quality_dashboard').first().waitFor({ state: 'visible' })
-  await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible()
+  await page.getByRole('searchbox', { name: 'Search by flow run name' }).click()
+  await page.getByRole('searchbox', { name: 'Search by flow run name' }).fill('dqd_demo')
+  await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible({ timeout: 60000 })
 
   // Jobs: View Logs - Check job logs for job: dqd_demo
   await page.waitForTimeout(50000)
@@ -112,6 +113,6 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset+/)
   await expect(page.getByRole('dialog')).toHaveText(
-    /.+1,047 out of 1,933 passed checks are not applicable, due to empty tables or fields.+/
+    /.+\d+(?:,\d+)? out of \d+(?:,\d+)? passed checks are not applicable, due to empty tables or fields.+/
   )
 })

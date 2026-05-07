@@ -37,19 +37,20 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "functions/_shared/alp-libs/nodejs/**"
-              - "functions/analytics-svc/**"
-              - "functions/bookmark-svc/**"
-              - "functions/cdw-svc/**"
-              - "functions/mri-pa-config/**"
-              - "functions/mri-pg-config/**"
-              - "functions/query-gen-svc/**"
+              - "plugins/functions/_shared/alp-libs/nodejs/**"
+              - "plugins/functions/analytics-svc/**"
+              - "plugins/functions/bookmark-svc/**"
+              - "plugins/functions/cdw-svc/**"
+              - "plugins/functions/mri-pa-config/**"
+              - "plugins/functions/mri-pg-config/**"
+              - "plugins/functions/query-gen-svc/**"
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
+              - "tests/backend_integration_tests/**"
               - ".github/workflows/functions-http-tests-hana.yml"
 
   run-http-tests:
@@ -121,7 +122,7 @@ jobs:
         if: success() || failure()
         id: init
         run: |
-          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./functions init
+          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./plugins/functions init
 
       - name: Initialise HANA
         if: success() || failure()
@@ -139,12 +140,11 @@ jobs:
 
       - name: Build system services
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 build
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 build
 
       - name: Manipulate configuration
         run: |
           yq -i '.networks.alp.external=true' docker-compose.yml
-          yq -i '.services.trex.command="npm run start"' docker-compose-local.yml # Display logs
 
       - name: Create network for external to use
         run: |
@@ -152,11 +152,25 @@ jobs:
 
       - name: Start system services
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./functions -p 41100 start
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 start
           echo "Waiting 160 secs for services to start..."
           sleep 160
           echo "Trex Health check..."
           curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
+              echo "webapi-init failed!"
+              docker logs ${PROJECT_NAME:-alp}-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
 
 
       - name: Check status of docker containers
@@ -257,6 +271,9 @@ jobs:
           export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
           echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV # Make available to subsequent github actions steps
 
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV # Used to refresh the access token after role assignment
+
           echo "BEARER TOKEN:"
           echo $BEARER_TOKEN
           # Get the idp sub
@@ -291,7 +308,7 @@ jobs:
               -H 'content-type: application/json' \
               -H 'origin: https://localhost:41100' \
               -H 'referer: https://localhost:41100/d2e/portal/no-access' \
-              --data-raw "{\"userId\":\"$IDP_SUB\"}")
+              --data-raw "{\"userId\":\"$IDP_SUB\",\"sync\":true}")
           printf "%s\n" "$response"
           USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
           echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
@@ -346,6 +363,25 @@ jobs:
           -H 'content-type: application/json' \
           -H 'origin: https://localhost:41100' \
           -H "authorization: Bearer $BEARER_TOKEN"
+
+      - name: Refresh bearer token to pick up researcher role
+        run: |
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --data-urlencode 'grant_type=refresh_token' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode "refresh_token=$REFRESH_TOKEN")
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+
+          echo "REFRESHED BEARER TOKEN:"
+          echo $BEARER_TOKEN
 
       - name: Install dependencies in backend integration tests
         run: |
