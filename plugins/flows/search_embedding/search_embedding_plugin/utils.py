@@ -6,7 +6,6 @@ from psycopg2 import sql as pg_sql
 from pathlib import Path
 from typing import List, Dict, Any
 import duckdb
-import sqlalchemy as sqla
 from _shared_flow_utils.dao.DBDao import DBDao
 
 DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
@@ -113,55 +112,4 @@ def resolve_duckdb_file_path(duckdb_database_name: str, folder_path: str) -> str
     Returns the full path to the DuckDB database file
     """
     return str(Path(folder_path) / f"{duckdb_database_name}.db")
-
-
-# ── HANA-specific helpers ──────────────────────────────────────────────────────
-
-def create_hana_tmp_embedding_table(dbdao: DBDao, schema_name: str, tmp_table: str) -> None:
-    with dbdao.engine.connect() as conn:
-        conn.execute(sqla.text(
-            f'DROP TABLE IF EXISTS "{schema_name}"."{tmp_table}"'
-        ))
-        conn.execute(sqla.text(
-            f'CREATE TABLE "{schema_name}"."{tmp_table}" '
-            f'(CONCEPT_ID INTEGER, VEC REAL_VECTOR(384))'
-        ))
-        conn.commit()
-
-
-def batch_insert_hana_tmp(dbdao: DBDao, schema_name: str, tmp_table: str,
-                           concept_ids: List[int], embeddings: List[List[float]]) -> None:
-    rows = [
-        {"cid": int(cid), "vec": f"[{','.join(str(v) for v in emb)}]"}
-        for cid, emb in zip(concept_ids, embeddings)
-    ]
-    with dbdao.engine.connect() as conn:
-        conn.execute(
-            sqla.text(
-                f'INSERT INTO "{schema_name}"."{tmp_table}" (CONCEPT_ID, VEC) '
-                f'VALUES (:cid, TO_REAL_VECTOR(:vec))'
-            ),
-            rows,
-        )
-        conn.commit()
-
-
-def add_embedding_column_hana(dbdao: DBDao, schema_name: str, embedding_col: str) -> None:
-    with dbdao.engine.connect() as conn:
-        conn.execute(sqla.text(
-            f'ALTER TABLE "{schema_name}".CONCEPT '
-            f'ADD ("{embedding_col}" REAL_VECTOR(384))'
-        ))
-        conn.commit()
-
-
-def merge_hana_embeddings(dbdao: DBDao, schema_name: str, tmp_table: str, embedding_col: str) -> None:
-    with dbdao.engine.connect() as conn:
-        conn.execute(sqla.text(
-            f'MERGE INTO "{schema_name}".CONCEPT c '
-            f'USING "{schema_name}"."{tmp_table}" t '
-            f'ON c.CONCEPT_ID = t.CONCEPT_ID '
-            f'WHEN MATCHED THEN UPDATE SET c."{embedding_col}" = t.VEC'
-        ))
-        conn.commit()
 
