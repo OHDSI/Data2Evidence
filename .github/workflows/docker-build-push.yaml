@@ -77,13 +77,14 @@ jobs:
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
+              - ".github/workflows/docker-build-push.yaml"
             rkernel:
               - "./services/enterprise-gateway/CustomKernelManager/**"
               - "./services/enterprise-gateway/kernels/**"
               - "./services/enterprise-gateway/r-strategus-lib/**"
               - "./plugins/flows/hades/renv.lock"
               - "./plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              - ".github/workflows/pr-ci.yml"
+              - ".github/workflows/docker-build-push.yaml"
             plugins:
               - "plugins/flows/**"
               - "package.json"
@@ -92,7 +93,7 @@ jobs:
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
               - "services/trex/ext/**"
-              - ".github/workflows/pr-ci.yml"
+              - ".github/workflows/docker-build-push.yaml"
             http_tests:
               - "plugins/functions/_shared/alp-libs/nodejs/**"
               - "plugins/functions/analytics-svc/**"
@@ -108,11 +109,13 @@ jobs:
               - "docker-compose.yml"
               - "scripts/**"
               - "tests/backend_integration_tests/**"
-              - ".github/workflows/pr-ci.yml"
+              - ".github/workflows/docker-build-push.yaml"
             ui:
               - "plugins/ui/**"
+              - ".github/workflows/docker-build-push.yaml"
             flow_package_json:
               - "plugins/flows/base/package.json"
+              - ".github/workflows/docker-build-push.yaml"
 
   build_images:
     needs: [setup]
