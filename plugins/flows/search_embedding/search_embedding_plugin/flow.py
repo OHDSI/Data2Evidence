@@ -69,29 +69,30 @@ def create_embeddings_hana(dbdao_hana, use_trex_connection, database_code, schem
     logger = get_run_logger()
     logger.info("***************** Start embedding (HANA -> cache) *****************")
 
-    # 1. Read concept_id, concept_name from HANA
+    # 1. Read concept_id, concept_name from HANA concept table
     with dbdao_hana.engine.connect() as conn:
         result = conn.execute(sqla.text(
             f'SELECT CONCEPT_ID, CONCEPT_NAME FROM "{schema_name}".CONCEPT'
         ))
         concept = pd.DataFrame(result.fetchall(), columns=['concept_id', 'concept_name'])
 
-    # 2. Create embedding and write to cache via Trex connection
+    # 2. Create embeddings and write to hana cache database concept_embeddings table via Trex connection
     cache_dao = TrexDao(use_cache_db=use_trex_connection, database_code=database_code)
     cache_dao.execute_sql("LOAD vss")
     
     embedding_cols = {'concept_id': 'INTEGER', embedding_col_name: 'FLOAT[384]'}
     embedding_table = 'concept_embeddings'
-    batch_embedding_concept_table(concept, tokenizer, model, device, cache_dao, schema_name, embedding_table, embedding_cols)
+    db_schema = f"{database_code}.{schema_name}"
+    batch_embedding_concept_table(concept, tokenizer, model, device, cache_dao, db_schema, embedding_table, embedding_cols)
 
-    # 3. HNSW index on the embedding column
+    # 3. Create HNSW index on the embedding column
     cache_dao.execute_sql(pg_sql.SQL(
         "SET hnsw_enable_experimental_persistence=TRUE; "
         "CREATE INDEX IF NOT EXISTS {index_col} ON {schema}.{table} "
         "USING HNSW ({col}) WITH (metric = 'cosine');"
     ).format(
         index_col=pg_sql.Identifier(index_col),
-        schema=pg_sql.Identifier(schema_name),
+        schema=pg_sql.Identifier(*db_schema.split(".")),
         table=pg_sql.Identifier(embedding_table),
         col=pg_sql.Identifier(embedding_col_name),
     ))

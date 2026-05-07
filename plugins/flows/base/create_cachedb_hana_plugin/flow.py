@@ -46,11 +46,7 @@ def create_schema_via_trex(use_trex_connection: bool, database_code: str, schema
 
     trex_dao = TrexDao(use_cache_db=use_trex_connection, database_code=database_code)                             
     trex_dao.execute_sql("CALL pg_clear_cache();") 
-    sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {database}.{schema}").format(
-        database=pg_sql.Identifier(database_code),
-        schema=pg_sql.Identifier(schema_name)
-        )
-    trex_dao.execute_sql(sql)
+    trex_dao.create_schema(f"{database_code}.{schema_name}")
 
     # attach_sql = (
     #     f"ATTACH IF NOT EXISTS '{duckdb_file_path}' AS \"{database_code}\";"
