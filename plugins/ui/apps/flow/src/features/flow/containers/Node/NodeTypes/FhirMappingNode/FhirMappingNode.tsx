@@ -14,6 +14,7 @@ export interface FhirMappingNodeData extends NodeDataState {
   omop_table_name: string;
   fhir_resource_type: string;
   write_key_map: boolean;
+  source_value_col?: string;
 }
 
 export const FhirMappingNode = (

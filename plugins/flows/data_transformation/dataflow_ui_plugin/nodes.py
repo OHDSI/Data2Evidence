@@ -31,89 +31,10 @@ from .types import (NodeType,
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import convert_csv_to_dataframe
 from .fhirutils.utils import omop_transform_utils
-import psycopg2.sql as pg_sql
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
 from subprocess import Popen, PIPE
-
-
-def _ensure_mapping_schema(database_code: str, schema_name: str, dao: DBDao = None, use_cache_db: bool = True) -> None:
-    schema = f"{database_code}_{schema_name}_fhir_mapping"
-    if dao is None:
-        dao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
-
-    if not dao.check_schema_exists(schema):
-        dao.create_schema(schema)
-
-    if hasattr(dao, "execute_sql"):
-        dao.execute_sql(pg_sql.SQL(
-            """
-            CREATE TABLE IF NOT EXISTS {schema}.data_source (
-                fhir_resource_type VARCHAR NOT NULL,
-                fhir_resource_id   VARCHAR NOT NULL,
-                omop_table_name    VARCHAR NOT NULL,
-                omop_id            VARCHAR,
-                flow_run_id        VARCHAR,
-                transformed_at     TIMESTAMP DEFAULT NOW()
-            )
-            """
-        ).format(schema=pg_sql.Identifier(schema)))
-
-
-        dao.execute_sql(pg_sql.SQL(
-            """
-            CREATE TABLE IF NOT EXISTS {schema}.fhir_omop_key_map (
-                fhir_id            VARCHAR NOT NULL,
-                fhir_resource_type VARCHAR NOT NULL,
-                omop_table_name    VARCHAR NOT NULL,
-                omop_id            VARCHAR,
-                transformed_at     TIMESTAMP DEFAULT NOW()
-            )
-            """
-        ).format(schema=pg_sql.Identifier(schema)))
-
-        dao.execute_sql(pg_sql.SQL(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
-            ON {schema}.fhir_omop_key_map (fhir_id, fhir_resource_type)
-            """
-        ).format(schema=pg_sql.Identifier(schema)))
-    else:
-        escaped_schema = schema.replace('"', '""')
-        engine = dao.engine
-        with engine.begin() as connection:
-            connection.execute(sql.text(
-                f'''
-                CREATE TABLE IF NOT EXISTS "{escaped_schema}".data_source (
-                    fhir_resource_type VARCHAR NOT NULL,
-                    fhir_resource_id   VARCHAR NOT NULL,
-                    omop_table_name    VARCHAR NOT NULL,
-                    omop_id            VARCHAR,
-                    flow_run_id        VARCHAR,
-                    transformed_at     TIMESTAMP DEFAULT NOW()
-                )
-                '''
-            ))
-            connection.execute(sql.text(
-                f'''
-                CREATE TABLE IF NOT EXISTS "{escaped_schema}".fhir_omop_key_map (
-                    fhir_id            VARCHAR NOT NULL,
-                    fhir_resource_type VARCHAR NOT NULL,
-                    omop_table_name    VARCHAR NOT NULL,
-                    omop_id            VARCHAR,
-                    transformed_at     TIMESTAMP DEFAULT NOW()
-                )
-                '''
-            ))
-            connection.execute(sql.text(
-                f'''
-                CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
-                ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type)
-                '''
-            ))
-
-
 
 class Node:
     def __init__(self, name, node):
@@ -867,7 +788,7 @@ class DataMappingNode(Node):
 
 class FhirMappingNode(Node):
     """
-    Runs after DbWriter. Queries {omop_table_name}_source_value and {omop_table_name}_id
+    Queries {omop_table_name}_source_value and {omop_table_name}_id
     from the OMOP table, then upserts the FHIR→OMOP lineage into the fhir_mapping schema.
     Re-runs are idempotent via ON CONFLICT DO UPDATE.
     Schema: {database_code}_{schema_name}_fhir_mapping
@@ -879,17 +800,63 @@ class FhirMappingNode(Node):
         self.omop_table_name = node["omop_table_name"]
         self.fhir_resource_type = node["fhir_resource_type"]
         self.write_key_map = node.get("write_key_map", True)
+        self.source_value_col = node.get("source_value_col") or f"{self.omop_table_name}_source_value"
+    
+    def _ensure_mapping_schema(database_code: str, schema_name: str, dao: DBDao) -> None:
+        schema = f"{database_code}_{schema_name}_fhir_mapping"
+
+        # dao is the trexDao
+        if not dao.check_schema_exists(schema):
+            dao.create_schema(schema)
+
+        escaped_schema = schema.replace('"', '""')
+
+        dao.execute_sql(f"""
+            CREATE TABLE IF NOT EXISTS "{escaped_schema}".data_source (
+                fhir_resource_type VARCHAR NOT NULL,
+                fhir_resource_id   VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                flow_run_id        VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        dao.execute_sql(f"""
+            CREATE TABLE IF NOT EXISTS "{escaped_schema}".fhir_omop_key_map (
+                fhir_id            VARCHAR NOT NULL,
+                fhir_resource_type VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        dao.execute_sql(f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+            ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type)
+        """)
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
             mapping_schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
+            # connect to source db to get omop_id and source_value pairs from the omop table, then connect to mapping db to upsert the lineage mapping
             omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
+            # mapping schema is in cache
             mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
             _ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
 
-            source_value_col = f"{self.omop_table_name}_source_value"
+            source_value_col = self.source_value_col
             omop_id_col = f"{self.omop_table_name}_id"
             flow_run_id = str(task_run_context.get("flow_run_id"))
+
+            inspector = sql.inspect(omop_dao.engine)
+            existing_columns = [col["name"] for col in inspector.get_columns(self.omop_table_name, schema=self.schema_name)]
+            if source_value_col not in existing_columns:
+                raise ValueError(
+                    f"Column '{source_value_col}' does not exist in {self.schema_name}.{self.omop_table_name}. "
+                    f"Available columns: {existing_columns}"
+                )
 
             escaped_schema = self.schema_name.replace('"', '""')
             escaped_table = self.omop_table_name.replace('"', '""')
