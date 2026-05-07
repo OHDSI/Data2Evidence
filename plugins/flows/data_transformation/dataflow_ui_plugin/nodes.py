@@ -844,7 +844,7 @@ class FhirMappingNode(Node):
             omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
             # mapping schema is in cache
             mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
-            _ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
+            self._ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
 
             source_value_col = self.source_value_col
             omop_id_col = f"{self.omop_table_name}_id"
