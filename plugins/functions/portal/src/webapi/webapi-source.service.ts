@@ -124,10 +124,10 @@ export class WebApiSourceService {
       })
     }
 
-    if (dataset.resultSchemaName) {
+    if (dataset.resultsSchemaName) {
       daimons.push({
         daimonType: 'Results',
-        tableQualifier: dataset.resultSchemaName,
+        tableQualifier: dataset.resultsSchemaName,
         priority: 1,
       })
     }

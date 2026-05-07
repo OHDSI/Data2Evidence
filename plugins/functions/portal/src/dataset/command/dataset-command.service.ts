@@ -121,7 +121,7 @@ export class DatasetCommandService {
       dialect: datasetDto.dialect,
       schemaName: datasetDto.schemaName,
       vocabSchemaName: datasetDto.vocabSchemaName,
-      resultSchemaName: datasetDto.resultSchemaName,
+      resultsSchemaName: datasetDto.resultsSchemaName,
     }, datasetDto.detail);
 
     // Then create dataset in database
@@ -376,6 +376,30 @@ export class DatasetCommandService {
         id: datasetId,
       };
     };
+
+    // First sync to WebAPI - fail fast if WebAPI is not accessible
+    const currDataset = await this.datasetRepo.getDataset(
+      datasetDetailMetadataUpdateDto.id,
+    );
+    if (!currDataset) {
+      throw new HttpException(
+        400,
+        `Dataset with id ${datasetDetailMetadataUpdateDto.id} not found`,
+      );
+    }
+    await this.syncDatasetToWebApi({
+      id: datasetDetailMetadataUpdateDto.id,
+      databaseCode: currDataset.databaseCode,
+      dialect: currDataset.dialect,
+      schemaName: currDataset.schemaName,
+      vocabSchemaName:
+        datasetDetailMetadataUpdateDto.vocabSchemaName ??
+          currDataset.vocabSchemaName,
+      resultsSchemaName:
+        datasetDetailMetadataUpdateDto.resultsSchemaName ??
+          currDataset.resultsSchemaName,
+    }, datasetDetailMetadataUpdateDto.detail);
+
     return this.transactionRunner.run(
       updateDatasetDetailMetadataFn,
       datasetDetailMetadataUpdateDto,
@@ -854,7 +878,7 @@ export class DatasetCommandService {
       dialect?: string;
       schemaName?: string;
       vocabSchemaName?: string;
-      resultSchemaName?: string;
+      resultsSchemaName?: string;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
@@ -873,7 +897,7 @@ export class DatasetCommandService {
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
-      resultSchemaName: datasetInfo.resultSchemaName,
+      resultsSchemaName: datasetInfo.resultsSchemaName,
     } as Dataset;
 
     const detailEntity = "datasetId" in detail
