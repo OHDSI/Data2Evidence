@@ -76,12 +76,6 @@ export class DatabaseManager {
         const dbCredentials = await this.getCredentialsDecrypted();
         this.trexdbm.setCredentials(dbCredentials);
 
-        // The Rust-side bootstrap above attaches a DuckDB cache catalog for
-        // postgres / bigquery dialects (via postgres_scanner / bigquery
-        // extensions). HANA has no DuckDB scanner, so we attach the cache
-        // file ourselves here so subsequent pgwire sessions can resolve
-        // 3-part names "<code>"."<schema>"."<table>" without each consumer
-        // having to ATTACH on its own.
         if (c.dialect === "hana") {
           const code = c.code || c.id;
           const cacheFile = `/usr/src/data/cache/${code}.db`;
