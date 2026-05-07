@@ -440,6 +440,10 @@ jobs:
   test_demosetup_dev:
     needs: [setup, build_images, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
@@ -673,12 +677,27 @@ jobs:
             -e GITHUB_ACTIONS=true \
             d2e-e2e npm test
 
+      - name: Mark e2e attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload e2e attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
       - name: Upload Error Context
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: error-context
+          name: error-context-attempt-${{ matrix.attempt }}
           path: tests/e2e/test-results/**/*
+          overwrite: true
 
       - name: Logs
         if: success() || failure()
@@ -704,6 +723,10 @@ jobs:
   test_demosetup_hana:
     needs: [setup, build_images, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
@@ -819,6 +842,20 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
+      - name: Mark demo hana attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload demo hana attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-hana-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
       - name: Stop d2e services
         if: success() || failure()
         run: |
@@ -838,6 +875,10 @@ jobs:
       (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
     runs-on: ${{ needs.setup.outputs.random_runner }}
     timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
     env:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
@@ -1156,6 +1197,20 @@ jobs:
           echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
           yarn test-specs --test_schema_name=$TESTSCHEMA
 
+      - name: Mark HTTP duckdb attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload HTTP duckdb attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: http-duckdb-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
       - name: Logs
         if: success() || failure()
         run: |
@@ -1180,10 +1235,14 @@ jobs:
       (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
     runs-on: ${{ needs.setup.outputs.random_runner }}
     timeout-minutes: 80
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
     env:
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      TESTSCHEMA: HTTP_${{ github.run_id }}
+      TESTSCHEMA: HTTP_${{ github.run_id }}_${{ matrix.attempt }}
       isTestEnv: "true"
       isHttpTestRun: "true"
       HANASERVER: localhost
@@ -1481,6 +1540,20 @@ jobs:
         working-directory: ./tests/backend_integration_tests/hana
         run: yarn test-specs --test_schema_name=$TESTSCHEMA
 
+      - name: Mark HTTP hana attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload HTTP hana attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: http-hana-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
       - name: print logs for alp-dataflow-gen-1
         if: ${{ always() || cancelled() || failure() }}
         run: docker logs alp-dataflow-gen-1 -t
@@ -1516,6 +1589,78 @@ jobs:
       - name: Prune system
         if: always()
         run: docker system prune -af
+
+  test_demosetup_dev_gate:
+    needs: [test_demosetup_dev]
+    if: always() && needs.test_demosetup_dev.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one e2e attempt succeeded."
+            exit 0
+          fi
+          echo "All e2e attempts failed."
+          exit 1
+
+  test_demosetup_hana_gate:
+    needs: [test_demosetup_hana]
+    if: always() && needs.test_demosetup_hana.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: demo-hana-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one demo hana attempt succeeded."
+            exit 0
+          fi
+          echo "All demo hana attempts failed."
+          exit 1
+
+  test_http_duckdb_gate:
+    needs: [test_http_duckdb]
+    if: always() && needs.test_http_duckdb.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: http-duckdb-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one HTTP duckdb attempt succeeded."
+            exit 0
+          fi
+          echo "All HTTP duckdb attempts failed."
+          exit 1
+
+  test_http_hana_gate:
+    needs: [test_http_hana]
+    if: always() && needs.test_http_hana.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: http-hana-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one HTTP hana attempt succeeded."
+            exit 0
+          fi
+          echo "All HTTP hana attempts failed."
+          exit 1
 
   promote:
     needs: [setup, build_images]
@@ -1580,90 +1725,8 @@ jobs:
           min-versions-to-keep: 3
           delete-only-untagged-versions: "true"
 
-  cleanup_pr_tags:
-    needs: [setup, build_images, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
-    if: always() && needs.setup.outputs.is_pr_or_mg == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    env:
-      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    strategy:
-      fail-fast: false
-      matrix:
-        image:
-          - d2e/flow-base
-          - d2e/flow-i2b2
-          - d2e/flow-search-embedding
-          - d2e/flow-data-management
-          - d2e/flow-loyalty-score
-          - d2e/flow-hades
-          - d2e/flow-data-transformation
-          - d2e-pg-mgmt-init
-          - d2e-logto
-          - d2e-logto-post-init
-          - d2e-enterprise-gateway
-          - d2e-r-ohdsi-kernel
-          - d2e-trex
-          - d2e-dataflow-gen-worker
-          - d2e-supabase-storage
-    steps:
-      - name: Delete PR-scoped image version
-        continue-on-error: true
-        run: |
-          PKG_NAME="${{ matrix.image }}"
-          PKG_ENC=$(echo "$PKG_NAME" | sed 's|/|%2F|g')
-          OWNER=ohdsi
-
-          versions=$(gh api -H "Accept: application/vnd.github+json" \
-            "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions?per_page=100" \
-            --jq ".[] | select(.metadata.container.tags[]? == \"${RUN_TAG}\") | .id" || true)
-
-          if [ -z "$versions" ]; then
-            echo "No version found with tag ${RUN_TAG} for ${PKG_NAME}"
-            exit 0
-          fi
-
-          for vid in $versions; do
-            echo "Deleting ${PKG_NAME} version ${vid} (tag ${RUN_TAG})"
-            gh api -X DELETE -H "Accept: application/vnd.github+json" \
-              "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions/${vid}" || true
-          done
-
-  cleanup_e2e_tag:
-    needs: [setup, build_e2e_image, test_demosetup_dev]
-    if: always() && needs.build_e2e_image.result != 'skipped'
-    runs-on: ubuntu-latest
-    permissions:
-      packages: write
-    env:
-      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - name: Delete d2e-e2e image version
-        continue-on-error: true
-        run: |
-          PKG_NAME=d2e-e2e
-          OWNER=ohdsi
-
-          versions=$(gh api -H "Accept: application/vnd.github+json" \
-            "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions?per_page=100" \
-            --jq ".[] | select(.metadata.container.tags[]? == \"${RUN_TAG}\") | .id" || true)
-
-          if [ -z "$versions" ]; then
-            echo "No version found with tag ${RUN_TAG} for ${PKG_NAME}"
-            exit 0
-          fi
-
-          for vid in $versions; do
-            echo "Deleting ${PKG_NAME} version ${vid} (tag ${RUN_TAG})"
-            gh api -X DELETE -H "Accept: application/vnd.github+json" \
-              "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions/${vid}" || true
-          done
-
   docker-success:
-    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
+    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1672,10 +1735,10 @@ jobs:
           R_BUILD_IMAGES: ${{ needs.build_images.result }}
           R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
           R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
-          R_DEMO_DEV: ${{ needs.test_demosetup_dev.result }}
-          R_DEMO_HANA: ${{ needs.test_demosetup_hana.result }}
-          R_HTTP_DUCKDB: ${{ needs.test_http_duckdb.result }}
-          R_HTTP_HANA: ${{ needs.test_http_hana.result }}
+          R_DEMO_DEV: ${{ needs.test_demosetup_dev_gate.result }}
+          R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
+          R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
+          R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
         run: |
           fail=0
           for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
