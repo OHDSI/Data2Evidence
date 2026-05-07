@@ -66,3 +66,37 @@ jobs:
 
             page=$((page + 1))
           done
+
+  sweep_e2e:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OWNER: ohdsi
+      MAX_AGE_HOURS: 24
+    steps:
+      - name: Sweep all d2e-e2e tags older than ${{ env.MAX_AGE_HOURS }}h
+        run: |
+          PKG_NAME=d2e-e2e
+          cutoff=$(date -u -d "${MAX_AGE_HOURS} hours ago" +%s)
+
+          page=1
+          while :; do
+            resp=$(gh api -H "Accept: application/vnd.github+json" \
+              "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions?per_page=100&page=${page}")
+            count=$(echo "$resp" | jq 'length')
+            if [ "$count" = "0" ]; then break; fi
+
+            echo "$resp" | jq -r '
+              .[]
+              | "\(.id) \(.updated_at)"
+            ' | while read vid updated; do
+              vid_ts=$(date -u -d "$updated" +%s)
+              if [ "$vid_ts" -lt "$cutoff" ]; then
+                echo "Deleting ${PKG_NAME} v${vid} updated=${updated}"
+                gh api -X DELETE -H "Accept: application/vnd.github+json" \
+                  "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions/${vid}" || true
+              fi
+            done
+
+            page=$((page + 1))
+          done

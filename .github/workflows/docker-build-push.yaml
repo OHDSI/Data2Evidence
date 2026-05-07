@@ -11,6 +11,7 @@ on:
   push:
     branches:
       - develop
+      - "release/*"
   workflow_dispatch:
 
 concurrency:
@@ -28,7 +29,10 @@ jobs:
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
       run_tag: ${{ steps.tag.outputs.run_tag }}
+      canonical_tag: ${{ steps.tag.outputs.canonical_tag }}
       is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
+      is_release_push: ${{ steps.tag.outputs.is_release_push }}
+      is_publish_push: ${{ steps.tag.outputs.is_publish_push }}
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
       changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
@@ -36,6 +40,7 @@ jobs:
       changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
       changes_ui: ${{ steps.file_changes.outputs.ui }}
       changes_flow_package_json: ${{ steps.file_changes.outputs.flow_package_json }}
+      changes_e2e: ${{ steps.file_changes.outputs.e2e }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
@@ -47,25 +52,44 @@ jobs:
       - id: tag
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
+          IS_PR_OR_MG=false
+          IS_DEVELOP_PUSH=false
+          IS_RELEASE_PUSH=false
+          CANONICAL_TAG=""
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             RUN_TAG="pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
-            echo "is_pr_or_mg=true" >> "$GITHUB_OUTPUT"
-            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
+            IS_PR_OR_MG=true
           elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
             RUN_TAG="mg-${SHORT_SHA}"
-            echo "is_pr_or_mg=true" >> "$GITHUB_OUTPUT"
-            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
+            IS_PR_OR_MG=true
           elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "develop" ]]; then
             RUN_TAG="develop-${SHORT_SHA}"
-            echo "is_pr_or_mg=false" >> "$GITHUB_OUTPUT"
-            echo "is_develop_push=true" >> "$GITHUB_OUTPUT"
+            IS_DEVELOP_PUSH=true
+            CANONICAL_TAG="develop"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == release/* ]]; then
+            REL_SLUG="${GITHUB_REF_NAME//\//-}"
+            RUN_TAG="${REL_SLUG}-${SHORT_SHA}"
+            IS_RELEASE_PUSH=true
+            CANONICAL_TAG="${REL_SLUG}"
           else
             RUN_TAG="dispatch-${SHORT_SHA}"
-            echo "is_pr_or_mg=false" >> "$GITHUB_OUTPUT"
-            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "run_tag=${RUN_TAG}" >> "$GITHUB_OUTPUT"
-          echo "RUN_TAG=${RUN_TAG}" >> "$GITHUB_STEP_SUMMARY"
+          IS_PUBLISH_PUSH=false
+          if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
+            IS_PUBLISH_PUSH=true
+          fi
+          {
+            echo "run_tag=${RUN_TAG}"
+            echo "canonical_tag=${CANONICAL_TAG}"
+            echo "is_pr_or_mg=${IS_PR_OR_MG}"
+            echo "is_develop_push=${IS_DEVELOP_PUSH}"
+            echo "is_release_push=${IS_RELEASE_PUSH}"
+            echo "is_publish_push=${IS_PUBLISH_PUSH}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "RUN_TAG=${RUN_TAG}"
+            echo "CANONICAL_TAG=${CANONICAL_TAG}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -116,12 +140,14 @@ jobs:
             flow_package_json:
               - "plugins/flows/base/package.json"
               - ".github/workflows/docker-build-push.yaml"
+            e2e:
+              - "tests/e2e/**"
+              - ".github/workflows/docker-build-push.yaml"
 
   build_images:
     needs: [setup]
     if: |
-      needs.setup.outputs.is_develop_push == 'true' ||
-      contains(github.ref_name, 'release/') ||
+      needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
@@ -229,8 +255,7 @@ jobs:
   build_plugins:
     needs: [setup]
     if: |
-      needs.setup.outputs.is_develop_push == 'true' ||
-      contains(github.ref_name, 'release/') ||
+      needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
@@ -334,7 +359,7 @@ jobs:
       - name: Publish or Pack
         env:
           CI: ${{ matrix.NPM != 'bun' }}
-          SHOULD_PUBLISH: ${{ needs.setup.outputs.is_develop_push == 'true' || github.event_name == 'workflow_dispatch' }}
+          SHOULD_PUBLISH: ${{ needs.setup.outputs.is_publish_push == 'true' || github.event_name == 'workflow_dispatch' }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
@@ -365,8 +390,55 @@ jobs:
             exit $FAILED
           fi
 
+      - name: Upload UI resources
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-resources
+          path: ./plugins/ui/resources
+          if-no-files-found: error
+          retention-days: 7
+
+  build_e2e_image:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build and Push e2e image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./tests/e2e
+          file: ./tests/e2e/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
+          provenance: false
+
   test_demosetup_dev:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     env:
       VERSION: develop
@@ -427,12 +499,8 @@ jobs:
       - name: Pull docker compose images
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions pull
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
-
-      - name: Prune buildx cache
-        if: always()
-        run: docker buildx prune -af
 
       - name: Start services
         if: success() || failure()
@@ -511,23 +579,12 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: UI Setup bun
+      - name: Download UI resources
         if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        uses: oven-sh/setup-bun@v2
+        uses: actions/download-artifact@v4
         with:
-          bun-version: 1.2.23
-      - name: UI Build
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        working-directory: ./plugins/ui
-        env:
-          CI: false
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential curl file git
-          bun install
-          bun build-all
-          UI_BUILD_EXIT_CODE=$?
-          [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
+          name: ui-resources
+          path: ./plugins/ui/resources
 
       - name: UI docker-compose-local
         if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
@@ -590,10 +647,10 @@ jobs:
             sleep 5
           done
 
-      - name: Build e2e Docker image
+      - name: Pull e2e Docker image
         run: |
-          cd ./tests/e2e
-          docker build -t d2e-e2e .
+          docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
+          docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
 
       - name: Verify app is reachable
         run: |
@@ -645,7 +702,7 @@ jobs:
         run: docker system prune -af
 
   test_demosetup_hana:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       VERSION: develop
@@ -690,19 +747,11 @@ jobs:
         run: |
           timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
-      - name: Pre-pull flow base image
-        run: |
-          docker pull ${REG_URL}/d2e/flow-base:${DOCKER_TAG_NAME}
-
       - name: Pull docker compose images
         if: success() || failure()
         run: |
-          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions build
+          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions pull
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
-
-      - name: Prune buildx cache
-        if: always()
-        run: docker buildx prune -af
 
       - name: Start services
         if: success() || failure()
@@ -780,10 +829,9 @@ jobs:
         run: docker system prune -af
 
   test_http_duckdb:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_plugins]
     if: |
-      needs.setup.outputs.is_develop_push == 'true' ||
-      contains(github.ref_name, 'release/') ||
+      needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
@@ -855,12 +903,8 @@ jobs:
       - name: Pull docker compose images
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions build
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
           docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
-
-      - name: Prune buildx cache
-        if: always()
-        run: docker buildx prune -af
 
       - name: Start services
         if: success() || failure()
@@ -1127,10 +1171,9 @@ jobs:
         run: docker system prune -af
 
   test_http_hana:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_plugins]
     if: |
-      needs.setup.outputs.is_develop_push == 'true' ||
-      contains(github.ref_name, 'release/') ||
+      needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
@@ -1219,7 +1262,7 @@ jobs:
 
       - name: Pull docker compose images
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 build
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 pull
 
       - name: Manipulate configuration
         run: yq -i '.networks.alp.external=true' docker-compose.yml
@@ -1475,14 +1518,18 @@ jobs:
         run: docker system prune -af
 
   promote:
-    needs: [setup, build_images, build_plugins, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
-    if: needs.setup.outputs.is_develop_push == 'true'
+    needs: [setup, build_images]
+    if: |
+      always() &&
+      needs.build_images.result == 'success' &&
+      needs.setup.outputs.is_publish_push == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      CANONICAL_TAG: ${{ needs.setup.outputs.canonical_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -1510,10 +1557,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Re-tag run image as :develop
+      - name: Re-tag run image as canonical
         run: |
           SRC=${REG_URL}/${{ matrix.image }}:${RUN_TAG}
-          DST=${REG_URL}/${{ matrix.image }}:develop
+          DST=${REG_URL}/${{ matrix.image }}:${CANONICAL_TAG}
+          if [[ -z "$CANONICAL_TAG" ]]; then
+            echo "CANONICAL_TAG empty; nothing to promote."
+            exit 0
+          fi
           if docker manifest inspect "$SRC" >/dev/null 2>&1; then
             docker buildx imagetools create -t "$DST" "$SRC"
           else
@@ -1580,8 +1631,39 @@ jobs:
               "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions/${vid}" || true
           done
 
+  cleanup_e2e_tag:
+    needs: [setup, build_e2e_image, test_demosetup_dev]
+    if: always() && needs.build_e2e_image.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Delete d2e-e2e image version
+        continue-on-error: true
+        run: |
+          PKG_NAME=d2e-e2e
+          OWNER=ohdsi
+
+          versions=$(gh api -H "Accept: application/vnd.github+json" \
+            "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions?per_page=100" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${RUN_TAG}\") | .id" || true)
+
+          if [ -z "$versions" ]; then
+            echo "No version found with tag ${RUN_TAG} for ${PKG_NAME}"
+            exit 0
+          fi
+
+          for vid in $versions; do
+            echo "Deleting ${PKG_NAME} version ${vid} (tag ${RUN_TAG})"
+            gh api -X DELETE -H "Accept: application/vnd.github+json" \
+              "/orgs/${OWNER}/packages/container/${PKG_NAME}/versions/${vid}" || true
+          done
+
   docker-success:
-    needs: [build_images, build_plugins, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
+    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1589,13 +1671,14 @@ jobs:
         env:
           R_BUILD_IMAGES: ${{ needs.build_images.result }}
           R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
+          R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
           R_DEMO_DEV: ${{ needs.test_demosetup_dev.result }}
           R_DEMO_HANA: ${{ needs.test_demosetup_hana.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;
