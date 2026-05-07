@@ -209,6 +209,7 @@ jobs:
         run: |
           sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
           sed -i 's|# - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json|- ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json|' docker-compose-local.yml
+          sed -i 's|# - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources|- ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
         if: steps.file_changes.outputs.flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
