@@ -802,7 +802,7 @@ class FhirMappingNode(Node):
         self.write_key_map = node.get("write_key_map", True)
         self.source_value_col = node.get("source_value_col") or f"{self.omop_table_name}_source_value"
     
-    def _ensure_mapping_schema(database_code: str, schema_name: str, dao: DBDao) -> None:
+    def _ensure_mapping_schema(self, database_code: str, schema_name: str, dao: DBDao) -> None:
         schema = f"{database_code}_{schema_name}_fhir_mapping"
 
         # dao is the trexDao
