@@ -302,12 +302,6 @@
           "function": "/parquet-export",
           "imports": "/parquet-export/deno.json",
           "env": "parquet-export"
-        },
-        {
-          "source": "/git",
-          "function": "/git",
-          "imports": "/git/deno.json",
-          "env": "git"
         }
       ],
       "env": {
@@ -348,16 +342,6 @@
         },
         "parquet-export": {
           "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
-        },
-        "git": {
-          "GIT__USERNAME": "${GIT__USERNAME:-gituser}",
-          "GIT__EMAIL": "${GIT__EMAIL:--}",
-          "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
-          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}",
-          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
-          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}",
-          "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
-          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}"
         },
         "analytics-svc": {
           "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
