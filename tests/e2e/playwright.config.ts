@@ -27,5 +27,6 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: 0 // 0 = no cap; run all tests even if some fail
+  maxFailures: 0, // 0 = no cap; run all tests even if some fail
+  preserveOutput: 'always' // keep test-results/ for passed tests too, not just failures
 })
