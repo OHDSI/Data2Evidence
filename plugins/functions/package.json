@@ -898,12 +898,6 @@
       },
       "scopes": [
         {
-          "path": "^/git",
-          "scopes": [
-            "portal.gitStudies.read"
-          ]
-        },
-        {
           "path": "^/gateway/dashboard/(.*)",
           "scopes": [
             "gateway.external.dashboards.read"
