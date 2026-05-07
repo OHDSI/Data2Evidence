@@ -59,6 +59,7 @@ export interface IDatasetDto {
   tokenDatasetCode: string;
   tenantId: string;
   databaseCode: string;
+  dialect: DatabaseDialect;
   schemaName: string;
   vocabSchemaName: string;
   resultsSchemaName: string;
@@ -190,8 +191,7 @@ export type IPublicDatasetQueryDto = IDatasetSearchFilterDto;
 export type DatasetQueryRole = (typeof DATASET_QUERY_ROLES)[number];
 
 export interface IDatasetQueryDto
-  extends IDatasetSearchFilterDto,
-    IDatasetFilterParamsDto {
+  extends IDatasetSearchFilterDto, IDatasetFilterParamsDto {
   role?: DatasetQueryRole;
 }
 export interface IDatasetSearchFilterDto {
