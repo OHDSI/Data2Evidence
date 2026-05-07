@@ -1,64 +1,71 @@
 name: d2e Docker Build
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   pull_request:
-    types:
-      - opened
-      - ready_for_review
-      - reopened
-      - synchronize
+    types: [opened, ready_for_review, reopened, synchronize]
   merge_group:
   push:
     branches:
       - develop
-
   workflow_dispatch:
-    inputs:
-      GIT_REPO_FULL_NAME:
-        description: Select RepoName
-        required: false
-        type: choice
-        options:
-          - OHDSI/Data2Evidence
-      GIT_BRANCH_NAME:
-        default: develop
-        description: Enter BranchName / ReleaseTagName
-        required: true
-        type: string
-      tag:
-        description: Enter Tag name for docker image
-        required: true
-        type: string
 
 concurrency:
-  group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
-  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
-  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+  REG_URL: ghcr.io/ohdsi
+  DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  pick_runner:
+  setup:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
+      run_tag: ${{ steps.tag.outputs.run_tag }}
+      is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
+      is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
+      changes_src: ${{ steps.file_changes.outputs.src }}
+      changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
+      changes_plugins: ${{ steps.file_changes.outputs.plugins }}
+      changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
+      changes_ui: ${{ steps.file_changes.outputs.ui }}
+      changes_flow_package_json: ${{ steps.file_changes.outputs.flow_package_json }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
-  check_file_changes:
-    environment: "github"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read   # Required to check out code
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    outputs:
-      changes: ${{ steps.file_changes.outputs.src }}
-      rkernel: ${{ steps.file_changes.outputs.rkernel }}
-      jenv: ${{ job.environment }}
-    steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - id: tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RUN_TAG="pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
+            echo "is_pr_or_mg=true" >> "$GITHUB_OUTPUT"
+            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            RUN_TAG="mg-${SHORT_SHA}"
+            echo "is_pr_or_mg=true" >> "$GITHUB_OUTPUT"
+            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "develop" ]]; then
+            RUN_TAG="develop-${SHORT_SHA}"
+            echo "is_pr_or_mg=false" >> "$GITHUB_OUTPUT"
+            echo "is_develop_push=true" >> "$GITHUB_OUTPUT"
+          else
+            RUN_TAG="dispatch-${SHORT_SHA}"
+            echo "is_pr_or_mg=false" >> "$GITHUB_OUTPUT"
+            echo "is_develop_push=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "run_tag=${RUN_TAG}" >> "$GITHUB_OUTPUT"
+          echo "RUN_TAG=${RUN_TAG}" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -76,23 +83,49 @@ jobs:
               - "./services/enterprise-gateway/r-strategus-lib/**"
               - "./plugins/flows/hades/renv.lock"
               - "./plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
-              - ".github/workflows/docker-build-push.yaml"
+              - ".github/workflows/pr-ci.yml"
+            plugins:
+              - "plugins/flows/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "plugins/ui/**"
+              - "plugins/functions/**"
+              - "plugins/fhir_functions/**"
+              - "services/trex/ext/**"
+              - ".github/workflows/pr-ci.yml"
+            http_tests:
+              - "plugins/functions/_shared/alp-libs/nodejs/**"
+              - "plugins/functions/analytics-svc/**"
+              - "plugins/functions/bookmark-svc/**"
+              - "plugins/functions/cdw-svc/**"
+              - "plugins/functions/mri-pa-config/**"
+              - "plugins/functions/mri-pg-config/**"
+              - "plugins/functions/query-gen-svc/**"
+              - "services/mri-db/**"
+              - "services/alp-logto/**"
+              - "services/alp-pg-management/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "scripts/**"
+              - "tests/backend_integration_tests/**"
+              - ".github/workflows/pr-ci.yml"
+            ui:
+              - "plugins/ui/**"
+            flow_package_json:
+              - "plugins/flows/base/package.json"
 
-  bld:
-    needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
-    permissions:
-      contents: read   # Required to check out code
-      packages: write  # Required to push images to GHCR
+  build_images:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      contains(github.ref_name, 'release/') ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true'))
+    runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
-      DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
-      DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
-      GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
-      GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
-      DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-      REG_URL: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
-
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
     strategy:
       fail-fast: false
       matrix:
@@ -133,7 +166,7 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
-            build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
+            build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
             DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
@@ -143,17 +176,11 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
-
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
           tool-cache: true
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
@@ -161,106 +188,1414 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ env.GIT_BRANCH_NAME }}
-          repository: ${{ env.GIT_REPO_FULL_NAME }}
           submodules: recursive
 
-      - name: Setting up variables
-        id: setup
-        env:
-          DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || false }}
-        run: |
-
-          DOCKER_BUILD_PUSH_BOOL_STR=false
-          if [[ $GITHUB_EVENT_NAME == "push" ]] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ] || [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true]; then
-            DOCKER_BUILD_PUSH_BOOL_STR=true
-          fi
-
-          if [[ ${{ github.event_name }} == "workflow_dispatch" ]]; then
-            DOCKER_IMG_TAG_NAME=${{ github.event.inputs.tag }}
-          elif [[ ${{ github.event_name }} == "push" ]]; then
-            DOCKER_IMG_TAG_NAME=develop
-          else
-            DOCKER_IMG_TAG_NAME=$(echo $(git rev-parse --short HEAD))
-          fi
-
-          echo DOCKER_BUILD_PUSH_BOOL_STR=$DOCKER_BUILD_PUSH_BOOL_STR | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_IMG_TAG_NAME=$DOCKER_IMG_TAG_NAME | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo GIT_BRANCH_NAME="${GIT_BRANCH_NAME}" | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo GIT_REPO_FULL_NAME="${GIT_REPO_FULL_NAME}" | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-          echo AZ_REG_REPOSITORY=${{ matrix.AZ_REG_REPOSITORY }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_BUILD_CONTEXT_PATH=${{ matrix.DOCKER_BUILD_CONTEXT_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_BUILD_FILE_PATH=${{ matrix.DOCKER_BUILD_FILE_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-          echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
-          echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-      - name: "Login to GitHub Container Registry"
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
-
-      - name: "Login to Docker Container Registry"
-        uses: docker/login-action@v3
-        if: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' }}
-        with:
-          registry: registry.hub.docker.com
-          username: data2evidence
-          password: ${{secrets.DOCKER_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: docker/setup-buildx-action@v3
         id: builder
 
       - name: Build and Push
-        id: build-push
-        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group'}}
+        if: ${{ matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || needs.setup.outputs.is_develop_push == 'true' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group' }}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
-          context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
-          file: ${{ env.DOCKER_BUILD_FILE_PATH }}
-          platforms: "linux/amd64"
-          push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
+          file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
+          platforms: linux/amd64
+          push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
-          tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
           provenance: false
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             ${{ env.DOCKER_BUILD_ARG1 }}
 
-      - name: delete-untagged-images
-        uses: actions/delete-package-versions@v5
-        if: env.GIT_BRANCH_NAME == 'develop'
-        continue-on-error: true
-        with:
-          package-name: ${{ env.AZ_REG_REPOSITORY }}
-          package-type: "container"
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
       - name: Prune system
         if: always()
-        id: prune
-        run: |
-          docker system prune -af
+        run: docker system prune -af
 
-  docker-success:
-    needs: bld
-    runs-on: ubuntu-latest
-    if: always()
+  build_plugins:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      contains(github.ref_name, 'release/') ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - PKGPATH: ./plugins/flows/base/
+          - PKGPATH: ./plugins/flows/i2b2/
+          - PKGPATH: ./plugins/flows/search_embedding/
+          - PKGPATH: ./plugins/flows/data_management/
+          - PKGPATH: ./plugins/flows/hades/
+          - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/data_transformation/
+          - PKGPATH: ./plugins/ui
+            NPM: bun
+          - PKGPATH: ./plugins/functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
+            RUNNER: ubuntu-24.04
+          - PKGPATH: ./plugins/fhir_functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
+    runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
-      BUILD_JOB_STATUS: ${{ needs.bld.result }}
+      NPM_ARTIFACT_TYPE: OSS-develop
     steps:
-      - name: Check
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@data2evidence"
+      - name: Setup bun
+        if: ${{ matrix.NPM == 'bun' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: Setup NPM
+        if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
+        run: npm install -g ${{ matrix.NPM }}
+      - name: Setup Java
+        if: ${{ matrix.DESTPATH }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install dependencies
+        if: ${{ matrix.DESTPATH }}
         run: |
-          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
-            exit 0
+          npm install -g deno@2.5.6
+          node ./install-deno-deps.js ${{ matrix.PKGPATH }}
+      - name: Update version
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+      - name: Build
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        working-directory: ${{ matrix.PKGPATH }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
+      - name: DEST
+        working-directory: ${{ matrix.PKGPATH }}
+        if: ${{ matrix.DESTPATH }}
+        run: |
+          cp package.json package.org.json
+          sudo mkdir -p ${{ matrix.DESTPATH }}
+          sudo chown runner:docker ${{ matrix.DESTPATH }}
+          cp -a . ${{ matrix.DESTPATH }}
+          cd ${{ matrix.DESTPATH }}
+          export DENO_DIR="$HOME/.cache/deno"
+          node ${{ github.workspace }}/install-deno-deps.js .
+          npm run build
+      - name: Use Node.js - OSS Develop
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+      - name: Publish or Pack
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          SHOULD_PUBLISH: ${{ needs.setup.outputs.is_develop_push == 'true' || github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+        run: |
+          cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
+          if [[ $SHOULD_PUBLISH == true ]]; then
+            npm publish
           else
+            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+            FAILED=0
+            MAX_SIZE_MIB=500
+            MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
+            shopt -s nullglob
+            TGZ_FILES=(*.tgz)
+            if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+              echo "ERROR: no .tgz files found after pack"
+              exit 1
+            fi
+            for PACK_FILE in "${TGZ_FILES[@]}"; do
+              SIZE=$(wc -c < "$PACK_FILE")
+              SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+                echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+                echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+                FAILED=1
+              else
+                echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
+              fi
+            done
+            exit $FAILED
+          fi
+
+  test_demosetup_dev:
+    needs: [setup, build_images]
+    runs-on: ubuntu-24.04
+    env:
+      VERSION: develop
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Patch seed config for e2e tests
+        run: node ./scripts/patch-seed-for-e2e.js
+
+      - name: Initialise d2e
+        if: success() || failure()
+        id: init
+        run: |
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+
+      - name: Pre-pull flow images
+        run: |
+          docker pull ${REG_URL}/d2e/flow-base:${DOCKER_TAG_NAME}
+          docker pull ${REG_URL}/d2e/flow-i2b2:${DOCKER_TAG_NAME}
+          docker pull ${REG_URL}/d2e/flow-data-management:${DOCKER_TAG_NAME}
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune buildx cache
+        if: always()
+        run: docker buildx prune -af
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Wait for d2e-trex healthy
+        if: success() || failure()
+        run: |
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
+            echo "[$i] d2e-trex health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+
+      - name: Setupdemo
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: UI Setup bun
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: UI Build
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        working-directory: ./plugins/ui
+        env:
+          CI: false
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential curl file git
+          bun install
+          bun build-all
+          UI_BUILD_EXIT_CODE=$?
+          [ $UI_BUILD_EXIT_CODE = 0 ] || { echo EXIT UI_BUILD_EXIT_CODE=$UI_BUILD_EXIT_CODE && exit $UI_BUILD_EXIT_CODE; }
+
+      - name: UI docker-compose-local
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        run: |
+          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
+      - name: Flow base docker-compose-local
+        if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
+        run: |
+          sed -i 's|# - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions start
+
+      - name: Wait for d2e-ui plugin to be installed
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        run: |
+          echo "Waiting for d2e-ui plugin to be installed..."
+          max_attempts=60
+          attempt=0
+          start_time=$(date +%s)
+          while [ $attempt -lt $max_attempts ]; do
+            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
+              end_time=$(date +%s)
+              elapsed=$((end_time - start_time))
+              echo "d2e-ui plugin is ready (took ${elapsed}s)"
+              break
+            fi
+            attempt=$((attempt + 1))
+            echo "  Attempt $attempt/$max_attempts: waiting..."
+            sleep 2
+          done
+          if [ $attempt -eq $max_attempts ]; then
+            echo "Timeout waiting for d2e-ui plugin to be installed"
             exit 1
           fi
+
+      - name: UI Mounting build
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        run: |
+          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+
+      - name: Wait for webapi-init to complete
+        run: |
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -qE "Exited \([1-9]"; then
+              echo "webapi-init failed!"
+              docker logs d2e-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
+
+      - name: Build e2e Docker image
+        run: |
+          cd ./tests/e2e
+          docker build -t d2e-e2e .
+
+      - name: Verify app is reachable
+        run: |
+          curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
+          curl -k -I https://localhost:443/d2e/portal || true
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          docker run --rm \
+            --network=host \
+            --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
+            d2e-e2e npm test
+
+      - name: Upload Error Context
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context
+          path: tests/e2e/test-results/**/*
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./tests/e2e/ctrf/*.json"
+          file-report: true
+
+      - name: Stop d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  test_demosetup_hana:
+    needs: [setup, build_images]
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    env:
+      VERSION: develop
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Initialise d2e
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+        env:
+          init_choice: y
+
+      - name: Initialise HANA
+        if: success() || failure()
+        run: |
+          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Pre-pull flow base image
+        run: |
+          docker pull ${REG_URL}/d2e/flow-base:${DOCKER_TAG_NAME}
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune buildx cache
+        if: always()
+        run: docker buildx prune -af
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions --hana start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
+            echo "DOCKER_STATUS_FILE=$DOCKER_STATUS_FILE" >> $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Setupdemohana
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./functions setupdemohana
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Stop d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  test_http_duckdb:
+    needs: [setup, build_images]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      contains(github.ref_name, 'release/') ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    timeout-minutes: 80
+    env:
+      VERSION: develop
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+      PGUSER: postgres
+      PGPASSWORD: mypass
+      PGHOST: localhost
+      PGPORT: 15432
+      PGDATABASE: postgres
+      TESTSCHEMA: demo_cdm
+      isTestEnv: "true"
+      isHttpTestRun: "true"
+      HTTPTEST_DB_DIALECT: "duckdb"
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Initialise d2e
+        if: success() || failure()
+        run: |
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+          grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
+
+      - name: Pre-pull flow images
+        run: |
+          docker pull ${REG_URL}/d2e/flow-base:${DOCKER_TAG_NAME}
+          docker pull ${REG_URL}/d2e/flow-i2b2:${DOCKER_TAG_NAME}
+          docker pull ${REG_URL}/d2e/flow-data-management:${DOCKER_TAG_NAME}
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions build
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Prune buildx cache
+        if: always()
+        run: docker buildx prune -af
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Setup HTTP Test Env
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setuphttptestenv
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Get dataset Id
+        run: |
+          export resDataset=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset" 2>/dev/null)
+          echo "$resDataset"
+          export resDatasetDetail=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from portal.dataset_detail" 2>/dev/null)
+          echo "$resDatasetDetail"
+          export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
+          echo "$resTrexDB"
+          export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type = 'omop'" 2>/dev/null | head -1 | xargs)
+          echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -p 41100 start
+
+      - name: Wait for services to be ready to avoid mounting race condition
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        run: sleep 10
+
+      - name: Check status of docker containers
+        run: docker ps -a
+
+      - name: Login to logto and get Bearer token and sub
+        run: |
+          echo "LOGTO__D2E_APP__CLIENT_ID: ${LOGTO__D2E_APP__CLIENT_ID}"
+          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
+          printf "%s\n" "$response"
+
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+
+          response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
+              --header 'content-type: application/json' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --data '{
+              "event": "SignIn",
+              "identifier": {
+                  "username": "admin",
+                  "password": "Updatepassword12345"
+              }
+          }')
+          printf "%s\n" "$response"
+
+          response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
+              --header 'accept: application/json' \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+
+          response=$(curl -ik 'https://localhost:41100/consent' \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
+
+          response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
+              --data-urlencode 'grant_type=authorization_code' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
+              --data-urlencode "code=$authorization_code" \
+              --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+
+          decode_base64_url() {
+              local len=$((${#1} % 4))
+              local result="$1"
+              if [ $len -eq 2 ]; then
+                  result="$1"'=='
+              elif [ $len -eq 3 ]; then
+                  result="$1"'='
+              fi
+              echo "$result" | tr '_-' '/+' | openssl enc -d -base64
+          }
+
+          decode_jwt() {
+              decode_base64_url $(echo -n $2 | cut -d "." -f $1)
+          }
+
+          DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
+          export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
+          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV
+
+          response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/no-access' \
+              --data-raw "{\"userId\":\"$IDP_SUB\"}")
+          printf "%s\n" "$response"
+          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
+          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV
+
+      - name: Check status of docker containers
+        run: docker ps -a
+
+      - name: Check PG DB connection
+        run: |
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+          sudo apt install -y postgresql-client
+          pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
+          psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
+
+      - name: Setup Test DB
+        run: |
+          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+          yarn --prefer-offline
+          yarn inittestdb-pg
+
+      - name: Install dependencies in backend integration tests
+        run: |
+          cd ./tests/backend_integration_tests/pg
+          yarn
+
+      - name: Set env vars for HTTP tests
+        run: |
+          echo "PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))" >> $GITHUB_ENV
+          echo "PGPORT=${PGPORT}" >> $GITHUB_ENV
+          echo "PGUSER=${PGUSER}" >> $GITHUB_ENV
+          echo "PGHOST=${PGHOST}" >> $GITHUB_ENV
+          echo "TESTSCHEMA=${TESTSCHEMA}" >> $GITHUB_ENV
+          echo "HDIPORT=${PGPORT}" >> $GITHUB_ENV
+          echo "HDIPW=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))" >> $GITHUB_ENV
+          echo "HDIUSER=${PGUSER}" >> $GITHUB_ENV
+          echo "HANASERVER=${PGHOST}" >> $GITHUB_ENV
+          echo "PGDATABASE=${PGDATABASE}" >> $GITHUB_ENV
+          echo "isHttpTestRun=${isHttpTestRun}" >> $GITHUB_ENV
+          echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
+          echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
+
+      - name: Run HTTP tests
+        working-directory: ./tests/backend_integration_tests/pg
+        run: |
+          echo "HDIPORT: ${HDIPORT}"
+          echo "HDIPW: ${HDIPW}"
+          echo "HDIUSER: ${HDIUSER}"
+          echo "HANASERVER: ${HANASERVER}"
+          echo "PGDATABASE: ${PGDATABASE}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+          echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
+          yarn test-specs --test_schema_name=$TESTSCHEMA
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Stop d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  test_http_hana:
+    needs: [setup, build_images]
+    if: |
+      needs.setup.outputs.is_develop_push == 'true' ||
+      contains(github.ref_name, 'release/') ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    timeout-minutes: 80
+    env:
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+      TESTSCHEMA: HTTP_${{ github.run_id }}
+      isTestEnv: "true"
+      isHttpTestRun: "true"
+      HANASERVER: localhost
+      HANASERVER_INT: hana
+      HDIPORT: 39041
+      HDIPW: TestPW1234
+      HDIUSER: SYSTEM
+      TESTPORT: 39041
+      TESTSYSTEMPW: TestPW1234
+      PROJECT_NAME: alp
+      CADDY__CONFIG: ./deploy/caddy-config
+      ENV_TYPE: local
+      DOTENV_FILE: .env.local
+      D2E_RESOURCE_LIMIT: 1.0
+      HTTPTEST_DB_DIALECT: "hana"
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          clean: false
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print env vars
+        run: |
+          echo "DOCKER_TAG_NAME: ${DOCKER_TAG_NAME}"
+          echo "HDIPORT: ${HDIPORT}"
+          echo "HDIPW: ${HDIPW}"
+          echo "HDIUSER: ${HDIUSER}"
+          echo "HANASERVER: ${HANASERVER}"
+          echo "isHttpTestRun: ${isHttpTestRun}"
+          echo "isTestEnv: ${isTestEnv:-false}"
+          echo "TESTSCHEMA: ${TESTSCHEMA}"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "18.20.4"
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Initialise d2e
+        if: success() || failure()
+        run: |
+          init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./plugins/functions init
+
+      - name: Initialise HANA
+        if: success() || failure()
+        run: |
+          timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Remove empty lines, replace ; within the query with a place holder
+        run: |
+          sed -i -r '/^\s*$/d' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          sed -i -e 's/;,.:-/PLACE_HOLDER_STR/g' tests/backend_integration_tests/build/sql/httptest-ddl.sql
+          grep LOGTO__D2E_APP__CLIENT_ID $DOTENV_FILE | sed -e "s/'//g" >> $GITHUB_ENV
+          echo >> $DOTENV_FILE
+          echo "NODE_ENV=production" >> $DOTENV_FILE
+
+      - name: Pull docker compose images
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 build
+
+      - name: Manipulate configuration
+        run: yq -i '.networks.alp.external=true' docker-compose.yml
+
+      - name: Create network for external to use
+        run: docker network inspect alp > /dev/null || docker network create alp
+
+      - name: Start system services
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 start
+          echo "Waiting 160 secs for services to start..."
+          sleep 160
+          echo "Trex Health check..."
+          curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
+              echo "webapi-init failed!"
+              docker logs ${PROJECT_NAME:-alp}-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
+
+      - name: Check status of docker containers
+        run: docker ps -a
+
+      - name: Setup Test DB
+        run: |
+          yarn --prefer-offline
+          yarn inittestdb-hana
+
+      - name: Login to logto and get Bearer token and sub
+        run: |
+          response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
+          printf "%s\n" "$response"
+
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+
+          response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
+              --header 'content-type: application/json' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --data '{
+              "event": "SignIn",
+              "identifier": {
+                  "username": "admin",
+                  "password": "Updatepassword12345"
+              }
+          }')
+          printf "%s\n" "$response"
+
+          response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
+              --header 'accept: application/json' \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+          session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
+
+          response=$(curl -ik 'https://localhost:41100/consent' \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
+
+          response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
+              --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+              --header 'referer: https://localhost:41100/sign-in' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
+          printf "%s\n" "$response"
+
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}" \
+              --header 'origin: https://localhost:41100' \
+              --header 'referer: https://localhost:41100/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc' \
+              --data-urlencode 'grant_type=authorization_code' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode 'redirect_uri=https://localhost:41100/d2e/portal/login-callback' \
+              --data-urlencode "code=$authorization_code" \
+              --data-urlencode 'code_verifier=kqVLhCyXRJ3Y9mXie6F9d1FW8AUbTUzIuJiqUf1SM9I')
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+
+          decode_base64_url() {
+              local len=$((${#1} % 4))
+              local result="$1"
+              if [ $len -eq 2 ]; then
+                  result="$1"'=='
+              elif [ $len -eq 3 ]; then
+                  result="$1"'='
+              fi
+              echo "$result" | tr '_-' '/+' | openssl enc -d -base64
+          }
+
+          decode_jwt() {
+              decode_base64_url $(echo -n $2 | cut -d "." -f $1)
+          }
+
+          DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
+          export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
+          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV
+
+          response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/no-access' \
+              --data-raw "{\"userId\":\"$IDP_SUB\",\"sync\":true}")
+          printf "%s\n" "$response"
+          USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
+          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV
+
+      - name: Seed db credentials
+        run: |
+          export ENCSALT=salt
+          ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
+          curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/d2e/trex/db/' \
+              --header 'Referer: https://localhost:41100/sign-in' \
+              --header 'accept: application/json, text/plain, */*' \
+              --header 'Content-Type: application/json' \
+              --header "authorization: Bearer $BEARER_TOKEN" \
+              --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
+
+      - name: Seed dummy dataset
+        run: |
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset (id,tenant_id,visibility_status,database_code,schema_name,token_dataset_code,\"type\",created_by,created_date,modified_by,modified_date,data_model,source_dataset_id,pa_config_id,vocab_schema_name,dialect,result_schema_name) VALUES
+          ('cd13fd3e-9f35-4812-b2a1-497b232a8771','e0348e4d-2e17-43f2-a3c6-efd752d17c23','DEFAULT','$TESTSCHEMA','$TESTSCHEMA','HTTP_TEST_TOKEN','','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539','DUMMY MODEL',NULL,'92d7c6f8-3118-4256-ab22-f2f7fd19d4e7','$TESTSCHEMA','hana','$TESTSCHEMA') ON CONFLICT DO NOTHING"
+
+          docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
+          ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
+
+      - name: Restart alp-trex service
+        run: |
+          docker container restart alp-trex
+          echo "Waiting 120 secs for alp-trex to restart..."
+          sleep 120
+          curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
+
+      - name: Assign and verify researcher assigned to user
+        run: |
+          curl --max-time 100 --fail -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/register-study-roles' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H "authorization: Bearer $BEARER_TOKEN" \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H 'referer: https://localhost:41100/d2e/portal/systemadmin/dataset-overview' \
+              --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
+
+          curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
+              -H 'accept: application/json, text/plain, */*' \
+              -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H "authorization: Bearer $BEARER_TOKEN"
+
+      - name: Refresh bearer token to pick up researcher role
+        run: |
+          response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
+              --header 'accept: application/json, text/javascript, */*; q=0.01' \
+              --header 'content-type: application/x-www-form-urlencoded' \
+              --data-urlencode 'grant_type=refresh_token' \
+              --data-urlencode "client_id=$LOGTO__D2E_APP__CLIENT_ID" \
+              --data-urlencode "refresh_token=$REFRESH_TOKEN")
+          printf "%s\n" "$response"
+
+          export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
+
+          export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
+
+      - name: Install dependencies in backend integration tests
+        run: |
+          cd ./tests/backend_integration_tests/hana
+          yarn
+
+      - name: Run HTTP tests
+        working-directory: ./tests/backend_integration_tests/hana
+        run: yarn test-specs --test_schema_name=$TESTSCHEMA
+
+      - name: print logs for alp-dataflow-gen-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-dataflow-gen-1 -t
+      - name: print logs for alp-dataflow-gen-worker
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-dataflow-gen-worker -t
+      - name: print logs for alp-logto-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-logto-1 -t
+      - name: print logs for alp-minerva-postgres-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-minerva-postgres-1 -t
+      - name: print logs for alp-supabase-storage-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-supabase-storage-1 -t
+      - name: print logs for trex
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-trex -t
+      - name: print logs for alp-minerva-pg-mgmt-init-1
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-minerva-pg-mgmt-init-1 -t
+      - name: print logs for alp-logto-post-init
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs alp-logto-post-init-1 -t
+      - name: print logs for hana
+        if: ${{ always() || cancelled() || failure() }}
+        run: docker logs hana -t
+
+      - name: Remove Test DB
+        if: ${{ always() || cancelled() || failure() }}
+        run: yarn removetestdb-hana
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  promote:
+    needs: [setup, build_images, build_plugins, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
+    if: needs.setup.outputs.is_develop_push == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - d2e/flow-base
+          - d2e/flow-i2b2
+          - d2e/flow-search-embedding
+          - d2e/flow-data-management
+          - d2e/flow-loyalty-score
+          - d2e/flow-hades
+          - d2e/flow-data-transformation
+          - d2e-pg-mgmt-init
+          - d2e-logto
+          - d2e-logto-post-init
+          - d2e-enterprise-gateway
+          - d2e-r-ohdsi-kernel
+          - d2e-trex
+          - d2e-dataflow-gen-worker
+          - d2e-supabase-storage
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-tag run image as :develop
+        run: |
+          SRC=${REG_URL}/${{ matrix.image }}:${RUN_TAG}
+          DST=${REG_URL}/${{ matrix.image }}:develop
+          if docker manifest inspect "$SRC" >/dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
+          fi
+
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: ${{ matrix.image }}
+          package-type: container
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: "true"
+
+  cleanup_pr_tags:
+    needs: [setup, build_images, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
+    if: always() && needs.setup.outputs.is_pr_or_mg == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - d2e/flow-base
+          - d2e/flow-i2b2
+          - d2e/flow-search-embedding
+          - d2e/flow-data-management
+          - d2e/flow-loyalty-score
+          - d2e/flow-hades
+          - d2e/flow-data-transformation
+          - d2e-pg-mgmt-init
+          - d2e-logto
+          - d2e-logto-post-init
+          - d2e-enterprise-gateway
+          - d2e-r-ohdsi-kernel
+          - d2e-trex
+          - d2e-dataflow-gen-worker
+          - d2e-supabase-storage
+    steps:
+      - name: Delete PR-scoped image version
+        continue-on-error: true
+        run: |
+          PKG_NAME="${{ matrix.image }}"
+          PKG_ENC=$(echo "$PKG_NAME" | sed 's|/|%2F|g')
+          OWNER=ohdsi
+
+          versions=$(gh api -H "Accept: application/vnd.github+json" \
+            "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions?per_page=100" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${RUN_TAG}\") | .id" || true)
+
+          if [ -z "$versions" ]; then
+            echo "No version found with tag ${RUN_TAG} for ${PKG_NAME}"
+            exit 0
+          fi
+
+          for vid in $versions; do
+            echo "Deleting ${PKG_NAME} version ${vid} (tag ${RUN_TAG})"
+            gh api -X DELETE -H "Accept: application/vnd.github+json" \
+              "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions/${vid}" || true
+          done
+
+  docker-success:
+    needs: [build_images, build_plugins, test_demosetup_dev, test_demosetup_hana, test_http_duckdb, test_http_hana]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check upstream job results
+        env:
+          R_BUILD_IMAGES: ${{ needs.build_images.result }}
+          R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
+          R_DEMO_DEV: ${{ needs.test_demosetup_dev.result }}
+          R_DEMO_HANA: ${{ needs.test_demosetup_hana.result }}
+          R_HTTP_DUCKDB: ${{ needs.test_http_duckdb.result }}
+          R_HTTP_HANA: ${{ needs.test_http_hana.result }}
+        run: |
+          fail=0
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+            case "$r" in
+              success|skipped) ;;
+              *) fail=1 ;;
+            esac
+          done
+          exit $fail

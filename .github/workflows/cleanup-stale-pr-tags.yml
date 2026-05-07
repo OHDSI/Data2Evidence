@@ -1,0 +1,68 @@
+name: Cleanup stale PR/MG container tags
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  packages: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      OWNER: ohdsi
+      MAX_AGE_HOURS: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - d2e/flow-base
+          - d2e/flow-i2b2
+          - d2e/flow-search-embedding
+          - d2e/flow-data-management
+          - d2e/flow-loyalty-score
+          - d2e/flow-hades
+          - d2e/flow-data-transformation
+          - d2e-pg-mgmt-init
+          - d2e-logto
+          - d2e-logto-post-init
+          - d2e-enterprise-gateway
+          - d2e-r-ohdsi-kernel
+          - d2e-trex
+          - d2e-dataflow-gen-worker
+          - d2e-supabase-storage
+    steps:
+      - name: Sweep pr-* and mg-* tags older than ${{ env.MAX_AGE_HOURS }}h
+        run: |
+          PKG_NAME="${{ matrix.image }}"
+          PKG_ENC=$(echo "$PKG_NAME" | sed 's|/|%2F|g')
+
+          cutoff=$(date -u -d "${MAX_AGE_HOURS} hours ago" +%s)
+
+          page=1
+          while :; do
+            resp=$(gh api -H "Accept: application/vnd.github+json" \
+              "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions?per_page=100&page=${page}")
+            count=$(echo "$resp" | jq 'length')
+            if [ "$count" = "0" ]; then break; fi
+
+            echo "$resp" | jq -r '
+              .[]
+              | . as $v
+              | (.metadata.container.tags // [])[]
+              | select(test("^(pr-|mg-)"))
+              | "\($v.id) \($v.updated_at) \(.)"
+            ' | while read vid updated tag; do
+              vid_ts=$(date -u -d "$updated" +%s)
+              if [ "$vid_ts" -lt "$cutoff" ]; then
+                echo "Deleting ${PKG_NAME} v${vid} tag=${tag} updated=${updated}"
+                gh api -X DELETE -H "Accept: application/vnd.github+json" \
+                  "/orgs/${OWNER}/packages/container/${PKG_ENC}/versions/${vid}" || true
+              fi
+            done
+
+            page=$((page + 1))
+          done
