@@ -21,7 +21,7 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      # - ./services/trex/core:/usr/src/core # For debugging trex with local code
+      - ./services/trex/core:/usr/src/core # For debugging trex with local code
       - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -29,7 +29,7 @@ services:
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'

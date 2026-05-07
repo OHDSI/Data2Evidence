@@ -17,7 +17,7 @@ export default defineConfig({
     browserName: 'chromium',
     headless: true,
     ignoreHTTPSErrors: true,
-    screenshot: 'on', // Take screenshot of page if test fails
+    screenshot: 'only-on-failure', // Take screenshot of page if test fails
     video: 'retain-on-failure',
     trace: 'retain-on-failure'
   },
@@ -27,6 +27,5 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: 0, // 0 = no cap; run all tests even if some fail
-  preserveOutput: 'always' // keep test-results/ for passed tests too, not just failures
+  maxFailures: process.env.CI ? 1 : 0, // 0 = no cap; run all tests even if some fail
 })
