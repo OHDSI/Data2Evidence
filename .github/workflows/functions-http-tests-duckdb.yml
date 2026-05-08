@@ -14,7 +14,7 @@ on:
 
 env:
   VERSION: develop
-  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "i2b2-flow", "data-management-flow"]'
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "i2b2-flow", "data-management-flow"]'
   PGUSER: postgres
   PGPASSWORD: mypass
   PGHOST: localhost

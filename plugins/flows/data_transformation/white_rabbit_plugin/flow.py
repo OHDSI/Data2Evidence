@@ -36,10 +36,7 @@ def scan_report_flow(options: WhiteRabbitRequestType):
     config_ini_path, scan_report_path = create_white_rabbit_settings(scan_type, options.data)
 
     if scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES:
-        # files_to_scan = [x["fileName"] for x in options.data.get("files", [])]
-        files_to_scan = options.data.files
-    
-        files_downloaded = download_files_from_supabase_storage(node_id, files_to_scan, supabase_api)
+        files_downloaded = download_files_from_supabase_storage(node_id, supabase_api)
 
     if (scan_type == WhiteRabbitRunType.SCAN_REPORT_FILES and files_downloaded) \
         or scan_type == WhiteRabbitRunType.SCAN_REPORT_DB:

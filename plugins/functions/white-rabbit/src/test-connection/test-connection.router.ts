@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 import { Service } from "typedi";
-import { ScanDbSettings } from "./models/scanDbSettings.ts";
+import { TestConnectionRequest } from "./models/scanDbSettings.ts";
 import { TestConnectionService } from "./test-connection.service.ts";
 
 @Service()
@@ -21,10 +21,10 @@ export class TestConnectionRouter {
       "/test-connection",
       async (req: Request, res: Response, next: NextFunction) => {
         try {
-          const dbSetting: ScanDbSettings = req.body;
+          const request: TestConnectionRequest = req.body;
           this.logger.info("REST request to test connection");
           const result = await this.testConnectionService.testConnection(
-            dbSetting
+            request
           );
           res.status(200).json(result);
         } catch (error) {
