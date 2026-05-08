@@ -110,7 +110,7 @@ export class WebApiSourceApi {
     schemaName: string,
     authToken?: string
   ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+    const databaseCode = `ds_${sourceKey.replace(/-/g, '_')}`
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache`
 
     const response = await fetch(url, {
@@ -131,7 +131,7 @@ export class WebApiSourceApi {
     sourceKey: string,
     authToken?: string
   ): Promise<{ cacheExists: boolean; cacheAttached: boolean }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+    const databaseCode = `ds_${sourceKey.replace(/-/g, '_')}`
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache/status?databaseCode=${databaseCode}`
 
     const response = await fetch(url, {
