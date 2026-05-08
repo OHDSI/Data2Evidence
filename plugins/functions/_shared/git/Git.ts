@@ -1,4 +1,5 @@
 import fs from "fs";
+import { createHash } from "crypto";
 import http from "isomorphic-git/http";
 import git from "isomorphic-git";
 import * as path from "path";
@@ -23,7 +24,13 @@ export class Git {
   private readonly submodules: boolean;
 
   constructor(config: GitConfig) {
-    this.repoDir = config.repoDir;
+    // Namespace dir by repoUrl+branch so different repo or branch under the same logical key
+    // routes to a fresh dir instead of fetching from origin that still points to old URL
+    const slug = createHash("sha1")
+      .update(`${config.repoUrl}#${config.branch}`)
+      .digest("hex")
+      .slice(0, 12);
+    this.repoDir = path.join(config.repoDir, slug);
     this.repoUrl = config.repoUrl;
     this.branch = config.branch;
     this.pat = config.pat;
@@ -63,10 +70,8 @@ export class Git {
     const targetDir = this.getTargetDir();
     const resolvedPath = path.resolve(targetDir, safe);
     const resolvedTargetDir = path.resolve(targetDir);
-    if (
-      !resolvedPath.startsWith(resolvedTargetDir + path.sep) &&
-      resolvedPath !== path.resolve(resolvedTargetDir, safe)
-    ) {
+    const rel = path.relative(resolvedTargetDir, resolvedPath);
+    if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
       throw new Error("Invalid filename: path traversal attempt detected");
     }
     return resolvedPath;
@@ -110,15 +115,11 @@ export class Git {
   async readFileByPath(relativePath: string): Promise<string> {
     await this.ensureRepositoryReady();
 
-    if (relativePath.includes("..")) {
-      throw new Error("Invalid path: traversal attempt detected");
-    }
-
     const cleanPath = relativePath.replace(/^\.\//, "");
     const fullPath = path.resolve(this.repoDir, cleanPath);
     const resolvedRepoDir = path.resolve(this.repoDir);
-
-    if (!fullPath.startsWith(resolvedRepoDir + path.sep) && fullPath !== resolvedRepoDir) {
+    const rel = path.relative(resolvedRepoDir, fullPath);
+    if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
       throw new Error("Invalid path: outside repository boundary");
     }
 
@@ -154,7 +155,7 @@ export class Git {
     fileName: string,
     content: string,
     commitMessage: string,
-    author: GitAuthor = DEFAULT_AUTHOR
+    author: GitAuthor = DEFAULT_AUTHOR,
   ): Promise<void> {
     await this.ensureRepositoryReadyForWrite(author);
 
@@ -201,7 +202,7 @@ export class Git {
   async deleteFile(
     fileName: string,
     commitMessage: string,
-    author: GitAuthor = DEFAULT_AUTHOR
+    author: GitAuthor = DEFAULT_AUTHOR,
   ): Promise<void> {
     await this.ensureRepositoryReadyForWrite(author);
 
@@ -214,6 +215,17 @@ export class Git {
 
     fs.unlinkSync(filePath);
     await git.remove({ fs, dir: this.repoDir, filepath: relativeFilePath });
+
+    const status = await git.status({
+      fs,
+      dir: this.repoDir,
+      filepath: relativeFilePath,
+    });
+
+    if (status === "unmodified") {
+      console.log(`No changes to commit for deletion of ${fileName}`);
+      return;
+    }
 
     const commitId = await git.commit({
       fs,
@@ -264,7 +276,7 @@ export class Git {
 
           if (hasOrigin) {
             console.log(
-              `Fetching latest changes from origin/${this.branch}...`
+              `Fetching latest changes from origin/${this.branch}...`,
             );
             await git.fetch({
               fs,
@@ -297,7 +309,7 @@ export class Git {
   }
 
   private async ensureRepositoryReadyForWrite(
-    author: GitAuthor
+    author: GitAuthor,
   ): Promise<void> {
     try {
       const isRepo = await this.isGitRepo();
@@ -384,7 +396,7 @@ export class Git {
       const gitmodulesPath = path.join(this.repoDir, ".gitmodules");
       if (!fs.existsSync(gitmodulesPath)) {
         console.log(
-          "No .gitmodules file found, skipping submodule initialization"
+          "No .gitmodules file found, skipping submodule initialization",
         );
         return;
       }
@@ -398,7 +410,7 @@ export class Git {
 
         try {
           console.log(
-            `Cloning submodule: ${submodule.name} from ${submodule.url}`
+            `Cloning submodule: ${submodule.name} from ${submodule.url}`,
           );
 
           const parentDir = path.dirname(submoduleDir);
@@ -421,7 +433,7 @@ export class Git {
         } catch (submoduleError: any) {
           console.error(
             `Failed to clone submodule ${submodule.name}:`,
-            submoduleError.message
+            submoduleError.message,
           );
         }
       }
