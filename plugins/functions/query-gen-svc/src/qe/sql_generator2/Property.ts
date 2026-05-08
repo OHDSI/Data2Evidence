@@ -292,7 +292,7 @@ export class Property extends AstElement {
                             .toLowerCase()
                             .includes("facet")
                     ) {
-                        finalDescendantsJoinExpressionSql += `AND ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`;
+                        finalDescendantsJoinExpressionSql += ` AND ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`;
                     }
                     const finalDescendantsJoinExpression = QueryObject.format(
                         "%UNSAFE",
