@@ -14,7 +14,7 @@ on:
 
 env:
   VERSION: develop
-  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+  PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
   PGUSER: postgres
   PGPASSWORD: mypass
   PGHOST: localhost
@@ -64,6 +64,7 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
+              - "tests/backend_integration_tests/**"
               - ".github/workflows/functions-http-tests-duckdb.yml"
 
   demosetup:
