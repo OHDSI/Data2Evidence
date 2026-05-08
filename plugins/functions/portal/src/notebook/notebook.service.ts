@@ -31,7 +31,7 @@ export class NotebookService {
   constructor(
     private readonly userArtifactService: UserArtifactService,
     private readonly requestContextService: RequestContextService,
-    private readonly configService: ConfigService
+    private readonly configService: ConfigService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
@@ -87,12 +87,12 @@ export class NotebookService {
       const userNotebooks =
         await this.userArtifactService.getAllUserServiceArtifacts(
           ServiceName.NOTEBOOKS,
-          this.userId
+          this.userId,
         );
       return userNotebooks;
     } catch (error) {
       console.error(
-        `Error while getting notebooks for user id ${this.userId}: ${error}`
+        `Error while getting notebooks for user id ${this.userId}: ${error}`,
       );
       throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE);
     }
@@ -107,20 +107,20 @@ export class NotebookService {
           userId: this.userId,
           isShared: false,
         },
-        true
+        true,
       );
       await this.userArtifactService.createServiceArtifact(
         ServiceName.NOTEBOOKS,
-        { serviceArtifact: notebookEntity }
+        { serviceArtifact: notebookEntity },
       );
       console.log(
-        `Created new notebook ${notebookEntity.name} with id ${notebookEntity.id}`
+        `Created new notebook ${notebookEntity.name} with id ${notebookEntity.id}`,
       );
 
       await this.saveToGitRepo(
         notebookEntity.id,
         notebookEntity,
-        `Created new notebook ${notebookEntity.name} with id ${notebookEntity.id}`
+        `Created new notebook ${notebookEntity.name} with id ${notebookEntity.id}`,
       );
 
       return notebookEntity;
@@ -131,20 +131,20 @@ export class NotebookService {
   }
 
   async updateNotebook(
-    notebookUpdateDto: INotebookUpdateDto
+    notebookUpdateDto: INotebookUpdateDto,
   ): Promise<INotebook> {
     try {
       const notebook =
         await this.userArtifactService.getUserServiceArtifactById(
           this.userId,
           ServiceName.NOTEBOOKS,
-          notebookUpdateDto.id
+          notebookUpdateDto.id,
         );
 
       if (notebook.userId !== this.userId) {
         console.error("Notebook does not belong to user!");
         throw new InternalServerErrorException(
-          "Notebook does not belong to user!"
+          "Notebook does not belong to user!",
         );
       }
 
@@ -155,24 +155,24 @@ export class NotebookService {
       });
       await this.userArtifactService.updateServiceArtifactEntity(
         ServiceName.NOTEBOOKS,
-        updatedServiceEntity
+        updatedServiceEntity,
       );
 
       await this.saveToGitRepo(
         notebookUpdateDto.id,
         notebookUpdateDto,
-        `Updated notebook ${notebookUpdateDto.name}`
+        `Updated notebook ${notebookUpdateDto.name}`,
       );
 
       console.log(`Updated notebook ${notebookUpdateDto.name}`);
       return { ...notebookUpdateDto, userId: this.userId };
     } catch (error) {
       console.error(
-        `Error while updating notebook ${notebookUpdateDto.id}: ${error}`
+        `Error while updating notebook ${notebookUpdateDto.id}: ${error}`,
       );
       if (error instanceof NotFoundException) {
         throw new NotFoundException(
-          `Notebook with id ${notebookUpdateDto.id} not found`
+          `Notebook with id ${notebookUpdateDto.id} not found`,
         );
       }
       throw new InternalServerErrorException(DEFAULT_ERROR_MESSAGE);
@@ -185,12 +185,12 @@ export class NotebookService {
       await this.userArtifactService.deleteUserServiceArtifact(
         this.userId,
         ServiceName.NOTEBOOKS,
-        id
+        id,
       );
 
       await this.deleteFromGitRepo(
         id,
-        `Deleted notebook ${notebook.name} with id ${id}`
+        `Deleted notebook ${notebook.name} with id ${id}`,
       );
 
       return notebook;
@@ -231,7 +231,7 @@ export class NotebookService {
     if (localNotebook) {
       const localContent = JSON.stringify(localNotebook.notebookContent || "");
       const remoteContent = JSON.stringify(
-        remoteNotebookData.notebookContent || ""
+        remoteNotebookData.notebookContent || "",
       );
 
       if (localContent === remoteContent) {
@@ -262,13 +262,13 @@ export class NotebookService {
       });
       await this.userArtifactService.updateServiceArtifactEntity(
         ServiceName.NOTEBOOKS,
-        updatedServiceEntity
+        updatedServiceEntity,
       );
     } else {
       const newServiceEntity = this.addOwner(updatedNotebook, true);
       await this.userArtifactService.createServiceArtifact(
         ServiceName.NOTEBOOKS,
-        { serviceArtifact: newServiceEntity }
+        { serviceArtifact: newServiceEntity },
       );
     }
 
@@ -301,7 +301,7 @@ export class NotebookService {
       const localNotebook = await this.getNotebook(notebookId);
       const localContent = JSON.stringify(localNotebook.notebookContent || "");
       const remoteContent = JSON.stringify(
-        remoteNotebookData.notebookContent || ""
+        remoteNotebookData.notebookContent || "",
       );
       const hasDifferences = localContent !== remoteContent;
 
@@ -321,16 +321,18 @@ export class NotebookService {
     const git = await this.getMainGit();
     if (!git) throw new Error("Git config not set, cannot sync from remote");
 
+    await git.ensureLatest();
+    const fileNames = await git.listFiles(JSON_FILE_FILTER);
+
     const existingNotebooks = await this.getNotebooksByUserId();
     for (const notebook of existingNotebooks) {
       await this.userArtifactService.deleteUserServiceArtifact(
         this.userId,
         ServiceName.NOTEBOOKS,
-        notebook.id
+        notebook.id,
       );
     }
 
-    const fileNames = await git.listFiles(JSON_FILE_FILTER);
     if (fileNames.length === 0) {
       return {
         message: "No notebooks folder found",
@@ -352,18 +354,18 @@ export class NotebookService {
             isShared: remoteData.isShared || false,
             userId: this.userId,
           },
-          true
+          true,
         );
 
         await this.userArtifactService.createServiceArtifact(
           ServiceName.NOTEBOOKS,
-          { serviceArtifact: notebookEntity }
+          { serviceArtifact: notebookEntity },
         );
 
         results.push({ notebookId, name: notebookEntity.name });
       } catch (fileError: any) {
         console.error(
-          `Failed to process file ${fileName}: ${fileError.message}`
+          `Failed to process file ${fileName}: ${fileError.message}`,
         );
         results.push({
           notebookId,
@@ -373,7 +375,7 @@ export class NotebookService {
     }
 
     console.log(
-      `Successfully overwritten all notebooks from remote. Processed ${fileNames.length} files`
+      `Successfully overwritten all notebooks from remote. Processed ${fileNames.length} files`,
     );
 
     return {
@@ -400,7 +402,7 @@ export class NotebookService {
         });
       } catch (fileError: any) {
         console.error(
-          `Failed to process template file ${fileName}: ${fileError.message}`
+          `Failed to process template file ${fileName}: ${fileError.message}`,
         );
       }
     }
@@ -411,7 +413,7 @@ export class NotebookService {
 
   async createNotebookFromTemplate(
     templateId: string,
-    name: string
+    name: string,
   ): Promise<INotebook> {
     const git = this.getTemplateGit();
     const fileName = `${templateId}.json`;
@@ -430,7 +432,7 @@ export class NotebookService {
 
     const result = await this.createNotebook(notebookDto);
     console.log(
-      `Created new notebook from template ${templateId} with id ${result.id}`
+      `Created new notebook from template ${templateId} with id ${result.id}`,
     );
     return result;
   }
@@ -440,12 +442,12 @@ export class NotebookService {
   private async saveToGitRepo(
     notebookId: string,
     notebookEntity: any,
-    commitMessage: string
+    commitMessage: string,
   ) {
     const git = await this.getMainGit();
     if (!git) {
       console.log(
-        "Git remote URL or default branch not configured, skipping Git operations"
+        "Git remote URL or default branch not configured, skipping Git operations",
       );
       return;
     }
@@ -461,7 +463,7 @@ export class NotebookService {
     const git = await this.getMainGit();
     if (!git) {
       console.log(
-        "Git remote URL or default branch not configured, skipping Git operations"
+        "Git remote URL or default branch not configured, skipping Git operations",
       );
       return;
     }
@@ -474,7 +476,7 @@ export class NotebookService {
     const notebook = await this.userArtifactService.getUserServiceArtifactById(
       this.userId,
       ServiceName.NOTEBOOKS,
-      id
+      id,
     );
     if (!notebook) {
       throw new NotFoundException(`Notebook with id ${id} not found`);

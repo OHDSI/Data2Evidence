@@ -41,7 +41,7 @@ export class TransformationService {
   private async getMainGit(token: string): Promise<Git | null> {
     const portalServerApi = new PortalServerAPI(token);
     const gitConfig = await portalServerApi.getConfigSecretByType(
-      "dataflow-git-config"
+      "dataflow-git-config",
     );
     if (!gitConfig?.value) return null;
     const cfg = JSON.parse(gitConfig.value) as {
@@ -159,11 +159,11 @@ export class TransformationService {
     if (
       await this.checkCanvasNameExists(
         dataflowDto.name,
-        dataflowDto.id || undefined
+        dataflowDto.id || undefined,
       )
     ) {
       throw new Error(
-        `Dataflow with name '${dataflowDto.name}' already exists`
+        `Dataflow with name '${dataflowDto.name}' already exists`,
       );
     }
 
@@ -172,12 +172,12 @@ export class TransformationService {
     let version = 1;
     if (dataflowDto.id) {
       const lastDataflowRevision = await this.getLatestGraphByCanvasId(
-        dataflowDto.id
+        dataflowDto.id,
       );
       version += lastDataflowRevision.version;
       await this.canvasRepo.update(
         dataflowDto.id,
-        this.addOwner(decodedToken, canvas)
+        this.addOwner(decodedToken, canvas),
       );
     } else {
       await this.canvasRepo.insert(this.addOwner(decodedToken, canvas, true));
@@ -193,14 +193,14 @@ export class TransformationService {
     });
     await this.graphRepo.insert(this.addOwner(decodedToken, graphEntity, true));
     this.logger.info(
-      `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`
+      `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`,
     );
 
     await this.saveToGitRepo(
       canvas.id,
       graphEntity,
       `Created new revision for dataflow ${canvas.name} with id ${graphEntity.id}`,
-      token
+      token,
     );
 
     return {
@@ -212,7 +212,7 @@ export class TransformationService {
 
   async checkCanvasNameExists(
     name: string,
-    excludeId?: string | undefined
+    excludeId?: string | undefined,
   ): Promise<boolean> {
     const existingCanvasQuery = this.canvasRepo
       .createQueryBuilder("canvas")
@@ -237,7 +237,7 @@ export class TransformationService {
   async createDataflowRun(id, prefecflowRunId) {
     await this.canvasRepo.update({ id }, { lastFlowRunId: prefecflowRunId });
     this.logger.info(
-      `Created dataflow run for dataflow ${id} with lastflowRunId ${prefecflowRunId}`
+      `Created dataflow run for dataflow ${id} with lastflowRunId ${prefecflowRunId}`,
     );
   }
 
@@ -245,13 +245,13 @@ export class TransformationService {
     id: string,
     revisionId: string,
     dataflowDuplicateDto: IDataflowDuplicateDto,
-    token
+    token,
   ) {
     const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
     const flowEntity = await this.getCanvas(id);
     if (!flowEntity) throw new Error("Dataflow does not exist");
     const revisionEntity = flowEntity.revisions.find(
-      (r) => r.id === revisionId
+      (r) => r.id === revisionId,
     );
     if (!revisionEntity) throw new Error("Dataflow Revision does not exist");
 
@@ -262,7 +262,7 @@ export class TransformationService {
         name: dataflowDuplicateDto.name,
         type: "datatransformation-flow",
       },
-      true
+      true,
     );
 
     const newRevisionEntity = this.addOwner(
@@ -273,20 +273,20 @@ export class TransformationService {
         flow: revisionEntity.flow,
         version: 1,
       },
-      true
+      true,
     );
 
     await this.canvasRepo.save(newDataflowEntity);
     await this.graphRepo.save(newRevisionEntity);
     this.logger.info(
-      `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`
+      `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`,
     );
 
     await this.saveToGitRepo(
       newDataflowEntity.id,
       newRevisionEntity,
       `Created new revision for dataflow ${newDataflowEntity.name} with id ${newRevisionEntity.id}`,
-      token
+      token,
     );
 
     return {
@@ -311,7 +311,7 @@ export class TransformationService {
         flowId,
         lastRev,
         `Deleted dataflow revision with id ${revisionId}`,
-        token
+        token,
       );
 
       return { revisionId };
@@ -391,7 +391,7 @@ export class TransformationService {
       });
 
       const localFlowContent = JSON.stringify(
-        normalizeFlow(latestLocalRevision.flow)
+        normalizeFlow(latestLocalRevision.flow),
       );
       const remoteFlowContent = JSON.stringify(normalizeFlow(remoteFlowData));
 
@@ -411,7 +411,7 @@ export class TransformationService {
         this.addOwner(decodedToken, {
           name: remoteFlowData.name || localCanvas.name,
           type: "datatransformation-flow",
-        })
+        }),
       );
     } else {
       const canvasEntity = {
@@ -420,7 +420,7 @@ export class TransformationService {
         type: "datatransformation-flow",
       };
       await this.canvasRepo.insert(
-        this.addOwner(decodedToken, canvasEntity, true)
+        this.addOwner(decodedToken, canvasEntity, true),
       );
     }
 
@@ -436,7 +436,7 @@ export class TransformationService {
     await this.graphRepo.insert(this.addOwner(decodedToken, graphEntity, true));
 
     this.logger.info(
-      `Overwritten canvas ${canvasId} from remote with version ${newVersion} (was version ${localVersion})`
+      `Overwritten canvas ${canvasId} from remote with version ${newVersion} (was version ${localVersion})`,
     );
 
     return {
@@ -477,7 +477,7 @@ export class TransformationService {
     });
 
     const localFlowNormalized = JSON.stringify(
-      normalizeFlow(latestLocalRevision.flow)
+      normalizeFlow(latestLocalRevision.flow),
     );
     const remoteFlowNormalized = JSON.stringify(normalizeFlow(remoteFlowData));
     const hasDifferences = localFlowNormalized !== remoteFlowNormalized;
@@ -496,6 +496,9 @@ export class TransformationService {
     if (!git) throw new Error("Git config not set, cannot sync from remote");
 
     const decodedToken = decode(token.replace(/bearer /i, "")) as JwtPayload;
+
+    await git.ensureLatest();
+    const fileNames = await git.listFiles(JSON_FILE_FILTER);
 
     const existingCanvases = await this.canvasRepo
       .createQueryBuilder("canvas")
@@ -516,7 +519,6 @@ export class TransformationService {
       .where("type = :type", { type: "datatransformation-flow" })
       .execute();
 
-    const fileNames = await git.listFiles(JSON_FILE_FILTER);
     if (fileNames.length === 0) {
       this.logger.info("flows folder does not exist in repository");
       return {
@@ -538,7 +540,7 @@ export class TransformationService {
           type: "datatransformation-flow",
         };
         await this.canvasRepo.insert(
-          this.addOwner(decodedToken, canvasEntity, true)
+          this.addOwner(decodedToken, canvasEntity, true),
         );
 
         const graphEntity = this.graphRepo.create({
@@ -550,7 +552,7 @@ export class TransformationService {
         });
 
         await this.graphRepo.insert(
-          this.addOwner(decodedToken, graphEntity, true)
+          this.addOwner(decodedToken, graphEntity, true),
         );
 
         results.push({
@@ -560,7 +562,7 @@ export class TransformationService {
         });
       } catch (fileError: any) {
         this.logger.error(
-          `Failed to process file ${fileName}: ${fileError.message}`
+          `Failed to process file ${fileName}: ${fileError.message}`,
         );
         results.push({
           canvasId,
@@ -570,7 +572,7 @@ export class TransformationService {
     }
 
     this.logger.info(
-      `Successfully overwritten all canvases from remote. Processed ${fileNames.length} files`
+      `Successfully overwritten all canvases from remote. Processed ${fileNames.length} files`,
     );
 
     return {
@@ -598,7 +600,7 @@ export class TransformationService {
         });
       } catch (fileError: any) {
         this.logger.error(
-          `Failed to process template file ${fileName}: ${fileError.message}`
+          `Failed to process template file ${fileName}: ${fileError.message}`,
         );
       }
     }
@@ -625,7 +627,7 @@ export class TransformationService {
         });
       } catch (fileError: any) {
         this.logger.error(
-          `Failed to process template file ${fileName}: ${fileError.message}`
+          `Failed to process template file ${fileName}: ${fileError.message}`,
         );
       }
     }
@@ -638,7 +640,7 @@ export class TransformationService {
     templateId: string,
     name: string,
     comment: string,
-    token: string
+    token: string,
   ) {
     const git = this.getTemplateGit();
     const fileName = `${templateId}.json`;
@@ -661,7 +663,7 @@ export class TransformationService {
     const result = await this.createCanvas(dataflowDto, token);
 
     this.logger.info(
-      `Created new canvas from template ${templateId} with id ${result.revisionId}`
+      `Created new canvas from template ${templateId} with id ${result.revisionId}`,
     );
 
     return result;
@@ -673,7 +675,7 @@ export class TransformationService {
     canvasId: string,
     graphEntity: any,
     commitMessage: string,
-    token: string
+    token: string,
   ) {
     const git = await this.getMainGit(token);
     if (!git) {
@@ -691,7 +693,7 @@ export class TransformationService {
   private async deleteFromGitRepo(
     canvasId: string,
     commitMessage: string,
-    token: string
+    token: string,
   ) {
     const git = await this.getMainGit(token);
     if (!git) {
