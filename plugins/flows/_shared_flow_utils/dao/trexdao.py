@@ -106,7 +106,7 @@ class TrexDao(DaoBase):
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
-        self.validate_schema_name(schema)
+        self.validate_schema_name(self._schema_ident(schema)[-1])
         sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
             .format(self._schema_ident(schema))
             
@@ -151,7 +151,9 @@ class TrexDao(DaoBase):
         parts = schema.split(".")
         if len(parts) == 2:
             return parts[0], parts[1]
-        return None, parts[0]
+        if len(parts) == 1:
+            return None, parts[0] 
+        raise ValueError(f"Invalid schema format: {schema}. Expected 'schema' or 'catalog.schema'.")
 
     def check_table_exists(self, schema: str, table: str) -> bool:
         try:

@@ -26,9 +26,3 @@ class CreateHanaCacheOptions(BaseModel):
         use_enum_values = True
         validate_by_name = True
     
-    @property
-    def use_trex_connection(self) -> bool:
-        """
-        Whether to use the TREX sql connection or direct database connection.
-        """
-        return True

@@ -5,6 +5,8 @@ import duckdb
 import torch
 import time
 from concurrent.futures import ThreadPoolExecutor
+import sqlalchemy as sqla
+from psycopg2 import sql as pg_sql
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -13,7 +15,6 @@ from prefect.variables import Variable
 from .types import *
 from .utils import *
 from _shared_flow_utils.dao.DBDao import DBDao, SupportedDatabaseDialects
-from _shared_flow_utils.dao.trexdao import TrexDao
 
 os.environ['plugin_name'] = 'search_embedding_plugin'
 
@@ -42,7 +43,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             database_code=database_code,
         )
         if dbdao.dialect == SupportedDatabaseDialects.HANA:
-            create_embeddings_hana(dbdao, use_trex_connection, database_code, schema_name)
+            create_embeddings_hana(dbdao, database_code, schema_name)
         else:
             ## Vss extension is installed by default in trex, just need to load it before use
             dbdao.execute_sql("LOAD vss")
@@ -56,28 +57,29 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             create_embeddings_duckdb(conn, schema_name)
 
 @task(log_prints=True, task_run_name="embedding_concept_table_hana_{schema_name}.concept")
-def create_embeddings_hana(dbdao_hana, use_trex_connection, database_code, schema_name):
+def create_embeddings_hana(dbdao_hana, database_code, schema_name):
     """
     HANA flow: read concept_id/concept_name from the HANA source via SQLAlchemy,
     then write (concept_id, concept_name_embedding) into the DuckDB cache via
     a Trex pgwire connection. Mirrors `create_cachedb_file_plugin/copy.py` —
     HANA is the read side, the cache is the write side.
     """
-    import sqlalchemy as sqla
-    from psycopg2 import sql as pg_sql
 
     logger = get_run_logger()
     logger.info("***************** Start embedding (HANA -> cache) *****************")
 
-    # 1. Read concept_id, concept_name from HANA concept table
+    # 1. Read concept_id, concept_name from HANA concept table.
+    #    schema_name is an identifier (cannot be a bind parameter), so let
+    #    SQLAlchemy's HANA dialect quote/escape it instead of f-stringing raw.
+    quoted_schema = dbdao_hana.engine.dialect.identifier_preparer.quote_schema(schema_name)
     with dbdao_hana.engine.connect() as conn:
         result = conn.execute(sqla.text(
-            f'SELECT CONCEPT_ID, CONCEPT_NAME FROM "{schema_name}".CONCEPT'
+            f'SELECT CONCEPT_ID, CONCEPT_NAME FROM {quoted_schema}.CONCEPT'
         ))
         concept = pd.DataFrame(result.fetchall(), columns=['concept_id', 'concept_name'])
 
     # 2. Create embeddings and write to hana cache database concept_embeddings table via Trex connection
-    cache_dao = TrexDao(use_cache_db=use_trex_connection, database_code=database_code)
+    cache_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=database_code)
     cache_dao.execute_sql("LOAD vss")
     
     embedding_cols = {'concept_id': 'INTEGER', embedding_col_name: 'FLOAT[384]'}
