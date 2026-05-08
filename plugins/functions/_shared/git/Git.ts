@@ -26,7 +26,7 @@ export class Git {
   constructor(config: GitConfig) {
     // Namespace dir by repoUrl+branch so different repo or branch under the same logical key
     // routes to a fresh dir instead of fetching from origin that still points to old URL
-    const slug = createHash("sha1")
+    const slug = createHash("sha256")
       .update(`${config.repoUrl}#${config.branch}`)
       .digest("hex")
       .slice(0, 12);
