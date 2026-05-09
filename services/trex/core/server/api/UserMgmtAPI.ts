@@ -17,7 +17,8 @@ export class UserMgmtAPI {
     const options: AxiosRequestConfig = {
       headers: {
         Authorization: token
-      }
+      },
+      timeout: 60000
     }
     const url = `${this.baseURL}/user-group/list`
     const result = await post(url, { userId }, options)
