@@ -886,8 +886,8 @@ jobs:
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
-      reg_url: ${{ env.REG_URL }}
-      prepull_flow_images: ${{ env.PREPULL_FLOW_IMAGES }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
   test_http_duckdb_retry:
@@ -906,8 +906,8 @@ jobs:
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
-      reg_url: ${{ env.REG_URL }}
-      prepull_flow_images: ${{ env.PREPULL_FLOW_IMAGES }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
   test_http_hana:
@@ -923,8 +923,8 @@ jobs:
       attempt: "1"
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
-      reg_url: ${{ env.REG_URL }}
-      prepull_flow_images: ${{ env.PREPULL_FLOW_IMAGES }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
   test_http_hana_retry:
@@ -942,8 +942,8 @@ jobs:
       attempt: "2"
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
-      reg_url: ${{ env.REG_URL }}
-      prepull_flow_images: ${{ env.PREPULL_FLOW_IMAGES }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
   test_demosetup_dev_gate:
