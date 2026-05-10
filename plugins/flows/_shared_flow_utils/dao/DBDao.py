@@ -35,17 +35,13 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     Raises:
         ValueError: If the dialect is not supported.
     """
-    # cache_id is not yet accepted by every DAO __init__ in the chain
-    # (only DaoBase / TrexDao). Pop it here so the SqlAlchemyDao test
-    # instance constructor doesn't choke, then forward it to the final
-    # DAO class via vars(test_instance) — DaoBase.__init__ sets
-    # self.cache_id, so it's already on the test instance and re-passed.
+    # Only DaoBase and TrexDao __init__ accept cache_id; pop it so the
+    # SqlAlchemyDao probe constructor doesn't reject it, then re-attach
+    # to the probe so vars(test_instance) carries it forward.
     cache_id = kwargs.pop("cache_id", None)
 
     # Create a test instance to infer dialect if not provided
     test_instance = SqlAlchemyDao(**kwargs)
-    # cache_id is a DaoBase attribute; re-apply it so vars(test_instance)
-    # carries it through to the dialect-specific DAO constructor below.
     if cache_id is not None:
         test_instance.cache_id = cache_id
     # Always infer dialect from test_instance if not provided
@@ -65,13 +61,11 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
             f"Supported dialects: {supported_dialects}"
         )
 
-    # For non-SqlAlchemy DAOs, pass the test instance's attributes
+    # For non-SqlAlchemy DAOs, pass the test instance's attributes.
     if dao_class != SqlAlchemyDao:
         attrs = vars(test_instance)
-        # Only forward cache_id to DAO classes that accept it (TrexDao).
-        # Other DAOs' __init__ signatures don't yet accept cache_id; their
-        # superclass DaoBase.__init__ will still default self.cache_id
-        # from database_code.
+        # Only TrexDao's __init__ accepts cache_id; for other DAOs the
+        # superclass DaoBase.__init__ defaults self.cache_id from database_code.
         if dao_class is TrexDao:
             return dao_class(**attrs)
         attrs_no_cache = {k: v for k, v in attrs.items() if k != "cache_id"}

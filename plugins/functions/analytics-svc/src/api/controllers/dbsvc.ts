@@ -15,9 +15,6 @@ export async function getCDMVersion(req, res, next) {
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
-        // Phase 2A: SQL identifier qualifying the catalog must match the trex
-        // connection alias (the dataset's cacheId, falling back to databaseCode
-        // for un-backfilled rows).
         const trexAlias = cacheId ?? databaseCode;
         const cdmVersion = await dbDao.getCDMVersion(trexAlias, schemaName, dialect);
 

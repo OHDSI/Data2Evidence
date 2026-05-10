@@ -77,7 +77,7 @@ Deno.test("ensureCacheAttached — throws on invalid identifier without calling 
   assertEquals(calls.length, 0);
 });
 
-Deno.test("ensureSourceAttached — postgres builds the same SQL as trex_lib.js", async () => {
+Deno.test("ensureSourceAttached — postgres builds the expected ATTACH SQL", async () => {
   const calls: string[] = [];
   const exec: ExecFn = (sql) => { calls.push(sql); };
   const c: SourceCredential = {
@@ -97,7 +97,7 @@ Deno.test("ensureSourceAttached — postgres builds the same SQL as trex_lib.js"
   );
 });
 
-Deno.test("ensureSourceAttached — bigquery builds the same SQL as trex_lib.js", async () => {
+Deno.test("ensureSourceAttached — bigquery builds the expected ATTACH SQL", async () => {
   const calls: string[] = [];
   const exec: ExecFn = (sql) => { calls.push(sql); };
   const c: SourceCredential = {

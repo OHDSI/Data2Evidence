@@ -19,8 +19,6 @@ export default class TrexConnection {
       this.cacheId = cacheId;
       // @ts-ignore To ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
-      // The connection alias in DuckDB is the cache_id; queries reference cacheId now.
-      // databaseCode is preserved on the instance for credential lookup elsewhere.
       const conn = dbm.getConnection(
         cacheId,
         schemaName,

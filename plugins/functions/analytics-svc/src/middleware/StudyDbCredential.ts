@@ -125,11 +125,8 @@ export default async (req: IMRIRequest, res, next) => {
             studyAnalyticsCredential.code = studyMetadata.databaseCode;
         }
 
-        // Phase 2A: propagate cacheId from the dataset record so the trex
-        // connection alias can be aligned to portal.dataset.cache_id (with
-        // databaseCode as fallback for un-backfilled rows). The credential
-        // lookup key remains databaseCode (`code`) — only the alias used at
-        // `getConnection(<alias>, ...)` should switch to cacheId.
+        // `code` is the credential lookup key (databaseCode); `cacheId` is the
+        // DuckDB ATTACH alias used at `getConnection(<alias>, ...)`.
         studyAnalyticsCredential.cacheId =
             studyMetadata.cacheId ?? studyMetadata.databaseCode;
 

@@ -54,10 +54,6 @@ export async function initTrex() {
       logger.error('Failed to attach cdw_config_svc validation schema:', e);
     }
 
-    // Phase 1 cache-id alignment: ensure every connection __srcdb and every
-    // portal.dataset.cache_id is attached at startup. This duplicates work that
-    // trex_lib.js's #updatePublications also does for __srcdbs (IF NOT EXISTS
-    // makes it a no-op the second time); the cache_ids side is new.
     try {
       const dbmInstance = await DatabaseManager.get();
       const credentials = await dbmInstance.getCredentialsDecrypted();
@@ -86,7 +82,7 @@ export async function initTrex() {
         await conn.execute(sql, []);
       };
 
-      // Best-effort per-item: bad ids/dialects shouldn't kill startup
+      // Per-item try/catch so a single bad credential or cache_id can't crash startup.
       for (const c of connections) {
         try {
           await ensureAttached({ connections: [c] }, { exec: attachExec });

@@ -68,7 +68,7 @@ export async function ensureSourceAttached(
     await opts.exec(sql);
     return;
   }
-  // Unsupported dialect: skip silently, mirroring trex_lib.js #updatePublications
+  // Unsupported dialect: nothing to attach; skip silently.
 }
 
 export interface EnsureAttachedInput {

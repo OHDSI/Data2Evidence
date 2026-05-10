@@ -68,10 +68,9 @@ class TrexDao(DaoBase):
             )
             con.autocommit = True
             # Trex pgwire only auto-issues `USE <dbname>` when dbname matches
-            # a credential id. For cache_id (a DuckDB ATTACH alias that isn't
-            # a credential id), we issue USE ourselves so unqualified queries
-            # route to the cache catalog. The cache_id is pre-attached by
-            # services/trex/core's ensureAttached at startup.
+            # a credential id. cache_id is a DuckDB ATTACH alias (not a
+            # credential id), so we issue USE ourselves to make unqualified
+            # queries resolve against the cache catalog.
             with con.cursor() as cur:
                 cur.execute(pg_sql.SQL("USE {}").format(pg_sql.Identifier(self.cache_id)))
             yield con

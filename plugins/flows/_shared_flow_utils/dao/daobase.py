@@ -75,9 +75,8 @@ class DaoBase(ABC):
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
-        # cache_id defaults to database_code so it always has a value and
-        # callers that don't yet thread cache_id through preserve existing
-        # behavior (pgwire dbname == database_code).
+        # cache_id defaults to database_code so callers that don't supply
+        # one still get a usable pgwire dbname.
         self.cache_id = cache_id or self.database_code
 
     # --- Property methods ---
