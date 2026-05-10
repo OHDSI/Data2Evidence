@@ -1203,6 +1203,12 @@ services:
       PGUSER: ${PG_SUPER_USER:-postgres}
       PGPASSWORD: ${PG_SUPER_PASSWORD}
       PGDATABASE: ${PG_DB_NAME:-alp}
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 1s
     command: >
       sh -c '
         echo "Waiting for logto.users table...";
@@ -1214,6 +1220,7 @@ services:
           echo "Waiting... ($$i/60)";
           sleep 2;
         done;
-        for f in /scripts/*.sql; do psql -f "$$f"; done
+        for f in /scripts/*.sql; do psql -f "$$f"; done;
+        tail -f /dev/null
       '
 

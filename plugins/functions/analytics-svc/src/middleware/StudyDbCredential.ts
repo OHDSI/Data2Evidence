@@ -125,6 +125,14 @@ export default async (req: IMRIRequest, res, next) => {
             studyAnalyticsCredential.code = studyMetadata.databaseCode;
         }
 
+        // Phase 2A: propagate cacheId from the dataset record so the trex
+        // connection alias can be aligned to portal.dataset.cache_id (with
+        // databaseCode as fallback for un-backfilled rows). The credential
+        // lookup key remains databaseCode (`code`) — only the alias used at
+        // `getConnection(<alias>, ...)` should switch to cacheId.
+        studyAnalyticsCredential.cacheId =
+            studyMetadata.cacheId ?? studyMetadata.databaseCode;
+
         // Add database pool related configs to studyAnalyticsCredential
         studyAnalyticsCredential.max = env.PG__MAX_POOL;
         studyAnalyticsCredential.min = env.PG__MIN_POOL;

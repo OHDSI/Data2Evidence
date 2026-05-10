@@ -22,6 +22,9 @@ export class Dataset extends Audit {
   @Column({ name: 'database_code' })
   databaseCode: string
 
+  @Column({ name: 'cache_id', type: 'varchar', nullable: true })
+  cacheId: string | null
+
   @Column({ name: 'schema_name', nullable: true })
   schemaName: string
 

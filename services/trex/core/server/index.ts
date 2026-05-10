@@ -10,6 +10,7 @@ import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
 import { authn } from "./auth/authn.ts"
+import { ensureAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -51,6 +52,58 @@ export async function initTrex() {
       logger.log('Attached cdw_config_svc validation schema');
     } catch (e) {
       logger.error('Failed to attach cdw_config_svc validation schema:', e);
+    }
+
+    // Phase 1 cache-id alignment: ensure every connection __srcdb and every
+    // portal.dataset.cache_id is attached at startup. This duplicates work that
+    // trex_lib.js's #updatePublications also does for __srcdbs (IF NOT EXISTS
+    // makes it a no-op the second time); the cache_ids side is new.
+    try {
+      const dbmInstance = await DatabaseManager.get();
+      const credentials = await dbmInstance.getCredentialsDecrypted();
+      const connections: SourceCredential[] = [];
+      for (const row of credentials) {
+        const adminCred = (row.credentials ?? []).find((c: any) => c.userScope === "Admin");
+        if (!adminCred) {
+          logger.log(`[attach-startup] no Admin credential for ${row.id} — skipping __srcdb attach`);
+          continue;
+        }
+        connections.push({
+          id: row.id,
+          dialect: row.dialect,
+          host: row.host,
+          port: row.port,
+          name: row.name,
+          adminUsername: adminCred.username,
+          adminPassword: adminCred.password,
+        });
+      }
+
+      const cacheIds = await dbmInstance.getCacheIdsFromPortal();
+
+      const attachExec: ExecFn = async (sql) => {
+        const conn = new Trex.TrexDB("memory");
+        await conn.execute(sql, []);
+      };
+
+      // Best-effort per-item: bad ids/dialects shouldn't kill startup
+      for (const c of connections) {
+        try {
+          await ensureAttached({ connections: [c] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] connection ${c.id} attach failed: ${(e as Error).message}`);
+        }
+      }
+      for (const cid of cacheIds) {
+        try {
+          await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
+        }
+      }
+      logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
+    } catch (e) {
+      logger.log(`[attach-startup] failed: ${(e as Error).message}`);
     }
 
     /*for await (const r of Deno.readDir("./core/server/routes")) {

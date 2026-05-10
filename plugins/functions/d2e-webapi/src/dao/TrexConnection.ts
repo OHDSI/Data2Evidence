@@ -4,18 +4,25 @@ import { ICohortExpression } from "../types.ts";
 export default class TrexConnection {
   // deno-lint-ignore no-explicit-any
   private readonly conn: any;
+  private readonly databaseCode: string;
+  private readonly cacheId: string;
 
   constructor(
     databaseCode: string,
+    cacheId: string,
     schemaName: string,
     vocabSchemaName: string,
     resultsSchemaName: string
   ) {
     try {
+      this.databaseCode = databaseCode;
+      this.cacheId = cacheId;
       // @ts-ignore To ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
+      // The connection alias in DuckDB is the cache_id; queries reference cacheId now.
+      // databaseCode is preserved on the instance for credential lookup elsewhere.
       const conn = dbm.getConnection(
-        databaseCode,
+        cacheId,
         schemaName,
         vocabSchemaName,
         resultsSchemaName,

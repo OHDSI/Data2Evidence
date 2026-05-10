@@ -44,6 +44,8 @@ export class DBRouter {
         const options = {
           options: {
             flow_action_type: "update_datamodel",
+            // Pre-dataset / infra path: databaseCode is used as the cache_id alias
+            // (matches portal.dataset.cache_id backfill). No datasetId is in scope here.
             database_code: databaseCode,
             data_model: dataModel,
             schema_name: schemaName,

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import SecretStr
 from contextlib import contextmanager
 
@@ -21,8 +22,9 @@ class TrexDao(DaoBase):
         use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
+        cache_id: Optional[str] = None,
     ):
-        super().__init__(use_cache_db, database_code, user_type)
+        super().__init__(use_cache_db, database_code, user_type, cache_id=cache_id)
 
     @property
     def dialect(self):
@@ -62,9 +64,16 @@ class TrexDao(DaoBase):
                 port=configs.port,
                 user=configs.user,
                 password=configs.password.get_secret_value(),
-                dbname=self.database_code,
+                dbname=self.cache_id,
             )
             con.autocommit = True
+            # Trex pgwire only auto-issues `USE <dbname>` when dbname matches
+            # a credential id. For cache_id (a DuckDB ATTACH alias that isn't
+            # a credential id), we issue USE ourselves so unqualified queries
+            # route to the cache catalog. The cache_id is pre-attached by
+            # services/trex/core's ensureAttached at startup.
+            with con.cursor() as cur:
+                cur.execute(pg_sql.SQL("USE {}").format(pg_sql.Identifier(self.cache_id)))
             yield con
         except Exception:
             if con and not con.autocommit:

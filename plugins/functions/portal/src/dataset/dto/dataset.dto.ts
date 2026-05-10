@@ -85,6 +85,8 @@ export class DatasetDto implements IDatasetDto {
   @IsNotEmpty()
   databaseCode: string
 
+  cacheId: string | null
+
   @ValidateIf(o => ['custom_cdm', 'existing_cdm'].includes(o.schemaOption))
   @IsNotEmpty()
   schemaName: string

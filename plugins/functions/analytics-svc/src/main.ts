@@ -637,8 +637,14 @@ const getTrexDbConnection = ({
                 parameters
             );
         };
+        // Phase 2A: alias passed to trex `getConnection` is the dataset's
+        // cacheId (falling back to databaseCode for un-backfilled rows).
+        // `analyticsCredentials.code` remains the credential lookup key
+        // (databaseCode) and is still used by `getFirstPublication` above.
+        const trexAlias =
+            analyticsCredentials.cacheId ?? analyticsCredentials.code;
         const conn = dbm.getConnection(
-            analyticsCredentials.code,
+            trexAlias,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
             analyticsCredentials.resultsSchemaName,

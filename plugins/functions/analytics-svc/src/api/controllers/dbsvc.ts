@@ -9,14 +9,17 @@ const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
-    const { dialect, schemaName, databaseCode } = await new PortalServerAPI().getStudy(
-        datasetId
-    );
+    const { dialect, schemaName, databaseCode, cacheId } =
+        await new PortalServerAPI().getStudy(datasetId);
 
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
-        const cdmVersion = await dbDao.getCDMVersion(databaseCode, schemaName, dialect);
+        // Phase 2A: SQL identifier qualifying the catalog must match the trex
+        // connection alias (the dataset's cacheId, falling back to databaseCode
+        // for un-backfilled rows).
+        const trexAlias = cacheId ?? databaseCode;
+        const cdmVersion = await dbDao.getCDMVersion(trexAlias, schemaName, dialect);
 
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =

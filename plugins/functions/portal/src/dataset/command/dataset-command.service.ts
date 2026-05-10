@@ -18,6 +18,7 @@ import {
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
   DatasetCodeQueryRepository,
@@ -52,6 +53,7 @@ export class DatasetCommandService {
     private readonly datasetCodeQueryRepo: DatasetCodeQueryRepository,
     private readonly requestContextService: RequestContextService,
     private readonly webApiSourceService: WebApiSourceService,
+    private readonly trexApiService: TrexApiService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
@@ -126,6 +128,14 @@ export class DatasetCommandService {
 
     // Then create dataset in database
     const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart.
+    const cacheId = datasetDto.cacheId ?? datasetDto.databaseCode;
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
 
     return result;
   }
