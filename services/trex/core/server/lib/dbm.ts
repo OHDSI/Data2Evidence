@@ -160,7 +160,7 @@ public async getCredentialsEncrypted() {
     public async getCacheIdsFromPortal(): Promise<string[]> {
         try {
             const r = await this.pgclient.query(
-                `SELECT cache_id FROM portal.dataset WHERE cache_id IS NOT NULL`,
+                `SELECT DISTINCT cache_id FROM portal.dataset WHERE cache_id IS NOT NULL`,
             );
             return r.rows.map((row: any) => row.cache_id).filter(Boolean);
         } catch (e) {

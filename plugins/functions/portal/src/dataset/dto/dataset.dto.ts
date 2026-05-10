@@ -5,8 +5,11 @@ import {
   IsIn,
   IsNotEmpty,
   IsNotEmptyObject,
+  IsOptional,
   IsString,
   IsUUID,
+  Matches,
+  MaxLength,
   Validate,
   ValidateIf,
   ValidateNested
@@ -85,6 +88,12 @@ export class DatasetDto implements IDatasetDto {
   @IsNotEmpty()
   databaseCode: string
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  @Matches(/^[a-zA-Z_][a-zA-Z0-9_]*$/, {
+    message: 'cacheId must be a SQL identifier: letters/digits/underscore, starting with a letter or underscore',
+  })
   cacheId: string | null
 
   @ValidateIf(o => ['custom_cdm', 'existing_cdm'].includes(o.schemaOption))

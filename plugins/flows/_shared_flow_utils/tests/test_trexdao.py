@@ -1,5 +1,4 @@
 from unittest.mock import patch, MagicMock
-import pytest
 
 from _shared_flow_utils.dao.trexdao import TrexDao
 

@@ -107,10 +107,9 @@ export function addRoutes(app: Hono) {
           }
         }
 
-        const attachExec: ExecFn = async (sql) => {
-          const conn = new Trex.TrexDB("memory");
-          await conn.execute(sql, []);
-        };
+        // One DuckDB session reused across every ATTACH in this request.
+        const attachConn = new Trex.TrexDB("memory");
+        const attachExec: ExecFn = (sql) => attachConn.execute(sql, []);
 
         for (const cid of connections) {
           try {

@@ -1204,13 +1204,15 @@ services:
       PGPASSWORD: ${PG_SUPER_PASSWORD}
       PGDATABASE: ${PG_DB_NAME:-alp}
     healthcheck:
-      test: ["CMD", "true"]
+      # Only healthy after the SQL scripts have finished successfully.
+      test: ["CMD", "test", "-f", "/tmp/webapi-init.done"]
       interval: 5s
       timeout: 2s
-      retries: 3
-      start_period: 1s
+      retries: 120
+      start_period: 5s
     command: >
       sh -c '
+        set -e;
         echo "Waiting for logto.users table...";
         for i in $$(seq 1 60); do
           if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = '\''logto'\'' AND table_name = '\''users'\''" | grep -q 1; then
@@ -1220,7 +1222,9 @@ services:
           echo "Waiting... ($$i/60)";
           sleep 2;
         done;
-        for f in /scripts/*.sql; do psql -f "$$f"; done;
+        for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
+        touch /tmp/webapi-init.done;
+        echo "webapi-init: SQL scripts complete";
         tail -f /dev/null
       '
 

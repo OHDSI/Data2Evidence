@@ -1,5 +1,5 @@
 //deno test --no-check --allow-env --allow-read services/trex/core/server/lib/attach.test.ts
-import { assertEquals, assertThrows } from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 import { ensureAttached, ensureCacheAttached, ensureSourceAttached, type ExecFn, isValidIdentifier, type SourceCredential } from "./attach.ts";
 
 Deno.test("isValidIdentifier — accepts plain identifiers", () => {

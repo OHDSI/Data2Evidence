@@ -77,10 +77,9 @@ export async function initTrex() {
 
       const cacheIds = await dbmInstance.getCacheIdsFromPortal();
 
-      const attachExec: ExecFn = async (sql) => {
-        const conn = new Trex.TrexDB("memory");
-        await conn.execute(sql, []);
-      };
+      // One DuckDB session shared across every ATTACH issued in this phase.
+      const attachConn = new Trex.TrexDB("memory");
+      const attachExec: ExecFn = (sql) => attachConn.execute(sql, []);
 
       // Per-item try/catch so a single bad credential or cache_id can't crash startup.
       for (const c of connections) {

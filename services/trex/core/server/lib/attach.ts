@@ -1,8 +1,16 @@
 const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 const MAX_IDENTIFIER_LEN = 128;
+// `${id}__srcdb` must also fit within MAX_IDENTIFIER_LEN; reserve the suffix length.
+const SRCDB_SUFFIX = "__srcdb";
+const MAX_SOURCE_ID_LEN = MAX_IDENTIFIER_LEN - SRCDB_SUFFIX.length;
 
 export function isValidIdentifier(s: string): boolean {
   return s.length > 0 && s.length <= MAX_IDENTIFIER_LEN && IDENTIFIER_RE.test(s);
+}
+
+// Escape a single value for safe inclusion inside a single-quoted SQL string.
+function sqlQuote(s: string): string {
+  return s.replace(/'/g, "''");
 }
 
 const DEFAULT_CACHE_DIR = "./data/cache";
@@ -52,19 +60,28 @@ export async function ensureSourceAttached(
   c: SourceCredential,
   opts: { exec: ExecFn },
 ): Promise<void> {
-  if (!isValidIdentifier(c.id)) {
+  if (!isValidIdentifier(c.id) || c.id.length > MAX_SOURCE_ID_LEN) {
     throw new Error(`invalid identifier: ${c.id}`);
   }
-  const alias = `${c.id}__srcdb`;
+  const alias = `${c.id}${SRCDB_SUFFIX}`;
   if (c.dialect === "postgres") {
+    // Credentials are quote-escaped because they're interpolated inside the
+    // single-quoted DuckDB ATTACH connection string. Identifier alias is
+    // already validated above.
+    const host = sqlQuote(c.host);
+    const name = sqlQuote(c.name);
+    const user = sqlQuote(c.adminUsername);
+    const password = sqlQuote(c.adminPassword);
     const sql =
-      `ATTACH IF NOT EXISTS 'host=${c.host} port=${c.port} dbname=${c.name} user=${c.adminUsername} password=${c.adminPassword}' AS ${alias} (TYPE postgres)`;
+      `ATTACH IF NOT EXISTS 'host=${host} port=${c.port} dbname=${name} user=${user} password=${password}' AS ${alias} (TYPE postgres)`;
     await opts.exec(sql);
     return;
   }
   if (c.dialect === "bigquery") {
+    const host = sqlQuote(c.host);
+    const name = sqlQuote(c.name);
     const sql =
-      `ATTACH IF NOT EXISTS 'project=${c.host} dataset=${c.name}' AS ${alias} (TYPE bigquery, READ_ONLY)`;
+      `ATTACH IF NOT EXISTS 'project=${host} dataset=${name}' AS ${alias} (TYPE bigquery, READ_ONLY)`;
     await opts.exec(sql);
     return;
   }
