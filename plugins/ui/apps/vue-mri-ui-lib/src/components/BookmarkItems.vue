@@ -316,13 +316,7 @@ onErrorCaptured((err, instance, info) => {
 </script>
 
 <template>
-  <div
-    style="
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    "
-  >
+  <div style="display: flex; flex-direction: column; height: 100%">
     <!-- Bookmarks Grid -->
     <div
       style="

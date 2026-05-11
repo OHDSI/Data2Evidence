@@ -12,6 +12,11 @@ import { createLogger } from '../Logger'
 import { LogtoAPI, PortalAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
 
+export type SyncRoleResult =
+  | { status: 'synced' }
+  | { status: 'skipped'; reason: string }
+  | { status: 'failed'; reason: string }
+
 @Service()
 export class UserGroupService {
   private readonly logger = createLogger(this.constructor.name)
@@ -224,23 +229,25 @@ export class UserGroupService {
   }
 
   // Sync role assignment/removal to Logto
-  async syncRoleToLogto(userId: string, groupId: string, action: 'assign' | 'remove'): Promise<void> {
+  async syncRoleToLogto(userId: string, groupId: string, action: 'assign' | 'remove'): Promise<SyncRoleResult> {
     try {
       const user = await this.userService.getUser(userId)
       if (!user?.idpUserId) {
-        this.logger.warn(`User ${userId} has no idpUserId, skipping Logto sync`)
-        return
+        const reason = `User ${userId} has no idpUserId`
+        this.logger.warn(`${reason}, skipping Logto sync`)
+        return { status: 'skipped', reason }
       }
 
       const group = await this.groupService.getGroup(groupId)
       if (!group) {
-        this.logger.warn(`Group ${groupId} not found, skipping Logto sync`)
-        return
+        const reason = `Group ${groupId} not found`
+        this.logger.warn(`${reason}, skipping Logto sync`)
+        return { status: 'skipped', reason }
       }
 
       const logtoRole = await this.buildLogtoRoleName(group)
       if (!logtoRole) {
-        return
+        return { status: 'skipped', reason: `Could not resolve Logto role for group ${groupId}` }
       }
 
       const { role, scopes } = logtoRole
@@ -252,9 +259,11 @@ export class UserGroupService {
         await this.logtoAPI.removeRoleFromUser(user.idpUserId, role)
         this.logger.info(`Removed Logto role ${role} from user ${user.idpUserId}`)
       }
+      return { status: 'synced' }
     } catch (err) {
-      this.logger.error(`Failed to sync role to Logto for user ${userId}, group ${groupId}: ${err}`)
-      // Don't throw - local DB update succeeded, Logto sync is best effort
+      const reason = err instanceof Error ? err.message : String(err)
+      this.logger.error(`Failed to sync role to Logto for user ${userId}, group ${groupId}: ${reason}`)
+      return { status: 'failed', reason }
     }
   }
 
