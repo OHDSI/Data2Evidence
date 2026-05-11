@@ -14,6 +14,25 @@ import { translateHanaToPostgres, translateHanaToDuckdb } from "./helpers/hanaTr
 import { EnvVarUtils } from "./EnvVarUtils";
 const logger = CreateLogger("Postgres Connection");
 
+function _isTransientPgError(err: any): boolean {
+  if (!err) return false;
+  const msg = String(err?.message || "");
+  const code = String(err?.code || "");
+  return (
+    msg === "Connection terminated" ||
+    msg === "Connection terminated unexpectedly" ||
+    msg.includes("Connection terminated") ||
+    code === "ECONNRESET" ||
+    code === "EPIPE" ||
+    code === "ETIMEDOUT" ||
+    code === "ENETUNREACH" ||
+    code === "ENOTCONN" ||
+    code === "57P01" || // admin_shutdown
+    code === "57P02" || // crash_shutdown
+    code === "57P03"    // cannot_connect_now
+  );
+}
+
 function _getRows(result) {
   if ("rows" in result) {
     return result.rows;
@@ -95,29 +114,40 @@ export class PostgresConnection implements ConnectionInterface {
     parameters: ParameterInterface[],
     callback: CallBackInterface,
   ) {
+    const params = flattenParameter(parameters);
+    let translatedSql: string;
     try {
-      //logger.debug(`Sql: ${sql}`);
-      // logger.debug(
-      //   `parameters: ${JSON.stringify(flattenParameter(parameters))}`,
-      // );
-      let temp = sql;
-      temp = this.parseSql(temp, parameters);
-      this.conn.connect((err, client, release) => {
-        if (err) {
-          logger.error(err);
-          callback(err, null);
+      translatedSql = this.parseSql(sql, parameters);
+    } catch (err) {
+      callback(new DBError(logger.error(err), err.message), null);
+      return;
+    }
+    const attempt = (attemptNo: number) => {
+      this.conn.connect((connectErr, client, release) => {
+        if (connectErr) {
+          if (_isTransientPgError(connectErr) && attemptNo < 1) {
+            logger.error(`[PG_RETRY] connect failed (transient), retrying once: ${connectErr?.message}`);
+            return setTimeout(() => attempt(attemptNo + 1), 50);
+          }
+          logger.error(connectErr);
+          return callback(connectErr, null);
         }
-        //logger.debug("PG client created");
-        client.query(temp, flattenParameter(parameters), (err, result) => {
+        client.query(translatedSql, params, (err, result) => {
           if (err) {
-            release(true); // Will destroy this client, instead of releasing back to pool
+            release(true);
+            if (_isTransientPgError(err) && attemptNo < 1) {
+              logger.error(`[PG_RETRY] query failed (transient), retrying once: ${err?.message}`);
+              return setTimeout(() => attempt(attemptNo + 1), 50);
+            }
           } else {
             release();
           }
-          //logger.debug("PG client released");
           callback(err, result);
         });
       });
+    };
+    try {
+      attempt(0);
     } catch (err) {
       callback(new DBError(logger.error(err), err.message), null);
     }
