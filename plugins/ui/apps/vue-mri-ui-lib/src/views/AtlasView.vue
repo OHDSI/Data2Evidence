@@ -5,7 +5,7 @@
     ref="iframeRef"
     :src="`/atlas${atlasStore.atlasPath}`"
     @load="handleIframeLoad"
-    style="width: 100%; height: calc(100% - 6px); border: none"
+    style="width: 100%; height: 100%; border: none"
     title="Atlas Lite"
   />
 </template>
