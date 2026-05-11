@@ -1,5 +1,9 @@
 <template>
-  <div class="axis-menu-button-wrapper" v-bind:style="componentStyle">
+  <div
+    class="axis-menu-button-wrapper"
+    :class="{ 'axis-menu-button-wrapper--disabled': isDisabled }"
+    v-bind:style="componentStyle"
+  >
     <div class="iconWrapper">
       <label class="iconLabel">
         <span class="icon cursorDefault" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>

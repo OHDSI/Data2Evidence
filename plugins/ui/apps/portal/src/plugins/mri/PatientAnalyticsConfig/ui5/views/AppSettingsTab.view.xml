@@ -73,6 +73,21 @@
 			visible="{analyticsModel>config/panelOptions/inclusionReport}">
 		</Switch>
 
+		<Label text="{i18n>MRI_PA_CFG_OVERLAPPING_HISTOGRAM_SETTING_LABEL}"/>
+		<Switch state="{analyticsModel>config/panelOptions/overlappingHistogram}"
+			tooltip="{i18n>MRI_PA_CFG_OVERLAPPING_HISTOGRAM_SETTING_TOOLTIP}">
+		</Switch>
+
+		<Label text="{i18n>MRI_PA_CFG_OVERLAPPING_BAR_CHART_SETTING_LABEL}"/>
+		<Switch state="{analyticsModel>config/panelOptions/overlappingBarChart}"
+			tooltip="{i18n>MRI_PA_CFG_OVERLAPPING_BAR_CHART_SETTING_TOOLTIP}">
+		</Switch>
+
+		<Label text="{i18n>MRI_PA_CFG_KERNEL_DENSITY_PLOT_SETTING_LABEL}"/>
+		<Switch state="{analyticsModel>config/panelOptions/kernelDensityPlot}"
+			tooltip="{i18n>MRI_PA_CFG_KERNEL_DENSITY_PLOT_SETTING_TOOLTIP}">
+		</Switch>
+
 
 	</f:SimpleForm>
 </mvc:View>

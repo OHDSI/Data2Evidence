@@ -13365,7 +13365,10 @@ const paConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
+        "overlappingHistogram": false,
+        "overlappingBarChart": false,
+        "kernelDensityPlot": false
     }
 };
 
@@ -27232,7 +27235,10 @@ const paConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": true,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
+        "overlappingHistogram": false,
+        "overlappingBarChart": false,
+        "kernelDensityPlot": false
     }
 };
 
@@ -28859,7 +28865,10 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
-    intersectViewInclusionReport: false
+    intersectViewInclusionReport: false,
+    overlappingHistogram: false,
+    overlappingBarChart: false,
+    kernelDensityPlot: false
   },
 };
 
@@ -34706,7 +34715,10 @@ const pajsonfhirConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
+        "overlappingHistogram": false,
+        "overlappingBarChart": false,
+        "kernelDensityPlot": false
     }
 };
 
@@ -38192,6 +38204,9 @@ const omopHanaLeanPAConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
+        "overlappingHistogram": false,
+        "overlappingBarChart": false,
+        "kernelDensityPlot": false
     }
 };

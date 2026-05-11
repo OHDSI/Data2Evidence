@@ -2,18 +2,7 @@
   <div class="axis-menu-button-wrapper bar-display-mode-axis-button">
     <div class="iconWrapper">
       <label class="iconLabel">
-        <svg
-          class="icon cursorDefault"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 -960 960 960"
-          width="14"
-          height="16"
-          fill="currentColor"
-        >
-          <path
-            d="M346-140 100-386q-10-10-15-22t-5-25q0-13 5-25t15-22l230-229-106-106 62-65 400 400q10 10 14.5 22t4.5 25q0 13-4.5 25T686-386L440-140q-10 10-22 15t-25 5q-13 0-25-5t-22-15Zm47-506L179-432h428L393-646Zm399 526q-36 0-61-25.5T706-208q0-27 13.5-51t30.5-47l42-54 44 54q16 23 30 47t14 51q0 37-26 62.5T792-120Z"
-          />
-        </svg>
+        <CohortDefinitionIcon class="icon cursorDefault" />
       </label>
     </div>
     <div class="buttonWrapper" ref="menuButtonWrapper">
@@ -62,6 +51,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
+import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 import { modeOrder } from './StackBarModes/modes'
 
 defineProps<{ parentContainer?: any }>()
@@ -69,11 +59,27 @@ defineProps<{ parentContainer?: any }>()
 const store = useStore()
 const getBarDisplayMode = computed(() => store?.getters?.getBarDisplayMode)
 const getShowDistributionOverlay = computed(() => store?.getters?.getShowDistributionOverlay)
+const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
 const getText = (key: string) => store?.getters?.getText?.(key) || key
 
 const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
 const menuVisible = ref(false)
+
+const modeIdToPanelOption: Record<string, string> = {
+  overlay: 'overlappingHistogram',
+  partialOverlaySolid: 'overlappingBarChart',
+  distribution: 'kernelDensityPlot',
+}
+
+const enabledModes = computed(() => {
+  const panelOptions = getMriFrontendConfig.value?._internalConfig?.panelOptions || {}
+  return modeOrder.filter(mode => {
+    const optionKey = modeIdToPanelOption[mode.id]
+    if (!optionKey) return true
+    return !!panelOptions[optionKey]
+  })
+})
 
 const currentModeLabel = computed(() => {
   const current = modeOrder.find(m => m.id === getBarDisplayMode.value)
@@ -97,7 +103,7 @@ const menuData = computed(() => {
     subMenu: [],
     data: null,
   })
-  for (const mode of modeOrder) {
+  for (const mode of enabledModes.value) {
     items.push({
       idx: idx++,
       text: mode.label,

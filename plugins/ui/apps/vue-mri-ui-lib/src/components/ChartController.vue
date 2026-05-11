@@ -5,10 +5,10 @@
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
         <div class="axis-group axis-group--top">
-          <barDisplayModeAxisButton
-            v-if="getActiveChart === 'stacked'"
+          <chartTypeAxisButton
+            v-if="getActiveChart === 'stacked' && chartTypeAxisButtonVisible"
             :parentContainer="$refs.axisContainer"
-          ></barDisplayModeAxisButton>
+          ></chartTypeAxisButton>
           <div class="axis-subgroup">
             <axisMenuButton
               v-if="getAllAxes[Constants.MRIChartDimensions.Y]?.props.active"
@@ -101,7 +101,7 @@ import appButton from '../lib/ui/app-button.vue'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import XAxisColorButton from './XAxisColorButton.vue'
-import BarDisplayModeAxisButton from './BarDisplayModeAxisButton.vue'
+import ChartTypeAxisButton from './ChartTypeAxisButton.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import PatientListContainer from './PatientListContainer.vue'
 import SacChart from './SACChart.vue'
@@ -222,6 +222,13 @@ export default {
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig?._internalConfig?.panelOptions?.cohortEntryExit || false
     },
+    chartTypeAxisButtonVisible() {
+      const panelOptions = this.getMriFrontendConfig?._internalConfig?.panelOptions
+      if (!panelOptions) return false
+      return (
+        !!panelOptions.overlappingHistogram || !!panelOptions.overlappingBarChart || !!panelOptions.kernelDensityPlot
+      )
+    },
   },
   methods: {
     ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue']),
@@ -323,7 +330,7 @@ export default {
     AxisMenuButton,
     DropDownMenu,
     XAxisColorButton,
-    BarDisplayModeAxisButton,
+    ChartTypeAxisButton,
     LoadingAnimation,
     SortMenuButton,
     CohortEntryExit,

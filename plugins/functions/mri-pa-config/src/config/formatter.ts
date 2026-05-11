@@ -159,6 +159,9 @@ export class Formatter {
           usePaAtlas: mriConfig.panelOptions.usePaAtlas,
           inclusionReport: mriConfig.panelOptions.inclusionReport,
           intersectViewInclusionReport: mriConfig.panelOptions.intersectViewInclusionReport,
+          overlappingHistogram: mriConfig.panelOptions.overlappingHistogram,
+          overlappingBarChart: mriConfig.panelOptions.overlappingBarChart,
+          kernelDensityPlot: mriConfig.panelOptions.kernelDensityPlot,
         };
         config.settings = {
           dateFormat: dmConfig.advancedSettings?.settings?.dateFormat || "YYYY-MM-dd"

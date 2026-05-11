@@ -4,6 +4,13 @@
   white-space: nowrap;
   height: fit-content;
 
+  &.axis-menu-button-wrapper--disabled {
+    .iconLabel,
+    .iconLabel .icon {
+      opacity: 0.5;
+    }
+  }
+
   .iconWrapper,
   .buttonWrapper,
   .binningWrapper {

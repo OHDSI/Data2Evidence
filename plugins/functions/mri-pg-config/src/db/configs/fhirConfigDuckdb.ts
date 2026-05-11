@@ -1286,5 +1286,8 @@ export const paFHIRConfigDuckdb = {
     cohortEntryExit: false,
     inclusionReport: false,
     intersectViewInclusionReport: false,
+    overlappingHistogram: false,
+    overlappingBarChart: false,
+    kernelDensityPlot: false,
   },
 };

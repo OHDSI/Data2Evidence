@@ -774,6 +774,21 @@ function _getValidDefinition(cdwConfig) {
           type: "boolean",
           strict: false,
         },
+        {
+          name: "overlappingHistogram",
+          type: "boolean",
+          strict: false,
+        },
+        {
+          name: "overlappingBarChart",
+          type: "boolean",
+          strict: false,
+        },
+        {
+          name: "kernelDensityPlot",
+          type: "boolean",
+          strict: false,
+        },
         // deprecated
         {
           name: "afp",
