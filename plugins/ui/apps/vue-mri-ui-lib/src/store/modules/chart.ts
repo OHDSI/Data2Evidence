@@ -370,7 +370,9 @@ const actions = {
   setBarDisplayMode({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode
     const X1 = Constants.MRIChartDimensions.X1
+    const X2 = Constants.MRIChartDimensions.X2
     let binsizeChanged = false
+    let xAxisCleared = false
 
     if (modeId === 'distribution' && previousMode !== 'distribution') {
       const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
@@ -402,9 +404,49 @@ const actions = {
       commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)
     }
 
+    if (previousMode === 'stack' && modeId !== 'stack') {
+      const allAxes = rootGetters.getAllAxes
+      const x1Axis = allAxes?.[X1]
+      const x2Axis = allAxes?.[X2]
+      const x1HasSelection = !!(x1Axis?.props?.filterCardId && x1Axis?.props?.key)
+      const x2HasSelection = !!(x2Axis?.props?.filterCardId && x2Axis?.props?.key)
+
+      let targetId: number | null = null
+      let needsClear = false
+
+      if (x1HasSelection && x2HasSelection) {
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Axis.props.attributeId)?.isBinnable?.()
+        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Axis.props.attributeId)?.isBinnable?.()
+        if (!x1Binnable && x2Binnable) {
+          targetId = X1
+        } else if (x1Binnable && !x2Binnable) {
+          targetId = X2
+        } else {
+          targetId = X1
+        }
+        needsClear = true
+      } else if (x1HasSelection && !x2HasSelection) {
+        targetId = X2
+      } else if (!x1HasSelection && x2HasSelection) {
+        targetId = X1
+      }
+
+      if (targetId !== null) {
+        if (needsClear) {
+          dispatch('clearAxisValue', targetId)
+          xAxisCleared = true
+        }
+        dispatch('setAxisValue', { id: targetId, props: { disabled: true } })
+      }
+    } else if (previousMode !== 'stack' && modeId === 'stack') {
+      dispatch('setAxisValue', { id: X1, props: { disabled: false } })
+      dispatch('setAxisValue', { id: X2, props: { disabled: false } })
+    }
+
     commit(types.SET_BAR_DISPLAY_MODE, modeId)
 
-    if (binsizeChanged) {
+    if (binsizeChanged || xAxisCleared) {
       dispatch('setFireRequest')
     }
   },

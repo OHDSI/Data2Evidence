@@ -55,6 +55,13 @@
     grid-column: 1;
     -ms-grid-columns: 120px 120px;
     grid-template-columns: 120px 120px;
+
+    &:disabled,
+    &.axisMenuButton--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   }
   .axisMenuText {
     width: 120px;

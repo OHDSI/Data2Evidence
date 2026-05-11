@@ -8,10 +8,12 @@
     <div class="buttonWrapper" ref="menuButtonWrapper">
       <button
         class="axisMenuButton"
+        :class="{ 'axisMenuButton--disabled': isDisabled }"
         ref="menuButton"
         v-click-focus
         v-on:click="toggleAxisMenu"
         v-bind:title="axisDisplay.axisSelectionTooltip"
+        :disabled="isDisabled"
         tabindex="0"
       >
         <span class="axisMenuText" :class="[axisDisplay.isEmpty ? 'axisTextPlaceholder' : '']">{{
@@ -84,6 +86,9 @@ export default {
         return this.getAxis(this.dimensionIndex)
       }
       return {}
+    },
+    isDisabled() {
+      return !!this.axisModel?.props?.disabled
     },
     componentStyle() {
       const axisModel = this.axisModel
@@ -258,6 +263,9 @@ export default {
       this.closeAxisMenu()
     },
     toggleAxisMenu(event) {
+      if (this.isDisabled) {
+        return
+      }
       const sourceEvent = event || window.event
 
       const chartableFilterCards = this.getChartableFilterCards
