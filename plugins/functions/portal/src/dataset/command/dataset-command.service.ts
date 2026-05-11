@@ -122,6 +122,8 @@ export class DatasetCommandService {
       schemaName: datasetDto.schemaName,
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultsSchemaName: datasetDto.resultsSchemaName,
+      type: datasetDto.type,
+      fhirProjectId: datasetDto.fhir_project_id,
     }, datasetDto.detail);
 
     // Then create dataset in database
@@ -398,6 +400,10 @@ export class DatasetCommandService {
       resultsSchemaName:
         datasetDetailMetadataUpdateDto.resultsSchemaName ??
           currDataset.resultsSchemaName,
+      type: datasetDetailMetadataUpdateDto.type ?? currDataset.type,
+      fhirProjectId:
+        datasetDetailMetadataUpdateDto.fhir_project_id ??
+          currDataset.fhir_project_id,
     }, datasetDetailMetadataUpdateDto.detail);
 
     return this.transactionRunner.run(
@@ -879,9 +885,24 @@ export class DatasetCommandService {
       schemaName?: string;
       vocabSchemaName?: string;
       resultsSchemaName?: string;
+      type?: string;
+      fhirProjectId?: string | null;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
+    // Skip sync for FHIR and Strategus_study dataset
+    const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
+    if (
+      datasetInfo.fhirProjectId ||
+      normalizedType === "fhir" ||
+      normalizedType === "strategus_analysis"
+    ) {
+      this.logger.info(
+        `Skipping WebAPI sync for non-OMOP dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+      );
+      return;
+    }
+
     const dbCredentials = getDbCredentialsByCode(datasetInfo.databaseCode);
     if (!dbCredentials) {
       throw new HttpException(400, `No database credentials found for ${datasetInfo.databaseCode}`);
