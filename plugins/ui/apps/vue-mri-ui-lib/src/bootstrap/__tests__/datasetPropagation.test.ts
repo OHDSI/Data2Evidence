@@ -54,6 +54,7 @@ describe('bootstrap/datasetPropagation', () => {
         'commit:RESET_DATASET_CACHE',
         'dispatch:requestMriConfig',
         'dispatch:setFireRequest',
+        'dispatch:refreshBookmarksForDatasetSwitch',
         `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
       ])
     })
