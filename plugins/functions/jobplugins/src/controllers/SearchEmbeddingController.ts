@@ -34,13 +34,17 @@ export class SearchEmbeddingController {
       const params = req.body;
 
       const portalServerApi = new PortalServerAPI(token);
-      const { databaseCode, schemaName } = await portalServerApi.getDataset(
-        params.datasetId
-      );
+      const dataset = await portalServerApi.getDataset(params.datasetId);
+      const { databaseCode, schemaName } = dataset;
+      const cacheId = dataset.cacheId ?? databaseCode;
 
       const result =
         await this.searchEmbeddingService.createSematicEmbeddingsFlowRun(
-          { database_code: databaseCode, schema_name: schemaName },
+          {
+            database_code: databaseCode,
+            cache_id: cacheId,
+            schema_name: schemaName,
+          },
           token
         );
       res.send(result);

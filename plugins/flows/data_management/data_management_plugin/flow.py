@@ -98,6 +98,7 @@ def get_version_info_flow(options: GetVersionInfoType, logger):
             plugin_classpath=get_plugin_classpath(options.flow_name),
             dataset_list=options.datasets,
             use_cache_db=options.use_cache_db,
+            cache_id=options.cache_id,
         )
     except Exception as e:
         logger.error(e)
@@ -111,6 +112,7 @@ def rollback_count_flow(options: RollbackCountType, logger):
         rollback_count_task(
             use_cache_db=options.use_cache_db,
             database_code=options.database_code,
+            cache_id=options.cache_id,
             data_model=options.data_model,
             schema_name=options.schema_name,
             vocab_schema=options.vocab_schema,
@@ -132,6 +134,7 @@ def rollback_tag_flow(options: RollbackTagType, logger):
         rollback_tag_task(
             use_cache_db=options.use_cache_db,
             database_code=options.database_code,
+            cache_id=options.cache_id,
             data_model=options.data_model,
             schema_name=options.schema_name,
             vocab_schema=options.vocab_schema,
