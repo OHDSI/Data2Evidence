@@ -535,31 +535,64 @@ class GenericFileNode(Node):
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
         
+def _make_conflict_method(upsert: bool):
+    def method(table, conn, keys, data_iter):
+        data = [dict(zip(keys, row)) for row in data_iter]
+        if not data:
+            return
+        t = table.table
+        from sqlalchemy.dialects.postgresql import insert as pg_insert
+        stmt = pg_insert(t).values(data)
+        if upsert:
+            pk_cols = [c.name for c in t.primary_key.columns]
+            non_pk = [k for k in keys if k not in pk_cols]
+            if pk_cols and non_pk:
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=pk_cols,
+                    set_={c: stmt.excluded[c] for c in non_pk},
+                )
+            else:
+                stmt = stmt.on_conflict_do_nothing()
+        else:
+            stmt = stmt.on_conflict_do_nothing()
+        conn.execute(stmt)
+    return method
+
+
 class DbWriter(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
         self.schema_name = _node["schemaname"]
         self.table_name = _node["dbtablename"]
-        self.database = _node["database"] 
+        self.database = _node["database"]
         self.dataframe = _node["dataframe"]
+        self.upsert = _node.get("upsert", False)
+        self.truncate = _node.get("truncate", False)
         self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
         return False
 
-    def task(self, _input: dict[str, Result], task_run_context):        
+    def task(self, _input: dict[str, Result], task_run_context):
         dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
         dbconn = dbutils.engine
 
         try:
             df_to_write = _input[self.dataframe].result
-            result = df_to_write.to_sql(self.table_name, 
-                                        dbconn, 
-                                        schema=self.schema_name, 
-                                        if_exists='append',
-                                        index=False)
-            
-            return Result(False,  result, self, task_run_context)
+
+            if self.truncate:
+                with dbconn.begin() as conn:
+                    conn.execute(sql.text(f'TRUNCATE TABLE "{self.schema_name}"."{self.table_name}"'))
+
+            result = df_to_write.to_sql(
+                self.table_name,
+                dbconn,
+                schema=self.schema_name,
+                if_exists='append',
+                index=False,
+                method=_make_conflict_method(self.upsert),
+            )
+            return Result(False, result, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
