@@ -18,6 +18,7 @@ import {
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
 import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
@@ -130,8 +131,11 @@ export class DatasetCommandService {
     const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
-    // so a freshly-set cache_id becomes available without a trex restart.
-    const cacheId = datasetDto.cacheId ?? datasetDto.databaseCode;
+    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
+    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
+    // doesn't supply one.
+    const cacheId = datasetDto.cacheId
+      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
     await this.trexApiService.attach({
       cacheIds: cacheId ? [cacheId] : [],
       connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
