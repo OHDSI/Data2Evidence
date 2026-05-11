@@ -40,8 +40,7 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
   // Average spacing between adjacent kernel centers — used as the std-dev fallback when all
   // weight sits in a single bin (variance = 0). For integer positions this is 1, matching the
   // previous behavior; for arbitrary positions it scales with the data.
-  const positionSpacing =
-    numCategories > 1 ? (positions[numCategories - 1] - positions[0]) / (numCategories - 1) : 1
+  const positionSpacing = numCategories > 1 ? (positions[numCategories - 1] - positions[0]) / (numCategories - 1) : 1
 
   const step = numPoints > 1 ? (xMax - xMin) / (numPoints - 1) : 0
   const xGrid = Array.from({ length: numPoints }, (_, i) => xMin + i * step)
@@ -55,7 +54,11 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
     const wVariance = yVals.reduce((s, v, idx) => s + v * (positions[idx] - wMean) ** 2, 0) / totalWeight
     const rawStdDev = Math.sqrt(wVariance)
     const stdDev = rawStdDev > 0 ? rawStdDev : positionSpacing
-    const bandwidth = SILVERMAN_FACTOR * stdDev * Math.pow(totalWeight, SILVERMAN_EXPONENT)
+    // Silverman's rule alone shrinks the bandwidth as N grows, which for grouped/binned data
+    // can drop below the bin spacing and produce a bumpy curve with a visible lump at every
+    // non-empty bin. Floor the bandwidth at the bin spacing so adjacent kernels always overlap.
+    const silvermanBandwidth = SILVERMAN_FACTOR * stdDev * Math.pow(totalWeight, SILVERMAN_EXPONENT)
+    const bandwidth = Math.max(silvermanBandwidth, positionSpacing)
 
     const density = xGrid.map(x => {
       let sum = 0

@@ -19,18 +19,48 @@ type Ctx = {
   colorway: string[]
 }
 
+// Matches binned labels produced by makeBinLabel: "from - to" with optional parentheses
+// around negative endpoints, e.g. "10 - 20" or "(-20) - (-10)".
+const BIN_LABEL_RE = /^\(?(-?\d+(?:\.\d+)?)\)?\s*-\s*\(?(-?\d+(?:\.\d+)?)\)?$/
+
+type ParsedPositions = {
+  // Bin centers used as kernel placement points.
+  centers: number[]
+  // Outer edges of the data range covered by the bars: left edge of the first bin and
+  // right edge of the last bin. Equal to centers[0]/centers[n-1] when labels are plain
+  // numeric values rather than "from - to" ranges.
+  dataMin: number
+  dataMax: number
+}
+
 // Try to interpret a 1D x-array as numeric positions. Returns null when the data is
 // multi-level or any value is not a finite number, so the caller can fall back to
-// index-space behavior for categorical data.
-function tryParseNumericPositions(origX: any[]): number[] | null {
+// index-space behavior for categorical data. Binned labels are resolved to bin centers,
+// and the bin edges are tracked so the caller can use the full data range for the axis.
+function tryParseNumericPositions(origX: any[]): ParsedPositions | null {
   if (!origX.length || Array.isArray(origX[0])) return null
-  const positions: number[] = []
+  const centers: number[] = []
+  const lefts: number[] = []
+  const rights: number[] = []
   for (const v of origX) {
-    const n = typeof v === 'number' ? v : parseFloat(String(v))
-    if (!Number.isFinite(n)) return null
-    positions.push(n)
+    const s = String(v).trim()
+    const m = s.match(BIN_LABEL_RE)
+    if (m) {
+      const from = parseFloat(m[1])
+      const to = parseFloat(m[2])
+      if (!Number.isFinite(from) || !Number.isFinite(to)) return null
+      centers.push((from + to) / 2)
+      lefts.push(from)
+      rights.push(to)
+    } else {
+      const n = typeof v === 'number' ? v : parseFloat(s)
+      if (!Number.isFinite(n)) return null
+      centers.push(n)
+      lefts.push(n)
+      rights.push(n)
+    }
   }
-  return positions
+  return { centers, dataMin: Math.min(...lefts), dataMax: Math.max(...rights) }
 }
 
 export function apply(traces: any[], layout: any, ctx: Ctx) {
@@ -45,21 +75,23 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
     ? origX[0].map((_: unknown, ci: number) => origX.map((level: any) => level[ci]).join(' / '))
     : origX.map(String)
 
-  const xPositions = tryParseNumericPositions(origX)
+  const parsed = tryParseNumericPositions(origX)
   let xMin: number
   let xMax: number
   let tickvals: number[]
   let kdeOptions: { xMin: number; xMax: number; xPositions?: number[] }
 
-  if (xPositions && xPositions.length === numCategories) {
-    xMin = Math.min(...xPositions)
-    xMax = Math.max(...xPositions)
+  if (parsed && parsed.centers.length === numCategories) {
+    // Axis and curve both span the full data range (first bin's left edge to last bin's
+    // right edge), not just the kernel-center range.
+    xMin = parsed.dataMin
+    xMax = parsed.dataMax
     if (xMin === xMax) {
       xMin -= 0.5
       xMax += 0.5
     }
-    tickvals = xPositions
-    kdeOptions = { xMin, xMax, xPositions }
+    tickvals = parsed.centers
+    kdeOptions = { xMin, xMax, xPositions: parsed.centers }
   } else {
     xMin = -0.5
     xMax = numCategories - 0.5
