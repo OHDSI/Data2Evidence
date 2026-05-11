@@ -77,6 +77,12 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
+      // `insertDataset` uses TypeORM's `insert()` builder, which skips entity
+      // lifecycle hooks. Apply the cache_id default here so the persisted row
+      // matches `Dataset.applyCacheIdDefault`.
+      if (entity.cacheId == null && entity.id) {
+        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
         this.addOwner(entity, true),
