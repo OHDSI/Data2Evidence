@@ -100,7 +100,7 @@ const getters = {
   getFireRequest: modulestate => modulestate.fireRequest,
   isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
   isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
-  getBarDisplayMode: modulestate => modulestate.barDisplayMode,
+  getBarChartType: modulestate => modulestate.barDisplayMode,
   getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
 }
 
@@ -367,7 +367,7 @@ const actions = {
     dispatch('setIFRState', { ifr: initialIFR })
     dispatch('setupChartDefaults')
   },
-  setBarDisplayMode({ commit, dispatch, state, rootGetters }, modeId: string) {
+  setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode
     const X1 = Constants.MRIChartDimensions.X1
     const X2 = Constants.MRIChartDimensions.X2

@@ -18,6 +18,7 @@ import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
 import { getBookmarkType, canModifyBookmark } from '../utils/BookmarkUtils'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { modeOrder } from './StackBarModes/modes'
 
 const store = useStore()
 
@@ -144,7 +145,7 @@ const totalPages = computed(() => {
   return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
-const paginatedBookmarks = computed(() => {  
+const paginatedBookmarks = computed(() => {
   if (!isAtlas) {
     return bookmarksDisplaySorted.value
   }
@@ -244,6 +245,16 @@ const getChartInfo = (chart: string, type: string) => {
     return Constants.chartInfo[chart][type]
   }
   return ''
+}
+
+const getBarChartModeLabel = (bookmark: Bookmark): string => {
+  if (!bookmark || bookmark.chartType !== 'stacked' || !bookmark.data) return ''
+  try {
+    const mode = JSON.parse(bookmark.data)?.barChartType?.mode
+    return modeOrder.find(m => m.id === mode)?.label ?? ''
+  } catch {
+    return ''
+  }
 }
 
 const getConstraint = (constraint: any): string => {
@@ -440,7 +451,12 @@ onErrorCaptured((err, instance, info) => {
                         :style="'font-family:' + getChartInfo(bookmarkDisplay.bookmark.chartType, 'iconGroup')"
                         >{{ getChartInfo(bookmarkDisplay.bookmark.chartType, 'icon') }}</span
                       >
-                      <div>{{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}</div>
+                      <div>
+                        {{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}
+                        <template v-if="getBarChartModeLabel(bookmarkDisplay.bookmark)">
+                          - {{ getBarChartModeLabel(bookmarkDisplay.bookmark) }}
+                        </template>
+                      </div>
                     </div>
                     <div style="display: flex">
                       <div>
@@ -469,12 +485,6 @@ onErrorCaptured((err, instance, info) => {
                           </div>
                         </template>
                       </div>
-                    </div>
-                    <div style="display: flex">
-                      <div>
-                        <span class="icon"></span>
-                      </div>
-                      <div>{{ getText('MRI_PA_EXTENSION_EXPORT_HEADER') }}</div>
                     </div>
                   </div>
                 </div>

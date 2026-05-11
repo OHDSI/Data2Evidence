@@ -57,7 +57,7 @@ import { modeOrder } from './StackBarModes/modes'
 defineProps<{ parentContainer?: any }>()
 
 const store = useStore()
-const getBarDisplayMode = computed(() => store?.getters?.getBarDisplayMode)
+const getBarChartType = computed(() => store?.getters?.getBarChartType)
 const getShowDistributionOverlay = computed(() => store?.getters?.getShowDistributionOverlay)
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
 const getText = (key: string) => store?.getters?.getText?.(key) || key
@@ -82,12 +82,12 @@ const enabledModes = computed(() => {
 })
 
 const currentModeLabel = computed(() => {
-  const current = modeOrder.find(m => m.id === getBarDisplayMode.value)
+  const current = modeOrder.find(m => m.id === getBarChartType.value)
   return current ? current.label : ''
 })
 
 const overlayAllowed = computed(() => {
-  const current = modeOrder.find(m => m.id === getBarDisplayMode.value)
+  const current = modeOrder.find(m => m.id === getBarChartType.value)
   return !!current?.hasDistributionOverlay
 })
 
@@ -110,7 +110,7 @@ const menuData = computed(() => {
       hasSubMenu: false,
       isSeperator: false,
       subMenu: [],
-      selected: getBarDisplayMode.value === mode.id,
+      selected: getBarChartType.value === mode.id,
       data: { id: mode.id },
     })
   }
@@ -148,7 +148,7 @@ function handleClick(arg: any) {
   if (!arg) return
   if (arg.toggleOverlay) return
   if (arg.id) {
-    store.dispatch('setBarDisplayMode', arg.id)
+    store.dispatch('setBarChartType', arg.id)
     const next = modeOrder.find(m => m.id === arg.id)
     if (!next?.hasDistributionOverlay && getShowDistributionOverlay.value) {
       store.dispatch('setShowDistributionOverlay', false)

@@ -248,7 +248,7 @@ export default {
     colorAxisIndex() {
       this.renderChart()
     },
-    getBarDisplayMode() {
+    getBarChartType() {
       this.renderChart()
     },
     getShowDistributionOverlay() {
@@ -271,7 +271,7 @@ export default {
       'processResponse',
       'getChartProperty',
       'getAllAxes',
-      'getBarDisplayMode',
+      'getBarChartType',
       'getShowDistributionOverlay',
     ]),
 
@@ -285,7 +285,7 @@ export default {
       return (this.chartData?.traces || []).filter(t => t.showlegend !== false)
     },
     yAxisTitle() {
-      if (this.getBarDisplayMode === 'distribution') {
+      if (this.getBarChartType === 'distribution') {
         return 'Density'
       }
       return this.chartData?.measures?.[0]?.name || ''
@@ -475,7 +475,7 @@ export default {
     applyBarDisplayMode(traces, layout) {
       if (!traces || !traces.length) return
       const colorway = Object.values(Constants.ChartColorway)
-      const modeApply = applyById[this.getBarDisplayMode] || applyById.stack
+      const modeApply = applyById[this.getBarChartType] || applyById.stack
       modeApply(traces, layout, {
         showDistributionOverlay: this.getShowDistributionOverlay,
         barGap: DEFAULT_BAR_GAP,

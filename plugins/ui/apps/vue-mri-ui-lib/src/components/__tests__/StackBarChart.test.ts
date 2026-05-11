@@ -57,7 +57,7 @@ const getters = {
   processResponse: () => chartData => chartData,
   getChartProperty: () => () => ({ props: { active: true } }),
   getAllAxes: () => [],
-  getBarDisplayMode: () => 'stack',
+  getBarChartType: () => 'stack',
   getShowDistributionOverlay: () => false,
 }
 
@@ -67,7 +67,7 @@ describe('StackBarChart selection handling', () => {
   const mountComponent = (barDisplayMode = 'stack', showDistributionOverlay = false) => {
     const customGetters = {
       ...getters,
-      getBarDisplayMode: () => barDisplayMode,
+      getBarChartType: () => barDisplayMode,
       getShowDistributionOverlay: () => showDistributionOverlay,
     }
     const store = createStore({ actions, getters: customGetters })
