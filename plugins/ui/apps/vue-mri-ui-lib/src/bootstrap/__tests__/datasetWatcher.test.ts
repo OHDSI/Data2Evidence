@@ -48,6 +48,7 @@ describe('bootstrap/datasetWatcher', () => {
         'commit:RESET_DATASET_CACHE',
         'dispatch:requestMriConfig',
         'dispatch:setFireRequest',
+        'dispatch:refreshBookmarksForDatasetSwitch',
         `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
       ])
     })
@@ -232,6 +233,52 @@ describe('bootstrap/datasetWatcher', () => {
         ([mutation, payload]) => mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
       )
       expect(reloadFinishCalls.length).toBe(1)
+    })
+
+    stop()
+  })
+
+  it('keeps overlay active until dataset-switch bookmark refresh completes', async () => {
+    setActivePinia(createPinia())
+    const portalContext = createPortalContextStore({
+      getToken: async () => 'token',
+      datasetId: 'ds-1',
+      releaseId: 'rel-1',
+      username: 'user-1',
+      locale: 'en',
+      features: [],
+      featuresLoading: false,
+    })
+
+    const refreshBookmarks = createDeferred()
+    const commit = vi.fn()
+    const dispatch = vi.fn(async (name: string) => {
+      if (name === 'refreshBookmarksForDatasetSwitch') {
+        await refreshBookmarks.promise
+      }
+    })
+
+    const stop = installDatasetChangeWatcher(portalContext, { commit, dispatch } as any)
+
+    portalContext.applyProps({ datasetId: 'ds-2' })
+    await nextTick()
+
+    await vi.waitFor(() => {
+      expect(dispatch).toHaveBeenCalledWith('refreshBookmarksForDatasetSwitch')
+    })
+
+    const finishCallsBeforeBookmarkRefresh = commit.mock.calls.filter(
+      ([mutation, payload]) => mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
+    )
+    expect(finishCallsBeforeBookmarkRefresh.length).toBe(0)
+
+    refreshBookmarks.resolve()
+
+    await vi.waitFor(() => {
+      const finishCalls = commit.mock.calls.filter(
+        ([mutation, payload]) => mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
+      )
+      expect(finishCalls.length).toBe(1)
     })
 
     stop()

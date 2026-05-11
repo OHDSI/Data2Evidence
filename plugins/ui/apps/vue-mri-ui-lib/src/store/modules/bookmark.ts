@@ -340,6 +340,15 @@ const actions = {
         commit(types.SET_BOOKMARKS_LOADING, { loading: false })
       })
   },
+  async refreshBookmarksForDatasetSwitch({ dispatch, rootGetters }) {
+    await dispatch('fireCheckIfDatasetCanMaterializeCohorts')
+    await dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
+
+    const chartConfig = rootGetters.getAllChartConfigs
+    if (chartConfig?.shared?.enabled) {
+      await dispatch('loadSharedBookmarkList')
+    }
+  },
   setFilterSummaryVisibility({ commit }, { filterSummaryVisibility }) {
     commit(types.SET_FILTERSUMMARY, { filterSummaryVisibility })
   },

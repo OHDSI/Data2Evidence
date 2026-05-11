@@ -45,6 +45,11 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
       }
 
       await vuexStore.dispatch('setFireRequest')
+      if (isStale()) {
+        return
+      }
+
+      await vuexStore.dispatch('refreshBookmarksForDatasetSwitch')
     } catch (error) {
       if (!isStale()) {
         console.error('[datasetWatcher] Config reload on dataset change failed', error)

@@ -240,14 +240,16 @@ export default {
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
-        this.loadAllSharedBookmark()
         this.loadDefaultFilters()
         this.loadValuesForAttributePath({
           attributePathUid: 'conceptSets',
           searchQuery: '',
           attributeType: 'conceptSet',
         })
-        this.initializeBookmarks()
+        if (!this.getDatasetReloadInProgress) {
+          this.loadAllSharedBookmark()
+          this.initializeBookmarks()
+        }
       }
     },
   },
@@ -271,6 +273,7 @@ export default {
       'getPLModel',
       'getActiveBookmark',
       'getBookmarkById',
+      'getDatasetReloadInProgress',
     ]),
     initBookmarkId() {
       const url = window.location.href
