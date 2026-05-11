@@ -7,6 +7,7 @@ type PortalContextLike = ReturnType<typeof usePortalContextStore>
 export function installDatasetChangeWatcher(portalContext: PortalContextLike, vuexStore: Store<unknown>): () => void {
   let previousDatasetId = portalContext.datasetId
   let previousReleaseId = portalContext.releaseId
+  let latestRequestId = 0
 
   return portalContext.$subscribe(async (_mutation, state) => {
     const datasetId = state.datasetId
@@ -18,18 +19,40 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
 
     previousDatasetId = datasetId
     previousReleaseId = releaseId
+    latestRequestId += 1
+    const requestId = latestRequestId
 
     vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: true })
+
+    const isStale = () => requestId !== latestRequestId
+
     try {
       await vuexStore.dispatch('setDataset', datasetId)
+      if (isStale()) {
+        return
+      }
+
       await vuexStore.dispatch('setDatasetReleaseId', releaseId)
+      if (isStale()) {
+        return
+      }
+
       vuexStore.commit('RESET_DATASET_CACHE')
+
       await vuexStore.dispatch('requestMriConfig')
+      if (isStale()) {
+        return
+      }
+
       await vuexStore.dispatch('setFireRequest')
     } catch (error) {
-      console.error('[datasetWatcher] Config reload on dataset change failed', error)
+      if (!isStale()) {
+        console.error('[datasetWatcher] Config reload on dataset change failed', error)
+      }
     } finally {
-      vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: false })
+      if (!isStale()) {
+        vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: false })
+      }
     }
   })
 }

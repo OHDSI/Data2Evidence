@@ -32,6 +32,49 @@ export default defineConfig(({ command, mode }) => {
     console.log('VITE_REDIRECT_URL:', env.VITE_REDIRECT_URL)
   }
 
+  const backendTarget = env.VITE_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100'
+
+  const rootProxyConfig = {
+    target: backendTarget,
+    changeOrigin: true,
+    secure: false,
+    ws: false,
+    bypass: (req, _res, _options) => {
+      const url = req.url || ''
+      const path = url.split('?')[0] || ''
+      const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
+
+      if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
+        return url
+      }
+
+      if (path === '/' || path === '' || path === '/index.html') {
+        return url
+      }
+
+      if (isAtlasAsset) {
+        return null
+      }
+
+      if (
+        url.endsWith('.ico') ||
+        (url.endsWith('.js') && !url.includes('/d2e/') && !url.includes('/api/')) ||
+        url.endsWith('.css') ||
+        url.endsWith('.png') ||
+        url.endsWith('.svg') ||
+        (url.endsWith('.json') && url.startsWith('/assets'))
+      ) {
+        return url
+      }
+
+      if (clientRoutes.some((route: string) => path.startsWith(route))) {
+        return url
+      }
+
+      return null
+    },
+  }
+
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
@@ -168,59 +211,16 @@ export default defineConfig(({ command, mode }) => {
       },
       proxy: {
         // Proxy configuration (matching webpack devServer.proxy)
-        '/': {
-          target: env.VITE_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100',
-          changeOrigin: true,
-          secure: false,
-          ws: false, // Disable WS proxying so HMR works directly with Vite
-          bypass: (req, _res, _options) => {
-            const url = req.url || ''
-            // Strip query string for path matching
-            const path = url.split('?')[0] || ''
-            const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
-
-            // Serve Vite's client scripts directly
-            if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
-              return url
-            }
-
-            // Let Vite handle index.html natively (don't route through proxy)
-            if (path === '/' || path === '' || path === '/index.html') {
-              return url
-            }
-
-            // Always proxy Atlas app and assets to backend
-            if (isAtlasAsset) {
-              return null
-            }
-
-            // Serve static assets from public folder
-            if (
-              url.endsWith('.ico') ||
-              (url.endsWith('.js') && !url.includes('/d2e/') && !url.includes('/api/')) ||
-              url.endsWith('.css') ||
-              url.endsWith('.png') ||
-              url.endsWith('.svg') ||
-              (url.endsWith('.json') && url.startsWith('/assets'))
-            ) {
-              return url
-            }
-
-            // Return original URL for client routes to trigger SPA fallback
-            if (clientRoutes.some((route: string) => path.startsWith(route))) {
-              return url
-            }
-
-            // Let other requests pass through to proxy
-            return null
-          },
-        },
+        '/': rootProxyConfig,
       },
     },
 
     preview: {
       port: 8085,
       ...(isPreview ? { https: false as any } : {}),
+      proxy: {
+        '/': rootProxyConfig,
+      },
     },
 
     optimizeDeps: {
