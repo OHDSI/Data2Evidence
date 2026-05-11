@@ -1259,6 +1259,59 @@ export class TransformationService {
     }
   }
 
+  private validateTemplateData(
+    templateData: unknown,
+    templateId: string
+  ): void {
+    const fail = (reason: string): never => {
+      const error = new Error(
+        `Template '${templateId}' is invalid: ${reason}`
+      ) as Error & { statusCode?: number };
+      error.statusCode = 400;
+      throw error;
+    };
+
+    if (!templateData || typeof templateData !== "object") {
+      fail("template content is not a JSON object");
+    }
+    const template = templateData as Record<string, unknown>;
+    const nodes = template.nodes;
+    if (!Array.isArray(nodes)) {
+      fail("missing or non-array 'nodes' field");
+      return;
+    }
+    const edges = template.edges;
+    if (edges != null && !Array.isArray(edges)) {
+      fail("'edges' field must be an array when present");
+    }
+
+    nodes.forEach((rawNode: unknown, index: number) => {
+      if (!rawNode || typeof rawNode !== "object") {
+        fail(`nodes[${index}] is not an object`);
+        return;
+      }
+      const node = rawNode as Record<string, unknown>;
+      if (typeof node.id !== "string" || !node.id) {
+        fail(`nodes[${index}] is missing a string 'id'`);
+      }
+      if (typeof node.type !== "string" || !node.type) {
+        fail(`nodes[${index}] (id='${node.id}') is missing a string 'type'`);
+      }
+      const pos = node.position as { x?: unknown; y?: unknown } | undefined;
+      if (
+        !pos ||
+        typeof pos.x !== "number" ||
+        typeof pos.y !== "number" ||
+        Number.isNaN(pos.x) ||
+        Number.isNaN(pos.y)
+      ) {
+        fail(
+          `nodes[${index}] (id='${node.id}') is missing a valid 'position' { x: number, y: number }`
+        );
+      }
+    });
+  }
+
   async createCanvasFromTemplate(
     templateId: string,
     name: string,
@@ -1290,6 +1343,8 @@ export class TransformationService {
       }
 
       const templateData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+      this.validateTemplateData(templateData, templateId);
 
       const dataflowDto: IDataflowDto = {
         name,
