@@ -16,7 +16,10 @@ import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
 import { WhiteRabbitNodeData } from "./WhiteRabbitNode";
 import { MappingHandle } from "./MappingHandle";
-import { ScanDataDialog } from "~/components/Dialog/ScanDataDialog/ScanDataDialog";
+import {
+  ScanDataDialog,
+  ScanMetadata,
+} from "~/components/Dialog/ScanDataDialog/ScanDataDialog";
 import { ScanProgressDialog } from "~/components/Dialog/ScanProgressDialog/ScanProgressDialog";
 import "./WhiteRabbitDrawer.scss";
 
@@ -45,6 +48,7 @@ const EMPTY_FORM_DATA: FormData = {
     source_tables: [],
   },
   sourceHandles: [],
+  scanMetadata: { dataType: "" },
 };
 
 export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
@@ -55,6 +59,9 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
   const [isScanDataDialogOpen, setIsScanDataDialogOpen] = useState(false);
   const [isScanProgressDialogOpen, setScanProgressDialogOpen] = useState(false);
   const [scanId, setScanId] = useState<string>("");
+  const [scanMetadata, setScanMetadata] = useState<ScanMetadata>({
+    dataType: "",
+  });
 
   const openScanDataDialog = () => {
     setIsScanDataDialogOpen(true);
@@ -63,6 +70,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
   const handleScanDataDialogClose = (type: CloseDialogType) => {
     setIsScanDataDialogOpen(false);
     if (type === "success") {
+      onFormDataChange({ scanMetadata });
       setScanProgressDialogOpen(true);
     }
   };
@@ -77,7 +85,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
   };
 
   const nodeState = useSelector((state: RootState) =>
-    selectNodeById(state, node.id)
+    selectNodeById(state, node.id),
   );
 
   const { formData, setFormData, onFormDataChange } =
@@ -90,6 +98,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
         description: node.data.description,
         scannedSchema: node.data.scannedSchema,
         sourceHandles: node.data.sourceHandles,
+        scanMetadata: node.data.scanMetadata,
       });
     } else {
       setFormData({
@@ -142,6 +151,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
         onClose={handleScanDataDialogClose}
         nodeId={node.id}
         setScanId={setScanId}
+        setScanMetadata={setScanMetadata}
       />
       <ScanProgressDialog
         open={isScanProgressDialogOpen}
@@ -149,6 +159,7 @@ export const WhiteRabbitDrawer: FC<WhiteRabbitDrawerProps> = ({
         onClose={handleScanProgressDialogClose}
         nodeId={node.id}
         scanId={scanId}
+        scanMetadata={scanMetadata}
         onFormDataChange={onFormDataChange}
       />
     </>

@@ -122,6 +122,33 @@ export default class StrategusAnalysisService {
         return { analysisId: existingAnalysis.id, message: "Analysis specification updated successfully." }
     }
 
+    async deleteStrategusAnalysis(token: string, studyId: string) {
+        const existingAnalysis = await this.strategusAnalysisRepository.findOne({
+            where: { studyId: studyId }
+        });
+
+        if (!existingAnalysis) {
+            throw new Error("Study does not exist.");
+        }
+
+        const datasetId = existingAnalysis.datasetId;
+        const portalAPI = new PortalAPI(token);
+
+        await this.strategusAnalysisRepository.delete({ id: existingAnalysis.id });
+
+        if (datasetId) {
+            try {
+                await portalAPI.deleteDataset(datasetId);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error("Error deleting dataset for strategus analysis:", errorMessage);
+                throw new Error(`Failed to delete dataset: ${errorMessage}`);
+            }
+        }
+
+        return { analysisId: existingAnalysis.id, message: "Analysis specification deleted successfully." };
+    }
+
     async saveStudyAnalysisViewerCode(studyId: string, viewerCode: string) {
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }

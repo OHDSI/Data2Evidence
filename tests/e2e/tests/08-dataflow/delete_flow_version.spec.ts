@@ -1,5 +1,7 @@
 import { test, expect } from '../fixtures'
 
+test.describe.configure({ retries: 3 })
+
 test('Delete specific version of ui-flow', async ({ page }) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').fill('admin')

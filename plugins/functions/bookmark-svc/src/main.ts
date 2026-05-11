@@ -12,7 +12,6 @@ import {
   utils,
 } from '@alp/alp-base-utils'
 import express from 'express'
-import https from 'https'
 import helmet from 'helmet'
 import noCacheMiddleware from './middleware/NoCache'
 import timerMiddleware from './middleware/Timer'
@@ -130,16 +129,7 @@ export const main = async () => {
   await registerRoutes(app)
   utils.setupGlobalErrorHandling(app, log)
 
-  const server = https.createServer(
-    {
-      key: env.TLS__INTERNAL__KEY,
-      cert: env.TLS__INTERNAL__CRT,
-      maxHeaderSize: 8192 * 10,
-    },
-    app
-  )
-
-  server.listen(port)
+  app.listen(port)
   log.info(`🚀 Bookmark svc started successfully!. Server listening on port ${port}`)
 }
 

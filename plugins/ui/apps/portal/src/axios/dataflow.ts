@@ -297,10 +297,10 @@ export class Dataflow {
     });
   }
 
-  public createCleanUpStudySchemaRun(studyId: string, datasetId: string) {
+  public createCleanUpStudySchemaRun(studyId: string) {
     return request({
       baseURL: JOBPLUGIN_URL,
-      url: `prefect/flow-run/strategus/remove-results-schema/${studyId}/${datasetId}`,
+      url: `prefect/flow-run/strategus/remove-results-schema/${studyId}`,
       method: "DELETE",
     });
   }
