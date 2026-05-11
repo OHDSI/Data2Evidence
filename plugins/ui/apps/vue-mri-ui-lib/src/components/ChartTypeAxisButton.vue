@@ -66,18 +66,18 @@ const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
 const menuVisible = ref(false)
 
-const modeIdToPanelOption: Record<string, string> = {
-  overlay: 'overlappingHistogram',
-  partialOverlaySolid: 'overlappingBarChart',
-  distribution: 'kernelDensityPlot',
+const modeIdToStackedOption: Record<string, string> = {
+  overlay: 'overlappingHistogramEnabled',
+  partialOverlaySolid: 'overlappingBarChartEnabled',
+  distribution: 'kernelDensityPlotEnabled',
 }
 
 const enabledModes = computed(() => {
-  const panelOptions = getMriFrontendConfig.value?._internalConfig?.panelOptions || {}
+  const stackedOptions = getMriFrontendConfig.value?._internalConfig?.chartOptions?.stacked || {}
   return modeOrder.filter(mode => {
-    const optionKey = modeIdToPanelOption[mode.id]
+    const optionKey = modeIdToStackedOption[mode.id]
     if (!optionKey) return true
-    return !!panelOptions[optionKey]
+    return !!stackedOptions[optionKey]
   })
 })
 

@@ -223,10 +223,12 @@ export default {
       return this.getMriFrontendConfig?._internalConfig?.panelOptions?.cohortEntryExit || false
     },
     chartTypeAxisButtonVisible() {
-      const panelOptions = this.getMriFrontendConfig?._internalConfig?.panelOptions
-      if (!panelOptions) return false
+      const stackedOptions = this.getMriFrontendConfig?._internalConfig?.chartOptions?.stacked
+      if (!stackedOptions) return false
       return (
-        !!panelOptions.overlappingHistogram || !!panelOptions.overlappingBarChart || !!panelOptions.kernelDensityPlot
+        !!stackedOptions.overlappingHistogramEnabled ||
+        !!stackedOptions.overlappingBarChartEnabled ||
+        !!stackedOptions.kernelDensityPlotEnabled
       )
     },
   },

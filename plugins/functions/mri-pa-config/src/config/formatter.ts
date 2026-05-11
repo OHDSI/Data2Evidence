@@ -84,6 +84,12 @@ export class Formatter {
             beginVisible: mriConfig.chartOptions.stacked.beginVisible,
             fillMissingValuesEnabled:
               mriConfig.chartOptions.stacked.fillMissingValuesEnabled,
+            overlappingHistogramEnabled:
+              mriConfig.chartOptions.stacked.overlappingHistogramEnabled,
+            overlappingBarChartEnabled:
+              mriConfig.chartOptions.stacked.overlappingBarChartEnabled,
+            kernelDensityPlotEnabled:
+              mriConfig.chartOptions.stacked.kernelDensityPlotEnabled,
           },
           boxplot: {
             visible: mriConfig.chartOptions.boxplot.visible,
@@ -159,9 +165,6 @@ export class Formatter {
           usePaAtlas: mriConfig.panelOptions.usePaAtlas,
           inclusionReport: mriConfig.panelOptions.inclusionReport,
           intersectViewInclusionReport: mriConfig.panelOptions.intersectViewInclusionReport,
-          overlappingHistogram: mriConfig.panelOptions.overlappingHistogram,
-          overlappingBarChart: mriConfig.panelOptions.overlappingBarChart,
-          kernelDensityPlot: mriConfig.panelOptions.kernelDensityPlot,
         };
         config.settings = {
           dateFormat: dmConfig.advancedSettings?.settings?.dateFormat || "YYYY-MM-dd"

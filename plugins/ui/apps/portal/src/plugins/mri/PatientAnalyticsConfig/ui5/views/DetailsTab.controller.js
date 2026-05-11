@@ -632,15 +632,6 @@ sap.ui.define([
             if (oldConfig.panelOptions.hasOwnProperty("intersectViewInclusionReport")) {
                 newConfig.panelOptions.intersectViewInclusionReport = oldConfig.panelOptions.intersectViewInclusionReport;
             }
-            if (oldConfig.panelOptions.hasOwnProperty("overlappingHistogram")) {
-                newConfig.panelOptions.overlappingHistogram = oldConfig.panelOptions.overlappingHistogram;
-            }
-            if (oldConfig.panelOptions.hasOwnProperty("overlappingBarChart")) {
-                newConfig.panelOptions.overlappingBarChart = oldConfig.panelOptions.overlappingBarChart;
-            }
-            if (oldConfig.panelOptions.hasOwnProperty("kernelDensityPlot")) {
-                newConfig.panelOptions.kernelDensityPlot = oldConfig.panelOptions.kernelDensityPlot;
-            }
         }
 
         return aRemovedElements;

@@ -1225,6 +1225,9 @@ export const paFHIRConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -1286,8 +1289,5 @@ export const paFHIRConfigDuckdb = {
     cohortEntryExit: false,
     inclusionReport: false,
     intersectViewInclusionReport: false,
-    overlappingHistogram: false,
-    overlappingBarChart: false,
-    kernelDensityPlot: false,
   },
 };

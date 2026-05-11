@@ -35,7 +35,10 @@ export const configDefaultValues = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -94,9 +97,6 @@ export const configDefaultValues = {
         "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
-        "overlappingHistogram": false,
-        "overlappingBarChart": false,
-        "kernelDensityPlot": false,
     },
     "configInformations": {
         "note": ""

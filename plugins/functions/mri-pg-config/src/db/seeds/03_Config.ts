@@ -178,7 +178,7 @@ export async function seed(knex: Knex): Promise<void> {
       },
     ])
     .onConflict(["Id", "Version"])
-    .ignore();
+    .merge();
 }
 
 export const cdwConfig = {
@@ -13302,7 +13302,10 @@ const paConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -13366,9 +13369,6 @@ const paConfig = {
         "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
-        "overlappingHistogram": false,
-        "overlappingBarChart": false,
-        "kernelDensityPlot": false
     }
 };
 
@@ -27172,7 +27172,10 @@ const paConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -27236,9 +27239,6 @@ const paConfigDuckdb = {
         "usePaAtlas": false,
         "inclusionReport": true,
         "intersectViewInclusionReport": false,
-        "overlappingHistogram": false,
-        "overlappingBarChart": false,
-        "kernelDensityPlot": false
     }
 };
 
@@ -28804,6 +28804,9 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -28866,9 +28869,6 @@ const paI2b2ConfigDuckdb = {
     cohortEntryExit: false,
     inclusionReport: false,
     intersectViewInclusionReport: false,
-    overlappingHistogram: false,
-    overlappingBarChart: false,
-    kernelDensityPlot: false
   },
 };
 
@@ -34652,7 +34652,10 @@ const pajsonfhirConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -34716,9 +34719,6 @@ const pajsonfhirConfigDuckdb = {
         "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
-        "overlappingHistogram": false,
-        "overlappingBarChart": false,
-        "kernelDensityPlot": false
     }
 };
 
@@ -38141,7 +38141,10 @@ const omopHanaLeanPAConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -38205,8 +38208,5 @@ const omopHanaLeanPAConfig = {
         "usePaAtlas": false,
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
-        "overlappingHistogram": false,
-        "overlappingBarChart": false,
-        "kernelDensityPlot": false
     }
 };
