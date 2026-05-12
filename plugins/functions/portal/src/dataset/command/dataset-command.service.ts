@@ -746,6 +746,56 @@ export class DatasetCommandService {
     );
   }
 
+  async convertToWebApiSource(id: string) {
+    const currDataset = await this.datasetRepo.getDataset(id);
+    if (!currDataset) {
+      throw new HttpException(400, `Dataset with id ${id} not found`);
+    }
+
+    const normalizedType = currDataset.type?.replace(/^hana__/, "");
+    if (normalizedType !== "source") {
+      throw new HttpException(
+        400,
+        `Dataset ${id} cannot be converted: expected type 'source' (or 'hana__source'), got '${currDataset.type}'`,
+      );
+    }
+
+    const currDetail = await this.detailRepo.getDetail(id);
+    if (!currDetail) {
+      throw new HttpException(400, `Dataset detail for ${id} not found`);
+    }
+
+    // Fail-fast: register WebAPI source before changing DB state
+    await this.syncDatasetToWebApi({
+      id: currDataset.id,
+      databaseCode: currDataset.databaseCode,
+      dialect: currDataset.dialect,
+      schemaName: currDataset.schemaName,
+      vocabSchemaName: currDataset.vocabSchemaName,
+      resultsSchemaName: currDataset.resultsSchemaName,
+      type: currDataset.type,
+      fhirProjectId: currDataset.fhir_project_id,
+    }, currDetail);
+
+    const newType = currDataset.type.startsWith("hana__")
+      ? "hana__webapi_source"
+      : "webapi_source";
+
+    const updateTypeFn = async (
+      entityMgr: EntityManager,
+      datasetId: string,
+    ) => {
+      await this.datasetRepo.updateDataset(
+        entityMgr,
+        datasetId,
+        this.addOwner({ type: newType }),
+      );
+    };
+    await this.transactionRunner.run(updateTypeFn, id);
+
+    return { id, type: newType };
+  }
+
   private async addCustomAttribute(
     entityMgr: EntityManager,
     datasetId: string,

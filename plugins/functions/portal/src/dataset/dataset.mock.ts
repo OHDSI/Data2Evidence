@@ -12,5 +12,6 @@ export const datasetFilterServiceMockFactory: () => MockType<DatasetFilterServic
 }))
 
 export const datasetCommandServiceMockFactory: () => MockType<DatasetCommandService> = jest.fn(() => ({
-  createDatasetSnapshot: jest.fn()
+  createDatasetSnapshot: jest.fn(),
+  convertToWebApiSource: jest.fn(),
 }))

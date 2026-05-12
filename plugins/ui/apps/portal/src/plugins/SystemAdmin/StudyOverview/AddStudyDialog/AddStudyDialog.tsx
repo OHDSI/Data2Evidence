@@ -140,7 +140,7 @@ const EMPTY_FORM_ERROR: FormError = {
 };
 
 const EMPTY_FORM_DATA: FormData = {
-  type: SourceDatasetType.SOURCE,
+  type: SourceDatasetType.WEBAPI_SOURCE,
   tokenStudyCode: "",
   schemaOption: "",
   cdmSchemaValue: "", //Optional
@@ -304,10 +304,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     [onClose]
   );
 
-  const displayCacheConfiguration = useMemo(() => {
-    return formData.dialect !== "hana";
-  }, [formData.dialect]);
-
   const getDataModels = useCallback(async () => {
     try {
       const dataModelResult: Datamodel[] = await api.dataflow.getDatamodels();
@@ -380,9 +376,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       paConfigId,
       name,
       dialect,
-
-      cacheDatasetName,
-      cacheDatasetType,
     } = formData;
 
     let formError: FormError | {} = {};
@@ -448,14 +441,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     // Type selection is required for HANA databases
     if (dialect === "hana" && !type) {
       formError = { ...formError, type: { required: true } };
-    }
-
-    if (!cacheDatasetName && dialect !== "hana") {
-      formError = { ...formError, cacheDatasetName: { required: true } };
-    }
-
-    if (!cacheDatasetType && dialect !== "hana") {
-      formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
     if (Object.keys(formError).length > 0) {
@@ -627,7 +612,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               value={formData.schemaOption}
               onChange={(event: SelectChangeEvent<string>) => {
                 const schemaOption = event.target.value;
-                const newType = schemaOption === SchemaTypes.FHIR ? SourceDatasetType.FHIR : SourceDatasetType.SOURCE;
+                const newType = schemaOption === SchemaTypes.FHIR ? SourceDatasetType.FHIR : SourceDatasetType.WEBAPI_SOURCE;
                 handleFormDataChange({
                   schemaOption,
                   cdmSchemaValue: schemaOption === SchemaTypes.FHIR ? FHIR_SCHEMA_NAME : "",
@@ -683,7 +668,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     cdmSchemaValue: "",
                     vocabSchemaValue: "",
                     // Set type to empty for HANA where user need to manually select the type
-                    type: db?.dialect === "hana" ? "" : SourceDatasetType.SOURCE,
+                    type: db?.dialect === "hana" ? "" : SourceDatasetType.WEBAPI_SOURCE,
                   });
                 }}
                 inputProps={{
@@ -1068,56 +1053,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
           )}
           <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__DATASET_CODE_ALLOWED_VALUES)}</FormHelperText>
         </div>
-        {displayCacheConfiguration && (
-          <>
-            <div style={{ marginBottom: "32px", fontWeight: "bold" }}>{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_CONFIGURATION)}</div>
-
-            <div style={{ marginBottom: "32px" }}>
-              <TextField
-                fullWidth
-                variant="standard"
-                label={getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_NAME)}
-                value={formData.cacheDatasetName}
-                onChange={(event) => handleFormDataChange({ cacheDatasetName: event.target.value })}
-                error={formError.cacheDatasetName.required}
-              />
-              {formError.cacheDatasetName.required && (
-                <FormHelperText error={true}>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-              )}
-            </div>
-            <div style={{ marginBottom: "32px" }}>
-              <FormControl
-                sx={styles}
-                className="select"
-                variant="standard"
-                fullWidth
-                {...(formError.vocabSchemaValue.required ? { error: true } : {})}
-              >
-                <InputLabel htmlFor="cache-dataset-option">{getText(i18nKeys.ADD_STUDY_DIALOG__CACHE_DATASET_TYPE)}</InputLabel>
-                <Select
-                  sx={styles}
-                  value={formData.cacheDatasetType}
-                  onChange={(event: SelectChangeEvent<string>) =>
-                    handleFormDataChange({ cacheDatasetType: event.target.value as CacheDatasetType })
-                  }
-                  inputProps={{
-                    name: "cacheDatasetType",
-                    id: "cache-dataset-option",
-                  }}
-                >
-                  {cacheDatasetTypeOptions.map((option) => (
-                    <MenuItem sx={styles} key={option.type} value={option.type}>
-                      {option.title}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {formError.cacheDatasetType.required && (
-                  <FormHelperText>{getText(i18nKeys.ADD_STUDY_DIALOG__REQUIRED)}</FormHelperText>
-                )}
-              </FormControl>
-            </div>
-          </>
-        )}
       </div>
       <Divider />
       <div className="button-group-actions">

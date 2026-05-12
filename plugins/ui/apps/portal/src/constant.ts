@@ -42,12 +42,19 @@ export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
   ],
   [SourceDatasetType.FHIR]: [CacheDatasetType.NON_OMOP],
   [SourceDatasetType.STRATEGUS_ANALYSIS]: [CacheDatasetType.NON_OMOP],
+  [SourceDatasetType.WEBAPI_SOURCE]: [
+    CacheDatasetType.OMOP,
+    CacheDatasetType.STUDY,
+    CacheDatasetType.HANA__OMOP,
+    CacheDatasetType.HANA__NON_OMOP,
+  ],
+  [SourceDatasetType.HANA__WEBAPI_SOURCE]: [],
 };
 
 export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
-  source: ["info", "metadata", "version", "delete"],
+  source: ["info", "metadata", "version", "delete", "convert-to-webapi"],
   fhir: ["info", "metadata", "version", "delete"],
   non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
@@ -73,6 +80,29 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
   ],
   hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
   strategus_analysis: ["metadata", "permissions", "resources", "delete"],
+  webapi_source: [
+    "info",
+    "metadata",
+    "version",
+    "permissions",
+    "resources",
+    "data-quality",
+    "data-characterization",
+    "setup-semantic-search",
+    "manage-dashboard",
+    "delete",
+  ],
+  hana__webapi_source: [
+    "info",
+    "metadata",
+    "version",
+    "permissions",
+    "resources",
+    "data-quality",
+    "data-characterization",
+    "manage-dashboard",
+    "delete",
+  ],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
@@ -84,6 +114,8 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
   hana__omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   strategus_analysis: [DatasetInfoTab.DatasetInfo],
+  webapi_source: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
+  hana__webapi_source: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
 };
 
 export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
@@ -95,6 +127,8 @@ export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeature
   hana__omop: ["Cohorts", "Notebooks", "Concepts"],
   hana__non_omop: ["Cohorts", "Notebooks"],
   strategus_analysis: [],
+  webapi_source: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
+  hana__webapi_source: ["Cohorts", "Notebooks", "Concepts"],
 };
 
 export enum LogResponseType {

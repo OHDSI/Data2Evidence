@@ -101,6 +101,11 @@ export class DatasetController {
     return await this.datasetCommandService.offboardDataset(id);
   }
 
+  @Post(":id/convert-to-webapi-source")
+  async convertToWebApiSource(@Param("id") id: string) {
+    return await this.datasetCommandService.convertToWebApiSource(id);
+  }
+
   @Put("attribute")
   async updateDatasetAttribute(
     @Body() datasetAttributeDto: DatasetAttributeDto,

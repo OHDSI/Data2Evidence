@@ -1471,6 +1471,15 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/convert-to-webapi-source$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset$",
           "scopes": [
             "portal.dataset.update"

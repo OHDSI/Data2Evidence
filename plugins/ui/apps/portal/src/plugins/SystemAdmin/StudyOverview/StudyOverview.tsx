@@ -24,6 +24,7 @@ import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
 import DatasetResourcesDialog from "./DatasetResourcesDialog/DatasetResourcesDialog";
 import DeleteStudyDialog from "./DeleteStudyDialog/DeleteStudyDialog";
+import ConvertToWebApiDialog from "./ConvertToWebApiDialog/ConvertToWebApiDialog";
 import PermissionsDialog from "./PermissionsDialog/PermissionsDialog";
 import RunStrategusStudyDialog from "./RunStrategusStudyDialog/RunStrategusStudyDialog";
 import SetupSemanticSearchDialog from "./SetupSemanticSearchDialog/SetupSemanticSearchDialog";
@@ -82,6 +83,7 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
     useDialogHelper(false);
+  const [showConvertToWebApiDialog, openConvertToWebApiDialog, closeConvertToWebApiDialog] = useDialogHelper(false);
 
   const [activeDataset, setActiveDataset] = useState<Study>();
   const [activeStrategusStudy, setActiveStrategusStudy] = useState<NetworkStrategusStudy>();
@@ -128,6 +130,14 @@ const StudyOverview: FC = () => {
       openDeleteStudyDialog();
     },
     [openDeleteStudyDialog]
+  );
+
+  const handleConvertToWebApi = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openConvertToWebApiDialog();
+    },
+    [openConvertToWebApiDialog]
   );
 
   const handlePermissions = useCallback(
@@ -363,7 +373,14 @@ const StudyOverview: FC = () => {
           // This is a parent or standalone FHIR dataset
           fhir.push(dataset);
         }
-      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
+      } else if (
+        type === "source" ||
+        type === "omop" ||
+        type === "hana__omop" ||
+        type === "hana__non_omop" ||
+        type === "webapi_source" ||
+        type === "hana__webapi_source"
+      ) {
         // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
         // Check if this is a child dataset (has source_dataset_id attribute)
         const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
@@ -487,6 +504,16 @@ const StudyOverview: FC = () => {
     [closeDeleteStudyDialog]
   );
 
+  const handleCloseConvertToWebApiDialog = useCallback(
+    (type: CloseDialogType) => {
+      closeConvertToWebApiDialog();
+      if (type === "success") {
+        setRefetch((refetch) => refetch + 1);
+      }
+    },
+    [closeConvertToWebApiDialog]
+  );
+
   const handleCloseAddStrategusStudyDialog = useCallback(
     (success?: boolean) => {
       closeAddStrategusStudyDialog();
@@ -516,7 +543,7 @@ const StudyOverview: FC = () => {
 
       if (hasSourceDatasetId) {
         cacheDatasets.push(item);
-      } else if (item.type === "source" || item.type === "hana__omop" || item.type === "hana__non_omop") {
+      } else if (item.type === "source" || item.type === "hana__omop" || item.type === "hana__non_omop" || item.type === "webapi_source" || item.type === "hana__webapi_source") {
         if (!datasetsByFlow[flowName]) {
           datasetsByFlow[flowName] = [];
         }
@@ -669,6 +696,7 @@ const StudyOverview: FC = () => {
             handleCreateCache={handleCreateCache}
             handleSetupSemanticSearch={handleSetupSemanticSearch}
             handleManageDashboard={handleManageDashboard}
+            handleConvertToWebApi={handleConvertToWebApi}
           />
         </TableCell>
       </TableRow>
@@ -941,6 +969,13 @@ const StudyOverview: FC = () => {
               study={activeDataset}
               open={showDeleteStudyDialog}
               onClose={handleCloseDeleteStudyDialog}
+            />
+          )}
+          {showConvertToWebApiDialog && (
+            <ConvertToWebApiDialog
+              study={activeDataset}
+              open={showConvertToWebApiDialog}
+              onClose={handleCloseConvertToWebApiDialog}
             />
           )}
           {showPermissionsDialog && (

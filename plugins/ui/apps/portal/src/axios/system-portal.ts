@@ -96,6 +96,14 @@ export class SystemPortal {
     });
   }
 
+  public convertDatasetToWebApi(id: string) {
+    return request<{ id: string; type: string }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/${id}/convert-to-webapi-source`,
+      method: "POST",
+    });
+  }
+
   public getDatasetFilterScopes() {
     return request<DatasetFilter>({
       baseURL: SYSTEM_PORTAL_URL,

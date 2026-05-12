@@ -5,6 +5,8 @@ export enum SourceDatasetType {
   SOURCE = "source",
   FHIR = "fhir",
   STRATEGUS_ANALYSIS = "strategus_analysis",
+  WEBAPI_SOURCE = "webapi_source",
+  HANA__WEBAPI_SOURCE = "hana__webapi_source",
 }
 
 export enum CacheDatasetType {
@@ -30,7 +32,8 @@ export type ActionValue =
   | "update"
   | "release"
   | "create-cache"
-  | "manage-dashboard";
+  | "manage-dashboard"
+  | "convert-to-webapi";
 
 export enum DatasetInfoTab {
   DatasetInfo = "info",
