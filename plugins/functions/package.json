@@ -74,10 +74,6 @@
       ],
       "api": [
         {
-          "source": "/gateway/dashboard",
-          "service": "kpi-dashboard"
-        },
-        {
           "source": "/jobplugins",
           "function": "/jobplugins",
           "imports": "/jobplugins/deno.json",
@@ -764,7 +760,6 @@
           "whiteRabbit.read",
           "whiteRabbit.post",
           "demo.setup",
-          "gateway.external.dashboards.read",
           "strategus.results.write",
           "strategus.results.delete",
           "strategus.results.admin.upload",
@@ -773,8 +768,7 @@
           "d2e.container.logs.read"
         ],
         "ALP_DASHBOARD_VIEWER": [
-          "gateway.dashboardGate.content",
-          "gateway.external.dashboards.read"
+          "gateway.dashboardGate.content"
         ],
         "TENANT_VIEWER": [
           "usermgmt.group.read",
@@ -897,12 +891,6 @@
         ]
       },
       "scopes": [
-        {
-          "path": "^/gateway/dashboard/(.*)",
-          "scopes": [
-            "gateway.external.dashboards.read"
-          ]
-        },
         {
           "path": "^/files-manager/api",
           "scopes": [
