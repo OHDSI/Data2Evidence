@@ -45,10 +45,4 @@ def create_schema_via_trex(database_code: str, schema_name: str):
     trex_dao.execute_sql("CALL pg_clear_cache();") 
     trex_dao.create_schema(f"{database_code}.{schema_name}")
 
-    # attach_sql = (
-    #     f"ATTACH IF NOT EXISTS '{duckdb_file_path}' AS \"{database_code}\";"
-    # )
-    # logger.info(f"Executing: {attach_sql}")
-    # trex_cur.execute(attach_sql)
-
     logger.info(f"Schema '{schema_name}' in database '{database_code}' created.")

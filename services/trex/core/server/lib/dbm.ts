@@ -75,22 +75,6 @@ export class DatabaseManager {
         const r = await this.pgclient.query(this.insert_query, params);
         const dbCredentials = await this.getCredentialsDecrypted();
         this.trexdbm.setCredentials(dbCredentials);
-
-        if (c.dialect === "hana") {
-          const code = c.code || c.id;
-          const cacheFile = `/usr/src/data/cache/${code}.db`;
-          try {
-            const conn = new Trex.TrexDB("memory");
-            await conn.execute(
-              `ATTACH IF NOT EXISTS '${cacheFile}' AS "${code}"`,
-              [],
-            );
-            logger.info(`Attached HANA cache for '${code}' at ${cacheFile}`);
-          } catch (e) {
-            logger.error(`Failed to attach HANA cache for '${code}': ${e}`);
-          }
-        }
-
         const prefectApi = new PrefectAPI();
         const dbCredBlockId = await prefectApi.createBlockDocument(
           "database-credentials",

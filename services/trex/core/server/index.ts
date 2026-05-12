@@ -55,6 +55,27 @@ export async function initTrex() {
     }
 
     try {
+      const dbm = await DatabaseManager.get();
+      const datasets = await dbm.getCredentialsDecrypted();
+      const hanaConn = new Trex.TrexDB("memory");
+      for (const ds of datasets) {
+        if (ds.dialect !== "hana") continue;
+        const cacheFile = `/usr/src/data/cache/${ds.code}.db`;
+        try {
+          await hanaConn.execute(
+            `ATTACH IF NOT EXISTS '${cacheFile}' AS "${ds.code}"`,
+            [],
+          );
+          logger.log(`Attached HANA cache for '${ds.code}' at ${cacheFile}`);
+        } catch (e) {
+          logger.error(`Failed to attach HANA cache for '${ds.code}': ${e}`);
+        }
+      }
+    } catch (e) {
+      logger.error(`Failed to enumerate HANA datasets for cache attach: ${e}`);
+    }
+
+    try {
       const dbmInstance = await DatabaseManager.get();
       const credentials = await dbmInstance.getCredentialsDecrypted();
       const connections: SourceCredential[] = [];

@@ -15,11 +15,13 @@ dependencies = [
     "sqlalchemy==2.0.38",
     "torch==2.8.0",
     "tqdm==4.66.4",
-    "transformers==5.0.0rc3",
+    "transformers>=4.44,<5",
 ]
 
 [project.optional-dependencies]
-hana = []
+hana = [
+    "sqlalchemy-hana==2.2.0",
+]
 
 [dependency-groups]
 dev = [

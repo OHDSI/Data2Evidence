@@ -6,7 +6,6 @@ import torch
 import time
 from concurrent.futures import ThreadPoolExecutor
 import sqlalchemy as sqla
-from psycopg2 import sql as pg_sql
 
 from prefect import flow, task
 from prefect.logging import get_run_logger
@@ -24,7 +23,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device == 'cpu':
     torch.set_num_threads(max(1, (os.cpu_count() or 1) // 2))
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
-model = AutoModel.from_pretrained("Supabase/gte-small").to(device).eval()
+model = AutoModel.from_pretrained("Supabase/gte-small", attn_implementation="sdpa").to(device).eval()
 embedding_col_name = 'concept_name_embedding'
 index_col = 'embedding_cos_idx'
 
