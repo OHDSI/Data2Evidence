@@ -36,17 +36,19 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     database_code = options.database_code
     cache_id = options.cache_id
     use_trex_connection = options.use_trex_connection
+    db_parameters = {
+        'database_code': database_code,
+        'cache_id': cache_id,
+        'use_cache_db': False
+    }   
     if use_trex_connection:
         # -------------------- Trex connection to cache --------------------
-        dbdao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX,
-            use_cache_db=use_trex_connection,
-            database_code=database_code,
-            cache_id=cache_id,
-        )
+        dbdao = DBDao(**db_parameters)
         if dbdao.dialect == SupportedDatabaseDialects.HANA:
             create_embeddings_hana(dbdao, database_code, schema_name)
         else:
+            db_parameters['dialect'] = SupportedDatabaseDialects.TREX
+            dbdao = DBDao(**db_parameters)
             ## Vss extension is installed by default in trex, just need to load it before use
             dbdao.execute_sql("LOAD vss")
             create_embeddings_cache(dbdao, schema_name)
@@ -90,8 +92,8 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name):
     batch_embedding_concept_table(concept, tokenizer, model, device, cache_dao, db_schema, embedding_table, embedding_cols)
 
     # 3. Create HNSW index on the embedding column
-    drop_embedding_index(cache_dao, *db_schema.split("."), index_col)
-    create_embedding_index(cache_dao, *db_schema.split("."), embedding_col_name, index_col)
+    drop_embedding_index(cache_dao, db_schema, index_col)
+    create_embedding_index(cache_dao, db_schema, embedding_table, embedding_col_name, index_col)
     logger.info("***************** HANA embedding cache complete *****************")
 
 
@@ -199,4 +201,4 @@ def insert_embeddings(dbdao, schema_name, tmp_embedding_table, table_name):
     dbdao.drop_table(schema_name, tmp_embedding_table, cascade=True)
     
     ## Create vss index on embedding column
-    create_embedding_index(dbdao, schema_name, embedding_col_name, index_col)
+    create_embedding_index(dbdao, schema_name, "concept", embedding_col_name, index_col)

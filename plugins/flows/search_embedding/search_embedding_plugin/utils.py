@@ -93,16 +93,17 @@ def update_concept_embedding(dbdao:DBDao, schema_name:str, emb_tmp_table:str, em
         )
     dbdao.execute_sql(sql)
     
-def create_embedding_index(dbdao, schema_name:str, embedding_col:str, index_col: str) -> None:
+def create_embedding_index(dbdao, schema_name:str, embedding_table: str, embedding_col:str, index_col: str) -> None:
     """ 
-    Create a GTE index on the embedding column of the concept table.
+    Create a GTE index on the embedding column of the concept embedding table.
     """ 
     sql = pg_sql.SQL("""
                      SET hnsw_enable_experimental_persistence=TRUE;
-                     CREATE INDEX {index_col} ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine');
+                     CREATE INDEX {index_col} ON {schema_name}.{embedding_table} USING HNSW ({embedding_col}) WITH (metric = 'cosine');
                      """).format(
         index_col=pg_sql.Identifier(index_col),
         schema_name=pg_sql.Identifier(*schema_name.split(".")),
+        embedding_table=pg_sql.Identifier(embedding_table),
         embedding_col=pg_sql.Identifier(embedding_col),
         )   
     dbdao.execute_sql(sql)

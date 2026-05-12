@@ -121,7 +121,7 @@ class TrexDao(DaoBase):
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
-        self.validate_schema_name(self._schema_ident(schema)[-1])
+        self.validate_schema_name(self._split_catalog_schema(schema)[-1])
         sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
             .format(self._schema_ident(schema))
             
