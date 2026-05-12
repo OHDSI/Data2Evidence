@@ -72,7 +72,7 @@ def drop_embedding_index(dbdao: DBDao, schema_name: str, index_col: str)-> None:
     Drop the existing GTE index on the concept table if it exists.
     """
     sql = pg_sql.SQL("DROP INDEX IF EXISTS {schema_name}.{index_col};").format(
-        schema_name=pg_sql.Identifier(schema_name),
+        schema_name=pg_sql.Identifier(*schema_name.split(".")),
         index_col=pg_sql.Identifier(index_col)
         )
     dbdao.execute_sql(sql)
@@ -102,7 +102,7 @@ def create_embedding_index(dbdao, schema_name:str, embedding_col:str, index_col:
                      CREATE INDEX {index_col} ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine');
                      """).format(
         index_col=pg_sql.Identifier(index_col),
-        schema_name=pg_sql.Identifier(schema_name),
+        schema_name=pg_sql.Identifier(*schema_name.split(".")),
         embedding_col=pg_sql.Identifier(embedding_col),
         )   
     dbdao.execute_sql(sql)

@@ -88,16 +88,8 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name):
     batch_embedding_concept_table(concept, tokenizer, model, device, cache_dao, db_schema, embedding_table, embedding_cols)
 
     # 3. Create HNSW index on the embedding column
-    cache_dao.execute_sql(pg_sql.SQL(
-        "SET hnsw_enable_experimental_persistence=TRUE; "
-        "CREATE INDEX IF NOT EXISTS {index_col} ON {schema}.{table} "
-        "USING HNSW ({col}) WITH (metric = 'cosine');"
-    ).format(
-        index_col=pg_sql.Identifier(index_col),
-        schema=pg_sql.Identifier(*db_schema.split(".")),
-        table=pg_sql.Identifier(embedding_table),
-        col=pg_sql.Identifier(embedding_col_name),
-    ))
+    drop_embedding_index(cache_dao, *db_schema.split("."), index_col)
+    create_embedding_index(cache_dao, *db_schema.split("."), embedding_col_name, index_col)
     logger.info("***************** HANA embedding cache complete *****************")
 
 
