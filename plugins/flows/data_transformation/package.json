@@ -709,6 +709,7 @@
                 "type": "object"
               },
               "WhiteRabbitDataType": {
+                "additionalProperties": true,
                 "properties": {
                   "node_id": {
                     "title": "Node Id",
@@ -725,22 +726,7 @@
                     ],
                     "default": null
                   },
-                  "files": {
-                    "anyOf": [
-                      {
-                        "items": {
-                          "type": "string"
-                        },
-                        "type": "array"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Files"
-                  },
-                  "database_code": {
+                  "databaseCode": {
                     "anyOf": [
                       {
                         "type": "string"
@@ -750,31 +736,7 @@
                       }
                     ],
                     "default": null,
-                    "title": "Database Code"
-                  },
-                  "tables_to_scan": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Tables To Scan"
-                  },
-                  "port": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Port"
+                    "title": "Databasecode"
                   },
                   "schema": {
                     "anyOf": [
@@ -788,77 +750,10 @@
                     "default": null,
                     "title": "Schema"
                   },
-                  "server": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Server"
-                  },
-                  "database": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Database"
-                  },
-                  "password": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Password"
-                  },
-                  "data_type": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Data Type"
-                  },
-                  "user_name": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "User Name"
-                  },
-                  "server_location": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ],
-                    "default": null,
-                    "title": "Server Location"
+                  "tables_to_scan": {
+                    "default": "*",
+                    "title": "Tables To Scan",
+                    "type": "string"
                   }
                 },
                 "required": [
