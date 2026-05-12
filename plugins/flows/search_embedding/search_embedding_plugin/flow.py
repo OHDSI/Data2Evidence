@@ -34,6 +34,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     logger.info(f'Device: {device} | PyTorch threads: {torch.get_num_threads()}')
     schema_name = options.schema_name
     database_code = options.database_code
+    cache_id = options.cache_id
     use_trex_connection = options.use_trex_connection
     if use_trex_connection:
         # -------------------- Trex connection to cache --------------------
@@ -41,6 +42,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             dialect=SupportedDatabaseDialects.TREX,
             use_cache_db=use_trex_connection,
             database_code=database_code,
+            cache_id=cache_id,
         )
         if dbdao.dialect == SupportedDatabaseDialects.HANA:
             create_embeddings_hana(dbdao, database_code, schema_name)

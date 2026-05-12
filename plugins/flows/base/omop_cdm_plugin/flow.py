@@ -42,11 +42,12 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
 def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_cache: bool):
     logger = get_run_logger()
     database_code = options.database_code
+    cache_id = options.cache_id
     schema_name = options.schema_name
     results_schema = options.results_schema
     use_cache_db = options.use_cache_db
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
 
     # Create CDM schema
     logger.info(f"Creating OMOP CDM schema '{schema_name}' in source database '{database_code}'..")

@@ -25,6 +25,7 @@ class TrexConnection {
     try {
       // @ts-ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
+      // Pre-dataset / infra path: no datasetId in scope, so databaseCode doubles as the cache_id alias.
       this.conn = dbm.getConnection(
         databaseCode,
         schemaName,
