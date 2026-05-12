@@ -7,6 +7,7 @@ import {
   ICreateDatamodelFlowRunDto,
   IGetVersionInfoFlowRunDto,
 } from "../types.ts";
+import { ensureOptionsCacheId } from "../utils/cacheIdResolver.ts";
 
 export class DataModelFlowController {
   private DataModelFlowService: DataModelFlowService;
@@ -80,6 +81,7 @@ export class DataModelFlowController {
     try {
       const token = req.headers.authorization;
       const getVersionInfoFlowRunDto: IGetVersionInfoFlowRunDto = req.body;
+      await ensureOptionsCacheId(getVersionInfoFlowRunDto, token);
       const result =
         await this.DataModelFlowService.createGetVersionInfoFlowRun(
           getVersionInfoFlowRunDto,
@@ -98,6 +100,7 @@ export class DataModelFlowController {
     try {
       const token = req.headers.authorization;
       const createDatamodelFlowRunDto: ICreateDatamodelFlowRunDto = req.body;
+      await ensureOptionsCacheId(createDatamodelFlowRunDto, token);
       const result = await this.DataModelFlowService.createDatamodelFlowRun(
         createDatamodelFlowRunDto,
         token
@@ -115,6 +118,7 @@ export class DataModelFlowController {
     try {
       const token = req.headers.authorization;
       const createDatamartFlowRunDto: ICreateDatamartFlowRunDto = req.body;
+      await ensureOptionsCacheId(createDatamartFlowRunDto, token);
       const result = await this.DataModelFlowService.createDatamartFlowRun(
         createDatamartFlowRunDto,
         token

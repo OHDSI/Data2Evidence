@@ -1,6 +1,7 @@
 import { Injectable } from '@danet/core'
 import { services } from '../env.ts'
 import { createLogger } from '../logger.ts'
+import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 import { ISourceInfo, ISourceRequest } from './types.ts'
 
 const DEFAULT_WEBAPI_URL = 'http://localhost:33001/WebAPI'
@@ -110,7 +111,7 @@ export class WebApiSourceApi {
     schemaName: string,
     authToken?: string
   ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+    const databaseCode = sanitizeIdForCacheId(sourceKey)
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache`
 
     const response = await fetch(url, {
@@ -131,7 +132,7 @@ export class WebApiSourceApi {
     sourceKey: string,
     authToken?: string
   ): Promise<{ cacheExists: boolean; cacheAttached: boolean }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+    const databaseCode = sanitizeIdForCacheId(sourceKey)
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache/status?databaseCode=${databaseCode}`
 
     const response = await fetch(url, {

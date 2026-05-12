@@ -56,8 +56,9 @@ export class PrefectService {
       revision.flow,
     );
     const portalServerApi = new PortalServerAPI(token);
-    const { schemaName, databaseCode } =
-      await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { schemaName, databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
@@ -83,6 +84,7 @@ export class PrefectService {
           datasetId,
           schemaName,
           databaseCode,
+          cacheId,
           studyName,
           studyId,
           ...(uploadResults !== undefined ? { uploadResults } : {}),
@@ -123,9 +125,9 @@ export class PrefectService {
     const portalServerApi = new PortalServerAPI(token);
 
     // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
-    const { schemaName, databaseCode } = await portalServerApi.getDataset(
-      options["datasetId"],
-    );
+    const dataset = await portalServerApi.getDataset(options["datasetId"]);
+    const { schemaName, databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     // Save analysis specification for researcher workflows
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
@@ -151,6 +153,7 @@ export class PrefectService {
         options: Object.assign(options, {
           schemaName,
           databaseCode,
+          cacheId,
         }),
       },
     );
@@ -194,7 +197,9 @@ export class PrefectService {
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
 
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     const STRATEGUS_RESULTS_BUCKET = "strategus-results";
     let storageFileName: string | undefined;
@@ -234,6 +239,7 @@ export class PrefectService {
           {
             mode: "upload-results-from-storage",
             databaseCode,
+            cacheId,
             studyId,
             datasetId,
             storageFileName,
@@ -279,7 +285,9 @@ export class PrefectService {
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
 
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     const flowRunId = await this.prefectApi.createFlowRun(
       "strategus-analysis-drop-results",
@@ -292,6 +300,7 @@ export class PrefectService {
           {
             mode: "drop-results",
             databaseCode,
+            cacheId,
             studyId,
             datasetId,
           },
