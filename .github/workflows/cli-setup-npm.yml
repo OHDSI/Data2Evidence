@@ -120,7 +120,7 @@ jobs:
               --arg version "$VERSION" \
               --arg os "${OS[$pkg]}" \
               --arg cpu "${CPU[$pkg]}" \
-              '{name:$name,version:$version,description:"Data2Evidence CLI binary",license:"Apache-2.0",os:[$os],cpu:[$cpu],bin:{d2e:"bin/d2e"}}' \
+              '{name:$name,version:$version,description:"Data2Evidence Installer",license:"Apache-2.0",os:[$os],cpu:[$cpu],bin:{d2e:"bin/d2e"}}' \
               > npm/${pkg}/package.json
             cp scripts/dist/${pkg} npm/${pkg}/bin/d2e
             chmod +x npm/${pkg}/bin/d2e
