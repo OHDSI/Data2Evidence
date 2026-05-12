@@ -1,0 +1,52 @@
+{
+  "name": "concept-sets",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "vite",
+    "dev": "concurrently --kill-others \"bun build:watch\" \"bun preview\"",
+    "build": "vitest run && vite build",
+    "build:dev": "vite build --mode=development",
+    "build:watch": "vite build --mode=development --watch",
+    "preview": "vite preview --mode=development",
+    "test": "vitest run",
+    "lint": "eslint src --ext js,ts,tsx",
+    "format": "prettier --write .",
+    "check-format": "prettier --check ."
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/systemjs": "^6.1.1",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^8.57.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.2.2",
+    "vite": "^6.4.2",
+    "vite-plugin-css-injected-by-js": "^3.5.1",
+    "vite-plugin-static-copy": "^3.1.6",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "@d4l/web-components-library": "^3.20.2",
+    "@emotion/react": "^11.9.0",
+    "@emotion/styled": "^11.8.1",
+    "@mui/icons-material": "^5.8.3",
+    "@mui/material": "^5.8.3",
+    "@portal/components": "^1.0.0",
+    "axios": "^1.13.4",
+    "classnames": "^2.5.1",
+    "material-react-table": "^2.9.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "reactflow": "^11.11.4",
+    "single-spa": "^6.0.3",
+    "single-spa-react": "^6.0.2",
+    "uuid": "^14.0.0"
+  }
+}

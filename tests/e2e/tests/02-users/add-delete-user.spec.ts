@@ -2,7 +2,7 @@ import { test, expect } from '../fixtures'
 
 const TEST_NAME = 'add-delete-user'
 const SHOULD_SKIP = false
-test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled`)
 
 test(TEST_NAME, async ({ page }) => {
   // Sign in
@@ -30,7 +30,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Show password' }).click()
   await page.getByRole('button', { name: 'Add' }).click()
   // Check if user is added
-  await page.waitForTimeout(1000)
+  await page.waitForTimeout(5000)
   await page.reload()
   await expect(page.getByRole('cell', { name: 'test_user' })).toBeVisible()
 

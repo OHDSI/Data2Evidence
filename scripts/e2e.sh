@@ -561,7 +561,7 @@ cmd_setup_env() {
     log_info "Adding PLUGINS_SEED to .env.local..."
     echo '' >> .env.local
     echo '# E2E: Match CI plugin seed configuration' >> .env.local
-    echo 'PLUGINS_SEED='\''["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'\''' >> .env.local
+    echo 'PLUGINS_SEED='\''["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'\''' >> .env.local
     echo '# Plugin reinstall on restart (false prevents race condition with UI mounting)' >> .env.local
     echo "PLUGINS_SEED_UPDATE=$PLUGINS_UPDATE" >> .env.local
 
@@ -575,7 +575,7 @@ cmd_setup_env() {
 }
 
 cmd_build_ui() {
-    cd "$ROOT_DIR/ui"
+    cd "$ROOT_DIR/plugins/ui"
     log_info "Building UI using Docker..."
 
     local image_name="d2e-ui-builder"
@@ -584,7 +584,7 @@ cmd_build_ui() {
     log_info "Building Docker image (first run only)..."
     docker build -f Dockerfile.build -t "$image_name" .
 
-    # Run the build with ui folder mounted (existing resources visible for cache)
+    # Run the build with plugins/ui folder mounted (existing resources visible for cache)
     log_info "Running bun install and build-all..."
     docker run --rm -v "$(pwd):/app" "$image_name"
 
@@ -592,7 +592,7 @@ cmd_build_ui() {
     log_info "Fixing resources ownership..."
     docker run --rm -v "$(pwd):/work" alpine chown -R $(id -u):$(id -g) /work/resources
 
-    log_info "UI build complete. Resources are in ui/resources/"
+    log_info "UI build complete. Resources are in plugins/ui/resources/"
     cd "$ROOT_DIR"
 }
 

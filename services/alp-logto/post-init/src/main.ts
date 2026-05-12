@@ -197,10 +197,11 @@ async function main() {
     "users",
     headers
   );
+  // The Logto management API doesn't return `tenant_id` in the user listing,
+  // so guarding on it here would always falsy-fail and we would attempt to
+  // recreate the user on every restart, fail, and silently skip USER-ROLES.
   const userExists = fetchExistingUsers.find(
-    (existingUser: any) =>
-      existingUser.username === user.username &&
-      existingUser.tenant_id === "default"
+    (existingUser: any) => existingUser.username === user.username
   );
   let logtoAdminUser = userExists || (await create("users", headers, user));
 
@@ -356,7 +357,7 @@ async function main() {
     id: "default",
     branding: {
       favicon: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal/assets/favicon.ico`,
-      logoUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal/assets/d2e.svg`,
+      logoUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal/assets/d2e-data2evidence.png`,
     },
     color: {
       primaryColor: "#000080",
@@ -364,7 +365,7 @@ async function main() {
       darkPrimaryColor: "#0000B3",
     },
     customCss: process.env.LOGTO__CUSTOM_CSS || `a[aria-label="Powered By Logto"] { display: none; }
-img[alt="app logo"] { height: 80px; }
+img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
     unknownSessionRedirectUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal`,

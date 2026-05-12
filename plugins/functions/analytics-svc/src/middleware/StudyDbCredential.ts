@@ -1,0 +1,195 @@
+import { Logger, utils } from "@alp/alp-base-utils";
+import {
+    ANALYTICS_DB_DIALECTS,
+    IMRIRequest,
+    StudyAnalyticsCredential,
+    StudyDbMetadata,
+} from "../types";
+import { convertZlibBase64ToJson } from "@alp/alp-base-utils";
+import PortalServerAPI from "../api/PortalServerAPI";
+import { env } from "../env";
+const log = Logger.CreateLogger("analytics-log");
+
+export default async (req: IMRIRequest, res, next) => {
+    log.addRequestCorrelationID(req);
+    const getDatasetIdFromMriquery = (): string => {
+        const base64EncodedMriQuery = req.query.mriquery;
+        const base64DecodedMriQueryJson = base64EncodedMriQuery
+            ? convertZlibBase64ToJson(base64EncodedMriQuery.toString())
+            : "";
+        return base64DecodedMriQueryJson
+            ? base64DecodedMriQueryJson.datasetId
+            : "";
+    };
+
+    const getDatasetIdFromRequest = (): string => {
+        if (req.query.datasetId) {
+            return req.query.datasetId.toString();
+        } else if (req.body.datasetId) {
+            return req.body.datasetId.toString();
+        }
+        // URL-encoded JSON path segment (e.g. /cohort/SYNTAX/%7B"datasetId":"..."%7D).
+        // Bounded indexOf-based extraction avoids ReDoS from a polynomial regex.
+        const url = req.url;
+        const pathEnd = url.search(/[?#]/);
+        const path = pathEnd === -1 ? url : url.slice(0, pathEnd);
+        const start = path.indexOf("%7B");
+        if (start !== -1) {
+            const end = path.indexOf("%7D", start + 3);
+            if (end !== -1) {
+                const segment = path.slice(start, end + 3);
+                if (segment.length <= 4096) {
+                    try {
+                        const decoded = JSON.parse(decodeURIComponent(segment));
+                        if (decoded?.datasetId) return String(decoded.datasetId);
+                    } catch {
+                        // not JSON, ignore
+                    }
+                }
+            }
+        }
+        return "";
+    };
+
+    const addPAConfigIdToReq = (studyMetadata): void => {
+        //This is for scenarios where dataset is yet to be created
+        if (studyMetadata == null) {
+            log.info(`Skip injection of PA config ID for path ${req.url}`);
+            return;
+        }
+        req.paConfigId = studyMetadata.paConfigId;
+        req.paConfigVersion = "A";
+    };
+
+    const getDefaultDbConnection = (): any => {
+        const studyAnalyticsCredential: StudyAnalyticsCredential = {
+            ...analyticsCredentials[Object.keys(analyticsCredentials)[0]],
+        };
+
+        if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {
+            studyAnalyticsCredential.schema =
+                studyAnalyticsCredential.schema.toUpperCase();
+        }
+        req.dbCredentials = {
+            ...req.dbCredentials,
+            studyAnalyticsCredential,
+        };
+    };
+
+    const getDbConnectionByStudyMetadata = (
+        studyMetadata: StudyDbMetadata
+    ): any => {
+        // Use default db connection credentials if studyMetadata is undefined
+        if (studyMetadata == null) {
+            getDefaultDbConnection();
+            return;
+        }
+        // Throw error if studyMetadata.databaseName or studyMetadata.schemaName is undefined
+        if (studyMetadata.databaseName == null) {
+            throw new Error("studyMetadata.databaseName is empty");
+        }
+        if (studyMetadata.schemaName == null) {
+            throw new Error("studyMetadata.schemaName is empty");
+        }
+        const studyDatabaseName: string = studyMetadata.databaseName;
+        const studySchemaName: string = studyMetadata.schemaName;
+        const studyVocabSchemaName: string = studyMetadata.vocabSchemaName;
+        const studyResultsSchemaName: string = studyMetadata.resultsSchemaName;
+
+        log.info(`studyDatabaseName ${studyDatabaseName}`);
+
+        const studyAnalyticsCredential: StudyAnalyticsCredential = {
+            ...analyticsCredentials[studyDatabaseName],
+        };
+
+        studyAnalyticsCredential.schema = studySchemaName
+            ? studySchemaName
+            : studyAnalyticsCredential.probeSchema;
+        studyAnalyticsCredential.vocabSchema = studyVocabSchemaName
+            ? studyVocabSchemaName
+            : null;
+        studyAnalyticsCredential.resultsSchemaName = studyResultsSchemaName
+            ? studyResultsSchemaName
+            : studyAnalyticsCredential.schema;
+
+        if (studyAnalyticsCredential.dialect === ANALYTICS_DB_DIALECTS.HANA) {
+            studyAnalyticsCredential.schema =
+                studyAnalyticsCredential.schema.toUpperCase();
+            studyAnalyticsCredential.vocabSchema =
+                studyAnalyticsCredential.vocabSchema.toUpperCase();
+        }
+
+        // Add dialect and databaseCode to credentials for BIGQUERY datasets as BIGQUERY credentials are not generated in envConverter
+        if (studyMetadata.dialect === ANALYTICS_DB_DIALECTS.BIGQUERY) {
+            studyAnalyticsCredential.dialect = studyMetadata.dialect;
+            studyAnalyticsCredential.code = studyMetadata.databaseCode;
+        }
+
+        // `code` is the credential lookup key (databaseCode); `cacheId` is the
+        // DuckDB ATTACH alias used at `getConnection(<alias>, ...)`.
+        studyAnalyticsCredential.cacheId =
+            studyMetadata.cacheId ?? studyMetadata.databaseCode;
+
+        // Add database pool related configs to studyAnalyticsCredential
+        studyAnalyticsCredential.max = env.PG__MAX_POOL;
+        studyAnalyticsCredential.min = env.PG__MIN_POOL;
+        studyAnalyticsCredential.idleTimeoutMillis = env.PG__IDLE_TIMEOUT_IN_MS;
+
+        req.dbCredentials = {
+            ...req.dbCredentials,
+            studyAnalyticsCredential,
+        };
+    };
+
+    const analyticsCredentials = req.dbCredentials.analyticsCredentials;
+
+    try {
+        if (req.url === "/check-readiness") {
+            getDefaultDbConnection();
+        } else if (utils.isClientCredReq(req)) {
+            if (req.query.datasetId) {
+                const studyTokenCode: string = String(req.query.datasetId);
+                log.info(`Selected study ID ${studyTokenCode}`);
+
+                const portalServerAPI = new PortalServerAPI();
+                const studies = await portalServerAPI.getStudies();
+
+                const studyMetadata: StudyDbMetadata = studies.find(
+                    (o) => o.tokenStudyCode === studyTokenCode
+                );
+                log.info(
+                    `Selected studyMetadata ${JSON.stringify(studyMetadata)}`
+                );
+                // Set req.selectedstudyDbMetadata if it does not already exist
+                if (!req.selectedstudyDbMetadata) {
+                    req.selectedstudyDbMetadata = studyMetadata;
+                }
+                getDbConnectionByStudyMetadata(studyMetadata);
+                addPAConfigIdToReq(studyMetadata);
+            } else {
+                getDefaultDbConnection();
+            }
+        } else {
+            // TODO: throw exact error for missing db metadata later on once mri sends in selected study entity value
+            // TODO: check for selected study is in user jwt token for authorisation
+            let datasetId: string = getDatasetIdFromMriquery();
+            // If datasetId is not found from mriquery, try and find datasetId from request query or body
+            if (!datasetId) {
+                datasetId = getDatasetIdFromRequest();
+            }
+            const studyMetadata: StudyDbMetadata =
+                req.studiesDbMetadata.studies.find((o) => o.id === datasetId || o.tokenStudyCode === datasetId);
+            // Set req.selectedstudyDbMetadata if it does not already exist
+            if (!req.selectedstudyDbMetadata) {
+                req.selectedstudyDbMetadata = studyMetadata;
+            }
+            getDbConnectionByStudyMetadata(studyMetadata);
+            addPAConfigIdToReq(studyMetadata);
+        }
+        next();
+    } catch (err) {
+        log.enrichErrorWithRequestCorrelationID(err, req);
+        log.error(err);
+        next(err);
+    }
+};
