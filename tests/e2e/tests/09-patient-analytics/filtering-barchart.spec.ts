@@ -79,14 +79,14 @@ test(TEST_NAME, async ({ page }) => {
     .locator('div.axis-menu-button-wrapper')
     .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
     .click()
-  await page.locator('div.dropdownmenu-container').getByText('Reset Selection').first().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
   await page
-    .locator('div.axis-menu-button-wrapper')
-    .first()
-    .getByRole('button', { name: 'Basic Data Gender ◢' })
+    .locator('.axis-group--bottom .axis-subgroup')
+    .last()
+    .locator('button.axisMenuButton', { hasText: 'Gender' })
     .click()
   await page.locator('div.dropdownmenu-container').getByRole('list').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
@@ -106,7 +106,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set X1-axis to gender
-  await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').nth(1).click()
   await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
   await page.locator('#pane-right').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -114,19 +114,19 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to month of birth
-  await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
+  await page.locator('.axis-group--top button.axisMenuButton').click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
-  await page.locator('div.axis-menu-button-wrapper').nth(6).getByRole('button').click()
+  await page.locator('.axis-group--top button.axisMenuButton').click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
   // Set X1-axis to condition concept name
-  await page.locator('div.axis-menu-button-wrapper').first().getByRole('button').click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').nth(1).click()
   await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
   await page.locator('#pane-right').getByText('Condition concept Name').click()
 
@@ -134,7 +134,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('i').click()
 
   // Set X2-axis to race concept id
-  await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
   await page
     .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
@@ -146,7 +146,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set X2-axis to year of birth with bin size of 50
-  await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
   await page
     .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
@@ -154,7 +154,7 @@ test(TEST_NAME, async ({ page }) => {
     .last()
     .click()
   await page.locator('#pane-right').getByText('Year of Birth').first().click()
-  await page.locator('button.binningButton').nth(1).click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.binningButton').first().click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
   await page.locator('.modal-wrapper').click()
@@ -162,13 +162,13 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Reset X2-axis
-  await page.locator('div.axis-menu-button-wrapper').nth(2).getByRole('button').first().click()
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
-  // Set attribute for stacked chart
-  await page.locator('div.axis-menu-button-wrapper').nth(4).getByRole('button').click()
+  // Set X3-axis attribute (was rendered as last bottom axis; originally captioned "stacked chart")
+  await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').last().click()
   await page
     .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
     .getByRole('listitem')
