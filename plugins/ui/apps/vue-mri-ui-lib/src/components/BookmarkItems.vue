@@ -155,6 +155,16 @@ const paginatedBookmarks = computed(() => {
   return bookmarksDisplaySorted.value.slice(start, end)
 })
 
+const barChartModeLabels = computed(() => {
+  const map = new WeakMap<Bookmark, string>()
+  for (const bd of paginatedBookmarks.value) {
+    if (bd.bookmark) {
+      map.set(bd.bookmark, getBarChartModeLabel(bd.bookmark))
+    }
+  }
+  return map
+})
+
 // Watch for changes in bookmarks and reset pagination if needed
 watch(
   () => props.bookmarksDisplay.length,
@@ -453,8 +463,8 @@ onErrorCaptured((err, instance, info) => {
                       >
                       <div>
                         {{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}
-                        <template v-if="getBarChartModeLabel(bookmarkDisplay.bookmark)">
-                          - {{ getBarChartModeLabel(bookmarkDisplay.bookmark) }}
+                        <template v-if="barChartModeLabels.get(bookmarkDisplay.bookmark)">
+                          - {{ barChartModeLabels.get(bookmarkDisplay.bookmark) }}
                         </template>
                       </div>
                     </div>

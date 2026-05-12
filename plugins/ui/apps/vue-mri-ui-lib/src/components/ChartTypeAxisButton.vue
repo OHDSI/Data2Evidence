@@ -18,7 +18,7 @@
         <span class="axisMenuButtonIcon"></span>
       </button>
       <dropDownMenu
-        :target="menuButton"
+        :target="menuButtonEl"
         :parentContainer="parentContainer"
         :subMenu="menuData"
         :opened="menuVisible"
@@ -48,7 +48,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, useTemplateRef } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef } from 'vue'
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
@@ -64,6 +64,7 @@ const getText = (key: string) => store?.getters?.getText?.(key) || key
 
 const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
+const menuButtonEl = ref<HTMLButtonElement | null>(null)
 const menuVisible = ref(false)
 
 const modeIdToStackedOption: Record<string, string> = {
@@ -169,6 +170,9 @@ function handleOutsideClick(event: MouseEvent) {
 
 onMounted(() => {
   window.addEventListener('click', handleOutsideClick)
+  nextTick(() => {
+    menuButtonEl.value = menuButton.value
+  })
 })
 
 onBeforeUnmount(() => {
