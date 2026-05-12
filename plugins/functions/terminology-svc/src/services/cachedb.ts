@@ -74,10 +74,8 @@ export class CachedbService {
       databaseCode,
       schemaName,
       resultsSchemaName,
+      cacheId,
     } = this.datasetDB;
-    if (dialect === DatasetDialects.HANA) {
-      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
-    }
     if (this.hybridSearchConfig == undefined) {
       throw new Error("hybridSearchConfig undefined!");
     }
@@ -85,6 +83,18 @@ export class CachedbService {
     const semanticRatio = enableSemantic
       ? parseFloat(this.hybridSearchConfig.semanticRatio)
       : 0;
+
+    if (dialect === DatasetDialects.HANA) {
+      return new HanaHDBDao(
+        this.token,
+        vocabSchemaName,
+        databaseCode,
+        semanticRatio,
+        schemaName,
+        resultsSchemaName,
+        cacheId,
+      );
+    }
 
     // By default return CachedbDAO
     return new CachedbDAO(

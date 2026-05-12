@@ -7,6 +7,8 @@ function initEnv(__env) {
   const envSchema = z.object({
     HANA_FTS_FUZZY: z.string().transform(Number),
 
+    HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("rerank"),
+
     PROJECT_NAME: z.string(),
   
     SERVICE_ROUTES: z
