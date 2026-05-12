@@ -199,6 +199,7 @@ export class DatasetQueryService {
       "dataset.id",
       "dataset.dialect",
       "dataset.databaseCode",
+      "dataset.cacheId",
       "dataset.schemaName",
       "dataset.vocabSchemaName",
       "dataset.resultsSchemaName",

@@ -234,4 +234,9 @@ export class DatasetController {
       body.databaseCode,
     );
   }
+
+  @Post(":id/transform-to-webapi")
+  async transformToWebApi(@Param("id") id: string) {
+    return await this.datasetCommandService.transformToWebApi(id);
+  }
 }

@@ -1,4 +1,4 @@
-import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType } from "./types";
+import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType, WebApiDatasetType } from "./types";
 
 export enum DatasetAttribute {
   PATIENT_COUNT = "patient_count",
@@ -47,8 +47,8 @@ export const DatasetMap: Record<SourceDatasetType, CacheDatasetType[]> = {
 export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts", "Analysis"];
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
-  source: ["info", "metadata", "version", "delete"],
-  fhir: ["info", "metadata", "version", "delete"],
+  source: ["info", "metadata", "version", "delete", "transform-to-webapi"],
+  fhir: ["info", "metadata", "version", "delete", "transform-to-webapi"],
   non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
     "metadata",
@@ -73,6 +73,17 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
   ],
   hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
   strategus_analysis: ["metadata", "permissions", "resources", "delete"],
+  webapi: [
+    "info",
+    "metadata",
+    "permissions",
+    "resources",
+    "delete",
+    "data-quality",
+    "data-characterization",
+    "setup-semantic-search",
+    "manage-dashboard",
+  ],
 };
 
 export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
@@ -84,6 +95,7 @@ export const InformationPageMap: Record<DatasetType, DatasetInfoTab[]> = {
   hana__omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   hana__non_omop: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
   strategus_analysis: [DatasetInfoTab.DatasetInfo],
+  webapi: [DatasetInfoTab.DatasetInfo, DatasetInfoTab.DataQuality, DatasetInfoTab.DataCharacterization],
 };
 
 export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeatures)[number][]> = {
@@ -95,6 +107,7 @@ export const ResearcherFeatureMap: Record<DatasetType, (typeof ResearcherFeature
   hana__omop: ["Cohorts", "Notebooks", "Concepts"],
   hana__non_omop: ["Cohorts", "Notebooks"],
   strategus_analysis: [],
+  webapi: ["Cohorts", "Notebooks", "Analysis", "Concepts"],
 };
 
 export enum LogResponseType {

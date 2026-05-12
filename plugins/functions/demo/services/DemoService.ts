@@ -84,22 +84,18 @@ export class DemoService {
     const portalAPI = new PortalAPI(token);
     const datasets = await portalAPI.getDatasets();
 
-    const sourceDataset = datasets.find(
+    const existingDataset = datasets.find(
       (dataset) =>
         dataset.databaseCode === env.DEMO_DB_CODE &&
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
-        dataset.visibilityStatus === "HIDDEN" &&
-        dataset.sourceStudyId == null
+        dataset.sourceStudyId == null &&
+        dataset.visibilityStatus !== "HIDDEN"
     );
 
-    const cacheDataset = datasets.find(
-      (dataset) => dataset.sourceStudyId === sourceDataset?.id
-    );
-
-    if (sourceDataset && cacheDataset) {
-      this.logger.info(`Dataset exists: ${JSON.stringify(sourceDataset)}`);
-      return { ...sourceDataset, cacheId: cacheDataset.id };
+    if (existingDataset) {
+      this.logger.info(`Dataset exists: ${JSON.stringify(existingDataset)}`);
+      return existingDataset;
     }
 
     const datasetAPI = new DatasetAPI(token);
@@ -128,7 +124,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { cacheId: datasetId, vocabSchemaName } = dataset;
+    const { id: datasetId, vocabSchemaName } = dataset;
     const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
@@ -186,7 +182,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
     const result = await jobPluginsAPI.createDcFlowRun({
       datasetId,
       releaseId: "",
@@ -250,7 +246,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
     const portalAPI = new PortalAPI(token);
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
 
     const cacheDataset = await portalAPI.getDataset(datasetId);
 
@@ -332,7 +328,7 @@ export class DemoService {
     const dataset = progress?.steps?.find(
       (step) => step.code === "dataset"
     )?.result;
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
 
     if (!dataset) {
       this.logger.error("Dataset not found in progress");
