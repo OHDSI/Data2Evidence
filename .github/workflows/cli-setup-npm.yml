@@ -135,7 +135,7 @@ jobs:
           cp scripts/dist/d2e-windows-x64.exe npm/d2e-windows-x64/bin/d2e.exe
           npm publish npm/d2e-windows-x64 --access public $DRY_RUN_FLAG
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPMJS_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish production
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'npm'
         run: npm publish --access public
