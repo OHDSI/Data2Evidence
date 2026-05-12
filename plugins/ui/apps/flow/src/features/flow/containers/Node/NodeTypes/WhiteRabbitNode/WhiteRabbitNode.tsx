@@ -8,10 +8,12 @@ import { TargetHandle, SourceHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
 import { WhiteRabbitDrawer } from "./WhiteRabbitDrawer";
 import { ScannedSchemaState, TableSourceState } from "../../../../types";
+import { ScanMetadata } from "~/components/Dialog/ScanDataDialog/ScanDataDialog";
 
 export interface WhiteRabbitNodeData extends NodeDataState {
   scannedSchema: ScannedSchemaState;
   sourceHandles: TableSourceState[];
+  scanMetadata?: ScanMetadata;
 }
 
 export const WhiteRabbitNode = (node: NodeProps<WhiteRabbitNodeData>) => {
