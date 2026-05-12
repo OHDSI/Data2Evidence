@@ -5,6 +5,7 @@ import {
   TableSourceHandleData,
   ScannedSchemaState,
 } from "~/features/flow/types";
+import { ScanMetadata } from "../ScanDataDialog/ScanDataDialog";
 import { ScanDataSourceTable } from "~/features/flow/types";
 import {
   useLazyGetFlowRunStatusQuery,
@@ -21,6 +22,7 @@ interface ScanProgressDialogProps {
   onClose?: (type: CloseDialogType) => void;
   nodeId: string;
   scanId: string;
+  scanMetadata: ScanMetadata;
   onFormDataChange: (updates: { [field: string]: any }) => void;
 }
 
@@ -37,6 +39,7 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
   onClose,
   nodeId,
   scanId,
+  scanMetadata,
   onFormDataChange,
 }) => {
   const [progress, setProgress] = useState(0);
@@ -95,12 +98,13 @@ export const ScanProgressDialog: FC<ScanProgressDialogProps> = ({
       onFormDataChange({ sourceHandles: sourceHandles });
       setLoading(false);
       onFormDataChange({ scannedSchema: scannedResult });
+      onFormDataChange({ scanMetadata });
       updateNodeInternals(nodeId);
       handleClose("success");
     } catch (error) {
       console.log(`Error creating source schema: ${error}`);
     }
-  }, [scanId, nodeId]);
+  }, [scanId, nodeId, scanMetadata]);
 
   const fetchScanProgress = useCallback(async () => {
     try {

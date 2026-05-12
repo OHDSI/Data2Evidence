@@ -637,8 +637,13 @@ const getTrexDbConnection = ({
                 parameters
             );
         };
+        // `code` (databaseCode) is the credential lookup key — used by
+        // `getFirstPublication` above. `cacheId` is the DuckDB ATTACH alias
+        // queries should target.
+        const trexAlias =
+            analyticsCredentials.cacheId ?? analyticsCredentials.code;
         const conn = dbm.getConnection(
-            analyticsCredentials.code,
+            trexAlias,
             analyticsCredentials.schema,
             analyticsCredentials.vocabSchema,
             analyticsCredentials.resultsSchemaName,
