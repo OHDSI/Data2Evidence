@@ -8,6 +8,8 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync, spawnSync } from "child_process";
 import { LibUtils } from "./lib";
+import dockerComposeFile from "../docker-compose.yml" with { type: "file" };
+import dockerComposeLocalFile from "../docker-compose-local.yml" with { type: "file" };
 
 interface CliOptions {
   functionPath?: string;
@@ -59,9 +61,20 @@ class D2ECli {
   constructor() {
     this.script_full_path = path.resolve(__dirname, "..");
     this.node_modules_path = this.initialise_node_modules_path();
+    if (dockerComposeFile.includes("$bunfs")) {
+      this.node_modules_path = process.cwd();
+    }
+    this.extract_compose_file();
     this.program = new Command();
     this.libUtils = new LibUtils();
     this.install_options();
+  }
+
+  extract_compose_file(): void {
+    const dest = path.join(this.node_modules_path, "docker-compose.yml");
+    if (!fs.existsSync(dest)) {
+      fs.writeFileSync(dest, fs.readFileSync(dockerComposeFile));
+    }
   }
 
   // Functions

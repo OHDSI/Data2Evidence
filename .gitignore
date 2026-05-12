@@ -74,3 +74,4 @@ ui/.nx
 ui/pyqetest
 scripts/dist/
 scripts/create_users.mjs
+*.bun-build
