@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import https from "node:https";
+import readline from "node:readline";
 import fetch from "node-fetch";
 
 // Helper functions
@@ -18,6 +19,54 @@ function extractAuthCode(url) {
     const regex = /code=([^&]+)/;
     const match = url.match(regex);
     return match ? match[1] : '';
+}
+
+function prompt(question, defaultValue) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const suffix = defaultValue ? ` [${defaultValue}]` : '';
+  return new Promise(resolve => {
+    rl.question(`${question}${suffix}: `, answer => {
+      rl.close();
+      resolve(answer.trim() || defaultValue || '');
+    });
+  });
+}
+
+function promptPassword(question) {
+  return new Promise((resolve, reject) => {
+    process.stdout.write(`${question}: `);
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.setEncoding('utf8');
+    let password = '';
+    const onData = (ch) => {
+      switch (ch) {
+        case '\n':
+        case '\r':
+        case '\u0004':
+          process.stdin.setRawMode(false);
+          process.stdin.pause();
+          process.stdin.removeListener('data', onData);
+          process.stdout.write('\n');
+          resolve(password);
+          return;
+        case '\u0003':
+          process.stdout.write('\n');
+          process.exit(1);
+        case '\u007f':
+        case '\b':
+          if (password.length > 0) {
+            password = password.slice(0, -1);
+            process.stdout.write('\b \b');
+          }
+          return;
+        default:
+          password += ch;
+          process.stdout.write('*');
+      }
+    };
+    process.stdin.on('data', onData);
+  });
 }
 
 const args = process.argv.slice(2);
@@ -44,6 +93,13 @@ const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
 console.log('\nSyncing usermgmt roles to Logto...\n');
 
+const username = await prompt('Admin username', 'admin');
+const password = await promptPassword('Admin password');
+if (!password) {
+  console.error('Password is required.');
+  process.exit(1);
+}
+
 // Start OIDC auth flow
 var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`;
 var response = await fetch(url, {
@@ -62,10 +118,7 @@ var logto_cookie = getCookie(setCookieHeaders, '_logto');
 var url = `https://${CADDY__D2E__PUBLIC_FQDN}/api/interaction`;
 const body = {
   event: "SignIn",
-  identifier: {
-    username: "admin",
-    password: "Updatepassword12345"
-  }
+  identifier: { username, password }
 };
 
 var response = await fetch(url, {
@@ -211,6 +264,13 @@ console.log(`  Synced:  ${result.synced}`);
 console.log(`  Skipped: ${result.skipped}`);
 console.log(`  Failed:  ${result.failed}`);
 
+if (result.skips && result.skips.length > 0) {
+  console.log('\nSkipped:');
+  for (const s of result.skips) {
+    console.log(`  User ${s.username} (${s.userId}): ${s.reason}`);
+  }
+}
+
 if (result.failures && result.failures.length > 0) {
   console.log('\nFailures:');
   for (const f of result.failures) {
@@ -230,5 +290,4 @@ if (result.failures && result.failures.length > 0) {
   }
   await fs.writeFile(envfile, updatedContent);
   console.log(`\nAll roles synced successfully. Set USER_MGMT__ROLE_SOURCE=logto in ${envfile}`);
-  console.log('Restart services for the change to take effect.');
 }

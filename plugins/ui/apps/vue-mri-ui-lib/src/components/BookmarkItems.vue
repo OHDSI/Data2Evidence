@@ -38,7 +38,7 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isAtlas = computed(() => getPortalAPI()?.isAtlas === true)
+const isAtlas = getPortalAPI()?.isAtlas || false
 
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => getPortalAPI()?.username || '')
