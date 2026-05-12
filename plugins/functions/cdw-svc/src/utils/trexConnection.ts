@@ -44,6 +44,7 @@ export const getTrexConnection = async (
   logger.info(
     `Connecting to: databaseCode:${databaseCode}, schemaName:${schemaName}, vocabSchemaName:${vocabSchemaName}, resultsSchemaName:${resultsSchemaName}`
   );
+  // Pre-dataset / infra path: no datasetId in scope, so databaseCode doubles as the cache_id alias.
   const conn = dbm.getConnection(
     databaseCode,
     schemaName,

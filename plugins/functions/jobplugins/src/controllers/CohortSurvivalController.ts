@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { param, validationResult } from "express-validator";
 import { validateCohortSurvivalFlowRunDto } from "../middlewares/CohortSurvivalValidatorMiddlewares.ts";
 import { CohortSurvivalService } from "../services/CohortSurvivalService.ts";
+import { ensureOptionsCacheId } from "../utils/cacheIdResolver.ts";
 
 export class CohortSurvivalController {
   private cohortSurvivalService: CohortSurvivalService;
@@ -44,6 +45,7 @@ export class CohortSurvivalController {
     try {
       const token = req.headers.authorization!;
       const cohortSurvivalFlowRunDto = req.body;
+      await ensureOptionsCacheId(cohortSurvivalFlowRunDto, token);
       const result =
         await this.cohortSurvivalService.createCohortSurvivalFlowRun(
           cohortSurvivalFlowRunDto,

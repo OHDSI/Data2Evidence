@@ -36,6 +36,7 @@ export class AnalyticsSvcAPI {
   }
 
   async getDataCharacterizationResults(
+    cacheId: string,
     databaseCode: string,
     resultsSchema: string,
     sourceKey: string,
@@ -46,8 +47,11 @@ export class AnalyticsSvcAPI {
     try {
       console.log(`vocabSchema ${vocabSchema} datasetId ${datasetId}`);
       const options = await this.createOptions("GET");
+      // URL segment uses cacheId (alias for the analytics-svc dataset lookup);
+      // databaseCode kept in the signature for downstream credential/schema resolution callers may need.
+      const aliasSegment = cacheId ?? databaseCode;
       const url = `${this.baseURL}/data-characterization/${encodeURIComponent(
-        databaseCode
+        aliasSegment
       )}/${encodeURIComponent(vocabSchema)}/${encodeURIComponent(
         resultsSchema.toLowerCase()
       )}/${encodeURIComponent(sourceKey)}?datasetId=${encodeURIComponent(
@@ -66,6 +70,7 @@ export class AnalyticsSvcAPI {
 
   // Fetch Data Characterization Drilldown
   async getDataCharacterizationResultsDrilldown(
+    cacheId: string,
     databaseCode: string,
     resultsSchema: string,
     sourceKey: string,
@@ -74,8 +79,11 @@ export class AnalyticsSvcAPI {
     datasetId: string
   ) {
     try {
+      // URL segment uses cacheId (alias for the analytics-svc dataset lookup);
+      // databaseCode kept in the signature for downstream callers that may need it.
+      const aliasSegment = cacheId ?? databaseCode;
       const url = `${this.baseURL}/data-characterization/${encodeURIComponent(
-        databaseCode
+        aliasSegment
       )}/${encodeURIComponent(vocabSchema)}/${encodeURIComponent(
         resultsSchema.toLowerCase()
       )}/${encodeURIComponent(sourceKey)}/${encodeURIComponent(
