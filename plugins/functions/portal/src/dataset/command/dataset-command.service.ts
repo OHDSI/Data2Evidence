@@ -208,7 +208,7 @@ export class DatasetCommandService {
     sourceId: string,
   ): Promise<{ id: string; transformed: boolean; reason?: string }> {
     const run = async (entityMgr: EntityManager) => {
-      const source = await this.datasetRepo.getDataset(sourceId);
+      const source = await entityMgr.findOne(Dataset, { where: { id: sourceId } });
       if (!source) {
         throw new HttpException(404, `Dataset ${sourceId} not found`);
       }
@@ -219,7 +219,7 @@ export class DatasetCommandService {
         );
       }
 
-      const snapshots = await this.datasetRepo.find({
+      const snapshots = await entityMgr.find(Dataset, {
         where: { sourceDatasetId: sourceId },
       });
       if (snapshots.length === 0) {
@@ -249,9 +249,9 @@ export class DatasetCommandService {
         type: "webapi",
       });
 
-      const snapshotDetail = await this.detailRepo.getDetail(snapshot.id);
+      const snapshotDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: snapshot.id } });
       if (snapshotDetail) {
-        const sourceDetail = await this.detailRepo.getDetail(sourceId);
+        const sourceDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: sourceId } });
         if (sourceDetail) {
           await entityMgr.update(
             DatasetDetail,

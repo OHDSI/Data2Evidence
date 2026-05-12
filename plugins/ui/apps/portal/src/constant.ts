@@ -1,4 +1,4 @@
-import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType, WebApiDatasetType } from "./types";
+import { ActionValue, CacheDatasetType, DatasetInfoTab, DatasetType, SourceDatasetType } from "./types";
 
 export enum DatasetAttribute {
   PATIENT_COUNT = "patient_count",

@@ -60,29 +60,39 @@ describe('DatasetCommandService', () => {
 })
 
 async function buildServiceWithMocks(overrides: {
-  getDataset?: jest.Mock
-  find?: jest.Mock
+  source?: any | null
+  snapshots?: any[]
   updateRowShape?: jest.Mock
   transactionRun?: jest.Mock
 } = {}) {
   const req = { headers: { authorization: 'Bearer token' } }
 
-  const getDataset = overrides.getDataset ?? jest.fn().mockResolvedValue(null)
-  const findDatasets = overrides.find ?? jest.fn().mockResolvedValue([])
+  const source = overrides.source ?? null
+  const snapshots = overrides.snapshots ?? []
   const updateRowShape = overrides.updateRowShape ?? jest.fn().mockResolvedValue(undefined)
+
+  // entityMgr.findOne dispatches by entity class: Dataset → source row; others → null.
+  const findOne = jest.fn().mockImplementation((entityCls: any) => {
+    return entityCls?.name === 'Dataset' ? source : null
+  })
+  // entityMgr.find dispatches by entity class: Dataset → snapshot list; others → [].
+  const find = jest.fn().mockImplementation((entityCls: any) => {
+    return entityCls?.name === 'Dataset' ? snapshots : []
+  })
 
   const stubEntityMgr = {
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
-    find: jest.fn().mockResolvedValue([])
+    find,
+    findOne
   }
   const transactionRun =
     overrides.transactionRun ??
     jest.fn().mockImplementation((fn: Function) => fn(stubEntityMgr))
 
   const datasetRepoMock = {
-    getDataset,
-    find: findDatasets,
+    getDataset: jest.fn(),
+    find: jest.fn(),
     updateRowShape,
     create: jest.fn(),
     insertDataset: jest.fn(),
@@ -175,30 +185,23 @@ async function buildServiceWithMocks(overrides: {
 
 describe('DatasetCommandService.transformToWebApi', () => {
   it('rejects an id that does not exist in the database', async () => {
-    const { svc } = await buildServiceWithMocks({
-      getDataset: jest.fn().mockResolvedValue(null)
-    })
+    const { svc } = await buildServiceWithMocks({ source: null })
 
-    await expect((svc as any).transformToWebApi('unknown-id')).rejects.toThrow(/not found/i)
+    await expect(svc.transformToWebApi('unknown-id')).rejects.toThrow(/not found/i)
   })
 
   it('rejects a snapshot row (has sourceDatasetId set)', async () => {
     const snapshotRow = { id: 'snap-1', sourceDatasetId: 'source-1', visibilityStatus: 'DEFAULT' }
-    const { svc } = await buildServiceWithMocks({
-      getDataset: jest.fn().mockResolvedValue(snapshotRow)
-    })
+    const { svc } = await buildServiceWithMocks({ source: snapshotRow })
 
-    await expect((svc as any).transformToWebApi('snap-1')).rejects.toThrow(/is a snapshot/i)
+    await expect(svc.transformToWebApi('snap-1')).rejects.toThrow(/is a snapshot/i)
   })
 
   it('returns { transformed: false } when no snapshot points at the source', async () => {
     const sourceRow = { id: 'src-1', sourceDatasetId: null, visibilityStatus: 'HIDDEN' }
-    const { svc } = await buildServiceWithMocks({
-      getDataset: jest.fn().mockResolvedValue(sourceRow),
-      find: jest.fn().mockResolvedValue([]) // no snapshots
-    })
+    const { svc } = await buildServiceWithMocks({ source: sourceRow, snapshots: [] })
 
-    const result = await (svc as any).transformToWebApi('src-1')
+    const result = await svc.transformToWebApi('src-1')
 
     expect(result).toMatchObject({ id: 'src-1', transformed: false, reason: expect.stringMatching(/already webapi-managed/i) })
   })
@@ -209,12 +212,9 @@ describe('DatasetCommandService.transformToWebApi', () => {
       { id: 'snap-a', sourceDatasetId: 'src-2' },
       { id: 'snap-b', sourceDatasetId: 'src-2' }
     ]
-    const { svc } = await buildServiceWithMocks({
-      getDataset: jest.fn().mockResolvedValue(sourceRow),
-      find: jest.fn().mockResolvedValue(snapshots)
-    })
+    const { svc } = await buildServiceWithMocks({ source: sourceRow, snapshots })
 
-    await expect((svc as any).transformToWebApi('src-2')).rejects.toThrow(/multiple snapshots|\d+ snapshot/i)
+    await expect(svc.transformToWebApi('src-2')).rejects.toThrow(/multiple snapshots|\d+ snapshot/i)
   })
 
   it('happy path: calls updateRowShape with type="webapi" and deletes the snapshot, returns { transformed: true }', async () => {
@@ -222,12 +222,12 @@ describe('DatasetCommandService.transformToWebApi', () => {
     const snapshot = { id: 'snap-only', sourceDatasetId: 'src-3' }
     const updateRowShape = jest.fn().mockResolvedValue(undefined)
     const { svc, datasetRepoMock, stubEntityMgr } = await buildServiceWithMocks({
-      getDataset: jest.fn().mockResolvedValue(sourceRow),
-      find: jest.fn().mockResolvedValue([snapshot]),
+      source: sourceRow,
+      snapshots: [snapshot],
       updateRowShape
     })
 
-    const result = await (svc as any).transformToWebApi('src-3')
+    const result = await svc.transformToWebApi('src-3')
 
     expect(result).toMatchObject({ id: 'src-3', transformed: true })
     expect(datasetRepoMock.updateRowShape).toHaveBeenCalledWith(

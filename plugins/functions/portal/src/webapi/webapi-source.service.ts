@@ -28,7 +28,7 @@ export class WebApiSourceService {
       }
 
       if (dataset.schemaName) {
-        this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
       }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
@@ -36,6 +36,9 @@ export class WebApiSourceService {
     }
   }
 
+  // Build the cache and block until bao reports lastJob.status === "COMPLETED".
+  // Downstream consumers (analytics-svc cdmversion, DQD, DC) query the cache
+  // catalog; without this wait they race against bao mid-copy.
   private async triggerCacheCreation(
     sourceKey: string,
     schemaName: string,
@@ -45,7 +48,9 @@ export class WebApiSourceService {
       const result = await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
       if (!result.success) {
         this.logger.warn(`TrexSQL cache creation failed for ${sourceKey}: ${result.error}`)
+        return
       }
+      await this.webApiSourceApi.waitForCacheReady(sourceKey, authToken)
     } catch (error) {
       this.logger.error(`Failed to create TrexSQL cache for ${sourceKey}: ${error}`)
     }
