@@ -124,7 +124,7 @@ jobs:
               > npm/${pkg}/package.json
             cp scripts/dist/${pkg} npm/${pkg}/bin/d2e
             chmod +x npm/${pkg}/bin/d2e
-            npm publish npm/${pkg} --access public $DRY_RUN_FLAG
+            npm publish ./npm/${pkg} --access public $DRY_RUN_FLAG
           done
 
           mkdir -p npm/d2e-windows-x64/bin
@@ -133,7 +133,7 @@ jobs:
             '{name:"d2e-windows-x64",version:$version,description:"Data2Evidence CLI binary",license:"Apache-2.0",os:["win32"],cpu:["x64"],bin:{"d2e":"bin/d2e.exe"}}' \
             > npm/d2e-windows-x64/package.json
           cp scripts/dist/d2e-windows-x64.exe npm/d2e-windows-x64/bin/d2e.exe
-          npm publish npm/d2e-windows-x64 --access public $DRY_RUN_FLAG
+          npm publish ./npm/d2e-windows-x64 --access public $DRY_RUN_FLAG
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish production
