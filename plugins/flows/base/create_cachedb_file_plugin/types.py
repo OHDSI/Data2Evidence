@@ -86,6 +86,7 @@ class CreateCacheOptions(BaseModel):
     flow_action_type: CacheFlowAction = Field(alias="flowActionType")
 
     database_code: Optional[str] = Field(default=None, alias="databaseCode")
+    cache_id: Optional[str] = Field(default=None, alias="cacheId")
     schema_name: Optional[str] = Field(default=None, alias="schemaName")
     vocab_schema_name: Optional[str] = Field(default=None, alias="vocabSchemaName")
     results_schema_name: Optional[str] = Field(
@@ -164,6 +165,7 @@ class CreateCacheOptions(BaseModel):
 
 class CreateCDWValidationConfig(BaseModel):
     databaseCode: str
+    cacheId: Optional[str] = None
     schemaName: str
     trex_connection: Optional[bool] = True
 

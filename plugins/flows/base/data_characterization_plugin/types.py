@@ -5,6 +5,7 @@ from pydantic import BaseModel
 class DCOptionsType(BaseModel):
     schemaName: str
     databaseCode: str
+    cacheId: Optional[str] = None
     cdmVersionNumber: str
     vocabSchemaName: str
     releaseDate: Optional[str] = None

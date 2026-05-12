@@ -35,6 +35,7 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
     try:
         dataset_id = dataset.get("id")
         database_code = dataset.get("databaseCode")
+        cache_id = dataset.get("cacheId")
         schema_name = dataset.get("schemaName")
     except KeyError as ke:
         missing_key = ke.args[0]
@@ -45,6 +46,7 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
             if options.use_trex_connection
             else None,
             database_code=database_code,
+            cache_id=cache_id,
         )
 
         portal_server_api = PortalServerAPI()

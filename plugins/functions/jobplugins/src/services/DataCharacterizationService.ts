@@ -26,10 +26,11 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, vocabSchemaName, datasetId } =
+    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
       dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResults(
+      cacheId ?? databaseCode,
       databaseCode,
       resultsSchema,
       sourceKey,
@@ -49,10 +50,11 @@ export class DataCharacterizationService {
     const dcFlowRun = await prefectApi.getFlowRun(flowRunId);
     const dcFlowRunOptions: DataCharacterizationOptions =
       dcFlowRun.parameters.options;
-    const { resultsSchema, databaseCode, vocabSchemaName, datasetId } =
+    const { resultsSchema, databaseCode, cacheId, vocabSchemaName, datasetId } =
       dcFlowRunOptions;
 
     return await analyticsSvcApi.getDataCharacterizationResultsDrilldown(
+      cacheId ?? databaseCode,
       databaseCode,
       resultsSchema,
       sourceKey,
@@ -121,8 +123,9 @@ export class DataCharacterizationService {
     const excludeAnalysisIds =
       dataCharacterizationFlowRunDto.excludeAnalysisIds ?? "";
 
-    const { dialect, databaseCode, schemaName, vocabSchemaName } =
-      await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { dialect, databaseCode, schemaName, vocabSchemaName } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     let resultsSchema =
       overrideResultsSchema || `${schemaName}_DC_${Date.now()}`;
@@ -154,6 +157,7 @@ export class DataCharacterizationService {
       options: {
         schemaName,
         databaseCode,
+        cacheId,
         datasetId,
         cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName,

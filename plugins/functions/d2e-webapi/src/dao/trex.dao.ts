@@ -16,11 +16,14 @@ import { ICohortDefinitionCheckV2ResponseDto } from "../dto/cohortdefinition.ts"
 export class TrexDAO {
   private readonly conn: TrexConnection;
 
+  private readonly databaseCode: string;
+  private readonly cacheId: string;
   private readonly vocabSchemaName: string;
   private readonly resultsSchemaName: string;
 
   constructor(
     databaseCode: string,
+    cacheId: string,
     schemaName: string,
     vocabSchemaName: string,
     resultsSchemaName: string
@@ -28,11 +31,14 @@ export class TrexDAO {
     try {
       this.conn = new TrexConnection(
         databaseCode,
+        cacheId,
         schemaName,
         vocabSchemaName,
         resultsSchemaName
       );
 
+      this.databaseCode = databaseCode;
+      this.cacheId = cacheId;
       this.vocabSchemaName = vocabSchemaName;
       this.resultsSchemaName = resultsSchemaName;
     } catch (err) {
@@ -43,11 +49,17 @@ export class TrexDAO {
 
   public static async getTrexDao(token: string, datasetId: string) {
     const portalServerApi = new PortalServerAPI(token);
-    const { databaseCode, schemaName, vocabSchemaName, resultsSchemaName } =
-      await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const {
+      databaseCode,
+      schemaName,
+      vocabSchemaName,
+      resultsSchemaName,
+    } = dataset;
 
     return new TrexDAO(
       databaseCode,
+      dataset.cacheId ?? dataset.databaseCode,
       schemaName,
       vocabSchemaName,
       resultsSchemaName

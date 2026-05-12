@@ -27,6 +27,7 @@ def dqd_plugin(options: DqdOptionsType):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
+        cache_id=options.cacheId,
     )
 
     # Todo: Update implementation if Hana uses trex

@@ -308,19 +308,23 @@ export class UserGroupRouter {
             synced: number
             skipped: number
             failed: number
+            skips: { userId: string; username: string; reason: string }[]
             failures: { userId: string; username: string; error: string }[]
           } = {
             total: 0,
             synced: 0,
             skipped: 0,
             failed: 0,
+            skips: [],
             failures: []
           }
 
           for (const user of users) {
             if (!user.idpUserId) {
-              this.logger.warn(`User ${user.id} (${user.username}) has no idpUserId, skipping`)
+              const reason = `User has no idpUserId`
+              this.logger.warn(`${user.id} (${user.username}): ${reason}, skipping`)
               results.skipped++
+              results.skips.push({ userId: user.id, username: user.username, reason })
               continue
             }
 
@@ -328,15 +332,22 @@ export class UserGroupRouter {
             results.total += userGroups.length
 
             for (const group of userGroups) {
-              try {
-                await this.userGroupService.syncRoleToLogto(user.id, group.b2cGroupId, 'assign')
+              const outcome = await this.userGroupService.syncRoleToLogto(user.id, group.b2cGroupId, 'assign')
+              if (outcome.status === 'synced') {
                 results.synced++
-              } catch (err) {
+              } else if (outcome.status === 'skipped') {
+                results.skipped++
+                results.skips.push({
+                  userId: user.id,
+                  username: user.username,
+                  reason: `Group ${group.b2cGroupId}: ${outcome.reason}`
+                })
+              } else {
                 results.failed++
                 results.failures.push({
                   userId: user.id,
                   username: user.username,
-                  error: `Group ${group.b2cGroupId}: ${err}`
+                  error: `Group ${group.b2cGroupId}: ${outcome.reason}`
                 })
               }
             }

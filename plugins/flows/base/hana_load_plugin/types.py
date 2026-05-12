@@ -23,6 +23,7 @@ class FlowActionType(str, Enum):
 class OmopCDMPluginOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: Optional[str] = None
     vocab_schema: Optional[str] = None
     results_schema: Optional[str] = None

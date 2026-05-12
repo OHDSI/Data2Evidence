@@ -9,6 +9,7 @@ class FileType(BaseModel):
 class DataloadOptions(BaseModel):
     files: List[FileType]
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: str
     header: Optional[bool] = True
     delimiter: Optional[str] = ','

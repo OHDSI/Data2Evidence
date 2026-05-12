@@ -6,6 +6,7 @@ class DqdOptionsType(BaseModel):
     datasetId: str
     schemaName: str
     databaseCode: str
+    cacheId: Optional[str] = None
     cdmVersionNumber: str
     vocabSchemaName: str
     resultsSchemaName: str

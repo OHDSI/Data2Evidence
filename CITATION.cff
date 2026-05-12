@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use Data2Evidence in your research, please cite it as below."
+title: "Data2Evidence"
+abstract: >-
+  Data2Evidence is an open-source research platform that streamlines the
+  journey from raw health data to reproducible scientific evidence. Built
+  for the OHDSI community and powered by the OMOP Common Data Model,
+  it unifies data ingestion, transformation, quality assessment, and
+  analysis within one end-to-end environment.
+type: software
+authors:
+  - name: "D4L data4life gGmbH"
+    website: "https://www.data4life.care/"
+repository-code: "https://github.com/OHDSI/Data2Evidence"
+url: "https://data2evidence.org"
+license: Apache-2.0
+date-released: "2026-04-18"
+keywords:
+  - OHDSI
+  - OMOP
+  - CDM
+  - health-data
+  - real-world-evidence
+  - ETL
+  - FHIR
+  - reproducible-research
+  - federated-analytics

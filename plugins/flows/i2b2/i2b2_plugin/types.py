@@ -13,6 +13,7 @@ class FlowActionType(str, Enum):
 class i2b2PluginType(BaseModel):
     flow_action_type: FlowActionType
     database_code: str = ""
+    cache_id: Optional[str] = None
     schema_name: Optional[str] = None
     data_model: Optional[str] = None
     load_demo_data: Optional[bool] = False

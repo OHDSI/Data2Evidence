@@ -1,7 +1,10 @@
 from pydantic import BaseModel
+from typing import Optional
+
 
 class SearchEmbeddingType(BaseModel):
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: str
 
     @property

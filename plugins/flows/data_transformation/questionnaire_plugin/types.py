@@ -23,6 +23,7 @@ class QuestionnaireBaseModel(BaseModel):
 class QuestionnaireOptionsType(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: Optional[str]
     questionnaire_definition: Optional[Dict]
     questionnaire_id: Optional[str]
