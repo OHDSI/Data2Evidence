@@ -74,6 +74,7 @@ export interface CohortSurvivalFlowRunDto {
 
 interface CohortSurvivalFlowRunOptions {
   databaseCode: string;
+  cacheId?: string;
   schemaName: string;
   datasetId: string;
   targetCohortDefinitionId: number;
@@ -92,6 +93,7 @@ export interface CohortGeneratorFlowRunDto {
 
 interface CohortGeneratorFlowRunOptions {
   databaseCode: string;
+  cacheId?: string;
   schemaName: string;
   resultsSchemaName: string;
   stringvocabSchemaName: string;
@@ -171,6 +173,7 @@ export interface ICreateDatamartFlowRunDto {
 
 export interface ICreateFhirCacheFlowRunDto {
   databaseCode: string;
+  cacheId?: string;
   schemaName: string;
   cacheSchemaName: string;
   studyCode: string;
@@ -200,6 +203,7 @@ export interface DataCharacterizationOptions {
   schemaName: string;
   releaseDate: string;
   databaseCode: string;
+  cacheId?: string;
   resultsSchema: string;
   vocabSchemaName: string;
   cdmVersionNumber: string;
@@ -214,6 +218,7 @@ export interface DataCharacterizationFlowRunDto {
 
 export interface SearchEmbeddingFlowRunDto {
   database_code: string;
+  cache_id?: string;
   schema_name: string;
 }
 
@@ -344,6 +349,7 @@ interface IGetVersionInfoFlowRunOptions {
 export interface ICreateCachedbFileFlowRunDto {
   flowActionType: string;
   databaseCode: string;
+  cacheId?: string;
   schemaName: string;
   snapshotSchemaName?: string;
   resultsSchemaName?: string;

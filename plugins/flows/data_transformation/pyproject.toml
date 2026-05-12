@@ -16,21 +16,22 @@ dependencies = [
     "pandas==2.2.2",
     "pandasql==0.7.3",
     "prefect[dask,docker,shell]==3.0.3",
+    "prefect-shell==0.3.1",
     "psycopg2-binary==2.9.6",
     "pydantic==2.10.6",
-    "pydicom==2.4.4",
-    "pyjwt==2.10.1",
+    "pydicom==2.4.5",
+    "pyjwt==2.12.0",
     "pymssql==2.3.4",
-    "pyomop==6.1.0",
+    "pyomop==6.4.0",
     "python-calamine==0.3.1",
     "rpy2==3.5.13",
-    "s3fs==2023.1.0",
+    "s3fs==2024.10.0",
     "sqlalchemy==2.0.38",
     "xmltodict==0.14.2",
     "xvfbwrapper>=0.2.15",
     "Cython==3.2.3",
     "setuptools==80.9.0",
-    "wheel==0.45.1",
+    "wheel==0.46.2",
     "pyarrow==22.0.0",
 ]
 
@@ -42,8 +43,8 @@ dataflow_ui = [
 ]
 dicom-etl = [
     "orthanc-api-client==0.15.3",
-    "pydicom==2.4.4",
-    "s3fs==2023.1.0",
+    "pydicom==2.4.5",
+    "s3fs==2024.10.0",
 ]
 white-rabbit = [
     "pandasql==0.7.3",

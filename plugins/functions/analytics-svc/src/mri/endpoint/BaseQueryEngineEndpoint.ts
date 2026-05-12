@@ -192,14 +192,20 @@ export class BaseQueryEngineEndpoint {
     }
 
     protected responseDbgInfo(result: MRIEndpointResultType, dbg) {
-        // if (dbg) {
-        //     if (!result.debug) {
-        //         result.debug = {};
-        //     }
-        //     Object.keys(dbg).forEach((k) => {
-        //         result.debug[k] = dbg[k];
-        //     });
-        // }
+        if (dbg) {
+            if (!result.debug) {
+                result.debug = {};
+            }
+            Object.keys(dbg).forEach((k) => {
+                const v = dbg[k];
+                if (k === "nql" && v && typeof v === "object") {
+                    result.debug.sql = v.queryString;
+                    result.debug.params = v.parameterPlaceholders;
+                } else {
+                    result.debug[k] = v;
+                }
+            });
+        }
     }
 
     protected logAccessError() {

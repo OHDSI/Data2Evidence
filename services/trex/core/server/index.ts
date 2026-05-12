@@ -10,6 +10,7 @@ import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
 import { authn } from "./auth/authn.ts"
+import { ensureAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -36,6 +37,69 @@ export async function initTrex() {
     const ftsConn = new Trex.TrexDB("memory");
     await ftsConn.execute("LOAD fts", []);
     logger.log(`Loaded FTS extension`);
+
+    // Attach the built-in cdw_config_svc validation schema so cdw-svc
+    // queries against datasetId="DEFAULT" can resolve `cdw_config_svc`.
+    // The old runtime did this lazily inside TrexDB's constructor; with
+    // @trex/pool worker connections share the catalog, so a one-shot
+    // ATTACH on the memory connection at startup is enough.
+    try {
+      const cdwConn = new Trex.TrexDB("memory");
+      await cdwConn.execute(
+        "ATTACH IF NOT EXISTS '/usr/src/cdw_data/built_in/cdw_config_svc_validation_schema' AS cdw_config_svc (READ_ONLY)",
+        [],
+      );
+      logger.log('Attached cdw_config_svc validation schema');
+    } catch (e) {
+      logger.error('Failed to attach cdw_config_svc validation schema:', e);
+    }
+
+    try {
+      const dbmInstance = await DatabaseManager.get();
+      const credentials = await dbmInstance.getCredentialsDecrypted();
+      const connections: SourceCredential[] = [];
+      for (const row of credentials) {
+        const adminCred = (row.credentials ?? []).find((c: any) => c.userScope === "Admin");
+        if (!adminCred) {
+          logger.log(`[attach-startup] no Admin credential for ${row.id} — skipping __srcdb attach`);
+          continue;
+        }
+        connections.push({
+          id: row.id,
+          dialect: row.dialect,
+          host: row.host,
+          port: row.port,
+          name: row.name,
+          adminUsername: adminCred.username,
+          adminPassword: adminCred.password,
+        });
+      }
+
+      const cacheIds = await dbmInstance.getCacheIdsFromPortal();
+
+      // One DuckDB session shared across every ATTACH issued in this phase.
+      const attachConn = new Trex.TrexDB("memory");
+      const attachExec: ExecFn = (sql) => attachConn.execute(sql, []);
+
+      // Per-item try/catch so a single bad credential or cache_id can't crash startup.
+      for (const c of connections) {
+        try {
+          await ensureAttached({ connections: [c] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] connection ${c.id} attach failed: ${(e as Error).message}`);
+        }
+      }
+      for (const cid of cacheIds) {
+        try {
+          await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
+        }
+      }
+      logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
+    } catch (e) {
+      logger.log(`[attach-startup] failed: ${(e as Error).message}`);
+    }
 
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
