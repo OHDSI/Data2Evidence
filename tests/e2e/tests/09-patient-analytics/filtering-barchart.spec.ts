@@ -114,14 +114,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to month of birth
-  await page.locator('.axis-group--top button.axisMenuButton').click()
+  await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Patient Count ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
-  await page.locator('.axis-group--top button.axisMenuButton').click()
+  await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
 
