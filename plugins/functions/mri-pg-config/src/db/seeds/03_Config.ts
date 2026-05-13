@@ -178,7 +178,7 @@ export async function seed(knex: Knex): Promise<void> {
       },
     ])
     .onConflict(["Id", "Version"])
-    .merge();
+    .ignore();
 }
 
 export const cdwConfig = {
