@@ -1,5 +1,6 @@
 from functools import partial
 from datetime import datetime
+from typing import Optional
 
 from prefect import task
 from prefect.logging import get_run_logger
@@ -220,8 +221,9 @@ def rollback_count_task(
     plugin_classpath: str,
     dialect: str,
     rollback_count: int,
+    cache_id: Optional[str] = None,
 ):
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
     tenant_configs = dbdao.tenant_configs
 
     try:
@@ -264,8 +266,9 @@ def rollback_tag_task(
     plugin_classpath: str,
     dialect: str,
     rollback_tag: str,
+    cache_id: Optional[str] = None,
 ):
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
     tenant_configs = dbdao.tenant_configs
 
     try:

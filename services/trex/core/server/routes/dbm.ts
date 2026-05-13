@@ -5,6 +5,7 @@ import { Hono, Context } from "npm:hono";
 import { DatabaseManager } from '../lib/dbm.ts';
 import { isValidDbDto } from '../middleware/dbm.ts'
 import { logger } from '../env.ts';
+import { ensureAttached, type ExecFn, type SourceCredential } from "../lib/attach.ts";
 import * as _ from "npm:lodash-es";
 
 export function addRoutes(app: Hono) {
@@ -72,6 +73,64 @@ export function addRoutes(app: Hono) {
         }
     });
 
+    app.post('/trex/attach', authn, authz, async (c: Context) => {
+      try {
+        const body = await c.req.json().catch(() => ({}));
+        const cacheIds: string[] = Array.isArray(body?.cacheIds) ? body.cacheIds.filter((s: unknown) => typeof s === "string") : [];
+        const connectionIds: string[] = Array.isArray(body?.connectionIds) ? body.connectionIds.filter((s: unknown) => typeof s === "string") : [];
 
+        const dbmInstance = await DatabaseManager.get();
+
+        const connections: SourceCredential[] = [];
+        if (connectionIds.length > 0) {
+          const all = await dbmInstance.getCredentialsDecrypted();
+          for (const id of connectionIds) {
+            const row = all.find((r: any) => r.id === id);
+            if (!row) {
+              logger.log(`[trex/attach] unknown connectionId: ${id}`);
+              continue;
+            }
+            const adminCred = (row.credentials ?? []).find((x: any) => x.userScope === "Admin");
+            if (!adminCred) {
+              logger.log(`[trex/attach] no Admin credential for ${id} — skipping`);
+              continue;
+            }
+            connections.push({
+              id: row.id,
+              dialect: row.dialect,
+              host: row.host,
+              port: row.port,
+              name: row.name,
+              adminUsername: adminCred.username,
+              adminPassword: adminCred.password,
+            });
+          }
+        }
+
+        // One DuckDB session reused across every ATTACH in this request.
+        const attachConn = new Trex.TrexDB("memory");
+        const attachExec: ExecFn = (sql) => attachConn.execute(sql, []);
+
+        for (const cid of connections) {
+          try {
+            await ensureAttached({ connections: [cid] }, { exec: attachExec });
+          } catch (e) {
+            logger.log(`[trex/attach] connection ${cid.id} attach failed: ${(e as Error).message}`);
+          }
+        }
+        for (const cid of cacheIds) {
+          try {
+            await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+          } catch (e) {
+            logger.log(`[trex/attach] cache ${cid} attach failed: ${(e as Error).message}`);
+          }
+        }
+
+        return c.body(null, 204);
+      } catch (e) {
+        logger.error(e);
+        return c.text(String(e), 500);
+      }
+    });
 
 }

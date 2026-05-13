@@ -43,6 +43,7 @@ class PersonPatientMapping(BaseModel):
 class DICOMETLOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     medical_imaging_schema_name: str
     cdm_schema_name: str
     vocab_schema_name: str
