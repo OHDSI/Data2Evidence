@@ -472,7 +472,7 @@ export default {
         })
       }
     },
-    applyBarDisplayMode(traces, layout) {
+    applyChartType(traces, layout) {
       if (!traces || !traces.length) return
       const colorway = Object.values(Constants.ChartColorway)
       const modeApply = applyById[this.getBarChartType] || applyById.stack
@@ -485,7 +485,7 @@ export default {
     reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
       if (!targetElement || !this.chartData?.traces) return
       const layout = this.buildPlotlyLayout(resetAxes)
-      this.applyBarDisplayMode(this.chartData.traces, layout)
+      this.applyChartType(this.chartData.traces, layout)
       Plotly.react(targetElement, this.chartData.traces, layout, this.config)
     },
     renderChart() {
@@ -565,7 +565,9 @@ export default {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
       const initialLayout = this.buildPlotlyLayout()
-      Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
+      const initialTraces = JSON.parse(JSON.stringify(this.chartData.traces || []))
+      this.applyChartType(initialTraces, initialLayout)
+      Plotly.newPlot(stackBarChart, initialTraces, initialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
       this.$nextTick(() => {

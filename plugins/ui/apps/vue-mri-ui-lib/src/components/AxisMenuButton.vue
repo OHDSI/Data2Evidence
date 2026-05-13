@@ -71,7 +71,6 @@ export default {
       axisMenuVisible: false,
       menuButton: null,
       axisMenuOpenParam: '',
-      cachedBinValue: '',
     }
   },
   mounted() {
@@ -178,20 +177,15 @@ export default {
     },
     binningValue() {
       const axisModel = this.axisModel
-      if (this.cachedBinValue) {
-        return this.cachedBinValue
-      } else if (axisModel && axisModel.props && axisModel.props.filterCardId && axisModel.props.key) {
+      if (axisModel && axisModel.props && axisModel.props.filterCardId && axisModel.props.key) {
+        if (axisModel.props.binsize !== null && axisModel.props.binsize !== undefined) {
+          return `${axisModel.props.binsize}`
+        }
         const defaultBinningVal = this.getMriFrontendConfig
           .getAttributeByPath(axisModel.props.attributeId)
           .getDefaultBinSize()
-        if (axisModel.props.binsize !== null && axisModel.props.binsize !== undefined) {
-          this.cachedBinValue = `${axisModel.props.binsize}`
-          return `${axisModel.props.binsize}`
-        } else if (defaultBinningVal) {
-          this.cachedBinValue = `${defaultBinningVal}`
+        if (defaultBinningVal) {
           return `${defaultBinningVal}`
-        } else {
-          return ''
         }
       }
       return ''
@@ -461,9 +455,8 @@ export default {
       this.axismenuData = menuData
     },
     setBinSize(arg) {
-      if (arg !== this.cachedBinValue) {
-        this.cachedBinValue = arg
-        this.binningValue = arg
+      const current = this.axisModel?.props?.binsize
+      if (arg !== current) {
         this.setAxisValue({
           id: this.dimensionIndex,
           props: { binsize: arg },

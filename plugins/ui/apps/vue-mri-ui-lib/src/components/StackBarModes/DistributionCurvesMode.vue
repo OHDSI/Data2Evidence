@@ -79,6 +79,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
   let xMin: number
   let xMax: number
   let tickvals: number[]
+  let numericAxis: boolean
   let kdeOptions: { xMin: number; xMax: number; xPositions?: number[] }
 
   if (parsed && parsed.centers.length === numCategories) {
@@ -91,11 +92,13 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
       xMax += 0.5
     }
     tickvals = parsed.centers
+    numericAxis = true
     kdeOptions = { xMin, xMax, xPositions: parsed.centers }
   } else {
     xMin = -0.5
     xMax = numCategories - 0.5
     tickvals = categoryLabels.map((_: unknown, i: number) => i)
+    numericAxis = false
     kdeOptions = { xMin, xMax }
   }
 
@@ -156,12 +159,18 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
   kdeTraces.forEach(t => traces.push(t))
 
   layout.xaxis.type = 'linear'
-  layout.xaxis.tickvals = tickvals
-  layout.xaxis.ticktext = categoryLabels
+  if (numericAxis) {
+    delete layout.xaxis.tickvals
+    delete layout.xaxis.ticktext
+    delete layout.xaxis.tickson
+  } else {
+    layout.xaxis.tickvals = tickvals
+    layout.xaxis.ticktext = categoryLabels
+    layout.xaxis.tickson = 'labels'
+  }
   layout.xaxis.range = [xMin, xMax]
   layout.xaxis.autorange = false
   layout.xaxis.zeroline = false
-  layout.xaxis.tickson = 'labels'
   delete layout.xaxis.dividercolor
   delete layout.xaxis.labelalias
   layout.yaxis.rangemode = 'nonnegative'
