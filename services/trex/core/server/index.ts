@@ -96,6 +96,11 @@ export async function initTrex() {
           logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
         }
       }
+      try {
+        await ensureAttached({ cacheIds: ["strategus_results"] }, { exec: attachExec, createDbFileIfMissing: true });
+      } catch (error) {
+        logger.log(`[attach-startup] cache strategus_results attach failed: ${(error as Error).message}`);
+      }
       logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
     } catch (e) {
       logger.log(`[attach-startup] failed: ${(e as Error).message}`);

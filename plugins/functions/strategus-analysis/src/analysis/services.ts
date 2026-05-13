@@ -61,6 +61,7 @@ export default class StrategusAnalysisService {
             tokenDatasetCode: tokenStudyCode,
             tenantId: tenantId,
             schemaName: `results_${studyId}`,
+            databaseCode: "strategus_results",
             detail: {
                 ...getDummyDataset().detail,
                 name: studyId,

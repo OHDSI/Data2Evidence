@@ -46,7 +46,7 @@ export const startStrategusResultsViewer = async (
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__SQL__DBNAME}?preferQueryMode=simple&autocommit=true`
+        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${`strategus_results`}?preferQueryMode=simple&autocommit=true`
       )
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
