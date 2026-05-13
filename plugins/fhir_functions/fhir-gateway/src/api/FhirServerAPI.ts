@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "../lib/axios";
+import axios, { AxiosRequestConfig } from "axios";
 import { services } from "../env";
 import { HTTPMethod, Headers } from "../types";
 import {

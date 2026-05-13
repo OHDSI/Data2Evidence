@@ -1,6 +1,6 @@
 import { services } from "../env";
 import { Dataset } from "../types";
-import axios, { AxiosRequestConfig } from "../lib/axios";
+import axios, { AxiosRequestConfig } from "axios";
 
 export class PortalAPI {
   private readonly baseURL: string;
