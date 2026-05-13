@@ -28,11 +28,14 @@ const HANA_HYBRID_COSINE_TOPK = 5000;
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
-  hasSearchTerm: boolean
+  hasSearchTerm: boolean,
 ): string {
-  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  const defaultOrder = hasSearchTerm
+    ? "ORDER BY score DESC"
+    : "ORDER BY concept_name ASC";
   if (!sortBy) return defaultOrder;
-  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy))
+    return defaultOrder;
   if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
 
   const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
@@ -48,9 +51,6 @@ export class HanaHDBDao {
   private readonly semanticRatio: number;
   private readonly schemaName: string;
   private readonly resultsSchemaName: string;
-  // Required by the hybrid search paths; absent when no cache
-  // has been built yet, in which case those paths fall back to plain FTS.
-  private readonly cacheId?: string;
 
   constructor(
     jwt: string,
@@ -59,7 +59,6 @@ export class HanaHDBDao {
     semanticRatio: number = 0,
     schemaName: string = "",
     resultsSchemaName: string = "",
-    cacheId?: string,
   ) {
     this.jwt = jwt;
     this.vocabSchemaName = vocabSchemaName;
@@ -67,29 +66,49 @@ export class HanaHDBDao {
     this.semanticRatio = semanticRatio;
     this.schemaName = schemaName;
     this.resultsSchemaName = resultsSchemaName;
-    this.cacheId = cacheId;
     if (!jwt) {
       throw new Error("No token passed for HanaHDBDao!");
     }
   }
 
-  // Opens a Trex pgwire connection used for the DuckDB side of hybrid search
-  // (cosine ranking against the cached concept_embedding table).
-  private getTrexConnection = () => {
-    if (!this.cacheId) {
-      throw new Error(
-        "HanaHDBDao.getTrexConnection: cacheId missing — DuckDB cache " +
-          "is not provisioned for this dataset.",
-      );
-    }
+  // Option A: raw DuckDB session for the cache side of hybrid search.
+  // For HANA datasets, dbm.getConnection(databaseCode, ...) routes to the
+  // HANA engine (dialect=hana in trex.db), so DuckDB SQL would dispatch to
+  // HanaDB and fail. The cache is a DuckDB file that initTrex ATTACHes into
+  // the shared in-memory session at startup under the alias <databaseCode>
+  // (services/trex/core/server/index.ts:57-76), so query the memory DB and
+  // qualify table refs with that alias.
+  private getTrexConnection = async () => {
+    // Option A: open an in-memory DuckDB session and ATTACH the cache file
+    // ourselves. initTrex also ATTACHes at startup, but each TrexDB instance
+    // acquires its own worker (op_acquire_worker in trex_lib.js), so the
+    // startup catalog isn't visible here. SQL must qualify table refs with
+    // the <databaseCode> alias.
+    // const conn = new Trex.TrexDB("memory");
+    // await conn.execute(
+    //   `ATTACH IF NOT EXISTS '/usr/src/data/cache/${this.databaseCode}.db' AS "${this.databaseCode}"`,
+    //   [],
+    // );
+    // return {
+    //   query: async (sql: string, params: any[] = []) => {
+    //     const res = await conn.execute(sql, params);
+    //     return { rows: res ?? [], rowCount: res?.length ?? 0 };
+    //   },
+    //   end: () => conn.close(),
+    // };
+
+    // Original dbm.getConnection-based version. Kept for reference — it
+    // routed to the HANA engine for HANA datasets, which can't run DuckDB
+    // hybrid SQL (HanaDB.execute rejected "?" parameter binding).
     const dbm = Trex.databaseManager();
     const conn = dbm.getConnection(
-      this.cacheId,
+      this.databaseCode,
       this.schemaName,
       this.vocabSchemaName,
       this.resultsSchemaName,
       {
         duckdb: (e: unknown) => e,
+        hana: (e: unknown) => e,
       },
     );
     return {
@@ -111,7 +130,7 @@ export class HanaHDBDao {
   private asyncExec(
     client: any,
     sql: string,
-    params: (string | number)[] = []
+    params: (string | number)[] = [],
   ) {
     return new Promise((resolve, reject) => {
       client.prepare(sql, function (err, statement) {
@@ -142,11 +161,11 @@ export class HanaHDBDao {
     const isHybridEligible =
       this.semanticRatio > 0 &&
       searchText !== "" &&
-      (!sortBy || sortBy === "score") &&
-      !!this.cacheId;
+      (!sortBy || sortBy === "score");
     console.log(
-      `getConcepts: hybrid eligible? ${isHybridEligible} (semanticRatio=${this.semanticRatio}, searchText="${searchText}", sortBy=${sortBy}, cacheId=${this.cacheId})`,
+      `getConcepts: hybrid eligible? ${isHybridEligible} (semanticRatio=${this.semanticRatio}, searchText="${searchText}", sortBy=${sortBy}, databaseCode=${this.databaseCode}, HANA_HYBRID_MODE=${env.HANA_HYBRID_MODE})`,
     );
+
     if (isHybridEligible) {
       if (env.HANA_HYBRID_MODE === "union") {
         return await this.getConceptsHybridUnion(
@@ -168,7 +187,11 @@ export class HanaHDBDao {
     try {
       const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
         this.getHanaFtsBaseQuery(searchText, filters);
-      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+      const orderByClause = buildOrderByClause(
+        sortBy,
+        sortOrder,
+        searchText !== "",
+      );
 
       const conceptsSql = `
       ${hanaFtsBaseQuery}
@@ -179,7 +202,11 @@ export class HanaHDBDao {
           `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [...hanaFtsBaseQueryParams, rowsPerPage, offset];
+      const conceptsSqlParams = [
+        ...hanaFtsBaseQueryParams,
+        rowsPerPage,
+        offset,
+      ];
 
       const countSql = `${hanaFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = hanaFtsBaseQueryParams;
@@ -210,7 +237,8 @@ export class HanaHDBDao {
     filters: Filters,
   ) {
     const hanaClient = await this.getHanaHDBConnection();
-    const trexClient = this.getTrexConnection();
+    const trexClient = await this.getTrexConnection();
+    console.log(`trexClient ${trexClient} created in getConceptsHybridRerank`);
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
       const ftsAndFilter = filterWhere
@@ -247,7 +275,7 @@ export class HanaHDBDao {
                    string_split(?, ',')::FLOAT[384]
                  ) AS embd_score
                FROM fts_input f
-               JOIN "${this.schemaName}".concept_embedding e USING (concept_id)
+               JOIN "${this.databaseCode}"."${this.schemaName}".concept_embedding e USING (concept_id)
              ),
              stats AS (
                SELECT
@@ -290,10 +318,12 @@ export class HanaHDBDao {
       `;
       const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
 
+      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
+      // as a number — normalize both sides to number so the lookup hits.
       const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(row.CONCEPT_ID, row);
+      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
       const orderedRows = rankedIds
-        .map((id) => byId.get(id))
+        .map((id) => byId.get(Number(id)))
         .filter((r) => r !== undefined);
 
       return {
@@ -319,7 +349,7 @@ export class HanaHDBDao {
     filters: Filters,
   ) {
     const hanaClient = await this.getHanaHDBConnection();
-    const trexClient = this.getTrexConnection();
+    const trexClient = await this.getTrexConnection();
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
       const ftsAndFilter = filterWhere
@@ -352,7 +382,7 @@ export class HanaHDBDao {
                    e.concept_name_embedding,
                    string_split(?, ',')::FLOAT[384]
                  ) AS embd_score
-               FROM "${this.schemaName}".concept_embedding e
+               FROM "${this.databaseCode}"."${this.schemaName}".concept_embedding e
                ORDER BY embd_score DESC
                LIMIT ${HANA_HYBRID_COSINE_TOPK}
              ),
@@ -411,10 +441,12 @@ export class HanaHDBDao {
       `;
       const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
 
+      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
+      // as a number — normalize both sides to number so the lookup hits.
       const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(row.CONCEPT_ID, row);
+      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
       const orderedRows = rankedIds
-        .map((id) => byId.get(id))
+        .map((id) => byId.get(Number(id)))
         .filter((r) => r !== undefined)
         .slice(0, rowsPerPage);
 
@@ -436,9 +468,14 @@ export class HanaHDBDao {
   async getConceptIds(searchText = "", filters: Filters): Promise<number[]> {
     const client = await this.getHanaHDBConnection();
     try {
-      const [baseQuery, baseParams] = this.getHanaFtsBaseQuery(searchText, filters);
+      const [baseQuery, baseParams] = this.getHanaFtsBaseQuery(
+        searchText,
+        filters,
+      );
       const sql = `${baseQuery} select concept_id as id from fts`;
-      const result = await this.asyncExec(client, sql, baseParams) as { ID: string }[];
+      const result = (await this.asyncExec(client, sql, baseParams)) as {
+        ID: string;
+      }[];
       return result.map((row) => parseInt(row.ID));
     } catch (error) {
       console.error(error);
@@ -468,7 +505,7 @@ export class HanaHDBDao {
 
   async getMultipleExactConcepts(
     searchTexts: number[],
-    includeInvalid = true
+    includeInvalid = true,
   ): Promise<IDuckdbConcept | null> {
     if (searchTexts.length === 0) {
       return {
@@ -513,7 +550,7 @@ export class HanaHDBDao {
 
   async getConceptFilterOptionsFaceted(
     searchText: string,
-    filters: Filters
+    filters: Filters,
   ): Promise<any> {
     const facetColumns = {
       conceptClassId: "concept_class_id",
@@ -572,7 +609,7 @@ export class HanaHDBDao {
           `;
           const sqlParams = hanaFtsBaseQueryParams;
           return this.asyncExec(client, sql, sqlParams);
-        }
+        },
       );
 
       const results = await Promise.all(facetPromises).then((data) => {
@@ -588,7 +625,7 @@ export class HanaHDBDao {
         (
           accumulator1: { [index: string]: { [index: string]: number } },
           [facetKey, facetColumn],
-          index: number
+          index: number,
         ) => {
           const result = results[index];
           const fields = [facetColumn, "count"];
@@ -596,16 +633,16 @@ export class HanaHDBDao {
           accumulator1[facetKey] = result.reduce(
             (
               accumulator2: { [index: string]: number },
-              { [fields[0]]: facetColumn, [fields[1]]: count }: any
+              { [fields[0]]: facetColumn, [fields[1]]: count }: any,
             ) => {
               accumulator2[facetColumn] = Number(count);
               return accumulator2;
             },
-            {}
+            {},
           );
           return accumulator1;
         },
-        {}
+        {},
       );
       // concept is a derived value, not from duckdb fts index search
       filterOptions["concept"] = (() => {
@@ -614,7 +651,7 @@ export class HanaHDBDao {
 
         const totalConceptsCount = Object.values(standardConcepts).reduce(
           (accumulator: number, value) => accumulator + Number(value),
-          0
+          0,
         );
 
         const nonStandardConceptsCount =
@@ -635,7 +672,7 @@ export class HanaHDBDao {
   private getHanaFtsBaseQuery = (
     searchText: string,
     filters: Filters,
-    columns: string[] = []
+    columns: string[] = [],
   ): [string, string[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
 
@@ -768,7 +805,7 @@ export class HanaHDBDao {
 
   async getExactConcept(
     conceptName: string | number,
-    conceptColumnName: "concept_name" | "concept_id" | "concept_code"
+    conceptColumnName: "concept_name" | "concept_id" | "concept_code",
   ): Promise<any> {
     const client = await this.getHanaHDBConnection();
     try {
@@ -785,7 +822,7 @@ export class HanaHDBDao {
   }
 
   async getExactConceptRecommended(
-    searchConceptIds: number[]
+    searchConceptIds: number[],
   ): Promise<IConceptRecommended[]> {
     const client = await this.getHanaHDBConnection();
     try {
@@ -796,12 +833,12 @@ export class HanaHDBDao {
         select concept_id_1, concept_id_2, relationship_id from ${
           this.vocabSchemaName
         }.concept_recommended WHERE concept_id_1 IN (${searchConceptIds.join(
-        ", "
-      )});
+          ", ",
+        )});
       `;
       const result = (await this.asyncExec(
         client,
-        sql
+        sql,
       )) as IHanaConceptRecommended[];
       return this.mapHanaConceptsRecommended(result) ?? [];
     } catch (error) {
@@ -813,7 +850,7 @@ export class HanaHDBDao {
   }
 
   async getExactConceptDescendants(
-    searchConceptIds: number[]
+    searchConceptIds: number[],
   ): Promise<IConceptAncestor[]> {
     const client = await this.getHanaHDBConnection();
     // TODO: Move searchConceptIds as a sql parameter instead of being in the sql statement itself.
@@ -824,12 +861,12 @@ export class HanaHDBDao {
       select ancestor_concept_id, descendant_concept_id, min_levels_of_separation, max_levels_of_separation from ${
         this.vocabSchemaName
       }.concept_ancestor WHERE ancestor_concept_id IN (${searchConceptIds.join(
-        ", "
+        ", ",
       )});
       `;
       const result = (await this.asyncExec(
         client,
-        sql
+        sql,
       )) as IHanaConceptAncestor[];
       return this.mapHanaConceptsAncestor(result) ?? [];
     } catch (error) {
@@ -842,7 +879,7 @@ export class HanaHDBDao {
 
   async getConceptRelationship(
     searchConceptIds: number[],
-    conceptRelationshipType: "Maps to"
+    conceptRelationshipType: "Maps to",
   ): Promise<IConceptRelationship[]> {
     const client = await this.getHanaHDBConnection();
     try {
@@ -853,8 +890,8 @@ export class HanaHDBDao {
         select concept_id_1, concept_id_2, relationship_id, valid_start_date, valid_end_date, invalid_reason from ${
           this.vocabSchemaName
         }.concept_relationship WHERE concept_id_2 IN (${searchConceptIds.join(
-        ", "
-      )}) AND relationship_id = ? AND invalid_reason IS NULL;
+          ", ",
+        )}) AND relationship_id = ? AND invalid_reason IS NULL;
             `;
 
       const result = (await this.asyncExec(client, sql, [
@@ -870,7 +907,7 @@ export class HanaHDBDao {
   }
 
   async getHierarchyDescendants(
-    searchConceptId: number
+    searchConceptId: number,
   ): Promise<IConceptHierarchy[]> {
     const client = await this.getHanaHDBConnection();
     try {
@@ -905,7 +942,7 @@ export class HanaHDBDao {
 
   async getHierarchyAncestors(
     searchConceptId: number,
-    maxDepth: number
+    maxDepth: number,
   ): Promise<IConceptHierarchy[]> {
     const client = await this.getHanaHDBConnection();
     let conceptAncestors: IConceptHierarchy[] = [];
@@ -936,13 +973,13 @@ export class HanaHDBDao {
         searchConceptId,
       ])) as IHanaConceptHierarchy[];
       conceptAncestors = conceptAncestors.concat(
-        this.mapHanaConceptsHierarchy(result)
+        this.mapHanaConceptsHierarchy(result),
       );
 
       const getAncestors = async (
         conceptIds: number[],
         depth: number,
-        maxDepth: number
+        maxDepth: number,
       ) => {
         if (maxDepth < depth || conceptIds.length === 0) {
           return [];
@@ -975,13 +1012,13 @@ export class HanaHDBDao {
             searchConceptId,
           ])) as IHanaConceptHierarchy[];
           conceptAncestors = conceptAncestors.concat(
-            this.mapHanaConceptsHierarchy(result)
+            this.mapHanaConceptsHierarchy(result),
           );
 
           await getAncestors(
             this.mapHanaConceptsHierarchy(result).map((e) => e.concept_id),
             depth + 1,
-            maxDepth
+            maxDepth,
           );
         }
       };
@@ -989,7 +1026,7 @@ export class HanaHDBDao {
       await getAncestors(
         this.mapHanaConceptsHierarchy(result).map((e) => e.concept_id),
         0,
-        maxDepth
+        maxDepth,
       );
 
       return conceptAncestors;
@@ -1022,7 +1059,7 @@ export class HanaHDBDao {
 
   // Map IHanaConceptRecommended to IConceptRecommended type
   private mapHanaConceptsRecommended = (
-    conceptsRecommended: IHanaConceptRecommended[]
+    conceptsRecommended: IHanaConceptRecommended[],
   ): IConceptRecommended[] => {
     const mappedConcepts = conceptsRecommended.map((conceptRecommended) => {
       return {
@@ -1036,17 +1073,17 @@ export class HanaHDBDao {
 
   // Map IHanaConceptAncestor to IConceptAncestor type
   private mapHanaConceptsAncestor = (
-    conceptsAncestor: IHanaConceptAncestor[]
+    conceptsAncestor: IHanaConceptAncestor[],
   ): IConceptAncestor[] => {
     const mappedConcepts = conceptsAncestor.map((conceptAncestor) => {
       return {
         ancestor_concept_id: parseInt(conceptAncestor.ANCESTOR_CONCEPT_ID),
         descendant_concept_id: parseInt(conceptAncestor.DESCENDANT_CONCEPT_ID),
         min_levels_of_separation: parseInt(
-          conceptAncestor.MIN_LEVELS_OF_SEPARATION
+          conceptAncestor.MIN_LEVELS_OF_SEPARATION,
         ),
         max_levels_of_separation: parseInt(
-          conceptAncestor.MAX_LEVELS_OF_SEPARATION
+          conceptAncestor.MAX_LEVELS_OF_SEPARATION,
         ),
       };
     });
@@ -1055,7 +1092,7 @@ export class HanaHDBDao {
 
   // Map IHanaConceptRelationship to IConceptRelationship type
   private mapHanaConceptsRelationship = (
-    conceptsRelationship: IHanaConceptRelationship[]
+    conceptsRelationship: IHanaConceptRelationship[],
   ): IConceptRelationship[] => {
     const mappedConcepts = conceptsRelationship.map((conceptRelationship) => {
       return {
@@ -1072,7 +1109,7 @@ export class HanaHDBDao {
 
   // Map IHanaConceptHierarchy to IConceptHierarchy type
   private mapHanaConceptsHierarchy = (
-    conceptsHierarchy: IHanaConceptHierarchy[]
+    conceptsHierarchy: IHanaConceptHierarchy[],
   ): IConceptHierarchy[] => {
     const mappedConcepts = conceptsHierarchy.map((conceptHierarchy) => {
       return {
@@ -1091,16 +1128,20 @@ export class HanaHDBDao {
   private lowercaseArrayObjectKeys = (objectArray: any[]) => {
     return objectArray.map((obj) => {
       return Object.fromEntries(
-        Object.entries(obj).map(([k, v]) => [k.toLowerCase(), v])
+        Object.entries(obj).map(([k, v]) => [k.toLowerCase(), v]),
       );
     });
   };
 
-  private injectSessionVariablesToCredentials = (credentials: any, token: string) => {
+  private injectSessionVariablesToCredentials = (
+    credentials: any,
+    token: string,
+  ) => {
     credentials["token"] = token;
     credentials["SESSIONVARIABLE:APPLICATION"] = `${env.PROJECT_NAME}-concepts`;
-    credentials["SESSIONVARIABLE:APPLICATIONUSER"] = decode(token).email ?? decode(token).sub; // Fallback to sub from logto token if thirdparty token isnt present
-  }
+    credentials["SESSIONVARIABLE:APPLICATIONUSER"] =
+      decode(token).email ?? decode(token).sub; // Fallback to sub from logto token if thirdparty token isnt present
+  };
 
   private getHanaHDBConnection = () => {
     return new Promise((resolve, reject) => {
@@ -1110,7 +1151,7 @@ export class HanaHDBDao {
           "DATABASE_CREDENTIALS"
         ].find(
           (databaseCredential) =>
-            databaseCredential.values.code === this.databaseCode
+            databaseCredential.values.code === this.databaseCode,
         );
 
         const credentials = {
@@ -1131,13 +1172,16 @@ export class HanaHDBDao {
         if (credentials.authentication_mode === "JWT") {
           // Add token to credentials
           const thirdPartyToken = decode(this.jwt.replace(/bearer /i, ""))[
-              "thirdPartyToken"
-            ];
+            "thirdPartyToken"
+          ];
           if (thirdPartyToken) {
-            this.injectSessionVariablesToCredentials(credentials, thirdPartyToken);
+            this.injectSessionVariablesToCredentials(
+              credentials,
+              thirdPartyToken,
+            );
           } else {
             throw new Error(
-              "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+              "Intermediary IDP token doesnt exist for HANA JWT Authentication!",
             );
           }
         } else {
@@ -1146,9 +1190,9 @@ export class HanaHDBDao {
           credentials["password"] =
             datasetDatabaseCredential.credentials.readPassword;
 
-          const token = decode(this.jwt.replace(/bearer /i, ""))[
-              "thirdPartyToken"
-            ] ?? this.jwt.replace(/bearer /i, "");
+          const token =
+            decode(this.jwt.replace(/bearer /i, ""))["thirdPartyToken"] ??
+            this.jwt.replace(/bearer /i, "");
           this.injectSessionVariablesToCredentials(credentials, token);
         }
 
@@ -1161,7 +1205,7 @@ export class HanaHDBDao {
             reject(err);
           } else {
             console.log(
-              `After connection creation, DB connection state: ${client.readyState}`
+              `After connection creation, DB connection state: ${client.readyState}`,
             );
             resolve(client);
           }

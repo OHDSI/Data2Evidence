@@ -255,7 +255,6 @@ export type DatasetDB = {
   vocabSchemaName: string;
   resultsSchemaName: string;
   schemaName: string;
-  cacheId?: string;
 };
 
 export type HybridSearchConfig = {

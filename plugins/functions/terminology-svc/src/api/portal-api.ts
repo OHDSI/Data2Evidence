@@ -38,7 +38,6 @@ export class SystemPortalAPI {
     dialect: string;
     schemaName: string;
     vocabSchemaName: string;
-    cacheId?: string;
   }> {
     console.info(`Portal request to get dataset info for id : ${datasetId}`);
     const errorMessage = `Error while getting dataset info for id : ${datasetId}`;
