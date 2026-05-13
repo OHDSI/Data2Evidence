@@ -127,7 +127,14 @@ export class DatasetCommandService {
 
       return result;
     };
-    // First sync to WebAPI - fail fast if WebAPI is not accessible
+    // Insert the dataset row first so its id is visible to callers as soon as we return,
+    // even if the upstream WebAPI sync takes longer than the caller's HTTP timeout.
+    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Then register the source and kick off the TrexSQL cache build. The cache build
+    // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
+    // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
+    // before issuing queries that read the cache catalog.
     await this.syncDatasetToWebApi({
       id: datasetDto.id,
       databaseCode: datasetDto.databaseCode,
@@ -136,9 +143,6 @@ export class DatasetCommandService {
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultSchemaName: datasetDto.resultSchemaName,
     }, datasetDto.detail);
-
-    // Then create dataset in database
-    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
     // so a freshly-set cache_id becomes available without a trex restart. The cache_id

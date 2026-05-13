@@ -59,6 +59,27 @@ export class PortalAPI {
     }
   }
 
+  async getCacheStatus(datasetId: string): Promise<{
+    ready: boolean;
+    cacheExists: boolean;
+    cacheAttached: boolean;
+    activeJobStatus?: string | null;
+    lastJobStatus?: string | null;
+    lastJobError?: string | null;
+  }> {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset/${encodeURIComponent(datasetId)}/cache-status`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      console.error(`Error while getting cache status: ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`);
+      throw error;
+    }
+  }
+
   private getRequestConfig() {
     let options: AxiosRequestConfig = {};
 

@@ -36,9 +36,11 @@ export class WebApiSourceService {
     }
   }
 
-  // Build the cache and block until bao reports lastJob.status === "COMPLETED".
-  // Downstream consumers (analytics-svc cdmversion, DQD, DC) query the cache
-  // catalog; without this wait they race against bao mid-copy.
+  // Kick off the TrexSQL cache build. We deliberately do NOT await
+  // `waitForCacheReady` here: bao's COMPLETED transition can take minutes, and
+  // edge-function HTTP callers (e.g. the dataset gateway) time out well before
+  // that. Consumers that depend on a hot cache (DQD, DC, analytics-svc
+  // cdmversion) must wait for readiness explicitly via `waitForCacheReady`.
   private async triggerCacheCreation(
     sourceKey: string,
     schemaName: string,
@@ -48,11 +50,46 @@ export class WebApiSourceService {
       const result = await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
       if (!result.success) {
         this.logger.warn(`TrexSQL cache creation failed for ${sourceKey}: ${result.error}`)
-        return
       }
-      await this.webApiSourceApi.waitForCacheReady(sourceKey, authToken)
     } catch (error) {
       this.logger.error(`Failed to create TrexSQL cache for ${sourceKey}: ${error}`)
+    }
+  }
+
+  // Block until the TrexSQL cache for the given dataset is COMPLETED.
+  // Call this from consumers that explicitly need a hot cache (DQD/DC kickoff).
+  async waitForCacheReady(sourceKey: string, authToken?: string): Promise<void> {
+    try {
+      await this.webApiSourceApi.waitForCacheReady(sourceKey, authToken)
+    } catch (error) {
+      this.logger.error(`Cache wait failed for ${sourceKey}: ${error}`)
+      throw error
+    }
+  }
+
+  // Snapshot the TrexSQL cache state for a dataset. Callers poll this and decide
+  // when it's safe to issue queries that read from the cache catalog.
+  async getCacheStatus(sourceKey: string, authToken?: string): Promise<{
+    ready: boolean
+    cacheExists: boolean
+    cacheAttached: boolean
+    activeJobStatus?: string | null
+    lastJobStatus?: string | null
+    lastJobError?: string | null
+  }> {
+    const status = await this.webApiSourceApi.getCacheStatus(sourceKey, authToken)
+    const ready =
+      !status.activeJob &&
+      !!status.cacheExists &&
+      !!status.cacheAttached &&
+      status.lastJob?.status === 'COMPLETED'
+    return {
+      ready,
+      cacheExists: !!status.cacheExists,
+      cacheAttached: !!status.cacheAttached,
+      activeJobStatus: status.activeJob?.status ?? null,
+      lastJobStatus: status.lastJob?.status ?? null,
+      lastJobError: status.lastJob?.error ?? null,
     }
   }
 

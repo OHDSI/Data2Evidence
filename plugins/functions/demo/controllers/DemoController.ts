@@ -36,6 +36,11 @@ export class DemoController {
         task: this.service.addDataset.bind(this.service),
       },
       {
+        code: "cache",
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
+      },
+      {
         code: "dqd",
         message: "Running DQD on demo dataset...",
         task: this.service.runDQD.bind(this.service),
@@ -72,6 +77,11 @@ export class DemoController {
         message: "Adding HTTP test dataset...",
         task: this.service.addDataset.bind(this.service),
       },
+      {
+        code: "cache",
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
+      },
     ];
 
     return await this.executeSteps(req, res, steps);
@@ -95,6 +105,11 @@ export class DemoController {
         code: "dataset",
         message: "Adding demo dataset...",
         task: this.service.addDataset.bind(this.service),
+      },
+      {
+        code: "cache",
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
       },
       {
         code: "dqd",
