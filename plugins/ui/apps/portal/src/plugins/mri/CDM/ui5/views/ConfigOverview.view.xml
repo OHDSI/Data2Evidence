@@ -91,7 +91,7 @@
     				    <Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_VERSIONS}" visible="{=!${configOverviewModel>/deleteModeConfig}}"
     						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_VERSIONS_TOOLTIP}" press="enterDeleteMode"></Button>
     				    <Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_MULTIPLE}" visible="{=${configOverviewModel>/deleteModeConfig}}"
-    						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_MULTIPLE_TOOLTIP}" press="deleteMultipleConfig"></Button>
+						enabled="{= ${configOverviewModel>/deleteSelectionCount} > 0 }" tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_DELETE_MULTIPLE_TOOLTIP}" press="deleteMultipleConfig"></Button>
     					<Button type="Transparent" text="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CANCEL}" visible="{=${configOverviewModel>/deleteModeConfig}}"
     						tooltip="{hc.hph.cdw.config.ui.i18n>HPH_CDM_CFG_BUTTON_CLEAR_TOOLTIP}" press="clearSelection"></Button>
     				</contentRight>

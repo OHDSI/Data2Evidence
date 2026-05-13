@@ -380,6 +380,7 @@ sap.ui.define([
         var deleteModeVersionAll = true;
         var that = this;
         var configOverviewModel = this.getView().getModel("configOverviewModel");
+        var deleteSelectionCount = 0;
         
         configOverviewModel.getProperty("/configurations").forEach(function(config, cfgidx){
             deleteModeVersionAll = true;
@@ -387,9 +388,13 @@ sap.ui.define([
                 if(!version.deleteFlagSelect){
                     deleteModeVersionAll = false;
                 }
+                if(version.deleteFlagSelect){
+                    deleteSelectionCount++;
+                }
             });
             that.getView().getModel("configOverviewModel").setProperty("/configurations/" + cfgidx + "/deleteFlagAllVersion", deleteModeVersionAll);
         });
+        configOverviewModel.setProperty("/deleteSelectionCount", deleteSelectionCount);
     };
     
     ConfigOverviewController.prototype.clearSelection = function(oEvent) {
@@ -405,6 +410,7 @@ sap.ui.define([
             });
         });
         this.getView().getModel("configOverviewModel").setProperty("/deleteModeConfig", false);
+        this.getView().getModel("configOverviewModel").setProperty("/deleteSelectionCount", 0);
     };
     
     
@@ -423,6 +429,7 @@ sap.ui.define([
     
     ConfigOverviewController.prototype.enterDeleteMode = function(oEvent) {
         this.getView().getModel("configOverviewModel").setProperty("/deleteModeConfig", true);
+        this.updateDeleteMode(oEvent);
     };
     
     ConfigOverviewController.prototype.deleteMultipleConfig = function (oEvent) {
@@ -457,7 +464,11 @@ sap.ui.define([
         if(configurations.length > 0) {
             var sIcon = MessageBox.Icon.WARNING;
             var sMessageKey = "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_MSG";
-            var sTitle = ConfigUtils.getText("HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_TITLE", []);
+            var deleteSelectionCount = configOverviewModel.getProperty("/deleteSelectionCount");
+            var sTitleKey = deleteSelectionCount === 1
+                ? "HPH_CDM_CFG_OVERVIEW_DELETE_SINGLE_CONFIGURATION_VERSION_TITLE"
+                : "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_TITLE";
+            var sTitle = ConfigUtils.getText(sTitleKey, []);
             var sMessage = ConfigUtils.getText(sMessageKey);
                 
             MessageBox.show(sMessage, {
