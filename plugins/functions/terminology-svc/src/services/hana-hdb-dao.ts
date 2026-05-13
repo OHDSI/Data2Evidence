@@ -20,7 +20,6 @@ import { individualFilterWhereOR } from "./cachedb.ts";
 import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
-
 // Take the K nearest neighbors by cosine distance and let the FULL OUTER JOIN
 // with FTS results decide the final shortlist. K is a balance between recall and performance.
 const HANA_HYBRID_COSINE_TOPK = 5000;
@@ -72,12 +71,30 @@ export class HanaHDBDao {
   }
 
   private getTrexConnection = async () => {
+    // TREX__SQL__* are optional in env.ts because terminology-svc deployments
+    // without HANA hybrid search don't need them.
+    const required = {
+      TREX__SQL__HOST: env.TREX__SQL__HOST,
+      TREX__SQL__PORT: env.TREX__SQL__PORT,
+      TREX__SQL__USER: env.TREX__SQL__USER,
+      TREX__SQL__PASSWORD: env.TREX__SQL__PASSWORD,
+      TREX__SQL__DBNAME: env.TREX__SQL__DBNAME,
+    };
+    const missing = Object.entries(required)
+      .filter(([, v]) => !v)
+      .map(([k]) => k);
+    if (missing.length > 0) {
+      throw new Error(
+        `HANA hybrid search requires the following env vars: ${missing.join(", ")}. ` +
+          `Add them to the terminology-svc env block in plugins/functions/package.json.`,
+      );
+    }
     const client = new pg.Client({
-      host: env.TREX__SQL__HOST,
-      port: Number(env.TREX__SQL__PORT),
-      user: env.TREX__SQL__USER,
-      password: env.TREX__SQL__PASSWORD,
-      database: env.TREX__SQL__DBNAME,
+      host: required.TREX__SQL__HOST,
+      port: Number(required.TREX__SQL__PORT),
+      user: required.TREX__SQL__USER,
+      password: required.TREX__SQL__PASSWORD,
+      database: required.TREX__SQL__DBNAME,
     });
     await client.connect();
     await client.query(
