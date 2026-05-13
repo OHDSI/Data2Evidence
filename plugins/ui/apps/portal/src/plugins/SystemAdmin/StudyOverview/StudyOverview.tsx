@@ -534,7 +534,12 @@ const StudyOverview: FC = () => {
 
       if (hasSourceDatasetId) {
         cacheDatasets.push(item);
-      } else if (item.type === "source" || item.type === "hana__omop" || item.type === "hana__non_omop") {
+      } else if (
+        item.type === "source" ||
+        item.type === "hana__omop" ||
+        item.type === "hana__non_omop" ||
+        item.type === "webapi"
+      ) {
         if (!datasetsByFlow[flowName]) {
           datasetsByFlow[flowName] = [];
         }
