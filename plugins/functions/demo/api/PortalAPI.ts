@@ -64,7 +64,6 @@ export class PortalAPI {
     cacheExists: boolean;
     cacheAttached: boolean;
     activeJobStatus?: string | null;
-    lastJobStatus?: string | null;
     lastJobError?: string | null;
   }> {
     try {

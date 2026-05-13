@@ -134,8 +134,7 @@ export class WebApiSourceApi {
   ): Promise<{
     cacheExists: boolean
     cacheAttached: boolean
-    activeJob?: { status: string } | null
-    lastJob?: { status: string; error?: string } | null
+    activeJob?: { status: string; error?: string } | null
   }> {
     const databaseCode = sanitizeIdForCacheId(sourceKey)
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache/status?databaseCode=${databaseCode}`
@@ -152,8 +151,10 @@ export class WebApiSourceApi {
     return response.json()
   }
 
-  // Poll cache/status until bao reports `lastJob.status === "COMPLETED"`
-  // (no activeJob in flight). Terminal failure statuses throw.
+  // Poll cache/status until the cache file exists+attached and any tracked
+  // build job is terminal-success. bao returns a single :activeJob row (no
+  // :lastJob) — for postgres/bigquery the row is never inserted (sync build),
+  // for JDBC dialects it persists after the batch with status=COMPLETED.
   async waitForCacheReady(
     sourceKey: string,
     authToken?: string,
@@ -165,12 +166,13 @@ export class WebApiSourceApi {
 
     while (Date.now() < deadline) {
       const status = await this.getCacheStatus(sourceKey, authToken)
-      if (status.activeJob) {
-        // build in progress
-      } else if (status.lastJob?.status === 'COMPLETED' && status.cacheExists && status.cacheAttached) {
+      const jobStatus = status.activeJob?.status
+      if (jobStatus && ['FAILED', 'STOPPED', 'ABANDONED'].includes(jobStatus)) {
+        throw new Error(`Cache build for ${sourceKey} ${jobStatus}: ${status.activeJob?.error ?? 'no error message'}`)
+      }
+      const jobDone = !jobStatus || jobStatus === 'COMPLETED'
+      if (jobDone && status.cacheExists && status.cacheAttached) {
         return
-      } else if (status.lastJob && ['FAILED', 'STOPPED', 'ABANDONED'].includes(status.lastJob.status)) {
-        throw new Error(`Cache build for ${sourceKey} ${status.lastJob.status}: ${status.lastJob.error ?? 'no error message'}`)
       }
       await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
     }

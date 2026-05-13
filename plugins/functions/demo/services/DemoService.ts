@@ -160,11 +160,11 @@ export class DemoService {
         return lastStatus;
       }
       if (
-        lastStatus.lastJobStatus &&
-        ["FAILED", "STOPPED", "ABANDONED"].includes(lastStatus.lastJobStatus)
+        lastStatus.activeJobStatus &&
+        ["FAILED", "STOPPED", "ABANDONED"].includes(lastStatus.activeJobStatus)
       ) {
         throw new Error(
-          `Cache build for dataset ${dataset.id} ${lastStatus.lastJobStatus}: ${lastStatus.lastJobError ?? "no error message"}`
+          `Cache build for dataset ${dataset.id} ${lastStatus.activeJobStatus}: ${lastStatus.lastJobError ?? "no error message"}`
         );
       }
       this.logger.info(

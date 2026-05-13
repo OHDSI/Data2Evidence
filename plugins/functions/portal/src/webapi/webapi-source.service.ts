@@ -69,27 +69,29 @@ export class WebApiSourceService {
 
   // Snapshot the TrexSQL cache state for a dataset. Callers poll this and decide
   // when it's safe to issue queries that read from the cache catalog.
+  //
+  // bao returns a single :activeJob field (no separate :lastJob). For postgres/
+  // bigquery dialects the cache POST builds synchronously and never inserts a
+  // job row, so activeJob is null and the cache is ready as soon as the file
+  // exists + is attached. For JDBC dialects, the job row persists after the
+  // batch finishes with status=COMPLETED — treat that as ready too.
   async getCacheStatus(sourceKey: string, authToken?: string): Promise<{
     ready: boolean
     cacheExists: boolean
     cacheAttached: boolean
     activeJobStatus?: string | null
-    lastJobStatus?: string | null
     lastJobError?: string | null
   }> {
     const status = await this.webApiSourceApi.getCacheStatus(sourceKey, authToken)
-    const ready =
-      !status.activeJob &&
-      !!status.cacheExists &&
-      !!status.cacheAttached &&
-      status.lastJob?.status === 'COMPLETED'
+    const jobStatus = status.activeJob?.status ?? null
+    const jobDone = jobStatus === null || jobStatus === 'COMPLETED'
+    const ready = !!status.cacheExists && !!status.cacheAttached && jobDone
     return {
       ready,
       cacheExists: !!status.cacheExists,
       cacheAttached: !!status.cacheAttached,
-      activeJobStatus: status.activeJob?.status ?? null,
-      lastJobStatus: status.lastJob?.status ?? null,
-      lastJobError: status.lastJob?.error ?? null,
+      activeJobStatus: jobStatus,
+      lastJobError: status.activeJob?.error ?? null,
     }
   }
 
