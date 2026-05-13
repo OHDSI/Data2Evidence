@@ -42,7 +42,11 @@ export class PortalServerAPI {
       `${this.baseURL}/dataset?datasetId=${datasetId}`,
       options
     );
-    return result.data;
+    const body = result.data;
+    return {
+      ...body,
+      cacheId: body.cacheId ?? body.cache_id ?? body.databaseCode ?? null,
+    };
   }
 
   async getUserArtifactSequenceNextval(
@@ -204,7 +208,11 @@ export class PortalServerAPI {
         datasetId
       )}`;
       const result = await this.portalapi.get(url, options);
-      return result.data;
+      const body = result.data;
+      return {
+        ...body,
+        cacheId: body.cacheId ?? body.cache_id ?? body.databaseCode ?? null,
+      };
     } catch (error) {
       console.error(`${errorMessage}: ${error}`);
       throw new Error(errorMessage);

@@ -70,7 +70,8 @@ def duckdb_to_database_flow(options:MimicOMOPOptionsType):
     schema_name = options.schema_name
     use_cache_db = options.use_cache_db
     database_code = options.database_code
-    to_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    cache_id = options.cache_id
+    to_dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
     overwrite_schema = options.overwrite_schema
     chunk_size = options.chunk_size
     # Export OMOP tables to Database
