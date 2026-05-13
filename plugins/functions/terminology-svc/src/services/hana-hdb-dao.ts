@@ -20,7 +20,6 @@ import { individualFilterWhereOR } from "./cachedb.ts";
 import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
-declare const Trex: any;
 
 // Take the K nearest neighbors by cosine distance and let the FULL OUTER JOIN
 // with FTS results decide the final shortlist. K is a balance between recall and performance.
@@ -72,14 +71,6 @@ export class HanaHDBDao {
     }
   }
 
-  // Option 2: connect to Trex's pgwire endpoint (port 5433). pgwire serves
-  // the shared DuckDB worker pool, which has the HANA cache file ATTACHed at
-  // startup as alias "<databaseCode>" (services/trex/core/server/index.ts:57-76).
-  // Defensive re-ATTACH below in case the pool worker that handles this
-  // pgwire session doesn't share the startup-session catalog. SQL must
-  // qualify table refs as "<databaseCode>"."<schemaName>"."<table>" and use
-  // $1, $2, ... placeholders (not "?") since pg.Client uses extended-query
-  // protocol with numbered binds.
   private getTrexConnection = async () => {
     const client = new pg.Client({
       host: env.TREX__SQL__HOST,
@@ -101,9 +92,7 @@ export class HanaHDBDao {
     };
   };
 
-  // Original dbm.getConnection-based version. Kept for reference — it routed
-  // to the HANA engine for HANA datasets, which can't run DuckDB hybrid SQL
-  // (HanaDB.execute rejected "?" parameter binding).
+  // Original dbm.getConnection routed to the HANA engine for HANA datasets, which can't run DuckDB hybrid SQL
   // private getTrexConnection = () => {
   //   const dbm = Trex.databaseManager();
   //   const conn = dbm.getConnection(
@@ -381,7 +370,7 @@ export class HanaHDBDao {
                  e.concept_id,
                  array_cosine_similarity(
                    e.concept_name_embedding,
-                   string_split(?, ',')::FLOAT[384]
+                   string_split('${embedding}', ',')::FLOAT[384]
                  ) AS embd_score
                FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
                ORDER BY embd_score DESC
@@ -418,14 +407,10 @@ export class HanaHDBDao {
         SELECT concept_id, count(*) OVER () AS total_hits
         FROM scored
         ORDER BY hybrid_score DESC NULLS LAST
-        LIMIT ? OFFSET ?
+        LIMIT ${rowsPerPage * 2} OFFSET ${pageNumber * rowsPerPage}
       `;
       const offset = pageNumber * rowsPerPage;
-      const ranked = await trexClient.query(duckdbSql, [
-        embedding,
-        rowsPerPage * 2,
-        offset,
-      ]);
+      const ranked = await trexClient.query(duckdbSql);
       const rankedIds: number[] = ranked.rows.map((r: any) => r.concept_id);
       const totalHits = ranked.rows[0]
         ? parseInt(ranked.rows[0].total_hits)
