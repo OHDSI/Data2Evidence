@@ -85,28 +85,13 @@ test(TEST_NAME, async ({ page }) => {
   // Wait for parent dataset to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: datasetNewSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
 
-  // Wait for schema to be created in the database (this also creates the cache dataset)
+  // Wait for schema to be created in the database
   await createComplete()
 
-  // After the job completes, the cache dataset should be visible
-  // Parent rows are automatically expanded by default, so child rows should be visible
-  await expect(page.locator('tr', { hasText: datasetNewCacheSchema }).first()).toBeVisible({ timeout: MINUTE_2 })
+  // webapi-managed datasets render as a single row; no separate cache child row.
 
-  // Copy the schema name for later use
-  // const schemaText = await page.getByRole('cell', { name: /^cdm_newtestdataset_/ }).first().textContent()
-  // const schemaName = schemaText?.replace(vocabSchemaName, '').trim() || ''
-
-  // Delete the newly created dataset
+  // Delete the dataset (webapi-managed, single row — no child cleanup required).
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-  // Find and delete the child dataset first (datasetNewCacheSchema)
-  const newCacheRow = page.locator('tr', { hasText: datasetNewCacheSchema }).first()
-  await expect(newCacheRow).toBeVisible()
-  await newCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  // Enter dataset name to confirm deletion
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetNewCacheSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  // Then delete the parent dataset (datasetNewSchema)
   const newSchemaRow = page.locator('tr', { hasText: datasetNewSchema }).first()
   await expect(newSchemaRow).toBeVisible()
   await newSchemaRow.getByText('Select action').click()
@@ -138,22 +123,12 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
-  // Wait for table to load and datasets to appear
+  // Wait for table to load and dataset to appear (single row for webapi-managed)
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   await expect(page.locator('tr', { hasText: datasetExistingSchema }).first()).toBeVisible()
-  await expect(page.locator('tr', { hasText: datasetExistingCacheSchema }).first()).toBeVisible()
 
   // Clean up
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-  // Find and delete the child dataset first (datasetExistingCacheSchema)
-  const existingCacheRow = page.locator('tr', { hasText: datasetExistingCacheSchema }).first()
-  await expect(existingCacheRow).toBeVisible()
-  await existingCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  // Enter dataset name to confirm deletion
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill(datasetExistingCacheSchema)
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  // Then delete the parent dataset (datasetExistingSchema)
   const existingSchemaRow = page.locator('tr', { hasText: datasetExistingSchema }).first()
   await expect(existingSchemaRow).toBeVisible()
   await existingSchemaRow.getByText('Select action').click()
