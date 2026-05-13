@@ -30,7 +30,7 @@ export class CachedbService {
   constructor(
     request: Request,
     datasetDB: DatasetDB,
-    hybridSearchConfig: HybridSearchConfig,
+    hybridSearchConfig: HybridSearchConfig
   ) {
     this.token = request.headers["authorization"]!;
     this.datasetDB = datasetDB;
@@ -42,7 +42,7 @@ export class CachedbService {
   */
   public static async createCacheDBService(
     request: Request,
-    datasetId: string,
+    datasetId: string
   ): Promise<CachedbService> {
     const systemPortalApi = new SystemPortalAPI(request);
     const getDatasetDetails = async () => {
@@ -75,6 +75,9 @@ export class CachedbService {
       schemaName,
       resultsSchemaName,
     } = this.datasetDB;
+    if (dialect === DatasetDialects.HANA) {
+      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
+    }
     if (this.hybridSearchConfig == undefined) {
       throw new Error("hybridSearchConfig undefined!");
     }
@@ -94,13 +97,14 @@ export class CachedbService {
       );
     }
 
+
     // By default return CachedbDAO
     return new CachedbDAO(
       vocabSchemaName,
       semanticRatio,
       databaseCode,
       schemaName,
-      resultsSchemaName,
+      resultsSchemaName
     );
   }
 
@@ -152,13 +156,13 @@ export class CachedbService {
 
   async getExactConcept(
     conceptName: string | number,
-    conceptColumnName: "concept_name" | "concept_id" | "concept_code",
+    conceptColumnName: "concept_name" | "concept_id" | "concept_code"
   ) {
     try {
       const cachedbDao = await this.getCachedbDaoFromDialect();
       const result = await cachedbDao.getExactConcept(
         conceptName,
-        conceptColumnName,
+        conceptColumnName
       );
       return result;
     } catch (err) {
@@ -169,7 +173,7 @@ export class CachedbService {
 
   async getConceptFilterOptionsFaceted(
     searchText: string,
-    filters: Filters,
+    filters: Filters
   ): Promise<IDuckdbFacet> {
     const cachedbDao = await this.getCachedbDaoFromDialect();
     return cachedbDao.getConceptFilterOptionsFaceted(searchText, filters);
@@ -187,7 +191,7 @@ export class CachedbService {
       const cachedbDao = await this.getCachedbDaoFromDialect();
       const DuckdbResultConcept1 = await cachedbDao.getMultipleExactConcepts(
         searchConcepts1,
-        true,
+        true
       );
       if (!DuckdbResultConcept1) {
         return defaultValue;
@@ -204,45 +208,46 @@ export class CachedbService {
         const detailsC1: FhirValueSetExpansionContainsWithExt =
           conceptC1.expansion.contains[0];
         const conceptRelations = await cachedbDao.getConceptRelationships(
-          detailsC1.conceptId,
+          detailsC1.conceptId
         );
 
         const relationshipIds = conceptRelations.hits.map(
-          (hit) => hit.relationship_id,
+          (hit) => hit.relationship_id
         );
-        const relationships =
-          await cachedbDao.getRelationships(relationshipIds);
+        const relationships = await cachedbDao.getRelationships(
+          relationshipIds
+        );
 
         const conceptIds2 = conceptRelations.hits.map(
-          (hit) => hit.concept_id_2,
+          (hit) => hit.concept_id_2
         );
 
         const exactConcepts2 = await cachedbDao.getMultipleExactConcepts(
           conceptIds2,
-          true,
+          true
         );
         const exactConcepts2Mapped = this.duckdbResultMapping(exactConcepts2);
 
         const conceptIds3 = relationships.hits.map(
-          (hit) => hit.relationship_concept_id,
+          (hit) => hit.relationship_concept_id
         );
         const exactConcepts3 = await cachedbDao.getMultipleExactConcepts(
           conceptIds3,
-          true,
+          true
         );
         const exactConcepts3Mapped = this.duckdbResultMapping(exactConcepts3);
 
         const conceptsWithRelationships = conceptRelations.hits
           .map((hit) => {
             const c2 = exactConcepts2Mapped.expansion.contains?.find(
-              (hit2) => hit2.conceptId === hit.concept_id_2,
+              (hit2) => hit2.conceptId === hit.concept_id_2
             );
             const relationship = relationships.hits.find(
-              (r) => r.relationship_id === hit.relationship_id,
+              (r) => r.relationship_id === hit.relationship_id
             );
             const detailsConcept3 =
               exactConcepts3Mapped.expansion.contains?.find(
-                (c) => c.conceptId === relationship?.relationship_concept_id,
+                (c) => c.conceptId === relationship?.relationship_concept_id
               );
             if (!c2 || !detailsConcept3) {
               return null;
@@ -263,7 +268,7 @@ export class CachedbService {
 
         const conceptRelationsGroupByVocab = groupBy(
           conceptsWithRelationships,
-          "vocabularyId",
+          "vocabularyId"
         );
         for (const targetVocab in conceptRelationsGroupByVocab) {
           const conceptMapElement: FhirConceptMapElementWithExt = {
@@ -295,8 +300,9 @@ export class CachedbService {
   async getRecommendedConcepts(conceptIds: number[]) {
     try {
       const cachedbDao = await this.getCachedbDaoFromDialect();
-      const recommendedConcepts =
-        await cachedbDao.getExactConceptRecommended(conceptIds);
+      const recommendedConcepts = await cachedbDao.getExactConceptRecommended(
+        conceptIds
+      );
 
       if (recommendedConcepts.length === 0) {
         return [];
@@ -304,8 +310,9 @@ export class CachedbService {
 
       const mappedConceptIds = recommendedConcepts.map((e) => e.concept_id_2);
 
-      const duckdbResult =
-        await cachedbDao.getMultipleExactConcepts(mappedConceptIds);
+      const duckdbResult = await cachedbDao.getMultipleExactConcepts(
+        mappedConceptIds
+      );
 
       if (duckdbResult === null) {
         return [];
@@ -321,7 +328,7 @@ export class CachedbService {
           conceptCode: mappedResult.code,
           conceptName: mappedResult.display,
           vocabularyId: mappedResult.system,
-        }),
+        })
       );
       return mappedResults;
     } catch (err) {
@@ -331,7 +338,7 @@ export class CachedbService {
   }
 
   async getHierarchyDescendants(
-    conceptId: number,
+    conceptId: number
   ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getHierarchyDescendants(conceptId);
@@ -340,7 +347,7 @@ export class CachedbService {
 
   async getHierarchyAncestors(
     conceptId: number,
-    depth: number,
+    depth: number
   ): Promise<IConceptHierarchy[]> {
     const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getHierarchyAncestors(conceptId, depth);
@@ -370,14 +377,14 @@ export class CachedbService {
     const cachedbDao = await this.getCachedbDaoFromDialect();
     const result = await cachedbDao.getConceptRelationship(
       conceptIds,
-      "Maps to",
+      "Maps to"
     );
     return result;
   }
 
   async getConceptsAndDescendantIds(
     conceptIds: number[],
-    descendantIds: number[],
+    descendantIds: number[]
   ): Promise<number[]> {
     if (!conceptIds.length) {
       return [];
@@ -389,7 +396,7 @@ export class CachedbService {
     // Ensures included concept IDs are present in vocab schema and valid
     const validConcepts = await cachedbDao.getMultipleExactConcepts(
       conceptIds,
-      false,
+      false
     );
     if (!validConcepts) {
       return [];
@@ -402,8 +409,9 @@ export class CachedbService {
       return conceptsAndDescendantIds;
     }
 
-    const conceptDescendants =
-      await cachedbDao.getExactConceptDescendants(descendantIds);
+    const conceptDescendants = await cachedbDao.getExactConceptDescendants(
+      descendantIds
+    );
     conceptDescendants.forEach((concept) => {
       conceptsAndDescendantIds.push(concept.descendant_concept_id);
     });
@@ -433,14 +441,14 @@ export class CachedbService {
         ? new Date(
             typeof item.valid_start_date === "number"
               ? item.valid_start_date * 1000
-              : item.valid_start_date,
+              : item.valid_start_date
           ).toISOString()
         : new Date(0).toISOString(),
       validEndDate: item.valid_end_date
         ? new Date(
             typeof item.valid_start_date === "number"
               ? item.valid_end_date * 1000
-              : item.valid_end_date,
+              : item.valid_end_date
           ).toISOString()
         : "",
       validity,

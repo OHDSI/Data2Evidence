@@ -81,7 +81,6 @@ export class SystemPortalAPI {
       schemaName: dataset.schemaName,
       vocabSchemaName: dataset.vocabSchemaName,
       dialect: dataset.dialect,
-      cacheId: dataset.cacheId,
     };
   }
 
