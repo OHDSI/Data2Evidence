@@ -88,8 +88,12 @@ test(TEST_NAME, async ({ page }) => {
     .last()
     .locator('button.axisMenuButton', { hasText: 'Gender' })
     .click()
-  await page.locator('div.dropdownmenu-container').getByRole('list').getByText('Condition Occurrence A').click()
-  await page.locator('#pane-right').getByText('Condition concept Name').click()
+  await page
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
+    .getByRole('list')
+    .getByText('Condition Occurrence A')
+    .click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Condition concept Name').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
@@ -107,8 +111,12 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set X1-axis to gender
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').nth(1).click()
-  await page.locator('#pane-right').getByRole('list').getByText('Basic Data').click()
-  await page.locator('#pane-right').getByText('Gender').nth(2).click()
+  await page
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
+    .getByRole('list')
+    .getByText('Basic Data')
+    .click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Gender').nth(2).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
   await expect(page).toHaveScreenshot()
@@ -116,19 +124,23 @@ test(TEST_NAME, async ({ page }) => {
   // Set Y-axis to month of birth
   await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Patient Count ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
-  await page.locator('div.dropdownmenu-container').getByText('Month of Birth').last().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
   await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
-  await page.locator('div.dropdownmenu-container').getByText('Patient Count').first().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Patient Count').click()
 
   // Set X1-axis to condition concept name
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').nth(1).click()
-  await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
-  await page.locator('#pane-right').getByText('Condition concept Name').click()
+  await page
+    .locator('div.dropdownmenu-container .menuWrapper:not(.closed)')
+    .getByRole('list')
+    .getByText('Condition Occurrence A')
+    .click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Condition concept Name').click()
 
   // Remove condition concept name value in filter card
   await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('i').click()
@@ -141,7 +153,7 @@ test(TEST_NAME, async ({ page }) => {
     .filter({ hasText: 'Basic Data' })
     .last()
     .click()
-  await page.locator('#pane-right').getByText('Race concept id').click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Race concept id').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
@@ -153,7 +165,7 @@ test(TEST_NAME, async ({ page }) => {
     .filter({ hasText: 'Basic Data' })
     .last()
     .click()
-  await page.locator('#pane-right').getByText('Year of Birth').first().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Year of Birth').click()
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.binningButton').first().click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
@@ -175,7 +187,7 @@ test(TEST_NAME, async ({ page }) => {
     .filter({ hasText: 'Basic Data' })
     .last()
     .click()
-  await page.locator('#pane-right').getByText('Month of Birth').first().click()
+  await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
