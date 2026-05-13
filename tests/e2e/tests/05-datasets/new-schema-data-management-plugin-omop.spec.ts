@@ -41,7 +41,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
-  // OMOP data model → webapi-managed, single row (no cache child).
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
   // Wait for job container to stabilize before navigating to Jobs page
   await page.waitForTimeout(20000)
@@ -54,7 +53,6 @@ test(TEST_NAME, async ({ page }) => {
   // Find the closest state badge to this entry
   const stateBadge = firstEntry.locator('.state-badge')
   await expect(stateBadge).toHaveText(/Completed/, { timeout: MINUTE_5 })
-  // Clean up - delete the created dataset (single webapi-managed row).
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()

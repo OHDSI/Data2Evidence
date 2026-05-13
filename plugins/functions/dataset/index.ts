@@ -134,11 +134,6 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
-        // OMOP-CDM datasets are webapi-managed regardless of which plugin
-        // creates them (omop_cdm_plugin or data_management_plugin with an
-        // OMOP data model): single dataset row with type=webapi, no separate
-        // cache child row. i2b2 / medical-imaging / FHIR keep the legacy
-        // source+cache pair.
         const isWebApiManaged = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
 
         const newCacheSchemaName = schemaName
@@ -271,9 +266,6 @@ export class DatasetRouter {
               .json(responseData || { error: createError.message });
           }
 
-          // Webapi-managed datasets attach their DuckDB cache as part of the
-          // dataset row itself (see WebApiSourceService.syncSourceForDataset);
-          // no separate cache snapshot is needed.
           let newCacheDataset: any = {};
           if (!isWebApiManaged) {
             this.logger.info("Creating cache dataset in Portal");
