@@ -3,7 +3,9 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
 
-@import "react-notebook/style.css";
+/* Lib source is a workspace member at ../../libs/react-notebook — let Tailwind scan it
+ * so utility classes used by Notebook/Cell/etc. are generated in our compiled CSS. */
+@source "../../../libs/react-notebook/src/**/*.{ts,tsx}";
 
 @plugin "@tailwindcss/typography";
 

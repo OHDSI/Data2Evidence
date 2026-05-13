@@ -18,7 +18,7 @@
     "concurrently": "^9.2.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-notebook": "git+https://github.com/hengxian-jiang/notebook-1.git#feat/lib-build",
+    "react-notebook": "workspace:*",
     "single-spa-react": "^6.0.2"
   },
   "devDependencies": {
