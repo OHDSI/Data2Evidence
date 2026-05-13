@@ -365,7 +365,10 @@ sap.ui.define([
     
     ConfigOverviewController.prototype.onCDMConfigSelected = function(oEvent) {
         var sourceControl = oEvent.getParameters().srcControl;
-        var path = sourceControl.getBindingContext("configOverviewModel");
+        var path = oEvent.getParameters().bindingContext || (sourceControl && sourceControl.getBindingContext("configOverviewModel"));
+        if (!path) {
+            return;
+        }
         
         this.oConfigModel.setData({
             selectedCard: path
