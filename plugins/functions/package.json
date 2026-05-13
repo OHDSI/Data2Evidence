@@ -371,7 +371,7 @@
           "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
           "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
           "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}",
-          "HANA_HINT": "${HANA_HINT:-}"
+          "HANA_HINT": "${HANA_HINT:-USE_HEX_PLAN}"
         },
         "alp-usermgmt": {
           "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
