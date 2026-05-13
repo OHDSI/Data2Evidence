@@ -249,7 +249,6 @@ export class HanaHDBDao {
   ) {
     const hanaClient = await this.getHanaHDBConnection();
     const trexClient = await this.getTrexConnection();
-    console.log(`trexClient ${trexClient} created in getConceptsHybridRerank`);
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
       const ftsAndFilter = filterWhere
@@ -275,6 +274,15 @@ export class HanaHDBDao {
         .join(",");
 
       const offset = pageNumber * rowsPerPage;
+      // Rerank hybrid score on the FTS candidate set:
+      //   hybrid_score = α · norm(embd_score) + (1 − α) · norm(fts_score)
+      // where
+      //   α               = this.semanticRatio          (0..1, from hybridSearchConfig)
+      //   embd_score      = array_cosine_similarity(cached_embedding, query_embedding)
+      //   fts_score       = HANA SCORE() over CONTAINS(*, ?, FUZZY(env.HANA_FTS_FUZZY))
+      //   norm(x)         = (x − min(x)) / (max(x) − min(x))  over the FTS candidate set
+      // Pipeline: HANA FTS → fts_input → join cached embeddings → min-max normalize
+      //           → blend by α → ORDER BY hybrid_score DESC → LIMIT/OFFSET
       const duckdbSql = `
         WITH fts_input(concept_id, fts_score) AS (VALUES ${valuesClause}),
              with_embd AS (
@@ -380,6 +388,17 @@ export class HanaHDBDao {
           ? ftsRows.map((r) => `(${r.CONCEPT_ID}, ${r.FTS_SCORE})`).join(",")
           : "(NULL::INTEGER, NULL::DOUBLE)";
 
+      // Union hybrid score over (HANA FTS hits) ⋃ (top-K cosine over whole cache):
+      //   hybrid_score = α · norm(embd_score) + (1 − α) · norm(fts_score)
+      // where
+      //   α               = this.semanticRatio          (0..1, from hybridSearchConfig)
+      //   candidates      = FTS_hits ∪ sem_topk(top HANA_HYBRID_COSINE_TOPK by cosine)
+      //   fts_score (FTS-miss row)  = 0   ┐ filled by COALESCE before normalization,
+      //   embd_score (sem-miss row) = 0   ┘ so the missing side contributes nothing
+      //   norm(x)         = (x − min(x)) / (max(x) − min(x))  over the unioned set
+      // Pipeline: HANA FTS → fts_input;  DuckDB top-K cosine over full
+      //           concept_embeddings → sem_topk;  FULL OUTER JOIN on concept_id
+      //           → min-max normalize → blend by α → ORDER BY hybrid_score DESC → LIMIT/OFFSET
       const duckdbSql = `
         WITH fts_input(concept_id, fts_score) AS (VALUES ${valuesClause}),
              sem_topk AS (
