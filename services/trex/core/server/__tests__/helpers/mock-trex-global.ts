@@ -7,15 +7,18 @@
   applySupabaseTag: (_orig: Request, _mod: Request) => {},
   getRuntimeMetrics: async () => ({ memory: 0, cpu: 0 }),
   addDB: (..._args: any[]) => {},
+  createRequestListener: (_handler: any) => {},
   DatabaseManager: {
     getDatabaseManager: () => ({
       setCredentials: () => {},
       getPublications: () => [],
     }),
   },
-  PluginManager: class {
-    constructor() {}
-    async install() {}
+  TrexDB: class {
+    constructor(_mode: string) {}
+    async execute(_sql: string, _params: any[]) {
+      return [];
+    }
   },
   userWorkers: {
     create: () => {},

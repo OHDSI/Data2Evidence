@@ -1,6 +1,6 @@
 import { Hono } from "npm:hono";
 import { logger as hlogger } from "npm:hono/logger";
-import {logger} from "./env.ts"
+import {env, logger} from "./env.ts"
 import {Plugins} from "./plugin/plugin.ts"
 import { KnexMigration } from './plugin/db.ts';
 import { DatabaseManager } from './lib/dbm.ts';
@@ -38,6 +38,18 @@ export async function initTrex() {
     addLogRoutes(app);
 
     await addGraphQL(app);
+
+    // TPM seed: install/update declared plugins before scanning
+    if (env.PLUGINS_INIT.length > 0) {
+        try {
+            const conn = new Trex.TrexDB("memory");
+            await conn.execute(`LOAD '${env.TPM_EXT_PATH}'`, []);
+            const seedResults = await conn.execute(`SELECT * FROM tpm_seed('${env.PLUGINS_PATH}')`, []);
+            logger.log(`TPM seed results: ${JSON.stringify(seedResults)}`);
+        } catch (e) {
+            logger.error(`TPM seed failed (continuing with existing plugins): ${e}`);
+        }
+    }
 
     await Plugins.initPlugins(app);
     logger.log("Added plugins");

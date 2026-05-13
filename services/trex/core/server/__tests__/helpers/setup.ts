@@ -86,7 +86,7 @@ export function restoreAxios() {
 // ── App factory ────────────────────────────────────────────────────────
 import { Hono } from "npm:hono";
 
-type RouteSet = "base" | "portal" | "log" | "dbm";
+type RouteSet = "base" | "portal" | "log" | "dbm" | "plugin";
 
 /**
  * Creates a Hono app with the requested route sets.
@@ -98,9 +98,9 @@ export async function createTestApp(opts: { routes: RouteSet[] }): Promise<Hono>
       const url = new URL(req.url);
       // Strip /d2e prefix just like the real app
       if (url.pathname.startsWith("/d2e/")) {
-        return url.pathname.replace(/^\/d2e/, "") + url.search;
+        return url.pathname.replace(/^\/d2e\//, "/");
       }
-      return url.pathname + url.search;
+      return url.pathname;
     },
   });
 
@@ -123,6 +123,11 @@ export async function createTestApp(opts: { routes: RouteSet[] }): Promise<Hono>
       }
       case "dbm": {
         const { addRoutes } = await import("../../routes/dbm.ts");
+        addRoutes(app);
+        break;
+      }
+      case "plugin": {
+        const { addRoutes } = await import("../../routes/plugin.ts");
         addRoutes(app);
         break;
       }
