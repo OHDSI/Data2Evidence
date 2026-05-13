@@ -247,9 +247,9 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
-    await page.getByText('Remove').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Remove').click()
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
-    await page.getByText(' Sort Descending').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
     //Add basic filters
     await page.getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
