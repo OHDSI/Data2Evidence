@@ -16,6 +16,7 @@ export const generateDatasetSchema = async (req: Request, res: Response, next: N
   logger.info('Option for schema: ' + schemaOption + ' with the value: ' + schemaName)
   if (schemaOption === CDMSchemaTypes.CustomCDM || schemaOption === CDMSchemaTypes.ExistingCDM) {
 
+    // Pre-dataset / infra path: no datasetId in scope, so databaseCode doubles as the cache_id alias.
     const schemaExists = await analyticsSvcApi.checkIfSchemaExists(dialect, databaseCode, schemaName)
 
     if (schemaOption === CDMSchemaTypes.CustomCDM && schemaExists) {
