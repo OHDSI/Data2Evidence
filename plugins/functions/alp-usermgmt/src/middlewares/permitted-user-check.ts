@@ -3,7 +3,7 @@ import { Container } from 'typedi'
 import { UserGroupService, UserService } from '../services'
 import { createLogger } from '../Logger'
 import { IAppRequest } from '../types'
-import { getUserGroupsCached } from './request-cache'
+import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
 import { ROLES } from '../const'
 
