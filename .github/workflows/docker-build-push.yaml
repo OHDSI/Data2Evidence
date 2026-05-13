@@ -152,7 +152,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true'))
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -260,7 +260,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     strategy:
       fail-fast: false
       matrix:
@@ -407,7 +407,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_e2e == 'true' || needs.setup.outputs.changes_plugins == 'true'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
