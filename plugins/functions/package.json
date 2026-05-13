@@ -844,7 +844,8 @@
           "jobplugins.dqd.execute",
           "d2e.webapi",
           "usermgmt.me.jupyter",
-          "gateway.dataset.shinylive.read"
+          "gateway.dataset.shinylive.read",
+          "gateway.dataset.dashboards.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -885,8 +886,7 @@
           "strategus.analysis.read",
           "strategus.results.read",
           "strategus.results.write",
-          "strategus.results.delete",
-          "gateway.dataset.dashboards.read"
+          "strategus.results.delete"
         ],
         "ETL_MAPPING_CONTRIBUTOR": [
           "dataflowmgmt.dataflow.flowRun.results.read",
@@ -2746,15 +2746,6 @@
           ]
         },
         {
-          "path": "^/gateway/api/dataset/cdm-schema/snapshot/metadata$",
-          "scopes": [
-            "gateway.dataset.dashboards.read"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
           "path": "^/gateway/api/dataset/cohorts$",
           "scopes": [
             "gateway.dataset.cohorts.read"
@@ -2981,11 +2972,7 @@
         },
         {
           "path": "^/strategus-results",
-          "scopes": [
-            "strategus.results.read",
-            "strategus.results.write",
-            "strategus.results.delete"
-          ],
+          "scopes": [],
           "httpMethods": [
             "GET",
             "HEAD",
