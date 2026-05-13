@@ -98,8 +98,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "Andromeda",
-      "RemoteRef": "v1.2.0",
-      "RemoteSha": "dec6a7dab2b654b3d46527db96b54bea0b347434"
+      "RemoteRef": "v1.2.0"
     },
     "BeastJar": {
       "Package": "BeastJar",
@@ -195,8 +194,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "BrokenAdaptiveRidge",
-      "RemoteRef": "v1.0.0",
-      "RemoteSha": "e1f91849638435b860a1bbb5d2181f50521ca93d"
+      "RemoteRef": "v1.0.0"
     },
     "Capr": {
       "Package": "Capr",
@@ -249,8 +247,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "Capr",
-      "RemoteRef": "main",
-      "RemoteSha": "335bf37fb5a2fcba6c9c68a83705d847430c08fa"
+      "RemoteRef": "v2.1.0"
     },
     "Characterization": {
       "Package": "Characterization",
@@ -366,8 +363,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "CohortDiagnostics",
-      "RemoteRef": "main",
-      "RemoteSha": "fc4ad94e47d80da583d6cbede94e563d1c13330e",
+      "RemoteRef": "v3.4.2",
       "Remotes": "ohdsi/OhdsiShinyModules"
     },
     "CohortExplorer": {
@@ -461,8 +457,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "CohortGenerator",
-      "RemoteRef": "v0.11.2",
-      "RemoteSha": "fc286833dde208cbe2ad2e0f1d20a21827be107f"
+      "RemoteRef": "v0.11.2"
     },
     "CohortIncidence": {
       "Package": "CohortIncidence",
@@ -510,12 +505,11 @@
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "CohortIncidence",
       "RemoteRef": "v4.0.0",
-      "RemoteSha": "ac147182ced2461d515041b385962062309c473f",
       "Remotes": "ohdsi/Eunomia"
     },
     "CohortMethod": {
       "Package": "CohortMethod",
-      "Version": "5.5.2",
+      "Version": "5.5.2-0.0.1",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "New-User Cohort Method with Large Scale Propensity and Outcome Models",
@@ -579,8 +573,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "CohortMethod",
-      "RemoteRef": "879efc63277a6abfffd166bb255d93dfd4c4837d",
-      "RemoteSha": "879efc63277a6abfffd166bb255d93dfd4c4837d"
+      "RemoteRef": "v5.5.2-0.0.1"
     },
     "RPostgres": {
       "Package": "RPostgres",
@@ -738,8 +731,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "Cyclops",
-      "RemoteRef": "v3.6.0",
-      "RemoteSha": "cd5859f9d7e658d50a30a5d98783e860bc3bc51a"
+      "RemoteRef": "v3.6.0"
     },
     "DBI": {
       "Package": "DBI",
@@ -880,8 +872,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "DataQualityDashboard",
-      "RemoteRef": "main",
-      "RemoteSha": "dc09e877b7d48fc0ec6747ce33d2d881e92b0fb3"
+      "RemoteRef": "v2.8.0"
     },
     "DatabaseConnector": {
       "Package": "DatabaseConnector",
@@ -943,8 +934,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "497c24aaf80c1677c0f263e20014372305547d32",
-      "RemoteSha": "497c24aaf80c1677c0f263e20014372305547d32"
+      "RemoteRef": "v6.3.2-0.0.1"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",
@@ -990,8 +980,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "DeepPatientLevelPrediction",
-      "RemoteRef": "main",
-      "RemoteSha": "bce1469b6f125e273a1d3c4e32c5fe13db981b8c"
+      "RemoteRef": "v2.2.0"
     },
     "Deriv": {
       "Package": "Deriv",
@@ -1096,8 +1085,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "EnsemblePatientLevelPrediction",
-      "RemoteRef": "main",
-      "RemoteSha": "4e37168b4136c1cb58a5dd898b8c604bf82eafe8",
+      "RemoteRef": "v1.0.2",
       "Remotes": "ohdsi/PatientLevelPrediction, ohdsi/FeatureExtraction, ohdsi/Eunomia, ohdsi/ResultModelManager"
     },
     "Eunomia": {
@@ -1394,7 +1382,6 @@
       "RemoteUsername": "OHDSI",
       "RemoteRepo": "Hades",
       "RemoteRef": "v1.18.0",
-      "RemoteSha": "bb8fa1a97c2e0c20902d6ff64ff9b0ec61437208",
       "Remotes": "ohdsi/BigKnn, ohdsi/ROhdsiWebApi, ohdsi/EnsemblePatientLevelPrediction, ohdsi/CohortDiagnostics, ohdsi/CohortMethod, ohdsi/SelfControlledCaseSeries, ohdsi/SelfControlledCohort, ohdsi/PatientLevelPrediction, ohdsi/MethodEvaluation, ohdsi/OhdsiSharing, ohdsi/PhenotypeLibrary, ohdsi/PheValuator, ohdsi/Hydra, ohdsi/Capr, ohdsi/DeepPatientLevelPrediction, ohdsi/OhdsiShinyModules, ohdsi/ShinyAppBuilder, ohdsi/DataQualityDashboard, ohdsi/Keeper, ohdsi/CohortIncidence, ohdsi/Strategus"
     },
     "Hydra": {
@@ -1726,8 +1713,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "OhdsiReportGenerator",
-      "RemoteRef": "0d8107d5e156a92ee700b62b511fef649042151c",
-      "RemoteSha": "0d8107d5e156a92ee700b62b511fef649042151c"
+      "RemoteRef": "v2.0.2"
     },
     "OhdsiSharing": {
       "Package": "OhdsiSharing",
@@ -1866,8 +1852,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "OhdsiShinyModules",
-      "RemoteRef": "db03f2a2216e564abda5ff3713477999e8d8e941",
-      "RemoteSha": "db03f2a2216e564abda5ff3713477999e8d8e941"
+      "RemoteRef": "v3.4.0"
     },
     "PRROC": {
       "Package": "PRROC",
@@ -2005,8 +1990,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "PatientLevelPrediction",
-      "RemoteRef": "main",
-      "RemoteSha": "bd220e32778d6998bc5f2751cc8403cbd0720a25"
+      "RemoteRef": "v6.5.0"
     },
     "PheValuator": {
       "Package": "PheValuator",
@@ -2054,8 +2038,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "PheValuator",
-      "RemoteRef": "main",
-      "RemoteSha": "81192a2d424c0589dd20febb0f904f02a9545032",
+      "RemoteRef": "v2.2.15"
       "Remotes": "ohdsi/PatientLevelPrediction, ohdsi/FeatureExtraction, ohdsi/ROhdsiWebApi, ohdsi/Eunomia, ohdsi/CohortGenerator"
     },
     "PhenotypeLibrary": {
@@ -2095,8 +2078,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "PhenotypeLibrary",
-      "RemoteRef": "main",
-      "RemoteSha": "bf0180d522382c733e50b14a0ba55434508cc90b"
+      "RemoteRef": "v3.36.0"
     },
     "R6": {
       "Package": "R6",
@@ -2561,8 +2543,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "SelfControlledCaseSeries",
-      "RemoteRef": "main",
-      "RemoteSha": "4788b58b47e0dc846700b09023dc32033ebfb00e"
+      "RemoteRef": "v6.1.0"
     },
     "SelfControlledCohort": {
       "Package": "SelfControlledCohort",
@@ -2817,8 +2798,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "darwin-eu",
       "RemoteRepo": "TreatmentPatterns",
-      "RemoteRef": "v3.1.1",
-      "RemoteSha": "7ac1b192d0a217eb6887a61b2ba7f2975eb19724"
+      "RemoteRef": "v3.1.1"
     },
     "V8": {
       "Package": "V8",
@@ -8742,8 +8722,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "rstudio",
       "RemoteRepo": "reticulate",
-      "RemoteRef": "v1.41.0",
-      "RemoteSha": "a56c309dc6324d02c9c17dab23a36fecc51134ed"
+      "RemoteRef": "v1.41.0"
     },
     "rlang": {
       "Package": "rlang",
@@ -11019,8 +10998,8 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "Strategus_d2e",
-      "RemoteRef": "72ae2cb9f377601f611f1c9a901514a31d51f885",
-      "RemoteSha": "72ae2cb9f377601f611f1c9a901514a31d51f885",
+      "RemoteRef": "a1918cf13574537180b11f9bc5117ed0f176eab0",
+      "RemoteSha": "a1918cf13574537180b11f9bc5117ed0f176eab0",
       "Remotes": "darwin-eu/CohortSurvival, darwin-eu/PatientProfiles, darwin-eu/omopgenerics, darwin-eu/visOmopResults, darwin-eu/CDMConnector, ohdsi/Characterization, ohdsi/CohortDiagnostics, ohdsi/CohortGenerator, ohdsi/CohortIncidence, ohdsi/CohortMethod, ohdsi/PatientLevelPrediction, ohdsi/ResultModelManager, ohdsi/SelfControlledCaseSeries"
     }
   }
