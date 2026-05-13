@@ -29,6 +29,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
     try:
         dataset_id = dataset.get("id")
         database_code = dataset.get("databaseCode")
+        cache_id = dataset.get("cacheId")
         schema_name = dataset.get("schemaName")
     except KeyError as ke:
         missing_key = ke.args[0]
@@ -44,7 +45,8 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
 
         try:
             dbdao = DBDao(use_cache_db=use_cache_db,
-                        database_code=database_code)
+                        database_code=database_code,
+                        cache_id=cache_id)
         except Exception as e:
             logger.error(e)
             return

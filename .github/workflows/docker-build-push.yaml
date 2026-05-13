@@ -152,7 +152,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true'))
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -260,7 +260,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     strategy:
       fail-fast: false
       matrix:
@@ -407,7 +407,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_e2e == 'true' || needs.setup.outputs.changes_plugins == 'true'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -639,11 +639,12 @@ jobs:
         run: |
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
           for i in $(seq 1 60); do
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
               echo "webapi-init completed successfully"
               break
             fi
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -qE "Exited \([1-9]"; then
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
               echo "webapi-init failed!"
               docker logs d2e-webapi-init || true
               exit 1
