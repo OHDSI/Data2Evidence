@@ -53,9 +53,15 @@ export class DatasetQueryService {
 
   async getDataset(id: string): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns();
-    // Support lookup by both UUID id and tokenDatasetCode
+    // Lookup supports UUID id, sanitized cache_id (analytics-svc passes this on
+    // the CDM-version path), or tokenDatasetCode.
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const whereClause = isUuid ? "dataset.id = :id" : "dataset.tokenDatasetCode = :id";
+    const isCacheId = /^_?[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}$/i.test(id);
+    const whereClause = isUuid
+      ? "dataset.id = :id"
+      : isCacheId
+        ? "dataset.cacheId = :id"
+        : "dataset.tokenDatasetCode = :id";
 
     const dataset = await this.datasetRepo
       .createQueryBuilder("dataset")
