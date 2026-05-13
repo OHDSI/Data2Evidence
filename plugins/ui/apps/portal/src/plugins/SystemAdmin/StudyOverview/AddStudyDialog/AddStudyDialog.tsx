@@ -485,9 +485,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dialect,
       paConfigId,
       visibilityStatus,
-
-      cacheDatasetName,
-      cacheDatasetType,
     } = formData;
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
@@ -520,8 +517,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       attributes: [],
       tags: [],
       dashboards: [],
-      cacheDatasetName,
-      cacheDatasetType,
     };
 
     try {
@@ -623,7 +618,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   databaseCode: schemaOption === SchemaTypes.FHIR ? FHIR_DB_CODE : "",
                   dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
                   type: newType,
-                  cacheDatasetType: DatasetMap[newType][0],
                 });
               }}
               inputProps={{
