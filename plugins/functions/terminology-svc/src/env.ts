@@ -9,6 +9,12 @@ function initEnv(__env) {
 
     HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("rerank"),
 
+    TREX__SQL__HOST: z.string().optional(),
+    TREX__SQL__PORT: z.string().optional(),
+    TREX__SQL__USER: z.string().optional(),
+    TREX__SQL__PASSWORD: z.string().optional(),
+    TREX__SQL__DBNAME: z.string().optional(),
+
     PROJECT_NAME: z.string(),
   
     SERVICE_ROUTES: z

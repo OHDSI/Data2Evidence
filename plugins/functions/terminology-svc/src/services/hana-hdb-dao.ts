@@ -1,4 +1,5 @@
 import * as hdb from "hdb";
+import pg from "pg";
 import { decode } from "jsonwebtoken";
 import {
   Filters,
@@ -71,61 +72,65 @@ export class HanaHDBDao {
     }
   }
 
-  // Option A: raw DuckDB session for the cache side of hybrid search.
-  // For HANA datasets, dbm.getConnection(databaseCode, ...) routes to the
-  // HANA engine (dialect=hana in trex.db), so DuckDB SQL would dispatch to
-  // HanaDB and fail. The cache is a DuckDB file that initTrex ATTACHes into
-  // the shared in-memory session at startup under the alias <databaseCode>
-  // (services/trex/core/server/index.ts:57-76), so query the memory DB and
-  // qualify table refs with that alias.
+  // Option 2: connect to Trex's pgwire endpoint (port 5433). pgwire serves
+  // the shared DuckDB worker pool, which has the HANA cache file ATTACHed at
+  // startup as alias "<databaseCode>" (services/trex/core/server/index.ts:57-76).
+  // Defensive re-ATTACH below in case the pool worker that handles this
+  // pgwire session doesn't share the startup-session catalog. SQL must
+  // qualify table refs as "<databaseCode>"."<schemaName>"."<table>" and use
+  // $1, $2, ... placeholders (not "?") since pg.Client uses extended-query
+  // protocol with numbered binds.
   private getTrexConnection = async () => {
-    // Option A: open an in-memory DuckDB session and ATTACH the cache file
-    // ourselves. initTrex also ATTACHes at startup, but each TrexDB instance
-    // acquires its own worker (op_acquire_worker in trex_lib.js), so the
-    // startup catalog isn't visible here. SQL must qualify table refs with
-    // the <databaseCode> alias.
-    // const conn = new Trex.TrexDB("memory");
-    // await conn.execute(
-    //   `ATTACH IF NOT EXISTS '/usr/src/data/cache/${this.databaseCode}.db' AS "${this.databaseCode}"`,
-    //   [],
-    // );
-    // return {
-    //   query: async (sql: string, params: any[] = []) => {
-    //     const res = await conn.execute(sql, params);
-    //     return { rows: res ?? [], rowCount: res?.length ?? 0 };
-    //   },
-    //   end: () => conn.close(),
-    // };
-
-    // Original dbm.getConnection-based version. Kept for reference — it
-    // routed to the HANA engine for HANA datasets, which can't run DuckDB
-    // hybrid SQL (HanaDB.execute rejected "?" parameter binding).
-    const dbm = Trex.databaseManager();
-    const conn = dbm.getConnection(
-      this.databaseCode,
-      this.schemaName,
-      this.vocabSchemaName,
-      this.resultsSchemaName,
-      {
-        duckdb: (e: unknown) => e,
-        hana: (e: unknown) => e,
-      },
+    const client = new pg.Client({
+      host: env.TREX__SQL__HOST,
+      port: Number(env.TREX__SQL__PORT),
+      user: env.TREX__SQL__USER,
+      password: env.TREX__SQL__PASSWORD,
+      database: env.TREX__SQL__DBNAME,
+    });
+    await client.connect();
+    await client.query(
+      `ATTACH IF NOT EXISTS '/usr/src/data/cache/${this.databaseCode}.db' AS "${this.databaseCode}"`,
     );
     return {
-      query: (sql: string, params: any[] = []) =>
-        new Promise<{ rows: any[]; rowCount: number }>((resolve, reject) => {
-          conn.execute(
-            sql,
-            params.map((e) => ({ value: e })),
-            (err: any, res: any) => {
-              if (err) return reject(err);
-              resolve({ rows: res, rowCount: res.length ?? 0 });
-            },
-          );
-        }),
-      end: () => conn.close(),
+      query: async (sql: string, params: any[] = []) => {
+        const res = await client.query(sql, params);
+        return { rows: res.rows, rowCount: res.rowCount ?? 0 };
+      },
+      end: () => client.end(),
     };
   };
+
+  // Original dbm.getConnection-based version. Kept for reference — it routed
+  // to the HANA engine for HANA datasets, which can't run DuckDB hybrid SQL
+  // (HanaDB.execute rejected "?" parameter binding).
+  // private getTrexConnection = () => {
+  //   const dbm = Trex.databaseManager();
+  //   const conn = dbm.getConnection(
+  //     this.databaseCode,
+  //     this.schemaName,
+  //     this.vocabSchemaName,
+  //     this.resultsSchemaName,
+  //     {
+  //       duckdb: (e: unknown) => e,
+  //       hana: (e: unknown) => e,
+  //     },
+  //   );
+  //   return {
+  //     query: (sql: string, params: any[] = []) =>
+  //       new Promise<{ rows: any[]; rowCount: number }>((resolve, reject) => {
+  //         conn.execute(
+  //           sql,
+  //           params.map((e) => ({ value: e })),
+  //           (err: any, res: any) => {
+  //             if (err) return reject(err);
+  //             resolve({ rows: res, rowCount: res.length ?? 0 });
+  //           },
+  //         );
+  //       }),
+  //     end: () => conn.close(),
+  //   };
+  // };
 
   private asyncExec(
     client: any,
@@ -272,10 +277,10 @@ export class HanaHDBDao {
                  f.fts_score,
                  array_cosine_similarity(
                    e.concept_name_embedding,
-                   string_split(?, ',')::FLOAT[384]
+                   string_split('${embedding}', ',')::FLOAT[384]
                  ) AS embd_score
                FROM fts_input f
-               JOIN "${this.databaseCode}"."${this.schemaName}".concept_embedding e USING (concept_id)
+               JOIN "${this.databaseCode}"."${this.schemaName}".concept_embeddings e USING (concept_id)
              ),
              stats AS (
                SELECT
@@ -299,13 +304,9 @@ export class HanaHDBDao {
         SELECT concept_id
         FROM scored
         ORDER BY hybrid_score DESC NULLS LAST
-        LIMIT ? OFFSET ?
+        LIMIT ${rowsPerPage} OFFSET ${offset}
       `;
-      const ranked = await trexClient.query(duckdbSql, [
-        embedding,
-        rowsPerPage,
-        offset,
-      ]);
+      const ranked = await trexClient.query(duckdbSql);
       const rankedIds: number[] = ranked.rows.map((r: any) => r.concept_id);
       if (rankedIds.length === 0) return { hits: [], totalHits };
 
@@ -382,7 +383,7 @@ export class HanaHDBDao {
                    e.concept_name_embedding,
                    string_split(?, ',')::FLOAT[384]
                  ) AS embd_score
-               FROM "${this.databaseCode}"."${this.schemaName}".concept_embedding e
+               FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
                ORDER BY embd_score DESC
                LIMIT ${HANA_HYBRID_COSINE_TOPK}
              ),

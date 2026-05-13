@@ -75,9 +75,6 @@ export class CachedbService {
       schemaName,
       resultsSchemaName,
     } = this.datasetDB;
-    if (dialect === DatasetDialects.HANA) {
-      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
-    }
     if (this.hybridSearchConfig == undefined) {
       throw new Error("hybridSearchConfig undefined!");
     }
