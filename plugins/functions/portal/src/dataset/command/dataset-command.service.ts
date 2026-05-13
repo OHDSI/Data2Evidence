@@ -18,6 +18,8 @@ import {
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
+import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
   DatasetCodeQueryRepository,
@@ -52,6 +54,7 @@ export class DatasetCommandService {
     private readonly datasetCodeQueryRepo: DatasetCodeQueryRepository,
     private readonly requestContextService: RequestContextService,
     private readonly webApiSourceService: WebApiSourceService,
+    private readonly trexApiService: TrexApiService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
@@ -74,6 +77,12 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
+      // `insertDataset` uses TypeORM's `insert()` builder, which skips entity
+      // lifecycle hooks. Apply the cache_id default here so the persisted row
+      // matches `Dataset.applyCacheIdDefault`.
+      if (entity.cacheId == null && entity.id) {
+        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
         this.addOwner(entity, true),
@@ -126,6 +135,17 @@ export class DatasetCommandService {
 
     // Then create dataset in database
     const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
+    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
+    // doesn't supply one.
+    const cacheId = datasetDto.cacheId
+      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
 
     return result;
   }

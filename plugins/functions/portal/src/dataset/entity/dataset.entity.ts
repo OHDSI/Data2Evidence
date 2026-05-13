@@ -1,4 +1,5 @@
 import {
+  BeforeInsert,
   Column,
   Entity,
   OneToMany,
@@ -13,6 +14,14 @@ import {
   DatasetDetail,
   DatasetTag,
 } from "../entity/index.ts";
+
+// Convert a UUID into a valid SQL/DuckDB identifier:
+//   * hyphens -> underscores
+//   * leading digit -> underscore prefix
+export function sanitizeIdForCacheId(id: string): string {
+  const cleaned = id.replace(/-/g, "_");
+  return /^[0-9]/.test(cleaned) ? `_${cleaned}` : cleaned;
+}
 @Entity("dataset")
 export class Dataset extends Audit {
   @PrimaryColumn({ type: "uuid" })
@@ -32,6 +41,9 @@ export class Dataset extends Audit {
 
   @Column({ name: "database_code" })
   databaseCode: string;
+
+  @Column({ name: "cache_id", type: "varchar", nullable: true })
+  cacheId: string | null;
 
   @Column({ name: "schema_name", nullable: true })
   schemaName: string;
@@ -83,4 +95,11 @@ export class Dataset extends Audit {
     (datasetDashboard) => datasetDashboard.dataset,
   )
   dashboards: DatasetDashboard[];
+
+  @BeforeInsert()
+  applyCacheIdDefault() {
+    if (this.cacheId == null && this.id) {
+      this.cacheId = sanitizeIdForCacheId(this.id);
+    }
+  }
 }
