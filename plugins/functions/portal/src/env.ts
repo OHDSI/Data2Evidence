@@ -113,3 +113,10 @@ export const getDbCredentialsByCode = (databaseCode: string): {
 
   return null;
 };
+
+export const toUpperCaseIfHana = (str: string, dialect: string | undefined): string => {
+  if (dialect === "hana") {
+    return str.toUpperCase();
+  }
+  return str;
+}
