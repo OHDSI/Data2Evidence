@@ -466,11 +466,13 @@ sap.ui.define([
         
         if(configurations.length > 0) {
             var sIcon = MessageBox.Icon.WARNING;
-            var sMessageKey = "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_MSG";
             var deleteSelectionCount = configOverviewModel.getProperty("/deleteSelectionCount");
             var sTitleKey = deleteSelectionCount === 1
                 ? "HPH_CDM_CFG_OVERVIEW_DELETE_SINGLE_CONFIGURATION_VERSION_TITLE"
                 : "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_TITLE";
+            var sMessageKey = deleteSelectionCount === 1
+                ? "HPH_CDM_CFG_OVERVIEW_DELETE_SINGLE_CONFIGURATION_VERSION_MSG"
+                : "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_MSG";
             var sTitle = ConfigUtils.getText(sTitleKey, []);
             var sMessage = ConfigUtils.getText(sMessageKey);
                 
