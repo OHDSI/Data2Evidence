@@ -348,8 +348,7 @@ export class HanaHDBDao {
             order by score desc
           )
         `,
-        // Surround searchText with asteriks for greedy search
-        [`*${searchText}*`],
+        [`${searchText}`],
       ];
     }
   };
