@@ -230,6 +230,19 @@
               "uiFilesUrl": "https://$$FQDN$$/"
             }
           },
+                    {
+            "visible": true,
+            "type": "app",
+            "name": "Analysis",
+            "nameI18nKey": "UI_PLUGIN_ANALYSIS",
+            "route": "analysis",
+            "pluginPath": "/resources/analysis-ui/lifecycles.js",
+            "featureFlag": "strategus",
+            "defaultEnabled": true,
+            "requiredRoles": [
+              "RESEARCHER"
+            ]
+          },
           {
             "visible": true,
             "type": "app",
@@ -245,19 +258,6 @@
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
-          },
-          {
-            "visible": true,
-            "type": "app",
-            "name": "Analysis",
-            "nameI18nKey": "UI_PLUGIN_ANALYSIS",
-            "route": "analysis",
-            "pluginPath": "/resources/analysis-ui/lifecycles.js",
-            "featureFlag": "strategus",
-            "defaultEnabled": true,
-            "requiredRoles": [
-              "RESEARCHER"
-            ]
           },
           {
             "visible": true,
