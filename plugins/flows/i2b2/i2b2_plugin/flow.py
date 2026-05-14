@@ -38,11 +38,13 @@ def i2b2_plugin(options: i2b2PluginType):
 
 def create_i2b2_dataset_flow(options: i2b2PluginType):
     database_code = options.database_code
+    cache_id = options.cache_id
     schema_name = options.schema_name
     use_cache_db = options.use_cache_db
 
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  cache_id=cache_id)
     # Create schema if there is no existing schema first
     create_schema_task(dbdao, schema_name)
 
@@ -183,6 +185,7 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
     try:
         dataset_id = dataset.get("id")
         database_code = dataset.get("databaseCode")
+        cache_id = dataset.get("cacheId")
         schema_name = dataset.get("schemaName")
         data_model = dataset.get("dataModel").split(" ")[0]
     except KeyError as ke:
@@ -190,7 +193,8 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
         logger.error(f"'{missing_key} not found in dataset'")
     else:
         dbdao = DBDao(use_cache_db=use_cache_db,
-                      database_code=database_code)
+                      database_code=database_code,
+                      cache_id=cache_id)
         portal_server_api = PortalServerAPI()
 
         # check if schema exists
