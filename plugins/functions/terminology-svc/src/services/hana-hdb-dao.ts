@@ -177,25 +177,27 @@ export class HanaHDBDao {
       `getConcepts: hybrid eligible? ${isHybridEligible} (semanticRatio=${this.semanticRatio}, searchText="${searchText}", sortBy=${sortBy}, databaseCode=${this.databaseCode}, HANA_HYBRID_MODE=${env.HANA_HYBRID_MODE})`,
     );
 
-    if (isHybridEligible) {
-      if (env.HANA_HYBRID_MODE === "union") {
-        return await this.getConceptsHybridUnion(
+    const client = await this.getHanaHDBConnection();
+    try {
+      if (isHybridEligible) {
+        if (env.HANA_HYBRID_MODE === "union") {
+          return await this.getConceptsHybridUnion(
+            client,
+            pageNumber,
+            rowsPerPage,
+            searchText,
+            filters,
+          );
+        }
+        return await this.getConceptsHybridRerank(
+          client,
           pageNumber,
           rowsPerPage,
           searchText,
           filters,
         );
       }
-      return await this.getConceptsHybridRerank(
-        pageNumber,
-        rowsPerPage,
-        searchText,
-        filters,
-      );
-    }
 
-    const client = await this.getHanaHDBConnection();
-    try {
       const [hanaFtsBaseQuery, hanaFtsBaseQueryParams] =
         this.getHanaFtsBaseQuery(searchText, filters);
       const orderByClause = buildOrderByClause(
@@ -242,12 +244,12 @@ export class HanaHDBDao {
   // Hybrid mode "rerank": HANA FTS picks the candidate set, then DuckDB
   // re-orders it by a normalized blend of FTS score and embedding distance.
   private async getConceptsHybridRerank(
+    hanaClient: any,
     pageNumber: number,
     rowsPerPage: number,
     searchText: string,
     filters: Filters,
   ) {
-    const hanaClient = await this.getHanaHDBConnection();
     const trexClient = await this.getTrexConnection();
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
@@ -349,7 +351,6 @@ export class HanaHDBDao {
       console.error(error);
       throw error;
     } finally {
-      await hanaClient.end();
       await trexClient.end();
     }
   }
@@ -358,12 +359,12 @@ export class HanaHDBDao {
   // independently, FULL OUTER JOIN the two candidate sets, then blend
   // scores.
   private async getConceptsHybridUnion(
+    hanaClient: any,
     pageNumber: number,
     rowsPerPage: number,
     searchText: string,
     filters: Filters,
   ) {
-    const hanaClient = await this.getHanaHDBConnection();
     const trexClient = await this.getTrexConnection();
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
@@ -480,7 +481,6 @@ export class HanaHDBDao {
       console.error(error);
       throw error;
     } finally {
-      await hanaClient.end();
       await trexClient.end();
     }
   }

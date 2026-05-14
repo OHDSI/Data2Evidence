@@ -7,7 +7,7 @@ function initEnv(__env) {
   const envSchema = z.object({
     HANA_FTS_FUZZY: z.string().transform(Number),
 
-    HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("rerank"),
+    HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("union"),
 
     TREX__SQL__HOST: z.string().optional(),
     TREX__SQL__PORT: z.string().optional(),
