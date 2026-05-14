@@ -26,7 +26,7 @@
         <div class="axis-group axis-group--bottom">
           <div class="axis-subgroup">
             <div class="sort-button">
-              <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
+              <!-- <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div> -->
               <sortMenuButton v-if="displaySort"></sortMenuButton>
             </div>
             <xAxisColorButton
