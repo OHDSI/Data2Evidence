@@ -1184,7 +1184,7 @@ export const i18nDefault = {
     UI_PLUGIN_LOGS: "Logs",
     UI_PLUGIN_METADATA: "Metadata",
     UI_PLUGIN_NOTEBOOKS: "Notebooks",
-    UI_PLUGIN_WEBR_NOTEBOOKS: "WebR-notebooks",
+    UI_PLUGIN_WEBR_NOTEBOOKS: "Notebooks",
     UI_PLUGIN_OVERVIEW_DESCRIPTION: "Overview description",
     UI_PLUGIN_PATIENT_ANALYTICS_CONFIG: "Cohort builder config",
     UI_PLUGIN_PLUGINS: "Plugins",
