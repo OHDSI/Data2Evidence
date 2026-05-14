@@ -654,16 +654,30 @@ const getTrexDbConnection = ({
         );
 
         // Tables under the results schema (cohort, cohort_definition) aren't replicated to the DuckDB cache.
-        const sourceConnection =
-            direct_connection_suffix && trex_direct_connection_alias !== trexAlias
-                ? dbm.getConnection(
-                      trex_direct_connection_alias,
-                      analyticsCredentials.schema,
-                      analyticsCredentials.vocabSchema,
-                      analyticsCredentials.resultsSchemaName,
-                      { duckdb: parseSql }
-                  )
-                : conn;
+        // The `__srcdb` ATTACH alias isn't always registered as a separate database in Trex's
+        // databaseManager (it's an ATTACH alias on the shared DuckDB session), so
+        // `dbm.getConnection(<alias>__srcdb)` may throw. Fall back to the analytics
+        // connection in that case — DuckDB still sees the ATTACHed alias and SQL targeting
+        // `<alias>__srcdb.<schema>.<table>` resolves correctly through the same session.
+        let sourceConnection;
+        if (direct_connection_suffix && trex_direct_connection_alias !== trexAlias) {
+            try {
+                sourceConnection = dbm.getConnection(
+                    trex_direct_connection_alias,
+                    analyticsCredentials.schema,
+                    analyticsCredentials.vocabSchema,
+                    analyticsCredentials.resultsSchemaName,
+                    { duckdb: parseSql }
+                );
+            } catch (e) {
+                console.log(
+                    `getConnection for ${trex_direct_connection_alias} failed; falling back to analytics connection: ${(e as Error).message}`
+                );
+                sourceConnection = conn;
+            }
+        } else {
+            sourceConnection = conn;
+        }
 
         return { analyticsConnection: conn, sourceConnection };
     } catch (error) {
