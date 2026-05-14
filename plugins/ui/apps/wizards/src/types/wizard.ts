@@ -19,6 +19,8 @@ export interface FieldDefinition {
   isWizardField?: boolean;
   /** If true, text fields accept free text input without requiring dropdown selection */
   allowFreeText?: boolean;
+  /** If true, condition fields exclude descendant concepts by default */
+  excludeDescendantsByDefault?: boolean;
 }
 
 /**
