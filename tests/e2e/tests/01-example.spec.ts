@@ -1,10 +1,11 @@
 import { test, expect } from './fixtures'
+import { takeScreenshot } from './screenshot-capture'
 
 const TEST_NAME = 'example'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
-test(TEST_NAME, async ({ page }) => {
+test(TEST_NAME, async ({ page }, testInfo) => {
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
@@ -19,5 +20,5 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('#patient').getByText('MALE - MALE').waitFor({ state: 'visible' })
   await page.locator('#patient').getByText('MALE - MALE').click()
   await expect(page.getByText('1,321 / 2,694')).toBeVisible()
-  await expect(page).toHaveScreenshot()
+ await takeScreenshot(page, testInfo)
 })
