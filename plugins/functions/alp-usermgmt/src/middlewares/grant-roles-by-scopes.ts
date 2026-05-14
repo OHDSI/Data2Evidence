@@ -118,6 +118,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         if (autoGrantCodes.length > 0) {
           grantDatasetCodes = [...new Set([...grantDatasetCodes, ...autoGrantCodes])]
         }
+        logger.info(`Granting roles for user ${userId} for dataset codes: ${grantDatasetCodes.join(', ')}`)
 
         await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
 
@@ -191,8 +192,10 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
     const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)
     if (isGrant) {
       isResearcher = true
+      logger.info(`Granting role ${role} for dataset ${dataset.token_dataset_code} to user ${userId}`)
       await addUserToGroup(userId, group!.id)
     } else {
+      logger.info(`Revoking role ${role} for dataset ${dataset.token_dataset_code} from user ${userId}`)
       await removeUserFromGroup(userId, group!.id)
     }
   }
