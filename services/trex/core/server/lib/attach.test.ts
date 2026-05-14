@@ -63,6 +63,51 @@ Deno.test("ensureCacheAttached — skips silently when file is missing", async (
   }
 });
 
+Deno.test("ensureCacheAttached — calls exec when file is missing but createDbFileIfMissing is true", async () => {
+  const dir = makeTempCacheDir();
+  try {
+    const calls: string[] = [];
+    const exec: ExecFn = (sql) => { calls.push(sql); };
+    await ensureCacheAttached("new_db", { cacheDir: dir, exec, createDbFileIfMissing: true });
+    assertEquals(calls.length, 1);
+    assertEquals(
+      calls[0],
+      `ATTACH IF NOT EXISTS '${dir}/new_db.db' AS new_db`,
+    );
+  } finally {
+    Deno.removeSync(dir, { recursive: true });
+  }
+});
+
+Deno.test("ensureCacheAttached — defaults createDbFileIfMissing to false", async () => {
+  const dir = makeTempCacheDir();
+  try {
+    const calls: string[] = [];
+    const exec: ExecFn = (sql) => { calls.push(sql); };
+    await ensureCacheAttached("missing", { cacheDir: dir, exec });
+    assertEquals(calls.length, 0);
+  } finally {
+    Deno.removeSync(dir, { recursive: true });
+  }
+});
+
+Deno.test("ensureCacheAttached — calls exec when file exists regardless of createDbFileIfMissing", async () => {
+  const dir = makeTempCacheDir();
+  try {
+    Deno.writeFileSync(`${dir}/existing.db`, new Uint8Array());
+    const calls: string[] = [];
+    const exec: ExecFn = (sql) => { calls.push(sql); };
+    await ensureCacheAttached("existing", { cacheDir: dir, exec, createDbFileIfMissing: false });
+    assertEquals(calls.length, 1);
+    assertEquals(
+      calls[0],
+      `ATTACH IF NOT EXISTS '${dir}/existing.db' AS existing`,
+    );
+  } finally {
+    Deno.removeSync(dir, { recursive: true });
+  }
+});
+
 Deno.test("ensureCacheAttached — throws on invalid identifier without calling exec", async () => {
   const calls: string[] = [];
   const exec: ExecFn = (sql) => { calls.push(sql); };
