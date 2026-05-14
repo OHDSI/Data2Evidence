@@ -728,7 +728,6 @@
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
           "dbSvc.schema.delete",
-          "gateway.dashboardGate.register",
           "gateway.dataset.dashboards.read",
           "gateway.dataset.cohorts.read",
           "gateway.dataset.create",
@@ -767,9 +766,7 @@
           "mlflow",
           "d2e.container.logs.read"
         ],
-        "ALP_DASHBOARD_VIEWER": [
-          "gateway.dashboardGate.content"
-        ],
+        "ALP_DASHBOARD_VIEWER": [],
         "TENANT_VIEWER": [
           "usermgmt.group.read",
           "usermgmt.me",
@@ -2063,24 +2060,6 @@
           ],
           "httpMethods": [
             "GET"
-          ]
-        },
-        {
-          "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
-          "scopes": [
-            "gateway.dashboardGate.content"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dashboard-gate/register",
-          "scopes": [
-            "gateway.dashboardGate.register"
-          ],
-          "httpMethods": [
-            "POST"
           ]
         },
         {
