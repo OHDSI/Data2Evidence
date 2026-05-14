@@ -249,10 +249,25 @@ export default {
       this.renderChart()
     },
     getBarChartType() {
-      this.renderChart()
+      // Plotly.react does not reliably reset trace-level (marker.opacity, width, offset) or
+      // layout-level (bargap, barmode, xaxis.type/range/autorange, xaxis2, yaxis.rangemode)
+      // properties set by mode apply() functions. Tear down and rebuild on every chart type change
+      // so each chart starts from a clean Plotly state. setupPlotly already renders via newPlot
+      // using the canonical bar traces in chartData.traces, so a follow-up renderChart would
+      // race Plotly.react against newPlot's internal staging (manifests as the xaxis2/scatter
+      // overlays being dropped on the first overlay-curve toggle after a mode dance).
+      if (stackBarChart) {
+        Plotly.purge(stackBarChart)
+      }
+      this.setupPlotly()
     },
     getShowDistributionOverlay() {
-      this.renderChart()
+      // Toggling the overlay adds/removes xaxis2 and scatter traces; Plotly.react does not
+      // pick up newly added layout axes reliably, so rebuild for the same reason as above.
+      if (stackBarChart) {
+        Plotly.purge(stackBarChart)
+      }
+      this.setupPlotly()
     },
   },
   computed: {
@@ -485,8 +500,13 @@ export default {
     reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
       if (!targetElement || !this.chartData?.traces) return
       const layout = this.buildPlotlyLayout(resetAxes)
-      this.applyChartType(this.chartData.traces, layout)
-      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
+      // Mode apply() functions mutate traces (distribution replaces them with KDE scatter;
+      // overlay/partialOverlaySolid tweak marker/width/offset and push overlay traces). Clone
+      // so this.chartData.traces stays the canonical bar-trace form that setupPlotly and
+      // subsequent renders can rely on.
+      const tracesForPlotly = JSON.parse(JSON.stringify(this.chartData.traces))
+      this.applyChartType(tracesForPlotly, layout)
+      Plotly.react(targetElement, tracesForPlotly, layout, this.config)
     },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
