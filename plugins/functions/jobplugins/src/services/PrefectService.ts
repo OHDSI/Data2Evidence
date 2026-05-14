@@ -8,6 +8,7 @@ import {
 } from "../utils/DataflowParser.ts";
 import { AnalysisService } from "./AnalysisService.ts";
 import { TransformationService } from "./DataTransformationService.ts";
+import env from "../env.ts";
 
 export class PrefectService {
   private dataflowService;
@@ -65,7 +66,7 @@ export class PrefectService {
       studyId,
       revision.canvas.name,
       JSON.stringify(prefectParams),
-      databaseCode,
+      env.TREX__STRATEGUS_RESULTS_DB_NAME,
       "analysis-ui",
     );
 
@@ -141,7 +142,7 @@ export class PrefectService {
       options["studyId"],
       options["notebookName"],
       json_graph["analysisSpecification"],
-      databaseCode,
+      env.TREX__STRATEGUS_RESULTS_DB_NAME,
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(

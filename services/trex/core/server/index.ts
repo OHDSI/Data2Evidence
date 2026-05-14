@@ -1,6 +1,6 @@
 import { Hono } from "npm:hono";
 import { logger as hlogger } from "npm:hono/logger";
-import {logger} from "./env.ts"
+import {env, logger} from "./env.ts"
 import {Plugins} from "./plugin/plugin.ts"
 import { KnexMigration } from './plugin/db.ts';
 import { DatabaseManager } from './lib/dbm.ts';
@@ -96,12 +96,13 @@ export async function initTrex() {
           logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
         }
       }
+      logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
       try {
-        await ensureAttached({ cacheIds: ["strategus_results"] }, { exec: attachExec, createDbFileIfMissing: true });
+        await ensureAttached({ cacheIds: [env.TREX__STRATEGUS_RESULTS_DB_NAME] }, { exec: attachExec, createDbFileIfMissing: true });
+        logger.log(`[attach-startup] strategus_results attach successful`);
       } catch (error) {
         logger.log(`[attach-startup] cache strategus_results attach failed: ${(error as Error).message}`);
       }
-      logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
     } catch (e) {
       logger.log(`[attach-startup] failed: ${(e as Error).message}`);
     }
