@@ -80,6 +80,5 @@ WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=true
 
-# USER docker
+USER docker
