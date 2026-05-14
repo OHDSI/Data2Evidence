@@ -133,6 +133,21 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
 
+      - name: Wait for services to be ready before setup
+        if: success() || failure()
+        run: |
+          for i in $(seq 1 60); do
+            NOT_READY=$(docker ps --format '{{.Names}},{{.Status}}' | grep -E 'health: starting|unhealthy' || true)
+            if [ -z "$NOT_READY" ]; then
+              echo "All services healthy after ${i} checks"
+              break
+            fi
+            echo "Waiting for services to become healthy (attempt ${i}/60)..."
+            echo "$NOT_READY"
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+
       - name: Setup HTTP Test Env
         if: success() || failure()
         uses: nick-fields/retry@v3
