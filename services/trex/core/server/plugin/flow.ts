@@ -85,10 +85,10 @@ export async function addPlugin(value: any) {
 						tags: f.tags,
 					};
 
-					// If plugin name is hana_load_plugin then add additional command to job variables
-					if (f.name === "hana_load_plugin") {
-						body.job_variables.command =
-						"bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'";
+					
+					// If flow has a command defined, add it to job variables
+					if (f.command) {
+						body.job_variables.command = f.command;
 					}
 
 					if(f.parameter_openapi_schema) body["parameter_openapi_schema"] = f.parameter_openapi_schema
