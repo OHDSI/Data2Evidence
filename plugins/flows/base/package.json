@@ -124,6 +124,7 @@
         {
           "name": "create_cachedb_file_plugin",
           "entrypoint": "flows.create_cachedb_file_plugin.flow.create_cachedb_file_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "concurrencyLimitOptions": [
             {
               "tag": "table-level-concurrency",
