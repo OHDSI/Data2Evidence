@@ -168,6 +168,5 @@ COPY --chown=docker:docker --chmod=711 ./hades /app/flows/
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=false
 
 USER docker

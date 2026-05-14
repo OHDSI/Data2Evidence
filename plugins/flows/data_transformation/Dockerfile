@@ -171,6 +171,5 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=false
 
 USER docker
