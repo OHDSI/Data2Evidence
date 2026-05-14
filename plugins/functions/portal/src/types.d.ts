@@ -62,6 +62,7 @@ export interface IDatasetDto {
   databaseCode: string;
   cacheId: string | null;
   schemaName: string;
+  dialect: DatabaseDialect;
   vocabSchemaName: string;
   resultsSchemaName: string;
   dataModel: string;
