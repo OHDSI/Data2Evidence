@@ -81,6 +81,10 @@ jobs:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
       
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
       - name: Update version
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
@@ -118,10 +122,6 @@ jobs:
           package-type: "npm"
           min-versions-to-keep: 3
           delete-only-pre-release-versions: "true"
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
       - name: bun install
         run: bun install
       - name: Build executables

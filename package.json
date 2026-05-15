@@ -42,8 +42,8 @@
     "inittestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js test",
     "removetestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal",
-    "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist",
-    "prepare": "npm run build:ts"
+    "build:ts": "bun build ./scripts/cli.ts --outdir ./scripts/dist --target node --format=cjs --asset-naming [name].[ext]",
+    "prepare": "bun run build:ts"
   },
   "optionalDependencies": {
     "fast-csv": "5.0.2",
