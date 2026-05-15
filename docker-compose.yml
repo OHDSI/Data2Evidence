@@ -45,7 +45,7 @@ x-envs:
     REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
-    TREX__SQL__PORT: 5433
+    TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:-pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
@@ -178,6 +178,7 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:-pencil}
+      TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
