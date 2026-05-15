@@ -75,6 +75,8 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # Resolve to absolute path so R uses the same directory regardless of its working directory
+    achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         achilles_params.schemaName = f"{options.databaseCode}.{options.schemaName}"
@@ -278,7 +280,9 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             )
         
 
-    except RRuntimeError:
+    except RRuntimeError as e:
+        logger.error(f"RRuntimeError from Achilles: {e}")
+
         error_file_name = "errorReportR.txt"
 
         error_message = (
