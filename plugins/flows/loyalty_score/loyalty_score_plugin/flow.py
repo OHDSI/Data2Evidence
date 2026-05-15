@@ -45,6 +45,7 @@ def calculate_loyalty_score(options:CalculateConfig):
     index_date = options.index_date
     lookback_years =  options.lookback_years
     database_code = options.database_code
+    cache_id = options.cache_id
     schema_name = options.schema_name
     result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
@@ -52,7 +53,8 @@ def calculate_loyalty_score(options:CalculateConfig):
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  cache_id=cache_id)
     if not dbdao.check_schema_exists(result_schema_name):
         logger.info(f"Schema {result_schema_name} does not exist, created")
         dbdao.create_schema(result_schema_name)
@@ -80,6 +82,7 @@ def retrain_algo(options:RetrainConfig):
     train_years =  options.train_years
     return_years = options.return_years
     database_code = options.database_code
+    cache_id = options.cache_id
     schema_name = options.schema_name
     result_schema_name = f"{schema_name}_results"
     use_cache_db = options.use_cache_db
@@ -88,7 +91,8 @@ def retrain_algo(options:RetrainConfig):
     train_st = index_datetime.replace(year=index_datetime.year-train_years-return_years).strftime("%Y-%m-%d")
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
     dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+                  database_code=database_code,
+                  cache_id=cache_id)
     if not dbdao.check_schema_exists(result_schema_name):
         logger.info(f"Schema {result_schema_name} does not exist, created")
         dbdao.create_schema(result_schema_name)

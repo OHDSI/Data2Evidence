@@ -1,91 +1,60 @@
-name: HTTP Tests HANA
-permissions:
-  contents: read
+name: _test-http-hana (reusable)
 
 on:
-  pull_request:
-    types: [opened, ready_for_review, reopened, synchronize]
-  merge_group:
-  push:
-    branches:
-      - develop
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      attempt:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      run_tag:
+        required: true
+        type: string
+      reg_url:
+        required: true
+        type: string
+      prepull_flow_images:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REG_URL: ${{ inputs.reg_url }}
+  PREPULL_FLOW_IMAGES: ${{ inputs.prepull_flow_images }}
 
 jobs:
-  pick_runner:
-    runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    outputs:
-      random_runner: ${{ steps.shuffle.outputs.random_runner }}
-    steps:
-      - id: shuffle
-        run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
-
-  check_file_changes:
-    runs-on: ubuntu-latest
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    outputs:
-      changes: ${{ steps.file_changes.outputs.src }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - uses: dorny/paths-filter@v3
-        id: file_changes
-        with:
-          initial-fetch-depth: 1
-          filters: |
-            src:
-              - "plugins/functions/_shared/alp-libs/nodejs/**"
-              - "plugins/functions/analytics-svc/**"
-              - "plugins/functions/bookmark-svc/**"
-              - "plugins/functions/cdw-svc/**"
-              - "plugins/functions/mri-pa-config/**"
-              - "plugins/functions/mri-pg-config/**"
-              - "plugins/functions/query-gen-svc/**"
-              - "services/mri-db/**"
-              - "services/alp-logto/**"
-              - "services/alp-pg-management/**"
-              - "package.json"
-              - "docker-compose.yml"
-              - "scripts/**"
-              - "tests/backend_integration_tests/**"
-              - ".github/workflows/functions-http-tests-hana.yml"
-
-  run-http-tests:
-    needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && needs.check_file_changes.outputs.changes == 'true' ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
+  test:
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 80
     env:
-      TESTSCHEMA: HTTP_${{github.run_id}}
+      DOCKER_TAG_NAME: ${{ inputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
+      TESTSCHEMA: HTTP_${{ github.run_id }}_${{ inputs.attempt }}
       isTestEnv: "true"
       isHttpTestRun: "true"
-      HANASERVER: localhost # az-hn-db/SG_FQDN
+      HANASERVER: localhost
       HANASERVER_INT: hana
-      HDIPORT: 39041 # az-hn-db/DB Port
-      HDIPW: TestPW1234 # az-hn-db/Admin password
-      HDIUSER: SYSTEM # az-hn-db/Admin user
-      TESTPORT: 39041 # az-hn-db/DB Port
-      TESTSYSTEMPW: TestPW1234 # az-hn-db/Admin password
+      HDIPORT: 39041
+      HDIPW: TestPW1234
+      HDIUSER: SYSTEM
+      TESTPORT: 39041
+      TESTSYSTEMPW: TestPW1234
       PROJECT_NAME: alp
       CADDY__CONFIG: ./deploy/caddy-config
       ENV_TYPE: local
       DOTENV_FILE: .env.local
       D2E_RESOURCE_LIMIT: 1.0
       HTTPTEST_DB_DIALECT: "hana"
-
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
           tool-cache: true
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
@@ -97,6 +66,13 @@ jobs:
         with:
           submodules: recursive
           clean: false
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Print env vars
         run: |
@@ -115,18 +91,15 @@ jobs:
 
       - name: npm install
         if: success() || failure()
-        run: |
-          npm install
+        run: npm install
 
       - name: Initialise d2e
         if: success() || failure()
-        id: init
         run: |
           init_choice=y node ./scripts/dist/cli.js -e -v develop --env-file .env.local -p 41100 -d ./plugins/functions init
 
       - name: Initialise HANA
         if: success() || failure()
-        id: inithana
         run: |
           timeout 5m bash -c "HANAPW=${HDIPW} ACCEPT_SAP_LICENSE=true node ./scripts/dist/cli.js -e -v develop --env-file .env.local --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
 
@@ -138,17 +111,21 @@ jobs:
           echo >> $DOTENV_FILE
           echo "NODE_ENV=production" >> $DOTENV_FILE
 
-      - name: Build system services
+      - name: Pre-pull flow images
         run: |
-          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 build
+          for img in $PREPULL_FLOW_IMAGES; do
+            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
+          done
+
+      - name: Pull docker compose images
+        run: |
+          node ./scripts/dist/cli.js -v develop -e -n .env.local --hana -d ./plugins/functions -p 41100 pull
 
       - name: Manipulate configuration
-        run: |
-          yq -i '.networks.alp.external=true' docker-compose.yml
+        run: yq -i '.networks.alp.external=true' docker-compose.yml
 
       - name: Create network for external to use
-        run: |
-          docker network inspect alp > /dev/null || docker network create alp
+        run: docker network inspect alp > /dev/null || docker network create alp
 
       - name: Start system services
         run: |
@@ -159,11 +136,12 @@ jobs:
           curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
           for i in $(seq 1 60); do
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
               echo "webapi-init completed successfully"
               break
             fi
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
               echo "webapi-init failed!"
               docker logs ${PROJECT_NAME:-alp}-webapi-init || true
               exit 1
@@ -172,10 +150,8 @@ jobs:
             sleep 5
           done
 
-
       - name: Check status of docker containers
-        run: |
-          docker ps -a
+        run: docker ps -a
 
       - name: Setup Test DB
         run: |
@@ -184,18 +160,15 @@ jobs:
 
       - name: Login to logto and get Bearer token and sub
         run: |
-          # Get sign in page
           response=$(curl -ik "https://localhost:41100/oidc/auth?redirect_uri=https%3A%2F%2Flocalhost%3A41100%2Fd2e%2Fportal%2Flogin-callback&client_id=$LOGTO__D2E_APP__CLIENT_ID&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256")
           printf "%s\n" "$response"
 
-          # Extract cookies
           interaction_cookie=$(printf "%s\n" "$response" | grep _interaction= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
           interaction_sig_cookie=$(printf "%s\n" "$response" | grep _interaction.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
           interaction_resume_cookie=$(printf "%s\n" "$response" | grep _interaction_resume= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
           interaction_resume_sig_cookie=$(printf "%s\n" "$response" | grep _interaction_resume.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
           logto_cookie=$(printf "%s\n" "$response" | grep _logto= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
 
-          # Sign in
           response=$(curl -ik --request PUT 'https://localhost:41100/api/interaction' \
               --header 'content-type: application/json' \
               --header 'Referer: https://localhost:41100/sign-in' \
@@ -209,7 +182,6 @@ jobs:
           }')
           printf "%s\n" "$response"
 
-          # Submit sign in page
           response=$(curl -ik --request POST 'https://localhost:41100/api/interaction/submit' \
               --header 'accept: application/json' \
               --header 'origin: https://localhost:41100' \
@@ -217,7 +189,6 @@ jobs:
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
-          # Get session
           response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
               --header 'referer: https://localhost:41100/sign-in' \
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
@@ -231,14 +202,12 @@ jobs:
           session_cookie=$(printf "%s\n" "$response" | grep _session= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
           session_sig_cookie=$(printf "%s\n" "$response" | grep _session.sig= | awk -F'=' '{print $2}' | awk -F'; ' '{print $1}')
 
-          # Submit consent page
           response=$(curl -ik 'https://localhost:41100/consent' \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
-          # Get authorization code
           response=$(curl -ik "https://localhost:41100/oidc/auth/$interaction_cookie" \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
@@ -247,14 +216,12 @@ jobs:
 
           authorization_code=$(printf "%s\n" "$response" | sed -n 's/.*code=\([^&]*\).*/\1/p' | head -n 1)
 
-          # Complete login
           response=$(curl -ik "https://localhost:41100/d2e/portal/login-callback?code=$authorization_code&state=lbFDB1hcko&iss=https%3A%2F%2Flocalhost%3A41100%2Foidc" \
               --header 'accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
               --header 'referer: https://localhost:41100/sign-in' \
               --header "Cookie: _interaction=$interaction_cookie; _interaction.sig=$interaction_sig_cookie; _interaction_resume=$interaction_resume_cookie; _interaction_resume.sig=$interaction_resume_sig_cookie; _session=$session_cookie; _session.sig=$session_sig_cookie; _logto={\"appId\":\"$LOGTO__D2E_APP__CLIENT_ID\"}")
           printf "%s\n" "$response"
 
-          # Get Bearer token
           response=$(curl -ik 'https://localhost:41100/d2e/oauth/token' \
               --header 'accept: application/json, text/javascript, */*; q=0.01' \
               --header 'content-type: application/x-www-form-urlencoded' \
@@ -269,14 +236,10 @@ jobs:
           printf "%s\n" "$response"
 
           export BEARER_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*"' | sed 's/"access_token":"\([^"]*\)"/\1/')
-          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV # Make available to subsequent github actions steps
+          echo "BEARER_TOKEN=$BEARER_TOKEN" >> $GITHUB_ENV
 
           export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
-          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV # Used to refresh the access token after role assignment
-
-          echo "BEARER TOKEN:"
-          echo $BEARER_TOKEN
-          # Get the idp sub
+          echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
 
           decode_base64_url() {
               local len=$((${#1} % 4))
@@ -294,14 +257,9 @@ jobs:
           }
 
           DECODED_TOKEN="$(decode_jwt 2 $BEARER_TOKEN)"
-          echo "DECODED TOKEN:"
-          echo $DECODED_TOKEN
           export IDP_SUB=$(echo $(echo $DECODED_TOKEN | grep -o '"sub":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"'))
-          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV # Make available to subsequent github actions steps
-          echo "IDP SUB:"
-          echo $IDP_SUB
+          echo "IDP_SUB=$IDP_SUB" >> $GITHUB_ENV
 
-          # Endpoint to update user management with idp user id
           response=$(curl -ik 'https://localhost:41100/d2e/usermgmt/api/user-group/list' \
               -H 'accept: application/json, text/plain, */*' \
               -H "authorization: Bearer $BEARER_TOKEN" \
@@ -311,24 +269,18 @@ jobs:
               --data-raw "{\"userId\":\"$IDP_SUB\",\"sync\":true}")
           printf "%s\n" "$response"
           USER_MGMT_ID=$(printf "%s\n" "$response" | grep -o '"userId":"[^"]*"' | awk -F':' '{print $2}' | tr -d '"')
-          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV # Make available to subsequent github actions steps
-          echo "USER_MGMT_ID:"
-          echo $USER_MGMT_ID
+          echo "USER_MGMT_ID=$USER_MGMT_ID" >> $GITHUB_ENV
 
       - name: Seed db credentials
         run: |
-          echo "Seed db credentials"
           export ENCSALT=salt
           ENCRYPTED_CREDS=$(npx zx ./scripts/httptest_enc_cred.mjs)
-          echo $ENCRYPTED_CREDS
-          echo "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
           curl -ks -w "status_code:%{http_code}" --location --request POST 'https://localhost:41100/d2e/trex/db/' \
               --header 'Referer: https://localhost:41100/sign-in' \
               --header 'accept: application/json, text/plain, */*' \
               --header 'Content-Type: application/json' \
               --header "authorization: Bearer $BEARER_TOKEN" \
               --data "{\"host\":\"${HANASERVER_INT}\",\"port\":\"${HDIPORT}\",\"code\":\"${TESTSCHEMA}\",\"name\":\"HXE\",\"dialect\":\"hana\",\"extra\":{\"Internal\":{\"schema\":\"CDMDEFAULT\",\"useTLS\":false,\"encrypt\":false,\"pooling\":true,\"autoCommit\":true,\"probeSchema\":\"CDMDEFAULT\",\"vocabSchema\":\"CDMDEFAULT\",\"enableAuditPolicies\":false,\"validateCertificate\":false,\"hostnameInCertificate\":\"${HANASERVER}\"}},\"authenticationMode\":\"Password\",\"credentials\":[{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Admin\",\"serviceScope\":\"Internal\"},{\"username\":\"SYSTEM\",\"password\":\"${ENCRYPTED_CREDS}\",\"salt\":\"${ENCSALT}\",\"userScope\":\"Read\",\"serviceScope\":\"Internal\"}],\"vocabSchemas\":[\"CDMVOCAB\"],\"publications\":[]}"
-
 
       - name: Seed dummy dataset
         run: |
@@ -338,13 +290,11 @@ jobs:
           docker exec alp-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "INSERT INTO portal.dataset_detail (id,\"name\",description,summary,show_request_access,dataset_id,created_by,created_date,modified_by,modified_date) VALUES
           ('4988423f-a5f9-43c4-b6a2-04d02efb2d45','hanasynpuf1k','','',false,'cd13fd3e-9f35-4812-b2a1-497b232a8771','$IDP_SUB','2024-03-26 09:59:19.539','$IDP_SUB','2024-03-26 09:59:19.539') ON CONFLICT DO NOTHING"
 
-      # Restart is required for alp-trex container after seeding database credentials into the db table
       - name: Restart alp-trex service
         run: |
           docker container restart alp-trex
           echo "Waiting 120 secs for alp-trex to restart..."
           sleep 120
-          # Health check
           curl --max-time 100 --fail -k https://localhost:41100/d2e/_internal/health
 
       - name: Assign and verify researcher assigned to user
@@ -358,11 +308,11 @@ jobs:
               --data-raw "{\"userIds\":[\"$USER_MGMT_ID\"],\"tenantId\":\"e0348e4d-2e17-43f2-a3c6-efd752d17c23\",\"studyId\":\"cd13fd3e-9f35-4812-b2a1-497b232a8771\",\"roles\":[\"RESEARCHER\"]}"
 
           curl --max-time 100 --fail -k 'https://localhost:41100/d2e/usermgmt/api/me/roles' \
-          -H 'accept: application/json, text/plain, */*' \
-          -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
-          -H 'content-type: application/json' \
-          -H 'origin: https://localhost:41100' \
-          -H "authorization: Bearer $BEARER_TOKEN"
+              -H 'accept: application/json, text/plain, */*' \
+              -H 'accept-language: en-GB,en-US;q=0.9,en;q=0.8' \
+              -H 'content-type: application/json' \
+              -H 'origin: https://localhost:41100' \
+              -H "authorization: Bearer $BEARER_TOKEN"
 
       - name: Refresh bearer token to pick up researcher role
         run: |
@@ -380,9 +330,6 @@ jobs:
           export REFRESH_TOKEN=$(echo "$response" | grep -o '"refresh_token":"[^"]*"' | sed 's/"refresh_token":"\([^"]*\)"/\1/')
           echo "REFRESH_TOKEN=$REFRESH_TOKEN" >> $GITHUB_ENV
 
-          echo "REFRESHED BEARER TOKEN:"
-          echo $BEARER_TOKEN
-
       - name: Install dependencies in backend integration tests
         run: |
           cd ./tests/backend_integration_tests/hana
@@ -392,42 +339,47 @@ jobs:
         working-directory: ./tests/backend_integration_tests/hana
         run: yarn test-specs --test_schema_name=$TESTSCHEMA
 
+      - name: Mark HTTP hana attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload HTTP hana attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: http-hana-attempt-${{ inputs.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
       - name: print logs for alp-dataflow-gen-1
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-dataflow-gen-1 -t
+        run: docker logs alp-dataflow-gen-1 -t
       - name: print logs for alp-dataflow-gen-worker
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-dataflow-gen-worker -t
+        run: docker logs alp-dataflow-gen-worker -t
       - name: print logs for alp-logto-1
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-1 -t
+        run: docker logs alp-logto-1 -t
       - name: print logs for alp-minerva-postgres-1
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-postgres-1 -t
+        run: docker logs alp-minerva-postgres-1 -t
       - name: print logs for alp-supabase-storage-1
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-supabase-storage-1 -t
+        run: docker logs alp-supabase-storage-1 -t
       - name: print logs for trex
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-trex -t
+        run: docker logs alp-trex -t
       - name: print logs for alp-minerva-pg-mgmt-init-1
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-minerva-pg-mgmt-init-1 -t
+        run: docker logs alp-minerva-pg-mgmt-init-1 -t
       - name: print logs for alp-logto-post-init
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs alp-logto-post-init-1 -t
+        run: docker logs alp-logto-post-init-1 -t
       - name: print logs for hana
         if: ${{ always() || cancelled() || failure() }}
-        run: |
-          docker logs hana -t
+        run: docker logs hana -t
 
       - name: Remove Test DB
         if: ${{ always() || cancelled() || failure() }}
@@ -435,6 +387,4 @@ jobs:
 
       - name: Prune system
         if: always()
-        id: prune_system
-        run: |
-          docker system prune -af
+        run: docker system prune -af

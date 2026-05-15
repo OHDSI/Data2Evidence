@@ -28,6 +28,7 @@ export interface IAnalyticsCohortDefinition {
 export interface ICohortGeneratorFlowRun {
   datasetId: string;
   databaseCode: string;
+  cacheId: string;
   schemaName: string;
   resultsSchemaName: string;
   vocabSchemaName: string;
@@ -244,6 +245,7 @@ export interface IUserMe {
 export interface IDataset {
   databaseName: string;
   databaseCode: string;
+  cacheId: string | null;
   id: string;
   dialect: string;
   schemaName: string;

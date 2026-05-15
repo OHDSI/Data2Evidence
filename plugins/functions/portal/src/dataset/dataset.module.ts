@@ -24,6 +24,7 @@ import {
   DatasetCodeRepository,
   DatasetCodeQueryRepository
 } from './repository/index.ts'
+import { TrexApiService } from './trex-api.service.ts'
 import { IsDatasetAttributeValueValid } from './validator/dataset-attribute.validator.ts'
 import { ResourceModule } from './resource/resource.module.ts'
 
@@ -53,7 +54,8 @@ const injectables = [
   DatasetCodeQueryRepository,
   IsDatasetAttributeValueValid,
   TransactionRunner,
-  RequestContextService
+  RequestContextService,
+  TrexApiService
 ]
 @Module({
   imports,
