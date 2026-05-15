@@ -800,7 +800,8 @@
           "portal.config.read",
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
-          "d2e.webapi.public"
+          "d2e.webapi.public",
+          "strategus.results.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -846,8 +847,7 @@
           "d2e.webapi",
           "usermgmt.me.jupyter",
           "gateway.dataset.shinylive.read",
-          "gateway.dataset.dashboards.read",
-          "strategus.results.read"
+          "gateway.dataset.dashboards.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
