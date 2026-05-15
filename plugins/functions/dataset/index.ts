@@ -50,7 +50,6 @@ export class DatasetRouter {
   }
 
   private registerRoutes() {
-    // deprecated route (not used anywhere in the frontend)
     this.router.get(
       "/cdm-schema/snapshot/metadata",
       async (req: Request, res: Response) => {

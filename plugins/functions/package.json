@@ -736,6 +736,7 @@
           "gateway.dataset.dashboards.read",
           "gateway.dataset.cohorts.read",
           "gateway.dataset.create",
+          "gateway.dataset.cdmMetadata.read",
           "gateway.dataset.snapshot.create",
           "gateway.db.dataModels.read",
           "gateway.db.vocabSchemas.read",
@@ -2740,6 +2741,15 @@
           "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/questionnaire/[a-zA-Z0-9]+",
           "scopes": [
             "dbSvc.questionnaire.responses.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/cdm-schema/snapshot/metadata$",
+          "scopes": [
+            "gateway.dataset.cdmMetadata.read"
           ],
           "httpMethods": [
             "GET"
