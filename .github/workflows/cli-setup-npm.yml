@@ -48,6 +48,19 @@ env:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - target: bun-linux-x64
+            filename: linux-x64
+          - target: bun-linux-arm64
+            filename: linux-arm64
+          - target: bun-darwin-x64
+            filename: darwin-x64
+          - target: bun-darwin-arm64
+            filename: darwin-arm64
+          - target: bun-windows-x64
+            filename: windows-x64.exe
     environment: ${{github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'github'}}
     steps:
       - uses: actions/checkout@v4
@@ -67,10 +80,7 @@ jobs:
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
+      
       - name: Update version
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
@@ -85,55 +95,15 @@ jobs:
           else
             jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
           fi
-      - name: bun install
-        run: bun install
-      - name: Build executables
-        run: |
-          bun build --compile ./scripts/cli.ts --outfile ./scripts/dist/d2e-linux-x64     --target bun-linux-x64
-          bun build --compile ./scripts/cli.ts --outfile ./scripts/dist/d2e-linux-arm64   --target bun-linux-arm64
-          bun build --compile ./scripts/cli.ts --outfile ./scripts/dist/d2e-windows-x64   --target bun-windows-x64
-          bun build --compile ./scripts/cli.ts --outfile ./scripts/dist/d2e-darwin-x64    --target bun-darwin-x64
-          bun build --compile ./scripts/cli.ts --outfile ./scripts/dist/d2e-darwin-arm64  --target bun-darwin-arm64
-          echo "EXE_LINUX_X64=scripts/dist/d2e-linux-x64"         >> $GITHUB_ENV
-          echo "EXE_LINUX_ARM64=scripts/dist/d2e-linux-arm64"     >> $GITHUB_ENV
-          echo "EXE_WINDOWS_X64=scripts/dist/d2e-windows-x64.exe" >> $GITHUB_ENV
-          echo "EXE_DARWIN_X64=scripts/dist/d2e-darwin-x64"       >> $GITHUB_ENV
-          echo "EXE_DARWIN_ARM64=scripts/dist/d2e-darwin-arm64"   >> $GITHUB_ENV
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Publish platform packages
+      - name: npm build
+        run: npm install
+      - name: Publish
         run: |
           if [[ (${{ env.GIT_BRANCH_NAME }} == 'develop' && ${{ github.event_name }} != 'workflow_dispatch') || (${{ github.event_name }} == 'workflow_dispatch' && "${{ github.event.inputs.environment }}" == 'github') ]]; then
-            DRY_RUN_FLAG=""
+            npm publish
           else
-            DRY_RUN_FLAG="--dry-run"
+            npm publish --dry-run
           fi
-          VERSION=$(jq -r .version package.json)
-
-          declare -A OS=( [d2e-linux-x64]=linux [d2e-linux-arm64]=linux [d2e-darwin-x64]=darwin [d2e-darwin-arm64]=darwin [d2e-windows-x64]=win32 )
-          declare -A CPU=( [d2e-linux-x64]=x64 [d2e-linux-arm64]=arm64 [d2e-darwin-x64]=x64 [d2e-darwin-arm64]=arm64 [d2e-windows-x64]=x64 )
-
-          for pkg in d2e-linux-x64 d2e-linux-arm64 d2e-darwin-x64 d2e-darwin-arm64; do
-            mkdir -p npm/${pkg}/bin
-            jq -n \
-              --arg name "$pkg" \
-              --arg version "$VERSION" \
-              --arg os "${OS[$pkg]}" \
-              --arg cpu "${CPU[$pkg]}" \
-              '{name:$name,version:$version,description:"Data2Evidence Installer",license:"Apache-2.0",os:[$os],cpu:[$cpu],bin:{d2e:"bin/d2e"}}' \
-              > npm/${pkg}/package.json
-            cp scripts/dist/${pkg} npm/${pkg}/bin/d2e
-            chmod +x npm/${pkg}/bin/d2e
-            npm publish ./npm/${pkg} --access public $DRY_RUN_FLAG
-          done
-
-          mkdir -p npm/d2e-windows-x64/bin
-          jq -n \
-            --arg version "$VERSION" \
-            '{name:"d2e-windows-x64",version:$version,description:"Data2Evidence CLI binary",license:"Apache-2.0",os:["win32"],cpu:["x64"],bin:{"d2e":"bin/d2e.exe"}}' \
-            > npm/d2e-windows-x64/package.json
-          cp scripts/dist/d2e-windows-x64.exe npm/d2e-windows-x64/bin/d2e.exe
-          npm publish ./npm/d2e-windows-x64 --access public $DRY_RUN_FLAG
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish production
@@ -148,6 +118,15 @@ jobs:
           package-type: "npm"
           min-versions-to-keep: 3
           delete-only-pre-release-versions: "true"
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: bun install
+        run: bun install
+      - name: Build executables
+        run: |
+          bun build --compile ./scripts/cli.ts --outfile ./${{ matrix.filename }} --target ${{ matrix.target }}
       - name: Pack
         run: |
           NPM_FILENAME=$(npm pack | tail -n 1)
@@ -155,7 +134,7 @@ jobs:
       - name: Prepare
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
-            echo "PRELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "PRERELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             TAG=${{ github.event.inputs.tag }}
             echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
@@ -164,7 +143,7 @@ jobs:
             GITHUB_RELEASE=v${{ github.event.inputs.tag }}
             echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           else
-            echo "PRELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "PRERELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             TAG=latest
             echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
@@ -172,54 +151,14 @@ jobs:
             echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
             echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
           fi
-          echo "TIMESTAMP=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
-      - name: Push linux-x64
+      - name: Push platforms
         uses: svenstaro/upload-release-action@v2
         if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.EXE_LINUX_X64 }}
+          file: ${{ matrix.filename }}
           tag: ${{ env.GITHUB_RELEASE }}
-          prerelease: ${{ env.PRELEASE }}
+          target_commit: ${{ github.ref_name }}
+          prerelease: ${{ env.PRERELEASE }}
           overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-linux-x64
-      - name: Push linux-arm64
-        uses: svenstaro/upload-release-action@v2
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.EXE_LINUX_ARM64 }}
-          tag: ${{ env.GITHUB_RELEASE }}
-          prerelease: ${{ env.PRELEASE }}
-          overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-linux-arm64
-      - name: Push windows-x64
-        uses: svenstaro/upload-release-action@v2
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.EXE_WINDOWS_X64 }}
-          tag: ${{ env.GITHUB_RELEASE }}
-          prerelease: ${{ env.PRELEASE }}
-          overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-windows-x64.exe
-      - name: Push darwin-x64
-        uses: svenstaro/upload-release-action@v2
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.EXE_DARWIN_X64 }}
-          tag: ${{ env.GITHUB_RELEASE }}
-          prerelease: ${{ env.PRELEASE }}
-          overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-darwin-x64
-      - name: Push darwin-arm64
-        uses: svenstaro/upload-release-action@v2
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ env.EXE_DARWIN_ARM64 }}
-          tag: ${{ env.GITHUB_RELEASE }}
-          prerelease: ${{ env.PRELEASE }}
-          overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-darwin-arm64
+          asset_name: ${{ env.ASSET_NAME }}-${{ matrix.filename }}      
