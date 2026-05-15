@@ -130,6 +130,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData' }).first()).toBeVisible()
   // Check that the nav bar contains the cache dataset name (not the parent dataset)
   await expect(page.getByTestId('nav')).toContainText(
-    `${cacheDatasetName}​DatasetConceptsCohortsAnalysisNotebooksAccount`
+    `${cacheDatasetName}​DatasetConceptsCohortsNotebooksAnalysisAccount`
   )
 })
