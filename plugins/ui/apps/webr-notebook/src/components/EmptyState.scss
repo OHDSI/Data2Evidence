@@ -1,0 +1,75 @@
+$primary: #000080;
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 640px;
+  padding: 80px 64px;
+  border: 2px dashed #c8d4e8;
+  border-radius: 16px;
+  background: white;
+  text-align: center;
+
+  &__icon {
+    color: $primary;
+    opacity: 0.35;
+  }
+
+  &__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: $primary;
+    margin: 0;
+  }
+
+  &__subtitle {
+    font-size: 0.9375rem;
+    color: #6b7280;
+    margin: 0;
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  &__btn {
+    padding: 11px 32px;
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.15s;
+    // Reset browser defaults
+    -webkit-appearance: none;
+    appearance: none;
+
+    &--primary {
+      background-color: $primary;
+      color: white;
+      border: 1px solid $primary;
+
+      &:hover {
+        opacity: 0.85;
+      }
+    }
+
+    &--outlined {
+      background-color: transparent;
+      color: $primary;
+      border: 1px solid $primary;
+
+      &:hover {
+        background-color: rgba(0, 0, 128, 0.05);
+      }
+    }
+  }
+}
