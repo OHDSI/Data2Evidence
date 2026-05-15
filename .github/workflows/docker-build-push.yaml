@@ -459,7 +459,7 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -594,18 +594,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Download UI resources
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-resources
-          path: ./plugins/ui/resources
-
-      - name: UI docker-compose-local
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
-          sed -i 's|# - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json|- ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json|' docker-compose-local.yml
       - name: Flow base docker-compose-local
         if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
@@ -617,49 +605,15 @@ jobs:
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
 
-      - name: Wait for d2e-ui plugin to be installed
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          echo "Waiting for d2e-ui plugin to be installed..."
-          max_attempts=60
-          attempt=0
-          start_time=$(date +%s)
-          while [ $attempt -lt $max_attempts ]; do
-            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
-              end_time=$(date +%s)
-              elapsed=$((end_time - start_time))
-              echo "d2e-ui plugin is ready (took ${elapsed}s)"
-              break
-            fi
-            attempt=$((attempt + 1))
-            echo "  Attempt $attempt/$max_attempts: waiting..."
-            sleep 2
-          done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "Timeout waiting for d2e-ui plugin to be installed"
-            exit 1
-          fi
-
       - name: Download UI package tarball
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
         uses: actions/download-artifact@v4
         with:
           name: ui-tgz
           path: ./plugins/ui
 
       - name: UI Mounting build
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
         run: |
-          # Extract this PR's freshly-built d2e-ui tarball into PLUGINS_DEV_PATH under
-          # a separate directory so it WON'T be overwritten by trex's npm install of the
-          # develop-published @data2evidence/d2e-ui package. trex's initPluginsDev (active
-          # because NODE_ENV=development) loads dev plugins after initPluginsEnv, and
-          # `updatePluginJson` merges entries with matching `route` in-place — meaning the
-          # earlier-loaded plugin (env) wins on array order. To make the PR's order win,
-          # we also flip the init order in trex so dev plugins are processed FIRST (see the
-          # corresponding code change in services/trex/core/server/plugin/plugin.ts).
           TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-          echo "Using tarball: $TGZ"
           docker cp "$TGZ" d2e-trex:/tmp/d2e-ui.tgz
           docker exec d2e-trex sh -c '
             set -e
@@ -670,7 +624,7 @@ jobs:
           '
           docker restart d2e-trex >/dev/null
           for i in $(seq 1 60); do
-            docker exec d2e-trex sh -c 'curl -ksf https://localhost:33000/health >/dev/null 2>&1' && { echo "trex back up after ${i}x2s"; break; } || sleep 2
+            docker exec d2e-trex sh -c 'curl -ksf https://localhost:33000/health >/dev/null 2>&1' && break || sleep 2
           done
 
       - name: Wait for webapi-init to complete

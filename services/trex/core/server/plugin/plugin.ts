@@ -175,12 +175,6 @@ export class Plugins {
 
 	static async initPlugins(app: Hono) {
 		logger.log("Add plugins");
-		// Dev plugins are loaded BEFORE env (npm-seeded) plugins so they get to claim
-		// each `route` first in PLUGINS_JSON. `updatePluginJson` merges later items into
-		// existing routes in-place (no reorder), so the first-inserted plugin wins on
-		// array order. This lets CI overlay a PR-built d2e-ui at PLUGINS_DEV_PATH that
-		// dictates registry order while the env-installed version (from npm) is still
-		// merged for any fields it carries.
 		if(env.NODE_ENV === 'development') {
 			try {
 				await Plugins.initPluginsDev(app);
