@@ -401,6 +401,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Upload UI package tarball
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
   build_e2e_image:
     needs: [setup]
     if: |
@@ -631,11 +640,38 @@ jobs:
             exit 1
           fi
 
+      - name: Download UI package tarball
+        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
       - name: UI Mounting build
         if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
         run: |
-          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
+          # Extract this PR's freshly-built d2e-ui tarball into PLUGINS_DEV_PATH under
+          # a separate directory so it WON'T be overwritten by trex's npm install of the
+          # develop-published @data2evidence/d2e-ui package. trex's initPluginsDev (active
+          # because NODE_ENV=development) loads dev plugins after initPluginsEnv, and
+          # `updatePluginJson` merges entries with matching `route` in-place — meaning the
+          # earlier-loaded plugin (env) wins on array order. To make the PR's order win,
+          # we also flip the init order in trex so dev plugins are processed FIRST (see the
+          # corresponding code change in services/trex/core/server/plugin/plugin.ts).
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          echo "Using tarball: $TGZ"
+          docker cp "$TGZ" d2e-trex:/tmp/d2e-ui.tgz
+          docker exec d2e-trex sh -c '
+            set -e
+            rm -rf /usr/src/plugins/d2e-ui-pr
+            mkdir -p /usr/src/plugins/d2e-ui-pr
+            tar -xzf /tmp/d2e-ui.tgz -C /usr/src/plugins/d2e-ui-pr --strip-components=1
+            rm -f /tmp/d2e-ui.tgz
+          '
+          docker restart d2e-trex >/dev/null
+          for i in $(seq 1 60); do
+            docker exec d2e-trex sh -c 'curl -ksf https://localhost:33000/health >/dev/null 2>&1' && { echo "trex back up after ${i}x2s"; break; } || sleep 2
+          done
 
       - name: Wait for webapi-init to complete
         run: |
