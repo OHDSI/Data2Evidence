@@ -27,5 +27,5 @@ export default defineConfig({
     ['playwright-ctrf-json-reporter', {}]
   ],
   workers: 1,
-  maxFailures: 0
+  maxFailures: process.env.CI ? 1 : 0,
 })
