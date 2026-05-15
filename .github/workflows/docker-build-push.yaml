@@ -21,7 +21,7 @@ concurrency:
 env:
   REG_URL: ghcr.io/ohdsi
   DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management"
+  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
 
 jobs:
   setup:
