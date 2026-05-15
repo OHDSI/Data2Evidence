@@ -30,6 +30,7 @@ function _addStatic(app: Hono, url: string, path: string) {
 }
 
 export function addPlugin(app: Hono, value: any, dir: string) {
+  if (!dir.endsWith("/")) dir = `${dir}/`;
   const portalIndexPath = `${dir}resources/portal/index.html`;
 
   if (value.routes)
