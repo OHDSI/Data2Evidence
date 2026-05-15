@@ -31,6 +31,7 @@ import { SyncFromRemoteButton } from "./Flow/SyncFromRemote/SyncFromRemoteButton
 import { FlowVariablesButton } from "./Flow/FlowVariables/FlowVariablesButton";
 import { CreateGroupButton } from "./Node/NodeTypes/GroupNode/CreateGroupNodeButton";
 import { selectFlowNodes } from "../selectors";
+import { sanitizeFlowEdges, sanitizeFlowNodes } from "../utils";
 import "./FlowLayout.scss";
 
 interface FlowLayoutProps {
@@ -59,8 +60,10 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
 
   useEffect(() => {
     if (!revisionId) {
-      dispatch(replaceNodes(dataflow?.flow?.nodes || []));
-      dispatch(replaceEdges(dataflow?.flow?.edges || []));
+      const safeNodes = sanitizeFlowNodes(dataflow?.flow?.nodes);
+      const safeEdges = sanitizeFlowEdges(dataflow?.flow?.edges, safeNodes);
+      dispatch(replaceNodes(safeNodes));
+      dispatch(replaceEdges(safeEdges));
       dispatch(replaceVariables(dataflow?.flow?.variables || []));
       dispatch(replaceImportLibs(dataflow?.flow?.importLibs || []));
     }
