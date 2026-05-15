@@ -499,6 +499,19 @@ jobs:
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
 
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
@@ -527,7 +540,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -602,30 +615,9 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
 
-      - name: Download UI package tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-tgz
-          path: ./plugins/ui
-
-      - name: UI Mounting build
-        run: |
-          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-          docker cp "$TGZ" d2e-trex:/tmp/d2e-ui.tgz
-          docker exec d2e-trex sh -c '
-            set -e
-            rm -rf /usr/src/plugins/d2e-ui-pr
-            mkdir -p /usr/src/plugins/d2e-ui-pr
-            tar -xzf /tmp/d2e-ui.tgz -C /usr/src/plugins/d2e-ui-pr --strip-components=1
-            rm -f /tmp/d2e-ui.tgz
-          '
-          docker restart d2e-trex >/dev/null
-          for i in $(seq 1 60); do
-            docker exec d2e-trex sh -c 'curl -ksf https://localhost:33000/health >/dev/null 2>&1' && break || sleep 2
-          done
 
       - name: Wait for webapi-init to complete
         run: |
