@@ -363,6 +363,7 @@ export interface StudyAnalyticsCredential {
     host: string;
     port: string;
     code: string;
+    cacheId?: string | null;
     databaseName: string;
     user: string;
     password: string;
@@ -385,6 +386,7 @@ export interface StudyDbMetadata {
     resultsSchemaName: string;
     dialect: string;
     databaseCode: string;
+    cacheId?: string | null;
 }
 
 export interface StudiesDbMetadata {

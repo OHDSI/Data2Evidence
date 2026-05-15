@@ -63,7 +63,7 @@ function registerNavigationApps() {
               username: portalAPI?.username,
               datasetId: portalAPI?.studyId,
               locale: portalAPI?.locale,
-              isAtlas: portalAPI?.isLocal || false,
+              isAtlas: portalAPI?.isAtlas === true,
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }
@@ -116,4 +116,3 @@ function initializeApps() {
 }
 
 export { initializeApps, navigateToRoute }
-

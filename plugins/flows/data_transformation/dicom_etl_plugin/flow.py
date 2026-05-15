@@ -17,6 +17,7 @@ def dicom_etl_plugin(options: DICOMETLOptions):
 
     flow_action_type = options.flow_action_type
     database_code = options.database_code
+    cache_id = options.cache_id
     medical_imaging_schema = options.medical_imaging_schema_name
     vocab_schema = options.vocab_schema_name
     cdm_schema = options.cdm_schema_name
@@ -24,7 +25,7 @@ def dicom_etl_plugin(options: DICOMETLOptions):
     use_cache_db = options.use_cache_db
     ingest_eav_table = options.ingest_eav_table
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
 
     match flow_action_type:
         case FlowActionType.LOAD_VOCAB:

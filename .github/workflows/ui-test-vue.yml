@@ -40,6 +40,8 @@ jobs:
         swap-storage: true
 
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
 
     - name: Check if vue files have changed
       uses: dorny/paths-filter@v3

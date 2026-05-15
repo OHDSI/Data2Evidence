@@ -13,7 +13,6 @@ import * as xsenv from "@sap/xsenv";
 import noCacheMiddleware from "./middleware/NoCache";
 import timerMiddleware from "./middleware/Timer";
 import os from "node:os";
-import https from "https";
 import {generateQuery} from "./api/controllers/query.ts"
 import {generateQuery as cohortGenerateQuery} from "./api/controllers/cohort.ts"
 import {generateQuery as cohortCompareGenerateQuery} from "./api/controllers/cohortCompareQuery.ts"
@@ -104,17 +103,7 @@ export const main = async () => {
             }]`
         );
     } else {
-        const server = https.createServer(
-            {
-                key: Deno.env.get("TLS__INTERNAL__KEY")?.replace(/\\n/g, "\n"),
-                cert: Deno.env.get("TLS__INTERNAL__CRT")?.replace(/\\n/g, "\n"),
-                ca: Deno.env.get("TLS__INTERNAL__CA_CRT")?.replace(/\\n/g, "\n"),
-                maxHeaderSize: 8192 * 10,
-            },
-            app
-        );
-
-        server.listen(port, () => {
+        app.listen(port, () => {
             log.info(
                 `🚀 Query-gen svc started successfully!. Server listening on port ${port} [hostname: ${os.hostname}...`
             );

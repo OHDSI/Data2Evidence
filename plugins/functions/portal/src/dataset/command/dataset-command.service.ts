@@ -3,7 +3,7 @@ import { EntityManager, In } from "npm:typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TransactionRunner } from "../../common/data-source/transaction-runner.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
-import { getDbCredentialsByCode } from "../../env.ts";
+import { getDbCredentialsByCode, toUpperCaseIfHana } from "../../env.ts";
 import { createLogger } from "../../logger.ts";
 import { TenantService } from "../../tenant/tenant.service.ts";
 import {
@@ -18,6 +18,8 @@ import {
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
+import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
   DatasetCodeQueryRepository,
@@ -52,11 +54,17 @@ export class DatasetCommandService {
     private readonly datasetCodeQueryRepo: DatasetCodeQueryRepository,
     private readonly requestContextService: RequestContextService,
     private readonly webApiSourceService: WebApiSourceService,
+    private readonly trexApiService: TrexApiService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
 
   async createDataset(datasetDto: IDatasetDto) {
+    
+    // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
+    datasetDto.vocabSchemaName = toUpperCaseIfHana(datasetDto.vocabSchemaName, datasetDto.dialect);
+    datasetDto.resultsSchemaName = toUpperCaseIfHana(datasetDto.resultsSchemaName, datasetDto.dialect);
+
     const createDatasetFn = async (
       entityMgr: EntityManager,
       datasetDto: IDatasetDto,
@@ -74,6 +82,12 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
+      // `insertDataset` uses TypeORM's `insert()` builder, which skips entity
+      // lifecycle hooks. Apply the cache_id default here so the persisted row
+      // matches `Dataset.applyCacheIdDefault`.
+      if (entity.cacheId == null && entity.id) {
+        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
         this.addOwner(entity, true),
@@ -126,6 +140,17 @@ export class DatasetCommandService {
 
     // Then create dataset in database
     const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
+    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
+    // doesn't supply one.
+    const cacheId = datasetDto.cacheId
+      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
 
     return result;
   }
@@ -412,11 +437,11 @@ export class DatasetCommandService {
     };
 
     if (vocabSchemaName !== undefined) {
-      dataset.vocabSchemaName = vocabSchemaName;
+      dataset.vocabSchemaName = toUpperCaseIfHana(vocabSchemaName, dataset.dialect);
     }
 
     if (resultsSchemaName !== undefined) {
-      dataset.resultsSchemaName = resultsSchemaName;
+      dataset.resultsSchemaName = toUpperCaseIfHana(resultsSchemaName, dataset.dialect);
     }
 
     await this.datasetRepo.updateDataset(

@@ -101,7 +101,6 @@ export function useRuleManagement(
       if (controller.signal.aborted) return // cancelled by a newer request, ignore
       if (axios.isCancel(error)) return // cancelled by fireQuery's shared CancelToken
       console.error('[useRuleManagement] Failed to fetch attrition stats:', error)
-      const axiosError = error as { response?: { data?: { errorMessage?: string } } }
       errorMessage.value = getText
         ? getText('MRI_PA_INCLUSION_REPORT_FETCH_ATTRITION_ERROR')
         : 'Attrition report update failed. Please contact your system administrator.'

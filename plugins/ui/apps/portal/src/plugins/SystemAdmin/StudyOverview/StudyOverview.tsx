@@ -18,6 +18,7 @@ import AddStrategusStudyDialog from "./AddStrategusStudyDialog/AddStrategusStudy
 import AddStudyDialog from "./AddStudyDialog/AddStudyDialog";
 import AnalysisDialog from "./AnalysisDialog/AnalysisDialog";
 import CleanupStrategusStudyDialog from "./CleanupStrategusStudyDialog/CleanupStrategusStudyDialog";
+import DeleteStrategusStudyDialog from "./DeleteStrategusStudyDialog/DeleteStrategusStudyDialog";
 import CopyStudyDialog from "./CopyStudyDialog/CopyStudyDialog";
 import CreateCacheDialog from "./CreateCacheDialog/CreateCacheDialog";
 import CreateReleaseDialog from "./CreateReleaseDialog/CreateReleaseDialog";
@@ -76,6 +77,8 @@ const StudyOverview: FC = () => {
   const [showRunStrategusStudyDialog, openRunStrategusStudyDialog, closeRunStrategusStudyDialog] =
     useDialogHelper(false);
   const [showCleanupStrategusStudyDialog, openCleanupStrategusStudyDialog, closeCleanupStrategusStudyDialog] =
+    useDialogHelper(false);
+  const [showDeleteStrategusStudyDialog, openDeleteStrategusStudyDialog, closeDeleteStrategusStudyDialog] =
     useDialogHelper(false);
   const [showUploadStrategusResultsDialog, openUploadStrategusResultsDialog, closeUploadStrategusResultsDialog] =
     useDialogHelper(false);
@@ -210,6 +213,24 @@ const StudyOverview: FC = () => {
       openCleanupStrategusStudyDialog();
     },
     [openCleanupStrategusStudyDialog]
+  );
+
+  const handleDeleteStrategusStudy = useCallback(
+    (study: NetworkStrategusStudy) => {
+      setActiveStrategusStudy(study);
+      openDeleteStrategusStudyDialog();
+    },
+    [openDeleteStrategusStudyDialog]
+  );
+
+  const handleCloseDeleteStrategusStudyDialog = useCallback(
+    (type: CloseDialogType) => {
+      closeDeleteStrategusStudyDialog();
+      if (type === "success") {
+        setRefetch((refetch) => refetch + 1);
+      }
+    },
+    [closeDeleteStrategusStudyDialog]
   );
 
   const handleManageStrategusResultViewer = useCallback(
@@ -865,6 +886,7 @@ const StudyOverview: FC = () => {
                               study={dataset.strategusAnalysis}
                               handleRunStrategusStudy={handleRunStrategusStudy}
                               handleCleanupStrategusStudy={handleCleanupStrategusStudy}
+                              handleDeleteStrategusStudy={handleDeleteStrategusStudy}
                               handleManageStrategusResultViewer={handleManageStrategusResultViewer}
                               handleUploadStrategusResults={handleUploadStrategusResults}
                               handleDownloadStrategusResults={handleDownloadStrategusResults}
@@ -1006,6 +1028,13 @@ const StudyOverview: FC = () => {
               study={activeStrategusStudy}
               open={showCleanupStrategusStudyDialog}
               onClose={closeCleanupStrategusStudyDialog}
+            />
+          )}
+          {showDeleteStrategusStudyDialog && (
+            <DeleteStrategusStudyDialog
+              study={activeStrategusStudy}
+              open={showDeleteStrategusStudyDialog}
+              onClose={handleCloseDeleteStrategusStudyDialog}
             />
           )}
           {showUploadStrategusResultsDialog && activeStrategusStudy && (

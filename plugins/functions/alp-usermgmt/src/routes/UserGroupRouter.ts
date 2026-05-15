@@ -41,18 +41,8 @@ export class UserGroupRouter {
         this.logger.info(`Get membership of ${userId}`)
 
         try {
-          if (env.USER_MGMT_ROLE_SOURCE === 'logto') {
-            const groups = await this.userGroupService.getUserGroupsMetadataFromLogto(userId)
-            return res.status(200).json(groups)
-          } else {
-            const user = await this.userService.getUserByIdpUserId(userId)
-            if (!user) {
-              this.logger.error(`IDP user ID ${userId} not found`)
-              return res.status(400).send({ message: `IDP user ID ${userId} not found` })
-            }
-            const groups = await this.userGroupService.getUserGroupsMetadata(user.id, tenantId, system)
-            return res.status(200).json(groups)
-          }
+          const groups = await this.userGroupService.getUserGroupsMetadataByIdpUserId(userId, tenantId, system)
+          return res.status(200).json(groups)
         } catch (err) {
           this.logger.error(`Error when getting membership metadata ${userId}: ${JSON.stringify(err)}`)
           return next(err)
@@ -318,19 +308,23 @@ export class UserGroupRouter {
             synced: number
             skipped: number
             failed: number
+            skips: { userId: string; username: string; reason: string }[]
             failures: { userId: string; username: string; error: string }[]
           } = {
             total: 0,
             synced: 0,
             skipped: 0,
             failed: 0,
+            skips: [],
             failures: []
           }
 
           for (const user of users) {
             if (!user.idpUserId) {
-              this.logger.warn(`User ${user.id} (${user.username}) has no idpUserId, skipping`)
+              const reason = `User has no idpUserId`
+              this.logger.warn(`${user.id} (${user.username}): ${reason}, skipping`)
               results.skipped++
+              results.skips.push({ userId: user.id, username: user.username, reason })
               continue
             }
 
@@ -338,15 +332,22 @@ export class UserGroupRouter {
             results.total += userGroups.length
 
             for (const group of userGroups) {
-              try {
-                await this.userGroupService.syncRoleToLogto(user.id, group.b2cGroupId, 'assign')
+              const outcome = await this.userGroupService.syncRoleToLogto(user.id, group.b2cGroupId, 'assign')
+              if (outcome.status === 'synced') {
                 results.synced++
-              } catch (err) {
+              } else if (outcome.status === 'skipped') {
+                results.skipped++
+                results.skips.push({
+                  userId: user.id,
+                  username: user.username,
+                  reason: `Group ${group.b2cGroupId}: ${outcome.reason}`
+                })
+              } else {
                 results.failed++
                 results.failures.push({
                   userId: user.id,
                   username: user.username,
-                  error: `Group ${group.b2cGroupId}: ${err}`
+                  error: `Group ${group.b2cGroupId}: ${outcome.reason}`
                 })
               }
             }

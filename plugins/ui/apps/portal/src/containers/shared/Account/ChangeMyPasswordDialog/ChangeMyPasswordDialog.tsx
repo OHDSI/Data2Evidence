@@ -64,8 +64,14 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
         message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED),
       });
     } catch (err: any) {
+      const code = err?.data?.code;
       const message = err?.data?.message || err?.data?.error_description;
-      if (message) {
+      if (code === "session.invalid_credentials") {
+        setFeedback({
+          type: "error",
+          message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__OLD_PASSWORD_INCORRECT),
+        });
+      } else if (message) {
         setFeedback({ type: "error", message });
       } else {
         console.log("There is an error in updating password", err);

@@ -1,7 +1,6 @@
 import React, { FC, useCallback, useState } from "react";
 import Divider from "@mui/material/Divider";
-import { useDatasets } from "../../../../hooks";
-import { Button, Dialog, Loader, MenuItem, SelectChangeEvent, Select } from "@portal/components";
+import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { NetworkStrategusStudy, Feedback, CloseDialogType } from "../../../../types";
 import { i18nKeys } from "../../../../contexts/app-context/states";
@@ -17,13 +16,7 @@ interface CleanupStrategusStudyDialogProps {
 const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ study, open, onClose }) => {
   const { getText } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>({});
-  const [selectedDatasetId, setSelectedDatasetId] = useState<string>("");
   const [isCleaningUp, setIsCleaningUp] = useState<boolean>(false);
-  const [datasets, loadingDatasets] = useDatasets("systemAdmin");
-
-  const handleDatasetChange = useCallback((event: SelectChangeEvent) => {
-    setSelectedDatasetId(event.target.value);
-  }, []);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
@@ -34,14 +27,14 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
   );
 
   const handleCleanupStudy = useCallback(async () => {
-    if (isCleaningUp || !selectedDatasetId || !study?.studyId) {
+    if (isCleaningUp || !study?.studyId) {
       return;
     }
 
     setIsCleaningUp(true);
 
     try {
-      await api.dataflow.createCleanUpStudySchemaRun(study.studyId, selectedDatasetId);
+      await api.dataflow.createCleanUpStudySchemaRun(study.studyId);
 
       setFeedback({
         type: "success",
@@ -58,9 +51,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
     } finally {
       setIsCleaningUp(false);
     }
-  }, [selectedDatasetId, setFeedback, study, isCleaningUp, getText]);
-
-  if (loadingDatasets) return <Loader />;
+  }, [setFeedback, study, isCleaningUp, getText]);
 
   return (
     <Dialog
@@ -73,34 +64,9 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
     >
       <Divider />
       <div className="cleanup-strategus-study-dialog__content">
-        <div className="cleanup-strategus-study-dialog-selector">
-          <label htmlFor="dataset-select" className="study-page__dataset-label">
-            {getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__SELECT_DATASET)}
-          </label>
-          <Select
-            id="dataset-select"
-            className="cleanup-strategus-study-dialog-select"
-            variant="outlined"
-            value={selectedDatasetId}
-            onChange={handleDatasetChange}
-            displayEmpty
-            sx={{
-              minWidth: "200px",
-              "& .MuiSelect-select": {
-                padding: "8px 14px",
-              },
-            }}
-          >
-            <MenuItem value="" disabled>
-              {getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__CHOOSE_DATASET)}
-            </MenuItem>
-            {datasets.map((dataset) => (
-              <MenuItem key={dataset.id} value={dataset.id}>
-                {dataset.studyDetail?.name || dataset.tokenStudyCode}
-              </MenuItem>
-            ))}
-          </Select>
-        </div>
+        <p className="cleanup-strategus-study-dialog__message">
+          {getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__CONFIRM_MESSAGE, [study?.studyId || ""])}
+        </p>
       </div>
       <Divider />
       <div className="button-group-actions">
@@ -114,7 +80,7 @@ const CleanupStrategusStudyDialog: FC<CleanupStrategusStudyDialogProps> = ({ stu
           text={getText(i18nKeys.CLEANUP_STRATEGUS_STUDY_DIALOG__CLEANUP_STUDY)}
           onClick={handleCleanupStudy}
           block
-          disabled={isCleaningUp || !selectedDatasetId || !study?.studyId}
+          disabled={isCleaningUp || !study?.studyId}
         />
       </div>
     </Dialog>
