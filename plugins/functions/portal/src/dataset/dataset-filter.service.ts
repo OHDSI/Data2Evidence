@@ -18,7 +18,7 @@ export class DatasetFilterService {
 
   async getDatabaseSchemaFilterResults(
     filterParams: IDatasetFilterParamsDto,
-    datasetsWithSchema: { databaseCode: string; schemaName: string }[]
+    datasetsWithSchema: { databaseCode: string; cacheId: string | null; schemaName: string }[]
   ) {
     const encodedDatasetsWithSchema = encodeURIComponent(JSON.stringify(datasetsWithSchema))
     const encodedFilterParams = encodeURIComponent(JSON.stringify(filterParams))

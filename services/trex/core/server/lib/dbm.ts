@@ -146,8 +146,8 @@ public async getCredentialsEncrypted() {
 }
 
     public async getCredentialsDecrypted() {
-        return await this._getCredentials((y:any) => { 
- 
+        return await this._getCredentials((y:any) => {
+
                     return {
                         username: y.username,
                         userScope: y.userScope || y.user_scope,
@@ -155,6 +155,18 @@ public async getCredentialsEncrypted() {
                         password: this.decrypt(y.password).replace(y.salt, "")
                     };
                 });
+    }
+
+    public async getCacheIdsFromPortal(): Promise<string[]> {
+        try {
+            const r = await this.pgclient.query(
+                `SELECT DISTINCT cache_id FROM portal.dataset WHERE cache_id IS NOT NULL`,
+            );
+            return r.rows.map((row: any) => row.cache_id).filter(Boolean);
+        } catch (e) {
+            logger.log(`[dbm] portal.dataset.cache_id read failed: ${(e as Error).message}`);
+            return [];
+        }
     }
 
   private async createBigQueryCredentialsFile(c: any) {
