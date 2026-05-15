@@ -66,7 +66,8 @@ class DaoBase(ABC):
         self,
         use_cache_db: bool,
         database_code: str,
-        user_type: UserType = UserType.ADMIN_USER
+        user_type: UserType = UserType.ADMIN_USER,
+        cache_id: Optional[str] = None,
     ):
         secret_block = Secret.load("database-credentials").get()
         if secret_block is None:
@@ -74,6 +75,9 @@ class DaoBase(ABC):
         self.use_cache_db = use_cache_db
         self.database_code = database_code
         self.user_type = user_type
+        # cache_id defaults to database_code so callers that don't supply
+        # one still get a usable pgwire dbname.
+        self.cache_id = cache_id or self.database_code
 
     # --- Property methods ---
     @property

@@ -17,8 +17,28 @@ export class Utils {
         context: string,
         name?: string
     ): QueryObject {
+        const { withClause, body } = this.getContextSQLParts(e, context, name);
+        if (!withClause) {
+            return body;
+        }
+        return new QueryObject(
+            `${withClause} ${body.queryString}`,
+            body.parameterPlaceholders,
+            body.sqlReturnOn
+        );
+    }
+
+    // Same traversal as getContextSQL, but returns the WITH clause and body
+    // separately so callers (notably appendPluginSpecificQueries) can hoist
+    // the WITH to the top level of the surrounding statement instead of
+    // emitting it inside a subquery — required for HANA, which rejects WITH
+    // inside parenthesized subqueries. See issue #2234.
+    public static getContextSQLParts(
+        e: any,
+        context: string,
+        name?: string
+    ): { withClause: string; body: QueryObject } {
         let contextList: QueryObject[] = [];
-        let query: any = [];
 
         function traverse(x: any) {
             if (
@@ -38,91 +58,120 @@ export class Utils {
         }
 
         e.node.def.forEach((x) => traverse(x));
-        
+
         const entryExitExist = this.isEntryExitExists(contextList);
         if (entryExitExist) {
-            const formMultipleEntryExit = (localContextList: QueryObject[]) => {
-                let count = 0;
-                const name = "PatientRequest";
-                const parsSet = new Set<string>();
-                localContextList.forEach((queryObject) => {
-                    if (queryObject.queryString.indexOf("PEE") > -1) {
-                        query = `WITH PatientRequestEntryExit AS ${
-                            this.wrapBrackets(queryObject).queryString
-                        } `;
-                    } else {
-                        query += `, ${name}${count} AS ( ${queryObject.queryString} ) `;
-                        count++;
-                    }
-                    queryObject.parameterPlaceholders.forEach((p) =>
-                        parsSet.add(p)
-                    );
-                });
-                let unionQuery = "";
-                for (let i = 0; i < count; i++) {
-                    if (i === 0) {
-                        unionQuery = `SELECT 
-                                "PatientListRequests"."patient.attributes.pcount.0" AS "patient.attributes.pcount.0", 
-                                "PatientRequestEntryExit"."entry" AS "entry", 
-                                "PatientRequestEntryExit"."exit" AS "exit" 
-                                FROM (SELECT * FROM ${name}${i}`;
-                    } else {
-                        unionQuery += ` UNION SELECT * FROM ${name}${i}`;
-                    }
-                }
+            return this.formMultipleEntryExitParts(contextList);
+        }
 
-                // Construct order by query for unionQuery if there is an ORDER BY in PatientRequest
-                let orderByQuery = "";
-                localContextList.forEach((queryObject) => {
-                    // Find ORDER BY expression and direction by looking for string inbetween ORDER BY and ASC|DESC
-                    const orderByExpressionMatch =
-                        queryObject.queryString.match(
-                            new RegExp(`(?<=ORDER BY)(.*)(ASC|DESC)`)
-                        );
-                    if (orderByExpressionMatch) {
-                        const orderByExpression =
-                            orderByExpressionMatch[1].trim();
-                        const orderByDirection =
-                            orderByExpressionMatch[2].trim();
-
-                        // Use orderByExpression to find `AS alias` to use in ORDER BY for unionQuery
-                        const OrderByAliasRegex = new RegExp(
-                            `${this.escapeRegExp(
-                                orderByExpression
-                            )} AS \\"(.*?)\\"`
-                        );
-                        const orderByAliasMatch = queryObject.queryString.match(
-                            OrderByAliasRegex
-                        );
-
-                        if (orderByAliasMatch) {
-                            const orderByAlias = orderByAliasMatch[1];
-                            orderByQuery = `ORDER BY "${orderByAlias}" ${orderByDirection}`;
-                        }
-                    }
-                });
-                
-                unionQuery += `) AS "PatientListRequests" INNER JOIN "PatientRequestEntryExit" 
-                ON "PatientListRequests"."patient.attributes.pcount.0" = "PatientRequestEntryExit"."patient.attributes.pid"
-                ${orderByQuery}`;
-
-                query = new QueryObject(`${query} ${unionQuery}`, [...Array.from(parsSet)], true);
-                return query;
-            };
-
-            query = formMultipleEntryExit(contextList);
+        let body: QueryObject;
+        if (contextList.length > 1) {
+            contextList.forEach((queryObject) => {
+                this.wrapBrackets(queryObject);
+            });
+            body = QueryObject.format(" UNION ").join(contextList);
         } else {
-            if (contextList.length > 1) {
-                contextList.forEach((queryObject) => {
-                    this.wrapBrackets(queryObject);
-                });
-                query = QueryObject.format(" UNION ").join(contextList);
+            body = contextList[0];
+        }
+        return { withClause: "", body };
+    }
+
+    // Exposed for unit testing. Builds the entry/exit-aware WITH clause
+    // and the corresponding SELECT/INNER JOIN body separately so the WITH
+    // can be hoisted out of any subquery wrapping. See getContextSQLParts.
+    public static formMultipleEntryExitParts(
+        localContextList: QueryObject[]
+    ): { withClause: string; body: QueryObject } {
+        // Two-pass build: collect the PEE clause and non-PEE clauses
+        // independently, then assemble a single WITH chain. The previous
+        // implementation used a single accumulator that was assigned (not
+        // appended to) on PEE iterations, which silently dropped any
+        // non-PEE clauses that happened to be iterated before PEE. Order
+        // is no longer load-bearing here. See issue #2234 (EC-1).
+        const name = "PatientRequest";
+        const parsSet = new Set<string>();
+        let peeClause = "";
+        const nonPeeClauses: string[] = [];
+        let count = 0;
+
+        localContextList.forEach((queryObject) => {
+            if (queryObject.queryString.indexOf("PEE") > -1) {
+                peeClause = `PatientRequestEntryExit AS ${
+                    this.wrapBrackets(queryObject).queryString
+                }`;
             } else {
-                query = contextList[0];
+                nonPeeClauses.push(
+                    `${name}${count} AS ( ${queryObject.queryString} )`
+                );
+                count++;
+            }
+            queryObject.parameterPlaceholders.forEach((p) =>
+                parsSet.add(p)
+            );
+        });
+
+        const withClause = `WITH ${[peeClause, ...nonPeeClauses]
+            .filter(Boolean)
+            .join(" , ")} `;
+        let unionQuery = "";
+        for (let i = 0; i < count; i++) {
+            if (i === 0) {
+                // PatientRequestEntryExit is referenced UNQUOTED to match the
+                // unquoted CTE declaration in the WITH chain. HANA stores
+                // unquoted identifiers in upper case, so a quoted reference
+                // ("PatientRequestEntryExit") would fail to resolve against
+                // the upper-cased CTE name. See issue #2234.
+                unionQuery = `SELECT
+                        "PatientListRequests"."patient.attributes.pcount.0" AS "patient.attributes.pcount.0",
+                        PatientRequestEntryExit."entry" AS "entry",
+                        PatientRequestEntryExit."exit" AS "exit"
+                        FROM (SELECT * FROM ${name}${i}`;
+            } else {
+                unionQuery += ` UNION SELECT * FROM ${name}${i}`;
             }
         }
 
-        return query;
+        // Construct order by query for unionQuery if there is an ORDER BY in PatientRequest
+        let orderByQuery = "";
+        localContextList.forEach((queryObject) => {
+            // Find ORDER BY expression and direction by looking for string inbetween ORDER BY and ASC|DESC
+            const orderByExpressionMatch =
+                queryObject.queryString.match(
+                    new RegExp(`(?<=ORDER BY)(.*)(ASC|DESC)`)
+                );
+            if (orderByExpressionMatch) {
+                const orderByExpression =
+                    orderByExpressionMatch[1].trim();
+                const orderByDirection =
+                    orderByExpressionMatch[2].trim();
+
+                // Use orderByExpression to find `AS alias` to use in ORDER BY for unionQuery
+                const OrderByAliasRegex = new RegExp(
+                    `${this.escapeRegExp(
+                        orderByExpression
+                    )} AS \\"(.*?)\\"`
+                );
+                const orderByAliasMatch = queryObject.queryString.match(
+                    OrderByAliasRegex
+                );
+
+                if (orderByAliasMatch) {
+                    const orderByAlias = orderByAliasMatch[1];
+                    orderByQuery = `ORDER BY "${orderByAlias}" ${orderByDirection}`;
+                }
+            }
+        });
+
+        unionQuery += `) AS "PatientListRequests" INNER JOIN PatientRequestEntryExit
+        ON "PatientListRequests"."patient.attributes.pcount.0" = PatientRequestEntryExit."patient.attributes.pid"
+        ${orderByQuery}`;
+
+        const body = new QueryObject(
+            unionQuery,
+            [...Array.from(parsSet)],
+            true
+        );
+        return { withClause, body };
     }
 
     static wrapBrackets(qo: QueryObject) {

@@ -37,11 +37,10 @@ export class DBConnectionUtil {
                             logger.info(`Schema set to: ${credentials.schema}`);
                         });
                     });
-                    DBConnectionUtil.pool.on("error", (err, client) => {
-                        logger.error("Postgres client error: " + err);
-                        client.release(true);
+                    DBConnectionUtil.pool.on("error", (err: any) => {
+                        logger.error(err);
                     });
-                    
+
 
                     NodeCleanup((_, eventType) => {
                             if (DBConnectionUtil.pool) {

@@ -8,6 +8,16 @@ import { proxy } from "npm:hono/proxy";
 
 import { STATUS_CODE } from "https://deno.land/std/http/status.ts";
 
+const eszipCache = new Map<string, Uint8Array>();
+
+async function readEszipCached(eszipPath: string): Promise<Uint8Array> {
+  const cached = eszipCache.get(eszipPath);
+  if (cached) return cached;
+  const bytes = await Deno.readFile(eszipPath);
+  eszipCache.set(eszipPath, bytes);
+  return bytes;
+}
+
 function substituteEnvVars(input: string): string {
   let result = input;
   let maxIterations = 10;
@@ -216,8 +226,11 @@ async function _callInit(
   if (eszip) {
     const eszipPath = `${dir}${eszip}`;
     try {
-      logger.log(`Loading eszip: ${eszipPath}`);
-      options["maybeEszip"] = await Deno.readFile(eszipPath);
+      const cached = eszipCache.has(eszipPath);
+      if (!cached) {
+        logger.log(`Loading eszip: ${eszipPath}`);
+      }
+      options["maybeEszip"] = await readEszipCached(eszipPath);
     } catch (e) {
       logger.error(`Failed to read eszip file ${eszipPath}: ${e}`);
       return; // Skip this plugin if eszip file is missing
@@ -285,8 +298,11 @@ async function _callWorker(
   if (fncfg.eszip) {
     const eszipPath = `${dir}${fncfg.eszip}`;
     try {
-      logger.log(`Loading eszip: ${eszipPath}`);
-      options["maybeEszip"] = await Deno.readFile(eszipPath);
+      const cached = eszipCache.has(eszipPath);
+      if (!cached) {
+        logger.log(`Loading eszip: ${eszipPath}`);
+      }
+      options["maybeEszip"] = await readEszipCached(eszipPath);
     } catch (e) {
       logger.error(`Failed to read eszip file ${eszipPath}: ${e}`);
       return new Response(JSON.stringify({ error: `Plugin eszip not found: ${eszipPath}` }), {

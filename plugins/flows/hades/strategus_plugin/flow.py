@@ -290,17 +290,16 @@ def drop_strategus_results(options):
     """
     Drops the Strategus results from the database.
     """
-    datasetId = options.get('datasetId', None)
     study_id = options.get('studyId', None)
     database_code = options.get('databaseCode', None)
-    if(not datasetId):
-       raise Exception('DatasetId is missing')
+    if(not study_id):
+        raise Exception('StudyId is missing')
+
     if(not database_code):
        raise Exception('Database code is missing')
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
-        'dataset_id': datasetId,
         'study_id': study_id
     })
 

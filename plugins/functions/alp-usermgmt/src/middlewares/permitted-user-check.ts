@@ -3,7 +3,7 @@ import { Container } from 'typedi'
 import { UserGroupService, UserService } from '../services'
 import { createLogger } from '../Logger'
 import { IAppRequest } from '../types'
-import * as _  from 'lodash-es'
+import * as _ from 'lodash-es'
 import { ROLES } from '../const'
 
 interface RoleCheckOptions {
@@ -30,7 +30,7 @@ export const permittedUserCheck =
     try {
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
-      const ctxUserGroups = await userGroupService.getUserGroupsMetadata(ctxUserId)
+      const ctxUserGroups = await userGroupService.getUserGroupsMetadataByIdpUserId(ctxUserId)
       const url = `${req.baseUrl}${req.url}`
 
       if (ctxUserGroups.alp_role_user_admin) {
@@ -61,7 +61,7 @@ export const permittedUserCheck =
         logger.info(`Permitted user check for ${req.user.userId} on ${userId}`)
 
         // UserID and UserGroups are referred to requested user
-        const userGroups = await userGroupService.getUserGroupsMetadata(userId)
+        const userGroups = await userGroupService.getUserGroupsMetadataByIdpUserId(userId)
 
         if (ctxUserGroups.alp_role_tenant_admin.length > 0) {
           if (opts.userMustWithinTenant) {

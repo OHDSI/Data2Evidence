@@ -7,6 +7,7 @@ Coefficients = 'flows/loyalty_score_plugin/external/coefficients.json'
 class CalculateConfig(BaseModel):
     schema_name: str
     database_code: str
+    cache_id: Optional[str] = None
     index_date: str
     lookback_years: int
     coeff_table_name: Optional[str]
@@ -19,6 +20,7 @@ class CalculateConfig(BaseModel):
 class RetrainConfig(BaseModel):
     schema_name: str
     database_code: str
+    cache_id: Optional[str] = None
     index_date: str
     train_years: int = 2
     return_years: int = 1

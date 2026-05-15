@@ -12,12 +12,10 @@ export class LogtoAPI extends BaseIDPAPI {
   private async getResourceId(): Promise<string> {
     if (this.resourceId) return this.resourceId
 
-    const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
-    const url = `${this.baseUrl}/api/resources`
-    const result = await get<Array<{ id: string; indicator: string; isDefault?: boolean }>>(url, options)
+    const resources = await this.fetchAllPages<{ id: string; indicator: string; isDefault?: boolean }>('/api/resources')
 
     // Find the application resource (set as default during post-init), not the Management API
-    const resource = result.data.find(r => r.isDefault)
+    const resource = resources.find(r => r.isDefault)
     if (!resource) {
       throw new Error('Default application resource not found in Logto')
     }
@@ -32,29 +30,27 @@ export class LogtoAPI extends BaseIDPAPI {
     const resourceId = await this.getResourceId()
     const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
 
-    // Find or create scope on the resource
-    const scopesUrl = `${this.baseUrl}/api/resources/${resourceId}/scopes`
-    const existingScopes = await get<Array<{ id: string; name: string }>>(scopesUrl, options)
-    let scope = existingScopes.data.find(s => s.name === scopeName)
+    const scopesPath = `/api/resources/${resourceId}/scopes`
+    const existingScopes = await this.fetchAllPages<{ id: string; name: string }>(scopesPath)
+    let scope = existingScopes.find(s => s.name === scopeName)
 
     if (!scope) {
       this.logger.info(`Creating scope ${scopeName} on resource ${resourceId}`)
       const createResult = await post<{ id: string; name: string }>(
-        scopesUrl,
+        `${this.baseUrl}${scopesPath}`,
         { name: scopeName, description: scopeName },
         options
       )
       scope = createResult.data
     }
 
-    // Assign scope to role if not already assigned
-    const roleScopesUrl = `${this.baseUrl}/api/roles/${roleId}/scopes`
-    const existingRoleScopes = await get<Array<{ id: string; name: string }>>(roleScopesUrl, options)
-    const alreadyAssigned = existingRoleScopes.data.some(s => s.id === scope!.id)
+    const roleScopesPath = `/api/roles/${roleId}/scopes`
+    const existingRoleScopes = await this.fetchAllPages<{ id: string; name: string }>(roleScopesPath)
+    const alreadyAssigned = existingRoleScopes.some(s => s.id === scope!.id)
 
     if (!alreadyAssigned) {
       this.logger.info(`Assigning scope ${scopeName} to role ${roleId}`)
-      await post(roleScopesUrl, { scopeIds: [scope.id] }, options)
+      await post(`${this.baseUrl}${roleScopesPath}`, { scopeIds: [scope!.id] }, options)
     }
   }
 
@@ -188,10 +184,7 @@ export class LogtoAPI extends BaseIDPAPI {
 
   async getUserRoles(idpUserId: string): Promise<ILogtoRole[]> {
     this.logger.debug(`Fetching roles for user ${idpUserId}`)
-    const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
-    const url = `${this.baseUrl}/api/users/${idpUserId}/roles`
-    const result = await get<ILogtoRole[]>(url, options)
-    return result.data
+    return this.fetchAllPages<ILogtoRole>(`/api/users/${idpUserId}/roles`)
   }
 
   async assignRoleToUser(idpUserId: string, roleName: string, scopes?: string[]): Promise<void> {
