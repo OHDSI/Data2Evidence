@@ -2038,7 +2038,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "PheValuator",
-      "RemoteRef": "v2.2.15"
+      "RemoteRef": "v2.2.15",
       "Remotes": "ohdsi/PatientLevelPrediction, ohdsi/FeatureExtraction, ohdsi/ROhdsiWebApi, ohdsi/Eunomia, ohdsi/CohortGenerator"
     },
     "PhenotypeLibrary": {
