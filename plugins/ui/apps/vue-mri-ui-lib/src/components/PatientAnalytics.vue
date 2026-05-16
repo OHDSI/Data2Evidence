@@ -252,9 +252,11 @@ export default {
   mounted() {
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
+    window.addEventListener('d2e-ai-artifact', this.handleAiArtifact)
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    window.removeEventListener('d2e-ai-artifact', this.handleAiArtifact)
   },
   computed: {
     ...mapGetters([
@@ -335,6 +337,17 @@ export default {
       const chartConfig = this.getAllChartConfigs
       if (chartConfig && chartConfig.shared && chartConfig.shared.enabled) {
         this.loadSharedBookmarkList()
+      }
+    },
+    /**
+     * Reacts to cohort-related artifacts emitted by the AI Assistant panel.
+     * The AI assistant dispatches `window.CustomEvent('d2e-ai-artifact', { detail })` after
+     * a successful tool call. We refresh the cohort list for any cohort-creation event.
+     */
+    handleAiArtifact(event: CustomEvent) {
+      const kind: string = event?.detail?.kind ?? ''
+      if (kind === 'atlas_cohort_created' || kind === 'cohort_created') {
+        this.initializeBookmarks()
       }
     },
     dismissBrowserMessage() {
