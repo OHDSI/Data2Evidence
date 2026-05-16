@@ -122,6 +122,12 @@
           "env": "code-suggestion"
         },
         {
+          "source": "/ai-assistant",
+          "function": "/code-suggestion",
+          "imports": "/code-suggestion/deno.json",
+          "env": "code-suggestion"
+        },
+        {
           "source": "/mcp",
           "function": "/mcp-server",
           "imports": "/mcp-server/deno.json",
@@ -2944,6 +2950,17 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/ai-assistant",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET"
           ]
         },
         {
