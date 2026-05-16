@@ -134,6 +134,8 @@ export class DatasetRouter {
           cacheDatasetType,
         } = req.body;
 
+        const isWebApiManaged = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
+
         const newCacheSchemaName = schemaName
           ? schemaName
           : `CDM${id}`.replace(/-/g, "");
@@ -228,7 +230,7 @@ export class DatasetRouter {
           this.logger.info("Creating new dataset in Portal");
           const newDatasetInput = {
             id,
-            type, // TODO: validate type
+            type: isWebApiManaged ? "webapi" : type,
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
             dialect,
@@ -240,7 +242,7 @@ export class DatasetRouter {
             plugin,
             tenantId,
             paConfigId,
-            visibilityStatus,
+            visibilityStatus: isWebApiManaged ? "DEFAULT" : visibilityStatus,
             detail,
             dashboards,
             attributes,
@@ -264,104 +266,101 @@ export class DatasetRouter {
               .json(responseData || { error: createError.message });
           }
 
-          this.logger.info("Creating cache dataset in Portal");
-
           let newCacheDataset: any = {};
+          if (!isWebApiManaged) {
+            this.logger.info("Creating cache dataset in Portal");
 
-          if (
-            type === SourceDatasetType.FHIR &&
-            cacheDatasetType === CacheDatasetType.NON_OMOP
-          ) {
-            // Create FHIR project synchronously so fhir_project_id is available before triggering cache flow
-            let resolvedFhirProjectId = fhirProjectId;
-            if (!resolvedFhirProjectId) {
+            if (
+              type === SourceDatasetType.FHIR &&
+              cacheDatasetType === CacheDatasetType.NON_OMOP
+            ) {
+              let resolvedFhirProjectId = fhirProjectId;
+              if (!resolvedFhirProjectId) {
+                try {
+                  this.logger.info(
+                    `Creating FHIR project for dataset '${tokenStudyCode}'..`,
+                  );
+                  const fhirGatewayAPI = new FhirGatewayAPI(token);
+                  resolvedFhirProjectId = await fhirGatewayAPI.createProject(
+                    id,
+                    detail?.name || tokenStudyCode,
+                  );
+                  this.logger.info(
+                    `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
+                  );
+                } catch (error) {
+                  await portalAPI.deleteDataset(id);
+                  this.logger.error(
+                    `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
+                  );
+                  return res
+                    .status(500)
+                    .send("Dataset cannot be created because of FHIR project creation failure");
+                }
+              }
+
               try {
                 this.logger.info(
-                  `Creating FHIR project for dataset '${tokenStudyCode}'..`,
+                  `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
                 );
-                const fhirGatewayAPI = new FhirGatewayAPI(token);
-                resolvedFhirProjectId = await fhirGatewayAPI.createProject(
-                  id,
-                  detail?.name || tokenStudyCode,
-                );
-                this.logger.info(
-                  `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
-                );
+                const fhirCacheFlowRunDto = {
+                  databaseCode: databaseCode,
+                  schemaName: schemaName,
+                  cacheSchemaName: parsedNewCacheSchemaName,
+                  studyCode: tokenStudyCode,
+                  fhirProjectId: resolvedFhirProjectId,
+                };
+                const fhirCacheResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+                flowRunId = fhirCacheResult?.flowRunId;
               } catch (error) {
-                await portalAPI.deleteDataset(id); // Rollback dataset creation if FHIR project creation fails
                 this.logger.error(
-                  `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
+                  `Error while creating FHIR cache schema! ${error}`,
                 );
                 return res
                   .status(500)
-                  .send("Dataset cannot be created because of FHIR project creation failure");
+                  .send("Error while creating FHIR cache schema");
               }
             }
 
-            try {
-              this.logger.info(
-                `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
-              );
-              const fhirCacheFlowRunDto = {
-                databaseCode: databaseCode,
+            if (cacheDatasetName && cacheDatasetType) {
+              const snapshotRequest = {
+                id: uuidv4(),
+                sourceDatasetId: id,
+                newDatasetName: cacheDatasetName,
                 schemaName: schemaName,
-                cacheSchemaName: parsedNewCacheSchemaName,
-                studyCode: tokenStudyCode,
-                fhirProjectId: resolvedFhirProjectId,
+                timestamp: new Date(),
+                type: cacheDatasetType,
               };
-              const fhirCacheResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
-              flowRunId = fhirCacheResult?.flowRunId;
-            } catch (error) {
-              this.logger.error(
-                `Error while creating FHIR cache schema! ${error}`,
-              );
-              return res
-                .status(500)
-                .send("Error while creating FHIR cache schema");
-            }
-          }
+              newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
 
-          if (cacheDatasetName && cacheDatasetType) {
-            const snapshotRequest = {
-              id: uuidv4(),
-              sourceDatasetId: id,
-              newDatasetName: cacheDatasetName,
-              schemaName: schemaName,
-              timestamp: new Date(),
-              type: cacheDatasetType,
-            };
-            newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
-
-            // Trigger cache creation for existing schema with OMOP cache type
-            if (
-              schemaOption === CDMSchemaTypes.ExistingCDM &&
-              cacheDatasetType === CacheDatasetType.OMOP
-            ) {
-              try {
-                this.logger.info(
-                  `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
-                );
-
-                const dataModels = await jobpluginsAPI.getDatamodels();
-                const dataModelInfo = dataModels.find(
-                  (model) => model.datamodel === dataModel,
-                );
-
-                const datamartCacheResult = await jobpluginsAPI.createDatamartCacheFlowRun(
-                  id,
-                  newCacheDataset.id,
-                  {},
-                  dataModelInfo?.flowId,
-                  `datamart-cache-${schemaName}`,
-                );
-                flowRunId = datamartCacheResult?.flowRunId;
-              } catch (error) {
-                this.logger.error(
-                  `Error while creating cache for existing schema! ${error}`,
-                );
-                return res
-                  .status(500)
-                  .send("Error while creating cache for existing schema");
+              if (
+                schemaOption === CDMSchemaTypes.ExistingCDM &&
+                cacheDatasetType === CacheDatasetType.OMOP
+              ) {
+                try {
+                  this.logger.info(
+                    `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
+                  );
+                  const dataModels = await jobpluginsAPI.getDatamodels();
+                  const dataModelInfo = dataModels.find(
+                    (model) => model.datamodel === dataModel,
+                  );
+                  const datamartCacheResult = await jobpluginsAPI.createDatamartCacheFlowRun(
+                    id,
+                    newCacheDataset.id,
+                    {},
+                    dataModelInfo?.flowId,
+                    `datamart-cache-${schemaName}`,
+                  );
+                  flowRunId = datamartCacheResult?.flowRunId;
+                } catch (error) {
+                  this.logger.error(
+                    `Error while creating cache for existing schema! ${error}`,
+                  );
+                  return res
+                    .status(500)
+                    .send("Error while creating cache for existing schema");
+                }
               }
             }
           }
