@@ -93,6 +93,8 @@
     "./src/routes/UserRouter": "./src/routes/UserRouter.ts",
     "./src/routes/AlpUserRouter": "./src/routes/AlpUserRouter.ts",
     "./src/services/MemberService": "./src/services/MemberService.ts",
+    "./src/services/AutoProvisionService": "./src/services/AutoProvisionService.ts",
+    "./src/services/EntitlementsSyncService": "./src/services/EntitlementsSyncService.ts",
     "./src/services/B2cGroupService": "./src/services/B2cGroupService.ts",
     "./src/services/roles/IRoleService": "./src/services/roles/IRoleService.ts",
     "./src/services/roles/UserAdminService": "./src/services/roles/UserAdminService.ts",

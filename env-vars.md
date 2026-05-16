@@ -28,3 +28,14 @@
 | `PG__LOGTO_MANAGER_PASSWORD`                    | string         |
 | `REDIS_PASSWORD`                                | string         | Redis Password                                                                      |
 | `TLS__CADDY_DIRECTIVE`                          | string         | Generate self-signed or public x509 certificate                                     |
+| `USERMGMT__AUTO_PROVISION_ENABLED`              | bool           | Auto-create a usermgmt.user row on first federated OIDC login (default `false`).    |
+| `USERMGMT__AUTO_PROVISION_CONNECTORS`           | csv            | Logto social-connector targets allowed to auto-provision (e.g. `physionet,oidc`).   |
+| `USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID`    | uuid           | Tenant for the default TENANT_VIEWER group; falls back to `APP__TENANT_ID`.         |
+| `USERMGMT__AUTO_PROVISION_ROLE_HOOK_URL`        | url            | Optional. POSTs `{idpUserId,email,connectorId,accessToken}` and merges `{roles:[]}`.|
+| `USERMGMT__AUTO_PROVISION_ROLE_HOOK_SECRET`     | password       | Optional bearer token sent to the role hook.                                        |
+| `USERMGMT__AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS` | number         | Role hook abort timeout in ms (default `5000`).                                     |
+| `USERMGMT__ENTITLEMENTS_SYNC_ENABLED`           | bool           | Reconcile STUDY_RESEARCHER groups against the upstream IdP's entitlements view on every login (default `false`). |
+| `USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL`     | url            | PhysioNet base URL the entitlements sync calls (e.g. `https://physionet.org`).      |
+| `USERMGMT__ENTITLEMENTS_TIMEOUT_MS`             | number         | Entitlements fetch abort timeout in ms (default `10000`).                           |
+| `USERMGMT__ENTITLEMENTS_TOKEN_CLAIM`            | string         | JWT claim name carrying the upstream access token (default `physionet_access_token`). |
+| `LOGTO__SOCIAL_SIGNIN_TARGETS`                  | csv            | Logto social-connector targets to enable on the sign-in screen. Defaults to the target of `LOGTO__CONNECTOR_CONFIG`. |

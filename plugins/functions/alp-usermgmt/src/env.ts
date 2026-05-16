@@ -38,7 +38,24 @@ export const env = {
   IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
   IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME,
   AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
-  USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE")
+  USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE"),
+  // Auto-provision new users on first federated OIDC login. Gated on the
+  // originating Logto social connector so we never auto-create from
+  // username/password sign-up or unintended connectors.
+  USERMGMT_AUTO_PROVISION_ENABLED: Deno.env.get("USERMGMT__AUTO_PROVISION_ENABLED") === 'true',
+  USERMGMT_AUTO_PROVISION_CONNECTORS: Deno.env.get("USERMGMT__AUTO_PROVISION_CONNECTORS") || '',
+  USERMGMT_AUTO_PROVISION_DEFAULT_TENANT_ID: Deno.env.get("USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID") || Deno.env.get("APP__TENANT_ID"),
+  USERMGMT_AUTO_PROVISION_ROLE_HOOK_URL: Deno.env.get("USERMGMT__AUTO_PROVISION_ROLE_HOOK_URL") || '',
+  USERMGMT_AUTO_PROVISION_ROLE_HOOK_SECRET: Deno.env.get("USERMGMT__AUTO_PROVISION_ROLE_HOOK_SECRET") || '',
+  USERMGMT_AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS: Number(Deno.env.get("USERMGMT__AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS")) || 5000,
+  // Entitlements sync: on every login of a user federated via a connector
+  // that exposes an upstream IdP token (e.g. PhysioNet via the patched
+  // connector-oidc), call the IdP's accessible-projects endpoint and
+  // reconcile STUDY_RESEARCHER on portal.dataset rows.
+  USERMGMT_ENTITLEMENTS_SYNC_ENABLED: Deno.env.get("USERMGMT__ENTITLEMENTS_SYNC_ENABLED") === 'true',
+  USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL: Deno.env.get("USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL") || '',
+  USERMGMT_ENTITLEMENTS_TIMEOUT_MS: Number(Deno.env.get("USERMGMT__ENTITLEMENTS_TIMEOUT_MS")) || 10000,
+  USERMGMT_ENTITLEMENTS_TOKEN_CLAIM: Deno.env.get("USERMGMT__ENTITLEMENTS_TOKEN_CLAIM") || 'physionet_access_token',
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
@@ -46,4 +63,9 @@ export const services = JSON.parse(env.SERVICE_ROUTES)
 export const getAutoGrantDatasetCodes = (): string[] => {
   if (!env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) return []
   return env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+}
+
+export const getAutoProvisionConnectors = (): string[] => {
+  if (!env.USERMGMT_AUTO_PROVISION_CONNECTORS) return []
+  return env.USERMGMT_AUTO_PROVISION_CONNECTORS.split(',').map(c => c.trim()).filter(c => c)
 }

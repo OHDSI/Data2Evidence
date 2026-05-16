@@ -98,8 +98,14 @@ services:
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
+    volumes:
+      # Overlay the bundled connector-oidc with a d2e-patched version that
+      # writes the upstream access/refresh tokens to globalThis.tokenMap so the
+      # Logto JWT customizer can surface them as physionet_access_token /
+      # physionet_refresh_token claims. Mirrors the connector-alp-azuread
+      # override pattern below.
+      - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
+      # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
   alp-minerva-pg-mgmt-init:
     ports:

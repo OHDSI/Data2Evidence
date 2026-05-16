@@ -4,7 +4,13 @@ import { Container } from 'typedi'
 import jwt from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 import { createLogger } from '../Logger'
-import { B2cGroupService, UserGroupService, UserService } from '../services'
+import {
+  AutoProvisionService,
+  B2cGroupService,
+  EntitlementsSyncService,
+  UserGroupService,
+  UserService,
+} from '../services'
 import { env, getAutoGrantDatasetCodes } from '../env'
 import { LogtoAPI } from '../api'
 import { IDataset, ITokenUser } from '../types'
@@ -57,7 +63,20 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.IDP_RELYING_PARTY === 'azure') {
+        // Try auto-provisioning from a configured federated OIDC connector
+        // (e.g. PhysioNet). When enabled and the user came in through an
+        // allowlisted connector, this creates the usermgmt.user row +
+        // default group so the Portal can complete login. Returns null
+        // when ineligible — in which case we fall through to the existing
+        // Azure or 500 branches.
+        const autoProvisionService = Container.get(AutoProvisionService)
+        const provisioned = await autoProvisionService.provision(sub, { email, username }, bearerToken)
+        if (provisioned) {
+          userId = provisioned.id
+          const tokenUser: ITokenUser = { userId: provisioned.id, idpUserId: sub }
+          req.user = tokenUser
+          Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+        } else if (env.IDP_RELYING_PARTY === 'azure') {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
@@ -94,6 +113,16 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     if (!userId) {
       return next()
     }
+
+    // Reconcile STUDY_RESEARCHER memberships against the upstream IdP's
+    // entitlements view on every authenticated request. Decoupled from
+    // the Azure isSync gate so it fires for PhysioNet-federated users
+    // on plain GETs too. Failures are logged and swallowed inside the
+    // service.
+    const entitlementsSync = Container.get(EntitlementsSyncService)
+    await entitlementsSync.sync(userId!, sub, token).catch(err => {
+      logger.warn(`[Entitlements] sync threw for ${sub}: ${err}; keeping existing roles`)
+    })
 
     if (isSync && env.IDP_RELYING_PARTY === 'azure') {
       const tenantId = env.APP_TENANT_ID

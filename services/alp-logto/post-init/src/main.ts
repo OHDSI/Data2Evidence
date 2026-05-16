@@ -418,6 +418,23 @@ button[name="submit"]{ background: #000080 !important; }`,
     console.log(
       "*********************************** SIGN-IN EXPERIENCES **********************************************"
     );
+    // socialSignInConnectorTargets: prefer the explicit env var
+    // (LOGTO__SOCIAL_SIGNIN_TARGETS, CSV) so operators can list multiple
+    // active connectors. Otherwise derive from the configured connector's
+    // own target/metadata.target so post-init doesn't fight the operator
+    // after a connectorId rename. The previous hardcoded "azuread-alp"
+    // value was a hangover from the original Azure-AD-only flow.
+    const envTargets = (process.env.LOGTO__SOCIAL_SIGNIN_TARGETS || "")
+      .split(",").map(s => s.trim()).filter(Boolean)
+    const connectorTarget = connectorEnvConfig?.metadata?.target
+      || (connectorDBConfig && Object.keys(connectorDBConfig).length > 0
+            ? connectorDBConfig.target
+            : undefined)
+    const socialSignInConnectorTargets =
+      envTargets.length > 0
+        ? envTargets
+        : (connectorTarget ? [connectorTarget] : [])
+
     const signinExperienceSocialConnector: {
       branding: Object;
       color: Object;
@@ -436,13 +453,13 @@ button[name="submit"]{ background: #000080 !important; }`,
                       "verificationCode": false, "isPasswordPrimary": true
                     }]
                },
-      socialSignInConnectorTargets: ["azuread-alp"]
+      socialSignInConnectorTargets
     };
 
     if (process.env.LOGTO__DISABLE_BASIC_AUTH === "true") {
       signinExperienceSocialConnector["signIn"] = { methods: [] }
       signinExperienceSocialConnector["signUp"] = { verify: false, password: false, identifiers: [] }
-    } 
+    }
 
     await update("sign-in-exp", headers, signinExperienceSocialConnector);
     // console.log(`signinExperienceSocialConnector ${JSON.stringify(signinExperienceSocialConnector)}`)
