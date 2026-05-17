@@ -15,11 +15,9 @@ const AiAssistantPanel: FC = () => {
   const { activeDataset } = useActiveDataset();
   const datasetId = activeDataset?.id || undefined;
 
-  const { sessionId, loading: sessionLoading, error: sessionError } = useAiAssistantSession(
-    datasetId
-  );
+  const { sessionId, loading: sessionLoading, error: sessionError, recreateSession } = useAiAssistantSession(datasetId);
 
-  const { send, isStreaming } = useStreamMessage(sessionId, setMessages);
+  const { send, isStreaming } = useStreamMessage(sessionId, setMessages, recreateSession);
 
   const hasDataset = Boolean(datasetId);
 
@@ -44,25 +42,15 @@ const AiAssistantPanel: FC = () => {
               <span className="ai-panel__icon">✦</span>
               AI Assistant
             </span>
-            <button
-              className="ai-panel__close"
-              onClick={() => setOpen(false)}
-              aria-label="Close AI Assistant"
-            >
+            <button className="ai-panel__close" onClick={() => setOpen(false)} aria-label="Close AI Assistant">
               ✕
             </button>
           </div>
 
           {/* Status banners */}
-          {!hasDataset && (
-            <div className="ai-panel__banner">Select a dataset to begin.</div>
-          )}
-          {hasDataset && sessionLoading && (
-            <div className="ai-panel__banner">Starting session…</div>
-          )}
-          {hasDataset && sessionError && (
-            <div className="ai-panel__banner ai-panel__banner--error">{sessionError}</div>
-          )}
+          {!hasDataset && <div className="ai-panel__banner">Select a dataset to begin.</div>}
+          {hasDataset && sessionLoading && <div className="ai-panel__banner">Starting session…</div>}
+          {hasDataset && sessionError && <div className="ai-panel__banner ai-panel__banner--error">{sessionError}</div>}
 
           {/* Message list */}
           <ChatLog messages={messages} />

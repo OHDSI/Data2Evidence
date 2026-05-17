@@ -1,6 +1,14 @@
 import fetchRequest from "../../../fetch/request";
 import type { ChatSession, StreamCallbacks } from "../types";
 
+/** Thrown by {@link streamMessage} when the backend returns 404 (stale session). */
+export class SessionExpiredError extends Error {
+  constructor() {
+    super("Session expired — a new session will be created automatically.");
+    this.name = "SessionExpiredError";
+  }
+}
+
 const BASE = "ai-assistant";
 
 export async function createSession(datasetId: string, context?: string): Promise<ChatSession> {
@@ -17,11 +25,7 @@ export async function createSession(datasetId: string, context?: string): Promis
   return response.json();
 }
 
-export async function streamMessage(
-  sessionId: string,
-  userInput: string,
-  callbacks: StreamCallbacks
-): Promise<void> {
+export async function streamMessage(sessionId: string, userInput: string, callbacks: StreamCallbacks): Promise<void> {
   const response = await fetchRequest(`${BASE}/sessions/${sessionId}/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,6 +33,7 @@ export async function streamMessage(
   });
 
   if (!response.ok) {
+    if (response.status === 404) throw new SessionExpiredError();
     callbacks.onError(`Request failed: ${response.status}`);
     return;
   }

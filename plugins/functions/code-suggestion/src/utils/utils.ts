@@ -39,6 +39,24 @@ export const getModels = async (llm) => {
   }
 
   const pattern = {
+    // OpenRouter — uses the OpenAI-compatible API with a custom base URL
+    "openrouter:": () =>
+      import("@langchain/openai").then(
+        ({ ChatOpenAI }) =>
+          new ChatOpenAI({
+            model: llm.replace("openrouter:", ""),
+            apiKey: env.OPENROUTER_API_KEY,
+            configuration: {
+              baseURL:
+                env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1",
+              defaultHeaders: {
+                "HTTP-Referer": "https://github.com/Data2Evidence",
+                "X-Title": "Data2Evidence",
+              },
+            },
+          }),
+      ),
+    // OpenAI direct
     gpt: () =>
       import("@langchain/openai").then(
         ({ ChatOpenAI }) =>

@@ -8,8 +8,9 @@ import { env } from "../env";
 
 export class AgentService {
   async getStream(session: Session, userInput: string, token?: string) {
+    if (!env.AI_MODEL)
+      throw new Error("AI_MODEL environment variable is not set.");
     const model = await getModels(env.AI_MODEL);
-    if (!model) throw new Error("LLM Model not found");
 
     // Restrict to cohort-related tools for v1
     const tools = createStaticMcpTools(token, session.datasetId);
@@ -19,7 +20,7 @@ export class AgentService {
         t.name.includes("phenotype") ||
         t.name.includes("validate") ||
         t.name.includes("before_cohort") ||
-        t.name.includes("fetch_templates")
+        t.name.includes("fetch_templates"),
     );
 
     const agent = createAgent({
@@ -28,7 +29,9 @@ export class AgentService {
     });
 
     const messages = [
-      new SystemMessage(getSystemPrompt(session.datasetId, session.initialContext)),
+      new SystemMessage(
+        getSystemPrompt(session.datasetId, session.initialContext),
+      ),
       ...session.history,
       new HumanMessage(userInput),
     ];
