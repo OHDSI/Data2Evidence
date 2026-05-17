@@ -17,7 +17,7 @@ const Env = z.object({
     .transform(
       (
         str: string | undefined,
-        ctx: any
+        ctx: any,
       ): z.infer<ReturnType<typeof object>> | undefined => {
         if (!str) return undefined;
         try {
@@ -26,7 +26,7 @@ const Env = z.object({
           ctx.addIssue({ code: "custom", message: "Invalid JSON" });
           return z.NEVER;
         }
-      }
+      },
     ),
   AI_MODEL: optionalSecret,
   OPENAI_API_KEY: optionalSecret,

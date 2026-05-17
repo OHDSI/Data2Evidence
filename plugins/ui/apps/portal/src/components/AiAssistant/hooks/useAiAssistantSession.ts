@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createSession } from "../api/client";
 
 const SESSION_KEY = "d2e_ai_session_id";
@@ -8,6 +8,8 @@ interface SessionState {
   loading: boolean;
   error: string | null;
   resetSession: () => void;
+  /** Clears the cached session and immediately creates a fresh one, returning the new id. */
+  recreateSession: () => Promise<string>;
 }
 
 /**
@@ -76,5 +78,25 @@ export function useAiAssistantSession(datasetId: string | undefined): SessionSta
     };
   }, [datasetId]);
 
-  return { sessionId, loading, error, resetSession };
+  const recreateSession = useCallback(async (): Promise<string> => {
+    sessionStorage.removeItem(SESSION_KEY);
+    setSessionId(null);
+    setError(null);
+    if (!datasetId) throw new Error("No dataset selected");
+    setLoading(true);
+    try {
+      const session = await createSession(datasetId);
+      sessionStorage.setItem(SESSION_KEY, session.sessionId);
+      setSessionId(session.sessionId);
+      return session.sessionId;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Failed to recreate session";
+      setError(msg);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [datasetId]);
+
+  return { sessionId, loading, error, resetSession, recreateSession };
 }
