@@ -283,7 +283,12 @@ onUnmounted(() => {
               @update:draggable-attrition-stats="draggableAttritionStats = $event"
             />
           </div>
-          <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
+          <div>
+            <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
+            <p class="footnote">
+              {{ getText('MRI_PA_MESSAGE_CENSORING_DISCLAIMER') }}
+            </p>
+          </div>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
             <p>
