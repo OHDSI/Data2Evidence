@@ -32,7 +32,7 @@
   "dependencies": {
     "@trex/as": "^0.5.0-1779020298-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
     "@trex/circe": "^0.0.1-1779020149-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
-    "@trex/cli": "^0.5.0-1779020223-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/cli": "0.5.0-1777874515-b147b3bbddb1a98e35b994dfdf016b74e2e7d3b2",
     "@trex/fhir": "^0.1.0-1779020241-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
     "@trex/hana": "^0.5.0-1779020210-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
     "@trex/pgwire": "^0.5.0-1779020307-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
