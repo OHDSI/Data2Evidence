@@ -12,7 +12,10 @@ import { createLogger } from '../Logger'
 import { LogtoAPI, PortalAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
 import { LinkedAccountRepository } from '../repositories/LinkedAccountRepository'
-import { PhysionetReconcileService } from './PhysionetReconcileService'
+// Note: PhysionetReconcileService is imported lazily (dynamic import) inside
+// maybeTriggerPhysionetSync to break the circular module dep with this file —
+// PhysionetReconcileService statically imports UserGroupService, so a static
+// import here causes a temporal-dead-zone ReferenceError at module load.
 
 export type SyncRoleResult =
   | { status: 'synced' }
@@ -487,7 +490,8 @@ export class UserGroupService {
         const ttlMs = env.PHYSIONET_SYNC_TTL_SECONDS * 1000
         const fresh = link.lastSyncedAt && (Date.now() - link.lastSyncedAt.getTime()) < ttlMs
         if (fresh) return
-        const svc = Container.get(PhysionetReconcileService)
+        const mod = await import('./PhysionetReconcileService.ts')
+        const svc = Container.get(mod.PhysionetReconcileService)
         await svc.reconcile(userId)
       } catch (e) {
         this.logger.warn(`physionet lazy reconcile failed for ${userId}: ${(e as Error).message}`)
