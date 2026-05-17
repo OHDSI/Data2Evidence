@@ -130,6 +130,7 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
+              - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
@@ -143,6 +144,7 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
             e2e:
               - "tests/e2e/**"
+              - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
