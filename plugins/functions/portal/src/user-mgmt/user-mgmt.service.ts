@@ -16,4 +16,8 @@ export class UserMgmtService {
     const userGroups = await this.userMgmtApi.getUserGroups(userId, this.jwt);
     return userGroups.alp_role_study_researcher;
   }
+
+  async getPhysionetGrantedDatasetIds(): Promise<string[]> {
+    return this.userMgmtApi.getPhysionetGrantedDatasetIds(this.jwt);
+  }
 }

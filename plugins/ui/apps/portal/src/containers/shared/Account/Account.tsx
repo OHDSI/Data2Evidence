@@ -10,6 +10,7 @@ import { api } from "../../../axios/api";
 import { ChangeMyPasswordDialog } from "./ChangeMyPasswordDialog/ChangeMyPasswordDialog";
 import DeleteAccountDialog from "./DeleteAccountDialog/DeleteAccountDialog";
 import { ChangeLanguageDialog } from "./ChangeLanguageDialog/ChangeLanguageDialog";
+import { LinkedAccountsSection } from "./LinkedAccountsSection";
 import { LegalCard } from "../Legal/LegalCard";
 import "./Account.scss";
 
@@ -128,6 +129,7 @@ export const Account: FC<AccountProps> = ({ portalType }) => {
                     text={getText(i18nKeys.ACCOUNT__CHANGE_LANGUAGE)}
                     onClick={openLanguageDialog}
                   />
+                  <LinkedAccountsSection />
                   <Button
                     block
                     variant="outlined"

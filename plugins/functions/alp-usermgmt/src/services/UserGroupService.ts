@@ -11,6 +11,8 @@ import { IPortalDataset, ITokenUser, RoleMap, UserGroupMetadata } from '../types
 import { createLogger } from '../Logger'
 import { LogtoAPI, PortalAPI } from '../api'
 import { env, getAutoGrantDatasetCodes } from '../env'
+import { LinkedAccountRepository } from '../repositories/LinkedAccountRepository'
+import { PhysionetReconcileService } from './PhysionetReconcileService'
 
 export type SyncRoleResult =
   | { status: 'synced' }
@@ -26,7 +28,8 @@ export class UserGroupService {
     private readonly userGroupRepo: UserGroupRepository,
     private readonly groupService: B2cGroupService,
     private readonly userService: UserService,
-    private readonly logtoAPI: LogtoAPI
+    private readonly logtoAPI: LogtoAPI,
+    private readonly linkedAccountRepo: LinkedAccountRepository
   ) {}
 
   async getUserGroupsMetadataByIdpUserId(
@@ -67,6 +70,7 @@ export class UserGroupService {
       },
       ...alpInfo
     }
+    this.maybeTriggerPhysionetSync(userId)
     return result
   }
 
@@ -99,7 +103,7 @@ export class UserGroupService {
     userId: string,
     groupId: string,
     trx?: Knex,
-    options?: { skipUserValidation?: boolean }
+    options?: { skipUserValidation?: boolean; createdByOverride?: string }
   ): Promise<undefined> {
     this.logger.debug(`Register user ${userId} to group ${groupId}`)
 
@@ -116,11 +120,11 @@ export class UserGroupService {
       return
     }
 
-    await this.addUserToGroup(userId, groupId, trx)
+    await this.addUserToGroup(userId, groupId, trx, opt.createdByOverride ? { createdByOverride: opt.createdByOverride } : undefined)
     await this.syncRoleToLogto(userId, groupId, 'assign')
   }
 
-  async addUserToGroup(userId: string, groupId: string, trx?: Knex) {
+  async addUserToGroup(userId: string, groupId: string, trx?: Knex, options?: { createdByOverride?: string }) {
     this.logger.info(`Add user ${userId} to group ${groupId}`)
 
     const tokenUser = Container.get<ITokenUser>(CONTAINER_KEY.CURRENT_USER)
@@ -130,7 +134,12 @@ export class UserGroupService {
       user_id: userId,
       b2c_group_id: groupId
     }
-    return await this.userGroupRepo.create(newUserGroup, tokenUser, trx)
+    return await this.userGroupRepo.create(
+      newUserGroup,
+      tokenUser,
+      trx,
+      options?.createdByOverride ? { createdBy: options.createdByOverride, modifiedBy: options.createdByOverride } : undefined
+    )
   }
 
   async registerUsersToGroups(userIds: string[], groupIds: string[]): Promise<{ userId: string }[]> {
@@ -467,5 +476,30 @@ export class UserGroupService {
     }
 
     return result
+  }
+
+  private maybeTriggerPhysionetSync(userId: string): void {
+    if (!env.PHYSIONET_LINKING_ENABLED) return
+    void (async () => {
+      try {
+        const link = await this.linkedAccountRepo.findByUserAndProvider(userId, 'physionet')
+        if (!link) return
+        const ttlMs = env.PHYSIONET_SYNC_TTL_SECONDS * 1000
+        const fresh = link.lastSyncedAt && (Date.now() - link.lastSyncedAt.getTime()) < ttlMs
+        if (fresh) return
+        const svc = Container.get(PhysionetReconcileService)
+        await svc.reconcile(userId)
+      } catch (e) {
+        this.logger.warn(`physionet lazy reconcile failed for ${userId}: ${(e as Error).message}`)
+      }
+    })()
+  }
+
+  async withdrawAllByProvenance(userId: string, createdBy: string): Promise<void> {
+    const rows = await this.userGroupRepo.findByProvenance(userId, createdBy)
+    if (!rows.length) return
+    const groupIds = rows.map(r => r.b2cGroupId)
+    this.logger.info(`Withdrawing ${rows.length} groups for user ${userId} provenance=${createdBy}`)
+    await this.withdrawUserFromGroups(userId, groupIds)
   }
 }

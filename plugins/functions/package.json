@@ -392,7 +392,15 @@
           "USER_MGMT__IDP_SUBJECT_PROP": "sub",
           "USER_MGMT__LOG_LEVEL": "info",
           "USER_MGMT__PATH": "/usermgmt/",
-          "USER_MGMT__PORT": 41104
+          "USER_MGMT__PORT": 41104,
+          "PHYSIONET__LINKING_ENABLED": "${PHYSIONET__LINKING_ENABLED:-false}",
+          "PHYSIONET__OAUTH__BASE_URL": "${PHYSIONET__OAUTH__BASE_URL:-}",
+          "PHYSIONET__OAUTH__CLIENT_ID": "${PHYSIONET__OAUTH__CLIENT_ID:-}",
+          "PHYSIONET__OAUTH__CLIENT_SECRET": "${PHYSIONET__OAUTH__CLIENT_SECRET:-}",
+          "PHYSIONET__OAUTH__REDIRECT_URI": "${PHYSIONET__OAUTH__REDIRECT_URI:-}",
+          "PHYSIONET__OAUTH__SCOPES": "${PHYSIONET__OAUTH__SCOPES:-credentialing:read profile:read}",
+          "PHYSIONET__SYNC_TTL_SECONDS": "${PHYSIONET__SYNC_TTL_SECONDS:-3600}",
+          "LINKED_ACCOUNT__ENC_KEY": "${LINKED_ACCOUNT__ENC_KEY:-}"
         },
         "white-rabbit": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",

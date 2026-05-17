@@ -7,10 +7,11 @@ import Routes from './routes'
 import { db } from './db/knex'
 import { healthCheckMiddleware } from './HealthCheckMiddleware'
 import { createLoggingMiddleware, createLogger } from './Logger'
-import { env } from './env'
+import { env, assertPhysionetEnv } from './env'
 import { addUserObjToReq } from './middlewares/add-user-object-to-req'
 import { CONTAINER_KEY } from './const'
 import { setupGlobalErrorHandling } from './error-handler'
+import { PhysionetAPI } from './api/PhysionetAPI'
 
 const PATH = env.USER_MGMT_PATH
 const PORT = env.USER_MGMT_PORT
@@ -30,6 +31,26 @@ export class Server {
 
   private registerContainerInstances() {
     Container.set({ id: 'DB_CONNECTION', factory: () => db })
+
+    if (env.PHYSIONET_LINKING_ENABLED) {
+      assertPhysionetEnv()
+      Container.set('LINKED_ACCOUNT_CONFIG', {
+        encryptionKey: env.LINKED_ACCOUNT_ENC_KEY,
+        stateTtlSeconds: 600,
+        refreshSkewSeconds: 60,
+      })
+      Container.set(PhysionetAPI, new PhysionetAPI({
+        baseUrl: env.PHYSIONET_OAUTH_BASE_URL,
+        clientId: env.PHYSIONET_OAUTH_CLIENT_ID,
+        clientSecret: env.PHYSIONET_OAUTH_CLIENT_SECRET,
+        redirectUri: env.PHYSIONET_OAUTH_REDIRECT_URI,
+        scopes: env.PHYSIONET_OAUTH_SCOPES,
+      }))
+    } else {
+      // Provide harmless stubs so the DI graph compiles even with the flag off
+      Container.set('LINKED_ACCOUNT_CONFIG', { encryptionKey: '', stateTtlSeconds: 600, refreshSkewSeconds: 60 })
+      Container.set(PhysionetAPI, new PhysionetAPI({ baseUrl: '', clientId: '', clientSecret: '', redirectUri: '', scopes: '' }))
+    }
   }
 
   private registerRequestInstance(req: Request, res: Response, next: NextFunction) {

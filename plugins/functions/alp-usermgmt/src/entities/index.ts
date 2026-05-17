@@ -1,5 +1,7 @@
 export * from './B2cGroup'
 export * from './Config'
 export * from './GroupAccessRequest'
+export * from './LinkedAccount'
+export * from './OauthState'
 export * from './User'
 export * from './UserGroup'

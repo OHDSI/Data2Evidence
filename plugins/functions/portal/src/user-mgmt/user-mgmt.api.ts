@@ -37,6 +37,18 @@ export class UserMgmtApi {
     return result.data;
   }
 
+  async getPhysionetGrantedDatasetIds(jwt: string): Promise<string[]> {
+    const requestConfig = this.getRequestConfig(jwt);
+    const url = `${this.url}/me/physionet-granted-dataset-ids`;
+    try {
+      const result = await this.channel.get(url, requestConfig);
+      return result.data?.datasetIds ?? [];
+    } catch {
+      // Feature flag is off (404) or any other error — treat as empty
+      return [];
+    }
+  }
+
   private getRequestConfig(jwt: string): RequestInit {
     return {
       headers: {

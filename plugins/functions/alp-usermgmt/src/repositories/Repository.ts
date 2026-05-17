@@ -112,14 +112,19 @@ export abstract class Repository<TEntity, TCriteria> {
     return await query.then(result => result != null && result.length != 0)
   }
 
-  async create<TField>(field: { [key in keyof TField]?: TField[key] }, user: ITokenUser, trx?: Knex) {
+  async create<TField>(
+    field: { [key in keyof TField]?: TField[key] },
+    user: ITokenUser,
+    trx?: Knex,
+    auditOverride?: { createdBy?: string; modifiedBy?: string }
+  ) {
     this.logger.debug(`Create ${this.tableName} record`)
 
     const { userId } = user
     const audit = {
-      created_by: userId,
+      created_by: auditOverride?.createdBy ?? userId,
       created_date: DateNow(),
-      modified_by: userId,
+      modified_by: auditOverride?.modifiedBy ?? userId,
       modified_date: DateNow()
     }
     const input = { ...field, ...audit }

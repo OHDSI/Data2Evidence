@@ -84,9 +84,11 @@ export class DatasetQueryService {
     }
 
     const tenant = this.tenantService.getTenant();
+    const physionetGrantedIds = await this.userMgmtService.getPhysionetGrantedDatasetIds();
+    const physionetGrantedIdSet = new Set(physionetGrantedIds);
 
     const swapped = this.swapVariables(
-      await this.buildDatasetResponseDto(dataset, tenant),
+      await this.buildDatasetResponseDto(dataset, tenant, physionetGrantedIdSet),
       SWAP_TO.STUDY,
     );
     return swapped as IDataset;
@@ -133,10 +135,13 @@ export class DatasetQueryService {
       }
     }
 
+    let physionetGrantedIdSet = new Set<string>();
     if (isResearcher) {
-      const datasetIds = await this.userMgmtService.getResearcherDatasetIds(
-        this.userId,
-      );
+      const [datasetIds, physionetGrantedIds] = await Promise.all([
+        this.userMgmtService.getResearcherDatasetIds(this.userId),
+        this.userMgmtService.getPhysionetGrantedDatasetIds(),
+      ]);
+      physionetGrantedIdSet = new Set(physionetGrantedIds);
       query.andWhere(
         "(dataset.visibility_status = :hidden AND dataset.id = ANY(:datasetIds) OR dataset.visibility_status != :hidden)",
         { hidden: "HIDDEN", datasetIds },
@@ -161,7 +166,7 @@ export class DatasetQueryService {
     const datasetDtos = await datasets.reduce<Promise<IDatasetResponseDto[]>>(
       async (accP, dataset) => {
         const acc = await accP;
-        const datasetDto = await this.buildDatasetResponseDto(dataset, tenant);
+        const datasetDto = await this.buildDatasetResponseDto(dataset, tenant, physionetGrantedIdSet);
 
         const { databaseCode, schemaName, dataModel, ...rest } = datasetDto;
         const formattedDataModel = dataModel.replace(/\s*\[.*?\]/, "").trim();
@@ -388,8 +393,15 @@ export class DatasetQueryService {
   buildDatasetResponseDto(
     dataset: Dataset,
     tenant: ITenant,
+    physionetGrantedIdSet: Set<string> = new Set(),
   ): IDatasetResponseDto {
     const { databaseCode, flowParameters, ...entity } = dataset;
+    const physionetGated = (dataset.attributes ?? []).some(
+      (a) => a.attributeId === 'physionet_version' && a.value?.trim() !== '',
+    );
+    const grantedVia: 'physionet_sync' | null = physionetGrantedIdSet.has(dataset.id)
+      ? 'physionet_sync'
+      : null;
     return {
       // TODO: Remove on 16 February 2024
       databaseName: databaseCode,
@@ -397,6 +409,8 @@ export class DatasetQueryService {
       ...entity,
       flowParameters,
       tenant,
+      physionetGated,
+      grantedVia,
     };
   }
 

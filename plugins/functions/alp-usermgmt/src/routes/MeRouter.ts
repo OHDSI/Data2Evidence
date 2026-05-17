@@ -5,6 +5,8 @@ import { MemberService, UserGroupService, UserService } from '../services'
 import { IAppRequest, UserDeleteRequest } from '../types'
 import { createLogger } from '../Logger'
 import { LogtoAPI } from '../api'
+import { env } from '../env'
+import { UserGroupRepository } from '../repositories'
 
 @Service()
 export class MeRouter {
@@ -15,7 +17,8 @@ export class MeRouter {
     private readonly userService: UserService,
     private readonly userGroupService: UserGroupService,
     private readonly memberService: MemberService,
-    private readonly logtoApi: LogtoAPI
+    private readonly logtoApi: LogtoAPI,
+    private readonly userGroupRepo: UserGroupRepository
   ) {
     this.registerRoutes()
   }
@@ -166,6 +169,32 @@ export class MeRouter {
 
       res.setHeader('Username', user.username)
       return res.status(200).send()
+    })
+
+    this.router.get('/physionet-granted-dataset-ids', async (req: IAppRequest, res: Response, next: NextFunction) => {
+      if (!env.PHYSIONET_LINKING_ENABLED) {
+        return res.status(404).send({ message: 'not enabled' })
+      }
+
+      const { idpUserId } = req.user
+      if (!idpUserId) {
+        this.logger.warn(`User does not contain 'idpUserId'`)
+        return res.status(403).send({ message: `User does not contain 'idpUserId'` })
+      }
+
+      try {
+        const user = await this.userService.getUserByIdpUserId(idpUserId)
+        if (!user) {
+          this.logger.error(`IDP user ID ${idpUserId} not found`)
+          return res.status(400).send({ message: `IDP user ID ${idpUserId} not found` })
+        }
+
+        const datasetIds = await this.userGroupRepo.findGrantedStudyIdsByProvenance(user.id, 'physionet_sync')
+        return res.status(200).json({ datasetIds })
+      } catch (err) {
+        this.logger.error(`Error when getting physionet-granted dataset IDs for ${idpUserId}: ${JSON.stringify(err)}`)
+        return next(err)
+      }
     })
   }
 }

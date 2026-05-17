@@ -126,6 +126,23 @@ export class UserGroupRepository extends Repository<UserGroup, UserGroupCriteria
     })
   }
 
+  async findByProvenance(userId: string, createdBy: string): Promise<{ id: string; b2cGroupId: string }[]> {
+    const rows = await this.db(this.tableName)
+      .where({ user_id: userId, created_by: createdBy })
+      .select('id', 'b2c_group_id')
+    return rows.map((r: any) => ({ id: r.id, b2cGroupId: r.b2c_group_id }))
+  }
+
+  async findGrantedStudyIdsByProvenance(userId: string, createdBy: string): Promise<string[]> {
+    const rows = await this.db(this.tableName)
+      .innerJoin('b2c_group', 'user_group.b2c_group_id', 'b2c_group.id')
+      .where('user_group.user_id', userId)
+      .andWhere('user_group.created_by', createdBy)
+      .andWhere('b2c_group.role', 'RESEARCHER')
+      .pluck('b2c_group.study_id')
+    return rows as string[]
+  }
+
   mapToUserGroupExt({
     id,
     user_id,

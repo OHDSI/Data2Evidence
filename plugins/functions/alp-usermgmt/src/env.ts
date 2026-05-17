@@ -38,7 +38,15 @@ export const env = {
   IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
   IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME,
   AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
-  USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE")
+  USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE"),
+  PHYSIONET_LINKING_ENABLED: (Deno.env.get('PHYSIONET__LINKING_ENABLED') ?? 'false') === 'true',
+  PHYSIONET_OAUTH_BASE_URL: Deno.env.get('PHYSIONET__OAUTH__BASE_URL') ?? '',
+  PHYSIONET_OAUTH_CLIENT_ID: Deno.env.get('PHYSIONET__OAUTH__CLIENT_ID') ?? '',
+  PHYSIONET_OAUTH_CLIENT_SECRET: Deno.env.get('PHYSIONET__OAUTH__CLIENT_SECRET') ?? '',
+  PHYSIONET_OAUTH_REDIRECT_URI: Deno.env.get('PHYSIONET__OAUTH__REDIRECT_URI') ?? '',
+  PHYSIONET_OAUTH_SCOPES: Deno.env.get('PHYSIONET__OAUTH__SCOPES') ?? 'credentialing:read profile:read',
+  PHYSIONET_SYNC_TTL_SECONDS: Number(Deno.env.get('PHYSIONET__SYNC_TTL_SECONDS') ?? '3600'),
+  LINKED_ACCOUNT_ENC_KEY: Deno.env.get('LINKED_ACCOUNT__ENC_KEY') ?? '',
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
@@ -46,4 +54,15 @@ export const services = JSON.parse(env.SERVICE_ROUTES)
 export const getAutoGrantDatasetCodes = (): string[] => {
   if (!env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) return []
   return env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+}
+
+export const assertPhysionetEnv = (): void => {
+  if (!env.PHYSIONET_LINKING_ENABLED) return
+  const missing: string[] = []
+  if (!env.PHYSIONET_OAUTH_BASE_URL) missing.push('PHYSIONET__OAUTH__BASE_URL')
+  if (!env.PHYSIONET_OAUTH_CLIENT_ID) missing.push('PHYSIONET__OAUTH__CLIENT_ID')
+  if (!env.PHYSIONET_OAUTH_CLIENT_SECRET) missing.push('PHYSIONET__OAUTH__CLIENT_SECRET')
+  if (!env.PHYSIONET_OAUTH_REDIRECT_URI) missing.push('PHYSIONET__OAUTH__REDIRECT_URI')
+  if (!env.LINKED_ACCOUNT_ENC_KEY) missing.push('LINKED_ACCOUNT__ENC_KEY')
+  if (missing.length) throw new Error(`PHYSIONET__LINKING_ENABLED=true but missing: ${missing.join(', ')}`)
 }

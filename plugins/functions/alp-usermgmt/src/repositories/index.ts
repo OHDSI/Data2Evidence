@@ -1,5 +1,7 @@
 export * from './B2cGroupRepository'
 export * from './ConfigRepository'
 export * from './GroupAccessRequestRepository'
+export * from './LinkedAccountRepository'
+export * from './OauthStateRepository'
 export * from './UserRepository'
 export * from './UserGroupRepository'

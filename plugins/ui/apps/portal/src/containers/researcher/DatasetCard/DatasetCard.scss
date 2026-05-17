@@ -68,4 +68,20 @@
       }
     }
   }
+
+  &__provenance-badge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background-color: rgba(0, 100, 200, 0.1);
+    color: #004080;
+    vertical-align: middle;
+
+    &--locked {
+      background-color: rgba(200, 100, 0, 0.1);
+      color: #804000;
+    }
+  }
 }

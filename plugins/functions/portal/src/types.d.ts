@@ -183,6 +183,8 @@ export interface IDatasetResponseDto {
   plugin: string;
   fhir_project_id?: string;
   flowParameters?: DatasetFlowParameters | null;
+  physionetGated?: boolean;
+  grantedVia?: 'physionet_sync' | null;
 }
 
 export interface IDatasetSearchDto {

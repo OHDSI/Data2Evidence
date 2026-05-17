@@ -11,9 +11,11 @@ import { Demo } from "./demo";
 import { StrategusResults } from "./strategus-results";
 import { StrategusAnalysis } from "./strategus-analysis";
 import { PublicWebapiProxyAPI } from "./public-webapi-proxy";
+import { LinkedAccounts } from "./linked-accounts";
 
 export const api = {
   userMgmt: new UserMgmt(),
+  linkedAccounts: new LinkedAccounts(),
   studyNotebook: new StudyNotebook(),
   systemPortal: new SystemPortal(),
   dataflow: new Dataflow(),

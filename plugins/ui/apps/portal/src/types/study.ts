@@ -67,6 +67,8 @@ export interface Study {
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
   strategusAnalysis?: NetworkStrategusStudy | null;
+  physionetGated?: boolean;
+  grantedVia?: 'physionet_sync' | null;
 }
 
 export interface NewStudyInput {
