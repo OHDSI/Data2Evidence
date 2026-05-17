@@ -365,31 +365,32 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
-          if [[ $SHOULD_PUBLISH == true ]]; then
-            npm publish
-          else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
-            FAILED=0
-            MAX_SIZE_MIB=500
-            MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
-            shopt -s nullglob
-            TGZ_FILES=(*.tgz)
-            if [ ${#TGZ_FILES[@]} -eq 0 ]; then
-              echo "ERROR: no .tgz files found after pack"
-              exit 1
+          ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+          FAILED=0
+          MAX_SIZE_MIB=500
+          MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
+          shopt -s nullglob
+          TGZ_FILES=(*.tgz)
+          if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+            echo "ERROR: no .tgz files found after pack"
+            exit 1
+          fi
+          for PACK_FILE in "${TGZ_FILES[@]}"; do
+            SIZE=$(wc -c < "$PACK_FILE")
+            SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+            if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+              echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+              echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+              FAILED=1
+            else
+              echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
             fi
+          done
+          [ $FAILED -eq 0 ] || exit $FAILED
+          if [[ $SHOULD_PUBLISH == true ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
-              SIZE=$(wc -c < "$PACK_FILE")
-              SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
-              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
-                echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
-                echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
-                FAILED=1
-              else
-                echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
-              fi
+              npm publish "$PACK_FILE"
             done
-            exit $FAILED
           fi
 
       - name: Upload UI resources
