@@ -1665,7 +1665,7 @@
     },
     "OhdsiReportGenerator": {
       "Package": "OhdsiReportGenerator",
-      "Version": "2.0.2",
+      "Version": "2.02",
       "Source": "GitHub",
       "Type": "Package",
       "Title": "Observational Health Data Sciences and Informatics Report Generator",
@@ -1713,7 +1713,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ohdsi",
       "RemoteRepo": "OhdsiReportGenerator",
-      "RemoteRef": "v2.0.2"
+      "RemoteRef": "v2.02"
     },
     "OhdsiSharing": {
       "Package": "OhdsiSharing",
