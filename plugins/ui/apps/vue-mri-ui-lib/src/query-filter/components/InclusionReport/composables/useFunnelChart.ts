@@ -206,6 +206,19 @@ export function useFunnelChart(
     { flush: 'post' } // Ensure <div ref="funnelChartRef"> exists
   )
 
+  // Re-render when chart container is mounted (e.g. after the loading spinner hides).
+  // The funnelChartData watcher may fire while showLoader keeps the chart div out of the DOM,
+  // leaving funnelChartRef null. Once the spinner finishes and the div is mounted, render now.
+  watch(
+    funnelChartRef,
+    newRef => {
+      if (newRef) {
+        renderFunnelChart()
+      }
+    },
+    { flush: 'post' }
+  )
+
   return {
     funnelChartRef,
     downloadFunnelChart,
