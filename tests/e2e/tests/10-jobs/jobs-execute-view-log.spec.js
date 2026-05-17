@@ -7,7 +7,7 @@ test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-  test.setTimeout(300000) // Set timeout to 5 minutes
+  test.setTimeout(600000) // 10 minutes — DQD job + 5 min `Completed` wait + login overhead
   // Jobs: Execute Job - Create DQD job with name dqd_demo
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
