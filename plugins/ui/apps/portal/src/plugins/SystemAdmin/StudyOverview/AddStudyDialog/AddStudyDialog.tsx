@@ -740,6 +740,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 value={formData.databaseCode}
                 onChange={(event: SelectChangeEvent<string>) => {
                   const db = databases.find((db) => db.code === event.target.value);
+                  const isHana = db?.dialect === "hana";
 
                   handleFormDataChange({
                     databaseCode: db?.code || "",
@@ -747,7 +748,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     cdmSchemaValue: "",
                     vocabSchemaValue: "",
                     // Set type to empty for HANA where user need to manually select the type
-                    type: db?.dialect === "hana" ? "" : SourceDatasetType.SOURCE,
+                    type: isHana ? "" : SourceDatasetType.SOURCE,
+                    // HANA hides the management-mode toggle and uses its own dataset types,
+                    // so force source mode to avoid submitting webApiManaged=true by default.
+                    ...(isHana ? { managementMode: "source" as ManagementMode } : {}),
                   });
                 }}
                 inputProps={{
