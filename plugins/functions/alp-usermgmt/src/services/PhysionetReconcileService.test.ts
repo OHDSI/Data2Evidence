@@ -25,27 +25,31 @@ function makeDeps(opts: {
     },
   }
   const groupSvc = {
+    // Mirror UserGroupService.registerUserToGroup: short-circuit when a row
+    // for (user, group) already exists, regardless of provenance — matches
+    // production behaviour where getUserGroup checks (user_id, b2c_group_id).
     registerUserToGroup: async (_u: string, gid: string, _trx: any, opts2: any) => {
-      // Existing service short-circuits if row exists — emulate that:
-      const exists = grants.find(g => g.groupId === gid && g.createdBy === opts2.createdByOverride)
+      const exists = grants.find(g => g.groupId === gid)
       if (exists) { events.push(`grant-skip:${gid}`); return }
       grants.push({ groupId: gid, createdBy: opts2.createdByOverride })
       events.push(`grant:${gid}`)
     },
+    // Provenance-scoped revoke: delete only rows whose createdBy matches.
+    // This is the production behaviour after the v1 fix.
     withdrawAllByProvenance: async (_u: string, prov: string) => {
       const before = grants.length
       for (let i = grants.length - 1; i >= 0; i--) if (grants[i].createdBy === prov) grants.splice(i, 1)
       events.push(`revoke-all:${prov}:${before - grants.length}`)
     },
-    withdrawUserFromGroups: async (_u: string, gids: string[]) => {
-      for (const gid of gids) {
-        for (let i = grants.length - 1; i >= 0; i--) {
-          if (grants[i].groupId === gid && grants[i].createdBy === 'physionet_sync') {
-            grants.splice(i, 1)
-          }
+    withdrawUserFromGroupByProvenance: async (_u: string, gid: string, prov: string) => {
+      let removed = 0
+      for (let i = grants.length - 1; i >= 0; i--) {
+        if (grants[i].groupId === gid && grants[i].createdBy === prov) {
+          grants.splice(i, 1)
+          removed++
         }
       }
-      events.push(`revoke:${gids.join(',')}`)
+      events.push(`revoke-prov:${gid}:${prov}:${removed}`)
     },
   }
   const datasetQuery = {
@@ -71,7 +75,6 @@ function makeDeps(opts: {
 function makeSvc(deps: any) {
   return new PhysionetReconcileService(
     deps.linkedSvc, deps.linkedRepo, deps.groupSvc, deps.datasetQuery, deps.api,
-    /* db */ undefined,
   )
 }
 
@@ -103,7 +106,7 @@ Deno.test('ACCESS is idempotent when row already exists', async () => {
   assertEquals(t.grants.length, 1)
 })
 
-Deno.test('NO_ACCESS revokes the physionet_sync row', async () => {
+Deno.test('NO_ACCESS revokes only the physionet_sync row, leaving admin grant intact', async () => {
   const t = makeDeps({
     link: { userId: 'u1', tokenValid: true },
     gated: [{ datasetId: 'd1', studyGroupId: 'g1', slug: 's1', version: 'v1', access: 'ok-no' }],
@@ -115,6 +118,20 @@ Deno.test('NO_ACCESS revokes the physionet_sync row', async () => {
   await makeSvc(t.deps).reconcile('u1')
   assertEquals(t.grants.length, 1)
   assertEquals(t.grants[0].createdBy, 'admin-1')
+  assertArrayIncludes(t.events, ['revoke-prov:g1:physionet_sync:1'])
+})
+
+Deno.test('NO_ACCESS for a dataset the user was never granted is a noop', async () => {
+  const t = makeDeps({
+    link: { userId: 'u1', tokenValid: true },
+    gated: [{ datasetId: 'd1', studyGroupId: 'g1', slug: 's1', version: 'v1', access: 'ok-no' }],
+    initialGrants: [{ groupId: 'g1', createdBy: 'admin-1' }],
+  })
+  await makeSvc(t.deps).reconcile('u1')
+  // Admin grant must NOT be revoked
+  assertEquals(t.grants.length, 1)
+  assertEquals(t.grants[0].createdBy, 'admin-1')
+  assertArrayIncludes(t.events, ['revoke-prov:g1:physionet_sync:0'])
 })
 
 Deno.test('UPSTREAM_ERROR leaves existing physionet_sync grant and records error', async () => {

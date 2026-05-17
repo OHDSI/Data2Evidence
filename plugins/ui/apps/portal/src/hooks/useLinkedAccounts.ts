@@ -8,17 +8,22 @@ export const useLinkedAccounts = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | undefined>();
 
+  const captureError = useCallback((e: unknown) => {
+    const message = e instanceof Error ? e.message : typeof e === "string" ? e : "Unexpected error";
+    setError({ message });
+  }, []);
+
   const reload = useCallback(async () => {
     setLoading(true);
     setError(undefined);
     try {
       setAccounts(await api.linkedAccounts.list());
-    } catch (e: any) {
-      if ("message" in e) setError({ message: e.message });
+    } catch (e) {
+      captureError(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [captureError]);
 
   useEffect(() => {
     reload();
@@ -31,14 +36,15 @@ export const useLinkedAccounts = () => {
 
   const refreshPhysionet = useCallback(async () => {
     setLoading(true);
+    setError(undefined);
     try {
       setAccounts(await api.linkedAccounts.refreshPhysionet());
-    } catch (e: any) {
-      if ("message" in e) setError({ message: e.message });
+    } catch (e) {
+      captureError(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [captureError]);
 
   const unlinkPhysionet = useCallback(async () => {
     await api.linkedAccounts.unlinkPhysionet();

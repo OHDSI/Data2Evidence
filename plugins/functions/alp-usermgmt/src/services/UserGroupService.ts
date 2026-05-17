@@ -498,8 +498,40 @@ export class UserGroupService {
   async withdrawAllByProvenance(userId: string, createdBy: string): Promise<void> {
     const rows = await this.userGroupRepo.findByProvenance(userId, createdBy)
     if (!rows.length) return
-    const groupIds = rows.map(r => r.b2cGroupId)
-    this.logger.info(`Withdrawing ${rows.length} groups for user ${userId} provenance=${createdBy}`)
-    await this.withdrawUserFromGroups(userId, groupIds)
+    this.logger.info(`Withdrawing ${rows.length} provenance=${createdBy} grants for user ${userId}`)
+    const trx = await this.userGroupRepo.getTransaction()
+    try {
+      for (const r of rows) {
+        await this.withdrawUserFromGroupByProvenance(userId, r.b2cGroupId, createdBy, trx)
+      }
+      await trx.commit()
+    } catch (e) {
+      await trx.rollback()
+      throw e
+    }
+  }
+
+  // Provenance-scoped revoke: deletes only the user_group row whose
+  // `created_by` matches `createdBy` (so admin grants on the same group are
+  // not touched), then syncs the Logto role-remove ONLY when no rows remain
+  // for (user, group). If another grant from a different source still exists,
+  // the Logto role assignment stays intact so the user keeps access via that
+  // other source.
+  async withdrawUserFromGroupByProvenance(
+    userId: string,
+    groupId: string,
+    createdBy: string,
+    trx?: Knex,
+  ): Promise<void> {
+    const deleted = await this.userGroupRepo.deleteByProvenance(userId, groupId, createdBy, trx)
+    if (deleted === 0) return
+    const remaining = await this.userGroupRepo.countByUserAndGroup(userId, groupId, trx)
+    if (remaining === 0) {
+      await this.syncRoleToLogto(userId, groupId, 'remove')
+    } else {
+      this.logger.info(
+        `User ${userId} retains group ${groupId} from another source (${remaining} row${remaining === 1 ? '' : 's'}); not removing Logto role`,
+      )
+    }
   }
 }

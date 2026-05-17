@@ -3,12 +3,17 @@ import { Button, Card } from "@portal/components";
 import { useLinkedAccounts } from "../../../hooks/useLinkedAccounts";
 
 export const LinkedAccountsSection: React.FC = () => {
-  const { accounts, loading, linkPhysionet, refreshPhysionet, unlinkPhysionet } = useLinkedAccounts();
+  const { accounts, loading, error, linkPhysionet, refreshPhysionet, unlinkPhysionet } = useLinkedAccounts();
   const physionet = accounts.find(a => a.provider === "physionet");
 
   return (
     <section aria-label="Linked accounts" className="account__linked-accounts">
       <h3>Linked accounts</h3>
+      {error?.message && (
+        <div role="alert" className="account__linked-error">
+          {error.message}
+        </div>
+      )}
       <div className="account__linked-row">
         <strong>PhysioNet</strong>
         {loading ? (

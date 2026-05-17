@@ -12,7 +12,7 @@ export function generateKey(): string {
 function loadKey(keyB64: string): Buffer {
   const buf = Buffer.from(keyB64, 'base64')
   if (buf.length !== 32) {
-    throw new Error('LINKED_ACCOUNT_ENC_KEY must be 32 bytes (base64-encoded)')
+    throw new Error('LINKED_ACCOUNT__ENC_KEY must be 32 bytes (base64-encoded)')
   }
   return buf
 }

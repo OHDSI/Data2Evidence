@@ -1,5 +1,4 @@
-import { Inject, Service } from 'typedi'
-import { CONTAINER_KEY } from '../const'
+import { Service } from 'typedi'
 import { LinkedAccountService } from './LinkedAccountService'
 import { LinkedAccountRepository } from '../repositories/LinkedAccountRepository'
 import { UserGroupService } from './UserGroupService'
@@ -10,17 +9,30 @@ const PROVENANCE = 'physionet_sync'
 
 @Service()
 export class PhysionetReconcileService {
+  // In-flight reconciles keyed by userId. A second caller for the same user
+  // joins the first call's promise instead of running concurrently. This is
+  // strictly stronger than serialising via a DB lock (no waiting) and matches
+  // our needs: we don't span Node processes today, and the underlying writes
+  // are idempotent anyway (registerUserToGroup short-circuits when a row exists;
+  // provenance-scoped revoke targets specific rows).
+  private readonly inFlight = new Map<string, Promise<void>>()
+
   constructor(
     private readonly linkedSvc: LinkedAccountService,
     private readonly linkedRepo: LinkedAccountRepository,
     private readonly groupSvc: UserGroupService,
     private readonly datasetQuery: PhysionetDatasetQuery,
     private readonly api: PhysionetAPI,
-    @Inject(CONTAINER_KEY.DB_CONNECTION) private readonly db?: any,
   ) {}
 
-  async reconcile(userId: string): Promise<void> {
-    return this.withAdvisoryLock(userId, async () => this.doReconcile(userId))
+  reconcile(userId: string): Promise<void> {
+    const existing = this.inFlight.get(userId)
+    if (existing) return existing
+    const promise = this.doReconcile(userId).finally(() => {
+      this.inFlight.delete(userId)
+    })
+    this.inFlight.set(userId, promise)
+    return promise
   }
 
   private async doReconcile(userId: string): Promise<void> {
@@ -57,13 +69,7 @@ export class PhysionetReconcileService {
           skipUserValidation: false,
         })
       } else {
-        // v1 trade-off: withdrawUserFromGroups removes any user_group row for the
-        // (user, group) pair regardless of who created it; if an admin happens to
-        // have granted the same group separately, that row is also removed.
-        // The cleaner alternative is a method that only revokes physionet_sync rows
-        // for a specific group — deferred to v2. Acceptable in v1 because admin-only
-        // grants on a PhysioNet-gated dataset are an unusual configuration.
-        await this.groupSvc.withdrawUserFromGroups(userId, [d.studyGroupId])
+        await this.groupSvc.withdrawUserFromGroupByProvenance(userId, d.studyGroupId, PROVENANCE)
       }
     }
 
@@ -74,17 +80,4 @@ export class PhysionetReconcileService {
     )
   }
 
-  private async withAdvisoryLock<T>(userId: string, fn: () => Promise<T>): Promise<T> {
-    if (!this.db) return await fn()
-    const trx = await this.db.transaction()
-    try {
-      await trx.raw("SELECT pg_advisory_xact_lock(hashtext('physionet_sync:' || ?))", [userId])
-      const r = await fn()
-      await trx.commit()
-      return r
-    } catch (e) {
-      await trx.rollback().catch(() => {})
-      throw e
-    }
-  }
 }

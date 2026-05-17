@@ -133,6 +133,25 @@ export class UserGroupRepository extends Repository<UserGroup, UserGroupCriteria
     return rows.map((r: any) => ({ id: r.id, b2cGroupId: r.b2c_group_id }))
   }
 
+  async deleteByProvenance(
+    userId: string,
+    b2cGroupId: string,
+    createdBy: string,
+    trx?: Knex,
+  ): Promise<number> {
+    return await (trx || this.db)(this.tableName)
+      .where({ user_id: userId, b2c_group_id: b2cGroupId, created_by: createdBy })
+      .del()
+  }
+
+  async countByUserAndGroup(userId: string, b2cGroupId: string, trx?: Knex): Promise<number> {
+    const row = await (trx || this.db)(this.tableName)
+      .where({ user_id: userId, b2c_group_id: b2cGroupId })
+      .count<{ count: string }[]>()
+      .first()
+    return Number(row?.count ?? 0)
+  }
+
   async findGrantedStudyIdsByProvenance(userId: string, createdBy: string): Promise<string[]> {
     const rows = await this.db(this.tableName)
       .innerJoin('b2c_group', 'user_group.b2c_group_id', 'b2c_group.id')

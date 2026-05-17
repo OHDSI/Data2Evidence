@@ -1,5 +1,7 @@
 import { Injectable, SCOPE } from "@danet/core";
+import axios from "npm:axios";
 import { services } from "../env.ts";
+import { createLogger } from "../logger.ts";
 import { UserGroup } from "../types.d.ts";
 
 const post = async <T = any>(
@@ -17,6 +19,7 @@ const post = async <T = any>(
 
 @Injectable({ scope: SCOPE.REQUEST })
 export class UserMgmtApi {
+  private readonly logger = createLogger(this.constructor.name);
   private readonly url: string;
   private readonly channel;
 
@@ -43,9 +46,17 @@ export class UserMgmtApi {
     try {
       const result = await this.channel.get(url, requestConfig);
       return result.data?.datasetIds ?? [];
-    } catch {
-      // Feature flag is off (404) or any other error — treat as empty
-      return [];
+    } catch (error) {
+      // Feature flag is off → 404 → fall through to []. Anything else is a real
+      // failure we want to surface in logs and propagate to the caller, who can
+      // decide whether to fail the whole dataset list or render without
+      // provenance info.
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      if (status === 404) return [];
+      this.logger.error(
+        `getPhysionetGrantedDatasetIds failed (status=${status ?? "n/a"}): ${(error as Error).message}`,
+      );
+      throw error;
     }
   }
 
