@@ -11,6 +11,35 @@ const PUBLIC_API_PATHS = [
   "^/system-portal/config/public(.*)",
 ];
 
+type CachedUserGroups = { value: any; expiresAt: number };
+const USER_GROUPS_CACHE_MAX = 10_000;
+const userGroupsCache = new Map<string, CachedUserGroups>();
+
+function getCachedUserGroups(jti: string): any | undefined {
+  const entry = userGroupsCache.get(jti);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= Date.now()) {
+    userGroupsCache.delete(jti);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function setCachedUserGroups(jti: string, exp: number, value: any): void {
+  if (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
+    const now = Date.now();
+    for (const [k, v] of userGroupsCache) {
+      if (v.expiresAt <= now) userGroupsCache.delete(k);
+      if (userGroupsCache.size < USER_GROUPS_CACHE_MAX) break;
+    }
+    if (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
+      const oldest = userGroupsCache.keys().next().value;
+      if (oldest) userGroupsCache.delete(oldest);
+    }
+  }
+  userGroupsCache.set(jti, { value, expiresAt: exp * 1000 });
+}
+
 export const ROLES = {
   ALP_USER_ADMIN: "ALP_USER_ADMIN",
   ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
@@ -338,10 +367,18 @@ export async function authz(c: Context, next: any) {
       mriUserObj = new MriUser(token, global.ROLE_SCOPES).adUserObject;
     } else {
       try {
-        const userGroups = await userMgmtApi.getUserGroups(
-          bearerToken.replace(/token /i, "bearer "),
-          idpUserId
-        );
+        const jti = typeof token["jti"] === "string" ? token["jti"] : undefined;
+        const exp = typeof token["exp"] === "number" ? token["exp"] : undefined;
+        let userGroups = jti ? getCachedUserGroups(jti) : undefined;
+        if (!userGroups) {
+          userGroups = await userMgmtApi.getUserGroups(
+            bearerToken.replace(/token /i, "bearer "),
+            idpUserId
+          );
+          if (jti && exp && exp * 1000 > Date.now()) {
+            setCachedUserGroups(jti, exp, userGroups);
+          }
+        }
         token["userMgmtGroups"] = userGroups;
         mriUserObj = new MriUser(token, global.ROLE_SCOPES).b2cUserObject;
       } catch (error) {
