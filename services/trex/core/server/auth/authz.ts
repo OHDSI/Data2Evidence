@@ -13,31 +13,31 @@ const PUBLIC_API_PATHS = [
 
 type CachedUserGroups = { value: any; expiresAt: number };
 const USER_GROUPS_CACHE_MAX = 10_000;
+const USER_GROUPS_CACHE_TTL_MS = 60_000;
 const userGroupsCache = new Map<string, CachedUserGroups>();
 
-function getCachedUserGroups(jti: string): any | undefined {
-  const entry = userGroupsCache.get(jti);
+function userGroupsCacheKey(jti: string, idpUserId: string): string {
+  return `${jti}:${idpUserId}`;
+}
+
+function getCachedUserGroups(key: string): any | undefined {
+  const entry = userGroupsCache.get(key);
   if (!entry) return undefined;
   if (entry.expiresAt <= Date.now()) {
-    userGroupsCache.delete(jti);
+    userGroupsCache.delete(key);
     return undefined;
   }
   return entry.value;
 }
 
-function setCachedUserGroups(jti: string, exp: number, value: any): void {
-  if (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
-    const now = Date.now();
-    for (const [k, v] of userGroupsCache) {
-      if (v.expiresAt <= now) userGroupsCache.delete(k);
-      if (userGroupsCache.size < USER_GROUPS_CACHE_MAX) break;
-    }
-    if (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
-      const oldest = userGroupsCache.keys().next().value;
-      if (oldest) userGroupsCache.delete(oldest);
-    }
+function setCachedUserGroups(key: string, expiresAt: number, value: any): void {
+  userGroupsCache.delete(key);
+  while (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
+    const oldest = userGroupsCache.keys().next().value;
+    if (!oldest) break;
+    userGroupsCache.delete(oldest);
   }
-  userGroupsCache.set(jti, { value, expiresAt: exp * 1000 });
+  userGroupsCache.set(key, { value, expiresAt });
 }
 
 export const ROLES = {
@@ -369,14 +369,19 @@ export async function authz(c: Context, next: any) {
       try {
         const jti = typeof token["jti"] === "string" ? token["jti"] : undefined;
         const exp = typeof token["exp"] === "number" ? token["exp"] : undefined;
-        let userGroups = jti ? getCachedUserGroups(jti) : undefined;
+        const cacheKey = jti ? userGroupsCacheKey(jti, idpUserId) : undefined;
+        let userGroups = cacheKey ? getCachedUserGroups(cacheKey) : undefined;
         if (!userGroups) {
           userGroups = await userMgmtApi.getUserGroups(
             bearerToken.replace(/token /i, "bearer "),
             idpUserId
           );
-          if (jti && exp && exp * 1000 > Date.now()) {
-            setCachedUserGroups(jti, exp, userGroups);
+          if (cacheKey && exp) {
+            const now = Date.now();
+            const expiresAt = Math.min(exp * 1000, now + USER_GROUPS_CACHE_TTL_MS);
+            if (expiresAt > now) {
+              setCachedUserGroups(cacheKey, expiresAt, userGroups);
+            }
           }
         }
         token["userMgmtGroups"] = userGroups;
