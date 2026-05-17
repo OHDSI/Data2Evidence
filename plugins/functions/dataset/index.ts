@@ -132,9 +132,17 @@ export class DatasetRouter {
           fhirProjectId,
           cacheDatasetName,
           cacheDatasetType,
+          webApiManaged,
         } = req.body;
 
-        const isWebApiManaged = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
+        const isOmopDataModel = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
+        if (webApiManaged === true && !isOmopDataModel) {
+          return res
+            .status(400)
+            .send("WebAPI-managed datasets require an OMOP data model");
+        }
+        const isWebApiManaged =
+          typeof webApiManaged === "boolean" ? webApiManaged : isOmopDataModel;
 
         const newCacheSchemaName = schemaName
           ? schemaName
