@@ -18,6 +18,13 @@ from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMo
 
 os.environ["plugin_name"] = "dqd_plugin"
 
+
+def _default_cache_id_from_dataset_id(dataset_id):
+    if not dataset_id:
+        return None
+    cleaned = dataset_id.replace("-", "_")
+    return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
+
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
@@ -88,7 +95,10 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatab
             cdm_source_name = dqd_params.schemaName
         else:
             # Qualify reads against the cache catalog (populated CDM tables) instead of the live source.
-            catalog = dqd_params.cacheId or dqd_params.databaseCode
+            # When cacheId is not supplied (e.g. a Prefect Custom Run that hands us only datasetId),
+            # mirror the BeforeInsert default on the dataset entity (UUID → sanitized identifier)
+            # so the catalog still resolves to the cache alias trex attaches.
+            catalog = dqd_params.cacheId or _default_cache_id_from_dataset_id(dqd_params.datasetId) or dqd_params.databaseCode
             cdm_database_schema = f"{catalog}.{dqd_params.schemaName}"
             vocab_database_schema = f"{catalog}.{dqd_params.vocabSchemaName}"
             cdm_source_name = f"{catalog}.{dqd_params.schemaName}"
