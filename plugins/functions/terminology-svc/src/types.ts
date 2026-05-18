@@ -251,6 +251,7 @@ export enum DatasetDialects {
 export type DatasetDB = {
   datasetId: string;
   databaseCode: string;
+  cacheId: string;
   dialect: string;
   vocabSchemaName: string;
   resultsSchemaName: string;

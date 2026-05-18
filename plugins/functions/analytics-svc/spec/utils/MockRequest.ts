@@ -9,6 +9,7 @@ export default class MockRequest implements Partial<IMRIRequest> {
   public dbConnections = {
     analyticsConnection: null,
     analyticsWriteConnection: null,
+    sourceConnection: null,
   };
 
   constructor() {

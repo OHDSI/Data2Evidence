@@ -30,6 +30,7 @@ export interface ITokenUser {
 
 export interface IAppRequest extends Request {
   user: ITokenUser
+  userGroupsCache?: Map<string, Promise<UserGroupMetadata>>
 }
 
 export interface RoleMap {
