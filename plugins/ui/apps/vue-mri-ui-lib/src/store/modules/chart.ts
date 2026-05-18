@@ -437,6 +437,9 @@ const actions = {
         targetId = X2
       } else if (!x1HasSelection && x2HasSelection) {
         targetId = X1
+      } else {
+        // When both X1 and X2 are empty, disable X2 by default
+        targetId = X2
       }
 
       if (targetId !== null) {

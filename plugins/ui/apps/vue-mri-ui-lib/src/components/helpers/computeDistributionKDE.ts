@@ -17,8 +17,11 @@ const SILVERMAN_FACTOR = 1.06
 const SILVERMAN_EXPONENT = -1 / 5
 // Bars are centered on integer indices, so the index-space axis extends a half bin past each end.
 const BAR_HALF_WIDTH = 0.5
-// Grid resolution heuristic: enough points for a smooth curve without over-sampling tiny histograms.
+// Grid resolution heuristic: enough points for a smooth curve without over-sampling tiny
+// histograms, and capped so high-cardinality attributes (e.g. concept names with thousands
+// of categories) can't push KDE evaluation into O(categories²) territory.
 const MIN_GRID_POINTS = 200
+const MAX_GRID_POINTS = 2000
 const GRID_POINTS_PER_CATEGORY = 20
 
 const gaussian = (x: number) => Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI)
@@ -35,7 +38,8 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
   const defaultMax = usingDataSpace ? Math.max(...positions) : numCategories - BAR_HALF_WIDTH
   const xMin = options.xMin ?? defaultMin
   const xMax = options.xMax ?? defaultMax
-  const numPoints = options.numPoints ?? Math.max(MIN_GRID_POINTS, numCategories * GRID_POINTS_PER_CATEGORY)
+  const numPoints =
+    options.numPoints ?? Math.min(MAX_GRID_POINTS, Math.max(MIN_GRID_POINTS, numCategories * GRID_POINTS_PER_CATEGORY))
 
   // Average spacing between adjacent kernel centers — used as the std-dev fallback when all
   // weight sits in a single bin (variance = 0). For integer positions this is 1, matching the

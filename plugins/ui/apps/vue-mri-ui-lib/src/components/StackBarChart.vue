@@ -15,7 +15,7 @@ import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
-import { applyById } from './StackBarModes/modes'
+import { applyById, getEffectiveBarChartMode } from './StackBarModes/modes'
 
 const DEFAULT_BAR_GAP = 0.3
 
@@ -300,7 +300,7 @@ export default {
       return (this.chartData?.traces || []).filter(t => t.showlegend !== false)
     },
     yAxisTitle() {
-      if (this.getBarChartType === 'distribution') {
+      if (getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig) === 'distribution') {
         // KDP requires at least two bins to compute a kernel density curve. When there
         // is only a single bin the mode falls back to rendering count bars, and the axis
         // title falls back to the measure name.
@@ -495,7 +495,8 @@ export default {
     applyChartType(traces, layout) {
       if (!traces || !traces.length) return { traces, layout }
       const colorway = Object.values(Constants.ChartColorway)
-      const modeApply = applyById[this.getBarChartType] || applyById.stack
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      const modeApply = applyById[effectiveMode] || applyById.stack
       // Each mode apply() is pure: it returns new trace objects/arrays without mutating its inputs.
       // This removes the need to JSON-clone this.chartData.traces before calling apply().
       return modeApply(traces, layout, {
