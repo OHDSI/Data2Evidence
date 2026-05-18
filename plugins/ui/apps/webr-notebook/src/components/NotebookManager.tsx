@@ -5,11 +5,13 @@ import {
   type NotebookHandle,
   type NotebookData,
   type NotebookTheme,
+  type KernelStatus,
   PyodideKernel,
   WebRKernel,
   createEmptyNotebook,
   serializeIpynb,
 } from 'react-notebook/src/index'
+import { buildPyqeBootstrapCode } from '../kernels/pyqeBootstrap'
 import * as notebookApi from '../api/notebook-api'
 import type { NotebookRecord } from '../types'
 import { parseNotebookContent } from '../utils/starboard'
@@ -20,6 +22,15 @@ import { RenameDialog } from './RenameDialog'
 import { CreateNotebookDialog } from './CreateNotebookDialog'
 import { CodingAssistant } from './CodingAssistant'
 import { Snackbar } from './Snackbar'
+
+// __PYODIDE_VERSION__ is injected by Vite at build time (see vite.config.ts).
+// Matches the resolved version of the `pyodide` npm package the submodule
+// depends on, so the CDN URL we pass to loadPyodide cannot drift.
+declare const __PYODIDE_VERSION__: string
+const pyodideIndexUrl =
+  typeof __PYODIDE_VERSION__ !== 'undefined'
+    ? `https://cdn.jsdelivr.net/pyodide/v${__PYODIDE_VERSION__}/full/`
+    : undefined
 
 const pyodideKernel = new PyodideKernel()
 const webRKernel = new WebRKernel()
@@ -90,7 +101,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       webREnvVars.TREX__AUTHORIZATION_TOKEN = token
     }
     return [
-      { type: 'pyodide' as const, envVars },
+      { type: 'pyodide' as const, envVars, indexUrl: pyodideIndexUrl },
       { type: 'webr' as const, envVars: webREnvVars },
     ]
   }, [token, datasetId])
@@ -115,6 +126,50 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
   useEffect(() => {
     fetchNotebooks()
   }, [fetchNotebooks])
+
+  // Override the vendored pyqe (loaded by the submodule's worker into
+  // /home/pyodide/pyqe) with d2e's pyodidepyqe sources. Runs once per kernel
+  // connect; the flag resets when the kernel disconnects so reconnect (e.g.
+  // after interrupt()) re-runs the bootstrap.
+  useEffect(() => {
+    let bootstrapInFlight = false
+    let bootstrapDoneForCurrentConnect = false
+
+    const unsubscribe = pyodideKernel.onStatusChange((status: KernelStatus) => {
+      if (status === 'disconnected' || status === 'connecting') {
+        bootstrapDoneForCurrentConnect = false
+        return
+      }
+      if (status !== 'idle' || bootstrapDoneForCurrentConnect || bootstrapInFlight) {
+        return
+      }
+      bootstrapInFlight = true
+      bootstrapDoneForCurrentConnect = true
+
+      ;(async () => {
+        try {
+          const code = buildPyqeBootstrapCode()
+          // Drain the async iterable; we don't surface stdout/stderr to the UI.
+          for await (const _output of pyodideKernel.execute(code, 'python')) {
+            void _output
+          }
+        } catch (err) {
+          console.error('pyqe bootstrap failed:', err)
+          showFeedback(
+            'error',
+            'Failed to load pyqe from d2e — Python notebooks may behave incorrectly.'
+          )
+          // Allow a future status transition (e.g. after interrupt+reconnect)
+          // to retry rather than locking the kernel into a broken state.
+          bootstrapDoneForCurrentConnect = false
+        } finally {
+          bootstrapInFlight = false
+        }
+      })()
+    })
+
+    return unsubscribe
+  }, [showFeedback])
 
   useEffect(() => {
     if (!activeNotebook) {
