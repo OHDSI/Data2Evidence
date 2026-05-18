@@ -32,6 +32,7 @@
             <xAxisColorButton
               :parentContainer="$refs.axisContainer"
               :selectedAxis="colorAxisIndex"
+              :disabled="isColorButtonDisabled"
               @colorAxisSelected="onColorAxisSelected"
             ></xAxisColorButton>
           </div>
@@ -177,7 +178,11 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getActiveBookmark',
+      'getBarChartType',
     ]),
+    isColorButtonDisabled() {
+      return this.getBarChartType !== 'stack'
+    },
     stackAttributeHasSelection() {
       const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
       return !!(axis?.props?.filterCardId && axis?.props?.key)
