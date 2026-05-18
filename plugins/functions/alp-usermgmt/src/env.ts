@@ -24,6 +24,9 @@ export const env = {
   APP_TENANT_ID: Deno.env.get("APP__TENANT_ID"),
   IDP_BASE_URL: Deno.env.get("IDP__BASE_URL"),
   IDP_RELYING_PARTY: Deno.env.get("IDP__RELYING_PARTY"),
+  IDP_AUTO_PROVISION_USERS:
+    Deno.env.get("IDP__AUTO_PROVISION_USERS") === 'true' ||
+    Deno.env.get("IDP__RELYING_PARTY") === 'azure',
   IDP_FETCH_USER_INFO_TYPE: Deno.env.get("IDP__FETCH_USER_INFO_TYPE"),
   IDP_ALP_ADMIN_CLIENT_ID: Deno.env.get("IDP__ALP_ADMIN__CLIENT_ID"),
   IDP_ALP_ADMIN_CLIENT_SECRET: Deno.env.get("IDP__ALP_ADMIN__CLIENT_SECRET"),
@@ -37,13 +40,15 @@ export const env = {
   APP__TENANT_ID: _env.APP__TENANT_ID,
   IDP__INITIAL_USER__UUID: _env.IDP__INITIAL_USER__UUID,
   IDP__INITIAL_USER__NAME: _env.IDP__INITIAL_USER__NAME,
-  AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
+  AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:
+    _env.AUTO_GRANT_RESEARCHER_BY_DATASET_CODES || _env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES,
   USER_MGMT_ROLE_SOURCE: Deno.env.get("USER_MGMT__ROLE_SOURCE")
 }
 
 export const services = JSON.parse(env.SERVICE_ROUTES)
 
 export const getAutoGrantDatasetCodes = (): string[] => {
-  if (!env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES) return []
-  return env.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES.split(',').map(c => c.trim()).filter(c => c)
+  const raw = env.AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+  if (!raw) return []
+  return raw.split(',').map(c => c.trim()).filter(c => c)
 }

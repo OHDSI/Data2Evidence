@@ -149,9 +149,15 @@ export class CohortEndpoint {
                 // Clone and manipulate query to execute on srcdb so that original query is unaffected
                 const queryClone = Object.create(Object.getPrototypeOf(query));
                 Object.assign(queryClone, structuredClone(query));
+                // Normalize the catalog to the postgres `__srcdb` ATTACH alias. writeConn.__database
+                // may be `<db>`, `<db>_trexpg`, or already `<db>__srcdb` depending on how Trex
+                // created the connection — appending `__srcdb` blindly produces `<db>__srcdb__srcdb`.
+                let writeDb: string = this.connection.writeConn?.__database || "";
+                if (writeDb.endsWith("_trexpg")) writeDb = writeDb.slice(0, -"_trexpg".length);
+                const srcCatalog = writeDb.endsWith("__srcdb") ? writeDb : `${writeDb}__srcdb`;
                 queryClone.queryString = queryClone.queryString.replaceAll(
                     this.schemaName,
-                    `${this.connection.writeConn.__database}__srcdb.${this.schemaName}`
+                    `${srcCatalog}.${this.schemaName}`
                 );
                 await queryClone.executeQueryOnWriteConnection(this.connection);
             }

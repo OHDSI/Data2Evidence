@@ -3,6 +3,8 @@ import { DatasetController } from './dataset.controller'
 import { DatasetFilterService } from './dataset-filter.service'
 import { DatasetQueryService } from './query/dataset-query.service'
 import { DatasetCommandService } from './command/dataset-command.service'
+import { WebApiSourceService } from '../webapi/webapi-source.service'
+import { RequestContextService } from '../common/request-context.service'
 import {
   datasetCommandServiceMockFactory,
   datasetFilterServiceMockFactory,
@@ -18,7 +20,9 @@ describe('DatasetController', () => {
       providers: [
         { provide: DatasetQueryService, useFactory: datasetQueryServiceMockFactory },
         { provide: DatasetFilterService, useFactory: datasetFilterServiceMockFactory },
-        { provide: DatasetCommandService, useFactory: datasetCommandServiceMockFactory }
+        { provide: DatasetCommandService, useFactory: datasetCommandServiceMockFactory },
+        { provide: WebApiSourceService, useValue: { getCacheStatus: jest.fn() } },
+        { provide: RequestContextService, useValue: { getOriginalToken: jest.fn() } }
       ]
     }).compile()
 
