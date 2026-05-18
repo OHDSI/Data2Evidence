@@ -335,21 +335,43 @@ export class HanaHDBDao {
         [],
       ];
     } else {
+      // Widen recall by also matching against concept_synonym. SCORE() reflects
+      // the CONTAINS in its own subquery, so we run two separate CONTAINS
+      // probes, UNION ALL their (concept_id, score) rows, then MAX-aggregate
+      // per concept_id. The aggregated score joins back to concept for
+      // projection and filter application.
+      const qualifiedColumns = columns.length === 0
+        ? "c.*"
+        : columns.map((col) => `c.${col}`).join(", ");
       return [
         `
-        with fts as (
+        with all_matches as (
+          select concept_id, SCORE() as match_score
+          from ${this.vocabSchemaName}.concept
+          WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
+          union all
+          select concept_id, SCORE() as match_score
+          from ${this.vocabSchemaName}.concept_synonym
+          WHERE CONTAINS (concept_synonym_name, (?), FUZZY(${env.HANA_FTS_FUZZY}))
+        ),
+        matched_concepts as (
+          select concept_id, MAX(match_score) as score
+          from all_matches
+          group by concept_id
+        ),
+        fts as (
           select
-            ${columnsToSelect},
-            SCORE() as score
+            ${qualifiedColumns},
+            m.score
           from
-            ${this.vocabSchemaName}.concept
-            WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
-            ${filterWhereClause.replace("WHERE", "AND")}
+            ${this.vocabSchemaName}.concept c
+            join matched_concepts m on m.concept_id = c.concept_id
+            ${filterWhereClause}
             order by score desc
           )
         `,
         // Surround searchText with asteriks for greedy search
-        [`*${searchText}*`],
+        [`*${searchText}*`, `*${searchText}*`],
       ];
     }
   };
