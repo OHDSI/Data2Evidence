@@ -1,4 +1,4 @@
-*                                                    @csafreen @SantanM @suwarnoong @p-hoffmann
+*                                                    @csafreen @SantanM @suwarnoong @p-hoffmann @brandantck
 /.github/*                                           @p-hoffmann
 /.github/workflows                                   @brandantck @mwaiyee @SantanM @p-hoffmann
 /.github/workflows/pr-approval.yml                   @p-hoffmann
@@ -33,8 +33,8 @@
 /plugins/functions/query-gen-svc                             @brandantck @jerome-ng @LSriragavan @khairul-syazwan @p-hoffmann @maggie-li-yd
 /plugins/functions/terminology-svc                           @brandantck @jerome-ng @LSriragavan @khairul-syazwan @p-hoffmann @maggie-li-yd
 /plugins/functions/alp-dataflow-gen-init                     @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/flows                                               @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
-/flows/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
+/plugins/flows                                               @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
+/plugins/flows/hades/strategus_plugin                              @hengxian-jiang @KangJingA @SantanM @suwarnoong @p-hoffmann
 /scripts                                             @brandantck @mwaiyee @SantanM @p-hoffmann
 /services/alp-dataflow-gen                           @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
 /services/alp-dataflow-gen-worker                    @alicia-koh @csafreen @Zhimin-arya @p-hoffmann
