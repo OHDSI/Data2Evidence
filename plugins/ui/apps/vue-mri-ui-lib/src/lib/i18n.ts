@@ -972,6 +972,7 @@ export const i18n = {
     MRI_PA_CHART_MODE_OVERLAY: 'Overlapping Histogram',
     MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: 'Overlapping Bar Chart',
     MRI_PA_CHART_MODE_DISTRIBUTION: 'Kernel Density Plot',
+    MRI_PA_CHART_YAXIS_DENSITY: 'Density',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1974,6 +1975,7 @@ export const i18n = {
     MRI_PA_CHART_MODE_OVERLAY: 'Überlagertes Histogramm',
     MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: 'Überlagertes Balkendiagramm',
     MRI_PA_CHART_MODE_DISTRIBUTION: 'Kerndichteschätzung',
+    MRI_PA_CHART_YAXIS_DENSITY: 'Dichte',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2884,6 +2886,7 @@ export const i18n = {
     MRI_PA_CHART_MODE_OVERLAY: '重叠直方图',
     MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: '重叠条形图',
     MRI_PA_CHART_MODE_DISTRIBUTION: '核密度图',
+    MRI_PA_CHART_YAXIS_DENSITY: '密度',
   },
 }
 

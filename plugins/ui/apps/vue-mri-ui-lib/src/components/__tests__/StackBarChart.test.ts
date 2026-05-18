@@ -368,7 +368,7 @@ describe('StackBarChart selection handling', () => {
     expect(layout.yaxis.title).toEqual({ text: 'Patient Count' })
   })
 
-  it('sets y-axis title to "Density" when bar display mode is KDP', async () => {
+  it('sets y-axis title to the density translation key when bar display mode is KDP', async () => {
     const wrapper = mountComponent('distribution')
     ;(wrapper.vm as any).chartData = {
       axisType: 'category',
@@ -376,9 +376,22 @@ describe('StackBarChart selection handling', () => {
       measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
     }
 
-    expect((wrapper.vm as any).yAxisTitle).toBe('Density')
+    expect((wrapper.vm as any).yAxisTitle).toBe('MRI_PA_CHART_YAXIS_DENSITY')
     const layout = (wrapper.vm as any).buildPlotlyLayout()
-    expect(layout.yaxis.title).toEqual({ text: 'Density' })
+    expect(layout.yaxis.title).toEqual({ text: 'MRI_PA_CHART_YAXIS_DENSITY' })
+  })
+
+  it('falls back to measure name in KDP mode when there is only one bin', async () => {
+    const wrapper = mountComponent('distribution')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [{ x: ['A'], y: [5] }],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('Patient Count')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'Patient Count' })
   })
 
   it('falls back to empty y-axis title when no measure is available', async () => {

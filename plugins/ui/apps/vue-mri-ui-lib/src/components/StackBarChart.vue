@@ -301,7 +301,12 @@ export default {
     },
     yAxisTitle() {
       if (this.getBarChartType === 'distribution') {
-        return 'Density'
+        // KDP requires at least two bins to compute a kernel density curve. When there
+        // is only a single bin the mode falls back to rendering count bars, and the axis
+        // title falls back to the measure name.
+        const firstTrace = this.chartData?.traces?.[0]
+        const hasInsufficientBins = !!firstTrace && (firstTrace.y?.length || 0) <= 1
+        if (!hasInsufficientBins) return this.getText('MRI_PA_CHART_YAXIS_DENSITY')
       }
       return this.chartData?.measures?.[0]?.name || ''
     },
