@@ -24,6 +24,7 @@
           "name": "search_embedding_plugin",
           "type": "search",
           "entrypoint": "flows.search_embedding_plugin.flow.search_embedding_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "tags": [
             "search_embedding"
           ],
