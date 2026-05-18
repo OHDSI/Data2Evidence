@@ -20,7 +20,7 @@ os.environ['plugin_name'] = 'search_embedding_plugin'
 # Define global variables for shared configurations
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 if device == 'cpu':
-    torch.set_num_threads(max(1, (os.cpu_count() or 1) // 2))
+    torch.set_num_threads(max(1, int((os.cpu_count() or 1) * 0.8)))
 tokenizer = AutoTokenizer.from_pretrained("Supabase/gte-small")
 model = AutoModel.from_pretrained("Supabase/gte-small", attn_implementation="sdpa").to(device).eval()
 embedding_col_name = 'concept_name_embedding'
