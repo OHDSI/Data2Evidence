@@ -370,8 +370,9 @@ class TrexDao(DaoBase):
         user = self.tenant_configs.user
         password = self.tenant_configs.password.get_secret_value()
 
-        # Use jdbc:postgresql for DatabaseConnector
-        conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+        # Match Python's _get_connection: connect on cache_id so unqualified queries resolve there.
+        jdbc_dbname = self.cache_id or self.database_code
+        conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{jdbc_dbname}?preferQueryMode=simple&autocommit=true"
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{DialectDrivers.database_connector.trex}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{self.path_to_driver}')"""
 

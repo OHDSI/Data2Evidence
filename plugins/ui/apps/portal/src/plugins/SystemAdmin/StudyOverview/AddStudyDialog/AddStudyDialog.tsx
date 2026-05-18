@@ -50,6 +50,8 @@ const cacheDatasetTypeOptions: { title: string; type: CacheDatasetType }[] = [
   { title: "Other datamodel", type: CacheDatasetType.NON_OMOP },
 ];
 
+type ManagementMode = "webapi" | "source";
+
 interface FormData {
   type: string;
   tokenStudyCode: string;
@@ -70,6 +72,7 @@ interface FormData {
   dialect: string;
   paConfigId: string;
   visibilityStatus: string;
+  managementMode: ManagementMode;
 
   cacheDatasetName: string;
   cacheDatasetType: CacheDatasetType;
@@ -159,6 +162,7 @@ const EMPTY_FORM_DATA: FormData = {
   dialect: "",
   paConfigId: "",
   visibilityStatus: "HIDDEN",
+  managementMode: "webapi",
 
   cacheDatasetName: "",
   cacheDatasetType: CacheDatasetType.OMOP,
@@ -305,8 +309,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displayCacheConfiguration = useMemo(() => {
+    return formData.dialect !== "hana" && formData.managementMode === "source";
+  }, [formData.dialect, formData.managementMode]);
+
+  const displayManagementMode = useMemo(() => {
     return formData.dialect !== "hana";
   }, [formData.dialect]);
+
+  const isOmopDataModel = useCallback((dataModelOption: string) => {
+    return dataModelOption.toLowerCase().startsWith("omop");
+  }, []);
+
+  const filteredDataModelOptions = useMemo(() => {
+    if (formData.managementMode === "webapi") {
+      return dataModelOptions.filter(isOmopDataModel);
+    }
+    return dataModelOptions;
+  }, [dataModelOptions, formData.managementMode, isOmopDataModel]);
 
   const getDataModels = useCallback(async () => {
     try {
@@ -450,11 +469,11 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       formError = { ...formError, type: { required: true } };
     }
 
-    if (!cacheDatasetName && dialect !== "hana") {
+    if (!cacheDatasetName && dialect !== "hana" && formData.managementMode === "source") {
       formError = { ...formError, cacheDatasetName: { required: true } };
     }
 
-    if (!cacheDatasetType && dialect !== "hana") {
+    if (!cacheDatasetType && dialect !== "hana" && formData.managementMode === "source") {
       formError = { ...formError, cacheDatasetType: { required: true } };
     }
 
@@ -537,6 +556,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       dashboards: [],
       cacheDatasetName,
       cacheDatasetType,
+      webApiManaged: formData.managementMode === "webapi",
     };
 
     try {
@@ -639,6 +659,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                   dialect: schemaOption === SchemaTypes.FHIR ? FHIR_DIALECT : "",
                   type: newType,
                   cacheDatasetType: DatasetMap[newType][0],
+                  // webapi requires OMOP — FHIR is non-OMOP, so force source mode.
+                  ...(schemaOption === SchemaTypes.FHIR ? { managementMode: "source" as ManagementMode } : {}),
                 });
               }}
               inputProps={{
@@ -660,6 +682,48 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
             )}
           </FormControl>
         </div>
+        {/* Management mode (webapi vs source). webapi is OMOP-only and disabled for FHIR. */}
+        {displayManagementMode && (
+          <div style={{ marginBottom: "32px" }}>
+            <FormControl sx={styles} className="select" variant="standard" fullWidth>
+              <InputLabel htmlFor="management-mode-option">
+                {getText(i18nKeys.ADD_STUDY_DIALOG__MANAGEMENT_MODE)}
+              </InputLabel>
+              <Select
+                sx={styles}
+                value={formData.managementMode}
+                onChange={(event: SelectChangeEvent<string>) => {
+                  const managementMode = event.target.value as ManagementMode;
+                  const changes: Partial<FormData> = { managementMode };
+                  if (
+                    managementMode === "webapi" &&
+                    formData.dataModel &&
+                    !isOmopDataModel(formData.dataModel)
+                  ) {
+                    changes.dataModel = "";
+                    changes.dataModelCustom = "";
+                  }
+                  handleFormDataChange(changes);
+                }}
+                inputProps={{
+                  name: "managementMode",
+                  id: "management-mode-option",
+                }}
+              >
+                <MenuItem
+                  sx={styles}
+                  value="webapi"
+                  disabled={formData.schemaOption === SchemaTypes.FHIR}
+                >
+                  {getText(i18nKeys.ADD_STUDY_DIALOG__MANAGEMENT_MODE_WEBAPI)}
+                </MenuItem>
+                <MenuItem sx={styles} value="source">
+                  {getText(i18nKeys.ADD_STUDY_DIALOG__MANAGEMENT_MODE_SOURCE)}
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </div>
+        )}
         {/* DB Input */}
         {displayDatabases && (
           <div style={{ marginBottom: "32px" }}>
@@ -676,6 +740,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 value={formData.databaseCode}
                 onChange={(event: SelectChangeEvent<string>) => {
                   const db = databases.find((db) => db.code === event.target.value);
+                  const isHana = db?.dialect === "hana";
 
                   handleFormDataChange({
                     databaseCode: db?.code || "",
@@ -683,7 +748,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                     cdmSchemaValue: "",
                     vocabSchemaValue: "",
                     // Set type to empty for HANA where user need to manually select the type
-                    type: db?.dialect === "hana" ? "" : SourceDatasetType.SOURCE,
+                    type: isHana ? "" : SourceDatasetType.SOURCE,
+                    // HANA hides the management-mode toggle and uses its own dataset types,
+                    // so force source mode to avoid submitting webApiManaged=true by default.
+                    ...(isHana ? { managementMode: "source" as ManagementMode } : {}),
                   });
                 }}
                 inputProps={{
@@ -988,7 +1056,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
                 <MenuItem sx={styles} value="">
                   &nbsp;
                 </MenuItem>
-                {dataModelOptions?.map((model) => (
+                {filteredDataModelOptions?.map((model) => (
                   <MenuItem sx={styles} key={model} value={model}>
                     {model}
                   </MenuItem>

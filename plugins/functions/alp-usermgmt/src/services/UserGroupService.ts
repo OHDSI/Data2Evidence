@@ -324,6 +324,16 @@ export class UserGroupService {
     const groups: string[] = []
     const logtoRoleValues = Object.values(LOGTO_ROLES) as string[]
 
+    let datasetsByCodePromise: Promise<Map<string, IPortalDataset>> | null = null
+    const getDatasetsByCode = () => {
+      if (!datasetsByCodePromise) {
+        datasetsByCodePromise = this.portalAPI
+          .getDatasets()
+          .then(datasets => new Map(datasets.map(d => [d.tokenStudyCode, d])))
+      }
+      return datasetsByCodePromise
+    }
+
     for (const name of tokenRoles) {
       groups.push(name)
 
@@ -355,9 +365,8 @@ export class UserGroupService {
         }
         case LOGTO_ROLES.RESEARCHER:
           if (context) {
-            const datasetCode = context
-            const datasets = await this.portalAPI.getDatasets()
-            const dataset = datasets.find(d => d.tokenStudyCode === datasetCode)
+            const datasetsByCode = await getDatasetsByCode()
+            const dataset = datasetsByCode.get(context)
             if (dataset?.id) {
               roleMap.alp_role_study_researcher.push(dataset.id)
             }
@@ -369,9 +378,9 @@ export class UserGroupService {
     // Auto-grant researcher datasets (mirrors grant-roles-by-scopes.ts)
     const autoGrantCodes = getAutoGrantDatasetCodes()
     if (autoGrantCodes.length > 0) {
-      const datasets = await this.portalAPI.getDatasets()
+      const datasetsByCode = await getDatasetsByCode()
       for (const code of autoGrantCodes) {
-        const dataset = datasets.find(d => d.tokenStudyCode === code)
+        const dataset = datasetsByCode.get(code)
         if (dataset?.id && !roleMap.alp_role_study_researcher.includes(dataset.id)) {
           roleMap.alp_role_study_researcher.push(dataset.id)
         }
