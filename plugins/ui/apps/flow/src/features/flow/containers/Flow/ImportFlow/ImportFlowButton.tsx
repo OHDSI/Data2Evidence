@@ -38,8 +38,8 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
 
           const safeNodes = sanitizeFlowNodes(json.nodes);
           const safeEdges = sanitizeFlowEdges(json.edges, safeNodes);
-          dispatch(replaceNodes(json.nodes));
-          dispatch(replaceEdges(json.edges));
+          dispatch(replaceNodes(safeNodes));
+          dispatch(replaceEdges(safeEdges));
           dispatch(replaceVariables(json.variables ?? []));
           dispatch(replaceImportLibs(json.importLibs ?? []));
           dispatch(markStatusAsDraft());
