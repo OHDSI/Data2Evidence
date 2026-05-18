@@ -42,6 +42,7 @@ def data_characterization_plugin(options: DCOptionsType):
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
+        cache_id=options.cacheId,
     )
 
     # Todo: Update implementation if Hana uses trex
@@ -76,7 +77,9 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
-        achilles_params.schemaName = f"{options.databaseCode}.{options.schemaName}"
+        # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
+        catalog = options.cacheId or options.databaseCode
+        achilles_params.schemaName = f"{catalog}.{options.schemaName}"
         achilles_params.vocabSchemaName = achilles_params.schemaName
 
     dc_schema = create_results_schema(
@@ -236,7 +239,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         if achilles_params.use_trex_connection:
             memory_limit = Variable.get("duckdb_memory_limit", "")
             if memory_limit:
-                trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode)
+                trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode, cache_id=achilles_params.cacheId)
                 trex_dao.execute_sql(f"SET memory_limit = '{memory_limit}'")
                 logger.info(f"Set DuckDB memory_limit to {memory_limit}")
 
@@ -262,6 +265,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 verboseMode=achilles_params.verboseMode,
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
+                cacheId=achilles_params.cacheId or "",
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder

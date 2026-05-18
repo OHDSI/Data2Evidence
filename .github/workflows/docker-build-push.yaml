@@ -21,7 +21,7 @@ concurrency:
 env:
   REG_URL: ghcr.io/ohdsi
   DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management"
+  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
 
 jobs:
   setup:
@@ -130,6 +130,7 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
+              - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
@@ -143,6 +144,7 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
             e2e:
               - "tests/e2e/**"
+              - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
@@ -152,7 +154,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true'))
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
@@ -260,7 +262,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
     strategy:
       fail-fast: false
       matrix:
@@ -274,6 +276,7 @@ jobs:
           - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
             NPM: bun
+            NODE_VERSION: "20.x"
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
@@ -302,7 +305,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
       - name: Setup bun
@@ -354,7 +357,7 @@ jobs:
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
           scope: "@data2evidence"
       - name: Publish or Pack
@@ -364,31 +367,32 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
-          if [[ $SHOULD_PUBLISH == true ]]; then
-            npm publish
-          else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
-            FAILED=0
-            MAX_SIZE_MIB=500
-            MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
-            shopt -s nullglob
-            TGZ_FILES=(*.tgz)
-            if [ ${#TGZ_FILES[@]} -eq 0 ]; then
-              echo "ERROR: no .tgz files found after pack"
-              exit 1
+          ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+          FAILED=0
+          MAX_SIZE_MIB=500
+          MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
+          shopt -s nullglob
+          TGZ_FILES=(*.tgz)
+          if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+            echo "ERROR: no .tgz files found after pack"
+            exit 1
+          fi
+          for PACK_FILE in "${TGZ_FILES[@]}"; do
+            SIZE=$(wc -c < "$PACK_FILE")
+            SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+            if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+              echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+              echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+              FAILED=1
+            else
+              echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
             fi
+          done
+          [ $FAILED -eq 0 ] || exit $FAILED
+          if [[ $SHOULD_PUBLISH == true ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
-              SIZE=$(wc -c < "$PACK_FILE")
-              SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
-              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
-                echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
-                echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
-                FAILED=1
-              else
-                echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
-              fi
+              npm publish "$PACK_FILE"
             done
-            exit $FAILED
           fi
 
       - name: Upload UI resources
@@ -400,6 +404,15 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Upload UI package tarball
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
   build_e2e_image:
     needs: [setup]
     if: |
@@ -407,7 +420,7 @@ jobs:
       contains(github.base_ref, 'release/') ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && needs.setup.outputs.changes_e2e == 'true')
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_e2e == 'true' || needs.setup.outputs.changes_plugins == 'true'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -449,7 +462,7 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -489,6 +502,19 @@ jobs:
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
 
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
       - name: Initialise d2e
         if: success() || failure()
         id: init
@@ -517,7 +543,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -584,17 +610,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Download UI resources
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-resources
-          path: ./plugins/ui/resources
-
-      - name: UI docker-compose-local
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
         if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
@@ -603,47 +618,20 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
 
-      - name: Wait for d2e-ui plugin to be installed
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          echo "Waiting for d2e-ui plugin to be installed..."
-          max_attempts=60
-          attempt=0
-          start_time=$(date +%s)
-          while [ $attempt -lt $max_attempts ]; do
-            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
-              end_time=$(date +%s)
-              elapsed=$((end_time - start_time))
-              echo "d2e-ui plugin is ready (took ${elapsed}s)"
-              break
-            fi
-            attempt=$((attempt + 1))
-            echo "  Attempt $attempt/$max_attempts: waiting..."
-            sleep 2
-          done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "Timeout waiting for d2e-ui plugin to be installed"
-            exit 1
-          fi
-
-      - name: UI Mounting build
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
       - name: Wait for webapi-init to complete
         run: |
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
           for i in $(seq 1 60); do
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
               echo "webapi-init completed successfully"
               break
             fi
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -qE "Exited \([1-9]"; then
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
               echo "webapi-init failed!"
               docker logs d2e-webapi-init || true
               exit 1

@@ -136,11 +136,12 @@ jobs:
           curl --max-time 120 --fail -k https://localhost:41100/d2e/_internal/health
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
           for i in $(seq 1 60); do
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited (0)"; then
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
               echo "webapi-init completed successfully"
               break
             fi
-            if docker ps -a --filter "name=webapi-init" --format '{{.Status}}' | grep -q "Exited"; then
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
               echo "webapi-init failed!"
               docker logs ${PROJECT_NAME:-alp}-webapi-init || true
               exit 1

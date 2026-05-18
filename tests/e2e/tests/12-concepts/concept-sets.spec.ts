@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { expect, test } from '../fixtures'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false

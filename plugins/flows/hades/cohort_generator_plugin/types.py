@@ -15,6 +15,7 @@ class CohortJsonType(BaseModel):
 
 class CohortGeneratorOptionsType(BaseModel):
     databaseCode: str
+    cacheId: Optional[str] = None
     schemaName: str
     vocabSchemaName: str
     resultsSchemaName: str

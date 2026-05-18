@@ -531,7 +531,7 @@ router.post("/", async (req: Request, res: Response) => {
     // @ts-ignore Trex global
     const dbm = Trex.databaseManager();
     const conn = dbm.getConnection(
-      dataset.databaseCode,
+      dataset.cacheId ?? dataset.databaseCode,
       dataset.schemaName,
       dataset.vocabSchemaName,
       dataset.resultsSchemaName,
