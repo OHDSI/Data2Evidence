@@ -10,6 +10,7 @@ import { computeKDE } from '../helpers/computeDistributionKDE'
 export const meta = {
   id: 'distribution',
   label: 'Kernel Density Plot',
+  labelKey: 'MRI_PA_CHART_MODE_DISTRIBUTION',
   hasDistributionOverlay: false,
 }
 
@@ -53,7 +54,7 @@ function tryParseNumericPositions(origX: any[]): ParsedPositions | null {
       lefts.push(from)
       rights.push(to)
     } else {
-      const n = typeof v === 'number' ? v : parseFloat(s)
+      const n = typeof v === 'number' ? v : s !== '' ? Number(s) : NaN
       if (!Number.isFinite(n)) return null
       centers.push(n)
       lefts.push(n)

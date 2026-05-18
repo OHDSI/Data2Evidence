@@ -20,6 +20,7 @@ import { appendDistributionOverlay } from '../helpers/computeDistributionKDE'
 export const meta = {
   id: 'partialOverlaySolid',
   label: 'Overlapping Bar Chart',
+  labelKey: 'MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID',
   hasDistributionOverlay: true,
 }
 

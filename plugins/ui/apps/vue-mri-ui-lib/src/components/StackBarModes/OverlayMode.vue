@@ -20,6 +20,7 @@ import { appendDistributionOverlay } from '../helpers/computeDistributionKDE'
 export const meta = {
   id: 'overlay',
   label: 'Overlapping Histogram',
+  labelKey: 'MRI_PA_CHART_MODE_OVERLAY',
   hasDistributionOverlay: true,
 }
 

@@ -968,6 +968,10 @@ export const i18n = {
     MRI_PA_DISTRIBUTION_CURVE: 'Distribution Curve',
     MRI_PA_CHART_TYPES: 'Chart Types',
     MRI_PA_OVERLAY: 'Overlay',
+    MRI_PA_CHART_MODE_STACKED: 'Stacked Bar Chart',
+    MRI_PA_CHART_MODE_OVERLAY: 'Overlapping Histogram',
+    MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: 'Overlapping Bar Chart',
+    MRI_PA_CHART_MODE_DISTRIBUTION: 'Kernel Density Plot',
   },
   de: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: 'Patienten zu Kohorte hinzufügen',
@@ -1966,6 +1970,10 @@ export const i18n = {
     MRI_PA_DISTRIBUTION_CURVE: 'Verteilungskurve',
     MRI_PA_CHART_TYPES: 'Diagrammtypen',
     MRI_PA_OVERLAY: 'Überlagerung',
+    MRI_PA_CHART_MODE_STACKED: 'Gestapeltes Balkendiagramm',
+    MRI_PA_CHART_MODE_OVERLAY: 'Überlagertes Histogramm',
+    MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: 'Überlagertes Balkendiagramm',
+    MRI_PA_CHART_MODE_DISTRIBUTION: 'Kerndichteschätzung',
   },
   zh: {
     MRI_PA_COLL_ADD_PATIENTS_TO_COLLECTION: '将病患添加到群',
@@ -2872,6 +2880,10 @@ export const i18n = {
     MRI_PA_DISTRIBUTION_CURVE: '分布曲线',
     MRI_PA_CHART_TYPES: '图表类型',
     MRI_PA_OVERLAY: '叠加',
+    MRI_PA_CHART_MODE_STACKED: '堆叠条形图',
+    MRI_PA_CHART_MODE_OVERLAY: '重叠直方图',
+    MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID: '重叠条形图',
+    MRI_PA_CHART_MODE_DISTRIBUTION: '核密度图',
   },
 }
 

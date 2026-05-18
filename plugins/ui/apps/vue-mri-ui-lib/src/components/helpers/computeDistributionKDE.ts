@@ -40,7 +40,8 @@ export function computeKDE(traces: Array<{ y?: Array<number | string> }>, option
   // Average spacing between adjacent kernel centers — used as the std-dev fallback when all
   // weight sits in a single bin (variance = 0). For integer positions this is 1, matching the
   // previous behavior; for arbitrary positions it scales with the data.
-  const positionSpacing = numCategories > 1 ? (positions[numCategories - 1] - positions[0]) / (numCategories - 1) : 1
+  const positionSpacing =
+    numCategories > 1 ? Math.abs(positions[numCategories - 1] - positions[0]) / (numCategories - 1) : 1
 
   const step = numPoints > 1 ? (xMax - xMin) / (numPoints - 1) : 0
   const xGrid = Array.from({ length: numPoints }, (_, i) => xMin + i * step)

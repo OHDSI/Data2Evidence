@@ -1,11 +1,12 @@
 import { meta as StackedMeta, apply as applyStacked } from './StackedMode.vue'
 import { meta as OverlayMeta, apply as applyOverlay } from './OverlayMode.vue'
 import { meta as PartialOverlaySolidMeta, apply as applyPartialOverlaySolid } from './PartialOverlaySolidMode.vue'
-import { meta as DistributionCurvesMeta, apply as applyDistributionCurves } from './DistributionCurvesMode.vue'
+import { meta as DistributionCurvesMeta, apply as applyDistributionCurves } from './KernelDensityPlotMode.vue'
 
 export type ModeMeta = {
   id: string
   label: string
+  labelKey: string
   hasDistributionOverlay: boolean
 }
 

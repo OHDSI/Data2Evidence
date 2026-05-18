@@ -84,7 +84,7 @@ const enabledModes = computed(() => {
 
 const currentModeLabel = computed(() => {
   const current = modeOrder.find(m => m.id === getBarChartType.value)
-  return current ? current.label : ''
+  return current ? getText(current.labelKey) : ''
 })
 
 const overlayAllowed = computed(() => {
@@ -107,7 +107,7 @@ const menuData = computed(() => {
   for (const mode of enabledModes.value) {
     items.push({
       idx: idx++,
-      text: mode.label,
+      text: getText(mode.labelKey),
       hasSubMenu: false,
       isSeperator: false,
       subMenu: [],

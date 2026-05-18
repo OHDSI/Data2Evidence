@@ -128,17 +128,21 @@ const getters = {
 
     const metadata = { version: 3 }
 
-    return {
+    const data: any = {
       filter,
       chartType,
       axisSelection,
       metadata,
       datasetId: rootGetters.getSelectedDataset.id,
-      barChartType: {
+    }
+    // Add barChartType only for stacked-bar charts.
+    if (chartType === 'stacked') {
+      data.barChartType = {
         mode: rootGetters.getBarChartType,
         showDistributionOverlay: rootGetters.getShowDistributionOverlay,
-      },
+      }
     }
+    return data
   },
   getBookmarkById: modulestate => bmkId =>
     JSON.parse(modulestate.bookmarks.find(b => b.bmkId === bmkId).bookmark || '{}'),
@@ -171,24 +175,24 @@ const getters = {
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection
     const currentBookmarksAxisSelection = bookmark?.axisSelection
-    const mriFrontendConfig = rootGetters.getMriFrontendConfig
-    const defaultBarChartType = { mode: 'stack', showDistributionOverlay: false }
-    const newBarChartTypeRaw = moduleGetters.getBookmarksData.barChartType ?? defaultBarChartType
-    const currentBarChartTypeRaw = bookmark?.barChartType ?? defaultBarChartType
-    // Normalize disabled modes to 'stack' on both sides so a freshly-loaded bookmark whose
-    // saved mode is disabled by the current config does not appear dirty.
-    const newBarChartType = {
-      ...newBarChartTypeRaw,
-      mode: getEffectiveBarChartMode(newBarChartTypeRaw.mode, mriFrontendConfig),
-    }
-    const currentBarChartType = {
-      ...currentBarChartTypeRaw,
-      mode: getEffectiveBarChartMode(currentBarChartTypeRaw.mode, mriFrontendConfig),
+    // Only compare barChartType for stacked-bar bookmarks
+    let barChartTypeChanged = false
+    if (bookmark?.chartType === 'stacked') {
+      const mriFrontendConfig = rootGetters.getMriFrontendConfig
+      const defaultBarChartType = { mode: 'stack', showDistributionOverlay: false }
+      const newRaw = moduleGetters.getBookmarksData.barChartType ?? defaultBarChartType
+      const curRaw = bookmark?.barChartType ?? defaultBarChartType
+      // Normalize disabled modes to 'stack' on both sides so a freshly-loaded bookmark whose
+      // saved mode is disabled by the current config does not appear dirty.
+      barChartTypeChanged = !isEqual(
+        { ...newRaw, mode: getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig) },
+        { ...curRaw, mode: getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig) }
+      )
     }
     return (
       !isEqual(newBookmarksFilter, currentBookmarksFilter) ||
       !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection) ||
-      !isEqual(newBarChartType, currentBarChartType)
+      barChartTypeChanged
     )
   },
   getDisplayBookmarks: modulestate => (showSharedBookmarks, username) => {

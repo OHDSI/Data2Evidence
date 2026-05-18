@@ -8,6 +8,7 @@
 export const meta = {
   id: 'stack',
   label: 'Stacked Bar Chart',
+  labelKey: 'MRI_PA_CHART_MODE_STACKED',
   hasDistributionOverlay: false,
 }
 
