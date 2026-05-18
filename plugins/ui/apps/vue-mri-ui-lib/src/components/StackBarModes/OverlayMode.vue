@@ -22,6 +22,7 @@ export const meta = {
   label: 'Overlapping Histogram',
   labelKey: 'MRI_PA_CHART_MODE_OVERLAY',
   hasDistributionOverlay: true,
+  configFlag: 'overlappingHistogramEnabled',
 }
 
 type Ctx = {

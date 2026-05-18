@@ -11,6 +11,7 @@ import {
   formatAtlasCohortDefinition,
   processBookmarksData,
 } from '@/utils/BookmarkUtils'
+import { getEffectiveBarChartMode } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
 let cancel
@@ -30,21 +31,6 @@ const state = {
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
 const webApiCohortDefinitionURL = '/d2e-webapi/cohortdefinition'
-
-// Mirrors the enablement rules used by ChartTypeAxisButton.vue. Falls back to 'stack' when
-// the given mode is unknown or its corresponding flag is disabled in the current config.
-const barChartModeOptionKey: Record<string, string> = {
-  overlay: 'overlappingHistogramEnabled',
-  partialOverlaySolid: 'overlappingBarChartEnabled',
-  distribution: 'kernelDensityPlotEnabled',
-}
-function getEffectiveBarChartMode(mode: string | undefined, mriFrontendConfig: any): string {
-  if (!mode || mode === 'stack') return 'stack'
-  const optionKey = barChartModeOptionKey[mode]
-  if (!optionKey) return 'stack'
-  const enabled = !!mriFrontendConfig?._internalConfig?.chartOptions?.stacked?.[optionKey]
-  return enabled ? mode : 'stack'
-}
 
 // getters
 const getters = {

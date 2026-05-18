@@ -52,7 +52,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef } f
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
-import { modeOrder } from './StackBarModes/modes'
+import { modeOrder, isBarChartModeEnabled } from './StackBarModes/modes'
 
 defineProps<{ parentContainer?: any }>()
 
@@ -67,20 +67,9 @@ const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
 const menuButtonEl = ref<HTMLButtonElement | null>(null)
 const menuVisible = ref(false)
 
-const modeIdToStackedOption: Record<string, string> = {
-  overlay: 'overlappingHistogramEnabled',
-  partialOverlaySolid: 'overlappingBarChartEnabled',
-  distribution: 'kernelDensityPlotEnabled',
-}
-
-const enabledModes = computed(() => {
-  const stackedOptions = getMriFrontendConfig.value?._internalConfig?.chartOptions?.stacked || {}
-  return modeOrder.filter(mode => {
-    const optionKey = modeIdToStackedOption[mode.id]
-    if (!optionKey) return true
-    return !!stackedOptions[optionKey]
-  })
-})
+const enabledModes = computed(() =>
+  modeOrder.filter(mode => isBarChartModeEnabled(mode.id, getMriFrontendConfig.value))
+)
 
 const currentModeLabel = computed(() => {
   const current = modeOrder.find(m => m.id === getBarChartType.value)

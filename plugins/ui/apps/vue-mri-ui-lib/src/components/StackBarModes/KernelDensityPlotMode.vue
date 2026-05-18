@@ -12,6 +12,7 @@ export const meta = {
   label: 'Kernel Density Plot',
   labelKey: 'MRI_PA_CHART_MODE_DISTRIBUTION',
   hasDistributionOverlay: false,
+  configFlag: 'kernelDensityPlotEnabled',
 }
 
 type Ctx = {

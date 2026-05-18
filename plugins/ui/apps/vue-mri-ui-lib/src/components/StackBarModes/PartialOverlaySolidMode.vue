@@ -22,6 +22,7 @@ export const meta = {
   label: 'Overlapping Bar Chart',
   labelKey: 'MRI_PA_CHART_MODE_PARTIAL_OVERLAY_SOLID',
   hasDistributionOverlay: true,
+  configFlag: 'overlappingBarChartEnabled',
 }
 
 type Ctx = {

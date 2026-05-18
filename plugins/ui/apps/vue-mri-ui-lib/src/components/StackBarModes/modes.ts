@@ -8,6 +8,7 @@ export type ModeMeta = {
   label: string
   labelKey: string
   hasDistributionOverlay: boolean
+  configFlag?: string
 }
 
 export type ModeApplyCtx = {
@@ -25,4 +26,16 @@ export const applyById: Record<string, ModeApply> = {
   [OverlayMeta.id]: applyOverlay,
   [PartialOverlaySolidMeta.id]: applyPartialOverlaySolid,
   [DistributionCurvesMeta.id]: applyDistributionCurves,
+}
+
+export function isBarChartModeEnabled(modeId: string, mriFrontendConfig: any): boolean {
+  const meta = modeOrder.find(m => m.id === modeId)
+  if (!meta) return false
+  if (!meta.configFlag) return true
+  return !!mriFrontendConfig?._internalConfig?.chartOptions?.stacked?.[meta.configFlag]
+}
+
+export function getEffectiveBarChartMode(mode: string | undefined, mriFrontendConfig: any): string {
+  if (!mode || mode === 'stack') return 'stack'
+  return isBarChartModeEnabled(mode, mriFrontendConfig) ? mode : 'stack'
 }
