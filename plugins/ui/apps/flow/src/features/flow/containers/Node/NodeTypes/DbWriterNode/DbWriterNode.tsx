@@ -14,7 +14,6 @@ export interface DbWriterNodeData extends NodeDataState {
   schemaname: string;
   dataframe: string;
   dbtablename: string;
-  upsert: boolean;
   truncate: boolean;
 }
 

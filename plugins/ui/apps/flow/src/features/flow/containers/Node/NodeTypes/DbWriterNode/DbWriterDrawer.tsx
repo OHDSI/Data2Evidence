@@ -43,7 +43,6 @@ const EMPTY_FORM_DATA: FormData = {
   schemaname: "",
   dataframe: "",
   dbtablename: "",
-  upsert: false,
   truncate: false,
 };
 
@@ -75,7 +74,6 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         dbtablename: node.data.dbtablename,
         database: node.data.database,
         schemaname: node.data.schemaname,
-        upsert: node.data.upsert ?? false,
         truncate: node.data.truncate ?? false,
       });
     } else {
@@ -188,19 +186,6 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
             />
           }
           label="Truncate table before writing"
-        />
-      </Box>
-      <Box mb={4}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={formData.upsert}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({ upsert: e.target.checked })
-              }
-            />
-          }
-          label="Upsert on conflict (do nothing if unchecked)"
         />
       </Box>
     </NodeDrawer>
