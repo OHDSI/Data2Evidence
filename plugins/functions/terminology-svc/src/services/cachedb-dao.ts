@@ -32,6 +32,7 @@ export class CachedbDAO {
   private readonly schemaName: string;
   private readonly resultsSchemaName: string;
   private readonly fts_concept_identifier: string;
+  private readonly fts_concept_synonym_identifier: string;
 
   constructor(
     vocabSchemaName: string,
@@ -46,7 +47,43 @@ export class CachedbDAO {
     this.schemaName = schemaName;
     this.resultsSchemaName = resultsSchemaName;
     this.fts_concept_identifier = `fts_${vocabSchemaName}_concept`;
+    this.fts_concept_synonym_identifier = `fts_${vocabSchemaName}_concept_synonym`;
   }
+
+  // Per-concept synonym signals: best exact-match boost across this concept's
+  // synonym rows + best BM25 across those rows. Used to "compensate" recall when
+  // a concept's canonical concept_name doesn't match but one of its alternate
+  // names does. Three positional params expected: searchText (exact),
+  // searchText (starts-with), searchText (BM25).
+  private getSynonymScoresCTE = (): string => `
+    synonym_scores as (
+      select
+        cs.concept_id,
+        MAX(CASE
+          WHEN LOWER(cs.concept_synonym_name) = LOWER(?) THEN 600
+          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER(?) || '%' THEN 500
+          ELSE 0
+        END) as syn_exact_score,
+        MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
+      from
+        ${this.vocabSchemaName}.concept_synonym cs
+      group by cs.concept_id
+      having syn_exact_score > 0 OR syn_bm25 is not null
+    )
+  `;
+
+  private getBestBm25Score = (
+    conceptBm25Expression: string,
+    synonymBm25Expression: string,
+  ): string => `
+    NULLIF(
+      GREATEST(
+        COALESCE(${conceptBm25Expression}, 0),
+        COALESCE(${synonymBm25Expression}, 0)
+      ),
+      0
+    )
+  `;
 
   async getConcepts(
     pageNumber = 0,
@@ -329,15 +366,29 @@ export class CachedbDAO {
         ? `${filterWhereClause} AND score is not null`
         : "WHERE score is not null ";
 
+      // Facet base query, hybrid: includes a concept if either its concept_name
+      // or any synonym matches FTS. fts_score uses the strongest BM25 signal
+      // across both tables before hybrid normalization.
       return [
         `
-      with sem_fts_scores as (
-        select 
+      with synonym_scores as (
+        select cs.concept_id,
+          MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
+        from ${this.vocabSchemaName}.concept_synonym cs
+        group by cs.concept_id
+        having syn_bm25 is not null
+      ),
+      sem_fts_scores as (
+        select
           ${columnsToSelect},
-          ${this.fts_concept_identifier}.match_bm25(concept_id, ?1) as fts_score,
-          array_cosine_distance(concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
+          ${this.getBestBm25Score(
+            `${this.fts_concept_identifier}.match_bm25(c.concept_id, ?)`,
+            "sy.syn_bm25",
+          )} as fts_score,
+          array_cosine_distance(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept c
+          left join synonym_scores sy on sy.concept_id = c.concept_id
           ${duckdbFtsWhereClause}
       ),
       fts as (
@@ -349,28 +400,42 @@ export class CachedbDAO {
           ) as hybrid_score
         from 
           sem_fts_scores
+        where fts_score is not null
         order by hybrid_score desc
         )
       `,
-        [searchText, textEmbedding],
+        [searchText, searchText, textEmbedding],
       ];
     } else {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND score is not null`
         : "WHERE score is not null ";
+      // Facet base query, FTS-only: same idea, simpler shape. Alias `score` is
+      // referenced in WHERE (DuckDB allows this) to avoid a second match_bm25.
       return [
         `
-      with fts as (
+      with synonym_scores as (
+        select cs.concept_id,
+          MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
+        from ${this.vocabSchemaName}.concept_synonym cs
+        group by cs.concept_id
+        having syn_bm25 is not null
+      ),
+      fts as (
         select
           ${columnsToSelect},
-          ${this.fts_concept_identifier}.match_bm25(concept_id, ?) as score
+          ${this.getBestBm25Score(
+            `${this.fts_concept_identifier}.match_bm25(c.concept_id, ?)`,
+            "sy.syn_bm25",
+          )} as score
         from
           ${this.vocabSchemaName}.concept c
+          left join synonym_scores sy on sy.concept_id = c.concept_id
           ${duckdbFtsWhereClause}
           order by score desc
         )
       `,
-        [searchText],
+        [searchText, searchText],
       ];
     }
   };
@@ -412,17 +477,26 @@ export class CachedbDAO {
         [],
       ];
     } else {
+      // CTE chain (rendered inside `with fts as (...)`):
+      //   synonym_scores  -> per-concept synonym signals (exact boost + BM25)
+      //   concept_with_scores -> concept_name exact/starts-with + standard boost
+      //   sem_fts_scores  -> only when semanticRatio > 0; merges the strongest
+      //                      concept/synonym BM25 into fts_score before normalization
+      //   search_scores   -> final fts/embedding combination per concept
+      //   (final select) -> sums boost + effective BM25, keeps any-signal rows
+      const synonymCte = this.getSynonymScoresCTE();
+
       const conceptWithScores = `
-        with concept_with_scores as (
+        with ${synonymCte},
+        concept_with_scores as (
           select
             ${columnsToSelect}${columns.length === 0 ? ", " : ""}
             -- Exact match scoring (highest priority)
             CASE
-              WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
-              WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' THEN 800
+              WHEN LOWER(concept_name) = LOWER(?) THEN 1000
+              WHEN LOWER(concept_name) LIKE LOWER(?) || '%' THEN 800
               ELSE 0
             END as exact_match_score,
-            
             -- Standard concept boost
             CASE
               WHEN standard_concept = 'S' THEN 100
@@ -437,75 +511,121 @@ export class CachedbDAO {
       let queryParams: any[];
 
       if (this.semanticRatio > 0) {
-        // Hybrid Search: Build the query with all scoring factors
+        // Hybrid: fold the strongest concept/synonym BM25 into fts_score before
+        // normalization so synonym-only matches rank as FTS hits too.
         searchScores = `
           sem_fts_scores as (
-            select 
+            select
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-              ${
-                this.fts_concept_identifier
-              }.match_bm25(concept_id, ?3) as fts_score,
-              array_cosine_distance(concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
+              ${this.getBestBm25Score(
+                `${this.fts_concept_identifier}.match_bm25(concept_id, ?)`,
+                "sy.syn_bm25",
+              )} as fts_score,
+              array_cosine_distance(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score,
+              sy.syn_exact_score as syn_exact_score
             from
               ${this.vocabSchemaName}.concept c
+              left join synonym_scores sy on sy.concept_id = c.concept_id
               ${filterWhereClause}
             ),
           search_scores as (
-            select 
+            select
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              syn_exact_score,
               (
-                ${this.semanticRatio} * 
-                (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) + 
-                (1 - ${this.semanticRatio}) * 
+                ${this.semanticRatio} *
+                (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) +
+                (1 - ${this.semanticRatio}) *
                 fts_score / (select max(fts_score) from sem_fts_scores)
               ) as search_score
-            from 
+            from
               sem_fts_scores
           )
         `;
-        // Combine all parameters for hybrid search
         queryParams = [
-          searchText, // For exact match (equals)
-          searchText, // For exact match (starts with)
-          searchText, // For match_bm25
-          textEmbedding, // For embedding score
+          searchText, // synonym exact
+          searchText, // synonym starts-with
+          searchText, // synonym BM25
+          searchText, // concept exact
+          searchText, // concept starts-with
+          searchText, // concept BM25
+          textEmbedding, // embedding
         ];
       } else {
-        // FTS search: Build the query with all scoring factors
         searchScores = `
           search_scores as (
-            select 
+            select
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
-              ${
-                this.fts_concept_identifier
-              }.match_bm25(concept_id, ?3) as search_score
+              ${this.fts_concept_identifier}.match_bm25(concept_id, ?) as search_score
             from
               ${this.vocabSchemaName}.concept c
           )
         `;
-        // Combine all parameters for fts
-        //  search
         queryParams = [
-          searchText, // For exact match (equals)
-          searchText, // For exact match (starts with)
-          searchText, // For match_bm25
+          searchText, // synonym exact
+          searchText, // synonym starts-with
+          searchText, // synonym BM25
+          searchText, // concept exact
+          searchText, // concept starts-with
+          searchText, // concept BM25
         ];
       }
 
-      const finalScores = `
+      // For hybrid, search_scores already merges synonym BM25 into search_score
+      // and forwards syn_exact_score, so we don't re-join synonym_scores here.
+      // For non-hybrid, search_score is raw concept BM25; combine it with
+      // syn_bm25 in the final score, and pick up syn_exact_score via LEFT JOIN.
+      const finalScores =
+        this.semanticRatio > 0
+          ? `
         select
           *,
-          (ss.search_score + c.exact_match_score + c.standard_boost) as score
+          (
+            COALESCE(ss.search_score, 0)
+            + c.exact_match_score
+            + COALESCE(ss.syn_exact_score, 0)
+            + c.standard_boost
+          ) as score
         from
           concept_with_scores c
         join search_scores ss
           on ss.concept_id = c.concept_id
-        WHERE score > 0
+        WHERE (
+          ss.search_score IS NOT NULL
+          OR c.exact_match_score > 0
+          OR ss.syn_exact_score > 0
+        )
+        ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
+        order by score desc
+      `
+          : `
+        select
+          *,
+          (
+            COALESCE(${this.getBestBm25Score(
+              "ss.search_score",
+              "sy.syn_bm25",
+            )}, 0)
+            + c.exact_match_score
+            + COALESCE(sy.syn_exact_score, 0)
+            + c.standard_boost
+          ) as score
+        from
+          concept_with_scores c
+        join search_scores ss
+          on ss.concept_id = c.concept_id
+        left join synonym_scores sy
+          on sy.concept_id = c.concept_id
+        WHERE (
+          ss.search_score IS NOT NULL
+          OR sy.syn_bm25 IS NOT NULL
+          OR c.exact_match_score > 0
+          OR sy.syn_exact_score > 0
+        )
         ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
         order by score desc
       `;
 
-      // Create the final query with fts wrapper
       const finalQuery = `
         with fts as (
           ${conceptWithScores}

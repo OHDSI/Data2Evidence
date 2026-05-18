@@ -175,7 +175,7 @@ def add_autoincrement_col_query(
     """
     Create a SQL query to add an auto-increment column to a table.
     """
-    return f'ALTER TABLE "{database_name}"."{schema_name}"."{table_name}" ADD COLUMN "{column_name}" INTEGER DEFAULT NEXTVAL("{database_name}"."{schema_name}"."{sequence_name}");'
+    return f'ALTER TABLE "{database_name}"."{schema_name}"."{table_name}" ADD COLUMN "{column_name}" INTEGER DEFAULT NEXTVAL(\'{database_name}.{schema_name}.{sequence_name}\');'
 
 
 def get_table_names_query(database_name: str, schema_name: str) -> str:
