@@ -95,7 +95,7 @@ export class DatasetQueryService {
       .getOne();
 
     if (!dataset) {
-      throw new HttpException(404, `Dataset with identifiler ${lookupValue} not found`);
+      throw new HttpException(404, `Dataset with identifier ${lookupValue} not found`);
     } else if (!dataset.datasetDetail) {
       throw new HttpException(
         404,
