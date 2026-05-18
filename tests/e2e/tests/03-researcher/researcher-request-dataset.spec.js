@@ -23,20 +23,12 @@ test(TEST_NAME, async ({ page }) => {
   const demoRow = datasetTable.locator('tr', { hasText: /Demo dataset/i }).first()
   await expect(demoRow).toBeVisible()
 
-  // Child rows are now expanded by default, so we can directly access them in the main table
-  const childRow = datasetTable
-    .locator('tbody tr')
-    .filter({ has: page.locator('.icon-cell--child') })
-    .first()
-  await expect(childRow).toBeVisible()
-
-  // Get the cache dataset name from the Name column (index 2: icon, dataset_id, name)
-  // The table structure is: [icon] [Dataset ID] [Name] [Schema name] [Schema version] ...
-  const cacheDatasetNameCell = childRow.locator('td').nth(2)
+  // webapi-managed datasets render as a single row (no child cache row).
+  // Table structure: [icon] [Dataset ID] [Name] [Schema name] [Schema version] ...
+  const cacheDatasetNameCell = demoRow.locator('td').nth(2)
   const cacheDatasetName = (await cacheDatasetNameCell.textContent())?.trim()
 
-  // Click "Select action" on the child dataset row
-  await childRow.getByText('Select action').click()
+  await demoRow.getByText('Select action').click()
   await page.getByRole('option', { name: 'Update dataset' }).click()
   await page.getByText('Show request access button').click()
   await page.getByRole('button', { name: 'Save' }).click()
@@ -99,13 +91,7 @@ test(TEST_NAME, async ({ page }) => {
   // Find the demo row again (can't reuse locator after navigation)
   const demoRowAgain = datasetTableAgain.locator('tr', { hasText: /Demo dataset/i }).first()
   await expect(demoRowAgain).toBeVisible()
-  // Child rows are expanded by default, find child row directly
-  const childRowAgain = datasetTableAgain
-    .locator('tbody tr')
-    .filter({ has: page.locator('.icon-cell--child') })
-    .first()
-  await expect(childRowAgain).toBeVisible()
-  await childRowAgain.getByText('Select action').click()
+  await demoRowAgain.getByText('Select action').click()
   await page.getByRole('option', { name: 'Permissions' }).click()
   await page.getByTestId('dialog').getByText('Select action').click()
   await page.getByRole('option', { name: 'Approve' }).click()
@@ -144,6 +130,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('card').locator('div').filter({ hasText: 'Dataset InfoData' }).first()).toBeVisible()
   // Check that the nav bar contains the cache dataset name (not the parent dataset)
   await expect(page.getByTestId('nav')).toContainText(
-    `${cacheDatasetName}​DatasetConceptsCohortsAnalysisNotebooksAccount`
+    `${cacheDatasetName}​DatasetConceptsCohortsNotebooksAnalysisAccount`
   )
 })

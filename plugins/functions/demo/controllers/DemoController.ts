@@ -37,8 +37,8 @@ export class DemoController {
       },
       {
         code: "cache",
-        message: "Creating cache for demo dataset...",
-        task: this.service.createCache.bind(this.service),
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
       },
       {
         code: "dqd",
@@ -79,8 +79,8 @@ export class DemoController {
       },
       {
         code: "cache",
-        message: "Creating cache for HTTP test dataset...",
-        task: this.service.createCache.bind(this.service),
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
       },
     ];
 
@@ -107,6 +107,11 @@ export class DemoController {
         task: this.service.addDataset.bind(this.service),
       },
       {
+        code: "cache",
+        message: "Waiting for cache to be ready...",
+        task: this.service.waitForCache.bind(this.service),
+      },
+      {
         code: "dqd",
         message: "Running DQD on demo dataset...",
         task: this.service.runDQD.bind(this.service),
@@ -115,11 +120,6 @@ export class DemoController {
         code: "dc",
         message: "Running DC on demo dataset...",
         task: this.service.runDC.bind(this.service),
-      },
-      {
-        code: "cache",
-        message: "Creating cache for demo dataset...",
-        task: this.service.createCache.bind(this.service),
       },
       {
         code: "metadata",

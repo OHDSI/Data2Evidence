@@ -40,6 +40,7 @@ import { dispatch, RootState } from "../../../../../store";
 import { selectFlowNodes, selectLastNode } from "../../../selectors";
 import { useGetLatestDataflowByIdQuery } from "../../../slices";
 import { EdgeState, NodeState, ExecutorOptions } from "../../../types";
+import { sanitizeFlowEdges, sanitizeFlowNodes } from "../../../utils";
 import {
   getNodeClassName,
   getNodeColors,
@@ -131,13 +132,8 @@ export const FlowPanel: FC<FlowPanelProps> = () => {
   );
 
   useEffect(() => {
-    let savedNodes: NodeState[] = [];
-    let savedEdges: EdgeState[] = [];
-
-    if (dataflow?.flow) {
-      savedNodes = dataflow.flow.nodes;
-      savedEdges = dataflow.flow.edges;
-    }
+    const savedNodes = sanitizeFlowNodes(dataflow?.flow?.nodes);
+    const savedEdges = sanitizeFlowEdges(dataflow?.flow?.edges, savedNodes);
 
     dispatch(replaceNodes(savedNodes));
     dispatch(replaceEdges(savedEdges));

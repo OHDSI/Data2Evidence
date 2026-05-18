@@ -48,6 +48,7 @@ export const i18nDefault = {
     ACTION_SELECTOR__SOURCE_INFORMATION: "Source information",
     ACTION_SELECTOR__UPDATE_DATASET: "Update dataset",
     ACTION_SELECTOR__UPDATE_SCHEMA: "Update schema",
+    ACTION_SELECTOR__TRANSFORM_TO_WEBAPI: "Convert to WebAPI",
     ACTION_SELECTOR__UPLOAD_STRATEGUS_RESULTS: "Upload strategus results",
     ADD_FLOW_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",
@@ -92,6 +93,9 @@ export const i18nDefault = {
     ADD_STUDY_DIALOG__HANA_TYPE: "Type",
     ADD_STUDY_DIALOG__INFO_CONFIG: "Dataset info configuration",
     ADD_STUDY_DIALOG__INVALID_SCHEMA_NAME: "Invalid schema name",
+    ADD_STUDY_DIALOG__MANAGEMENT_MODE: "Management mode",
+    ADD_STUDY_DIALOG__MANAGEMENT_MODE_WEBAPI: "WebAPI-managed (OMOP only, no cache dataset)",
+    ADD_STUDY_DIALOG__MANAGEMENT_MODE_SOURCE: "Source (with cache dataset)",
     ADD_STUDY_DIALOG__NO_AVAILABLE_SCHEMA: "No available schemas found. Please select another schema option.",
     ADD_STUDY_DIALOG__PA_CONFIG: "PA config",
     ADD_STUDY_DIALOG__REQUIRED: "This is required",
@@ -1237,6 +1241,9 @@ export const i18nDefault = {
     UPDATE_STUDY_DIALOG__UPDATE_DATASET: "Update dataset",
     UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE: "Please enter a valid Token dataset code",
     UPDATE_STUDY_DIALOG__VOCAB_SCHEMA_NAME: "Vocab schema name",
+    TRANSFORM_TO_WEBAPI__BODY:
+      "This merges the cache dataset into the source row and deletes the cache row. Researcher roles on the cache row will be orphaned and must be re-granted on the source after migration. Continue?",
+    TRANSFORM_TO_WEBAPI__TITLE: "Convert dataset to WebAPI-managed",
     USER_OVERVIEW__ADD_USER: "Add user",
     USER_OVERVIEW__DELETE: "Delete",
     USER_OVERVIEW__EDIT: "Edit",
