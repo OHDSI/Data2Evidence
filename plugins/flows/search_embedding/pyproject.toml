@@ -13,9 +13,9 @@ dependencies = [
     "pydantic==2.10.6",
     "pyjwt==2.12.0",
     "sqlalchemy==2.0.38",
-    "torch==2.8.0",
+    "torch==2.6.0",
     "tqdm==4.66.4",
-    "transformers>=4.44,<5",
+    "transformers>=4.44.2",
 ]
 
 [project.optional-dependencies]
