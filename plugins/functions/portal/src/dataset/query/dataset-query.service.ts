@@ -59,21 +59,29 @@ export class DatasetQueryService {
     tokenDatasetCode?: string;
   }): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns();
+    const lookupValue = id ?? tokenDatasetCode;
+
+    if (!lookupValue) {
+      throw new HttpException(
+        400,
+        "Dataset id or tokenDatasetCode is required",
+    );
+  }
     // Lookup supports UUID id, sanitized cache_id (analytics-svc passes this on
     // the CDM-version path), or tokenDatasetCode.
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        id,
+        lookupValue,
       );
     const isCacheId =
       /^_?[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}$/i.test(
-        id,
+        lookupValue,
       );
     const whereClause = isUuid
-      ? "dataset.id = :id"
+      ? "dataset.id = :lookupValue"
       : isCacheId
-        ? "dataset.cacheId = :id"
-        : "dataset.tokenDatasetCode = :id";
+        ? "dataset.cacheId = :lookupValue"
+        : "dataset.tokenDatasetCode = :lookupValue";
 
     const dataset = await this.datasetRepo
       .createQueryBuilder("dataset")
@@ -82,14 +90,16 @@ export class DatasetQueryService {
       .leftJoin("dataset.tags", "tag")
       .leftJoin("dataset.attributes", "attribute")
       .leftJoin("attribute.attributeConfig", "attributeConfig")
-      .select(baseColumns);
+      .where(whereClause, { id })
+      .select(baseColumns)
+      .getOne();
 
     if (!dataset) {
-      throw new HttpException(404, `Dataset ${lookup} not found`);
+      throw new HttpException(404, `Dataset with identifiler ${lookupValue} not found`);
     } else if (!dataset.datasetDetail) {
       throw new HttpException(
         404,
-        `Dataset detail with dataset id ${id} not found`,
+        `Dataset detail with dataset identifier ${lookupValue} not found`,
       );
     }
 
