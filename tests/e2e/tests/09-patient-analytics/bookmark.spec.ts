@@ -79,6 +79,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
+      await expect(page.getByRole('row', { name: /40055000.*Chronic sinusitis/ })).toBeVisible({ timeout: 60_000 })
       await page
         .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
         .locator('td')
