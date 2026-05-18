@@ -65,6 +65,15 @@ test(TEST_NAME, async ({ page, context }) => {
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('demo_database')
+  // Fill up Cacheid field
+  const cleaned_dataset_id = dataset_id.replace(/-/g, '_')
+  const cache_id = /^[0-9]/.test(cleaned_dataset_id) ? `_${cleaned_dataset_id}` : cleaned_dataset_id
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .click()
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .fill(cache_id)
   // Fill up Vocabschemaname field
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
