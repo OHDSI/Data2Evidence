@@ -10,6 +10,10 @@ import {
   replaceVariables,
   replaceImportLibs,
 } from "~/features/flow/reducers";
+import {
+  sanitizeFlowEdges,
+  sanitizeFlowNodes,
+} from "~/features/flow/utils";
 
 export interface ImportFlowButtonProps {}
 
@@ -32,10 +36,12 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
           const json = JSON.parse(jsonData) as DataflowExportDto;
           console.debug("JSON content:", json);
 
-          dispatch(replaceNodes(json.flow.nodes));
-          dispatch(replaceEdges(json.flow.edges));
-          dispatch(replaceVariables(json.flow.variables ?? []));
-          dispatch(replaceImportLibs(json.flow.importLibs ?? []));
+          const safeNodes = sanitizeFlowNodes(json.flow?.nodes);
+          const safeEdges = sanitizeFlowEdges(json.flow?.edges, safeNodes);
+          dispatch(replaceNodes(safeNodes));
+          dispatch(replaceEdges(safeEdges));
+          dispatch(replaceVariables(json.flow?.variables ?? []));
+          dispatch(replaceImportLibs(json.flow?.importLibs ?? []));
           dispatch(markStatusAsDraft());
         } catch (err) {
           console.error("Error parsing JSON:", err);

@@ -19,11 +19,10 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible()
-  // Get the dataset ID
-  await page.locator('div.alp-text__copy-button-container').nth(2).locator('button.alp-icon-button--icon-only').click()
+  const demoRow = page.getByRole('row', { name: /Demo dataset/ })
+  await demoRow.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
-  // Get the dataset ID
-  await page.locator('div.alp-text__copy-button-container').nth(3).locator('button.alp-icon-button--icon-only').click()
+  await demoRow.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click()
   const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()

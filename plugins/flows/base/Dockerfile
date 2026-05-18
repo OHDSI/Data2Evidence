@@ -171,4 +171,7 @@ WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+# DataQualityDashboard writes errorReportSql.txt to CWD (/app) at runtime.
+RUN chown docker:docker /app
+
 USER docker
