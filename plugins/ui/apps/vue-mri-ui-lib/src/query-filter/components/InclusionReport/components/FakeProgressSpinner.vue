@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import VProgressCircular from '../../../../components/vuetify/VProgressCircular.vue'
+import VProgressCircular from '@/components/vuetify/VProgressCircular.vue'
 
 const props = withDefaults(
   defineProps<{

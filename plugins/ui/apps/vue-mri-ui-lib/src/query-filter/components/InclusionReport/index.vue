@@ -141,7 +141,9 @@ const { treemapChartRef, disposeTreemap, downloadTreemapImage, downloadTreemapCS
   getText
 )
 
-const ruleCount = computed(() => props.filterCardDetails?.length ?? 0)
+// Fall back to 1 (not 0) when filterCardDetails isn't provided by the caller,
+// so that patientCount still influences the estimated duration in computeExpectedDurationMs.
+const ruleCount = computed(() => props.filterCardDetails?.length ?? 1)
 const expectedDurationMs = computed(() => computeExpectedDurationMs(ruleCount.value, props.patientCount))
 
 // Keep the loader mounted until the progress spinner animates to 100%.
