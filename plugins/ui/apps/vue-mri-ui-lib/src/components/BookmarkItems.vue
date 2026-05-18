@@ -261,7 +261,8 @@ const getBarChartModeLabel = (bookmark: Bookmark): string => {
   if (!bookmark || bookmark.chartType !== 'stacked' || !bookmark.data) return ''
   try {
     const mode = JSON.parse(bookmark.data)?.barChartType?.mode
-    return modeOrder.find(m => m.id === mode)?.label ?? ''
+    const meta = modeOrder.find(m => m.id === mode)
+    return meta?.labelKey ? getText(meta.labelKey) : (meta?.label ?? '')
   } catch {
     return ''
   }
