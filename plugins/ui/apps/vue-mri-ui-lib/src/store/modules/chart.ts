@@ -48,8 +48,9 @@ const state = {
   // stacked bar chart display mode and overlay toggle
   barDisplayMode: 'stack',
   showDistributionOverlay: false,
-  // saved X1 binsize prior to entering Kernel Density Plot mode (for restoration)
+  // saved X1 binsize and attributeId prior to entering Kernel Density Plot mode (for restoration)
   previousXAxisBinsize: null,
+  previousXAxisAttributeId: null,
 }
 
 // Cancel tokens
@@ -378,6 +379,7 @@ const actions = {
       const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
       const currentBinsize = xAxis?.props?.binsize ?? null
       commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, currentBinsize)
+      commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, xAxis?.props?.attributeId ?? null)
       if (currentBinsize !== 0) {
         dispatch('setAxisValue', { id: X1, props: { binsize: 0 } })
         binsizeChanged = true
@@ -385,9 +387,13 @@ const actions = {
     } else if (previousMode === 'distribution' && modeId !== 'distribution') {
       const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
       const currentBinsize = xAxis?.props?.binsize ?? null
-      let restoreBinsize = state.previousXAxisBinsize
+      const attributeId = xAxis?.props?.attributeId
+      // Only restore the saved binsize if the X1 attribute has not changed since entering KDP.
+      // If the attribute changed while in KDP, the saved binsize belongs to a different attribute
+      // and must not be applied; fall through to recompute the default for the current attribute.
+      const attributeMatches = attributeId && attributeId === state.previousXAxisAttributeId
+      let restoreBinsize = attributeMatches ? state.previousXAxisBinsize : null
       if (restoreBinsize === null || restoreBinsize === undefined) {
-        const attributeId = xAxis?.props?.attributeId
         const mriFrontendConfig = rootGetters.getMriFrontendConfig
         if (attributeId && mriFrontendConfig) {
           const attrCfg = mriFrontendConfig.getAttributeByPath(attributeId)
@@ -402,6 +408,7 @@ const actions = {
         binsizeChanged = true
       }
       commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)
+      commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, null)
     }
 
     if (previousMode === 'stack' && modeId !== 'stack') {
@@ -509,6 +516,9 @@ const mutations = {
   },
   [types.SET_PREVIOUS_X_AXIS_BINSIZE](modulestate, value) {
     modulestate.previousXAxisBinsize = value
+  },
+  [types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID](modulestate, value) {
+    modulestate.previousXAxisAttributeId = value
   },
 }
 
