@@ -59,7 +59,23 @@ export class DatasetQueryService {
     tokenDatasetCode?: string;
   }): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns();
-    const query = this.datasetRepo
+    // Lookup supports UUID id, sanitized cache_id (analytics-svc passes this on
+    // the CDM-version path), or tokenDatasetCode.
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        id,
+      );
+    const isCacheId =
+      /^_?[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}$/i.test(
+        id,
+      );
+    const whereClause = isUuid
+      ? "dataset.id = :id"
+      : isCacheId
+        ? "dataset.cacheId = :id"
+        : "dataset.tokenDatasetCode = :id";
+
+    const dataset = await this.datasetRepo
       .createQueryBuilder("dataset")
       .leftJoin("dataset.datasetDetail", "datasetDetail")
       .leftJoin("dataset.dashboards", "dashboard")
@@ -68,23 +84,13 @@ export class DatasetQueryService {
       .leftJoin("attribute.attributeConfig", "attributeConfig")
       .select(baseColumns);
 
-    if (id) {
-      query.where("dataset.id = :id", { id });
-    } else if (tokenDatasetCode) {
-      query.where("dataset.tokenDatasetCode = :tokenDatasetCode", {
-        tokenDatasetCode,
-      });
-    } else {
-      throw new HttpException(400, "id or tokenDatasetCode is required");
-    }
-
-    const dataset = await query.getOne();
-    const lookup = id ?? tokenDatasetCode;
-
     if (!dataset) {
       throw new HttpException(404, `Dataset ${lookup} not found`);
     } else if (!dataset.datasetDetail) {
-      throw new HttpException(404, `Dataset detail for ${lookup} not found`);
+      throw new HttpException(
+        404,
+        `Dataset detail with dataset id ${id} not found`,
+      );
     }
 
     const tenant = this.tenantService.getTenant();
@@ -208,6 +214,7 @@ export class DatasetQueryService {
       "dataset.id",
       "dataset.dialect",
       "dataset.databaseCode",
+      "dataset.cacheId",
       "dataset.schemaName",
       "dataset.vocabSchemaName",
       "dataset.resultsSchemaName",

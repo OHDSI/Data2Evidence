@@ -1,0 +1,71 @@
+{
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "npm:zx": "npm:zx@8.1.4"
+    },
+    "npm": {
+      "@types/fs-extra@11.0.4": {
+        "integrity": "sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==",
+        "dependencies": {
+          "@types/jsonfile": "@types/jsonfile@6.1.4",
+          "@types/node": "@types/node@18.16.19"
+        }
+      },
+      "@types/jsonfile@6.1.4": {
+        "integrity": "sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==",
+        "dependencies": {
+          "@types/node": "@types/node@18.16.19"
+        }
+      },
+      "@types/node@18.16.19": {
+        "integrity": "sha512-IXl7o+R9iti9eBW4Wg2hx1xQDig183jj7YLn8F7udNceyfkbn1ZxmzZXuak20gR40D7pIkIY1kYGx5VIGbaHKA==",
+        "dependencies": {}
+      },
+      "@types/node@22.2.0": {
+        "integrity": "sha512-bm6EG6/pCpkxDf/0gDNDdtDILMOHgaQBVOJGdwsqClnxA3xL6jtMv76rLBc006RVMWbmaf0xbmom4Z/5o2nRkQ==",
+        "dependencies": {
+          "undici-types": "undici-types@6.13.0"
+        }
+      },
+      "undici-types@6.13.0": {
+        "integrity": "sha512-xtFJHudx8S2DSoujjMd1WeWvn7KKWFRESZTMeL1RptAYERu29D6jphMjjY+vn96jvN3kVPDNxU/E13VTaXj6jg==",
+        "dependencies": {}
+      },
+      "zx@8.1.4": {
+        "integrity": "sha512-QFDYYpnzdpRiJ3dL2102Cw26FpXpWshW4QLTGxiYfIcwdAqg084jRCkK/kuP/NOSkxOjydRwNFG81qzA5r1a6w==",
+        "dependencies": {
+          "@types/fs-extra": "@types/fs-extra@11.0.4",
+          "@types/node": "@types/node@22.2.0"
+        }
+      }
+    }
+  },
+  "remote": {},
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@medplum/bot-layer@3.2.2",
+        "npm:@medplum/core@3.2.2",
+        "npm:@medplum/fhirtypes@3.2.2",
+        "npm:@types/express@^4.17.21",
+        "npm:@types/node@^20.14.9",
+        "npm:@types/pg@^8.11.6",
+        "npm:@types/uuid@^10.0.0",
+        "npm:duckdb-async@^1.0.0",
+        "npm:esbuild@0.21.5",
+        "npm:express@^4.19.2",
+        "npm:helmet@^7.1.0",
+        "npm:pg@^8.4.2",
+        "npm:reflect-metadata@^0.2.2",
+        "npm:ts-node-dev@^2.0.0",
+        "npm:ts-node@^10.9.2",
+        "npm:typedi@^0.10.0",
+        "npm:typescript@^5.5.4",
+        "npm:uuid@^10.0.0",
+        "npm:winston@^3.13.1",
+        "npm:zod@^3.23.8"
+      ]
+    }
+  }
+}
