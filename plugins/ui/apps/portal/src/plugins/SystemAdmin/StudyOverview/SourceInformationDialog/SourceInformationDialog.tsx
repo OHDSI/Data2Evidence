@@ -43,6 +43,11 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
         <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.databaseCode} />
         </div>
+
+        <div style={{ marginTop: "32px", fontWeight: "bold" }}>{getText(i18nKeys.SOURCE_INFORMATION_DIALOG__TOKEN_CODE)}</div>
+        <div style={{ marginBottom: "32px" }}>
+          <TextField disabled fullWidth variant="standard" value={dataset?.tokenStudyCode} />
+        </div>
       </div>
 
       <Divider />
