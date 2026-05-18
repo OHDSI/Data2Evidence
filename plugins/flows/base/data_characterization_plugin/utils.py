@@ -24,7 +24,8 @@ def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
 
 
 def is_safe_schema_name(schema: str) -> bool:
-    return match(r"^[a-zA-Z][a-zA-Z0-9_]*$", schema) is not None
+    # Allow leading underscore (cache_ids from sanitized UUIDs) and a single catalog.schema pair.
+    return match(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$", schema) is not None
 
 
 def get_cdm_source(dbdao, schema: str, *, use_trex_connection: bool = False) -> str:
@@ -32,7 +33,8 @@ def get_cdm_source(dbdao, schema: str, *, use_trex_connection: bool = False) -> 
     Get the cdm_source_abbreviation from the cdm_source table.
     """
     if use_trex_connection:
-        sql = f'SELECT cdm_source_abbreviation FROM "{dbdao.database_code}"."{schema}"."cdm_source"'
+        catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
+        sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
         value = dbdao.execute_sql(
             sql,
             fetch=True,

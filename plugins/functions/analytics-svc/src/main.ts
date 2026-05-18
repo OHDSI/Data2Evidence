@@ -594,7 +594,10 @@ let initSettingsFromEnvVars = () => {
 
 const getTrexDbConnection = ({
     analyticsCredentials,
-}): { analyticsConnection: Connection.ConnectionInterface } => {
+}): {
+    analyticsConnection: Connection.ConnectionInterface;
+    sourceConnection: Connection.ConnectionInterface;
+} => {
     try {
         const dbm = Trex.databaseManager();
         const trex_publication = dbm.getFirstPublication(
@@ -650,7 +653,33 @@ const getTrexDbConnection = ({
             { duckdb: parseSql }
         );
 
-        return { analyticsConnection: conn };
+        // Tables under the results schema (cohort, cohort_definition) aren't replicated to the DuckDB cache.
+        // The `__srcdb` ATTACH alias isn't always registered as a separate database in Trex's
+        // databaseManager (it's an ATTACH alias on the shared DuckDB session), so
+        // `dbm.getConnection(<alias>__srcdb)` may throw. Fall back to the analytics
+        // connection in that case — DuckDB still sees the ATTACHed alias and SQL targeting
+        // `<alias>__srcdb.<schema>.<table>` resolves correctly through the same session.
+        let sourceConnection;
+        if (direct_connection_suffix && trex_direct_connection_alias !== trexAlias) {
+            try {
+                sourceConnection = dbm.getConnection(
+                    trex_direct_connection_alias,
+                    analyticsCredentials.schema,
+                    analyticsCredentials.vocabSchema,
+                    analyticsCredentials.resultsSchemaName,
+                    { duckdb: parseSql }
+                );
+            } catch (e) {
+                console.log(
+                    `getConnection for ${trex_direct_connection_alias} failed; falling back to analytics connection: ${(e as Error).message}`
+                );
+                sourceConnection = conn;
+            }
+        } else {
+            sourceConnection = conn;
+        }
+
+        return { analyticsConnection: conn, sourceConnection };
     } catch (error) {
         console.log("Error getting trex connection, ", error);
         throw error;
@@ -662,6 +691,7 @@ const getDBConnections = async ({
     userObj,
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
+    sourceConnection: Connection.ConnectionInterface;
 }> => {
     // node hdb library checks for these to use TLS
     // TLS does not work with deno for self signed certs
@@ -703,6 +733,7 @@ const getDBConnections = async ({
 
     return {
         analyticsConnection,
+        sourceConnection: analyticsConnection,
     };
 };
 const main = async () => {
