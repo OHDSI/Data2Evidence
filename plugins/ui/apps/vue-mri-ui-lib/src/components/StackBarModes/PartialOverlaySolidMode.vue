@@ -47,7 +47,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; la
       offset: i * offsetStep - groupSpan / 2,
     }))
   } else {
-    newTraces = traces
+    newTraces = [...traces]
   }
   if (ctx.showDistributionOverlay) {
     appendDistributionOverlay(newTraces, layout, ctx.colorway)

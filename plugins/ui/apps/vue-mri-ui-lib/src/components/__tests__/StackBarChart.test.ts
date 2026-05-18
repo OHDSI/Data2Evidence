@@ -44,7 +44,17 @@ const getters = {
         selectedpoints: selection && index in selection ? selection[index] : [],
       })),
     }),
-  getMriFrontendConfig: () => ({}),
+  getMriFrontendConfig: () => ({
+    _internalConfig: {
+      chartOptions: {
+        stacked: {
+          overlappingHistogramEnabled: true,
+          overlappingBarChartEnabled: true,
+          kernelDensityPlotEnabled: true,
+        },
+      },
+    },
+  }),
   getChartSize: () => ({}),
   getCsvFireDownload: () => false,
   getText: () => (key: string) => key,

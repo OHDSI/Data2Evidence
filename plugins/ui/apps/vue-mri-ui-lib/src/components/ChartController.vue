@@ -164,6 +164,12 @@ export default {
         this.colorAxisIndex = null
       }
     },
+    getBarChartType(newVal: string) {
+      // Clear the X-axis color selection whenever the chart type stops being stacked bar chart
+      if (newVal !== 'stack') {
+        this.colorAxisIndex = null
+      }
+    },
   },
   computed: {
     ...mapGetters([
