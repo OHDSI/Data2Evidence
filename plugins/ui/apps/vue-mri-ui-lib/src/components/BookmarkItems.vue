@@ -38,8 +38,8 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
+const isAtlas = getPortalAPI()?.isAtlas || false
 
-const isLocal = getPortalAPI()?.isLocal || false
 // Get current username from JWT token for ownership checks
 const currentUsername = computed(() => getPortalAPI()?.username || '')
 
@@ -144,7 +144,7 @@ const totalPages = computed(() => {
 })
 
 const paginatedBookmarks = computed(() => {  
-  if (!isLocal) {
+  if (!isAtlas) {
     return bookmarksDisplaySorted.value
   }
 
@@ -556,7 +556,7 @@ onErrorCaptured((err, instance, info) => {
           "
         >
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -572,7 +572,7 @@ onErrorCaptured((err, instance, info) => {
             />
           </div>
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) && canModify(bookmarkDisplay)
                 ? ''
@@ -596,7 +596,7 @@ onErrorCaptured((err, instance, info) => {
                 : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="addCohort(bookmarkDisplay)"
+            @click.stop="canDatasetMaterializeCohorts && addCohort(bookmarkDisplay)"
             :title="
               ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')
@@ -607,7 +607,7 @@ onErrorCaptured((err, instance, info) => {
           </div>
 
           <div
-            v-if="!isLocal"
+            v-if="!isAtlas"
             :class="`icon-button ${
               ['M', 'A+M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
@@ -636,7 +636,7 @@ onErrorCaptured((err, instance, info) => {
 
     <!-- Pagination Footer -->
     <div
-      v-if="isLocal && props.bookmarksDisplay.length > 0"
+      v-if="isAtlas && props.bookmarksDisplay.length > 0"
       style="
         position: fixed;
         bottom: 0;

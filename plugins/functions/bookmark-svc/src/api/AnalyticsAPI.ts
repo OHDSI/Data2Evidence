@@ -25,6 +25,7 @@ export class AnalyticsSvcAPI {
       throw new Error('No url is set for AnalyticsAPI')
     }
 
+    // note: cacheId resolved downstream by analytics-svc (we only forward datasetId)
     this.analyticsapi = Trex.tokioChannel('d2e-functions/analytics-svc')
   }
 

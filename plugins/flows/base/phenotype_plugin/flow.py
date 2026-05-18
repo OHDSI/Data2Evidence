@@ -191,6 +191,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     logger.info("******************* Running Phenotype Plugin *******************")
 
     database_code = options.database_code
+    cache_id = options.cache_id
     cdmschema_name = options.cdmschema_name
     cohortschema_name = options.cohortschema_name
     cohorttable_name = "phenotypes"  # Fixed the prefix of the phenotype result tables
@@ -220,7 +221,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     if materialize:
         logger.info("Materializing cohort definitions to database")
         # Setup database connection only when needed for materialization
-        dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+        dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
 
         materialize_cohort_definitions(
             cohort_definitions=cohort_definitions,
