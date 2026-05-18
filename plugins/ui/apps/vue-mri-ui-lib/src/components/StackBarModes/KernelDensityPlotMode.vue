@@ -66,11 +66,11 @@ function tryParseNumericPositions(origX: any[]): ParsedPositions | null {
 }
 
 export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; layout: any } {
-  layout.barmode = 'overlay'
-  layout.bargap = ctx.barGap
-
   const numCategories = traces[0]?.y?.length || 0
   if (numCategories <= 1) return { traces, layout }
+
+  layout.barmode = 'overlay'
+  layout.bargap = ctx.barGap
 
   const origX = traces[0]?.x || []
   const categoryLabels = Array.isArray(origX[0])

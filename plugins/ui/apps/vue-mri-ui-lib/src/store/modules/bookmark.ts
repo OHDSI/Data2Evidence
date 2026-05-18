@@ -11,7 +11,7 @@ import {
   formatAtlasCohortDefinition,
   processBookmarksData,
 } from '@/utils/BookmarkUtils'
-import { getEffectiveBarChartMode } from '@/components/StackBarModes/modes'
+import { getEffectiveBarChartMode, modeOrder } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
 let cancel
@@ -441,6 +441,23 @@ const actions = {
       }
       dispatch('setIFRState', { ifr })
         .then(() => {
+          // Restore bar chart mode BEFORE axis restoration so that setNewAxisValue's KDP guard
+          // (which forces X1 binsize=0 when getBarChartType === 'distribution') sees the
+          // bookmark's mode, not the stale pre-load mode. Otherwise loading a stacked bookmark
+          // over a KDP session would clobber the saved X1 binsize with 0, then leave it there
+          // because the direct SET_BAR_DISPLAY_MODE commit below bypasses setBarChartType's
+          // binsize-restoration path. If the saved mode is disabled by the current config,
+          // fall back to 'stack'.
+          const barChartType = parsedBookmark.barChartType ?? { mode: 'stack', showDistributionOverlay: false }
+          const effectiveMode = getEffectiveBarChartMode(barChartType.mode, rootGetters.getMriFrontendConfig)
+          commit(types.SET_BAR_DISPLAY_MODE, effectiveMode)
+          // Clear the overlay flag when the effective mode does not support distribution overlays.
+          // This prevents the Chart type menu showing a checked, disabled Distribution Curve option
+          // when a saved overlay-capable mode is disabled by the current config and falls back to stack.
+          const effectiveModeMeta = modeOrder.find(m => m.id === effectiveMode)
+          const overlayAllowed = !!effectiveModeMeta?.hasDistributionOverlay
+          commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, overlayAllowed && !!barChartType.showDistributionOverlay)
+
           if (parsedBookmark.axisSelection) {
             for (let i = 0; i < 5; i += 1) {
               if (parsedBookmark.axisSelection[i].attributeId !== 'n/a') {
@@ -507,15 +524,6 @@ const actions = {
               sorted_attributes: parsedBookmark.filter.sorted_attributes,
             })
           }
-          // Restore stacked-bar chart type (mode + distribution overlay). Commit mutations
-          // directly to bypass setBarChartType action side effects (X1 binsize transitions
-          // and axis disable/clear), since axes were already restored from the bookmark above.
-          // If the saved mode is disabled by the current config, fall back to 'stack'.
-          const barChartType = parsedBookmark.barChartType ?? { mode: 'stack', showDistributionOverlay: false }
-          const effectiveMode = getEffectiveBarChartMode(barChartType.mode, rootGetters.getMriFrontendConfig)
-          commit(types.SET_BAR_DISPLAY_MODE, effectiveMode)
-          commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, !!barChartType.showDistributionOverlay)
-
           // Reconcile X1/X2 'disabled' state with the restored mode: in non-stack modes
           // exactly one of X1/X2 is selectable, the empty one must be disabled. The axis
           // set/clear dispatches above don't manage 'disabled', and stale state may persist

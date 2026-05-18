@@ -61,7 +61,7 @@
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
           :shouldRerenderChart="shouldRerenderChart"
-          :colorAxisIndex="colorAxisIndex"
+          :colorAxisIndex="effectiveColorAxisIndex"
           @chartDataReady="onChartDataReady"
         ></stackBarChart>
         <!-- <variantBrowser v-if="getActiveChart === 'vb'" :response="response" @busyEv="setChartBusy"></variantBrowser> -->
@@ -188,6 +188,9 @@ export default {
     ]),
     isColorButtonDisabled() {
       return this.getBarChartType !== 'stack'
+    },
+    effectiveColorAxisIndex() {
+      return this.isColorButtonDisabled ? null : this.colorAxisIndex
     },
     stackAttributeHasSelection() {
       const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
@@ -323,6 +326,7 @@ export default {
     onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
       if (this.hasSetDefaultColorAxis || xAxisCategoryCounts.length === 0) return
       if (this.stackAttributeHasSelection) return
+      if (this.isColorButtonDisabled) return
       this.hasSetDefaultColorAxis = true
 
       // Find the axis with the smaller number of categories

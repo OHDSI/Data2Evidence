@@ -617,12 +617,16 @@ export default {
         }
 
         eventData.points.forEach(point => {
+          // Skip generated non-bar traces (KDP scatter, distribution overlay): their
+          // pointIndex doesn't map to canonical bar categories.
+          if (point.data?.type !== 'bar') return
           const traceIndex = point.curveNumber
           const pointIndex = point.pointIndex
           const trace = this.chartData.traces[traceIndex]
           if (!trace) return
 
           const pointCustomData = trace.customdata[pointIndex]
+          if (!pointCustomData) return
           const xAxes = pointCustomData.x
           const yAxis = pointCustomData.y
 
@@ -652,7 +656,9 @@ export default {
         // before calling Plotly.react, which Plotly treats as a data swap and
         // tears down the in-flight selection highlight.
         this.chartData.traces.forEach((trace, i) => {
-          trace.selectedpoints = eventData.points.filter(p => p.curveNumber === i).map(p => p.pointIndex)
+          trace.selectedpoints = eventData.points
+            .filter(p => p.curveNumber === i && p.data?.type === 'bar')
+            .map(p => p.pointIndex)
         })
       }
 

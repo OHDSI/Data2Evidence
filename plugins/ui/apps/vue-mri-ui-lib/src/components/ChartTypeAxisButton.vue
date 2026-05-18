@@ -52,7 +52,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef } f
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
-import { modeOrder, isBarChartModeEnabled } from './StackBarModes/modes'
+import { modeOrder, isBarChartModeEnabled, getEffectiveBarChartMode } from './StackBarModes/modes'
 
 defineProps<{ parentContainer?: any }>()
 
@@ -71,13 +71,15 @@ const enabledModes = computed(() =>
   modeOrder.filter(mode => isBarChartModeEnabled(mode.id, getMriFrontendConfig.value))
 )
 
+const effectiveMode = computed(() => getEffectiveBarChartMode(getBarChartType.value, getMriFrontendConfig.value))
+
 const currentModeLabel = computed(() => {
-  const current = modeOrder.find(m => m.id === getBarChartType.value)
+  const current = modeOrder.find(m => m.id === effectiveMode.value)
   return current ? getText(current.labelKey) : ''
 })
 
 const overlayAllowed = computed(() => {
-  const current = modeOrder.find(m => m.id === getBarChartType.value)
+  const current = modeOrder.find(m => m.id === effectiveMode.value)
   return !!current?.hasDistributionOverlay
 })
 
@@ -100,7 +102,7 @@ const menuData = computed(() => {
       hasSubMenu: false,
       isSeperator: false,
       subMenu: [],
-      selected: getBarChartType.value === mode.id,
+      selected: effectiveMode.value === mode.id,
       data: { id: mode.id },
     })
   }

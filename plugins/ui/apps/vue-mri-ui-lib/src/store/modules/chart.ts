@@ -375,22 +375,45 @@ const actions = {
     let binsizeChanged = false
     let xAxisCleared = false
 
+    // Resolve the active KDP x-axis slot: the non-disabled one when a slot is already
+    // disabled, otherwise predict it by mirroring the disable logic below.
+    const allAxesInit = rootGetters.getAllAxes
+    const x1Init = allAxesInit?.[X1]
+    const x2Init = allAxesInit?.[X2]
+    const x1DisabledInit = !!x1Init?.props?.disabled
+    const x2DisabledInit = !!x2Init?.props?.disabled
+    let activeXSlot: number
+    if (x1DisabledInit !== x2DisabledInit) {
+      activeXSlot = x1DisabledInit ? X2 : X1
+    } else {
+      const x1HasSelection = !!(x1Init?.props?.filterCardId && x1Init?.props?.key)
+      const x2HasSelection = !!(x2Init?.props?.filterCardId && x2Init?.props?.key)
+      if (x1HasSelection && x2HasSelection) {
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Init.props.attributeId)?.isBinnable?.()
+        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Init.props.attributeId)?.isBinnable?.()
+        activeXSlot = x1Binnable && !x2Binnable ? X1 : X2
+      } else if (x2HasSelection && !x1HasSelection) {
+        activeXSlot = X2
+      } else {
+        activeXSlot = X1
+      }
+    }
+
     if (modeId === 'distribution' && previousMode !== 'distribution') {
-      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(activeXSlot) : null
       const currentBinsize = xAxis?.props?.binsize ?? null
       commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, currentBinsize)
       commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, xAxis?.props?.attributeId ?? null)
       if (currentBinsize !== 0) {
-        dispatch('setAxisValue', { id: X1, props: { binsize: 0 } })
+        dispatch('setAxisValue', { id: activeXSlot, props: { binsize: 0 } })
         binsizeChanged = true
       }
     } else if (previousMode === 'distribution' && modeId !== 'distribution') {
-      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(X1) : null
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(activeXSlot) : null
       const currentBinsize = xAxis?.props?.binsize ?? null
       const attributeId = xAxis?.props?.attributeId
-      // Only restore the saved binsize if the X1 attribute has not changed since entering KDP.
-      // If the attribute changed while in KDP, the saved binsize belongs to a different attribute
-      // and must not be applied; fall through to recompute the default for the current attribute.
+      // Restore the saved binsize only if the attribute on the active slot is unchanged.
       const attributeMatches = attributeId && attributeId === state.previousXAxisAttributeId
       let restoreBinsize = attributeMatches ? state.previousXAxisBinsize : null
       if (restoreBinsize === null || restoreBinsize === undefined) {
@@ -404,7 +427,7 @@ const actions = {
         }
       }
       if (restoreBinsize !== currentBinsize) {
-        dispatch('setAxisValue', { id: X1, props: { binsize: restoreBinsize } })
+        dispatch('setAxisValue', { id: activeXSlot, props: { binsize: restoreBinsize } })
         binsizeChanged = true
       }
       commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)

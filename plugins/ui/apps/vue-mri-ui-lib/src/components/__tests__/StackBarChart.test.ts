@@ -110,10 +110,10 @@ describe('StackBarChart selection handling', () => {
   it('captures selection after deselect and clears drilldown state', async () => {
     const wrapper = mountComponent()
 
-    const handlers: Record<string, () => void> = {}
+    const handlers: Record<string, (...args: any[]) => void> = {}
     const fakePlotElement = {
       clientWidth: 800,
-      on: vi.fn((event: string, cb: () => void) => {
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
         handlers[event] = cb
       }),
     }
@@ -143,7 +143,7 @@ describe('StackBarChart selection handling', () => {
 
     // selectionUpdate now reads from the eventData payload, not from
     // trace.selectedpoints on the canonical traces.
-    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0 }] })
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
     const firstSelection = getLastSelectionPayload()
     expect(firstSelection.selection).toEqual([
       { id: 'cat.id', value: 'Alpha' },
@@ -156,7 +156,7 @@ describe('StackBarChart selection handling', () => {
     // Plotly.react is called by clearSelectionState (deselect), not by the selection handler.
     expect(Plotly.react).toHaveBeenCalled()
 
-    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 1 }] })
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 1, data: { type: 'bar' } }] })
     const secondSelection = getLastSelectionPayload()
     expect(secondSelection.selection).toEqual([
       { id: 'cat.id', value: 'Beta' },
@@ -167,10 +167,10 @@ describe('StackBarChart selection handling', () => {
   it('resets to default state when plotly_selected has no selected points', async () => {
     const wrapper = mountComponent()
 
-    const handlers: Record<string, () => void> = {}
+    const handlers: Record<string, (...args: any[]) => void> = {}
     const fakePlotElement = {
       clientWidth: 800,
-      on: vi.fn((event: string, cb: () => void) => {
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
         handlers[event] = cb
       }),
     }
@@ -270,10 +270,10 @@ describe('StackBarChart selection handling', () => {
   })
 
   const wireSelectionHandlers = (wrapper: ReturnType<typeof shallowMount>) => {
-    const handlers: Record<string, () => void> = {}
+    const handlers: Record<string, (...args: any[]) => void> = {}
     const fakePlotElement = {
       clientWidth: 800,
-      on: vi.fn((event: string, cb: () => void) => {
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
         handlers[event] = cb
       }),
     }
@@ -302,7 +302,8 @@ describe('StackBarChart selection handling', () => {
     }
     ;(wrapper.vm as any).setupPlotly()
 
-    handlers.plotly_selected()
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
+    handlers.plotly_deselect()
 
     const [, traces, layout] = lastReactArgs()
     expect(layout.barmode).toBe('overlay')
@@ -334,7 +335,8 @@ describe('StackBarChart selection handling', () => {
     }
     ;(wrapper.vm as any).setupPlotly()
 
-    handlers.plotly_selected()
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
+    handlers.plotly_deselect()
 
     const [, traces, layout] = lastReactArgs()
     expect(layout.barmode).toBe('overlay')
