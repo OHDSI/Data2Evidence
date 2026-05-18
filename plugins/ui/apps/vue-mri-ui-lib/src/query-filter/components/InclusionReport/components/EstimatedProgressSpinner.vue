@@ -37,12 +37,14 @@ function increment(n: number) {
   if (n < 0.2) return 0.1
   if (n < 0.5) return 0.04
   if (n < 0.8) return 0.02
-  if (n < 0.99) return 0.005
+  if (n < 0.994) return 0.005
   return 0
 }
 
 function trickle() {
-  progress.value = clamp(progress.value + increment(progress.value), 0, 0.994)
+  const inc = increment(progress.value)
+  if (inc === 0) return
+  progress.value = clamp(progress.value + inc, 0, 0.994)
   if (progress.value < 0.994) {
     trickleTimer = setTimeout(trickle, effectiveTrickleMs.value)
   }
@@ -86,13 +88,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <VProgressCircular class="fake-progress-spinner" :model-value="percent" :size="size" :width="stroke">
+  <VProgressCircular class="estimated-progress-spinner" :model-value="percent" :size="size" :width="stroke">
     <span class="label">{{ percent }}%</span>
   </VProgressCircular>
 </template>
 
 <style scoped lang="scss">
-.fake-progress-spinner {
+.estimated-progress-spinner {
   color: var(--color-primary, #000080);
 
   :deep(.v-progress-circular__underlay) {

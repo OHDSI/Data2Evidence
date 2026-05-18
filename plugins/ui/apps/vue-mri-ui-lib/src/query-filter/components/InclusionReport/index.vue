@@ -10,7 +10,7 @@ import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
 import RulesTable from './components/RulesTable.vue'
-import FakeProgressSpinner from './components/FakeProgressSpinner.vue'
+import EstimatedProgressSpinner from './components/EstimatedProgressSpinner.vue'
 import { useInclusionReportData } from './composables/useInclusionReportData'
 import { useRuleManagement } from './composables/useRuleManagement'
 import { useFunnelChart } from './composables/useFunnelChart'
@@ -213,7 +213,7 @@ onUnmounted(() => {
   </div>
 
   <div v-if="showLoader" class="status-message loading">
-    <FakeProgressSpinner
+    <EstimatedProgressSpinner
       :loading="isLoadingInclusionReport"
       :expected-duration-ms="expectedDurationMs"
       @finished="handleLoaderFinished"
@@ -259,7 +259,7 @@ onUnmounted(() => {
         <div class="rules-section">
           <div class="rules-table-wrapper">
             <div v-if="showReorderLoader" class="reorder-loading-overlay">
-              <FakeProgressSpinner
+              <EstimatedProgressSpinner
                 :loading="isReorderLoading"
                 :expected-duration-ms="expectedDurationMs"
                 @finished="handleReorderLoaderFinished"
