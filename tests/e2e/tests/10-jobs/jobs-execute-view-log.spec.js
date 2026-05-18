@@ -7,7 +7,7 @@ test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-  test.setTimeout(300000) // Set timeout to 5 minutes
+  test.setTimeout(600000) // 10 minutes — DQD job + 5 min `Completed` wait + login overhead
   // Jobs: Execute Job - Create DQD job with name dqd_demo
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
@@ -65,6 +65,15 @@ test(TEST_NAME, async ({ page, context }) => {
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('demo_database')
+  // Fill up Cacheid field
+  const cleaned_dataset_id = dataset_id.replace(/-/g, '_')
+  const cache_id = /^[0-9]/.test(cleaned_dataset_id) ? `_${cleaned_dataset_id}` : cleaned_dataset_id
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .click()
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .fill(cache_id)
   // Fill up Vocabschemaname field
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
