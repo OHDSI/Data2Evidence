@@ -1,12 +1,12 @@
 import axios from "axios";
 
-const BASE_URL = "concept-mapping";
+const BASE_URL = "/d2e/resources/concept-mapping";
 
 // Translations are publicly accessible, hence interceptors for auth is not needed.
 export class Translation {
   public async getTranslation(locale: string) {
     return await axios.get<{
       [key: string]: string;
-    }>(`/${locale}.json`, { baseURL: BASE_URL });
+    }>(`${locale}.json`, { baseURL: BASE_URL });
   }
 }
