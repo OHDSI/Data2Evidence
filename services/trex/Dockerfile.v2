@@ -4,13 +4,13 @@
 # Based on WebAPI 3.0-dev with all trex dependencies installed
 #
 
-FROM ghcr.io/ohdsi/webapi@sha256:32a0a9ca7bd50d934903ab873f041c777502b5d5e27ff46c23753407d003ed6d AS base
+FROM ghcr.io/ohdsi/webapi@sha256:944ec75e741b05b7b059a5c8eeb55ded623753f21431893519f89fb9846f4209 AS base
 
 USER root
 
 ENV ONNXRUNTIME_VERSION=1.20.1
 ENV DUCKDB_VERSION=1.4.4
-ENV TREXSQL_EXT_VERSION=0.1.24
+ENV TREXSQL_EXT_VERSION=0.2.1
 
 # Copy install scripts
 RUN mkdir -p /scripts
@@ -97,16 +97,11 @@ RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
     ln -s /usr/src/package.json /var/lib/ohdsi/webapi/package.json && \
     ln -s /usr/src/data /var/lib/ohdsi/webapi/data
 
-# Replace trexsql-ext JAR in WebAPI with newer version (DuckDB v1.4.4)
-# Remove old trexsql-ext JAR and conflicting WebAPI trexsql classes (now provided by the new JAR)
-# Nested JARs must use ZIP_STORED (no compression) for Spring Boot's nested jar loader
-RUN cd /var/lib/ohdsi/webapi && \
-    curl -fsSL https://github.com/p-hoffmann/trexsql-ext/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar -o /tmp/trexsql-new.jar && \
-    zip -d WebAPI.jar "BOOT-INF/lib/trexsql-ext-*" "BOOT-INF/classes/org/ohdsi/webapi/trexsql/*" && \
-    mkdir -p /tmp/webapi-patch/BOOT-INF/lib && \
-    cp /tmp/trexsql-new.jar /tmp/webapi-patch/BOOT-INF/lib/trexsql-ext-v${TREXSQL_EXT_VERSION}.jar && \
-    cd /tmp/webapi-patch && zip -r -0 /var/lib/ohdsi/webapi/WebAPI.jar . && \
-    rm -rf /tmp/trexsql-new.jar /tmp/webapi-patch
+# Override trexsql plugin JAR with the version this trex build expects.
+# Since WebAPI 595fe916 (Extract trexsql), trexsql is a runtime plugin loaded via
+# -Dloader.path=/opt/webapi/plugins. The base image ships an older version we replace here.
+RUN curl -fsSL https://github.com/OHDSI/trex/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar \
+        -o /opt/webapi/plugins/trexsql.jar
 
 # Go back to WebAPI working directory
 WORKDIR /var/lib/ohdsi/webapi
@@ -114,5 +109,5 @@ WORKDIR /var/lib/ohdsi/webapi
 # Expose both WebAPI and trex ports
 EXPOSE 8080 33001 5432 33000 9876 5433 9443
 
-# Run WebAPI directly - trexas will be started internally by trexsql-ext
-CMD ["sh", "-c", "exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dorg.duckdb.lib_path=/tmp/trexsql/libtrexsql_java.so --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]
+# Run WebAPI directly - trexas will be started internally by the trexsql plugin
+CMD ["sh", "-c", "exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dloader.path=/opt/webapi/plugins --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]
