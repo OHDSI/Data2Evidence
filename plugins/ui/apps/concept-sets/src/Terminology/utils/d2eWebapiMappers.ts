@@ -105,6 +105,8 @@ export const mapd2eWebapiConceptSet = (
     name: conceptSet.name,
     id: conceptSet.id,
     shared: conceptSet.shared,
+    hasWriteAccess: conceptSet.hasWriteAccess,
+    hasReadAccess: conceptSet.hasReadAccess,
     createdBy: conceptSet.createdBy.name,
     createdDate: conceptSet.createdDate
       ? new Date(conceptSet.createdDate).toISOString().split("T")[0]

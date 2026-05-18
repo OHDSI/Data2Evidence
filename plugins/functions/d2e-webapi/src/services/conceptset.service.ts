@@ -1,130 +1,116 @@
 import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
+  IWebApiConceptSetHeader,
+  IWebApiConceptSetItemWrite,
+  WebApiConceptSetAPI,
+} from "../api/WebApiConceptSetAPI.ts";
+import {
   IConceptSetListResponseDto,
   IConceptSetResponseDto,
   IConceptSetCreateDto,
   IConceptSetItemListDto,
   IConceptSetItemsResponseDto,
 } from "../dto/conceptset.ts";
-import {
-  ITerminologyCreateConceptSet,
-  ITerminologyConceptSetConcept,
-  ITerminologyConceptSet,
-} from "../api/types.ts";
-import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
+import { ITerminologyConceptSet } from "../api/types.ts";
 import { _getInvalidReasonFromCaption } from "./vocabulary.service.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   ConceptSetInUseError,
+  LegacyConceptSetReadOnlyError,
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
+
+export const WEBAPI_CONCEPT_SET_ID_OFFSET = 1_000_000_000;
+export const LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE =
+  "Legacy concept sets are read-only. Create a new WebAPI concept set to make changes.";
+
+export const encodeWebApiConceptSetId = (conceptSetId: number): number =>
+  WEBAPI_CONCEPT_SET_ID_OFFSET + conceptSetId;
+
+const decodeWebApiConceptSetId = (conceptSetId: number): number =>
+  conceptSetId - WEBAPI_CONCEPT_SET_ID_OFFSET;
+
+export const isWebApiConceptSetId = (conceptSetId: number): boolean =>
+  conceptSetId >= WEBAPI_CONCEPT_SET_ID_OFFSET;
+
+export const assertConceptSetWritable = (conceptSetId: number): void => {
+  if (!isWebApiConceptSetId(conceptSetId)) {
+    throw new LegacyConceptSetReadOnlyError(LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE);
+  }
+};
 
 export const getConceptSet = async (
   token: string,
   datasetId: string,
   conceptSetId: number
 ): Promise<IConceptSetResponseDto> => {
-  // Get all concept sets from terminology-svc
+  if (isWebApiConceptSetId(conceptSetId)) {
+    const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+    const webApiConceptSet = await webApiConceptSetApi.getConceptSet(
+      decodeWebApiConceptSetId(conceptSetId)
+    );
+    return mapWebApiConceptSetToFacadeConceptSet(webApiConceptSet);
+  }
+
   const terminologySvcApi = new TerminologySvcAPI(token);
   const terminologyConceptSet = await terminologySvcApi.getConceptSet(
     conceptSetId,
     datasetId
   );
 
-  // Map terminologyConceptSets to webapi format
-  const webapiConceptSet = _mapTerminologyConceptSetToWebapiConceptSet(
-    terminologyConceptSet
-  );
-
-  return webapiConceptSet;
+  return mapLegacyConceptSetToWebApiConceptSet(terminologyConceptSet);
 };
 
 export const getConceptSets = async (
   token: string,
   datasetId: string
 ): Promise<IConceptSetListResponseDto> => {
-  // Get all concept sets from terminology-svc
   const terminologySvcApi = new TerminologySvcAPI(token);
-  const terminologyConceptSets = await terminologySvcApi.getConceptSets(
-    datasetId
-  );
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
 
-  // Map terminologyConceptSets to webapi format
-  const webapiConceptSets = terminologyConceptSets.map(
-    _mapTerminologyConceptSetToWebapiConceptSet
-  );
+  const [terminologyConceptSets, webApiConceptSets] = await Promise.all([
+    terminologySvcApi.getConceptSets(datasetId),
+    webApiConceptSetApi.getConceptSets().catch(() => []),
+  ]);
 
-  return webapiConceptSets;
+  const merged = [
+    ...terminologyConceptSets.map(mapLegacyConceptSetToWebApiConceptSet),
+    ...webApiConceptSets.map(mapWebApiConceptSetToFacadeConceptSet),
+  ];
+
+  return merged;
 };
 
 export const createConceptSet = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   conceptSetDto: IConceptSetCreateDto
 ): Promise<IConceptSetResponseDto> => {
-  // Get username
-  const userMgmtAPI = new UserMgmtAPI(token);
-  const { username } = await userMgmtAPI.getMe();
-
-  // Construct dto for terminology-svc concept set creation
-  const terminologyCreateConceptSetDto: ITerminologyCreateConceptSet = {
-    concepts: [],
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  const webApiConceptSet = await webApiConceptSetApi.createConceptSet({
     name: conceptSetDto.name,
-    shared: conceptSetDto.shared ?? false,
-    userName: username,
-  };
+    description: conceptSetDto.description,
+  });
 
-  const terminologySvcApi = new TerminologySvcAPI(token);
-  const terminologyConceptSetId = await terminologySvcApi.createConceptSet(
-    datasetId,
-    terminologyCreateConceptSetDto
-  );
-
-  // Construct response
-  const webapiConceptSets: IConceptSetResponseDto = {
-    createdDate: Date.now(),
-    createdBy: {
-      name: terminologyCreateConceptSetDto.userName,
-    },
-    modifiedDate: Date.now(),
-    modifiedBy: {
-      name: terminologyCreateConceptSetDto.userName,
-    },
-    hasWriteAccess: false,
-    hasReadAccess: false,
-    id: terminologyConceptSetId,
-    name: terminologyCreateConceptSetDto.name,
-    shared: terminologyCreateConceptSetDto.shared,
-  };
-  return webapiConceptSets;
+  return mapWebApiConceptSetToFacadeConceptSet(webApiConceptSet);
 };
 
 export const updateConceptSet = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   conceptSetId: number,
   conceptSetDto: IConceptSetCreateDto
 ): Promise<boolean> => {
-  const terminologySvcApi = new TerminologySvcAPI(token);
+  assertConceptSetWritable(conceptSetId);
 
-  const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
-    datasetId,
-    conceptSetId
-  );
-
-  // Update terminologyConceptSet with concept set items from request
-  const updatedTerminologyConceptSet: ITerminologyCreateConceptSet = {
-    ...terminologyConceptSet,
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  await webApiConceptSetApi.updateConceptSet(decodeWebApiConceptSetId(conceptSetId), {
+    id: decodeWebApiConceptSetId(conceptSetId),
     name: conceptSetDto.name,
-    shared: conceptSetDto.shared ?? false,
-  };
+    description: conceptSetDto.description,
+  });
 
-  await terminologySvcApi.updateConceptSet(
-    datasetId,
-    conceptSetId,
-    updatedTerminologyConceptSet
-  );
   return true;
 };
 
@@ -133,20 +119,23 @@ export const deleteConceptSet = async (
   datasetId: string,
   conceptSetId: number
 ): Promise<void> => {
+  assertConceptSetWritable(conceptSetId);
+  const resolvedConceptSetId = decodeWebApiConceptSetId(conceptSetId);
+
   // Check if concept set is in use
   // Note: There is a potential race condition between this check and the deletion.
   // If another user adds a reference to the concept set between this check and the
   // actual deletion, the reference could become broken. This is an acceptable risk
   // for this feature, as the window is small and the impact is limited.
-  const usage = await getConceptSetUsage(token, datasetId, conceptSetId);
+  const usage = await getConceptSetUsage(token, datasetId, resolvedConceptSetId);
 
   if (usage.inUse) {
     throw new ConceptSetInUseError(usage.cohortDefinitions, usage.bookmarks);
   }
 
   // Proceed with deletion if not in use
-  const terminologySvcApi = new TerminologySvcAPI(token);
-  await terminologySvcApi.deleteConceptSet(datasetId, conceptSetId);
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  await webApiConceptSetApi.deleteConceptSet(resolvedConceptSetId);
 };
 
 export const getConceptSetUsage = async (
@@ -224,37 +213,25 @@ export const getConceptSetUsage = async (
 
 export const updateConceptSetItems = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   conceptSetId: number,
   conceptSetItemList: IConceptSetItemListDto
 ): Promise<boolean> => {
-  const terminologySvcApi = new TerminologySvcAPI(token);
+  assertConceptSetWritable(conceptSetId);
 
-  const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
-    datasetId,
-    conceptSetId
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  const items: IWebApiConceptSetItemWrite[] = conceptSetItemList.map((conceptSetItem) => ({
+    conceptId: conceptSetItem.conceptId,
+    includeMapped: conceptSetItem.includeMapped,
+    includeDescendants: conceptSetItem.includeDescendants,
+    isExcluded: conceptSetItem.isExcluded,
+  }));
+
+  await webApiConceptSetApi.updateConceptSetItems(
+    decodeWebApiConceptSetId(conceptSetId),
+    items
   );
 
-  const terminologyConceptSetConcept: ITerminologyConceptSetConcept[] =
-    conceptSetItemList.map(function (conceptSetItem) {
-      return {
-        id: conceptSetItem.conceptId,
-        useMapped: conceptSetItem.includeMapped,
-        useDescendants: conceptSetItem.includeDescendants,
-        isExcluded: conceptSetItem.isExcluded,
-      };
-    });
-  // Update terminologyConceptSet with concept set items from request
-  const updatedTerminologyConceptSet: ITerminologyCreateConceptSet = {
-    ...terminologyConceptSet,
-    concepts: terminologyConceptSetConcept,
-  };
-
-  await terminologySvcApi.updateConceptSet(
-    datasetId,
-    conceptSetId,
-    updatedTerminologyConceptSet
-  );
   return true;
 };
 
@@ -263,6 +240,14 @@ export const getConceptSetExpression = async (
   datasetId: string,
   conceptSetId: number
 ): Promise<IConceptSetItemsResponseDto> => {
+  if (isWebApiConceptSetId(conceptSetId)) {
+    const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+    return await webApiConceptSetApi.getConceptSetExpression(
+      decodeWebApiConceptSetId(conceptSetId),
+      datasetId
+    );
+  }
+
   const terminologySvcApi = new TerminologySvcAPI(token);
 
   const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
@@ -305,11 +290,19 @@ export const checkIfConceptSetExists = async (
   conceptSetId: number,
   conceptSetName: string
 ): Promise<number> => {
-  // Get all concept sets from terminology-svc
   const terminologySvcApi = new TerminologySvcAPI(token);
-  const terminologyConceptSets = await terminologySvcApi.getConceptSets(
-    datasetId
-  );
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+  const [terminologyConceptSets, webApiExistsCount] = await Promise.all([
+    terminologySvcApi.getConceptSets(datasetId),
+    webApiConceptSetApi
+      .checkIfConceptSetExists(
+        isWebApiConceptSetId(conceptSetId)
+          ? decodeWebApiConceptSetId(conceptSetId)
+          : 0,
+        conceptSetName
+      )
+      .catch(() => 0),
+  ]);
 
   const result = terminologyConceptSets.find(
     (terminologyConceptSet) =>
@@ -317,10 +310,10 @@ export const checkIfConceptSetExists = async (
       terminologyConceptSet.name === conceptSetName
   );
 
-  return result === undefined ? 0 : 1;
+  return (result === undefined ? 0 : 1) + webApiExistsCount;
 };
 
-const _mapTerminologyConceptSetToWebapiConceptSet = (
+export const mapLegacyConceptSetToWebApiConceptSet = (
   conceptSet: ITerminologyConceptSet
 ): IConceptSetResponseDto => {
   return {
@@ -333,10 +326,32 @@ const _mapTerminologyConceptSetToWebapiConceptSet = (
       name: conceptSet.userName,
     },
     tags: [],
-    hasWriteAccess: true,
+    hasWriteAccess: false,
     hasReadAccess: true,
     id: conceptSet.id,
     name: conceptSet.name,
     shared: conceptSet.shared,
+  };
+};
+
+export const mapWebApiConceptSetToFacadeConceptSet = (
+  conceptSet: IWebApiConceptSetHeader
+): IConceptSetResponseDto => {
+  return {
+    createdDate: conceptSet.createdDate,
+    createdBy: {
+      name: conceptSet.createdBy,
+    },
+    modifiedDate: conceptSet.modifiedDate,
+    modifiedBy: {
+      name: conceptSet.modifiedBy,
+    },
+    tags: conceptSet.tags,
+    hasWriteAccess: conceptSet.hasWriteAccess,
+    hasReadAccess: conceptSet.hasReadAccess,
+    id: encodeWebApiConceptSetId(conceptSet.id),
+    name: conceptSet.name,
+    shared: false,
+    description: conceptSet.description ?? undefined,
   };
 };

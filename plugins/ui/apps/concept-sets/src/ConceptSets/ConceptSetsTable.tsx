@@ -103,7 +103,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
           <>
             <IconButton
               startIcon={
-                row.original.createdBy === userName ? (
+                row.original.hasWriteAccess ? (
                   <EditIcon />
                 ) : (
                   <VisibilityOnIcon />
@@ -111,7 +111,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
               }
               onClick={() => onAddEdit(row.original.id)}
             />
-            {row.original.createdBy === userName && (
+            {row.original.hasWriteAccess && (
               <IconButton
                 startIcon={<DeleteIcon />}
                 onClick={() => onDelete(row.original)}
@@ -121,7 +121,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         ),
       },
     ],
-    [getText, userName, onAddEdit, onDelete],
+    [getText, onAddEdit, onDelete],
   );
 
   const table = useMaterialReactTable({

@@ -36,6 +36,8 @@ import { i18nKeys } from "../context/state";
 import "./Terminology.scss";
 
 const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
+const LEGACY_CONCEPT_SET_READ_ONLY_MESSAGE =
+  "This concept set is stored in the legacy user artifacts service and is now read-only. Create a new concept set in WebAPI to make changes.";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
@@ -142,7 +144,7 @@ const NameSection = ({
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
           onBlur={(e) => setConceptSetName(e.target.value.trim())}
-          disabled={isLoading}
+          disabled={isLoading || !isUserConceptSet}
         />
         <Box
           sx={{
@@ -578,7 +580,12 @@ export const Terminology: FC<TerminologyProps> = ({
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(conceptSet.createdBy === userName);
+        setIsUserConceptSet(!!conceptSet.hasWriteAccess);
+        setErrorMsg(
+          conceptSet.hasWriteAccess
+            ? ""
+            : LEGACY_CONCEPT_SET_READ_ONLY_MESSAGE
+        );
         return;
       } finally {
         setIsConceptSetLoading(false);
@@ -607,6 +614,10 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const onSelectConceptId = useCallback(
     (concept: FhirValueSetExpansionContainsWithExt) => {
+      if (isConceptSet && !isUserConceptSet) {
+        return;
+      }
+
       if (isConceptSet || isConceptMultiSelect) {
         const selectedConceptsCopy = JSON.parse(
           JSON.stringify(selectedConcepts),
@@ -640,6 +651,7 @@ export const Terminology: FC<TerminologyProps> = ({
     [
       isConceptSet,
       isConceptMultiSelect,
+      isUserConceptSet,
       onConceptIdSelect,
       resetState,
       selectedConcepts,
@@ -649,6 +661,10 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const toggleDescendantsAndMapped = useCallback(
     (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => {
+      if (!isUserConceptSet) {
+        return;
+      }
+
       const selectedConceptsCopy = JSON.parse(
         JSON.stringify(selectedConcepts),
       ) as FhirValueSetExpansionContainsWithExt[];
@@ -665,12 +681,12 @@ export const Terminology: FC<TerminologyProps> = ({
       });
       sortAndSetSelectedConcepts(selectedConceptsCopy);
     },
-    [selectedConcepts, sortAndSetSelectedConcepts],
+    [isUserConceptSet, selectedConcepts, sortAndSetSelectedConcepts],
   );
 
   const showAddIcon = !!(
     onConceptIdSelect ||
-    isConceptSet ||
+    (isConceptSet && isUserConceptSet) ||
     isConceptMultiSelect
   );
 

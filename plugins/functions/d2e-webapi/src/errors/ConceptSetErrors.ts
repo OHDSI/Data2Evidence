@@ -27,3 +27,14 @@ export class ConceptSetValidationError extends Error {
     this.name = "ConceptSetValidationError";
   }
 }
+
+/**
+ * Thrown when attempting to mutate a concept set that only exists in the
+ * legacy user-artifact store.
+ */
+export class LegacyConceptSetReadOnlyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LegacyConceptSetReadOnlyError";
+  }
+}

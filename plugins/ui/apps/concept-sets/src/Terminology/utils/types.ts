@@ -56,6 +56,8 @@ export type ConceptSet = {
   name: string;
   id: number;
   shared: boolean;
+  hasWriteAccess?: boolean;
+  hasReadAccess?: boolean;
   createdBy?: string;
   createdDate?: string;
   modifiedBy?: string;
