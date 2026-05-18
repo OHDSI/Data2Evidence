@@ -90,7 +90,7 @@ export class DatasetQueryService {
       .leftJoin("dataset.tags", "tag")
       .leftJoin("dataset.attributes", "attribute")
       .leftJoin("attribute.attributeConfig", "attributeConfig")
-      .where(whereClause, { id })
+      .where(whereClause, { lookupValue })
       .select(baseColumns)
       .getOne();
 
