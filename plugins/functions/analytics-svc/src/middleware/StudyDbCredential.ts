@@ -23,16 +23,32 @@ export default async (req: IMRIRequest, res, next) => {
     };
 
     const getDatasetIdFromRequest = (): string => {
-        // Try to find datasetId from request query
-        // If not found, try to find from request body
-        // If still not found, return empty string
         if (req.query.datasetId) {
             return req.query.datasetId.toString();
         } else if (req.body.datasetId) {
             return req.body.datasetId.toString();
-        } else {
-            return "";
         }
+        // URL-encoded JSON path segment (e.g. /cohort/SYNTAX/%7B"datasetId":"..."%7D).
+        // Bounded indexOf-based extraction avoids ReDoS from a polynomial regex.
+        const url = req.url;
+        const pathEnd = url.search(/[?#]/);
+        const path = pathEnd === -1 ? url : url.slice(0, pathEnd);
+        const start = path.indexOf("%7B");
+        if (start !== -1) {
+            const end = path.indexOf("%7D", start + 3);
+            if (end !== -1) {
+                const segment = path.slice(start, end + 3);
+                if (segment.length <= 4096) {
+                    try {
+                        const decoded = JSON.parse(decodeURIComponent(segment));
+                        if (decoded?.datasetId) return String(decoded.datasetId);
+                    } catch {
+                        // not JSON, ignore
+                    }
+                }
+            }
+        }
+        return "";
     };
 
     const addPAConfigIdToReq = (studyMetadata): void => {
@@ -82,8 +98,23 @@ export default async (req: IMRIRequest, res, next) => {
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
+        // analyticsCredentials may be keyed by cacheId, databaseCode or databaseName
+        // depending on how the credential was registered. Try each in order so that
+        // datasets registered under the new cache_id scheme still resolve.
+        const credentialLookupKey =
+            (studyMetadata.cacheId && analyticsCredentials[studyMetadata.cacheId])
+                ? studyMetadata.cacheId
+                : (studyMetadata.databaseCode && analyticsCredentials[studyMetadata.databaseCode])
+                    ? studyMetadata.databaseCode
+                    : studyDatabaseName;
+        const resolvedCredential = analyticsCredentials[credentialLookupKey];
+        if (!resolvedCredential) {
+            throw new Error(
+                `No analytics credential found for dataset (cacheId=${studyMetadata.cacheId ?? "n/a"}, databaseCode=${studyMetadata.databaseCode ?? "n/a"}, databaseName=${studyDatabaseName})`
+            );
+        }
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
-            ...analyticsCredentials[studyDatabaseName],
+            ...resolvedCredential,
         };
 
         studyAnalyticsCredential.schema = studySchemaName
@@ -109,9 +140,14 @@ export default async (req: IMRIRequest, res, next) => {
             studyAnalyticsCredential.code = studyMetadata.databaseCode;
         }
 
+        // `code` is the credential lookup key (databaseCode); `cacheId` is the
+        // DuckDB ATTACH alias used at `getConnection(<alias>, ...)`.
+        studyAnalyticsCredential.cacheId =
+            studyMetadata.cacheId ?? studyMetadata.databaseCode;
+
         // Add database pool related configs to studyAnalyticsCredential
-        studyAnalyticsCredential.max = env.PG__MIN_POOL;
-        studyAnalyticsCredential.min = env.PG__MAX_POOL;
+        studyAnalyticsCredential.max = env.PG__MAX_POOL;
+        studyAnalyticsCredential.min = env.PG__MIN_POOL;
         studyAnalyticsCredential.idleTimeoutMillis = env.PG__IDLE_TIMEOUT_IN_MS;
 
         req.dbCredentials = {

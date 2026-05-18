@@ -5,6 +5,30 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
+const RUN_ID = Date.now().toString(36)
+const NAME = {
+  savedFilters: `Test Saved Filters ${RUN_ID}`,
+  renamedFilters: `Other saved filters ${RUN_ID}`,
+  patientListFilters: `Test Another Patient List Saved Filters ${RUN_ID}`,
+  sharedFilter: `Shared saved filter ${RUN_ID}`,
+  testUserB: `testuserB_${RUN_ID}`
+}
+
+async function openDatasetCohorts(page) {
+  const cohortsLink = page.getByRole('link', { name: 'Cohorts' })
+  for (let attempt = 0; attempt < 6; attempt++) {
+    await page.getByText('Demo dataset').first().click()
+    try {
+      await cohortsLink.waitFor({ state: 'visible', timeout: 10_000 })
+      await cohortsLink.click()
+      return
+    } catch {
+      await page.getByRole('link', { name: 'Dataset' }).click().catch(() => {})
+    }
+  }
+  throw new Error('Cohorts link did not appear for selected dataset within ~60s')
+}
+
 test(TEST_NAME, async ({ page }) => {
   test.slow()
   await page.goto('/d2e/portal')
@@ -118,7 +142,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
-    await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Saved Filters')
+    await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
@@ -152,7 +176,7 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Saved Filters0. Icons/')).toBeVisible()
+    await expect(page.getByText(`${NAME.savedFilters}0. Icons/`)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
@@ -160,7 +184,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'D2E' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Saved Filters')
+    await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Cohort name already exists. Please enter another name.')).toBeVisible()
     await page.getByRole('button', { name: 'Cancel' }).click()
@@ -172,12 +196,12 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox').fill('')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
-    await page.getByRole('textbox').fill('Other saved filters')
+    await page.getByRole('textbox').fill(NAME.renamedFilters)
     await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
     await page
       .locator('div')
-      .filter({ hasText: /^Other saved filters$/ })
+      .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
       .first()
       .click()
     await page.getByRole('button', { name: 'Discard' }).click()
@@ -190,10 +214,10 @@ test(TEST_NAME, async ({ page }) => {
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
     await page.getByTitle('Delete Saved Filter').first().click()
     await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText('Other saved filters0. Icons/')).not.toBeVisible()
+    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
@@ -263,15 +287,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('menuitem', { name: 'Death' }).click()
     //Save filter
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Another Patient List Saved Filters')
+    await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
     await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved Filters0. Icons/')).toBeVisible()
+    await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByText('Test Another Patient List').nth(1).click()
+    await page.getByText(NAME.patientListFilters).nth(1).click()
     await expect(page.getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
@@ -321,7 +345,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Create', exact: true }).click()
     await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved FiltersAtlas Cohort DefinitionID')).toBeVisible()
+    await expect(page.getByText(`${NAME.patientListFilters}Atlas Cohort DefinitionID`)).toBeVisible()
   })
   //Create another user to verify bookmark visibility
   await test.step('Switch to admin portal', async () => {
@@ -332,7 +356,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Create user', async () => {
     await page.getByRole('button', { name: 'Add user' }).click()
     await page.getByRole('textbox', { name: 'Username' }).click()
-    await page.getByRole('textbox', { name: 'Username' }).fill('testuserB')
+    await page.getByRole('textbox', { name: 'Username' }).fill(NAME.testUserB)
     await page.getByRole('textbox', { name: 'Password' }).click()
     await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Add' }).click()
@@ -340,16 +364,16 @@ test(TEST_NAME, async ({ page }) => {
     await page.waitForTimeout(2000)
     await page.reload()
     await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
-    await expect(page.getByRole('cell', { name: 'testuserB' })).toBeVisible()
+    await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('cell', { name: 'omop', exact: true }).nth(0).locator('..').getByText('Select action').click()
+    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByText('Select action').click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
-    await page.getByRole('menuitem', { name: 'testuserB' }).click()
-    // Wait for permission to be saved and propagated
-    await page.waitForTimeout(2000)
+    await expect(page.getByRole('menuitem', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })
+    await page.getByRole('menuitem', { name: NAME.testUserB }).click()
+    await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible({ timeout: 30_000 })
     await page.getByTestId('dialog-close').click()
   })
 
@@ -358,14 +382,13 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
     await page.locator('input[name="identifier"]').click()
-    await page.locator('input[name="identifier"]').fill('testuserB')
+    await page.locator('input[name="identifier"]').fill(NAME.testUserB)
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
     //Verify that the bookmark is visible
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText('Test Another Patient List Saved Filters')).toBeVisible()
+    await openDatasetCohorts(page)
+    await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
     //Login as admin again
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -379,23 +402,22 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
     await page.getByRole('textbox').fill('')
-    await page.getByRole('textbox').fill('Shared saved filter')
+    await page.getByRole('textbox').fill(NAME.sharedFilter)
     await page.getByRole('button', { name: 'Save' }).click()
     //Logout as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
     //Login as testuserB
     await page.locator('input[name="identifier"]').click()
-    await page.locator('input[name="identifier"]').fill('testuserB')
+    await page.locator('input[name="identifier"]').fill(NAME.testUserB)
     await page.locator('input[name="identifier"]').press('Tab')
     await page.locator('input[name="password"]').click()
     await page.locator('input[name="password"]').fill('Updatepassword12345')
     await page.getByRole('button', { name: 'Sign in' }).click()
     //Verify that the bookmark is renamed
-    await page.getByText('Demo dataset').first().click()
-    await page.getByRole('link', { name: 'Cohorts' }).click()
+    await openDatasetCohorts(page)
     await page.locator('#pane-left label div').click()
-    await expect(page.getByText('Shared saved filter')).toBeVisible()
+    await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -409,23 +431,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
-      await expect(page.getByText('Shared saved filter')).toBeVisible()
+      await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
       await page
         .locator('.item-card', { hasText: 'D2E Cohort Definition' })
         .locator('.footer .icon-button[title="Delete Saved Filter"]')
         .click()
       await page.getByRole('button', { name: 'Delete' }).click()
-      await expect(page.getByText('Shared saved filter')).not.toBeVisible()
+      await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
     //Delete the Atlas Cohort Definition
     await test.step('Delete Atlas Cohort Definition', async () => {
-      await expect(page.getByText('Test Another Patient List')).toBeVisible()
+      await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
       await page
         .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
         .locator('.footer .icon-button[title="Delete Saved Filter"]')
         .click()
       await page.getByRole('button', { name: 'Delete' }).click()
-      await expect(page.getByText('Test Another Patient List')).not.toBeVisible()
+      await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
     await expect(page.getByText('You have not yet saved any filters')).toBeVisible()
   })
@@ -444,5 +466,16 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('row', { name: 'Viral sinusitis' }).getByRole('button').nth(1).click()
     await page.getByRole('button', { name: 'Yes, delete' }).click()
     await expect(page.getByRole('cell', { name: 'Viral sinusitis' })).not.toBeVisible()
+  })
+
+  await test.step('Delete testuserB', async () => {
+    await page.getByRole('link', { name: 'Account' }).click()
+    await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
+    await page.getByRole('link', { name: 'Users' }).click()
+    await expect(page.getByRole('heading', { name: 'Users' })).toBeVisible()
+    const userRow = page.getByRole('row', { name: new RegExp(NAME.testUserB) })
+    await userRow.getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(userRow).not.toBeVisible()
   })
 })

@@ -38,4 +38,12 @@ export class DatasetRepository extends Repository<Dataset> {
       id: id
     }
   }
+
+  async updateRowShape(
+    trxMgr: EntityManager,
+    id: string,
+    fields: { visibilityStatus?: string; type?: string },
+  ): Promise<void> {
+    await trxMgr.update(Dataset, { id }, fields)
+  }
 }

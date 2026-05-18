@@ -28,6 +28,7 @@ def dqd_plugin(options: DqdOptionsType):
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
+        cache_id=options.cacheId,
     )
 
     # Todo: Update implementation if Hana uses trex
@@ -86,9 +87,11 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatab
             vocab_database_schema = dqd_params.vocabSchemaName
             cdm_source_name = dqd_params.schemaName
         else:
-            cdm_database_schema = f"{dqd_params.databaseCode}.{dqd_params.schemaName}"
-            vocab_database_schema = f"{dqd_params.databaseCode}.{dqd_params.vocabSchemaName}"
-            cdm_source_name = f"{dqd_params.databaseCode}.{dqd_params.schemaName}"
+            # Qualify reads against the cache catalog (populated CDM tables) instead of the live source.
+            catalog = dqd_params.cacheId or dqd_params.databaseCode
+            cdm_database_schema = f"{catalog}.{dqd_params.schemaName}"
+            vocab_database_schema = f"{catalog}.{dqd_params.vocabSchemaName}"
+            cdm_source_name = f"{catalog}.{dqd_params.schemaName}"
 
         r_execute_dqd(
             set_trex_env_string=set_trex_env_string,

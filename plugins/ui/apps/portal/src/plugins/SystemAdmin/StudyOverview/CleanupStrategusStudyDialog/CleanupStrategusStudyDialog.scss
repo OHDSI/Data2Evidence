@@ -6,32 +6,11 @@
     color: var(--color-primary);
   }
 
-  &-selector {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  &-label {
+  &__message {
     font-size: 16px;
-    font-weight: 500;
-    color: #000080;
     margin: 0;
   }
 
-  &-select {
-    .MuiOutlinedInput-root {
-      border-radius: 6px;
-
-      &:hover .MuiOutlinedInput-notchedOutline {
-        border-color: #000080;
-      }
-
-      &.Mui-focused .MuiOutlinedInput-notchedOutline {
-        border-color: #000080;
-      }
-    }
-  }
   .button-group-actions {
     display: flex;
     justify-content: center;

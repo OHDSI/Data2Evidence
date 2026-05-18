@@ -1,5 +1,5 @@
 import json
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from prefect import task
 from prefect.logging import get_run_logger
@@ -23,7 +23,8 @@ from _shared_flow_utils.update_dataset_metadata import (extract_version,
 def get_version_info_tasks(changelog_filepath_list: Dict,
                           plugin_classpath: str,
                           dataset_list: List[PortalDatasetType],
-                          use_cache_db: bool):
+                          use_cache_db: bool,
+                          cache_id: Optional[str] = None):
     logger = get_run_logger()
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
@@ -35,7 +36,7 @@ def get_version_info_tasks(changelog_filepath_list: Dict,
 
         for dataset in dataset_schema_list["datasets_with_schema"]:
             get_and_update_attributes(
-                dataset, changelog_filepath_list, plugin_classpath, use_cache_db)
+                dataset, changelog_filepath_list, plugin_classpath, use_cache_db, cache_id)
 
 
 @task(log_prints=True)
@@ -62,7 +63,8 @@ def extract_db_schema(dataset_list: List[PortalDatasetType]) -> ExtractDatasetSc
 def get_and_update_attributes(dataset: PortalDatasetType,
                               changelog_filepath_list: Dict,
                               plugin_classpath: str,
-                              use_cache_db: bool
+                              use_cache_db: bool,
+                              cache_id: Optional[str] = None
                               ):
     logger = get_run_logger()
 
@@ -77,7 +79,7 @@ def get_and_update_attributes(dataset: PortalDatasetType,
 
     try:
         # handle case of wrong db credentials
-        dataset_dao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+        dataset_dao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
     except Exception as e:
         logger.error(f"Failed to connect to database")
         raise e

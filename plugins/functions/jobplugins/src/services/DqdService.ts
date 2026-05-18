@@ -143,12 +143,14 @@ export class DqdService {
       cohortDefinitionId,
     } = dataQualityFlowRunDto;
 
+    const dataset = await portalServerApi.getDataset(datasetId);
     const {
       databaseCode,
       schemaName,
       vocabSchemaName: vocabSchema,
       resultsSchemaName: resultsSchema,
-    } = await portalServerApi.getDataset(datasetId);
+    } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
     const releaseDate = (
       await this.getReleaseDate(releaseId, portalServerApi)
     ).split("T")[0];
@@ -164,6 +166,7 @@ export class DqdService {
       options: {
         schemaName,
         databaseCode,
+        cacheId,
         datasetId,
         cdmVersionNumber: parseCdmVersionForOhdsi(cdmVersionNumber),
         vocabSchemaName: vocabSchema || vocabSchemaName,

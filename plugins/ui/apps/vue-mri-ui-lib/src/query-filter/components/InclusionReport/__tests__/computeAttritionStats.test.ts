@@ -1,5 +1,5 @@
-import { computeAttritionStats } from '../computeAttritionStats'
-import type { InclusionReportResponse } from '../../../types/InclusionReportTypes'
+import { computeAttritionStats, mapAttritionApiResponseToStats } from '../computeAttritionStats'
+import type { InclusionReportResponse, AttritionApiResponse } from '../../../types/InclusionReportTypes'
 
 describe('Attrition Stats Computation', () => {
   const multipleRulesReport: InclusionReportResponse = {
@@ -215,6 +215,10 @@ describe('Attrition Stats Computation', () => {
   })
 
   describe('custom order', () => {
+    it('should throw for an invalid rule ID in a custom order', () => {
+      expect(() => computeAttritionStats(multipleRulesReport, [0, 99, 2])).toThrow('Invalid rule ID: 99')
+    })
+
     it('should compute stats with custom rule order', () => {
       // Apply custom order: [2, 0, 1] instead of [0, 1, 2]
       const stats = computeAttritionStats(multipleRulesReport, [2, 0, 1])
@@ -251,5 +255,96 @@ describe('Attrition Stats Computation', () => {
         pctDiff: '0.87%',
       })
     })
+  })
+})
+
+describe('mapAttritionApiResponseToStats', () => {
+  const baseApiResponse: AttritionApiResponse = {
+    summary: { baseCount: 100, finalCount: 60, lostCount: 40, percentMatched: '60.00%' },
+    attritionStats: [
+      { id: 0, name: 'Rule A', isExclude: false, cumulativeCountSatisfying: 90 },
+      { id: 1, name: 'Rule B', isExclude: false, cumulativeCountSatisfying: 80 },
+    ],
+  }
+
+  it('returns empty array for empty attritionStats', () => {
+    const result = mapAttritionApiResponseToStats({ ...baseApiResponse, attritionStats: [] })
+    expect(result).toEqual([])
+  })
+
+  it('maps id, name, isExclude, and cumulativeCountSatisfying → countSatisfying', () => {
+    const result = mapAttritionApiResponseToStats(baseApiResponse)
+    expect(result[0]).toMatchObject({ id: 0, name: 'Rule A', isExclude: false, countSatisfying: 90 })
+    expect(result[1]).toMatchObject({ id: 1, name: 'Rule B', isExclude: false, countSatisfying: 80 })
+  })
+
+  it('computes percentSatisfying as (cumulativeCountSatisfying / baseCount) formatted to 2 dp', () => {
+    const result = mapAttritionApiResponseToStats(baseApiResponse)
+    expect(result[0].percentSatisfying).toBe('90.00%')
+    expect(result[1].percentSatisfying).toBe('80.00%')
+  })
+
+  it('computes pctDiff starting from a 100% baseline for the first row', () => {
+    const result = mapAttritionApiResponseToStats(baseApiResponse)
+    // First row: 1.0 - 0.9 = 0.1 → '10.00%'
+    expect(result[0].pctDiff).toBe('10.00%')
+  })
+
+  it('computes pctDiff as the delta from the previous row for subsequent rows', () => {
+    const result = mapAttritionApiResponseToStats(baseApiResponse)
+    // Second row: 0.9 - 0.8 = 0.1 → '10.00%'
+    expect(result[1].pctDiff).toBe('10.00%')
+  })
+
+  it('computes percentExcluded as (1 - pctSat) formatted to 2 dp', () => {
+    const result = mapAttritionApiResponseToStats(baseApiResponse)
+    expect(result[0].percentExcluded).toBe('10.00%') // 1.0 - 0.9 = 0.1
+    expect(result[1].percentExcluded).toBe('20.00%') // 1.0 - 0.8 = 0.2
+  })
+
+  it('handles zero baseCount without divide-by-zero: percentSatisfying is 0.00% while pctDiff and percentExcluded fall back to 100.00%', () => {
+    const response: AttritionApiResponse = {
+      summary: { baseCount: 0, finalCount: 0, lostCount: 0, percentMatched: '0.00%' },
+      attritionStats: [{ id: 0, name: 'Rule A', isExclude: false, cumulativeCountSatisfying: 0 }],
+    }
+    const result = mapAttritionApiResponseToStats(response)
+    expect(result[0].percentSatisfying).toBe('0.00%')
+    expect(result[0].pctDiff).toBe('100.00%') // 1.0 - 0.0 = 1.0
+    expect(result[0].percentExcluded).toBe('100.00%')
+  })
+
+  it('correctly tracks cumulative pctDiff across three rows', () => {
+    const response: AttritionApiResponse = {
+      summary: { baseCount: 100, finalCount: 60, lostCount: 40, percentMatched: '60.00%' },
+      attritionStats: [
+        { id: 0, name: 'Rule A', isExclude: false, cumulativeCountSatisfying: 90 }, // 90%
+        { id: 1, name: 'Rule B', isExclude: false, cumulativeCountSatisfying: 70 }, // 70%
+        { id: 2, name: 'Rule C', isExclude: false, cumulativeCountSatisfying: 60 }, // 60%
+      ],
+    }
+    const result = mapAttritionApiResponseToStats(response)
+    expect(result[0].pctDiff).toBe('10.00%') // 100% → 90%
+    expect(result[1].pctDiff).toBe('20.00%') // 90%  → 70%
+    expect(result[2].pctDiff).toBe('10.00%') // 70%  → 60%
+  })
+
+  it('preserves isExclude: true on exclusion rules', () => {
+    const response: AttritionApiResponse = {
+      ...baseApiResponse,
+      attritionStats: [{ id: 0, name: 'No Prior Cancer', isExclude: true, cumulativeCountSatisfying: 50 }],
+    }
+    const [stat] = mapAttritionApiResponseToStats(response)
+    expect(stat.isExclude).toBe(true)
+  })
+
+  it('returns 100.00% percentSatisfying and 0.00% pctDiff when all patients satisfy', () => {
+    const response: AttritionApiResponse = {
+      summary: { baseCount: 100, finalCount: 100, lostCount: 0, percentMatched: '100.00%' },
+      attritionStats: [{ id: 0, name: 'Trivial Rule', isExclude: false, cumulativeCountSatisfying: 100 }],
+    }
+    const [stat] = mapAttritionApiResponseToStats(response)
+    expect(stat.percentSatisfying).toBe('100.00%')
+    expect(stat.pctDiff).toBe('0.00%')
+    expect(stat.percentExcluded).toBe('0.00%')
   })
 })
