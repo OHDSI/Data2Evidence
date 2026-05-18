@@ -30,12 +30,14 @@ index_col = 'embedding_cos_idx'
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters: {options.json()}")
     logger.info(f'Device: {device} | PyTorch threads: {torch.get_num_threads()}')
     schema_name = options.schema_name
     database_code = options.database_code
     cache_id = options.cache_id
     use_trex_connection = options.use_trex_connection
     if use_trex_connection:
+        logger.info("Using TREX connection")
         # -------------------- Trex connection to cache --------------------
         dbdao = DBDao(
             dialect=SupportedDatabaseDialects.TREX,
@@ -44,9 +46,12 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             cache_id=cache_id,
         )
         ## Vss extension is installed by default in trex, just need to load it
+        logger.info("Loading vss extension in TREX...")
         dbdao.execute_sql("LOAD vss")
+        logger.info("Vss extension loaded in TREX")
         create_embeddings_trex(dbdao, schema_name)
     else:
+        logger.info("Using direct DuckDB connection")
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
         vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
@@ -58,11 +63,12 @@ def search_embedding_plugin(options: SearchEmbeddingType):
 def create_embeddings_trex(dbdao, schema_name):
     logger = get_run_logger()
     logger.info("***************** Start embedding *****************")
-    
+    logger.info(f"Schema name: {schema_name}")
     ## Load concept table
     concept = dbdao.execute_sql(f'SELECT concept_id, concept_name FROM {schema_name}.concept', fetch=True)
     concept = pd.DataFrame(concept, columns=['concept_id','concept_name'])
     length = len(concept)
+    logger.info(f"Number of concepts: {length}")
     
     ## Create tmp embedding table
     embedding_cols = {'concept_id':'int', 'vec':'FLOAT[384]'}

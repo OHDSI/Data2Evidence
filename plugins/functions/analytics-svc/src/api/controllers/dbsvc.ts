@@ -22,7 +22,7 @@ export async function getCDMVersion(req, res, next) {
             dialect
         );
         logger.info(
-            `[Analytics Svc] CDM version retrieved for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${JSON.stringify(cdmVersion)}`
+            `CDM version retrieved for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${JSON.stringify(cdmVersion)}`
         );
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
@@ -39,7 +39,7 @@ export async function getCDMVersion(req, res, next) {
             throw new Error("Invalid cdm version value");
         }
         logger.info(
-            `[Analytics Svc] CDM version returned for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${cdmVersionValue}`
+            `CDM version returned for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${cdmVersionValue}`
         );
         res.status(200).json(cdmVersionValue);
     } catch (err) {

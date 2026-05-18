@@ -14,8 +14,10 @@ from prefect.logging import get_run_logger
 os.environ['plugin_name'] = 'loyalty_score_plugin'
 
 @flow(log_prints=True)
-def loyalty_score_plugin(options:LoyaltyPluginType):
+def loyalty_score_plugin(options: LoyaltyPluginType):
+    logger = get_run_logger()
     options = options.config
+    logger.info(f"Flow parameters received: {options.json()}")
     match options:
         case CalculateConfig():
             calculate_loyalty_score(options)

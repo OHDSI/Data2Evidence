@@ -14,7 +14,6 @@ os.environ['plugin_name'] = 'data_management_plugin'
 @flow(log_prints=True, timeout_seconds=3600)
 def data_management_plugin(options: DataModelType):
     logger = get_run_logger()
-
     match options.flow_action_type:
         case FlowActionType.CREATE_DATA_MODEL:
             create_datamodel_flow(options, logger)
@@ -35,6 +34,7 @@ def data_management_plugin(options: DataModelType):
             
             
 def create_cdm_schema(options: CreateSchemaType, logger):
+    logger.info(f"Flow parameters received: {options.json()}")
     db_dialect = get_db_dialect(options)
     try:
         create_cdm_schema_tasks(
@@ -53,6 +53,7 @@ def create_cdm_schema(options: CreateSchemaType, logger):
 
 
 def create_datamodel_flow(options: CreateDataModelType, logger):
+    logger.info(f"Flow parameters received: {options.json()}")
     try:
         db_dialect = get_db_dialect(options)
         create_datamodel(
@@ -72,6 +73,7 @@ def create_datamodel_flow(options: CreateDataModelType, logger):
 
 
 def update_datamodel_flow(options: UpdateDataModelType, logger):
+    logger.info(f"Flow parameters received: {options.json()}")
     try:
         db_dialect = get_db_dialect(options)
 
@@ -106,6 +108,7 @@ def get_version_info_flow(options: GetVersionInfoType, logger):
 
 
 def rollback_count_flow(options: RollbackCountType, logger):
+    logger.info(f"Flow parameters received: {options.json()}")
     try:
         db_dialect = get_db_dialect(options)
 
@@ -128,6 +131,7 @@ def rollback_count_flow(options: RollbackCountType, logger):
 
 
 def rollback_tag_flow(options: RollbackTagType, logger):
+    logger.info(f"Flow parameters received: {options.json()}")
     try:
         db_dialect = get_db_dialect(options)
 

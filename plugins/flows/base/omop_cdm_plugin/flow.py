@@ -41,6 +41,7 @@ def omop_cdm_plugin(options: OmopCDMPluginOptions):
 
 def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_cache: bool):
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     database_code = options.database_code
     cache_id = options.cache_id
     schema_name = options.schema_name
@@ -102,6 +103,8 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_c
 
 
 def create_seed_schemas_flow(options: OmopCDMPluginOptions):
+    logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     if options.schema_name != options.vocab_schema:
         create_vocab_schema(options)
         create_dataset_schema(options)

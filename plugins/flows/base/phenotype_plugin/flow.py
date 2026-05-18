@@ -188,6 +188,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     logging.basicConfig()
     rpy2_logger.setLevel(logging.DEBUG)
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     logger.info("******************* Running Phenotype Plugin *******************")
 
     database_code = options.database_code

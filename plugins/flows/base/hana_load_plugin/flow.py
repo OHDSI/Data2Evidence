@@ -33,7 +33,7 @@ def hana_load_plugin(options: OmopCDMPluginOptions):
 
 def create_datamodel(options: OmopCDMPluginOptions):
     logger = get_run_logger()
-
+    logger.info(f"Flow parameters received: {options.json()}")
     database_code = options.database_code
     cache_id = options.cache_id
     use_cache_db = options.use_cache_db
