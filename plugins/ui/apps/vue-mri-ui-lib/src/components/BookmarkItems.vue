@@ -588,7 +588,7 @@ onErrorCaptured((err, instance, info) => {
                 : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="addCohort(bookmarkDisplay)"
+            @click.stop="canDatasetMaterializeCohorts && addCohort(bookmarkDisplay)"
             :title="
               ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')
