@@ -30,18 +30,20 @@ type Ctx = {
   colorway: string[]
 }
 
-export function apply(traces: any[], layout: any, ctx: Ctx) {
+export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; layout: any } {
   layout.barmode = 'overlay'
   layout.bargap = 0
-  traces.forEach(trace => {
-    trace.marker = {
-      ...trace.marker,
-      opacity: 0.3,
-    }
-  })
+  // Create new trace objects so the canonical chartData.traces are never mutated.
+  const newTraces = traces.map(trace => ({
+    ...trace,
+    marker: { ...trace.marker, opacity: 0.3 },
+  }))
   if (ctx.showDistributionOverlay) {
-    appendDistributionOverlay(traces, layout, ctx.colorway)
+    // appendDistributionOverlay pushes to newTraces (safe — it's a fresh array) and
+    // mutates layout properties (safe — layout is always a fresh object from buildPlotlyLayout).
+    appendDistributionOverlay(newTraces, layout, ctx.colorway)
   }
+  return { traces: newTraces, layout }
 }
 
 export default {

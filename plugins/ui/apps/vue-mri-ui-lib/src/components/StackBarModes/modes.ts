@@ -16,7 +16,7 @@ export type ModeApplyCtx = {
   colorway: string[]
 }
 
-export type ModeApply = (traces: any[], layout: any, ctx: ModeApplyCtx) => void
+export type ModeApply = (traces: any[], layout: any, ctx: ModeApplyCtx) => { traces: any[]; layout: any }
 
 export const modeOrder: ModeMeta[] = [StackedMeta, OverlayMeta, PartialOverlaySolidMeta, DistributionCurvesMeta]
 

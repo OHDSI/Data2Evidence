@@ -18,8 +18,9 @@ type Ctx = {
   colorway: string[]
 }
 
-export function apply(_traces: any[], layout: any, ctx: Ctx) {
+export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; layout: any } {
   layout.bargap = ctx.barGap
+  return { traces, layout }
 }
 
 export default {

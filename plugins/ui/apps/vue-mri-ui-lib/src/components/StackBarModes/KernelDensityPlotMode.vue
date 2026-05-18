@@ -64,12 +64,12 @@ function tryParseNumericPositions(origX: any[]): ParsedPositions | null {
   return { centers, dataMin: Math.min(...lefts), dataMax: Math.max(...rights) }
 }
 
-export function apply(traces: any[], layout: any, ctx: Ctx) {
+export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; layout: any } {
   layout.barmode = 'overlay'
   layout.bargap = ctx.barGap
 
   const numCategories = traces[0]?.y?.length || 0
-  if (numCategories <= 1) return
+  if (numCategories <= 1) return { traces, layout }
 
   const origX = traces[0]?.x || []
   const categoryLabels = Array.isArray(origX[0])
@@ -156,9 +156,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
     })
     .filter((t): t is NonNullable<typeof t> => t !== null)
 
-  traces.length = 0
-  kdeTraces.forEach(t => traces.push(t))
-
+  // Return kdeTraces as a new array; the canonical chartData.traces (bar traces) are never mutated.
   layout.xaxis.type = 'linear'
   if (numericAxis) {
     delete layout.xaxis.tickvals
@@ -175,6 +173,8 @@ export function apply(traces: any[], layout: any, ctx: Ctx) {
   delete layout.xaxis.dividercolor
   delete layout.xaxis.labelalias
   layout.yaxis.rangemode = 'nonnegative'
+
+  return { traces: kdeTraces, layout }
 }
 
 export default {

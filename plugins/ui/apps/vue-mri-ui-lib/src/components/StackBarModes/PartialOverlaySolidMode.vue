@@ -30,22 +30,28 @@ type Ctx = {
   colorway: string[]
 }
 
-export function apply(traces: any[], layout: any, ctx: Ctx) {
+export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; layout: any } {
   layout.barmode = 'overlay'
   layout.bargap = ctx.barGap
   const n = traces.length
+  // Create new trace objects so the canonical chartData.traces are never mutated.
+  let newTraces: any[]
   if (n > 1) {
     const barWidth = (1 - ctx.barGap) * 0.68
     const offsetStep = (barWidth * 0.5) / (n - 1)
     const groupSpan = (n - 1) * offsetStep + barWidth
-    traces.forEach((trace, i) => {
-      trace.width = barWidth
-      trace.offset = i * offsetStep - groupSpan / 2
-    })
+    newTraces = traces.map((trace, i) => ({
+      ...trace,
+      width: barWidth,
+      offset: i * offsetStep - groupSpan / 2,
+    }))
+  } else {
+    newTraces = traces
   }
   if (ctx.showDistributionOverlay) {
-    appendDistributionOverlay(traces, layout, ctx.colorway)
+    appendDistributionOverlay(newTraces, layout, ctx.colorway)
   }
+  return { traces: newTraces, layout }
 }
 
 export default {

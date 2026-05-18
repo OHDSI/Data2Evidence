@@ -131,7 +131,9 @@ describe('StackBarChart selection handling', () => {
     }
     ;(wrapper.vm as any).setupPlotly()
 
-    handlers.plotly_selected()
+    // selectionUpdate now reads from the eventData payload, not from
+    // trace.selectedpoints on the canonical traces.
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0 }] })
     const firstSelection = getLastSelectionPayload()
     expect(firstSelection.selection).toEqual([
       { id: 'cat.id', value: 'Alpha' },
@@ -141,15 +143,15 @@ describe('StackBarChart selection handling', () => {
     handlers.plotly_deselect()
     const afterDeselect = getLastSelectionPayload()
     expect(afterDeselect.selection).toEqual([])
-    ;(wrapper.vm as any).chartData.traces[0].selectedpoints = [1]
-    handlers.plotly_selected()
+    // Plotly.react is called by clearSelectionState (deselect), not by the selection handler.
+    expect(Plotly.react).toHaveBeenCalled()
+
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 1 }] })
     const secondSelection = getLastSelectionPayload()
     expect(secondSelection.selection).toEqual([
       { id: 'cat.id', value: 'Beta' },
       { id: 'grp.id', value: 'Group One' },
     ])
-
-    expect(Plotly.react).toHaveBeenCalled()
   })
 
   it('resets to default state when plotly_selected has no selected points', async () => {

@@ -488,10 +488,12 @@ export default {
       }
     },
     applyChartType(traces, layout) {
-      if (!traces || !traces.length) return
+      if (!traces || !traces.length) return { traces, layout }
       const colorway = Object.values(Constants.ChartColorway)
       const modeApply = applyById[this.getBarChartType] || applyById.stack
-      modeApply(traces, layout, {
+      // Each mode apply() is pure: it returns new trace objects/arrays without mutating its inputs.
+      // This removes the need to JSON-clone this.chartData.traces before calling apply().
+      return modeApply(traces, layout, {
         showDistributionOverlay: this.getShowDistributionOverlay,
         barGap: DEFAULT_BAR_GAP,
         colorway,
@@ -500,13 +502,9 @@ export default {
     reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
       if (!targetElement || !this.chartData?.traces) return
       const layout = this.buildPlotlyLayout(resetAxes)
-      // Mode apply() functions mutate traces (distribution replaces them with KDE scatter;
-      // overlay/partialOverlaySolid tweak marker/width/offset and push overlay traces). Clone
-      // so this.chartData.traces stays the canonical bar-trace form that setupPlotly and
-      // subsequent renders can rely on.
-      const tracesForPlotly = JSON.parse(JSON.stringify(this.chartData.traces))
-      this.applyChartType(tracesForPlotly, layout)
-      Plotly.react(targetElement, tracesForPlotly, layout, this.config)
+      // applyChartType returns new traces/layout objects — no clone needed.
+      const { traces: tracesForPlotly, layout: finalLayout } = this.applyChartType(this.chartData.traces, layout)
+      Plotly.react(targetElement, tracesForPlotly, finalLayout, this.config)
     },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
@@ -585,61 +583,71 @@ export default {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
       const initialLayout = this.buildPlotlyLayout()
-      const initialTraces = JSON.parse(JSON.stringify(this.chartData.traces || []))
-      this.applyChartType(initialTraces, initialLayout)
-      Plotly.newPlot(stackBarChart, initialTraces, initialLayout, this.config)
+      // applyChartType returns new traces/layout — no clone needed.
+      const { traces: initialTracesForPlotly, layout: finalInitialLayout } = this.applyChartType(
+        this.chartData.traces || [],
+        initialLayout
+      )
+      Plotly.newPlot(stackBarChart, initialTracesForPlotly, finalInitialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
       this.$nextTick(() => {
         Plotly.Plots.resize(stackBarChart)
       })
 
-      const selectionUpdate = () => {
-        // Update selection in state to activate drilldown
-        const selectedData = []
-        let selectedCount = 0
-        const pushPoint = (dataId, dataValue) => {
-          selectedData.push({ id: dataId, value: dataValue })
-        }
-        this.chartData.traces.forEach(trace => {
-          if (!trace.selectedpoints) {
-            return
-          }
-          trace.selectedpoints.forEach(pointIndex => {
-            const pointCustomData = trace.customdata[pointIndex]
-            const xAxes = pointCustomData.x
-            const yAxis = pointCustomData.y
-
-            xAxes.forEach((xAxis, axisIndex) => {
-              // Use the canonical plotted value from trace.x (full, untruncated)
-              let canonicalValue: string
-              if (Array.isArray(trace.x[0])) {
-                // multicategory display labels may be truncated; prefer canonical values from customdata
-                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[axisIndex][pointIndex])
-              } else {
-                // single axis
-                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[pointIndex])
-              }
-              pushPoint(xAxis.id, canonicalValue)
-            })
-            if (yAxis.length > 0) {
-              pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
-            }
-            selectedCount++
-          })
-        })
-        if (selectedCount === 0) {
+      const selectionUpdate = eventData => {
+        // Guard: no points in payload → treat as deselect.
+        // Plotly sets selectedpoints on the cloned traces it received (not on
+        // this.chartData.traces), so we must source selection from the event
+        // payload rather than reading trace.selectedpoints from the canonical copy.
+        if (!eventData?.points?.length) {
           this.clearSelectionState()
           return
         }
 
+        const selectedData = []
+        const pushPoint = (dataId, dataValue) => {
+          selectedData.push({ id: dataId, value: dataValue })
+        }
+
+        eventData.points.forEach(point => {
+          const traceIndex = point.curveNumber
+          const pointIndex = point.pointIndex
+          const trace = this.chartData.traces[traceIndex]
+          if (!trace) return
+
+          const pointCustomData = trace.customdata[pointIndex]
+          const xAxes = pointCustomData.x
+          const yAxis = pointCustomData.y
+
+          xAxes.forEach((xAxis, axisIndex) => {
+            // Use the canonical plotted value from trace.x (full, untruncated)
+            let canonicalValue: string
+            if (Array.isArray(trace.x[0])) {
+              // multicategory display labels may be truncated; prefer canonical values from customdata
+              canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[axisIndex][pointIndex])
+            } else {
+              // single axis
+              canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[pointIndex])
+            }
+            pushPoint(xAxis.id, canonicalValue)
+          })
+          if (yAxis.length > 0) {
+            pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
+          }
+        })
+
         this.setChartSelection({ selection: selectedData })
 
-        // Persist selection across Plotly react
-        const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
-        this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
-
-        this.reactWithCurrentMode()
+        // Mirror Plotly's selection onto the canonical traces so subsequent renders
+        // (mode switch, color-axis change, deselect) preserve it. Do NOT call
+        // dataToTraces/reactWithCurrentMode here: Plotly has already drawn the
+        // active selection visual, and reactWithCurrentMode clones the traces
+        // before calling Plotly.react, which Plotly treats as a data swap and
+        // tears down the in-flight selection highlight.
+        this.chartData.traces.forEach((trace, i) => {
+          trace.selectedpoints = eventData.points.filter(p => p.curveNumber === i).map(p => p.pointIndex)
+        })
       }
 
       const deselectionUpdate = () => {
