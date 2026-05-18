@@ -33,6 +33,14 @@ export class CachedbDAO {
   private readonly resultsSchemaName: string;
   private readonly fts_concept_identifier: string;
   private readonly fts_concept_synonym_identifier: string;
+  // Calibration constants for hybrid score. bm25SaturationK controls how fast
+  // BM25 saturates toward 1 (smaller = faster). hybridBoostScale lifts the
+  // calibrated [0,1] hybrid score onto the booster scale. Kept below 500 so
+  // prefix/exact name (800/1000) and exact synonym (600/500) always outrank
+  // pure semantic hits, while still beating standard_boost (100) for the
+  // token-disjoint recovery case ("high blood sugar" -> "Hyperglycemia").
+  private readonly bm25SaturationK = 5;
+  private readonly hybridBoostScale = 400;
 
   constructor(
     vocabSchemaName: string,
@@ -385,20 +393,20 @@ export class CachedbDAO {
             `${this.fts_concept_identifier}.match_bm25(c.concept_id, ?)`,
             "sy.syn_bm25",
           )} as fts_score,
-          array_cosine_distance(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score
+          array_cosine_similarity(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept c
           left join synonym_scores sy on sy.concept_id = c.concept_id
           ${duckdbFtsWhereClause}
       ),
       fts as (
-        select 
+        select
           sem_fts_scores.${columnsToSelect},
           (
-            ${this.semanticRatio} * (embd_score + 1) / (select max(embd_score)+1 from sem_fts_scores) + 
-            (1-${this.semanticRatio}) * fts_score / (select max(fts_score) from sem_fts_scores)
+            ${this.semanticRatio} * GREATEST(embd_score, 0) +
+            (1 - ${this.semanticRatio}) * (fts_score / (fts_score + ${this.bm25SaturationK}))
           ) as hybrid_score
-        from 
+        from
           sem_fts_scores
         where fts_score is not null
         order by hybrid_score desc
@@ -521,7 +529,7 @@ export class CachedbDAO {
                 `${this.fts_concept_identifier}.match_bm25(concept_id, ?)`,
                 "sy.syn_bm25",
               )} as fts_score,
-              array_cosine_distance(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score,
+              array_cosine_similarity(concept_name_embedding, string_split(?, ',')::FLOAT[384]) as embd_score,
               sy.syn_exact_score as syn_exact_score
             from
               ${this.vocabSchemaName}.concept c
@@ -533,10 +541,9 @@ export class CachedbDAO {
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
               syn_exact_score,
               (
-                ${this.semanticRatio} *
-                (embd_score + 1) / (select max(embd_score) + 1 from sem_fts_scores) +
+                ${this.semanticRatio} * GREATEST(embd_score, 0) +
                 (1 - ${this.semanticRatio}) *
-                fts_score / (select max(fts_score) from sem_fts_scores)
+                (fts_score / (fts_score + ${this.bm25SaturationK}))
               ) as search_score
             from
               sem_fts_scores
@@ -581,7 +588,7 @@ export class CachedbDAO {
         select
           *,
           (
-            COALESCE(ss.search_score, 0)
+            COALESCE(ss.search_score, 0) * ${this.hybridBoostScale}
             + c.exact_match_score
             + COALESCE(ss.syn_exact_score, 0)
             + c.standard_boost
