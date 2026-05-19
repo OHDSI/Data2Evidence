@@ -84,12 +84,14 @@ test(TEST_NAME, async ({ page }) => {
       .locator('iframe[title="Atlas Lite"]')
       .contentFrame()
       .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
+      .first()
   ).toBeVisible()
   await expect(
     page
       .locator('iframe[title="Atlas Lite"]')
       .contentFrame()
       .locator('.conceptTable.stripe.compact.hover.dataTable.no-footer')
+      .first()
   ).toContainText('No data available in table')
 
   await page.getByRole('link', { name: 'Account' }).click()

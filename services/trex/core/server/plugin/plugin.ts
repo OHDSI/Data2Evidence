@@ -175,7 +175,6 @@ export class Plugins {
 
 	static async initPlugins(app: Hono) {
 		logger.log("Add plugins");
-		await Plugins.initPluginsEnv(app);
 		if(env.NODE_ENV === 'development') {
 			try {
 				await Plugins.initPluginsDev(app);
@@ -183,6 +182,7 @@ export class Plugins {
 				logger.error(e)
 			}
 		}
+		await Plugins.initPluginsEnv(app);
 	}
 }
 
