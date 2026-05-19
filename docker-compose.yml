@@ -184,16 +184,6 @@ services:
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
       TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
       TREXSQL_ENABLED: "true"
-      TREX_INIT: |-
-        {
-          "tlsCert": "/usr/src/cert/cert.pem",
-          "tlsKey": "/usr/src/cert/key.pem",
-          "tlsPort": 33000,
-          "trexasPort": 33001,
-          "pgwirePort": 5434,
-          "mainPath": "/usr/src/core/server/index.eszip",
-          "eventWorkerPath": "/usr/src/core/event/index.eszip"
-        }
       SWARM_NODE: d2e
       SWARM_CONFIG: |-
         {
