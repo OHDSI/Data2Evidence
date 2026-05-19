@@ -30,9 +30,6 @@ const pyodideIndexUrl =
     ? `https://cdn.jsdelivr.net/pyodide/v${__PYODIDE_VERSION__}/full/`
     : undefined
 
-const pyodideKernel = new PyqeReadyPyodideKernel()
-const webRKernel = new WebRKernel()
-
 const portalTheme: NotebookTheme = {
   primary: '#000080',
   primaryForeground: '#ffffff',
@@ -58,6 +55,29 @@ interface NotebookManagerProps {
 }
 
 export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
+  // Fresh kernel instances per component mount. The submodule's useKernel hook
+  // skips connect()+status-subscribe for any kernel whose status is not
+  // 'disconnected' (see useKernel.ts:184), so module-level singletons leave the
+  // remounted NotebookManager with an empty kernelStatuses map and a stale
+  // 'disconnected' UI even though the previous worker is alive. Tying the
+  // kernels to component lifecycle forces useKernel down its full connect path
+  // on every mount; the cleanup terminates the old worker so reconnect actually
+  // produces fresh state.
+  const [pyodideKernel] = useState(() => new PyqeReadyPyodideKernel())
+  const [webRKernel] = useState(() => new WebRKernel())
+  const kernels = useMemo(() => [pyodideKernel, webRKernel], [pyodideKernel, webRKernel])
+
+  useEffect(() => {
+    return () => {
+      pyodideKernel.disconnect().catch((err) =>
+        console.warn('Pyodide kernel cleanup failed:', err)
+      )
+      webRKernel.disconnect().catch((err) =>
+        console.warn('WebR kernel cleanup failed:', err)
+      )
+    }
+  }, [pyodideKernel, webRKernel])
+
   const [notebooks, setNotebooks] = useState<NotebookRecord[]>([])
   const [activeNotebook, setActiveNotebook] = useState<NotebookRecord | null>(null)
   const [notebookData, setNotebookData] = useState<NotebookData>(createEmptyNotebook())
@@ -382,7 +402,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
                   ref={notebookRef}
                   data={notebookData}
                   onChange={setNotebookData}
-                  kernels={[pyodideKernel, webRKernel]}
+                  kernels={kernels}
                   kernelConfigs={kernelConfigs}
                   showToolbar={true}
                   showLineNumbers={true}
