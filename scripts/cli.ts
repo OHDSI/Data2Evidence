@@ -38,6 +38,7 @@ class D2ECli {
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
   node_modules_path: string;
+  compose_dir: string;
   script_full_path: string;
   program: Command;
   port: string;
@@ -62,6 +63,9 @@ class D2ECli {
     this.node_modules_path = (globalThis as any).Bun
       ? this.script_full_path
       : this.initialise_node_modules_path();
+    this.compose_dir = (globalThis as any).Bun
+      ? process.cwd()
+      : this.node_modules_path;
     this.extract_compose_file();
     this.program = new Command();
     this.libUtils = new LibUtils();
@@ -69,7 +73,7 @@ class D2ECli {
   }
 
   extract_compose_file(): void {
-    const dest = path.join(this.node_modules_path, "docker-compose.yml");
+    const dest = path.join(this.compose_dir, "docker-compose.yml");
     if (!fs.existsSync(dest)) {
       fs.writeFileSync(dest, dockerComposeContent);
     }
@@ -416,7 +420,7 @@ class D2ECli {
     dockerbasecmd.push("compose");
     dockerbasecmd.push(
       "--file",
-      `${this.node_modules_path}/docker-compose.yml`,
+      `${this.compose_dir}/docker-compose.yml`,
     );
     if (options.demo) dockerbasecmd.push("--profile", "demodb");
     if (options.dicom) dockerbasecmd.push("--profile", "dicom");
@@ -425,7 +429,7 @@ class D2ECli {
     if (options.hana) dockerbasecmd.push("--profile", "hana");
     if (options.minio) dockerbasecmd.push("--profile", "minio");
     if (options.functionPath) {
-      const dev = `--file ${this.node_modules_path}/docker-compose-local.yml`;
+      const dev = `--file ${this.compose_dir}/docker-compose-local.yml`;
       dockerbasecmd.push(dev);
     }
     dockerbasecmd.push("--env-file", this.ENVFILE);
