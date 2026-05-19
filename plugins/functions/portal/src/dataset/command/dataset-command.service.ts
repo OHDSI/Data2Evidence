@@ -1039,7 +1039,7 @@ export class DatasetCommandService {
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
-      resultsSchemaName: datasetInfo.resultSchemaName,
+      resultSchemaName: datasetInfo.resultSchemaName,
     } as Dataset;
 
     const detailEntity = "datasetId" in detail
