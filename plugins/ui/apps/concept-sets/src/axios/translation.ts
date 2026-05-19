@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "/d2e/resources/concept-sets";
+const BASE_URL = "/resources/concept-sets";
 
 // Translations are publicly accessible, hence interceptors for auth is not needed.
 export class Translation {
