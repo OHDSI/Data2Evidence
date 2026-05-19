@@ -13,18 +13,37 @@ export default class StrategusAnalysisService {
         this.strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     }
 
-    async getAllAnalysis() {
+    async getAllAnalysis(token: string) {
         const analysisList = await this.strategusAnalysisRepository.find();
-        
-        return analysisList;
+        const portalAPI = new PortalAPI(token);
+        return await Promise.all(
+            analysisList.map(async (analysis) => {
+                try {
+                    const dataset = await portalAPI.getDataset(analysis.datasetId);
+                    return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
+                } catch (error) {
+                    console.error(`Failed to resolve tokenStudyCode for analysis ${analysis.id} (datasetId: ${analysis.datasetId}):`, error);
+                    return { ...analysis, tokenStudyCode: null };
+                }
+            })
+        );
     }
 
-    async getStudyAnalysis(studyId: string) {
+    async getStudyAnalysis(studyId: string, token: string) {
         const analysis = await this.strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
 
-        return analysis;
+        if (!analysis) return null;
+
+        try {
+            const portalAPI = new PortalAPI(token);
+            const dataset = await portalAPI.getDataset(analysis.datasetId);
+            return { ...analysis, tokenStudyCode: dataset.tokenStudyCode };
+        } catch (error) {
+            console.error(`Failed to resolve tokenStudyCode for study`, error);
+            return { ...analysis, tokenStudyCode: null };
+        }
     }
 
     async getAnalysisByDatasetId(datasetId: string) {
@@ -89,14 +108,16 @@ export default class StrategusAnalysisService {
         return { analysisId, message: "Analysis specification saved successfully." };
     }
 
-    async updateStrategusAnalysis(token: string, studyId: string, analysisSpec: string, databaseCode: string) {
+    async updateStrategusAnalysis(token: string, tokenStudyCode: string, analysisSpec: string, databaseCode: string) {
         this.token = token;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDatasetByToken(tokenStudyCode);
         const existingAnalysis = await this.strategusAnalysisRepository.findOne({
-            where: { studyId: studyId }
+            where: { datasetId: dataset.id }
         });
 
         if (!existingAnalysis) {
-            throw new Error("Study does not exist.")
+            throw new Error(`Study with token ${tokenStudyCode} does not exist.`);
         }
 
         existingAnalysis.analysisSpec = analysisSpec;

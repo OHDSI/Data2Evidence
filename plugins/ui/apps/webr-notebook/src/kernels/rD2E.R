@@ -1,3 +1,4 @@
+
 # rD2E.R
 # WebR-compatible port of the rD2E package
 #
@@ -330,8 +331,8 @@ run_strategus_flow <- function(analysisSpecification,
     options <- create_options()
   }
 
-  if (options$studyId == "" || is.null(options$studyId)) {
-    stop("Error: studyId must be set in options")
+  if (options$tokenStudyCode == "" || is.null(options$tokenStudyCode)) {
+    stop("Error: tokenStudyCode must be set in options")
   }
 
   parameters <- list(
@@ -356,7 +357,7 @@ run_strategus_flow <- function(analysisSpecification,
   }
 }
 
-create_options <- function(study_id = "",
+create_options <- function(token_study_code = "",
                            upload_results = FALSE,
                            update_results_schema = TRUE,
                            run_table1 = FALSE) {
@@ -366,7 +367,7 @@ create_options <- function(study_id = "",
     datasetId = dataset_id,
     uploadResults = upload_results,
     updateResultsSchema = update_results_schema,
-    studyId = study_id,
+    tokenStudyCode = token_study_code,
     runTable1 = run_table1
   ))
 }
