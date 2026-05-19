@@ -11,6 +11,10 @@ import {
   setRevisionId,
 } from "~/features/flow/reducers";
 import { useBooleanHelper } from "~/features/flow/hooks";
+import {
+  sanitizeFlowEdges,
+  sanitizeFlowNodes,
+} from "~/features/flow/utils";
 import { DeleteFlowRevisionDialog } from "./DeleteFlowRevisionDialog";
 import { DuplicateFlowRevisionDialog } from "./DuplicateFlowRevisionDialog";
 import "./FlowRevisionList.scss";
@@ -36,9 +40,11 @@ export const FlowRevisionList: FC<RevisionItemProps> = ({
       const isLatest = index === 0;
       if (index >= 0) {
         const revision = revisions[index];
+        const safeNodes = sanitizeFlowNodes(revision.flow?.nodes);
+        const safeEdges = sanitizeFlowEdges(revision.flow?.edges, safeNodes);
         dispatch(setRevisionId(isLatest ? undefined : revisionId));
-        dispatch(replaceNodes(revision.flow.nodes));
-        dispatch(replaceEdges(revision.flow.edges));
+        dispatch(replaceNodes(safeNodes));
+        dispatch(replaceEdges(safeEdges));
         dispatch(clearStatus());
       }
       typeof onAfterView === "function" && onAfterView();
