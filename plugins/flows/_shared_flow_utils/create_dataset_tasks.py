@@ -194,5 +194,6 @@ def is_safe_schema_name(schema: str) -> bool:
     if not s:
         return False
 
-    pattern = r"^[A-Za-z][A-Za-z0-9_]*(?:\.[A-Za-z][A-Za-z0-9_]*)?$"
+    # Each segment may start with an underscore (cache_id from sanitized UUIDs does).
+    pattern = r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$"
     return match(pattern, s) is not None

@@ -78,6 +78,10 @@ export class SystemPortalAPI {
 
     return {
       databaseCode: dataset.databaseCode,
+      // webapi-managed datasets attach the DuckDB cache under their cache_id
+      // (UUID-derived, leading-underscore for digit-prefixed ids). Fall back to
+      // databaseCode for legacy rows that pre-date cache_id alignment.
+      cacheId: dataset.cacheId ?? dataset.databaseCode,
       schemaName: dataset.schemaName,
       vocabSchemaName: dataset.vocabSchemaName,
       dialect: dataset.dialect,

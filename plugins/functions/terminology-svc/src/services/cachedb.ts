@@ -72,6 +72,7 @@ export class CachedbService {
       dialect,
       vocabSchemaName,
       databaseCode,
+      cacheId,
       schemaName,
       resultsSchemaName,
     } = this.datasetDB;
@@ -86,11 +87,11 @@ export class CachedbService {
       ? parseFloat(this.hybridSearchConfig.semanticRatio)
       : 0;
 
-    // By default return CachedbDAO
+    // cacheId is the DuckDB ATTACH alias for webapi-managed datasets.
     return new CachedbDAO(
       vocabSchemaName,
       semanticRatio,
-      databaseCode,
+      cacheId,
       schemaName,
       resultsSchemaName
     );

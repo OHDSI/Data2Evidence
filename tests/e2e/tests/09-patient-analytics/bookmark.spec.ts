@@ -79,6 +79,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
+      await expect(page.getByRole('row', { name: /40055000.*Chronic sinusitis/ })).toBeVisible({ timeout: 60_000 })
       await page
         .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
         .locator('td')
@@ -367,7 +368,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('cell', { name: 'omop', exact: true }).nth(0).locator('..').getByText('Select action').click()
+    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByText('Select action').click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
