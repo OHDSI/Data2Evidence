@@ -146,7 +146,7 @@ export class DatasetCommandService {
       dialect: datasetDto.dialect,
       schemaName: datasetDto.schemaName,
       vocabSchemaName: datasetDto.vocabSchemaName,
-      resultSchemaName: datasetDto.resultsSchemaName,
+      resultsSchemaName: datasetDto.resultsSchemaName,
       type: datasetDto.type,
       fhirProjectId: datasetDto.fhir_project_id
     }, datasetDto.detail);
@@ -1004,7 +1004,7 @@ export class DatasetCommandService {
       dialect?: string;
       schemaName?: string;
       vocabSchemaName?: string;
-      resultSchemaName?: string;
+      resultsSchemaName?: string;
       type?: string;
       fhirProjectId: string | null;
     },
@@ -1039,7 +1039,7 @@ export class DatasetCommandService {
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
-      resultSchemaName: datasetInfo.resultSchemaName,
+      resultsSchemaName: datasetInfo.resultsSchemaName,
     } as Dataset;
 
     const detailEntity = "datasetId" in detail
