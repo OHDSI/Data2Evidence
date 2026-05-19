@@ -181,3 +181,40 @@ jobs:
           package-type: "npm"
           min-versions-to-keep: 3
           delete-only-pre-release-versions: "true"
+      - name: Prepare
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            echo "PRERELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=${{ github.event.inputs.tag }}
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=data2evidence-cli-${TAG}
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            GITHUB_RELEASE=v${{ github.event.inputs.tag }}
+            echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "PRERELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=latest
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=data2evidence-cli
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          fi
+      - name: Pack
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
+        run: |
+          NPM_FILENAME=$(npm pack | tail -n 1)
+          echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
+      - name: Push
+        uses: svenstaro/upload-release-action@v2
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.NPM_FILENAME }}
+          tag: ${{ env.GITHUB_RELEASE }}
+          target_commit: ${{ github.ref_name }}
+          prerelease: ${{ env.PRERELEASE }}
+          overwrite: ${{ env.OVERWRITE }}
+          asset_name: ${{ env.ASSET_NAME }}.tgz
