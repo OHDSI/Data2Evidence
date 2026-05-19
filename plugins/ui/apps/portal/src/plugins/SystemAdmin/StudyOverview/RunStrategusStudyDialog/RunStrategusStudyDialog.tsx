@@ -34,7 +34,7 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
   );
 
   const handleRunStudy = useCallback(async () => {
-    if (isRunning || !selectedDatasetId || !study?.studyId) {
+    if (isRunning || !selectedDatasetId || !study?.tokenStudyCode) {
       return;
     }
 
@@ -49,6 +49,7 @@ const RunStrategusStudyDialog: FC<RunStrategusStudyDialogProps> = ({ study, open
           mode: "kernel",
           datasetId: selectedDatasetId,
           studyId: study.studyId,
+          tokenStudyCode: study.tokenStudyCode,
           uploadResults: true,
         },
       };

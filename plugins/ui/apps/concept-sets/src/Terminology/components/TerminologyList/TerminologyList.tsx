@@ -1053,6 +1053,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
             handleChangePage(event, page);
           }}
           ActionsComponent={TablePaginationActions}
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`.replace(
+              /(\d+)/g,
+              (match) => Number(match).toLocaleString()
+            )
+          }
           sx={{
             overflow: "visible",
             height: "52px",
