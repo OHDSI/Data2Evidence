@@ -25,8 +25,6 @@ def create_fts_index_task(
     Create duckdb full text search indexes based on columns specified in tables_to_create_duckdb_fts_index
     """
     logger = get_run_logger()
-    logger.info(f"Task parameters: use_trex_conn={use_trex_conn}, copy_params={copy_params}, duckdb_file_path={duckdb_file_path}")
-
     task_run_ctx = TaskRunContext.get()
     logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
 
