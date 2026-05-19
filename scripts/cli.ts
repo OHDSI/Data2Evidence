@@ -59,11 +59,9 @@ class D2ECli {
 
   constructor() {
     this.script_full_path = path.resolve(__dirname, "..");
-    if ((globalThis as any).Bun) {
-      this.node_modules_path = process.cwd();
-    } else {
-      this.node_modules_path = this.initialise_node_modules_path();
-    }
+    this.node_modules_path = (globalThis as any).Bun
+      ? this.script_full_path
+      : this.initialise_node_modules_path();
     this.extract_compose_file();
     this.program = new Command();
     this.libUtils = new LibUtils();
@@ -518,6 +516,8 @@ class D2ECli {
     } else if (fs.existsSync(zxBin)) {
       zx_cmd = process.platform === "win32" ? `${zxBin}.cmd` : zxBin;
       return zx_cmd;
+    } else if ((globalThis as any).Bun) {
+      return "bunx zx";
     } else {
       console.error("Error: zx not found in node_modules");
       process.exit(1);
