@@ -89,6 +89,9 @@ def data_characterization_plugin(options: DCOptionsType):
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
 
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        dbdao.clear_pg_cache()
+
     if dc_schema:
         execute_achilles_wo = execute_achilles.with_options(
             on_failure=[
