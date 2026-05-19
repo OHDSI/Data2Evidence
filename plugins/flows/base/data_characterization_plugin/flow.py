@@ -207,7 +207,15 @@ def execute_sql_script(sql_script: str, dbdao):
             try:
                 for statement in sql_script.strip().split(";"):
                     if statement.strip():
-                        conn.execute(text(statement))
+                        try:
+                            conn.execute(text(statement))
+                        except Exception as stmt_e:
+                            if (
+                                dbdao.dialect == SupportedDatabaseDialects.HANA
+                                and "index already exists" in str(stmt_e).lower()
+                            ):
+                                continue
+                            raise
             except Exception as e:
                 raise
             else:
