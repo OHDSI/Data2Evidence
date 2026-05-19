@@ -109,5 +109,7 @@ WORKDIR /var/lib/ohdsi/webapi
 # Expose both WebAPI and trex ports
 EXPOSE 8080 33001 5432 33000 9876 5433 9443
 
-# Run WebAPI directly - trexas will be started internally by the trexsql plugin
-CMD ["sh", "-c", "exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dloader.path=/opt/webapi/plugins --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]
+# Run WebAPI directly - trexas will be started internally by the trexsql plugin.
+# Materialise the TLS cert/key from env into /usr/src/cert/ before launch so the
+# trexsql orchestrator's tls_cert_path / tls_key_path resolve at server-build time.
+CMD ["sh", "-c", "mkdir -p /usr/src/cert && printf '%s' \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && printf '%s' \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dloader.path=/opt/webapi/plugins --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]
