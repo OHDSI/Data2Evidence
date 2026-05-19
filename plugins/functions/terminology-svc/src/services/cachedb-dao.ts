@@ -96,27 +96,37 @@ export class CachedbDAO {
   // stays consistent between the result list and the facet counts.
   // ===========================================================================
 
-  // Per-concept synonym signals: best exact-match boost across this concept's
-  // synonym rows + best BM25 across those rows. Used to "compensate" recall when
-  // a concept's canonical concept_name doesn't match but one of its alternate
-  // names does. Three positional params expected: searchText (exact),
-  // searchText (starts-with), searchText (BM25).
-  private getSynonymScoresCTE = (): string => `
-    synonym_scores as (
-      select
-        cs.concept_id,
+  // Per-concept synonym signals. Used to "compensate" recall when a concept's
+  // canonical concept_name doesn't match but one of its alternate names does.
+  //
+  // Two flavors via `includeExactScore`:
+  //   true  -> emits syn_exact_score AND syn_bm25
+  //   false -> emits only syn_bm25 
+  
+  private getSynonymScoresCTE = (includeExactScore: boolean): string => {
+    const exactScoreColumn = includeExactScore
+      ? `
         MAX(CASE
           WHEN LOWER(cs.concept_synonym_name) = LOWER(?) THEN 600
           WHEN LOWER(cs.concept_synonym_name) LIKE LOWER(?) || '%' THEN 500
           ELSE 0
-        END) as syn_exact_score,
+        END) as syn_exact_score,`
+      : "";
+    const havingClause = includeExactScore
+      ? `having syn_exact_score > 0 OR syn_bm25 is not null`
+      : `having syn_bm25 is not null`;
+    return `
+    synonym_scores as (
+      select
+        cs.concept_id,${exactScoreColumn}
         MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
       from
         ${this.vocabSchemaName}.concept_synonym cs
       group by cs.concept_id
-      having syn_exact_score > 0 OR syn_bm25 is not null
+      ${havingClause}
     )
   `;
+  };
 
   private getBestBm25Score = (
     conceptBm25Expression: string,
@@ -417,13 +427,7 @@ export class CachedbDAO {
       // across both tables before hybrid normalization.
       return [
         `
-      with synonym_scores as (
-        select cs.concept_id,
-          MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
-        from ${this.vocabSchemaName}.concept_synonym cs
-        group by cs.concept_id
-        having syn_bm25 is not null
-      ),
+      with ${this.getSynonymScoresCTE(false)},
       sem_fts_scores as (
         select
           ${columnsToSelect},
@@ -460,13 +464,7 @@ export class CachedbDAO {
       // referenced in WHERE (DuckDB allows this) to avoid a second match_bm25.
       return [
         `
-      with synonym_scores as (
-        select cs.concept_id,
-          MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
-        from ${this.vocabSchemaName}.concept_synonym cs
-        group by cs.concept_id
-        having syn_bm25 is not null
-      ),
+      with ${this.getSynonymScoresCTE(false)},
       fts as (
         select
           ${columnsToSelect},
@@ -593,7 +591,7 @@ export class CachedbDAO {
       //                      concept/synonym BM25 into fts_score before normalization
       //   search_scores   -> final fts/embedding combination per concept
       //   (final select) -> sums boost + effective BM25, keeps any-signal rows
-      const synonymCte = this.getSynonymScoresCTE();
+      const synonymCte = this.getSynonymScoresCTE(true);
 
       const conceptWithScores = `
         with ${synonymCte},
