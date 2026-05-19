@@ -59,9 +59,10 @@ class D2ECli {
 
   constructor() {
     this.script_full_path = path.resolve(__dirname, "..");
-    this.node_modules_path = this.initialise_node_modules_path();
     if ((globalThis as any).Bun) {
       this.node_modules_path = process.cwd();
+    } else {
+      this.node_modules_path = this.initialise_node_modules_path();
     }
     this.extract_compose_file();
     this.program = new Command();
