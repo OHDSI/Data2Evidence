@@ -433,6 +433,7 @@ export default {
       if (this.chartData?.traces) {
         const clearedSelectedPoints = this.chartData.traces.map(() => null)
         this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
+        this.applyXAxisColoring()
       }
 
       this.reactWithCurrentMode(targetElement, { resetAxes })
@@ -512,6 +513,49 @@ export default {
       const { traces: tracesForPlotly, layout: finalLayout } = this.applyChartType(this.chartData.traces, layout)
       Plotly.react(targetElement, tracesForPlotly, finalLayout, this.config)
     },
+    applyXAxisColoring() {
+      // Apply x-axis category coloring if a color axis is selected.
+      // Called after every dataToTraces() invocation so selection/deselection
+      // does not wipe the per-bar marker colors set by XAxisColorButton.
+      if (this.colorAxisIndex != null && this.chartData?.traces) {
+        const colorValues = Object.values(Constants.ChartColorway)
+        const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+        // Resolve raw allAxes slot index to position within filtered xAxes/values[]
+        const allAxesForColor = this.getAllAxes
+        const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
+        const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
+        if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
+          // Collect unique x-axis values across all traces in stable order
+          const uniqueVals: string[] = []
+          const seen = new Set<string>()
+          this.chartData.traces.forEach(trace => {
+            trace.customdata?.forEach(cd => {
+              const val = String(cd.values?.[valuesIndex] ?? '')
+              if (val && !seen.has(val)) {
+                seen.add(val)
+                uniqueVals.push(val)
+              }
+            })
+          })
+          // Map each unique value to a ChartColorway color (cycling)
+          const valColorMap: Record<string, string> = {}
+          uniqueVals.forEach((val, i) => {
+            valColorMap[val] = colorValues[i % colorValues.length]
+          })
+          // Assign per-bar marker colors on each trace
+          this.chartData.traces.forEach(trace => {
+            const colors =
+              trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
+            trace.marker = { ...trace.marker, color: colors }
+          })
+          // Build color legend for the legend component
+          this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
+        }
+      } else {
+        // Clear color-by state when no color axis is selected
+        delete this.chartData.colorLegend
+      }
+    },
     renderChart() {
       if (this.chartData && Object.keys(this.chartData).length !== 0) {
         const data = JSON.parse(JSON.stringify(this.chartData))
@@ -537,45 +581,7 @@ export default {
 
         this.chartData = this.dataToTraces(data)
 
-        // Apply x-axis category coloring if a color axis is selected
-        if (this.colorAxisIndex != null && this.chartData.traces) {
-          const colorValues = Object.values(Constants.ChartColorway)
-          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
-          // Resolve raw allAxes slot index to position within filtered xAxes/values[]
-          const allAxesForColor = this.getAllAxes
-          const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
-          const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
-          if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
-            // Collect unique x-axis values across all traces in stable order
-            const uniqueVals: string[] = []
-            const seen = new Set<string>()
-            this.chartData.traces.forEach(trace => {
-              trace.customdata?.forEach(cd => {
-                const val = String(cd.values?.[valuesIndex] ?? '')
-                if (val && !seen.has(val)) {
-                  seen.add(val)
-                  uniqueVals.push(val)
-                }
-              })
-            })
-            // Map each unique value to a ChartColorway color (cycling)
-            const valColorMap: Record<string, string> = {}
-            uniqueVals.forEach((val, i) => {
-              valColorMap[val] = colorValues[i % colorValues.length]
-            })
-            // Assign per-bar marker colors on each trace
-            this.chartData.traces.forEach(trace => {
-              const colors =
-                trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
-              trace.marker = { ...trace.marker, color: colors }
-            })
-            // Build color legend for the legend component
-            this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
-          }
-        } else {
-          // Clear color-by state when no color axis is selected
-          delete this.chartData.colorLegend
-        }
+        this.applyXAxisColoring()
 
         this.reactWithCurrentMode()
 
@@ -655,6 +661,8 @@ export default {
         // active selection visual, and reactWithCurrentMode clones the traces
         // before calling Plotly.react, which Plotly treats as a data swap and
         // tears down the in-flight selection highlight.
+        // applyXAxisColoring() has already run on the canonical traces during
+        // the last renderChart() call, so per-bar colors are already in place.
         this.chartData.traces.forEach((trace, i) => {
           trace.selectedpoints = eventData.points
             .filter(p => p.curveNumber === i && p.data?.type === 'bar')
