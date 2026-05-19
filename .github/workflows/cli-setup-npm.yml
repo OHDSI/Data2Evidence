@@ -67,6 +67,70 @@ jobs:
         with:
           ref: ${{ env.GIT_BRANCH_NAME }}
           repository: ${{ env.GIT_REPO_FULL_NAME }}
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: Update version
+        run: |
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            RELEASE_VERSION=${{ github.event.inputs.tag }}
+            if [[ "${{ github.event.inputs.environment }}" == 'npm' ]]; then
+              # Unscoped name for npmjs.org
+              jq --arg v $RELEASE_VERSION '.version=$v | .name="d2e" | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
+            else
+              # Keep scoped name for GitHub Packages
+              jq --arg v $RELEASE_VERSION '.version=$v | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
+            fi
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v | del(.optionalDependencies)' package.json > tmppkg; mv tmppkg package.json
+          fi
+      - name: bun install
+        run: bun install
+      - name: Build executables
+        run: |
+          bun build --compile ./scripts/cli.ts --outfile ./${{ matrix.filename }} --target ${{ matrix.target }}
+      - name: Prepare
+        run: |
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
+            echo "PRERELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=${{ github.event.inputs.tag }}
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=data2evidence-cli-${TAG}
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            GITHUB_RELEASE=v${{ github.event.inputs.tag }}
+            echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          else
+            echo "PRERELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            TAG=latest
+            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            ASSET_NAME=data2evidence-cli
+            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
+          fi
+      - name: Push platforms
+        uses: svenstaro/upload-release-action@v2
+        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ matrix.filename }}
+          tag: ${{ env.GITHUB_RELEASE }}
+          target_commit: ${{ github.ref_name }}
+          prerelease: ${{ env.PRERELEASE }}
+          overwrite: ${{ env.OVERWRITE }}
+          asset_name: ${{ env.ASSET_NAME }}-${{ matrix.filename }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment: ${{github.event_name == 'workflow_dispatch' && github.event.inputs.environment || 'github'}}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.GIT_BRANCH_NAME }}
+          repository: ${{ env.GIT_REPO_FULL_NAME }}
       - name: Use Node.js
         uses: actions/setup-node@v4
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.environment == 'github'
@@ -80,11 +144,6 @@ jobs:
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
-      
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.2.23
       - name: Update version
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
@@ -122,43 +181,3 @@ jobs:
           package-type: "npm"
           min-versions-to-keep: 3
           delete-only-pre-release-versions: "true"
-      - name: bun install
-        run: bun install
-      - name: Build executables
-        run: |
-          bun build --compile ./scripts/cli.ts --outfile ./${{ matrix.filename }} --target ${{ matrix.target }}
-      - name: Pack
-        run: |
-          NPM_FILENAME=$(npm pack | tail -n 1)
-          echo "NPM_FILENAME=$NPM_FILENAME" >> $GITHUB_ENV
-      - name: Prepare
-        run: |
-          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
-            echo "PRERELEASE=${{ github.event.inputs.prerelease }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            echo "OVERWRITE=${{ github.event.inputs.overwrite }}" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            TAG=${{ github.event.inputs.tag }}
-            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            ASSET_NAME=data2evidence-cli-${TAG}
-            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            GITHUB_RELEASE=v${{ github.event.inputs.tag }}
-            echo "GITHUB_RELEASE=$GITHUB_RELEASE" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-          else
-            echo "PRERELEASE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            echo "OVERWRITE=true" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            TAG=latest
-            echo "TAG=$TAG" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            ASSET_NAME=data2evidence-cli
-            echo "ASSET_NAME=$ASSET_NAME" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-            echo "GITHUB_RELEASE=latest" | tee -a $GITHUB_ENV | tee -a $GITHUB_STEP_SUMMARY
-          fi
-      - name: Push platforms
-        uses: svenstaro/upload-release-action@v2
-        if: github.ref_name == 'develop' || github.event_name == 'workflow_dispatch'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ${{ matrix.filename }}
-          tag: ${{ env.GITHUB_RELEASE }}
-          target_commit: ${{ github.ref_name }}
-          prerelease: ${{ env.PRERELEASE }}
-          overwrite: ${{ env.OVERWRITE }}
-          asset_name: ${{ env.ASSET_NAME }}-${{ matrix.filename }}      
