@@ -77,7 +77,9 @@ def data_characterization_plugin(options: DCOptionsType):
     )
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
-        achilles_params.schemaName = f"{options.databaseCode}.{options.schemaName}"
+        # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
+        catalog = options.cacheId or options.databaseCode
+        achilles_params.schemaName = f"{catalog}.{options.schemaName}"
         achilles_params.vocabSchemaName = achilles_params.schemaName
 
     dc_schema = create_results_schema(
@@ -263,6 +265,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 verboseMode=achilles_params.verboseMode,
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
+                cacheId=achilles_params.cacheId or "",
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder

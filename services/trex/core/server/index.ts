@@ -38,6 +38,39 @@ export async function initTrex() {
     await ftsConn.execute("LOAD fts", []);
     logger.log(`Loaded FTS extension`);
 
+    // Start the in-process FHIR HTTP server (from @trex/fhir extension).
+    // The trex runtime auto-loads fhir.trex at boot, which registers
+    // trex_fhir_start/_stop/_status/_version SQL functions. Calling
+    // trex_fhir_start spins up an Axum HTTP server in the engine process
+    // that serves FHIR R4 traffic, reachable here at FHIR__HOST:FHIR__PORT.
+    //
+    // The extension's `db_name` argument names the DuckDB catalog where
+    // FHIR schemas/tables are created — we ATTACH a persistent file
+    // alongside the cache dbs (./data/cache/FHIR.db) AS `FHIR` so
+    // datasets survive restarts.
+    try {
+      const fhirHost = Deno.env.get("FHIR__HOST") || "0.0.0.0";
+      const fhirPort = parseInt(Deno.env.get("FHIR__PORT") || "8094", 10);
+      const fhirDbName = Deno.env.get("FHIR__DB_NAME") || "FHIR";
+      const fhirDbPath = Deno.env.get("FHIR__DB_PATH") || `./data/cache/${fhirDbName}.db`;
+      const fhirConn = new Trex.TrexDB("memory");
+      await fhirConn.execute(
+        `ATTACH IF NOT EXISTS '${fhirDbPath}' AS ${fhirDbName}`,
+        [],
+      );
+      const versionRows = await fhirConn.execute("SELECT trex_fhir_version() AS v", []);
+      const fhirVersion = versionRows[0]?.v ?? "unknown";
+      const startRows = await fhirConn.execute(
+        `SELECT trex_fhir_start('${fhirHost}', ${fhirPort}, '${fhirDbName}', '${fhirDbPath}') AS msg`,
+        [],
+      );
+      logger.log(
+        `Started FHIR server (${fhirVersion}) at ${fhirHost}:${fhirPort} (db=${fhirDbName} @ ${fhirDbPath}) — ${startRows[0]?.msg}`,
+      );
+    } catch (e) {
+      logger.error(`Failed to start FHIR server: ${(e as Error).message}`);
+    }
+
     // Attach the built-in cdw_config_svc validation schema so cdw-svc
     // queries against datasetId="DEFAULT" can resolve `cdw_config_svc`.
     // The old runtime did this lazily inside TrexDB's constructor; with

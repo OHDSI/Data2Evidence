@@ -172,4 +172,7 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 ENV INSTALL_SQLALCHEMY_HANA=true
 
+# DataQualityDashboard writes errorReportSql.txt to CWD (/app) at runtime.
+RUN chown docker:docker /app
+
 USER docker
