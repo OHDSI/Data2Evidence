@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
-  await expect(page.getByText('–25 of 444')).toBeVisible()
+  await expect(page.getByText('-25 of 444')).toBeVisible()
   await expect(page).toHaveScreenshot()
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
