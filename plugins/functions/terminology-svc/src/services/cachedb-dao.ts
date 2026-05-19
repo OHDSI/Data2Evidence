@@ -426,6 +426,9 @@ export class CachedbDAO {
         [],
       ];
     } else {
+      // Escape SQL LIKE special characters so user-supplied % and _ are treated literally
+      const escapedSearchText = searchText.replace(/[%_\\]/g, "\\$&");
+
       const conceptWithScores = `
         with concept_with_scores as (
           select
@@ -433,8 +436,8 @@ export class CachedbDAO {
             -- Exact match scoring (highest priority)
             CASE
               WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
-              WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' THEN 800
-              WHEN LOWER(concept_name) LIKE '%' || LOWER(?2) || '%' THEN 600 // Find any name where the search term appears anywhere inside it
+              WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' ESCAPE '\' THEN 800
+              WHEN LOWER(concept_name) LIKE '%' || LOWER(?2) || '%' ESCAPE '\' THEN 600
               ELSE 0
             END as exact_match_score,
             
@@ -481,7 +484,7 @@ export class CachedbDAO {
         // Combine all parameters for hybrid search
         queryParams = [
           searchText, // For exact match (equals)
-          searchText, // For exact match (starts with)
+          escapedSearchText, // For exact match (starts with / contains) LIKE - escaped
           searchText, // For match_bm25
           textEmbedding, // For embedding score
         ];
@@ -498,11 +501,10 @@ export class CachedbDAO {
               ${this.vocabSchemaName}.concept c
           )
         `;
-        // Combine all parameters for fts
-        //  search
+        // Combine all parameters for fts search
         queryParams = [
           searchText, // For exact match (equals)
-          searchText, // For exact match (starts with)
+          escapedSearchText, // For exact match (starts with / contains) LIKE - escaped
           searchText, // For match_bm25
         ];
       }
@@ -515,7 +517,7 @@ export class CachedbDAO {
           concept_with_scores c
         left join search_scores ss
           on ss.concept_id = c.concept_id
-        WHERE (COALESCE(ss.search_score, 0) + c.exact_match_score + c.standard_boost) > 0
+        WHERE (ss.search_score IS NOT NULL OR c.exact_match_score > 0)
         ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
         order by score desc
       `;
