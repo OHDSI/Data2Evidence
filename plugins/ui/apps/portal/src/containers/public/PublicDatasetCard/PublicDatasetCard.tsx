@@ -5,6 +5,7 @@ import { Card, CalendarIcon, DatabaseIcon, DocPlayIcon, PadlockEmptyIcon, UsersI
 import { HighlightText } from "../../../components";
 import { Study } from "../../../types";
 import { DatasetAttribute } from "../../../constant";
+import { createTooltipFormatter } from "../../../components/Charts/util";
 import { useActiveDataset, useTranslation } from "../../../contexts";
 import { formatNumber } from "../../../utils";
 import "./PublicDatasetCard.scss";
@@ -40,7 +41,7 @@ export const PublicDatasetCard: FC<PublicDatasetCardProps> = ({ dataset, path, h
 
   const getAttributeValue = useCallback(
     (id: string) => dataset.attributes?.find((att) => att.attributeId === id)?.value,
-    [dataset.attributes]
+    [dataset.attributes],
   );
 
   const patientCount = getAttributeValue(DatasetAttribute.PATIENT_COUNT);
@@ -55,7 +56,7 @@ export const PublicDatasetCard: FC<PublicDatasetCardProps> = ({ dataset, path, h
       return {
         tooltip: {
           trigger: "item",
-          formatter: "{a} <br/>{b}: {c} ({d}%)",
+          formatter: createTooltipFormatter("{a} <br/>{b}: {c} ({d}%)"),
         },
         series: [
           {
@@ -79,7 +80,7 @@ export const PublicDatasetCard: FC<PublicDatasetCardProps> = ({ dataset, path, h
         ],
       };
     },
-    [getText, i18nKeys]
+    [getText, i18nKeys],
   );
 
   const entityCounts = getAttributeValue(DatasetAttribute.ENTITY_COUNT_DISTRIBUTION);
@@ -123,7 +124,7 @@ export const PublicDatasetCard: FC<PublicDatasetCardProps> = ({ dataset, path, h
         <div className="public-dataset-card__attributes">
           <div className="public-dataset-card__attribute">
             <UsersIcon />
-            {getText(i18nKeys.PUBLIC_DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || '0'}
+            {getText(i18nKeys.PUBLIC_DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || "0"}
           </div>
           <div className="public-dataset-card__attribute">
             <CalendarIcon />
