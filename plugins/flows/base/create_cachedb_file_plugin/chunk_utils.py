@@ -17,6 +17,7 @@ def determine_chunk_size(dialect: str, row_count: int | None, chunk_size: int | 
 
 
 def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_col: str, chunk_size: int, row_count: int | None, logger=None):
+    logger.info(f"Planning chunks for table '{table}' using column '{chunk_col}' with target chunk size {chunk_size} rows.")
     min_val = None
     max_val = None
 
@@ -31,6 +32,7 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
             col_quote = '"'
         with read_conn.engine.connect() as connection:
             query = sql.text(f'SELECT MIN({col_quote}{chunk_col}{col_quote}), MAX({col_quote}{chunk_col}{col_quote}) FROM {table_path}')
+            logger.info(f"Executing query to get min/max values: {query}")
             result = connection.execute(query).fetchone()
             if result:
                 min_val, max_val = result
@@ -40,7 +42,7 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
         min_val = None
 
     if min_val is None or max_val is None:
-        logger.info(f"Chunk column '{chunk_col}' has no valid values. Cannot chunk.")
+        logger.error(f"Chunk column '{chunk_col}' has no valid values. Cannot chunk.")
         return None
 
     # Try to convert to int; if fails (e.g., for dates), don't chunk
@@ -48,7 +50,7 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
         min_val = int(min_val)
         max_val = int(max_val)
     except (ValueError, TypeError):
-        logger.info(f"Chunk column '{chunk_col}' is not numeric. Cannot chunk.")
+        logger.error(f"Chunk column '{chunk_col}' is not numeric. Cannot chunk.")
         return None
 
     chunks = []
@@ -65,9 +67,11 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
             return None
         else:
             logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
+            logger.info(f"Chunks: {chunks}")
             return chunks
     else:
          logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
+         logger.info(f"Chunks: {chunks}")
          return chunks
 
 
