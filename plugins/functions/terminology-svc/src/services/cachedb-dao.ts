@@ -14,11 +14,14 @@ import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.t
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
-  hasSearchTerm: boolean
+  hasSearchTerm: boolean,
 ): string {
-  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  const defaultOrder = hasSearchTerm
+    ? "ORDER BY score DESC"
+    : "ORDER BY concept_name ASC";
   if (!sortBy) return defaultOrder;
-  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy))
+    return defaultOrder;
   if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
 
   const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
@@ -64,7 +67,11 @@ export class CachedbDAO {
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
-      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+      const orderByClause = buildOrderByClause(
+        sortBy,
+        sortOrder,
+        searchText !== "",
+      );
 
       const conceptsSql = `
       ${duckdbFtsBaseQuery}
@@ -75,7 +82,11 @@ export class CachedbDAO {
       `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [...duckdbFtsBaseQueryParams, rowsPerPage, offset];
+      const conceptsSqlParams = [
+        ...duckdbFtsBaseQueryParams,
+        rowsPerPage,
+        offset,
+      ];
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -105,8 +116,11 @@ export class CachedbDAO {
         this.semanticRatio > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
-      const [baseQuery, baseParams] =
-        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+      const [baseQuery, baseParams] = this.getOptimizedSearchQuery(
+        searchText,
+        textEmbedding,
+        filters,
+      );
 
       const sql = `${baseQuery} select concept_id as id from fts`;
       const result = await client.query(sql, baseParams);
@@ -420,6 +434,7 @@ export class CachedbDAO {
             CASE
               WHEN LOWER(concept_name) = LOWER(?1) THEN 1000
               WHEN LOWER(concept_name) LIKE LOWER(?2) || '%' THEN 800
+              WHEN LOWER(concept_name) LIKE '%' || LOWER(?2) || '%' THEN 600 // Find any name where the search term appears anywhere inside it
               ELSE 0
             END as exact_match_score,
             
@@ -495,12 +510,12 @@ export class CachedbDAO {
       const finalScores = `
         select
           *,
-          (ss.search_score + c.exact_match_score + c.standard_boost) as score
+          (COALESCE(ss.search_score, 0) + c.exact_match_score + c.standard_boost) as score
         from
           concept_with_scores c
-        join search_scores ss
+        left join search_scores ss
           on ss.concept_id = c.concept_id
-        WHERE score > 0
+        WHERE (COALESCE(ss.search_score, 0) + c.exact_match_score + c.standard_boost) > 0
         ${filterWhereClause ? ` AND ${filterWhereClause.substring(7)}` : ""}
         order by score desc
       `;
