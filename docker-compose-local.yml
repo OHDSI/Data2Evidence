@@ -21,8 +21,12 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core # For debugging trex with local code
-      - ./services/trex/deno.json:/usr/src/deno.json
+      # Uncomment for local trex hot-reload. Leave commented for CI: index.eszip
+      # is gitignored and only exists inside the built image, so mounting the
+      # host source over /usr/src/core hides the bundled eszip and trexas can't
+      # find main_service_path -> "Failed to build server".
+      # - ./services/trex/core:/usr/src/core
+      # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: ${RUST_LOG:-info}
