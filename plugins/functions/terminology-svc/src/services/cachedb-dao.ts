@@ -33,13 +33,23 @@ export class CachedbDAO {
   private readonly resultsSchemaName: string;
   private readonly fts_concept_identifier: string;
   private readonly fts_concept_synonym_identifier: string;
-  // Calibration constants for hybrid score. bm25SaturationK controls how fast
-  // BM25 saturates toward 1 (smaller = faster). hybridBoostScale lifts the
-  // calibrated [0,1] hybrid score onto the booster scale. Kept below 500 so
-  // prefix/exact name (800/1000) and exact synonym (600/500) always outrank
-  // pure semantic hits, while still beating standard_boost (100) for the
-  // token-disjoint recovery case ("high blood sugar" -> "Hyperglycemia").
-  private readonly bm25SaturationK = 5;
+  // Calibration constants for the hybrid score.
+  //
+  // bm25SaturationK shapes the normalization curve fts_score / (fts_score + k).
+  // A smaller k makes BM25 saturate toward 1 faster, so even a moderately good
+  // FTS hit already contributes near-maximum signal.
+  //
+  // hybridBoostScale multiplies the normalized [0,1] hybrid score so it can be
+  // summed alongside the discrete boosts (exact_match, syn_exact, standard).
+  // It is kept below 500 so the ranking invariants hold:
+  //   - exact concept_name (1000) and prefix match (800) always outrank pure
+  //     semantic hits
+  //   - exact synonym (600) and synonym prefix (500) likewise outrank them
+  //   - but a hybrid hit still beats standard_boost (100) on its own, which
+  //     is what recovers token-disjoint matches such as
+  //     "high blood sugar" -> "Hyperglycemia"
+  // TODO: these constants could be tuned based on distributional analysis of the actual BM25 and embedding scores
+  private readonly bm25SaturationK = 5; // Means BM25 scores around 5 contribute a strong signal of ~0.5 after normalization
   private readonly hybridBoostScale = 400;
 
   constructor(
@@ -57,6 +67,34 @@ export class CachedbDAO {
     this.fts_concept_identifier = `fts_${vocabSchemaName}_concept`;
     this.fts_concept_synonym_identifier = `fts_${vocabSchemaName}_concept_synonym`;
   }
+
+  // ===========================================================================
+  // concept_synonym mechanism
+  //
+  // A concept has one canonical concept_name plus zero-to-many concept_synonym
+  // rows holding alternate labels, abbreviations, and translations. Searching
+  // only against concept_name silently drops recall whenever a user types one
+  // of those alternates, so every search path here folds synonym evidence into
+  // the score alongside the concept_name evidence.
+  //
+  // The mechanism rests on two per-concept signals, both produced by the
+  // synonym_scores CTE below by max-aggregating across all synonym rows that
+  // belong to a concept:
+  //
+  //   syn_exact_score - discrete exact/prefix boost (600 / 500), scaled below
+  //                     the concept_name boost (1000 / 800) so that a
+  //                     canonical-name match always outranks a synonym match
+  //                     of the same string.
+  //   syn_bm25        - best BM25 score from the synonym FTS index, folded
+  //                     into the concept-level fts_score via
+  //                     GREATEST(concept_bm25, syn_bm25). To the downstream
+  //                     hybrid calibration a synonym-only FTS hit therefore
+  //                     looks identical to a concept_name FTS hit.
+  //
+  // Both the optimized search path (getOptimizedSearchQuery) and the facet
+  // base query (getDuckdbFtsBaseQuery) build on this CTE, so synonym recall
+  // stays consistent between the result list and the facet counts.
+  // ===========================================================================
 
   // Per-concept synonym signals: best exact-match boost across this concept's
   // synonym rows + best BM25 across those rows. Used to "compensate" recall when
@@ -449,15 +487,78 @@ export class CachedbDAO {
   };
 
   /**
-   * Optimized search query method with multi-factor scoring - used for concept searches
+   * Build the hybrid search SQL used by the /concept search endpoint.
    *
-   * Scoring system:
-   * 1. Exact match (1000 points): When concept_name exactly matches the search term
-   * 2. Starts with match (800 points): When concept_name starts with the search term
-   * 3. Standard concept (100 points): When the concept is a standard concept (standard_concept = 'S')
-   * 4. BM25 score: Base relevance score from full-text search
+   * The per-concept score is an additive sum of one continuous "relevance"
+   * term and three discrete "label-quality" boosts. Rows are kept only when
+   * at least one of these signals fires, and ordered by total score desc.
    *
-   * The final score is the sum of all applicable scores, and results are ordered by this score.
+   *   score = hybrid_part
+   *         + exact_match_score   -- on concept_name
+   *         + syn_exact_score     -- on concept_synonym (max over rows)
+   *         + standard_boost      -- on standard_concept = 'S'
+   *
+   * Discrete boosts (chosen so canonical labels dominate alternates):
+   *
+   *   exact_match_score = 1000  if LOWER(concept_name) = LOWER(query)
+   *                       800   if concept_name starts with query
+   *                       0     otherwise
+   *
+   *   syn_exact_score   = max over this concept's synonym rows of
+   *                       600   if LOWER(syn) = LOWER(query)
+   *                       500   if syn starts with query
+   *                       0     otherwise
+   *
+   *   standard_boost    = 100   if standard_concept = 'S', else 0
+   *
+   * Relevance term — two flavors depending on semanticRatio:
+   *
+   *   fts_score = GREATEST(concept_bm25, syn_bm25)
+   *               -- best BM25 across the concept_name FTS index and the
+   *               -- synonym FTS index, so a synonym-only FTS hit ranks
+   *               -- identically to a concept_name FTS hit
+   *
+   *   semanticRatio = 0  (FTS-only):
+   *     hybrid_part = COALESCE(fts_score, 0)
+   *
+   *   semanticRatio > 0 (hybrid):
+   *     hybrid_part = hybridBoostScale * (
+   *                     semanticRatio       * sem_norm
+   *                   + (1 - semanticRatio) * fts_norm
+   *                   )
+   *
+   *     Score normalization — the two relevance signals start on totally
+   *     different scales, so each is mapped onto [0, 1] before they are
+   *     mixed by the convex combination semanticRatio / (1 - semanticRatio):
+   *
+   *       Semantic: embedding_cos_sim lives in [-1, 1].
+   *                 sem_norm = MAX(embedding_cos_sim, 0)
+   *                 -- clamping negatives to 0 means a vector pointing
+   *                    away from the query contributes nothing rather
+   *                    than subtracting from the score.
+   *                 sem_norm in [0, 1].
+   *
+   *       FTS:      fts_score lives in [0, +inf), unbounded above.
+   *                 fts_norm = fts_score / (fts_score + bm25SaturationK)
+   *                 -- a Michaelis-Menten-style saturation curve, monotone
+   *                    in fts_score, with fts_norm = 0.5 at fts_score = k.
+   *                    Smaller k means BM25 saturates faster (a moderate
+   *                    hit already contributes near-1).
+   *                 fts_norm in [0, 1).
+   *
+   *     The bracket is therefore in [0, 1], and hybrid_part is bounded by
+   *     hybridBoostScale — the cap that the ranking invariants below rely on.
+   *
+   * Ranking invariants enforced by the constants
+   * (hybridBoostScale = 400, bm25SaturationK = 5):
+   *
+   *   - concept_name exact (1000) / prefix (800) always outrank any pure
+   *     hybrid hit, which is bounded by ~400.
+   *   - synonym exact (600) / prefix (500) outrank pure hybrid hits as
+   *     well, but lose to a concept_name match for the same string.
+   *   - pure hybrid hits still beat standard_boost (100) alone, which is
+   *     what lets token-disjoint queries surface via embedding similarity
+   *     (e.g. "high blood sugar" -> "Hyperglycemia").
    */
   private getOptimizedSearchQuery = (
     searchText: string,
