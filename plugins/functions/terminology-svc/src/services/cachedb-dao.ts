@@ -112,9 +112,11 @@ export class CachedbDAO {
           ELSE 0
         END) as syn_exact_score,`
       : "";
-    const havingClause = includeExactScore
-      ? `having syn_exact_score > 0 OR syn_bm25 is not null`
-      : `having syn_bm25 is not null`;
+    const exactWhereDisjuncts = includeExactScore
+      ? `
+        OR LOWER(cs.concept_synonym_name) = LOWER(?)
+        OR LOWER(cs.concept_synonym_name) LIKE LOWER(?) || '%'`
+      : "";
     return `
     synonym_scores as (
       select
@@ -122,8 +124,9 @@ export class CachedbDAO {
         MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?)) as syn_bm25
       from
         ${this.vocabSchemaName}.concept_synonym cs
+      where
+        ${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, ?) IS NOT NULL${exactWhereDisjuncts}
       group by cs.concept_id
-      ${havingClause}
     )
   `;
   };
