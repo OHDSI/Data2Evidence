@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/NumberUtils'
 import { onMounted, computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
@@ -526,7 +527,7 @@ onErrorCaptured((err, instance, info) => {
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Patient Count:</div>
-                  <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.patientCount }}</div>
+                  <div class="ui-light-text">{{ formatNumber(bookmarkDisplay.cohortDefinition.patientCount) }}</div>
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Created On:</div>
