@@ -113,18 +113,18 @@ def create_embeddings_cache(dbdao, schema_name, chunksize):
     logger.info("***************** Start embedding *****************")
     logger.info(f'Loading concept table from cache for schema {schema_name}')
 
-    total_row = dbdao.execute_sql(
-        f'SELECT COUNT(*) FROM {schema_name}.concept', fetch=True
-    )[0][0]
+    total_row = count_concept_rows(dbdao, schema_name)
 
     embedding_table = 'concept_name_embeddings'
     embedding_cols = {'concept_id': 'int', embedding_col_name: 'FLOAT[384]'}
+
+    select_sql = build_concept_select_sql(schema_name)
 
     # Stream the concept table via psycopg2 fetchmany
     def cache_batches():
         with dbdao._get_connection() as con:
             with con.cursor() as cur:
-                cur.execute(f'SELECT concept_id, concept_name FROM {schema_name}.concept')
+                cur.execute(select_sql)
                 while True:
                     rows = cur.fetchmany(chunksize)
                     if not rows:

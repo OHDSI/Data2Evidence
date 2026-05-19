@@ -67,6 +67,28 @@ def add_embedding_column(dbdao: DBDao, schema_name: str, embedding_col: str) -> 
     )
     dbdao.execute_sql(sql)
     
+def count_concept_rows(dbdao: DBDao, schema_name: str) -> int:
+    """
+    Return COUNT(*) of `{schema_name}.concept`, with the schema identifier
+    safely quoted via psycopg2.sql. `schema_name` may be dotted
+    (catalog.schema); each part is quoted separately.
+    """
+    sql = pg_sql.SQL("SELECT COUNT(*) FROM {schema}.{table}").format(
+        schema=pg_sql.Identifier(*schema_name.split(".")),
+        table=pg_sql.Identifier("concept"),
+    )
+    return dbdao.execute_sql(sql, fetch=True)[0][0]
+
+def build_concept_select_sql(schema_name: str) -> pg_sql.Composable:
+    """
+    Build a safely-quoted `SELECT concept_id, concept_name FROM {schema}.concept`
+    Composable for use with a psycopg2 cursor. `schema_name` may be dotted.
+    """
+    return pg_sql.SQL("SELECT concept_id, concept_name FROM {schema}.{table}").format(
+        schema=pg_sql.Identifier(*schema_name.split(".")),
+        table=pg_sql.Identifier("concept"),
+    )
+
 def drop_embedding_index(dbdao: DBDao, schema_name: str, index_col: str)-> None:
     """ 
     Drop the existing GTE index on the concept table if it exists.
