@@ -173,9 +173,6 @@ export class HanaHDBDao {
       this.semanticRatio > 0 &&
       searchText !== "" &&
       (!sortBy || sortBy === "score");
-    console.log(
-      `getConcepts: hybrid eligible? ${isHybridEligible} (semanticRatio=${this.semanticRatio}, searchText="${searchText}", sortBy=${sortBy}, databaseCode=${this.databaseCode}, HANA_HYBRID_MODE=${env.HANA_HYBRID_MODE})`,
-    );
 
     const client = await this.getHanaHDBConnection();
     try {
