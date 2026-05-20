@@ -564,7 +564,7 @@ class D2ECli {
   async getnoproxy(): Promise<void> {
     process.env.PORT = this.port;
     process.env.DOTENV_FILE = this.ENVFILE;
-    await runGetNoProxy(this.node_modules_path).catch(() => process.exit(1));
+    await runGetNoProxy(this.compose_dir).catch(() => process.exit(1));
   }
 
   async syncRoles(): Promise<{ ok: boolean }> {

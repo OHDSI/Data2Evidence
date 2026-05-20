@@ -72,7 +72,8 @@ for (const [filename, { fn, paramExpr, argvBlock: argvBlockKey }] of Object.entr
 }
 
 if (generatedPaths.length > 0) {
-  const tscBin = resolve(__dirname, "../node_modules/.bin/tsc");
+  const tscExt = process.platform === "win32" ? ".cmd" : "";
+  const tscBin = resolve(__dirname, `../node_modules/.bin/tsc${tscExt}`);
   execFileSync(tscBin, [
     "--module", "commonjs",
     "--esModuleInterop", "true",
