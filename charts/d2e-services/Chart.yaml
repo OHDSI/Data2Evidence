@@ -6,6 +6,5 @@ apiVersion: v2
 dependencies:
   - name: d2e-core
     version: 0.15.0
-    repository: "file://../charts/d2e-core"
 keywords:
   - deploy/k8s

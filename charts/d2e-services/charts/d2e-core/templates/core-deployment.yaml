@@ -162,7 +162,6 @@ spec:
                         "+trex": {},
                         "+usermgmt": {},
                         "+logto": {},
-                        "+public": {},
                         "+storage": {},
                         "+strategus": {},
                         "+fhir": {}
