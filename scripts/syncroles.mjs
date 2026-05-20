@@ -3,7 +3,8 @@ import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import https from "node:https";
 import readline from "node:readline";
-import fetch from "node-fetch";
+import { Agent } from "undici";
+
 
 // Helper functions
 function getCookie(setCookieHeaders, name) {

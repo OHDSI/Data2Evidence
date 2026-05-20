@@ -89,7 +89,7 @@ jobs:
         run: bun install
       - name: Build executables
         run: |
-          bun build --compile ./scripts/cli.ts --outfile ./${{ matrix.filename }} --target ${{ matrix.target }}
+          bun build --compile ./scripts/dist/cli.js --outfile ./${{ matrix.filename }} --target ${{ matrix.target }}
       - name: Prepare
         run: |
           if [[ ${{ github.event_name }} == 'workflow_dispatch' ]]; then
