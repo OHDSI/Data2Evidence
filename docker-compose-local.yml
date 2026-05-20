@@ -1,33 +1,66 @@
 services:
   trex:
-    command: npm run startdev
     build:
       context: ./services/trex
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.v2
+    networks:
+      alp:
+        aliases:
+          - ${PROJECT_NAME:-alp}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     ports:
       - 9229:9229
       - 25432:5432
       - 25433:5433
       - 33000:33000
     volumes:
-      - ${D2E_FUNCTIONS:-./functions}:/usr/src/plugins/d2ef
-      - ${D2E_FHIRFUNCTIONS:-./fhir_functions}:/usr/src/plugins/fhir
-      - ./plugins/chat_functions:/usr/src/plugins/chat
-      - ./ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
-      - ./ui/resources:/usr/src/local-resources # For local ui development only
-      # - ./services/trex/core:/usr/src/core # For debugging trex with local code
-      # - ./services/trex/deno.json:/usr/src/deno.json 
-      # - ./flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
+      - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
+      - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
+      - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
+      - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
+      # - ./plugins/chat_functions:/usr/src/plugins/chat
+      # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
+      # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
+      # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
+      # - ./services/trex/core:/usr/src/core
+      # - ./services/trex/deno.json:/usr/src/deno.json
+      # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
-      TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-notebook-plugin", "d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "trex-hana", "trex-pgwire", "d2e-fhir-server", "storage"]}
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
-      PLUGINS_DEV_PATH: "./plugins"
+      PLUGINS_DEV_PATH: "/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
+      SWARM_CONFIG: |-
+        {
+          "cluster_id": "d2e",
+          "nodes": {
+            "d2e": {
+              "gossip_addr": "0.0.0.0:4200",
+              "extensions": [
+                {
+                  "name": "trexas",
+                  "config": {
+                    "host": "0.0.0.0",
+                    "port": 33001,
+                    "main_service_path": "/usr/src/core/server",
+                    "event_worker_path": "/usr/src/core/event",
+                    "tls_port": 33000,
+                    "tls_cert_path": "/usr/src/cert/cert.pem",
+                    "tls_key_path": "/usr/src/cert/key.pem",
+                    "inspector": "inspect:0.0.0.0:9229"
+                  }
+                },
+                {
+                  "name": "pgwire",
+                  "config": { "host": "0.0.0.0", "port": 5433 }
+                }
+              ]
+            }
+          }
+        }
       WATCH: |-
         {
           "analytics-svc": false,

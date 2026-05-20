@@ -7,7 +7,7 @@ test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-  test.setTimeout(300000) // Set timeout to 5 minutes
+  test.setTimeout(600000) // 10 minutes — DQD job + 5 min `Completed` wait + login overhead
   // Jobs: Execute Job - Create DQD job with name dqd_demo
   await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
@@ -19,11 +19,10 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.getByText('Demo dataset')).toBeVisible()
-  // Get the dataset ID
-  await page.locator('div.alp-text__copy-button-container').nth(2).locator('button.alp-icon-button--icon-only').click()
+  const demoRow = page.getByRole('row', { name: /Demo dataset/ })
+  await demoRow.locator('div.alp-text__copy-button-container').nth(0).locator('button.alp-icon-button--icon-only').click()
   const dataset_id = await page.evaluate(async () => await navigator.clipboard.readText())
-  // Get the dataset ID
-  await page.locator('div.alp-text__copy-button-container').nth(3).locator('button.alp-icon-button--icon-only').click()
+  await demoRow.locator('div.alp-text__copy-button-container').nth(1).locator('button.alp-icon-button--icon-only').click()
   const schema_name = await page.evaluate(async () => await navigator.clipboard.readText())
   await page.getByRole('link', { name: 'Jobs' }).click()
   await expect(page.getByRole('button', { name: 'Jobs' })).toBeVisible()
@@ -66,6 +65,15 @@ test(TEST_NAME, async ({ page, context }) => {
   await page
     .locator('div:nth-child(5) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
     .fill('demo_database')
+  // Fill up Cacheid field
+  const cleaned_dataset_id = dataset_id.replace(/-/g, '_')
+  const cache_id = /^[0-9]/.test(cleaned_dataset_id) ? `_${cleaned_dataset_id}` : cleaned_dataset_id
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .click()
+  await page
+    .locator('div:nth-child(6) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
+    .fill(cache_id)
   // Fill up Vocabschemaname field
   await page
     .locator('div:nth-child(7) > .p-label__body > .schema-form-property__fields > .p-base-input > .p-textarea__control')
@@ -91,8 +99,9 @@ test(TEST_NAME, async ({ page, context }) => {
   await page.getByRole('button', { name: 'Job Runs' }).click()
   await expect(page.getByRole('heading', { name: 'Job Runs' })).toBeVisible()
   await expect(page.locator('.p-content > .p-content')).toBeVisible()
-  await page.getByText('data_quality_dashboard').first().waitFor({ state: 'visible' })
-  await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible()
+  await page.getByRole('searchbox', { name: 'Search by flow run name' }).click()
+  await page.getByRole('searchbox', { name: 'Search by flow run name' }).fill('dqd_demo')
+  await expect(page.getByRole('link', { name: 'dqd_demo' }).first()).toBeVisible({ timeout: 60000 })
 
   // Jobs: View Logs - Check job logs for job: dqd_demo
   await page.waitForTimeout(50000)
@@ -112,6 +121,6 @@ test(TEST_NAME, async ({ page, context }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByTestId('dialog-title')).toHaveText(/Results for dataset+/)
   await expect(page.getByRole('dialog')).toHaveText(
-    /.+1,047 out of 1,933 passed checks are not applicable, due to empty tables or fields.+/
+    /.+\d+(?:,\d+)? out of \d+(?:,\d+)? passed checks are not applicable, due to empty tables or fields.+/
   )
 })

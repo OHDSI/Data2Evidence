@@ -63,13 +63,17 @@ export class Plugins {
 
 	private static async initPluginsEnv(app: Hono) {
 		const plugin = await Plugins.get();
+		const failed: string[] = [];
 		for(const name of env.PLUGINS_INIT) {
-			try { 
+			try {
 				await plugin.addPluginPackage(app, name, env.PLUGINS_SEED_UPDATE || false)
 			} catch(e) {
-				logger.error(`${name} failed to install plugin`)
-				throw e
+				logger.error(`${name} failed to install plugin: ${e instanceof Error ? e.message : e}`)
+				failed.push(name)
 			}
+		}
+		if(failed.length > 0) {
+			logger.error(`plugin seed completed with failures: ${failed.join(", ")}`)
 		}
 	}
 
@@ -112,8 +116,29 @@ export class Plugins {
 			pkg = {name: _plugin.name, version: _plugin.version, trex: _plugin.payload}
 		} else {
 			const pm = new Trex.PluginManager(`${env.PLUGINS_PATH}`);
-			await pm.install(pkgurl);
-			pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_PATH}/@${env.GH_ORG}/${name}/package.json`));
+			const pkgJsonPath = `${env.PLUGINS_PATH}/@${env.GH_ORG}/${name}/package.json`;
+			const maxAttempts = 3;
+			let lastErr: unknown;
+			for(let attempt = 1; attempt <= maxAttempts; attempt++) {
+				try {
+					await pm.install(pkgurl);
+					await Deno.stat(pkgJsonPath);
+					lastErr = undefined;
+					break;
+				} catch(e) {
+					lastErr = e;
+					const msg = e instanceof Error ? e.message : String(e);
+					logger.error(`install attempt ${attempt}/${maxAttempts} failed for ${pkgurl}: ${msg}`);
+					if(attempt < maxAttempts) {
+						const backoffMs = 1000 * Math.pow(2, attempt - 1);
+						await new Promise(r => setTimeout(r, backoffMs));
+					}
+				}
+			}
+			if(lastErr !== undefined) {
+				throw new Error(`failed to install plugin ${pkgurl} after ${maxAttempts} attempts: ${lastErr instanceof Error ? lastErr.message : lastErr}`);
+			}
+			pkg = JSON.parse(await Deno.readTextFile(pkgJsonPath));
 		}
 		await this.addPlugin(app, `${env.PLUGINS_PATH}/@${env.GH_ORG}/${name}/`, pkg, name);
 	}
@@ -150,7 +175,6 @@ export class Plugins {
 
 	static async initPlugins(app: Hono) {
 		logger.log("Add plugins");
-		await Plugins.initPluginsEnv(app);
 		if(env.NODE_ENV === 'development') {
 			try {
 				await Plugins.initPluginsDev(app);
@@ -158,6 +182,7 @@ export class Plugins {
 				logger.error(e)
 			}
 		}
+		await Plugins.initPluginsEnv(app);
 	}
 }
 

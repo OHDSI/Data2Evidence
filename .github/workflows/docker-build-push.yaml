@@ -1,64 +1,96 @@
 name: d2e Docker Build
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   pull_request:
-    types:
-      - opened
-      - ready_for_review
-      - reopened
-      - synchronize
+    types: [opened, ready_for_review, reopened, synchronize]
   merge_group:
   push:
     branches:
       - develop
-
+      - "release/*"
   workflow_dispatch:
-    inputs:
-      GIT_REPO_FULL_NAME:
-        description: Select RepoName
-        required: false
-        type: choice
-        options:
-          - OHDSI/Data2Evidence
-      GIT_BRANCH_NAME:
-        default: develop
-        description: Enter BranchName / ReleaseTagName
-        required: true
-        type: string
-      tag:
-        description: Enter Tag name for docker image
-        required: true
-        type: string
 
 concurrency:
-  group: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }}-${{ github.event_name }}-docker-build-push
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
-  GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
-  GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
+  REG_URL: ghcr.io/ohdsi
+  DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
+  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
 
 jobs:
-  pick_runner:
+  setup:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     outputs:
       random_runner: ${{ steps.shuffle.outputs.random_runner }}
+      run_tag: ${{ steps.tag.outputs.run_tag }}
+      canonical_tag: ${{ steps.tag.outputs.canonical_tag }}
+      is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
+      is_release_push: ${{ steps.tag.outputs.is_release_push }}
+      is_publish_push: ${{ steps.tag.outputs.is_publish_push }}
+      is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
+      changes_src: ${{ steps.file_changes.outputs.src }}
+      changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
+      changes_plugins: ${{ steps.file_changes.outputs.plugins }}
+      changes_http_tests: ${{ steps.file_changes.outputs.http_tests }}
+      changes_ui: ${{ steps.file_changes.outputs.ui }}
+      changes_flow_package_json: ${{ steps.file_changes.outputs.flow_package_json }}
+      changes_e2e: ${{ steps.file_changes.outputs.e2e }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
 
-  check_file_changes:
-    environment: "github"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read   # Required to check out code
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( (contains(github.base_ref, 'release/') || github.event_name == 'pull_request') && !github.event.pull_request.draft ) # Should always run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    outputs:
-      changes: ${{ steps.file_changes.outputs.src }}
-      rkernel: ${{ steps.file_changes.outputs.rkernel }}
-      jenv: ${{ job.environment }}
-    steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - id: tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          IS_PR_OR_MG=false
+          IS_DEVELOP_PUSH=false
+          IS_RELEASE_PUSH=false
+          CANONICAL_TAG=""
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            RUN_TAG="pr-${{ github.event.pull_request.number }}-${SHORT_SHA}"
+            IS_PR_OR_MG=true
+          elif [[ "${{ github.event_name }}" == "merge_group" ]]; then
+            RUN_TAG="mg-${SHORT_SHA}"
+            IS_PR_OR_MG=true
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == "develop" ]]; then
+            RUN_TAG="develop-${SHORT_SHA}"
+            IS_DEVELOP_PUSH=true
+            CANONICAL_TAG="develop"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref_name }}" == release/* ]]; then
+            REL_SLUG="${GITHUB_REF_NAME//\//-}"
+            RUN_TAG="${REL_SLUG}-${SHORT_SHA}"
+            IS_RELEASE_PUSH=true
+            CANONICAL_TAG="${REL_SLUG}"
+          else
+            RUN_TAG="dispatch-${SHORT_SHA}"
+          fi
+          IS_PUBLISH_PUSH=false
+          if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
+            IS_PUBLISH_PUSH=true
+          fi
+          {
+            echo "run_tag=${RUN_TAG}"
+            echo "canonical_tag=${CANONICAL_TAG}"
+            echo "is_pr_or_mg=${IS_PR_OR_MG}"
+            echo "is_develop_push=${IS_DEVELOP_PUSH}"
+            echo "is_release_push=${IS_RELEASE_PUSH}"
+            echo "is_publish_push=${IS_PUBLISH_PUSH}"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "RUN_TAG=${RUN_TAG}"
+            echo "CANONICAL_TAG=${CANONICAL_TAG}"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: dorny/paths-filter@v3
         id: file_changes
@@ -66,58 +98,91 @@ jobs:
           initial-fetch-depth: 1
           filters: |
             src:
-              - "flows/**"
+              - "plugins/flows/**"
               - "services/**"
               - "package.json"
               - "docker-compose.yml"
+              - ".github/workflows/docker-build-push.yaml"
             rkernel:
-              - "./services/enterprise-gateway/CustomKernelManager/**"
-              - "./services/enterprise-gateway/kernels/**"
-              - "./services/enterprise-gateway/r-strategus-lib/**"
-              - "./flows/hades/renv.lock"
-              - "./flows/_shared_flow_utils/postgresql-42.3.1.jar"
+              - "services/enterprise-gateway/CustomKernelManager/**"
+              - "services/enterprise-gateway/kernels/**"
+              - "services/enterprise-gateway/r-strategus-lib/**"
+              - "plugins/flows/hades/renv.lock"
+              - "plugins/flows/_shared_flow_utils/postgresql-42.3.1.jar"
+              - ".github/workflows/docker-build-push.yaml"
+            plugins:
+              - "plugins/flows/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "plugins/ui/**"
+              - "plugins/functions/**"
+              - "plugins/fhir_functions/**"
+              - "services/trex/ext/**"
+              - ".github/workflows/docker-build-push.yaml"
+            http_tests:
+              - "plugins/functions/_shared/alp-libs/nodejs/**"
+              - "plugins/functions/analytics-svc/**"
+              - "plugins/functions/bookmark-svc/**"
+              - "plugins/functions/cdw-svc/**"
+              - "plugins/functions/mri-pa-config/**"
+              - "plugins/functions/mri-pg-config/**"
+              - "plugins/functions/query-gen-svc/**"
+              - "services/mri-db/**"
+              - "services/alp-logto/**"
+              - "services/alp-pg-management/**"
+              - "services/trex/**"
+              - "package.json"
+              - "docker-compose.yml"
+              - "scripts/**"
+              - "tests/backend_integration_tests/**"
+              - ".github/workflows/docker-build-push.yaml"
+            ui:
+              - "plugins/ui/**"
+              - ".github/workflows/docker-build-push.yaml"
+            flow_package_json:
+              - "plugins/flows/base/package.json"
+              - ".github/workflows/docker-build-push.yaml"
+            e2e:
+              - "tests/e2e/**"
+              - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
 
-  bld:
-    needs: [pick_runner, check_file_changes]
-    if: (github.ref_name == 'develop' || contains(github.ref_name, 'release/') || contains(github.base_ref, 'release/') || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group') || ( github.event_name == 'pull_request' && !github.event.pull_request.draft && (needs.check_file_changes.outputs.changes == 'true' || needs.check_file_changes.outputs.rkernel == 'true')  ) # Should run if branch is develop/release/workflow_dispatch and doesnt have a PR
-    runs-on: ${{ needs.pick_runner.outputs.random_runner }}
-    permissions:
-      contents: read   # Required to check out code
-      packages: write  # Required to push images to GHCR
+  build_images:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_rkernel == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
-      DOCKER_BUILD_DISABLE: ${{ vars.DOCKER_BUILD_DISABLE || 'false' }}
-      DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || 'false' }}
-      GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
-      GIT_REPO_FULL_NAME: ${{ github.event.inputs.GIT_REPO_FULL_NAME || github.event.pull_request.head.repo.full_name || github.event.repository.full_name }} # workflow_dispatch || pull_request || push
-      DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-      REG_URL: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' && 'registry.hub.docker.com/data2evidence' || 'ghcr.io/ohdsi'}}
-
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - AZ_REG_REPOSITORY: d2e/flow-base
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/base/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/base/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-i2b2
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/i2b2/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/i2b2/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-search-embedding
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/search_embedding/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/search_embedding/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-management
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_management/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_management/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/loyalty_score/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/loyalty_score/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-hades
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/hades/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/hades/Dockerfile
           - AZ_REG_REPOSITORY: d2e/flow-data-transformation
-            DOCKER_BUILD_CONTEXT_PATH: ./flows
-            DOCKER_BUILD_FILE_PATH: ./flows/data_transformation/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
+            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_transformation/Dockerfile
           - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
@@ -133,9 +198,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-r-ohdsi-kernel
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
-            build_disable: ${{ (needs.check_file_changes.outputs.rkernel != 'true') && 'true' || 'false' }}
+            build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-trex
-            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile
+            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
             DOCKER_BUILD_CONTEXT_PATH: ./services/trex
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
@@ -143,17 +208,11 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
-
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
           tool-cache: true
-
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
           android: true
           dotnet: true
           haskell: true
@@ -161,106 +220,875 @@ jobs:
           docker-images: true
           swap-storage: true
 
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          ref: ${{ env.GIT_BRANCH_NAME }}
-          repository: ${{ env.GIT_REPO_FULL_NAME }}
           submodules: recursive
 
-      - name: Setting up variables
-        id: setup
-        env:
-          DOCKER_BUILD_PUSH_BOOL_OVERRIDE: ${{ vars.DOCKER_BUILD_PUSH_BOOL_OVERRIDE || false }}
-        run: |
-
-          DOCKER_BUILD_PUSH_BOOL_STR=false
-          if [[ $GITHUB_EVENT_NAME == "push" ]] || [ $GITHUB_EVENT_NAME = "workflow_dispatch" ] || [ $DOCKER_BUILD_PUSH_BOOL_OVERRIDE = true]; then
-            DOCKER_BUILD_PUSH_BOOL_STR=true
-          fi
-
-          if [[ ${{ github.event_name }} == "workflow_dispatch" ]]; then
-            DOCKER_IMG_TAG_NAME=${{ github.event.inputs.tag }}
-          elif [[ ${{ github.event_name }} == "push" ]]; then
-            DOCKER_IMG_TAG_NAME=develop
-          else
-            DOCKER_IMG_TAG_NAME=$(echo $(git rev-parse --short HEAD))
-          fi
-
-          echo DOCKER_BUILD_PUSH_BOOL_STR=$DOCKER_BUILD_PUSH_BOOL_STR | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_IMG_TAG_NAME=$DOCKER_IMG_TAG_NAME | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo GIT_BRANCH_NAME="${GIT_BRANCH_NAME}" | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo GIT_REPO_FULL_NAME="${GIT_REPO_FULL_NAME}" | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-          echo AZ_REG_REPOSITORY=${{ matrix.AZ_REG_REPOSITORY }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_BUILD_CONTEXT_PATH=${{ matrix.DOCKER_BUILD_CONTEXT_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-          echo DOCKER_BUILD_FILE_PATH=${{ matrix.DOCKER_BUILD_FILE_PATH }} | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-          echo GITHUB_SHA=$GITHUB_SHA | tee -a $GITHUB_STEP_SUMMARY
-          echo GITHUB_SHA_SHORT=$GITHUB_SHA_SHORT | tee -a $GITHUB_ENV | tee -a $GITHUB_OUTPUT | tee -a $GITHUB_STEP_SUMMARY
-
-      - name: "Login to GitHub Container Registry"
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
-
-      - name: "Login to Docker Container Registry"
-        uses: docker/login-action@v3
-        if: ${{ needs.check_file_changes.outputs.jenv == 'dockerhub' }}
-        with:
-          registry: registry.hub.docker.com
-          username: data2evidence
-          password: ${{secrets.DOCKER_TOKEN}}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: docker/setup-buildx-action@v3
         id: builder
 
       - name: Build and Push
-        id: build-push
-        if: ${{matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || github.ref_name == 'develop' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group'}}
+        if: ${{ matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || needs.setup.outputs.is_develop_push == 'true' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group' }}
         uses: docker/build-push-action@v6
         with:
           builder: ${{ steps.builder.outputs.name }}
-          context: ${{ env.DOCKER_BUILD_CONTEXT_PATH }}
-          file: ${{ env.DOCKER_BUILD_FILE_PATH }}
-          platforms: "linux/amd64"
-          push: ${{ env.DOCKER_BUILD_PUSH_BOOL_STR == 'true' }}
+          context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
+          file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
+          platforms: linux/amd64
+          push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
-          tags: ${{ env.REG_URL }}/${{ env.AZ_REG_REPOSITORY }}:${{ env.DOCKER_IMG_TAG_NAME }}
+          tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
           provenance: false
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             ${{ env.DOCKER_BUILD_ARG1 }}
 
-      - name: delete-untagged-images
-        uses: actions/delete-package-versions@v5
-        if: env.GIT_BRANCH_NAME == 'develop'
-        continue-on-error: true
-        with:
-          package-name: ${{ env.AZ_REG_REPOSITORY }}
-          package-type: "container"
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
       - name: Prune system
         if: always()
-        id: prune
-        run: |
-          docker system prune -af
+        run: docker system prune -af
 
-  docker-success:
-    needs: bld
-    runs-on: ubuntu-latest
-    if: always()
+  build_plugins:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - PKGPATH: ./plugins/flows/base/
+          - PKGPATH: ./plugins/flows/i2b2/
+          - PKGPATH: ./plugins/flows/search_embedding/
+          - PKGPATH: ./plugins/flows/data_management/
+          - PKGPATH: ./plugins/flows/hades/
+          - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/data_transformation/
+          - PKGPATH: ./plugins/ui
+            NPM: bun
+            NODE_VERSION: "20.x"
+          - PKGPATH: ./plugins/functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
+            RUNNER: ubuntu-24.04
+          - PKGPATH: ./plugins/fhir_functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
+    runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
-      BUILD_JOB_STATUS: ${{ needs.bld.result }}
+      NPM_ARTIFACT_TYPE: OSS-develop
     steps:
-      - name: Check
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@data2evidence"
+      - name: Setup bun
+        if: ${{ matrix.NPM == 'bun' }}
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.23
+      - name: Setup NPM
+        if: ${{ matrix.NPM && matrix.NPM != 'bun' }}
+        run: npm install -g ${{ matrix.NPM }}
+      - name: Setup Java
+        if: ${{ matrix.DESTPATH }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install dependencies
+        if: ${{ matrix.DESTPATH }}
         run: |
-          if [ "$BUILD_JOB_STATUS" == "success" ] || [ "$BUILD_JOB_STATUS" == "skipped" ]; then
-            exit 0
-          else
+          npm install -g deno@2.5.6
+          node ./install-deno-deps.js ${{ matrix.PKGPATH }}
+      - name: Update version
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+      - name: Build
+        run: |
+          cd ${{ matrix.PKGPATH }}
+          ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Patch Package
+        if: ${{ matrix.NPM }}
+        working-directory: ${{ matrix.PKGPATH }}
+        run: jq '.private=false' package.json > tmppkg; mv tmppkg package.json
+      - name: DEST
+        working-directory: ${{ matrix.PKGPATH }}
+        if: ${{ matrix.DESTPATH }}
+        run: |
+          cp package.json package.org.json
+          sudo mkdir -p ${{ matrix.DESTPATH }}
+          sudo chown runner:docker ${{ matrix.DESTPATH }}
+          cp -a . ${{ matrix.DESTPATH }}
+          cd ${{ matrix.DESTPATH }}
+          export DENO_DIR="$HOME/.cache/deno"
+          node ${{ github.workspace }}/install-deno-deps.js .
+          npm run build
+      - name: Use Node.js - OSS Develop
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+      - name: Publish or Pack
+        env:
+          CI: ${{ matrix.NPM != 'bun' }}
+          SHOULD_PUBLISH: ${{ needs.setup.outputs.is_publish_push == 'true' || github.event_name == 'workflow_dispatch' }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
+        run: |
+          cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
+          ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+          FAILED=0
+          MAX_SIZE_MIB=500
+          MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
+          shopt -s nullglob
+          TGZ_FILES=(*.tgz)
+          if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+            echo "ERROR: no .tgz files found after pack"
             exit 1
           fi
+          for PACK_FILE in "${TGZ_FILES[@]}"; do
+            SIZE=$(wc -c < "$PACK_FILE")
+            SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+            if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+              echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+              echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+              FAILED=1
+            else
+              echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
+            fi
+          done
+          [ $FAILED -eq 0 ] || exit $FAILED
+          if [[ $SHOULD_PUBLISH == true ]]; then
+            for PACK_FILE in "${TGZ_FILES[@]}"; do
+              npm publish "$PACK_FILE"
+            done
+          fi
+
+      - name: Upload UI resources
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-resources
+          path: ./plugins/ui/resources
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload UI package tarball
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  build_e2e_image:
+    needs: [setup]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_e2e == 'true' || needs.setup.outputs.changes_plugins == 'true'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build and Push e2e image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./tests/e2e
+          file: ./tests/e2e/Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
+          provenance: false
+
+  test_demosetup_dev:
+    needs: [setup, build_images, build_plugins, build_e2e_image]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
+    env:
+      VERSION: develop
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Patch seed config for e2e tests
+        run: node ./scripts/patch-seed-for-e2e.js
+
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+
+      - name: Initialise d2e
+        if: success() || failure()
+        id: init
+        run: |
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
+
+      - name: Pre-pull flow images
+        run: |
+          for img in $PREPULL_FLOW_IMAGES; do
+            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
+          done
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Wait for d2e-trex healthy
+        if: success() || failure()
+        run: |
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
+            echo "[$i] d2e-trex health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+
+      - name: Setupdemo
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Flow base docker-compose-local
+        if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
+        run: |
+          sed -i 's|# - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
+
+
+      - name: Wait for webapi-init to complete
+        run: |
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
+              echo "webapi-init failed!"
+              docker logs d2e-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
+
+      - name: Pull e2e Docker image
+        run: |
+          docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
+          docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+
+      - name: Verify app is reachable
+        run: |
+          curl -k -s -o /dev/null -w "%{http_code}" https://localhost:443/d2e/portal || echo "App not reachable"
+          curl -k -I https://localhost:443/d2e/portal || true
+
+      - name: Disable IPv6 to prevent ERR_NETWORK_CHANGED
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+
+      - name: e2e tests
+        run: |
+          cd ./tests/e2e
+          docker run --rm \
+            --network=host \
+            --ipc=host \
+            -v "$(pwd)/test-results:/work/test-results" \
+            -v "$(pwd)/ctrf:/work/ctrf" \
+            -e D2E_BASE_URL=https://localhost:443 \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
+            d2e-e2e npm test
+
+      - name: Mark e2e attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload e2e attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
+      - name: Upload Error Context
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: error-context-attempt-${{ matrix.attempt }}
+          path: tests/e2e/test-results/**/*
+          overwrite: true
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@v1
+        with:
+          report-path: "./tests/e2e/ctrf/*.json"
+          file-report: true
+
+      - name: Stop d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  test_demosetup_hana:
+    needs: [setup, build_images, build_plugins]
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
+    env:
+      VERSION: develop
+      DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm install
+        if: success() || failure()
+        run: npm install
+
+      - name: Initialise d2e
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+        env:
+          init_choice: y
+
+      - name: Initialise HANA
+        if: success() || failure()
+        run: |
+          timeout 5m bash -c "ACCEPT_SAP_LICENSE=true DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env --hana inithana" || echo "HANA initialization timed out or failed, continuing..."
+
+      - name: Pre-pull flow images
+        run: |
+          for img in $PREPULL_FLOW_IMAGES; do
+            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
+          done
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop --hana -d ./plugins/functions pull
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            DOTENV_FILE=.env ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions --hana start
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt
+            echo "DOCKER_STATUS_FILE=$DOCKER_STATUS_FILE" >> $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Log status
+        if: success() || failure()
+        run: |
+          echo DC_EXIT_CODE=$DC_EXIT_CODE | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
+          echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
+          echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Setupdemohana
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemohana
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Mark demo hana attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload demo hana attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-hana-attempt-${{ matrix.attempt }}
+          path: ./_attempt/
+          overwrite: true
+
+      - name: Stop d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
+
+  test_http_duckdb:
+    needs: [setup, build_images, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+    uses: ./.github/workflows/_test-http-duckdb.yml
+    with:
+      attempt: "1"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      changes_ui: ${{ needs.setup.outputs.changes_ui }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_http_duckdb_retry:
+    needs: [setup, build_images, build_plugins, test_http_duckdb]
+    if: |
+      always() && needs.test_http_duckdb.result == 'failure' && (
+        needs.setup.outputs.is_publish_push == 'true' ||
+        contains(github.base_ref, 'release/') ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'merge_group' ||
+        (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+      )
+    uses: ./.github/workflows/_test-http-duckdb.yml
+    with:
+      attempt: "2"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      changes_ui: ${{ needs.setup.outputs.changes_ui }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_http_hana:
+    needs: [setup, build_images, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+    uses: ./.github/workflows/_test-http-hana.yml
+    with:
+      attempt: "1"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_http_hana_retry:
+    needs: [setup, build_images, build_plugins, test_http_hana]
+    if: |
+      always() && needs.test_http_hana.result == 'failure' && (
+        needs.setup.outputs.is_publish_push == 'true' ||
+        contains(github.base_ref, 'release/') ||
+        github.event_name == 'workflow_dispatch' ||
+        github.event_name == 'merge_group' ||
+        (github.event_name == 'pull_request' && needs.setup.outputs.changes_http_tests == 'true')
+      )
+    uses: ./.github/workflows/_test-http-hana.yml
+    with:
+      attempt: "2"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_demosetup_dev_gate:
+    needs: [test_demosetup_dev]
+    if: always() && needs.test_demosetup_dev.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one e2e attempt succeeded."
+            exit 0
+          fi
+          echo "All e2e attempts failed."
+          exit 1
+
+  test_demosetup_hana_gate:
+    needs: [test_demosetup_hana]
+    if: always() && needs.test_demosetup_hana.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: demo-hana-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one demo hana attempt succeeded."
+            exit 0
+          fi
+          echo "All demo hana attempts failed."
+          exit 1
+
+  test_http_duckdb_gate:
+    needs: [test_http_duckdb, test_http_duckdb_retry]
+    if: always() && needs.test_http_duckdb.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: http-duckdb-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one HTTP duckdb attempt succeeded."
+            exit 0
+          fi
+          echo "All HTTP duckdb attempts failed."
+          exit 1
+
+  test_http_hana_gate:
+    needs: [test_http_hana, test_http_hana_retry]
+    if: always() && needs.test_http_hana.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: http-hana-attempt-*
+          path: ./_attempts
+      - name: Pass if any attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "At least one HTTP hana attempt succeeded."
+            exit 0
+          fi
+          echo "All HTTP hana attempts failed."
+          exit 1
+
+  promote:
+    needs: [setup, build_images]
+    if: |
+      always() &&
+      needs.build_images.result == 'success' &&
+      needs.setup.outputs.is_publish_push == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      CANONICAL_TAG: ${{ needs.setup.outputs.canonical_tag }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - d2e/flow-base
+          - d2e/flow-i2b2
+          - d2e/flow-search-embedding
+          - d2e/flow-data-management
+          - d2e/flow-loyalty-score
+          - d2e/flow-hades
+          - d2e/flow-data-transformation
+          - d2e-pg-mgmt-init
+          - d2e-logto
+          - d2e-logto-post-init
+          - d2e-enterprise-gateway
+          - d2e-r-ohdsi-kernel
+          - d2e-trex
+          - d2e-dataflow-gen-worker
+          - d2e-supabase-storage
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Re-tag run image as canonical
+        run: |
+          SRC=${REG_URL}/${{ matrix.image }}:${RUN_TAG}
+          DST=${REG_URL}/${{ matrix.image }}:${CANONICAL_TAG}
+          if [[ -z "$CANONICAL_TAG" ]]; then
+            echo "CANONICAL_TAG empty; nothing to promote."
+            exit 0
+          fi
+          if docker manifest inspect "$SRC" >/dev/null 2>&1; then
+            docker buildx imagetools create -t "$DST" "$SRC"
+          else
+            echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
+          fi
+
+      - name: Delete untagged versions
+        uses: actions/delete-package-versions@v5
+        continue-on-error: true
+        with:
+          package-name: ${{ matrix.image }}
+          package-type: container
+          min-versions-to-keep: 3
+          delete-only-untagged-versions: "true"
+
+  docker-success:
+    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check upstream job results
+        env:
+          R_BUILD_IMAGES: ${{ needs.build_images.result }}
+          R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
+          R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
+          R_DEMO_DEV: ${{ needs.test_demosetup_dev_gate.result }}
+          R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
+          R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
+          R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
+        run: |
+          fail=0
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+            case "$r" in
+              success|skipped) ;;
+              *) fail=1 ;;
+            esac
+          done
+          exit $fail

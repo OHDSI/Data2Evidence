@@ -1,0 +1,73 @@
+import { NextFunction, Request, Response } from "express";
+import StrategusAnalysisService from "../analysis/services.ts";
+import { PortalServerAPI } from "../strategus-results/api/PortalServerAPI.ts";
+
+export const validateStudyIdMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const studyId = req.params.studyId || req.body.studyId;
+
+    if (!studyId) {
+      return res.status(400).json({
+        message: "Study ID is required",
+      });
+    }
+
+    const token = req.headers["authorization"];
+    const isValidStudy = await validateStudyId(studyId, token);
+
+    if (!isValidStudy) {
+      return res.status(404).json({
+        message: `Study ${studyId} not found.`,
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Error in study validation middleware:", error);
+    return res.status(500).json({
+      message: "Internal error during study validation",
+    });
+  }
+};
+
+export async function validateStudyId(
+  studyId: string,
+  token?: string,
+): Promise<boolean> {
+  try {
+    if (!token) {
+      console.warn(
+        "No authorization token provided, skipping study validation",
+      );
+      return true;
+    }
+
+    try {
+      const portalAPI = new PortalServerAPI(token);
+      const analysisService = new StrategusAnalysisService();
+      const existingAnalysis = await analysisService.getStudyAnalysis(studyId, token);
+      const datasets = await portalAPI
+        .getDatasets()
+        .then((data) =>
+          data.filter((dataset: any) => dataset.tokenStudyCode === studyId),
+        );
+
+      if (datasets.length > 0) return true;
+
+      if (existingAnalysis) return true;
+
+      const studiesData = await portalAPI.getGitStudies();
+      return studyId in studiesData;
+    } catch (apiError: any) {
+      console.error("Error calling PortalServerAPI:", apiError);
+      return false;
+    }
+  } catch (error) {
+    console.error("Error validating study ID:", error);
+    return false;
+  }
+}

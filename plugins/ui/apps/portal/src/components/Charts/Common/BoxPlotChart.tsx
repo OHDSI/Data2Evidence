@@ -1,0 +1,134 @@
+import React, { FC } from "react";
+
+import ReactECharts from "echarts-for-react";
+import ChartContainer from "./ChartContainer";
+import "./BoxPlotChart.scss";
+import { useTranslation } from "../../../contexts";
+import { formatNumber } from "../../../utils";
+import { chartColors } from "./chartColors";
+import { getAxisNameGap } from "../util";
+interface BoxPlotChartProps {
+  data: any[];
+  title: string;
+  xAxisName: string;
+  yAxisName: string;
+  extraChartConfigs?: any;
+  axisBaseGap?: number;
+}
+
+const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName, extraChartConfigs, axisBaseGap }) => {
+  const { getText, i18nKeys } = useTranslation();
+  if (data.length === 0) {
+    return (
+      <ChartContainer title={title}>
+        <div className="no_data_text">{getText(i18nKeys.BOX_PLOT_CHART__NO_DATA)}</div>
+      </ChartContainer>
+    );
+  }
+  const seriesForYGap = [
+    {
+      data: data.flatMap((d) => [Number(d.MAXVALUE)]),
+    },
+  ];
+  const seriesForXGap = [
+    {
+      data: data.map((d) => String(d.CATEGORY)),
+    },
+  ];
+  const xAxisNameGap = getAxisNameGap(seriesForXGap, extraChartConfigs?.xAxisFormat, axisBaseGap);
+  const yAxisNameGap = getAxisNameGap(seriesForYGap, extraChartConfigs?.yAxisFormat, axisBaseGap);
+
+  const maxLabelLength = Math.max(...data.map((d) => String(d.CATEGORY || "").length));
+  const shouldRotate = maxLabelLength > 8 || data.length > 6;
+  const option = {
+    dataset: [
+      {
+        id: "data",
+        source: data,
+      },
+    ],
+    grid: { containLabel: true },
+    toolbox: {
+      show: true,
+      feature: {
+        dataView: { readOnly: false },
+        saveAsImage: {},
+        restore: {},
+      },
+    },
+    tooltip: {
+      trigger: "item",
+      formatter: function (params: any) {
+        return `
+        Max: ${formatNumber(params.data["MAXVALUE"])} <br />
+        P90: ${formatNumber(params.data["P90VALUE"])} <br />
+        P75: ${formatNumber(params.data["P75VALUE"])} <br />
+        Median: ${formatNumber(params.data["MEDIANVALUE"])} <br />
+        P25: ${formatNumber(params.data["P25VALUE"])} <br />
+        P10: ${formatNumber(params.data["P10VALUE"])} <br />
+        Min: ${formatNumber(params.data["MINVALUE"])} <br />
+        `;
+      },
+      confine: true,
+    },
+    xAxis: {
+      type: "category",
+      name: xAxisName,
+      nameLocation: "middle",
+      nameGap: xAxisNameGap,
+      axisLabel: {
+        interval: 0,
+        rotate: shouldRotate ? 270 : 0,
+      },
+      nameTextStyle: {
+        fontSize: 14,
+        fontWeight: "bold",
+      },
+    },
+    yAxis: {
+      axisLabel: {
+        formatter: (value: number) => formatNumber(value),
+      },
+      name: yAxisName,
+      nameLocation: "middle",
+      nameGap: yAxisNameGap,
+      nameTextStyle: {
+        fontSize: 14,
+        fontWeight: "bold",
+      },
+    },
+    series: [
+      {
+        name: "boxplot",
+        type: "boxplot",
+        datasetId: "data",
+        itemStyle: {
+          color: "#b8c5f2",
+        },
+        encode: {
+          x: "CATEGORY",
+          y: ["MINVALUE", "P25VALUE", "MEDIANVALUE", "P75VALUE", "MAXVALUE"],
+          itemName: ["CATEGORY"],
+          tooltip: ["MINVALUE", "P10VALUE", "P25VALUE", "MEDIANVALUE", "P75VALUE", "P90VALUE", "MAXVALUE"],
+        },
+      },
+    ],
+    color: chartColors,
+    ...(extraChartConfigs && { ...extraChartConfigs }),
+  };
+
+  return (
+    <ChartContainer title={title}>
+      <ReactECharts
+        style={{
+          height: "100%",
+          minHeight: 400,
+          width: "100%",
+        }}
+        option={option}
+      />
+    </ChartContainer>
+  );
+};
+
+export default BoxPlotChart;

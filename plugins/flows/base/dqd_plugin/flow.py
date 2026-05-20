@@ -1,0 +1,161 @@
+import os
+import sys
+import json
+from rpy2 import robjects
+from pprint import pformat
+
+from prefect import runtime
+from prefect import flow, task
+from prefect.logging import get_run_logger
+from prefect.artifacts import create_markdown_artifact
+
+from .types import DqdOptionsType, DqdParams
+
+from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
+from _shared_flow_utils.rutils import set_trex_env_var, convert_to_int_vector
+from _shared_flow_utils.types import UserType, SupportedDatabaseDialects, AuthMode
+
+os.environ["plugin_name"] = "dqd_plugin"
+
+
+def _default_cache_id_from_dataset_id(dataset_id):
+    if not dataset_id:
+        return None
+    cleaned = dataset_id.replace("-", "_")
+    return f"_{cleaned}" if cleaned[:1].isdigit() else cleaned
+
+@flow(log_prints=True)
+def dqd_plugin(options: DqdOptionsType):
+    logger = get_run_logger()
+
+    flow_run_id = runtime.flow_run.id
+
+    dbdao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+        use_cache_db=options.use_cache_db,
+        database_code=options.databaseCode,
+        cache_id=options.cacheId,
+    )
+
+    # Todo: Update implementation if Hana uses trex
+    use_trex_connection = (
+        False
+        if dbdao.dialect == SupportedDatabaseDialects.HANA
+        else options.use_trex_connection
+    )
+    
+    r_connection_string = dbdao.get_r_database_connector_connection_string(
+        user_type=UserType.READ_USER, release_date=options.releaseDate
+    )
+
+    db_driver_string = dbdao.set_db_driver_env()
+
+    # Todo: Update implementation if Hana uses trex
+    dqd_parameters = DqdParams(
+        **options.model_dump(),
+        setDBDriverEnv=db_driver_string,
+        connectionDetails=r_connection_string,
+        use_trex_connection=use_trex_connection,
+    )
+    # For TREX connections, set vocabSchemaName to schemaName
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        dqd_parameters.vocabSchemaName = options.schemaName
+
+    if (
+        options.cohortDefinitionId
+        and dbdao.dialect == SupportedDatabaseDialects.HANA
+        and dbdao.tenant_configs.authMode == AuthMode.JWT
+    ):
+        # For Hana JWT mode, fetch the materialized cohort schema and assign to DQD parameters
+        schema_from_api = get_cohort_database_schema(options.datasetId)
+        if schema_from_api:
+            dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
+
+    execute_dqd(dqd_parameters, flow_run_id, dbdao.dialect)
+
+
+@task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")
+def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatabaseDialects):
+    logger = get_run_logger()
+
+    logger.info("Running DQD with input parameters:")
+    logger.info(pformat(dqd_params.to_json_dict(), indent=2))
+
+    set_trex_env_string = set_trex_env_var(dqd_params.use_trex_connection)
+    logger.debug(f"set_trex_env_string is {set_trex_env_string}")
+    r_script_path = os.path.join(os.path.dirname(__file__), "execute_dqd.R")
+    with robjects.conversion.localconverter(robjects.default_converter):
+        robjects.r(f"source('{r_script_path}')")
+        r_execute_dqd = robjects.r['execute_dqd']
+        # For HANA the Database/Schemas are represented differently and do not use a dotted database.schema form
+        if dialect == SupportedDatabaseDialects.HANA:
+            cdm_database_schema = dqd_params.schemaName
+            vocab_database_schema = dqd_params.vocabSchemaName
+            cdm_source_name = dqd_params.schemaName
+        else:
+            # Qualify reads against the cache catalog (populated CDM tables) instead of the live source.
+            # When cacheId is not supplied (e.g. a Prefect Custom Run that hands us only datasetId),
+            # mirror the BeforeInsert default on the dataset entity (UUID → sanitized identifier)
+            # so the catalog still resolves to the cache alias trex attaches.
+            catalog = dqd_params.cacheId or _default_cache_id_from_dataset_id(dqd_params.datasetId) or dqd_params.databaseCode
+            cdm_database_schema = f"{catalog}.{dqd_params.schemaName}"
+            vocab_database_schema = f"{catalog}.{dqd_params.vocabSchemaName}"
+            cdm_source_name = f"{catalog}.{dqd_params.schemaName}"
+
+        r_execute_dqd(
+            set_trex_env_string=set_trex_env_string,
+            setDBDriverEnv=dqd_params.setDBDriverEnv,
+            connectionDetailsString=dqd_params.connectionDetails,
+            cdmDatabaseSchema = cdm_database_schema,
+            vocabDatabaseSchema = vocab_database_schema,
+            resultsDatabaseSchema = dqd_params.resultsSchemaName,
+            cdmSourceName = cdm_source_name,
+            numThreads = dqd_params.numThreads,
+            sqlOnly = dqd_params.sqlOnly,
+            outputFolder = dqd_params.outputFolder,
+            outputFile = dqd_params.outputFile,
+            writeToTable = dqd_params.writeToTable,
+            verboseMode = dqd_params.verboseMode,
+            checkLevels = robjects.StrVector(dqd_params.checkLevels),
+            checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
+            cohortDefinitionId = convert_to_int_vector(dqd_params.cohortDefinitionId),
+            cdmVersion = dqd_params.cdmVersionNumber,
+            cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
+            cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
+        )   
+        
+    # Read the result from the output file
+    with open(f"{dqd_params.outputFolder}/{dqd_params.outputFile}", "rt") as f:
+        result_data = json.loads(f.read())
+
+    # Create a markdown artifact with the result data
+    artifact_key = f"{flow_run_id}-dqd-output"
+
+    create_markdown_artifact(
+        key=artifact_key,
+        markdown=json.dumps(result_data),
+        description="DQD output stored as JSON",
+    )
+
+    return result_data
+
+
+@task(log_prints=True, task_run_name="get_cohort_database_schema_{dataset_id}")
+def get_cohort_database_schema(dataset_id: str) -> str:
+    logger = get_run_logger()
+
+    try:
+        analytics_svc_api = AnalyticsSvcAPI()
+        cohort_database_schema = analytics_svc_api.get_db_owner_schema(dataset_id)
+        if not cohort_database_schema:
+            error_message = "Unable to fetch cohort_database_schema from analytics api for Hana Jwt mode!"
+            raise ValueError(error_message)
+    except Exception as e:
+        logger.error(f"Error fetching cohort_database_schema: {e}")
+        raise
+    else:
+        logger.info(
+            f"Successfully fetched cohort_database_schema: {cohort_database_schema}"
+        )
+        return cohort_database_schema

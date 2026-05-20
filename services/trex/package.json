@@ -30,11 +30,14 @@
     "nodemon": "^3.1.4"
   },
   "dependencies": {
-    "@trex/as": "^0.5.0-1767141707-422c9a9635e7ff5c4eebcb2a33601f9e70c2d3b0",
-    "@trex/circe": "^0.0.1-1767160991-31b22e0c75722f66f9b216f1bf9a721017c34e4e",
-    "@trex/cli": "^0.5.0-1767160988-31b22e0c75722f66f9b216f1bf9a721017c34e4e",
-    "@trex/hana": "^0.5.0-1767160989-31b22e0c75722f66f9b216f1bf9a721017c34e4e",
-    "@trex/pgwire": "^0.5.0-1767160991-31b22e0c75722f66f9b216f1bf9a721017c34e4e",
-    "@trex/tpm": "^0.5.0-1767160990-31b22e0c75722f66f9b216f1bf9a721017c34e4e"
+    "@trex/as": "^0.5.0-1779020298-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/circe": "^0.0.1-1779020149-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/cli": "0.5.0-1777874515-b147b3bbddb1a98e35b994dfdf016b74e2e7d3b2",
+    "@trex/db": "^0.5.0-1779116964-69ebee2d456e55402d9bd3f244b287daf56f9355",
+    "@trex/fhir": "^0.1.0-1779020241-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/hana": "^0.5.0-1779020210-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/pgwire": "^0.5.0-1779020307-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/pool": "^0.1.0-1779020281-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
+    "@trex/tpm": "^0.5.0-1779020146-ff7632fa89aa77af33e94a4a3c5db8c9ba730495"
   }
 }

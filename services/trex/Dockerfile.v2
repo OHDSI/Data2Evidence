@@ -1,0 +1,115 @@
+# syntax=docker/dockerfile:1.4
+#
+# TrexSQL + WebAPI combined image
+# Based on WebAPI 3.0-dev with all trex dependencies installed
+#
+
+FROM ghcr.io/ohdsi/webapi@sha256:a084547bf3ff36fcf7de87eb03e5efbe2403739ab2b39e8ea344b8dc0af996f6 AS base
+
+USER root
+
+ENV ONNXRUNTIME_VERSION=1.20.1
+ENV DUCKDB_VERSION=1.4.4
+ENV TREXSQL_EXT_VERSION=0.2.2
+
+# Copy install scripts
+RUN mkdir -p /scripts
+COPY install_onnx.sh /scripts/
+COPY install_libchdb.sh /scripts/
+
+# Install system dependencies needed by trex
+# Note: default-jre-headless is not needed since WebAPI already has Java 21
+# Ubuntu noble already has recent libstdc++6, no need for Debian testing repo
+RUN apt-get update && apt-get install -y \
+    curl \
+    clang \
+    libgomp1 \
+    wget \
+    libssl-dev \
+    mesa-vulkan-drivers \
+    libopenblas-dev \
+    npm \
+    tar \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ONNX Runtime
+RUN /scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
+    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
+    rm -rf /root/onnxruntime
+
+# Install libchdb (ClickHouse embedded library)
+WORKDIR /tmp
+RUN bash /scripts/install_libchdb.sh
+
+# Create trex data directories
+RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
+
+WORKDIR /usr/src
+
+# Copy and install npm dependencies for trex
+COPY deno.json package.json package-lock.json .npmrc ./
+RUN npm install
+
+# Pre-install DuckDB extensions for offline use
+RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
+    cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
+    for lib in autocomplete avro aws azure fts httpfs icu inet json mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
+        wget -q https://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
+        gzip -d ${lib}.duckdb_extension.gz; \
+    done && \
+    for lib in bigquery; do \
+        wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
+        gzip -d ${lib}.duckdb_extension.gz; \
+    done
+
+# Create directories for trex core and cert
+RUN mkdir -p ./cert ./core
+
+# Copy trex core files
+COPY ./core ./core
+
+# Bundle trex TypeScript files
+RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
+    npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
+
+# Copy logto configuration
+RUN mkdir -p ./logto
+COPY ./logto ./logto
+
+# Copy built-in CDW data
+COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
+
+# Set trex environment variables
+ENV TREXAS_HOST=0.0.0.0
+ENV TREXAS_PORT=9876
+ENV PGWIRE_HOST=0.0.0.0
+ENV PGWIRE_PORT=5433
+ENV TLS_CERT_PATH=""
+ENV TLS_KEY_PATH=""
+ENV TLS_PORT=9443
+ENV MAIN_PATH=/usr/src/main
+
+# Create symlinks so Deno can find node_modules and deno.json from WebAPI's working directory
+# Also symlink data directory so trex can find duckdb cache files at ./data/cache/
+RUN ln -s /usr/src/node_modules /var/lib/ohdsi/webapi/node_modules && \
+    ln -s /usr/src/deno.json /var/lib/ohdsi/webapi/deno.json && \
+    ln -s /usr/src/package.json /var/lib/ohdsi/webapi/package.json && \
+    ln -s /usr/src/data /var/lib/ohdsi/webapi/data
+
+# Override trexsql plugin JAR with the version this trex build expects.
+# Since WebAPI 595fe916 (Extract trexsql), trexsql is a runtime plugin loaded via
+# -Dloader.path=/opt/webapi/plugins. The base image ships an older version we replace here.
+RUN curl -fsSL https://github.com/OHDSI/trex/releases/download/v${TREXSQL_EXT_VERSION}/trexsql-${TREXSQL_EXT_VERSION}.jar \
+        -o /opt/webapi/plugins/trexsql.jar
+
+# Go back to WebAPI working directory
+WORKDIR /var/lib/ohdsi/webapi
+
+# Expose both WebAPI and trex ports
+EXPOSE 8080 33001 5432 33000 9876 5433 9443
+
+# Run WebAPI directly - trexas will be started internally by the trexsql plugin.
+# Materialise the TLS cert/key from env into /usr/src/cert/ before launch so the
+# trexsql orchestrator's tls_cert_path / tls_key_path resolve at server-build time.
+CMD ["sh", "-c", "mkdir -p /usr/src/cert && printf '%s' \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && printf '%s' \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && exec java ${DEFAULT_JAVA_OPTS} ${JAVA_OPTS} -Dloader.path=/opt/webapi/plugins --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED -jar WebAPI.jar"]

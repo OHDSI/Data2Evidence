@@ -1,4 +1,4 @@
-import { test, expect } from '../fixtures'
+import { expect, test } from '../fixtures'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
-  await expect(page.getByText('1–25 of 444')).toBeVisible()
+  await expect(page.getByText('-25 of 444')).toBeVisible()
   await expect(page).toHaveScreenshot()
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
@@ -71,7 +71,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.goto('/d2e/portal')
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Concepts' }).click()
-    await expect(page.getByText('1–25 of 444')).toBeVisible()
+    await expect(page.getByText('-25 of 444')).toBeVisible()
     await page.getByRole('tab', { name: 'Concept Sets' }).click()
     await page.getByTestId('button').click()
     await page.getByRole('textbox', { name: 'Concept set name' }).click()

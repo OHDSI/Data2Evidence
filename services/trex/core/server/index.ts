@@ -9,6 +9,8 @@ import { addRoutes as addDBMRoutes } from "./routes/dbm.ts"
 import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
+import { authn } from "./auth/authn.ts"
+import { ensureAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -36,6 +38,102 @@ export async function initTrex() {
     await ftsConn.execute("LOAD fts", []);
     logger.log(`Loaded FTS extension`);
 
+    // Start the in-process FHIR HTTP server (from @trex/fhir extension).
+    // The trex runtime auto-loads fhir.trex at boot, which registers
+    // trex_fhir_start/_stop/_status/_version SQL functions. Calling
+    // trex_fhir_start spins up an Axum HTTP server in the engine process
+    // that serves FHIR R4 traffic, reachable here at FHIR__HOST:FHIR__PORT.
+    //
+    // The extension's `db_name` argument names the DuckDB catalog where
+    // FHIR schemas/tables are created — we ATTACH a persistent file
+    // alongside the cache dbs (./data/cache/FHIR.db) AS `FHIR` so
+    // datasets survive restarts.
+    try {
+      const fhirHost = Deno.env.get("FHIR__HOST") || "0.0.0.0";
+      const fhirPort = parseInt(Deno.env.get("FHIR__PORT") || "8094", 10);
+      const fhirDbName = Deno.env.get("FHIR__DB_NAME") || "FHIR";
+      const fhirDbPath = Deno.env.get("FHIR__DB_PATH") || `./data/cache/${fhirDbName}.db`;
+      const fhirConn = new Trex.TrexDB("memory");
+      await fhirConn.execute(
+        `ATTACH IF NOT EXISTS '${fhirDbPath}' AS ${fhirDbName}`,
+        [],
+      );
+      const versionRows = await fhirConn.execute("SELECT trex_fhir_version() AS v", []);
+      const fhirVersion = versionRows[0]?.v ?? "unknown";
+      const startRows = await fhirConn.execute(
+        `SELECT trex_fhir_start('${fhirHost}', ${fhirPort}, '${fhirDbName}', '${fhirDbPath}') AS msg`,
+        [],
+      );
+      logger.log(
+        `Started FHIR server (${fhirVersion}) at ${fhirHost}:${fhirPort} (db=${fhirDbName} @ ${fhirDbPath}) — ${startRows[0]?.msg}`,
+      );
+    } catch (e) {
+      logger.error(`Failed to start FHIR server: ${(e as Error).message}`);
+    }
+
+    // Attach the built-in cdw_config_svc validation schema so cdw-svc
+    // queries against datasetId="DEFAULT" can resolve `cdw_config_svc`.
+    // The old runtime did this lazily inside TrexDB's constructor; with
+    // @trex/pool worker connections share the catalog, so a one-shot
+    // ATTACH on the memory connection at startup is enough.
+    try {
+      const cdwConn = new Trex.TrexDB("memory");
+      await cdwConn.execute(
+        "ATTACH IF NOT EXISTS '/usr/src/cdw_data/built_in/cdw_config_svc_validation_schema' AS cdw_config_svc (READ_ONLY)",
+        [],
+      );
+      logger.log('Attached cdw_config_svc validation schema');
+    } catch (e) {
+      logger.error('Failed to attach cdw_config_svc validation schema:', e);
+    }
+
+    try {
+      const dbmInstance = await DatabaseManager.get();
+      const credentials = await dbmInstance.getCredentialsDecrypted();
+      const connections: SourceCredential[] = [];
+      for (const row of credentials) {
+        const adminCred = (row.credentials ?? []).find((c: any) => c.userScope === "Admin");
+        if (!adminCred) {
+          logger.log(`[attach-startup] no Admin credential for ${row.id} — skipping __srcdb attach`);
+          continue;
+        }
+        connections.push({
+          id: row.id,
+          dialect: row.dialect,
+          host: row.host,
+          port: row.port,
+          name: row.name,
+          adminUsername: adminCred.username,
+          adminPassword: adminCred.password,
+        });
+      }
+
+      const cacheIds = await dbmInstance.getCacheIdsFromPortal();
+
+      // One DuckDB session shared across every ATTACH issued in this phase.
+      const attachConn = new Trex.TrexDB("memory");
+      const attachExec: ExecFn = (sql) => attachConn.execute(sql, []);
+
+      // Per-item try/catch so a single bad credential or cache_id can't crash startup.
+      for (const c of connections) {
+        try {
+          await ensureAttached({ connections: [c] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] connection ${c.id} attach failed: ${(e as Error).message}`);
+        }
+      }
+      for (const cid of cacheIds) {
+        try {
+          await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+        } catch (e) {
+          logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
+        }
+      }
+      logger.log(`[attach-startup] ensureAttached over ${connections.length} connection(s) and ${cacheIds.length} cache_id(s)`);
+    } catch (e) {
+      logger.log(`[attach-startup] failed: ${(e as Error).message}`);
+    }
+
     /*for await (const r of Deno.readDir("./core/server/routes")) {
         logger.log(`Add Routes ${r.name}`)
         const module = await import(`./routes/${r.name}`);
@@ -47,6 +145,43 @@ export async function initTrex() {
     addPluginRoutes(app);
     addPortalRoutes(app);
     addLogRoutes(app);
+
+    // Proxy WebAPI requests with Logto token exchange
+    app.all('/WebAPI/*', authn, async (c) => {
+        const url = new URL(c.req.url);
+        const targetUrl = `http://localhost:8080${url.pathname}${url.search}`;
+
+        const headers = new Headers(c.req.raw.headers);
+        headers.delete('host');
+
+        const webApiToken = c.get("webApiToken");
+        if (webApiToken) {
+            headers.set("Authorization", `Bearer ${webApiToken}`);
+        }
+
+        try {
+            const response = await fetch(targetUrl, {
+                method: c.req.method,
+                headers: headers,
+                body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? c.req.raw.body : undefined,
+                // @ts-ignore - duplex is needed for streaming request bodies
+                duplex: 'half',
+                redirect: 'manual',
+            });
+
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers: response.headers,
+            });
+        } catch (e) {
+            logger.error(`WebAPI proxy error: ${e}`);
+            return new Response(JSON.stringify({ error: 'WebAPI proxy error' }), {
+                status: 502,
+                headers: { 'Content-Type': 'application/json' },
+            });
+        }
+    });
 
     await Plugins.initPlugins(app);
     logger.log("Added plugins");

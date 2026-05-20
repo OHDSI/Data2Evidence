@@ -1,0 +1,108 @@
+$primary: #000080;
+
+dialog.portal-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  border: none;
+  border-radius: 20px;
+  padding: 0;
+  min-width: 520px;
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.portal-dialog {
+  &__title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    color: $primary;
+    font-size: 1.125rem;
+    font-weight: 500;
+  }
+
+  &__close {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #555;
+    font-size: 1.25rem;
+    line-height: 1;
+    padding: 4px 8px;
+
+    &:hover {
+      color: $primary;
+    }
+  }
+
+  &__divider {
+    border: none;
+    border-top: 1px solid lightgray;
+    margin: 0;
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: $primary;
+    min-height: 150px;
+    text-align: center;
+    padding: 24px 40px;
+
+    &--form {
+      align-items: flex-start;
+      text-align: left;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 24px;
+  }
+
+  &__btn {
+    width: 247px;
+    padding: 10px 16px;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+
+    &--primary {
+      background-color: $primary;
+      color: white;
+      border: 1px solid $primary;
+
+      &:hover {
+        background-color: rgba(0, 0, 128, 0.9);
+      }
+    }
+
+    &--outlined {
+      background-color: transparent;
+      color: $primary;
+      border: 1px solid $primary;
+
+      &:hover {
+        background-color: rgba(0, 0, 128, 0.05);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  }
+}

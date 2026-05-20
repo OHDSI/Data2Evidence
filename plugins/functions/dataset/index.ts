@@ -1,0 +1,668 @@
+import express, { NextFunction, Request, Response } from "npm:express";
+import { Buffer } from "node:buffer";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { v4 as uuidv4 } from "npm:uuid";
+import { AnalyticsSvcAPI } from "./api/AnalyticsSvcAPI.ts";
+import { DbCredentialsAPI } from "./api/DbCredentialsAPI.ts";
+import { FhirGatewayAPI } from "./api/FhirGatewayAPI.ts";
+import { JobPluginsAPI } from "./api/JobpluginsAPI.ts";
+import { PortalAPI } from "./api/PortalAPI.ts";
+import {
+  CacheDatasetType,
+  CDMSchemaTypes,
+  DbDialect,
+  SourceDatasetType,
+} from "./const.ts";
+import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
+import { ShinyLiveService } from "./services/shinylive.service.ts";
+
+const app = express();
+
+interface DashboardCode {
+  id: number;
+  datasetId: string;
+  name: string;
+  type: string;
+  code: string;
+  language?: string;
+}
+
+export class DatasetRouter {
+  public router = express.Router();
+  private readonly logger = console;
+  private readonly shinyLiveService: ShinyLiveService;
+
+  constructor() {
+    this.shinyLiveService = new ShinyLiveService();
+    this.registerRoutes();
+  }
+
+  private schemaCase(schemaName: string, dialect: DbDialect) {
+    switch (dialect) {
+      case DbDialect.Hana:
+        return schemaName.toUpperCase();
+      case DbDialect.Postgres:
+        return schemaName.toLowerCase();
+      default:
+        return schemaName.toLowerCase();
+    }
+  }
+
+  private registerRoutes() {
+    this.router.get(
+      "/cdm-schema/snapshot/metadata",
+      async (req: Request, res: Response) => {
+        const { datasetId } = req.query || {};
+
+        if (!datasetId) {
+          return res.status(400).send(`datasetId is required`);
+        } else if (typeof datasetId !== "string") {
+          return res.status(400).send(`datasetId query param is invalid`);
+        }
+
+        const token = req.headers.authorization!;
+        const analyticsSvcAPI = new AnalyticsSvcAPI(token);
+
+        try {
+          const metadata =
+            await analyticsSvcAPI.getCdmSchemaSnapshotMetadata(datasetId);
+          return res.status(200).json(metadata);
+        } catch (error) {
+          this.logger.error(
+            `Error when getting CDM schema snapshot metadata: ${JSON.stringify(
+              error,
+            )}`,
+          );
+          res
+            .status(500)
+            .send("Error when getting CDM schema snapshot metadata");
+        }
+      },
+    );
+
+    this.router.get("/cohorts", async (req: Request, res: Response) => {
+      const { datasetId } = req.query || {};
+
+      if (!datasetId) {
+        return res.status(400).send(`datasetId is required`);
+      } else if (typeof datasetId !== "string") {
+        return res.status(400).send(`datasetId query param is invalid`);
+      }
+
+      try {
+        const analyticsSvcAPI = new AnalyticsSvcAPI(req.headers.authorization!);
+        const result = await analyticsSvcAPI.getAllCohorts(datasetId);
+        return res.status(200).json(result);
+      } catch (error) {
+        this.logger.error(
+          `Error when getting cohorts: ${JSON.stringify(error)}`,
+        );
+        res.status(500).send("Error when getting cohorts");
+      }
+    });
+
+    this.router.post(
+      "/",
+      generateDatasetSchema,
+      async (req: Request, res: Response) => {
+        const token = req.headers.authorization!;
+        const portalAPI = new PortalAPI(token);
+        const jobpluginsAPI = new JobPluginsAPI(token);
+
+        const id = uuidv4();
+        const {
+          type,
+          tokenStudyCode,
+          tenantId,
+          schemaOption,
+          vocabSchemaValue,
+          resultsSchemaValue,
+          dialect,
+          databaseCode,
+          schemaName,
+          dataModel,
+          plugin,
+          paConfigId,
+          visibilityStatus,
+          detail,
+          dashboards,
+          attributes,
+          tags,
+          fhirProjectId,
+          cacheDatasetName,
+          cacheDatasetType,
+          webApiManaged,
+        } = req.body;
+
+        const isOmopDataModel = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
+        if (webApiManaged === true && !isOmopDataModel) {
+          return res
+            .status(400)
+            .send("WebAPI-managed datasets require an OMOP data model");
+        }
+        const isWebApiManaged =
+          typeof webApiManaged === "boolean" ? webApiManaged : isOmopDataModel;
+
+        const newCacheSchemaName = schemaName
+          ? schemaName
+          : `CDM${id}`.replace(/-/g, "");
+        const parsedNewCacheSchemaName = this.schemaCase(
+          newCacheSchemaName,
+          dialect as DbDialect,
+        );
+
+        // Token study code validation
+        const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
+        if (!tokenStudyCode.match(tokenFormat)) {
+          this.logger.error(
+            `Token dataset code ${tokenStudyCode} has invalid format`,
+          );
+          return res.status(400).send("Token dataset code format is invalid");
+        } else if (await portalAPI.hasDataset(tokenStudyCode)) {
+          this.logger.error(
+            `Provided token dataset code ${tokenStudyCode} is already used`,
+          );
+          return res.status(400).send("Token dataset code is already used");
+        }
+
+        try {
+          let flowRunId: string | undefined;
+          this.logger.info(`Create dataset ${id}`);
+          const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
+          const resultsSchemaName = resultsSchemaValue
+            ? resultsSchemaValue
+            : `${schemaName}_results`;
+
+          // Create CDM & Custom schemas
+          if (schemaOption != CDMSchemaTypes.NoCDM && schemaName) {
+            if (
+              schemaOption == CDMSchemaTypes.CreateCDM ||
+              schemaOption == CDMSchemaTypes.CustomCDM
+            ) {
+              try {
+                this.logger.info(
+                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
+                );
+
+                const options = {
+                  options: {
+                    flow_action_type: "create_datamodel",
+                    database_code: databaseCode,
+                    data_model: dataModel,
+                    schema_name: schemaName,
+                    cache_schema_name: parsedNewCacheSchemaName,
+                    vocab_schema: vocabSchema,
+                    results_schema: resultsSchemaName,
+                    plugin: plugin,
+                  },
+                };
+                const datamodelFlowRunDto = {
+                  flowRunName: `datamodel-create-${schemaName}`,
+                  options: options,
+                };
+                flowRunId = await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating new CDM schema! ${error}`,
+                );
+                return res.status(500).send("Error while creating CDM schema");
+              }
+            }
+          }
+
+          if (schemaOption === CDMSchemaTypes.ExistingCDM) {
+            const dbAPI = new DbCredentialsAPI(token);
+            const dbList = await dbAPI.getDbList();
+            const db = dbList.find((d) => d.code === databaseCode);
+
+            if (!db) {
+              this.logger.error(
+                `Database with code ${databaseCode} does not exist`,
+              );
+              return res.status(400).send("Database does not exist");
+            }
+
+            if (!db.vocab_schemas.includes(schemaName)) {
+              this.logger.info(
+                `Vocab schema ${schemaName} does not exist in database ${databaseCode}. Appending it to the database`,
+              );
+
+              await dbAPI.updateDbDetails({
+                id: databaseCode,
+                vocabSchemas: [...db.vocab_schemas, schemaName],
+              });
+            }
+          }
+
+          this.logger.info("Creating new dataset in Portal");
+          const newDatasetInput = {
+            id,
+            type: isWebApiManaged ? "webapi" : type,
+            tokenDatasetCode: tokenStudyCode,
+            schemaOption,
+            dialect,
+            databaseCode: databaseCode,
+            schemaName,
+            vocabSchemaName: vocabSchema,
+            resultsSchemaName,
+            dataModel,
+            plugin,
+            tenantId,
+            paConfigId,
+            visibilityStatus: isWebApiManaged ? "DEFAULT" : visibilityStatus,
+            detail,
+            dashboards,
+            attributes,
+            tags,
+            fhir_project_id: fhirProjectId,
+          };
+
+          let newDataset;
+          try {
+            newDataset = await portalAPI.createDataset(newDatasetInput);
+          } catch (createError: any) {
+            const status = createError.status || createError.response?.status;
+            const responseData = createError.response?.data;
+            this.logger.error(
+              `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+            );
+            // Return 400 for client errors, 500 for server errors
+            const httpStatus = status >= 400 && status < 500 ? status : 500;
+            return res
+              .status(httpStatus)
+              .json(responseData || { error: createError.message });
+          }
+
+          let newCacheDataset: any = {};
+          if (!isWebApiManaged) {
+            this.logger.info("Creating cache dataset in Portal");
+
+            if (
+              type === SourceDatasetType.FHIR &&
+              cacheDatasetType === CacheDatasetType.NON_OMOP
+            ) {
+              let resolvedFhirProjectId = fhirProjectId;
+              if (!resolvedFhirProjectId) {
+                try {
+                  this.logger.info(
+                    `Creating FHIR project for dataset '${tokenStudyCode}'..`,
+                  );
+                  const fhirGatewayAPI = new FhirGatewayAPI(token);
+                  resolvedFhirProjectId = await fhirGatewayAPI.createProject(
+                    id,
+                    detail?.name || tokenStudyCode,
+                  );
+                  this.logger.info(
+                    `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
+                  );
+                } catch (error) {
+                  await portalAPI.deleteDataset(id);
+                  this.logger.error(
+                    `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
+                  );
+                  return res
+                    .status(500)
+                    .send("Dataset cannot be created because of FHIR project creation failure");
+                }
+              }
+
+              try {
+                this.logger.info(
+                  `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
+                );
+                const fhirCacheFlowRunDto = {
+                  databaseCode: databaseCode,
+                  schemaName: schemaName,
+                  cacheSchemaName: parsedNewCacheSchemaName,
+                  studyCode: tokenStudyCode,
+                  fhirProjectId: resolvedFhirProjectId,
+                };
+                const fhirCacheResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+                flowRunId = fhirCacheResult?.flowRunId;
+              } catch (error) {
+                this.logger.error(
+                  `Error while creating FHIR cache schema! ${error}`,
+                );
+                return res
+                  .status(500)
+                  .send("Error while creating FHIR cache schema");
+              }
+            }
+
+            if (cacheDatasetName && cacheDatasetType) {
+              const snapshotRequest = {
+                id: uuidv4(),
+                sourceDatasetId: id,
+                newDatasetName: cacheDatasetName,
+                schemaName: schemaName,
+                timestamp: new Date(),
+                type: cacheDatasetType,
+              };
+              newCacheDataset = await portalAPI.copyDataset(snapshotRequest);
+
+              if (
+                schemaOption === CDMSchemaTypes.ExistingCDM &&
+                cacheDatasetType === CacheDatasetType.OMOP
+              ) {
+                try {
+                  this.logger.info(
+                    `Creating cache for existing schema ${schemaName}. Cache schema name is ${schemaName}`,
+                  );
+                  const dataModels = await jobpluginsAPI.getDatamodels();
+                  const dataModelInfo = dataModels.find(
+                    (model) => model.datamodel === dataModel,
+                  );
+                  const datamartCacheResult = await jobpluginsAPI.createDatamartCacheFlowRun(
+                    id,
+                    newCacheDataset.id,
+                    {},
+                    dataModelInfo?.flowId,
+                    `datamart-cache-${schemaName}`,
+                  );
+                  flowRunId = datamartCacheResult?.flowRunId;
+                } catch (error) {
+                  this.logger.error(
+                    `Error while creating cache for existing schema! ${error}`,
+                  );
+                  return res
+                    .status(500)
+                    .send("Error while creating cache for existing schema");
+                }
+              }
+            }
+          }
+
+          return res
+            .status(200)
+            .json({ id: newDataset.id, cacheId: newCacheDataset.id, flowRunId });
+        } catch (error) {
+          this.logger.error(
+            `Error while creating dataset: ${JSON.stringify(error)}`,
+          );
+          res.status(500).send("Error while creating dataset");
+        }
+      },
+    );
+
+    this.router.post("/snapshot", async (req: Request, res: Response) => {
+      const token = req.headers.authorization!;
+      const portalAPI = new PortalAPI(token);
+      const jobpluginsAPI = new JobPluginsAPI(token);
+
+      const {
+        sourceStudyId,
+        sourceType,
+        newStudyName,
+        snapshotLocation,
+        snapshotCopyConfig,
+        dataModel,
+        type,
+        cdmSchemaValue,
+        vocabSchemaValue,
+        resultsSchemaValue,
+      } = req.body;
+      const {
+        dialect,
+        databaseCode,
+        schemaName,
+        vocabSchemaName,
+        resultsSchemaName,
+        tokenStudyCode
+      } = await portalAPI.getDataset(sourceStudyId);
+
+      const sourceHasSchema = schemaName.trim() !== "";
+      const id = uuidv4();
+
+      // Use parent schema names if provided, otherwise generate new ones
+      const newSchemaName = `CDM${id}`.replace(/-/g, "");
+      const newVocabSchemaName = vocabSchemaValue || vocabSchemaName;
+      const newResultsSchemaName = resultsSchemaValue || resultsSchemaName;
+
+      const parsedNewSchemaName = this.schemaCase(
+        newSchemaName,
+        dialect as DbDialect,
+      );
+
+      try {
+        const snapshotRequest = {
+          id,
+          sourceDatasetId: sourceStudyId,
+          newDatasetName: newStudyName,
+          schemaName: parsedNewSchemaName,
+          vocabSchemaName: newVocabSchemaName,
+          resultsSchemaName: newResultsSchemaName,
+          timestamp: new Date(),
+          type,
+          flowParameters: snapshotCopyConfig
+            ? { snapshotCopyConfig }
+            : undefined,
+        };
+
+        this.logger.info("Copying dataset in Portal");
+        const newDataset = await portalAPI.copyDataset(snapshotRequest);
+        let flowRunId: string | undefined;
+
+        // Copy schema if it exist
+        if (sourceHasSchema) {
+          if (
+            type === CacheDatasetType.NON_OMOP &&
+            sourceType === SourceDatasetType.FHIR
+          ) {
+            this.logger.info(
+              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`,
+            );
+            try {
+              const fhirCacheFlowRunDto = {
+                databaseCode: databaseCode,
+                schemaName: schemaName,
+                cacheSchemaName: parsedNewSchemaName,
+                studyCode: tokenStudyCode,
+              };
+              const fhirResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
+              flowRunId = fhirResult?.flowRunId;
+            } catch (error) {
+              this.logger.error(`Error copying source FHIR schema! ${error}`);
+              throw new Error(`Error copying source FHIR schema! ${error}`);
+            }
+          } else {
+            this.logger.info(
+              `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
+                snapshotCopyConfig,
+              )})`,
+            );
+
+            try {
+              const dataModels = await jobpluginsAPI.getDatamodels();
+              const dataModelInfo = dataModels.find(
+                (model) => model.datamodel === dataModel,
+              );
+
+              const datamartResult = await jobpluginsAPI.createDatamartCacheFlowRun(
+                sourceStudyId,
+                newDataset.id,
+                snapshotCopyConfig,
+                dataModelInfo.flowId,
+                `datamart-snapshot-${schemaName}`,
+              );
+              flowRunId = datamartResult?.flowRunId;
+            } catch (error) {
+              this.logger.error(`Error copying CDM schema! ${error}`);
+              throw new Error(`Error copying CDM schema! ${error}`);
+            }
+          }
+        }
+
+        return res.status(200).json({ ...newDataset, flowRunId });
+      } catch (error) {
+        this.logger.error(
+          `Error when copying dataset: ${JSON.stringify(error)}`,
+        );
+        res.status(500).send(`Error when copying dataset: ${error}`);
+      }
+    });
+
+    this.router.get("/info", async (req: Request, res: Response) => {
+      const { datasetId } = req.query || {};
+
+      if (!datasetId || typeof datasetId !== "string") {
+        return res.status(400).send("datasetId is required");
+      }
+
+      try {
+        const token = req.headers.authorization!;
+        const portalAPI = new PortalAPI(token);
+        const dataset = await portalAPI.getDataset(datasetId);
+        return res.status(200).json({
+          type: dataset.type,
+          tokenStudyCode: dataset.tokenStudyCode,
+        });
+      } catch (error) {
+        this.logger.error(`Error when getting dataset info: ${JSON.stringify(error)}`);
+        res.status(500).send("Error when getting dataset info");
+      }
+    });
+
+    this.router.get("/dashboard/list", async (req: Request, res: Response) => {
+      const { datasetId } = req.query || {};
+
+      if (!datasetId) {
+        return res.status(400).send(`datasetId is required`);
+      } else if (typeof datasetId !== "string") {
+        return res.status(400).send(`datasetId query param is invalid`);
+      }
+
+      try {
+        const token = req.headers.authorization!;
+        const portalAPI = new PortalAPI(token);
+        const dashboards = await portalAPI.getDatasetDashboards(datasetId);
+
+        // Map to return id, datasetId, name, and language
+        const mapped = dashboards.map((dashboard: DashboardCode) => ({
+          id: dashboard.id,
+          datasetId: dashboard.datasetId,
+          name: dashboard.name,
+          language: dashboard.language,
+        }));
+
+        this.logger.info(
+          `Found ${mapped.length} dashboards for dataset ${datasetId}`,
+        );
+
+        return res.status(200).json(mapped);
+      } catch (error) {
+        this.logger.error(
+          `Error when getting dashboards: ${JSON.stringify(error)}`,
+        );
+        res.status(500).send("Error when getting dashboards");
+      }
+    });
+
+    this.router.use(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response, next: NextFunction) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+
+        if (!datasetId || !type || !name || !language) {
+          return res
+            .status(400)
+            .send(
+              "Invalid resource ID format. Expected: datasetId_type_name_language",
+            );
+        }
+
+        try {
+          const staticDir = await this.shinyLiveService.getStaticFilesDir(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+
+          if (!staticDir) {
+            return res.status(404).send("Shinylive application not found");
+          }
+
+          express.static(staticDir, {
+            index: "index.html",
+            fallthrough: true,
+          })(req, res, async () => {
+            const requestedPath =
+              req.path === "/" ? "index.html" : req.path.substring(1);
+            const encodedSubPath = requestedPath
+              .split("/")
+              .map(encodeURIComponent)
+              .join("/");
+            const url = this.shinyLiveService.getPublicUrl(
+              datasetId,
+              type,
+              name,
+              language,
+              encodedSubPath,
+            );
+
+            try {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                return res.status(response.status).send("Resource not found");
+              }
+
+              const buffer = Buffer.from(await response.arrayBuffer());
+              const contentType =
+                response.headers.get("content-type") ||
+                "application/octet-stream";
+
+              res.set("Content-Type", contentType);
+              res.send(buffer);
+
+              const localFilePath = path.join(staticDir, requestedPath);
+              try {
+                await fs.mkdir(path.dirname(localFilePath), {
+                  recursive: true,
+                });
+                await fs.writeFile(localFilePath, buffer);
+              } catch (e) {}
+            } catch (err) {
+              this.logger.error("[ShinyLive] Proxy error:", err);
+              return res.status(502).send("Error fetching resource");
+            }
+          });
+        } catch (error) {
+          this.logger.error("[ShinyLive] Error:", { resourceId, error });
+          res.status(500).send("Error loading shiny-live application");
+        }
+      },
+    );
+
+    // resourceId format: datasetId_type_name_language
+    this.router.delete(
+      "/shiny-live/:resourceId",
+      async (req: Request, res: Response) => {
+        const resourceId = req.params.resourceId;
+        const [datasetId, type, name, language] = resourceId.split("_");
+        this.logger.info(`Deleting shiny-live resources for ${resourceId}`);
+
+        try {
+          await this.shinyLiveService.deleteDatasetShinyLiveResources(
+            datasetId,
+            type,
+            name,
+            language,
+          );
+          return res.status(200).send("Resource deleted successfully");
+        } catch (error) {
+          this.logger.error(
+            `Error deleting shiny-live resources: ${JSON.stringify(error)}`,
+          );
+          res.status(500).send("Error deleting shiny-live resources");
+        }
+      },
+    );
+  }
+}
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb" }));
+app.use("/gateway/api/dataset", new DatasetRouter().router);
+app.listen(8000);

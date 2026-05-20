@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "isomorphic-git": "npm:isomorphic-git@1.27.1",
+    "isomorphic-git/http": "npm:isomorphic-git@1.27.1/http/web/index.js",
+    "fs": "node:fs",
+    "path": "node:path"
+  }
+}

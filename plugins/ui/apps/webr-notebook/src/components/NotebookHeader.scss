@@ -1,0 +1,85 @@
+$primary: #000080;
+
+.notebook-header {
+  color: $primary;
+  border-bottom: 1px solid lightgray;
+  background-color: white;
+  width: 100%;
+
+  &__content {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 0;
+
+    &-title {
+      display: flex;
+      align-items: center;
+      margin-left: 1rem;
+      gap: 4px;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-right: 1rem;
+  }
+
+  &__btn {
+    background-color: transparent;
+    border: 1px solid $primary;
+    border-radius: 6px;
+    cursor: pointer;
+    color: $primary;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 5px 14px;
+    outline: none;
+    font-family: inherit;
+    transition: background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(0, 0, 128, 0.05);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  &__icon-btn {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: $primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    outline: none;
+
+    &:hover {
+      opacity: 0.7;
+    }
+  }
+
+  &__share-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: $primary;
+    padding: 4px 12px;
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      accent-color: $primary;
+      margin-bottom: 0;
+    }
+  }
+}

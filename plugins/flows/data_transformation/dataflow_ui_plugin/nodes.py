@@ -1,0 +1,914 @@
+from io import StringIO
+import os
+from _shared_flow_utils.api.FhirAPI import FhirAPI
+import ibis
+import json
+import duckdb
+import logging
+from typing import Any
+import traceback as tb
+from rpy2 import robjects
+from functools import partial
+from jsonpath_ng import parse
+from asyncio import iscoroutine, run
+
+import pandas as pd
+from pandas.api.types import is_list_like, is_dict_like
+
+from genson import SchemaBuilder
+from genson.schema.node import SchemaGenerationError
+
+from prefect import task, flow
+
+from .hooks import *
+from .flowutils import *
+from .types import (NodeType, 
+                    TableSourceType, 
+                    DataMappingType, 
+                    ConceptMappingType)
+
+from .nodeutils.querygenerator import *
+from .nodeutils.csvutils import load_csv_from_storage
+from .fhirutils.utils import omop_transform_utils
+from _shared_flow_utils.dao.DBDao import DBDao
+from subprocess import Popen, PIPE, STDOUT
+
+
+class Node:
+    def __init__(self, name, node):
+        self.id = node["id"]
+        self.name = name
+        self.type = node["type"]
+
+
+class Flow(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.graph = _node["graph"]
+        self.executor_type = _node["executor_options"]["executor_type"]
+        self.executor_host = _node["executor_options"]["executor_address"]["host"]
+        self.executor_port = _node["executor_options"]["executor_address"]["port"]
+        self.ssl = _node["executor_options"]["executor_address"]["ssl"]
+        self.sorted_nodes = get_node_list(self.graph)
+
+
+class Result:
+    def __init__(self, error: bool, data, node: Node, task_run_context):
+        self.error = error
+        self.node = node
+        self.result = data # preserves the actual data of the node result
+        self.task_run_id = str(task_run_context.get("id"))
+        self.task_run_name = str(task_run_context.get("name"))
+        self.flow_run_id = str(task_run_context.get("flow_run_id"))
+
+
+    def serialize_result(self):
+        base_result = {
+            "error": self.error,
+            "errorMessage": self.result if self.error else None,
+            "nodeName": self.node.name
+        }
+
+        if self.error: return base_result
+        base_result.update(self.__create_result_schema(self.result))
+        return base_result
+    
+
+    def __is_strictly_list_like(self, obj):
+        return is_list_like(obj) and not is_dict_like(obj)
+    
+
+    def __create_result_schema(self, result_value: Any):
+        result_schema = {
+            "length": len(result_value) if hasattr(result_value, "__len__") else None,
+            "type": str(type(result_value))
+        }
+
+        if isinstance(result_value, pd.DataFrame):
+            result_schema["schema"] = result_value.dtypes.apply(lambda x: x.name).to_dict()
+            return result_schema
+
+        try:
+            builder = SchemaBuilder()
+            if self.__is_strictly_list_like(result_value):
+                builder.add_object(list(result_value))
+            elif is_dict_like(result_value):
+                builder.add_object(result_value)
+            else:
+                return result_schema
+
+            schema = builder.to_schema()
+            schema.pop("$schema", None)
+            schema.pop("required", None)
+            result_schema["schema"] = schema
+
+
+        except SchemaGenerationError:
+            if self.__is_strictly_list_like(result_value):
+                result_schema["schema"] = [self.__create_result_schema(v) for v in result_value]
+            elif is_dict_like(result_value):
+                result_schema["schema"] = {k: self.__create_result_schema(v) for k, v in result_value.items()}
+            
+        return result_schema
+
+
+class Py2TableNode(Node):
+    """
+    Retrieves a table using a specified path in a python object and return as table.
+    
+    Attributes:
+        path: str
+        source: str
+    """
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.map = _node.get("map")
+        self.ui_map = _node.get("uiMap")
+
+
+    def _get_matches(self, json_to_parse: dict, json_path: str):
+        expression = parse(json_path)
+
+        matched: list = expression.find(json_to_parse)
+
+        # Assume only one match so return index 0
+        return matched[0].value
+    
+    def __create_dataframe(self, data: dict|list) -> pd.DataFrame:
+        if isinstance(data, dict):
+            if all(not isinstance(v, list) for v in data.values()):
+                # If values are all scalar, need to pass in index
+                index = [0]
+                return pd.DataFrame(data, index=index)
+            else:
+                return pd.DataFrame.from_dict(data)
+        else:
+            # Data is list
+            return pd.DataFrame(data)
+
+    def _exec(self, _input: dict[str, Result]) -> pd.DataFrame:
+        source_node = self.ui_map.get("source").split(".")[0]
+        path = self.ui_map.get("path")
+        result_obj = _input.get(source_node).result
+
+        if isinstance(result_obj, pd.DataFrame):
+            return result_obj
+        elif isinstance(result_obj, dict):
+            # If result from input node is already a json/dict object, use jsonpath to access data
+            data = self._get_matches(result_obj, path)
+        else:
+            # Assume result from input node is an instance of a class
+            # Remove first element and use it to access the attribute that stores the data
+            path_list: list = path.split(".")
+            data_attribute = path_list.pop(0)
+            json_to_parse = getattr(result_obj, data_attribute)
+            data = self._get_matches(json_to_parse, ".".join(path_list))
+
+        df = self.__create_dataframe(data)
+        return df
+    
+    def test(self, _input: dict[str, Result], task_run_context):
+        try:
+            table_df = self._exec(_input)
+            return Result(False,  table_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+    
+
+    def task(self, _input: dict[str, Result], task_run_context):
+        try:
+            table_df = self._exec(_input)
+            return Result(False,  table_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class SqlNode(Node):
+    """
+    Execute queries on pandas dataframes using duckdb as backend.
+    
+    Attributes:
+        tables: A dictionary mapping of a user input table name to a dataframe from an incoming node. 
+        sql: The sql query to execute.
+    """
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.sql = _node["sql"]
+        
+    def __exec_query(self, _input: dict[str, Result]) -> pd.DataFrame:
+        con = None
+        try:
+            # create temporary in-memory table and register input dfs as tables
+            con = duckdb.connect()
+            # If _input is empty i.e. no linked nodes assume dummy query and execute
+            if _input == {}:
+                result_df = con.execute(self.sql).fetch_df()
+            else:
+                for nodename, input_node_result in _input.items():
+                    data = input_node_result.result
+
+                    # Register incoming dfs as tables using nodename
+                    if isinstance(data, str):
+                        temp_df = pd.DataFrame(json.loads(data))
+                        con.register(nodename, temp_df)
+                    else:
+                        
+                        con.register(nodename, data)
+                result_df = con.execute(self.sql).fetch_df()
+            return result_df
+        except Exception as e:
+            raise e
+        finally:
+            if con:
+                con.close()
+        
+            
+    def task(self, _input: dict[str, Result], task_run_context)  -> pd.DataFrame:
+        try:
+            result_df = self.__exec_query(_input)
+            return Result(False,  result_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+    def test(self, _input: dict[str, Result], task_run_context):
+        return self.task(_input, task_run_context)
+
+
+class PythonNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.source_code = _node["python_code"] + '\noutput = exec(myinput)'
+        self.test_source_code = _node["python_code"]+'\noutput = test_exec(myinput)'
+        
+    def test(self, _input: dict[str, Result], 
+             shared_variables: dict[str, str], 
+             importlibs: list[str], 
+             task_run_context):
+        return self.task(_input, shared_variables, importlibs, task_run_context)
+
+    def task(self, _input: dict[str, Result], 
+             shared_variables: list[dict[str, str]], 
+             importlibs: list[str], 
+             task_run_context):
+        params = {"myinput": _input, "output": {}}
+        try:
+            if shared_variables:
+                for item in shared_variables:
+                    params.update({item["key"]: item["value"]})
+            if importlibs:
+                exec("\n".join(importlibs), params)
+            code = compile(self.source_code, '<string>', 'exec')
+
+            data = exec(code, params)
+            output = params["output"]
+            # If python code was async, output will be a coroutine
+            if iscoroutine(output):
+                params["output"] = run(output)
+            return Result(False,  params["output"], self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class RNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.r_code = ''''''+_node["r_code"]+''''''
+
+    def test(self, _input: dict[str, Result], task_run_context):
+        
+        with robjects.conversion.localconverter(robjects.default_converter):
+            r_inst = robjects.r(self.r_code)
+            r_test_exec = robjects.globalenv['test_exec']
+            global_params = {"r_test_exec": r_test_exec, "convert_R_to_py": convert_R_to_py,
+                             "myinput": convert_py_to_R(_input), "output": {}}
+            e = exec(
+                f'output = convert_R_to_py(r_test_exec(myinput))', global_params)
+        output = global_params["output"]
+        return output
+
+    def task(self, _input: dict[str, Result], task_run_context):
+        try:
+            with robjects.conversion.localconverter(robjects.default_converter):
+                r_inst = robjects.r(self.r_code)
+                r_exec = robjects.globalenv['exec']
+                global_params = {"r_exec": r_exec, "convert_R_to_py": convert_R_to_py,
+                                 "myinput": convert_py_to_R(_input), "output": {}}
+                e = exec(f'output = convert_R_to_py(r_exec(myinput))',
+                         global_params)
+            output = global_params["output"]
+            return Result(False,  output, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class CsvNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.file = _node["file"]
+        self.delimiter = _node["delimiter"]
+
+        self.names = _node["columns"]
+        self.hasheader = _node["hasheader"]
+        self.encoding = _node.get("encoding", "utf8")
+
+    def test(self, task_run_context):
+        df = load_csv_from_storage(
+            node_id=self.id,
+            filename=self.file,
+            hasheader=self.hasheader,
+            delimiter=self.delimiter,
+            names=self.names,
+            encoding=self.encoding
+        )
+        return df
+
+    def task(self, task_run_context) -> Result:
+        try:
+            df = load_csv_from_storage(
+                node_id=self.id,
+                filename=self.file,
+                hasheader=self.hasheader,
+                delimiter=self.delimiter,
+                names=self.names,
+                encoding=self.encoding
+            )
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class TransformFhirDataNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.structure_map = _node["structure_map"]
+        self.dataframe = _node["dataframe"]
+        
+    def get_fhir_structure_definition(self, url: str) -> dict:
+        fhir_api = FhirAPI()
+        query = f"?url={url}"
+        response = fhir_api.get(resource_type="StructureDefinition", query=query)
+        if(response):
+            response_json = response.get("entry", [])[0].get("resource", {})
+        else:
+            response_json = {}
+        return response_json
+    
+    def get_omop_structure_definition_by_url(self, folder: str, incoming_url: str) -> dict:
+        omop_structureDefinition = {}
+        for fname in os.listdir(folder):
+            if fname.endswith('.json'):
+                file_path = os.path.join(folder, fname)
+                with open(file_path, "r", encoding="utf8") as f:
+                    try:
+                        data = json.load(f)
+                    except Exception:
+                        raise Exception("Target omop structure definition file not found")
+                    if data.get("url") == incoming_url:
+                        omop_structureDefinition = data
+        if omop_structureDefinition == {}:
+            raise Exception(f"OMOP Structure Definition not found for url: {incoming_url}")
+        return omop_structureDefinition
+
+    def omop_table_name(self, target_structure_definition_url: str) -> str:
+        omop_table = omop_transform_utils.omop_tables[target_structure_definition_url]
+        return omop_table
+
+    def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
+        if(input_fhir_df is None):
+            raise Exception("Input FHIR Dataframe is None")
+        elif self.structure_map is None:
+            raise Exception("Structure map is not defined")
+        source_structure_definition_url = ""
+        target_structure_definition_url = ""
+        structure_list = json.loads(self.structure_map).get("structure", [])
+        for struct in structure_list:
+            if struct['mode'] == 'source':
+                source_structure_definition_url = struct['url']
+            elif struct['mode'] == 'target':
+                target_structure_definition_url = struct['url']
+        # Call FHIR server to get source structure definition
+        source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
+        folder = "/app/flows/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
+        target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
+        transformed_omop = []
+        if input_fhir_df is not None and "content" in input_fhir_df.columns:
+            content_list = input_fhir_df["content"].tolist()
+            fhir_resource = content_list if content_list else None
+        else:
+            fhir_resource = None
+        script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
+        omop_table_name = self.omop_table_name(target_structure_definition_url)
+        if source_structure_definition_url is None or source_structure_definition_url == "":
+            raise Exception("Source Structure Definition URL is missing in structure map")
+        elif target_structure_definition_url is None or target_structure_definition_url == "":
+            raise Exception("Target Structure Definition URL is missing in structure map")
+        elif not source_structure_definition:
+            raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
+        elif not target_structure_definition:   
+            raise Exception(f"Target Structure Definition not found for url: {target_structure_definition_url}")
+        elif omop_table_name is None:
+            raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
+        print("Starting FHIR Transform...")
+        if fhir_resource:
+            for key in fhir_resource:
+                with Popen(
+                    [
+                        'node',
+                        script_path,
+                        self.structure_map,
+                        json.dumps(key),
+                        json.dumps(source_structure_definition),
+                        json.dumps(target_structure_definition)
+                    ],
+                    stdout=PIPE,
+                    stderr=STDOUT,
+                    text=True
+                ) as process:
+                    try:
+                        stdout, _ = process.communicate()
+                        if process.returncode != 0:
+                            raise Exception(f"FHIR Transform failed with error: {stdout}")
+                        transformed_data = json.loads(stdout)
+                        transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
+                        transformed_omop.append(transformed_data)
+                    except Exception as e:
+                        raise e
+            df = pd.json_normalize(transformed_omop)
+        else:
+            df = None
+        return df
+
+    def test(self, task_run_context) -> Result:
+        try:
+            df = self.transform_fhir_data()
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
+        try:
+            df_to_write = _input[self.dataframe].result
+            if df_to_write is None:
+                raise Exception("Input dataframe is None")
+            df = self.transform_fhir_data(df_to_write)
+            if df is None:
+                raise Exception("Transformation resulted in empty dataframe")
+            df = df.drop(columns=["meta.profile"], errors='ignore')
+            df = df.drop(columns=["resourceType"], errors='ignore')
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+class GenericFileNode(Node):
+    """
+    Loads a file or a zip file and return its address.
+    """
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.file = _node["file"]
+        logging.info(f"GenericFileNode: file={self.file}")
+
+    def task(self, task_run_context) -> Result:
+        try:
+            node_id = self.id
+            filename = self.file
+
+            result = {
+                "node_id": node_id,
+                "filename": filename
+            }
+            return Result(False, result, self, task_run_context)
+
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+        
+class DbWriter(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.schema_name = _node["schemaname"]
+        self.table_name = _node["dbtablename"]
+        self.database = _node["database"] 
+        self.dataframe = _node["dataframe"]
+        self.use_cache_db = False
+
+    def test(self, _input: dict[str, Result], task_run_context):
+        return False
+
+    def task(self, _input: dict[str, Result], task_run_context):        
+        dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
+        dbconn = dbutils.engine
+
+        try:
+            df_to_write = _input[self.dataframe].result
+            result = df_to_write.to_sql(self.table_name, 
+                                        dbconn, 
+                                        schema=self.schema_name, 
+                                        if_exists='append',
+                                        index=False)
+            
+            return Result(False,  result, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+class DBReader(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.sqlquery = _node["sqlquery"]
+        self.schemaname = "cdmdefault" # Use as the default schema for all dialects
+        self.database = _node["database"]
+        self.testdata = _node["testdata"]
+
+    def test(self, task_run_context):
+        return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
+
+    def task(self, task_run_context) -> Result:
+        dbutils = DBDao(use_cache_db=False, database_code=self.database) 
+        dbconn = dbutils.engine
+
+        try:
+            df = pd.read_sql_query(
+                self.sqlquery, dbconn)
+            return Result(False,  df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+class ConceptMappingNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+
+        self.concept_mapping_data = _node["data"]["csvData"]["data"]
+        
+    def test(self, task_run_context) -> Result:
+        return self.task(task_run_context)
+    
+    def task(self, task_run_context) -> Result:
+        try:
+            checked_concepts = (
+                {
+                    "domain_id": cm.domainId,
+                    "concept_id": cm.conceptId,
+                    "concept_name": cm.conceptName,
+                    "concept_code": cm.conceptCode,
+                    "vocabulary_id": cm.vocabularyId,
+                    "source_code": cm.source_code,
+                    "validity": cm.validity if cm.validity else None
+                } for item in self.concept_mapping_data
+                if (cm := ConceptMappingType(**item)).status == "checked"
+            )
+            concept_mapping_df = pd.DataFrame(checked_concepts)
+            return Result(False,  concept_mapping_df, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class WhiteRabbitNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.scan_metadata = _node["scanMetadata"]
+    
+    def test(self, task_run_context) -> Result:
+        return Result(False,  "White Rabbit Node Test Successful", self, task_run_context)
+
+    def task(self, task_run_context) -> Result:
+        try:
+            scan_metadata = self.scan_metadata
+            scan_metadata["node_id"] = self.id
+            return Result(False,  scan_metadata, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
+class DataMappingNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+
+
+        # Fail node generation if scan report data validation fails
+        self.etl_mapping = DataMappingType(**_node["data"])
+
+    def create_target_table_df(self, target_table_name: str, scan_metadata: dict) -> pd.DataFrame:
+        """
+        Creates and returns a pandas DataFrame for the specified target table.
+        Args:
+            target_table_name (str): The name of the target table.
+            scan_metadata (dict): The scan metadata from the White Rabbit Node.
+        Returns:
+            pd.DataFrame: A DataFrame containing the data from the target table.
+        Raises:
+            Exception: Propagates any exceptions encountered during database connection or querying.
+        """
+        table_source = scan_metadata.get("dataType")
+
+        db_con = None
+        try:
+            if table_source == TableSourceType.CSV:
+                # Use duckdb as ibis backend for csv files
+                db_con = ibis.duckdb.connect()
+                target_df = self.generate_query(db_con, target_table_name, table_source, scan_metadata)
+
+            if table_source  == TableSourceType.DB:
+                database_code = scan_metadata.get("databaseCode")
+                # Use db as ibis backend depending on database_code
+                db_con = DBDao(use_cache_db=False, database_code=database_code).ibis_connect()
+                with db_con as con:
+                    target_df = self.generate_query(con, target_table_name, table_source, scan_metadata)
+
+        except Exception as e:
+            raise
+        finally:
+            if db_con and table_source == TableSourceType.CSV:
+                db_con.disconnect()
+
+        return target_df
+    
+    def _load_source_table(self, con, source_table_name: str, table_source: TableSourceType, scan_metadata: dict):
+        """
+        Loads source table data and registers it in the connection.
+        
+        Args:
+            con: Database connection
+            source_table_name: Name of the source table
+            table_source: Type of source (CSV or DB)
+            scan_metadata: Metadata containing source information
+            
+        Returns:
+            Ibis table expression for the source table
+        """
+        if table_source == TableSourceType.CSV:
+            csv_file_name = scan_metadata.get("fileName")
+            delimiter = scan_metadata.get("delimiter", ",")
+            node_id = scan_metadata.get("node_id")
+
+            source_df = load_csv_from_storage(
+                node_id=node_id,
+                filename=csv_file_name,
+                delimiter=delimiter,
+                names=None,
+                encoding="utf8"
+            )
+            temp_table_obj = con.create_table(source_table_name, source_df)
+        else:  # TableSourceType.DB
+            schema_name = scan_metadata.get("schemaName")
+            temp_table_obj = con.table(source_table_name, database=schema_name)
+        
+        # Cast integer columns to int64 for consistency
+        return temp_table_obj.mutate({
+            name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
+            for name, dtype in temp_table_obj.schema().items()
+        })
+    
+    def _process_column_mappings(self, source_table_obj, source_table_name: str, 
+                                 target_table_name: str, target_column_properties):
+        """
+        Processes column mappings between source and target tables.
+        
+        Args:
+            source_table_obj: Ibis table expression for source data
+            source_table_name: Name of the source table
+            target_table_name: Name of the target table
+            target_column_properties: List of target column properties
+            
+        Returns:
+            Tuple of (selected_columns list, mapped_target_columns set)
+        """
+        column_mappings = self.etl_mapping.field.edges
+        selected_columns = []
+        mapped_target_columns = set()
+        
+        for column_mapping in column_mappings:
+            if (column_mapping.sourceHandle.startswith(source_table_name) and 
+                column_mapping.targetHandle.startswith(target_table_name)):
+                
+                source_column_name = column_mapping.sourceHandle.split("-")[-1]
+                target_column_name = column_mapping.targetHandle.split("-")[-1]
+                
+                mapped_target_columns.add(target_column_name)
+                
+                selected_columns.append(
+                    apply_ibis_func(
+                        expr=source_table_obj[source_column_name],
+                        table_columns=target_column_properties,
+                        target_column=target_column_name
+                    )
+                    .cast(convert_column_type(target_column_name, target_column_properties))
+                    .name(target_column_name)
+                )
+        
+        return selected_columns, mapped_target_columns
+    
+    def _add_constant_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds columns with constant values to the selection.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set to track mapped columns
+            
+        Returns:
+            List of constant value column expressions
+        """
+        constant_columns = []
+        
+        for col in target_column_properties:
+            if col.data.constantValue:
+                constant_columns.append(
+                    ibis.literal(
+                        convert_value(col.data.constantValue, col.data.columnType)
+                    ).name(col.data.label)
+                )
+                mapped_target_columns.add(col.data.label)
+        
+        return constant_columns
+    
+    def _add_unmapped_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds null-valued columns for unmapped target columns.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set of already mapped column names
+            
+        Returns:
+            List of null column expressions with appropriate types
+        """
+        target_column_names = [col.data.label for col in target_column_properties]
+        unmapped_target_columns = set(target_column_names) - mapped_target_columns
+        
+        return [
+            ibis.null()
+            .cast(convert_column_type(col_name, target_column_properties))
+            .name(col_name)
+            for col_name in unmapped_target_columns
+        ]
+    
+
+    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, scan_metadata: dict) -> pd.DataFrame:
+        """
+        Generates and executes a query to transform source table(s) to a target table.
+        
+        This method processes ETL mappings to generate SQL queries that transform source data
+        into the target table format. It handles column mappings, type conversions, constant values,
+        and unmapped columns. For multiple source tables, it combines them using UNION ALL.
+        
+        Args:
+            con: Database connection (ibis or duckdb connection object)
+            target_table_name: Name of the target table to generate data for
+            table_source: Source type (CSV or DB) from TableSourceType enum
+            scan_metadata: Metadata dictionary containing source information:
+                - For CSV: 'fileName', 'delimiter', 'node_id'
+                - For DB: 'schemaName', 'databaseCode'
+        
+        Returns:
+            pd.DataFrame: Transformed data matching the target table schema
+        
+        Raises:
+            Exception: If there are issues loading source data, creating tables, or executing queries
+        
+        Note:
+            - Loads CSV files using load_csv_from_storage for CSV sources
+            - Automatically handles type casting and null values for unmapped columns
+            - Applies transformation functions specified in the ETL mapping
+            - Uses UNION ALL to combine multiple source tables mapped to the same target
+        """
+        table_mappings = self.etl_mapping.table.edges
+        source_table_queries = {}
+        
+        # Process each source table mapped to the target table
+        for mapping in table_mappings:
+            if mapping.targetHandle != target_table_name:
+                continue
+            
+            source_table_name = mapping.sourceHandle
+            field_map_key = mapping.id
+            target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
+            
+            # Load source table data
+            source_table_obj = self._load_source_table(
+                con, source_table_name, table_source, scan_metadata
+            )
+            
+            # Process column mappings
+            selected_columns, mapped_target_columns = self._process_column_mappings(
+                source_table_obj, source_table_name, target_table_name, target_column_properties
+            )
+            
+            # Add constant value columns
+            constant_columns = self._add_constant_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(constant_columns)
+            
+            # Add null columns for unmapped target columns
+            unmapped_columns = self._add_unmapped_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(unmapped_columns)
+            
+            # Create query for this source table
+            query = source_table_obj.select(selected_columns)
+            source_table_queries[source_table_name] = query
+
+        # Combine multiple source tables using UNION ALL if needed
+        union_all_query = (
+            union_all_tables(source_table_queries) 
+            if len(source_table_queries) > 1 
+            else list(source_table_queries.values())[0]
+        )
+        
+        # Log the generated SQL for debugging
+        union_all_sql = union_all_query.compile(pretty=True)
+        print(f"SQL Query for {target_table_name}:")
+        print(union_all_sql)
+        
+        # Execute and return the result
+        return con.execute(union_all_query)
+
+        
+    def test(self, _input: dict[str, Result], task_run_context) -> Result:
+        return self.task(_input, task_run_context)
+
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
+        try:
+            table_mapping = self.etl_mapping.table.edges
+            target_table_list = set(t.targetHandle for t in table_mapping)
+            scan_metadata = next(iter(_input.values())).result
+
+            # store output dataframes for each target table
+            target_table_dfs = {}
+            for target_table in target_table_list:
+                target_table_dfs[target_table] = self.create_target_table_df(target_table, scan_metadata)
+
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+        else:
+            return Result(False, target_table_dfs, self, task_run_context)
+
+
+@flow(name="generate-nodes",
+      flow_run_name="generate-nodes-flowrun",
+      log_prints=True)
+def generate_nodes_flow(graph, sorted_nodes):
+    for nodename in sorted_nodes:
+        node = graph["nodes"][nodename]
+        nodetype = node["type"]
+
+        # check if node is a subflow
+        if nodetype == NodeType.SUBFLOW:
+            subflow_obj = Flow(nodename, node)
+            graph["nodes"][nodename]["nodeobj"] = subflow_obj
+            for subflow_nodename in subflow_obj.sorted_nodes:
+                subflow_nodegraph = subflow_obj.graph["nodes"][subflow_nodename]
+                subflow_nodetype = subflow_nodegraph["type"]
+                # create task run to generate node obj for each subflow node
+                subflow_node_obj = generate_node_task(
+                    subflow_nodename, subflow_nodegraph, subflow_nodetype)
+                graph["nodes"][nodename]["graph"]["nodes"][subflow_nodename]["nodeobj"] = subflow_node_obj
+        else:
+            node_task_generation_wo = generate_node_task.with_options(
+                on_completion=[partial(
+                    node_task_generation_hook, **dict(nodename=nodename, nodetype=nodetype))],
+                on_failure=[partial(node_task_generation_hook,
+                                    **dict(nodename=nodename, nodetype=nodetype))]
+            )
+
+            nodeobj = node_task_generation_wo(nodename, node, nodetype)
+
+            graph["nodes"][nodename]["nodeobj"] = nodeobj
+    return graph
+
+
+@task(task_run_name="generate-node-taskrun-{nodename}",
+      log_prints=True
+      )
+def generate_node_task(nodename, node, nodetype):
+    nodeobj = None
+    match nodetype:
+        case NodeType.CSV:
+            nodeobj = CsvNode(nodename, node)
+        case NodeType.FILE:
+            nodeobj = GenericFileNode(nodename, node)
+        case NodeType.SQL:
+            nodeobj = SqlNode(nodename, node)
+        case NodeType.PYTHON:
+            nodeobj = PythonNode(nodename, node)
+        case NodeType.PY2TABLE:
+            nodeobj = Py2TableNode(nodename, node)
+        case NodeType.RNODE:
+            nodeobj = RNode(nodename, node)
+        case NodeType.DBREADER:
+            nodeobj = DBReader(nodename, node)
+        case NodeType.DBWRITER:
+            nodeobj = DbWriter(nodename, node)
+        case NodeType.WHITERABBIT:
+            nodeobj = WhiteRabbitNode(nodename, node)
+        case NodeType.DATAMAPPING:
+            nodeobj = DataMappingNode(nodename, node)
+        case NodeType.CONCEPTMAPPING:
+            nodeobj = ConceptMappingNode(nodename, node)
+        case NodeType.TRANSFORMFHIRDATA:
+            nodeobj = TransformFhirDataNode(nodename, node)
+        case _:
+            logging.error("ERR: Unknown Node "+node["type"])
+            logging.error(tb.StackSummary())
+    return nodeobj
