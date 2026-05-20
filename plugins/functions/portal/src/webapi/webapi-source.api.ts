@@ -76,9 +76,6 @@ export class WebApiSourceApi {
       headers: this.buildHeaders(authToken),
     })
     
-    console.log("Delete webapi source")
-    console.log(response.json())
-
     if (!response.ok) {
       const errorText = await response.text()
       throw new Error(`Failed to delete WebAPI source: ${response.status} ${errorText}`)
