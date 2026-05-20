@@ -516,6 +516,10 @@ jobs:
           docker-images: true
           swap-storage: true
 
+      - name: Recreate /opt/hostedtoolcache
+        # free-disk-space deletes /opt/hostedtoolcache; helm/kind-action needs it.
+        run: sudo mkdir -p /opt/hostedtoolcache
+
       - uses: actions/checkout@v4
 
       - uses: helm/kind-action@v1
