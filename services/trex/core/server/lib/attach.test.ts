@@ -1,6 +1,6 @@
 //deno test --no-check --allow-env --allow-read services/trex/core/server/lib/attach.test.ts
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { ensureAttached, ensureCacheAttached, ensureSourceAttached, type ExecFn, isValidIdentifier, type SourceCredential } from "./attach.ts";
+import { ensureAttached, ensureCacheAttached, ensureSourceAttached, type ExecFn, isValidIdentifier, removeCacheFile, type SourceCredential } from "./attach.ts";
 
 Deno.test("isValidIdentifier — accepts plain identifiers", () => {
   assertEquals(isValidIdentifier("alp_db_svc"), true);
@@ -182,4 +182,43 @@ Deno.test("ensureAttached — empty input is a no-op", async () => {
   const exec: ExecFn = (sql) => { calls.push(sql); };
   await ensureAttached({}, { exec });
   assertEquals(calls.length, 0);
+});
+
+Deno.test("removeCacheFile — deletes an existing cache file", async () => {
+  const dir = Deno.makeTempDirSync({ prefix: "trex_remove_cache_test_" });
+  try {
+    const filePath = `${dir}/exists.db`;
+    Deno.writeFileSync(filePath, new Uint8Array());
+    await removeCacheFile("exists", { cacheDir: dir });
+    let stillThere = true;
+    try {
+      Deno.statSync(filePath);
+    } catch (e) {
+      if (e instanceof Deno.errors.NotFound) stillThere = false;
+      else throw e;
+    }
+    assertEquals(stillThere, false);
+  } finally {
+    Deno.removeSync(dir, { recursive: true });
+  }
+});
+
+Deno.test("removeCacheFile — no-op when file is already missing", async () => {
+  const dir = Deno.makeTempDirSync({ prefix: "trex_remove_cache_test_" });
+  try {
+    await removeCacheFile("ghost", { cacheDir: dir });
+  } finally {
+    Deno.removeSync(dir, { recursive: true });
+  }
+});
+
+Deno.test("removeCacheFile — throws on invalid identifier", async () => {
+  let threw = false;
+  try {
+    await removeCacheFile("../bad", { cacheDir: "/tmp" });
+  } catch (e) {
+    threw = true;
+    assertEquals((e as Error).message.includes("invalid identifier"), true);
+  }
+  assertEquals(threw, true);
 });

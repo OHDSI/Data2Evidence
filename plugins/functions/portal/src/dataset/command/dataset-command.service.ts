@@ -191,6 +191,11 @@ export class DatasetCommandService {
   }
 
   async offboardDataset(id: string) {
+    const existing = await this.datasetRepo.findOne({ where: { id } });
+    if (!existing) {
+      throw new HttpException(400, `Invalid dataset ID provided: ${id}`);
+    }
+
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id);
       if (result.affected === 0) {
@@ -208,6 +213,13 @@ export class DatasetCommandService {
     if (authToken) {
       this.webApiSourceService.deleteSourceForDataset(id, authToken)
         .catch((err) => this.logger.error(`WebAPI delete failed for ${id}: ${err}`));
+
+      // Only `type='webapi'` source rows own a TrexSQL cache. Snapshots share
+      if (existing.type === 'webapi') {
+        const cacheId = existing.cacheId ?? sanitizeIdForCacheId(id);
+        this.webApiSourceService.deleteCacheForDataset(cacheId, authToken)
+          .catch((err) => this.logger.error(`TrexSQL cache delete failed for ${cacheId}: ${err}`));
+      }
     }
 
     return result;
