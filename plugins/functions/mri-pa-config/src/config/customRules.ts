@@ -9,8 +9,10 @@ export class InitialAttributesRule extends RuleValidatorBase {
   }
 
   public selectObjects(config) {
-    const initialAttributes = config.chartOptions.initialAttributes.measures
-      .concat(config.chartOptions.initialAttributes.categories)
+    const initialAttributes = (
+      config.chartOptions.initialAttributes.measures ?? []
+    )
+      .concat(config.chartOptions.initialAttributes.categories ?? [])
       .concat(config.chartOptions.initialAttributes.stackCategory ?? []);
     const initialFiltercards = config.filtercards
       .filter((e) => {
@@ -23,7 +25,7 @@ export class InitialAttributesRule extends RuleValidatorBase {
     let match;
     initialAttributes.forEach((obj) => {
       match = obj.match(/^(.+)\.attributes\..+$/);
-      if (!(match.length === 2)) {
+      if (!match || match.length !== 2) {
         throw new Error(
           "MRI_PA_CFG_VALIDATION_ERROR_INVALID_SOURCE_OF_ATTRIBUTE",
         );
@@ -72,10 +74,9 @@ export class InitialChartCategoriesVisibleRule extends RuleValidatorBase {
   }
 
   public selectObjects(config) {
-    const initialChartCategories =
-      config.chartOptions.initialAttributes.categories.concat(
-        config.chartOptions.initialAttributes.stackCategory ?? [],
-      );
+    const initialChartCategories = (
+      config.chartOptions.initialAttributes.categories ?? []
+    ).concat(config.chartOptions.initialAttributes.stackCategory ?? []);
     const filtercards = config.filtercards;
 
     const res = initialChartCategories.every((category) => {
@@ -118,7 +119,7 @@ export class InitialYAxisRule extends RuleValidatorBase {
 
   public selectObjects(config) {
     let valid = true;
-    const yAttributes = config.chartOptions.initialAttributes.measures;
+    const yAttributes = config.chartOptions.initialAttributes.measures ?? [];
     if (Object.keys(yAttributes).length === 0) {
       valid = false;
     }
