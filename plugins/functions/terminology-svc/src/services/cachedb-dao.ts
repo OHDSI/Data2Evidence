@@ -335,9 +335,10 @@ export class CachedbDAO {
         select 
           ${columnsToSelect},
           ${this.fts_concept_identifier}.match_bm25(concept_id, ?1) as fts_score,
-          array_cosine_distance(concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
+          array_cosine_distance(e.concept_name_embedding, string_split(?2, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept c
+          JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
           ${duckdbFtsWhereClause}
       ),
       fts as (
@@ -445,9 +446,10 @@ export class CachedbDAO {
               ${
                 this.fts_concept_identifier
               }.match_bm25(concept_id, ?3) as fts_score,
-              array_cosine_distance(concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
+              array_cosine_distance(e.concept_name_embedding, string_split(?4, ',')::FLOAT[384]) as embd_score
             from
               ${this.vocabSchemaName}.concept c
+              JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
               ${filterWhereClause}
             ),
           search_scores as (
