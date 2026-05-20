@@ -457,7 +457,12 @@ export class CachedbDAO {
         order by hybrid_score desc
         )
       `,
-        [searchText, searchText, textEmbedding],
+        [
+          searchText, // synonym BM25 (SELECT)
+          searchText, // synonym BM25 (WHERE)
+          searchText, // concept BM25
+          textEmbedding,
+        ],
       ];
     } else {
       const duckdbFtsWhereClause = filterWhereClause
@@ -482,7 +487,11 @@ export class CachedbDAO {
           order by score desc
         )
       `,
-        [searchText, searchText],
+        [
+          searchText, // synonym BM25 (SELECT)
+          searchText, // synonym BM25 (WHERE)
+          searchText, // concept BM25
+        ],
       ];
     }
   };
@@ -652,9 +661,12 @@ export class CachedbDAO {
           )
         `;
         queryParams = [
-          searchText, // synonym exact
-          searchText, // synonym starts-with
-          searchText, // synonym BM25
+          searchText, // synonym exact (SELECT CASE)
+          searchText, // synonym starts-with (SELECT CASE)
+          searchText, // synonym BM25 (SELECT MAX)
+          searchText, // synonym BM25 (WHERE)
+          searchText, // synonym exact (WHERE)
+          searchText, // synonym starts-with (WHERE)
           searchText, // concept exact
           searchText, // concept starts-with
           searchText, // concept BM25
@@ -671,9 +683,12 @@ export class CachedbDAO {
           )
         `;
         queryParams = [
-          searchText, // synonym exact
-          searchText, // synonym starts-with
-          searchText, // synonym BM25
+          searchText, // synonym exact (SELECT CASE)
+          searchText, // synonym starts-with (SELECT CASE)
+          searchText, // synonym BM25 (SELECT MAX)
+          searchText, // synonym BM25 (WHERE)
+          searchText, // synonym exact (WHERE)
+          searchText, // synonym starts-with (WHERE)
           searchText, // concept exact
           searchText, // concept starts-with
           searchText, // concept BM25
