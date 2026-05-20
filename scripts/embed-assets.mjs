@@ -17,6 +17,7 @@ const SCRIPT_MAP = {
   "setupdemohana.mjs":            { fn: "setupDemoHana" },
   "check-setupdemohana-flow.mjs": { fn: "checkSetupDemoHanaFlow" },
   "syncroles.mjs":                { fn: "syncRoles" },
+  "get-noproxy.mjs":              { fn: "getNoProxy", paramExpr: "nodeModulesPath", argvBlock: "NOPROXY" },
 };
 
 const ARGV_BLOCK =
@@ -29,23 +30,37 @@ if (vIndex_envfile !== -1 && !args[vIndex_envfile + 1].startsWith("-")) {
   envfile = ".env";
 }`;
 
+const NOPROXY_ARGV_BLOCK =
+`const args = process.argv.slice(2);
+const vIndex_nodeModulesPath = args.indexOf("-p");
+let nodeModulesPath;
+if (vIndex_nodeModulesPath !== -1 && !args[vIndex_nodeModulesPath + 1].startsWith("-")) {
+  nodeModulesPath = args[vIndex_nodeModulesPath + 1];
+} else {
+  nodeModulesPath = ".";
+}`;
+
 const distDir = join(__dirname, "dist");
 mkdirSync(distDir, { recursive: true });
 
 const generatedPaths = [];
 
-for (const [filename, { fn }] of Object.entries(SCRIPT_MAP)) {
-  const src = readFileSync(join(__dirname, filename), "utf8");
+const ARGV_BLOCKS = { NOPROXY: NOPROXY_ARGV_BLOCK };
 
-  if (!src.includes(ARGV_BLOCK)) {
+for (const [filename, { fn, paramExpr, argvBlock: argvBlockKey }] of Object.entries(SCRIPT_MAP)) {
+  const src = readFileSync(join(__dirname, filename), "utf8");
+  const block = argvBlockKey ? ARGV_BLOCKS[argvBlockKey] : ARGV_BLOCK;
+  const param = paramExpr ?? 'envfile = ".env"';
+
+  if (!src.includes(block)) {
     console.error(`embed-assets: could not find argv block in ${filename} — skipping`);
     continue;
   }
 
   let code = src
-    .replace(/^#!.*\n/, "")                                          // remove shebang
-    .replace(ARGV_BLOCK, `export async function ${fn}(envfile = ".env") {`) // replace entry point
-    .replace(/process\.exit\(1\)/g, "throw new Error('exit 1')")    // propagate errors
+    .replace(/^#!.*\n/, "")                                                   // remove shebang
+    .replace(block, `export async function ${fn}(${param}) {`)                // replace entry point
+    .replace(/process\.exit\(1\)/g, "throw new Error('exit 1')")              // propagate errors
     .trimEnd() + "\n}\n";
 
   code = `// @ts-nocheck\n// Auto-generated from ${filename} — do not edit directly.\n${code}`;
