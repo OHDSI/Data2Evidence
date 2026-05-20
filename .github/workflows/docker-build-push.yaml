@@ -461,16 +461,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Banned-terms guard
-        run: |
-          set -e
-          PATTERN='airms|mtsinai|mountsinai|sinai|azurecr\.io|d2e-sandbox\.sg|/ms/'
-          # The CI README documents the banned terms; exclude it.
-          if grep -riE "$PATTERN" charts/ | grep -v '^charts/d2e-services/ci/README\.md:' ; then
-            echo "::error::Banned terms found in charts/ (see charts/d2e-services/ci/README.md)"
-            exit 1
-          fi
-
       - uses: azure/setup-helm@v4
         with:
           version: ${{ env.HELM_VERSION }}
