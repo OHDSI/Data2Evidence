@@ -1,0 +1,377 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    profile: d2e-core
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  namespace: d2e
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      profile: d2e-core
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        profile: d2e-core
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": linux
+      restartPolicy: Always
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: app
+                operator: NotIn
+                values:
+                - d2e
+      initContainers:
+        - name: supabase-storage-pre-init
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+          command: ["/bin/sh"]
+          args:
+            [
+              "-c",
+              "echo 'Creating role if not exists..' &&
+               psql -c 'CREATE ROLE service_role NOLOGIN INHERIT;' || true &&
+               echo 'Supabase Storage pre-initialization complete!' &&
+               exit 0"
+            ]
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+        - name: pg-mgmt-init
+          env:
+            - name: NODE_ENV
+              value: development
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: POSTGRES_SUPERUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: POSTGRES_SUPERUSER_PASSWORD
+              # value:
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: POSTGRES_CONFIG_DB
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: POSTGRES_CONFIG_DB_NAME
+              value: "$(POSTGRES_CONFIG_DB)"
+            - name: POSTGRES_ALTER_EXTENSION_CONFIG
+              value: "{}"
+            - name: POSTGRES_CONFIG_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: POSTGRES_CONFIG_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
+            - name: POSTGRES_CONFIG_WRITE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_WRITE_USER
+            - name: POSTGRES_CONFIG_WRITE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_WRITE_PASSWORD
+            - name: POSTGRES_IDP_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_USER
+            - name: POSTGRES_IDP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_IDP_ADMIN_PASSWORD
+            - name: POSTGRES_CONNECTION_CONFIG
+              value: |-
+                {
+                  "ssl": {{ if eq .Values.global.pgSSLMode "disable" }}false{{ else }}{"rejectUnauthorized": false}{{ end }},
+                  "connectionTimeoutMillis": 60000,
+                  "database": "postgres",
+                  "host": "$(PG__HOST)",
+                  "idle_in_transaction_session_timeout": 60000,
+                  "port": "5432",
+                  "query_timeout": 60000,
+                  "statement_timeout": 60000,
+                  "user": "$(POSTGRES_SUPERUSER)",
+                  "password": "$(POSTGRES_SUPERUSER_PASSWORD)"
+                }
+            - name: POSTGRES_MANAGE_CONFIG
+              value: |-
+                {
+                  "databases": {
+                    "+$(POSTGRES_CONFIG_DB)": {
+                      "schemas": {
+                        "+cdw_config": {},
+                        "+dataflow": {},
+                        "+db_credentials_mgr": {},
+                        "+jobplugins": {},
+                        "+portal": {},
+                        "+public": {},
+                        "+qe_config": {},
+                        "+terminology": {},
+                        "+trex": {},
+                        "+usermgmt": {},
+                        "+logto": {},
+                        "+public": {},
+                        "+storage": {},
+                        "+strategus": {},
+                        "+fhir": {}
+                      }
+                    }
+                  }
+                }
+            - name: POSTGRES_PUBLICATION_CONFIG
+              value: |-
+                {
+                  "databases": {
+                  }
+                }
+            - name: POSTGRES_MANAGE_USERS
+              value: |-
+                {
+                  "$(POSTGRES_CONFIG_DB)": {
+                    "manager": "$(POSTGRES_CONFIG_ADMIN_USER)",
+                    "managerPassword": "$(POSTGRES_CONFIG_ADMIN_PASSWORD)",
+                    "reader": "$(POSTGRES_CONFIG_WRITE_USER)",
+                    "readerPassword": "$(POSTGRES_CONFIG_WRITE_PASSWORD)",
+                    "writer": "$(POSTGRES_CONFIG_WRITE_USER)",
+                    "writerPassword": "$(POSTGRES_CONFIG_WRITE_PASSWORD)",
+                    "logtoManager": "$(POSTGRES_IDP_ADMIN_USER)",
+                    "logtoManagerPassword": "$(POSTGRES_IDP_ADMIN_PASSWORD)"
+                  }
+                }
+            - name: POSTGRES_MANAGE_ROLES_USERS
+              value: "{}"
+            - name: TLS__INTERNAL__CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CA_CRT
+            - name: TLS__INTERNAL__CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CRT
+            - name: TLS__INTERNAL__DOMAIN
+              value: alp.local
+            - name: TLS__INTERNAL__KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__KEY
+          image: ghcr.io/ohdsi/d2e-pg-mgmt-init:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
+        - name: supabase-storage-grant-roles
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: POSTGRES_CONFIG_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: POSTGRES_CONFIG_WRITE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_WRITE_USER
+          command: ["/bin/sh"]
+          args:
+            [
+              '-c',
+              'echo "Grant roles to users.." &&
+               psql -c "GRANT service_role TO ${POSTGRES_CONFIG_ADMIN_USER};" &&
+               psql -c "GRANT anon TO ${POSTGRES_CONFIG_WRITE_USER};" &&
+               psql -c "GRANT authenticated TO ${POSTGRES_CONFIG_WRITE_USER};" &&
+               echo "Supabase Storage roles assignment complete!" &&
+               exit 0'
+            ]
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+        - name: logto-seed-init
+          env:
+            - name: DATABASE_CONNECTION_TIMEOUT
+              value: "100000"
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__JDBC__URL
+          image: ghcr.io/ohdsi/d2e-logto:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          command: ["/bin/sh"]
+          args:
+            [
+              "-c",
+              "npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1",
+            ]
+          resources:
+            {{- toYaml .Values.global.resources.logtoSeedInit | nindent 12 }}
+      containers:
+        # - name: etl-copy
+        #   command: ["tail"]
+        #   volumeMounts:
+        #     - mountPath: /data
+        #       name: etl-volume
+        #   args:
+        #     [
+        #       "-f",
+        #       "/dev/null"
+        #     ]
+        #   image: mcr.microsoft.com/azure-cli:azurelinux3.0
+        #   imagePullPolicy: IfNotPresent
+        #   resources:
+        #     requests:
+        #       cpu: 100m
+        #       memory: 100Mi
+        #     limits:
+        #       cpu: 2
+        #       memory: 16000Mi
+        - name: logto
+          command: ["/bin/sh"]
+          args: ["-c", "npm start"]
+          env:
+            - name: DATABASE_CONNECTION_TIMEOUT
+              value: "60000"
+            - name: ADMIN_DISABLE_LOCALHOST
+              value: "false"
+            - name: ADMIN_ENDPOINT
+              value: "http://localhost:3002"
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__JDBC__URL
+            - name: ENDPOINT
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL
+            - name: LOGTO_API_M2M_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_ID
+            - name: LOGTO_API_M2M_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_API_M2M_CLIENT_SECRET
+            - name: LOGTO_ROLES_AZ_GROUPS_MAPPING
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO_ROLES_AZ_GROUPS_MAPPING
+            - name: NODE_ENV
+              value: production
+            - name: TLS__INTERNAL__DOMAIN
+              value: alp.local
+            - name: TRUST_PROXY_HEADER
+              value: "true"
+            - name: PORT
+              value: "3001"
+          image: ghcr.io/ohdsi/d2e-logto:{{ .Values.global.image.tag }}
+          imagePullPolicy: Always
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 30"]
+          resources:
+            {{- toYaml .Values.global.resources.logto | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /api/status
+              port: 3001
+            failureThreshold: 5
+            initialDelaySeconds: 100
+            periodSeconds: 5
+            timeoutSeconds: 10
+          ports:
+            - containerPort: 3001
+              protocol: TCP
+            - containerPort: 3002
+              protocol: TCP
