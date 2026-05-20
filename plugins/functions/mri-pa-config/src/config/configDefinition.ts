@@ -583,6 +583,7 @@ function _getValidDefinition(cdwConfig) {
                         name: "stackCategory",
                         type: "array",
                         strict: true,
+                        mandatory: false,
                         children: [
                             {
                                 name: "source",
