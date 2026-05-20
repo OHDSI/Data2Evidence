@@ -4,7 +4,7 @@ import { useTheme } from "@mui/material/styles";
 
 import "./TreeMapTable.scss";
 import { useTranslation } from "../../../../contexts";
-
+import { formatNumber } from "../../../../utils";
 interface TreeMapTableProps {
   data: any;
   setSelectedConcept: (value: { id: string; name: string } | null) => void;
@@ -33,6 +33,7 @@ const TreeMapTable: FC<TreeMapTableProps> = ({ data, setSelectedConcept, isSimpl
       {
         accessorKey: "NUMPERSONS",
         header: getText(i18nKeys.TREE_MAP_TABLE__HEADER_NUM_PERSONS),
+        Cell: ({ cell }) => formatNumber(cell.getValue<number>()),
         muiTableHeadCellProps: {
           align: "right",
         },
