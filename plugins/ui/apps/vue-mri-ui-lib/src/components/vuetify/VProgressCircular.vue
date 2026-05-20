@@ -21,11 +21,14 @@
  * - Provides proper v-model support via modelValue prop
  *
  * Usage:
- * <v-progress-circular :model-value="50" :size="48" :width="4" />
- * <v-progress-circular indeterminate />
+ * <VProgressCircular :model-value="50" :size="48" :width="4" />
+ * <VProgressCircular indeterminate />
+ *
+ * With v-model:
+ * <VProgressCircular v-model="progress" />
  *
  * With default slot for inner content:
- * <v-progress-circular :model-value="progress">{{ progress }}%</v-progress-circular>
+ * <VProgressCircular :model-value="progress">{{ progress }}%</VProgressCircular>
  *
  * All Vuetify VProgressCircular props are supported.
  */

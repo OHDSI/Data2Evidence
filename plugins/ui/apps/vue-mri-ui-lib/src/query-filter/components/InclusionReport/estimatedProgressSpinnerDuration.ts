@@ -4,7 +4,7 @@ export const SPINNER_MAX_MS = 90000
 export const SPINNER_K_MS = 1500
 
 export function computeExpectedDurationMs(ruleCount: number, patientCount: number | null | undefined): number {
-  const n = Math.max(ruleCount, 0)
+  const n = Math.max(ruleCount, 1)
   const P = Math.max(patientCount ?? 1, 1)
   const cost = n * n + n * P
   const score = Math.log(cost + 1)
