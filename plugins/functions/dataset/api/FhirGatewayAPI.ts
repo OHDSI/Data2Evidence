@@ -14,7 +14,7 @@ export class FhirGatewayAPI {
     }
     if (services.fhirGateway) {
       this.baseURL = services.fhirGateway;
-      this.channel = Trex.tokioChannel("fhir/alp-fhir-gateway");
+      this.channel = Trex.tokioChannel("fhir/fhir-gateway");
     } else {
       throw new Error("No url is set for FhirGatewayAPI");
     }
@@ -28,22 +28,24 @@ export class FhirGatewayAPI {
     };
   }
 
-  async createProject(id: string, description: string): Promise<string> {
-    this.logger.info(`Creating FHIR project for dataset '${id}'`);
+  async createFhirDataset(id: string, description: string): Promise<string> {
+    this.logger.info(`Creating FHIR dataset for portal dataset '${id}'`);
     try {
       const options = this.getRequestConfig();
-      const url = `${this.baseURL}/createProject`;
+      const url = `${this.baseURL}/createDataset`;
       const result = await this.channel.post(url, { id, description }, options);
-      const projectId = result.data?.projectId;
-      if (!projectId) {
-        throw new Error(`No projectId returned from FHIR gateway for dataset '${id}'`);
+      const fhirDatasetId = result.data?.datasetId;
+      if (!fhirDatasetId) {
+        throw new Error(
+          `No data returned from FHIR gateway for portal dataset '${id}'`,
+        );
       }
-      return projectId;
+      return fhirDatasetId;
     } catch (error: any) {
       const status = error.status || error.response?.status;
       const responseData = error.response?.data;
       this.logger.error(
-        `Failed to create FHIR project for dataset '${id}': ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+        `Failed to create FHIR dataset for portal dataset '${id}': ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
       );
       throw error;
     }

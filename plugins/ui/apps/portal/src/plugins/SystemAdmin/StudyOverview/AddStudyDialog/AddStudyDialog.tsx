@@ -526,7 +526,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     const dataModelDetails = parseDatamodelOption(dataModel);
     const parsedDataModel =
       dataModelDetails.dataModel === customDataModelOption.datamodel ? dataModelCustom : dataModelDetails.dataModel;
-    let fhirProjectId;
 
     const parsedDatasetType = dialect === "hana" ? `hana__${type}` : type;
 
@@ -549,7 +548,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       databaseCode,
       dialect,
       paConfigId,
-      fhirProjectId,
       visibilityStatus: dialect === "hana" ? "DEFAULT" : visibilityStatus,
       attributes: [],
       tags: [],
