@@ -96,6 +96,14 @@ export class SystemPortal {
     });
   }
 
+  public transformToWebApi(datasetId: string) {
+    return request<{ id: string; transformed: boolean; reason?: string }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/${datasetId}/transform-to-webapi`,
+      method: "POST",
+    });
+  }
+
   public getDatasetFilterScopes() {
     return request<DatasetFilter>({
       baseURL: SYSTEM_PORTAL_URL,

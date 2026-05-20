@@ -28,28 +28,52 @@ execute_achilles <- function(
         createTable,
         resultsDatabaseSchema,
         outputFolder,
-        sqlOnly, 
-        numThreads, 
+        sqlOnly,
+        numThreads,
         verboseMode,
-        excludeAnalysisIds, 
-        createIndices) {
-            
+        excludeAnalysisIds,
+        createIndices,
+        cacheId = NULL) {
+
     # Set TREX and DB driver environment variables and create connection details
     eval(parse(text = set_trex_env_string))
     eval(parse(text = setDBDriverEnv))
     eval(parse(text = connectionDetailsString))
 
+    # Force each pooled JDBC connection onto the cache catalog (Achilles opens many).
+    if (!is.null(cacheId) && nzchar(cacheId)) {
+        .ns <- asNamespace("DatabaseConnector")
+        .original_connect <- get("connect", envir = .ns)
+        .use_sql <- sprintf('USE "%s"', gsub('"', '""', cacheId, fixed = TRUE))
+        .patched_connect <- function(...) {
+            conn <- .original_connect(...)
+            tryCatch(
+                DatabaseConnector::executeSql(
+                    connection = conn,
+                    sql = .use_sql,
+                    progressBar = FALSE,
+                    reportOverallTime = FALSE
+                ),
+                error = function(e) {
+                    message(sprintf("[execute_achilles] USE \"%s\" failed: %s", cacheId, conditionMessage(e)))
+                }
+            )
+            conn
+        }
+        assignInNamespace("connect", .patched_connect, ns = "DatabaseConnector")
+    }
+
     Achilles::achilles(
-        connectionDetail = connectionDetails, 
-        cdmVersion = cdmVersion, 
-        cdmDatabaseSchema = cdmDatabaseSchema, 
-        createTable = createTable, 
-        resultsDatabaseSchema = resultsDatabaseSchema, 
-        outputFolder = outputFolder, 
-        sqlOnly = sqlOnly, 
-        numThreads = numThreads, 
-        verboseMode = verboseMode, 
-        excludeAnalysisIds = excludeAnalysisIds, 
+        connectionDetail = connectionDetails,
+        cdmVersion = cdmVersion,
+        cdmDatabaseSchema = cdmDatabaseSchema,
+        createTable = createTable,
+        resultsDatabaseSchema = resultsDatabaseSchema,
+        outputFolder = outputFolder,
+        sqlOnly = sqlOnly,
+        numThreads = numThreads,
+        verboseMode = verboseMode,
+        excludeAnalysisIds = excludeAnalysisIds,
         createIndices = createIndices
     )
 }

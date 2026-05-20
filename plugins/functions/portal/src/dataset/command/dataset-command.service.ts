@@ -17,7 +17,13 @@ import {
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
-import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import {
+  Dataset,
+  DatasetAttribute,
+  DatasetDashboard,
+  DatasetDetail,
+  DatasetTag,
+} from "../entity/index.ts";
 import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
 import { TrexApiService } from "../trex-api.service.ts";
 import {
@@ -82,9 +88,7 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
-      // `insertDataset` uses TypeORM's `insert()` builder, which skips entity
-      // lifecycle hooks. Apply the cache_id default here so the persisted row
-      // matches `Dataset.applyCacheIdDefault`.
+      // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror Dataset.applyCacheIdDefault explicitly.
       if (entity.cacheId == null && entity.id) {
         entity.cacheId = sanitizeIdForCacheId(entity.id);
       }
@@ -128,7 +132,14 @@ export class DatasetCommandService {
 
       return result;
     };
-    // First sync to WebAPI - fail fast if WebAPI is not accessible
+    // Insert the dataset row first so its id is visible to callers as soon as we return,
+    // even if the upstream WebAPI sync takes longer than the caller's HTTP timeout.
+    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Then register the source and kick off the TrexSQL cache build. The cache build
+    // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
+    // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
+    // before issuing queries that read the cache catalog.
     await this.syncDatasetToWebApi({
       id: datasetDto.id,
       databaseCode: datasetDto.databaseCode,
@@ -137,9 +148,6 @@ export class DatasetCommandService {
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultSchemaName: datasetDto.resultSchemaName,
     }, datasetDto.detail);
-
-    // Then create dataset in database
-    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
     // so a freshly-set cache_id becomes available without a trex restart. The cache_id
@@ -205,6 +213,119 @@ export class DatasetCommandService {
     return result;
   }
 
+  async transformToWebApi(
+    sourceId: string,
+  ): Promise<{ id: string; transformed: boolean; reason?: string }> {
+    const run = async (entityMgr: EntityManager) => {
+      const source = await entityMgr.findOne(Dataset, { where: { id: sourceId } });
+      if (!source) {
+        throw new HttpException(404, `Dataset ${sourceId} not found`);
+      }
+      if (source.sourceDatasetId) {
+        throw new HttpException(
+          400,
+          `Dataset ${sourceId} is a snapshot (sourceDatasetId=${source.sourceDatasetId}); transform must be invoked on the source row.`,
+        );
+      }
+
+      const snapshots = await entityMgr.find(Dataset, {
+        where: { sourceDatasetId: sourceId },
+      });
+      if (snapshots.length === 0) {
+        this.logger.info(
+          `Dataset ${sourceId} is already webapi-managed; no-op.`,
+        );
+        return {
+          id: sourceId,
+          transformed: false,
+          reason: "already webapi-managed",
+        };
+      }
+      if (snapshots.length > 1) {
+        throw new HttpException(
+          400,
+          `Dataset ${sourceId} has ${snapshots.length} snapshots; manual inspection required (multiple snapshots).`,
+        );
+      }
+      const snapshot = snapshots[0];
+
+      const targetVisibility =
+        snapshot.visibilityStatus && snapshot.visibilityStatus !== "HIDDEN"
+          ? snapshot.visibilityStatus
+          : "DEFAULT";
+      await this.datasetRepo.updateRowShape(entityMgr, sourceId, {
+        visibilityStatus: targetVisibility,
+        type: "webapi",
+      });
+
+      const snapshotDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: snapshot.id } });
+      if (snapshotDetail) {
+        const sourceDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: sourceId } });
+        if (sourceDetail) {
+          await entityMgr.update(
+            DatasetDetail,
+            { id: sourceDetail.id },
+            {
+              name: snapshotDetail.name,
+              description: snapshotDetail.description,
+              summary: snapshotDetail.summary,
+              showRequestAccess: snapshotDetail.showRequestAccess,
+            },
+          );
+        } else {
+          await entityMgr.update(
+            DatasetDetail,
+            { id: snapshotDetail.id },
+            { datasetId: sourceId },
+          );
+        }
+      }
+
+      // Skip rows whose identity-key already exists on the source.
+      const moveTable = async (entityCls: any, conflictField: string) => {
+        const fromSnapshot = await entityMgr.find(entityCls, {
+          where: { datasetId: snapshot.id },
+        });
+        const onSource = await entityMgr.find(entityCls, {
+          where: { datasetId: sourceId },
+        });
+        const existingKeys = new Set(
+          (onSource as any[]).map((r) => r[conflictField]),
+        );
+        for (const row of fromSnapshot as any[]) {
+          if (existingKeys.has(row[conflictField])) {
+            this.logger.info(
+              `Skipping ${entityCls.name} row ${row.id} on snapshot — key ${conflictField}=${row[conflictField]} already on source.`,
+            );
+            continue;
+          }
+          await entityMgr.update(
+            entityCls,
+            { id: row.id },
+            { datasetId: sourceId },
+          );
+        }
+      };
+      await moveTable(DatasetAttribute, "attributeId");
+      await moveTable(DatasetDashboard, "name");
+      await moveTable(DatasetTag, "name");
+
+      // user-mgmt has no role-listing endpoint, so snapshot grants are orphaned — re-grant on sourceId manually.
+      this.logger.warn(
+        `transformToWebApi(${sourceId}): role grants on snapshot ${snapshot.id} are orphaned; re-grant roles on ${sourceId} manually.`,
+      );
+
+      await entityMgr.delete(Dataset, { id: snapshot.id });
+
+      this.logger.info(
+        `Transformed dataset ${sourceId}: merged snapshot ${snapshot.id}, visibility=${targetVisibility}.`,
+      );
+      return { id: sourceId, transformed: true };
+    };
+
+    return this.transactionRunner.run(run, undefined);
+  }
+
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
     // Cache/snapshot datasets do NOT create WebAPI sources - they use the source dataset's WebAPI source
     // The TrexSQL cache is created for the source dataset, not for snapshots
@@ -266,6 +387,8 @@ export class DatasetCommandService {
         type: newType,
         tenantId,
         databaseCode,
+        // Snapshot points at the same cache catalog as its source (falls back to source id for legacy rows).
+        cacheId: sourceDataset.cacheId ?? sanitizeIdForCacheId(sourceDatasetId),
         dialect,
         schemaName,
         vocabSchemaName: finalVocabSchemaName,
