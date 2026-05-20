@@ -3,6 +3,11 @@
   height: calc(100% - 64px);
   background-color: #f2f0f1;
 
+  &__container {
+    height: 100%;
+    padding: 0 20px;
+  }
+
   &__content {
     border-radius: 18px;
     padding: 10px;

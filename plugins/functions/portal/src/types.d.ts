@@ -26,6 +26,7 @@ export interface IDataset {
   tokenStudyCode: string;
   dialect: DatabaseDialect;
   databaseCode: string;
+  cacheId: string | null;
   schemaName?: string;
   vocabSchemaName?: string;
   sourceDatasetId?: string;
@@ -59,7 +60,9 @@ export interface IDatasetDto {
   tokenDatasetCode: string;
   tenantId: string;
   databaseCode: string;
+  cacheId: string | null;
   schemaName: string;
+  dialect: DatabaseDialect;
   vocabSchemaName: string;
   resultsSchemaName: string;
   dataModel: string;
@@ -170,6 +173,7 @@ export interface IDatasetResponseDto {
   // @deprecated: all dependency should switch to use of `databaseCode`before removal on 16 February 2024
   databaseName?: string;
   databaseCode?: string;
+  cacheId: string | null;
   schemaName?: string;
   dashboards: IDatasetDashboardBaseDto[];
   attributes: IDatasetAttribute[];

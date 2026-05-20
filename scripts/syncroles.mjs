@@ -264,6 +264,13 @@ console.log(`  Synced:  ${result.synced}`);
 console.log(`  Skipped: ${result.skipped}`);
 console.log(`  Failed:  ${result.failed}`);
 
+if (result.skips && result.skips.length > 0) {
+  console.log('\nSkipped:');
+  for (const s of result.skips) {
+    console.log(`  User ${s.username} (${s.userId}): ${s.reason}`);
+  }
+}
+
 if (result.failures && result.failures.length > 0) {
   console.log('\nFailures:');
   for (const f of result.failures) {

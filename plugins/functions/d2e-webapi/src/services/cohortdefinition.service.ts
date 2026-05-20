@@ -34,8 +34,10 @@ export const generateCohort = async (
 ) => {
   const portalServerApi = new PortalServerAPI(token);
   // Get dataset
+  const dataset = await portalServerApi.getStudy(datasetId);
   const { databaseCode, schemaName, vocabSchemaName, resultsSchemaName } =
-    await portalServerApi.getStudy(datasetId);
+    dataset;
+  const cacheId = dataset.cacheId ?? dataset.databaseCode;
 
   // Get atlas cohort definition from user artifacts via cohort definition id
   const userArtifactAtlasCohortDefinition =
@@ -78,6 +80,7 @@ export const generateCohort = async (
   const cohortGeneratorFlowRun: ICohortGeneratorFlowRun = {
     datasetId,
     databaseCode,
+    cacheId,
     schemaName,
     resultsSchemaName,
     vocabSchemaName,
