@@ -46,27 +46,6 @@ export async function ensureCacheAttached(
   await opts.exec(`ATTACH IF NOT EXISTS '${filePath}' AS ${cacheId}`);
 }
 
-export interface RemoveCacheOpts {
-  cacheDir?: string;
-}
-
-export async function removeCacheFile(
-  cacheId: string,
-  opts: RemoveCacheOpts = {},
-): Promise<void> {
-  if (!isValidIdentifier(cacheId)) {
-    throw new Error(`invalid identifier: ${cacheId}`);
-  }
-  const dir = opts.cacheDir ?? DEFAULT_CACHE_DIR;
-  const filePath = `${dir}/${cacheId}.db`;
-  try {
-    await Deno.remove(filePath);
-  } catch (e) {
-    if (e instanceof Deno.errors.NotFound) return;
-    throw e;
-  }
-}
-
 export interface SourceCredential {
   id: string;
   dialect: "postgres" | "bigquery" | string;

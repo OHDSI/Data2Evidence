@@ -16,11 +16,6 @@ export let global = {
         "trex"
       ]
     },{
-      "path": "^/trex/cache/(.*)$",
-      "scopes": [
-        "trex"
-      ]
-    },{
       "path": "^/trex/log",
       "scopes": [
         "trex.log.write"

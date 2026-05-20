@@ -5,7 +5,7 @@ import { Hono, Context } from "npm:hono";
 import { DatabaseManager } from '../lib/dbm.ts';
 import { isValidDbDto } from '../middleware/dbm.ts'
 import { logger } from '../env.ts';
-import { ensureAttached, isValidIdentifier, removeCacheFile, type ExecFn, type SourceCredential } from "../lib/attach.ts";
+import { ensureAttached, type ExecFn, type SourceCredential } from "../lib/attach.ts";
 import * as _ from "npm:lodash-es";
 
 export function addRoutes(app: Hono) {
@@ -132,31 +132,4 @@ export function addRoutes(app: Hono) {
         return c.text(String(e), 500);
       }
     });
-
-    app.delete('/trex/cache/:cacheId', authn, authz, async (c: Context) => {
-      const cacheId = c.req.param('cacheId');
-      if (!isValidIdentifier(cacheId)) {
-        return c.text('invalid cacheId', 400);
-      }
-
-      // Best-effort DETACH on a fresh session. Mirrors POST /trex/attach, which
-      // also uses a fresh memory session. Other pooled DuckDB sessions cycle the
-      // ATTACH independently; removing the file is the durable cleanup.
-      const conn = new Trex.TrexDB("memory");
-      try {
-        await conn.execute(`DETACH ${cacheId}`, []);
-      } catch (e) {
-        logger.log(`[trex/cache] DETACH ${cacheId} skipped: ${(e as Error).message}`);
-      }
-
-      try {
-        await removeCacheFile(cacheId);
-      } catch (e) {
-        logger.error(e);
-        return c.text(String(e), 500);
-      }
-
-      return c.body(null, 204);
-    });
-
 }

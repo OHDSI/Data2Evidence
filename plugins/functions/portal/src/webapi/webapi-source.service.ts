@@ -107,15 +107,6 @@ export class WebApiSourceService {
     }
   }
 
-  async deleteCacheForDataset(cacheId: string, authToken?: string): Promise<void> {
-    try {
-      await this.webApiSourceApi.deleteCache(cacheId, authToken)
-    } catch (error) {
-      this.logger.error(`Failed to delete TrexSQL cache ${cacheId}: ${error}`)
-      throw error
-    }
-  }
-
   private buildSourceRequest(
     dataset: Dataset,
     detail: DatasetDetail,

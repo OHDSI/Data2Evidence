@@ -5,17 +5,14 @@ import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 import { ISourceInfo, ISourceRequest } from './types.ts'
 
 const DEFAULT_WEBAPI_URL = 'http://localhost:33001/WebAPI'
-const DEFAULT_TREX_URL = 'http://localhost:33001'
 
 @Injectable()
 export class WebApiSourceApi {
   private readonly baseUrl: string
-  private readonly trexBaseUrl: string
   private readonly logger = createLogger(this.constructor.name)
 
   constructor() {
     this.baseUrl = services.webapi || DEFAULT_WEBAPI_URL
-    this.trexBaseUrl = services.trex || DEFAULT_TREX_URL
   }
 
   private buildHeaders(authToken?: string, contentType?: string): Record<string, string> {
@@ -79,19 +76,6 @@ export class WebApiSourceApi {
     if (!response.ok) {
       const errorText = await response.text()
       throw new Error(`Failed to delete WebAPI source: ${response.status} ${errorText}`)
-    }
-  }
-
-  async deleteCache(cacheId: string, authToken?: string): Promise<void> {
-    const url = `${this.trexBaseUrl}/trex/cache/${cacheId}`
-    const response = await fetch(url, {
-      method: 'DELETE',
-      headers: this.buildHeaders(authToken),
-    })
-
-    if (!response.ok && response.status !== 404) {
-      const errorText = await response.text()
-      throw new Error(`Failed to delete TrexSQL cache: ${response.status} ${errorText}`)
     }
   }
 
