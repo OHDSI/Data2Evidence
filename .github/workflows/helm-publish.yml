@@ -15,7 +15,7 @@ permissions:
 
 env:
   CHART_DIR: charts/d2e-services
-  OCI_REGISTRY: oci://ghcr.io/data2evidence/charts
+  OCI_REGISTRY: oci://ghcr.io/ohdsi/charts
 
 jobs:
   publish:
