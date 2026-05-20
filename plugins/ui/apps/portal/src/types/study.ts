@@ -15,7 +15,11 @@ export enum CacheDatasetType {
   NON_OMOP = "non_omop",
 }
 
-export type DatasetType = SourceDatasetType | CacheDatasetType;
+export enum WebApiDatasetType {
+  WEBAPI = "webapi",
+}
+
+export type DatasetType = SourceDatasetType | CacheDatasetType | WebApiDatasetType;
 
 export type ActionValue =
   | "info"
@@ -30,7 +34,8 @@ export type ActionValue =
   | "update"
   | "release"
   | "create-cache"
-  | "manage-dashboard";
+  | "manage-dashboard"
+  | "transform-to-webapi";
 
 export enum DatasetInfoTab {
   DatasetInfo = "info",
@@ -89,6 +94,7 @@ export interface NewStudyInput {
   tags: string[];
   cacheDatasetName: string;
   cacheDatasetType: string;
+  webApiManaged?: boolean;
 }
 
 export interface CopyStudyInput {

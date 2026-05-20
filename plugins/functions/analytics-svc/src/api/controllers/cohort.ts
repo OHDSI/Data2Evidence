@@ -25,8 +25,8 @@ const mriConfigConnection = new MriConfigConnection(
 );
 
 export function getCohortAnalyticsConnection(req: IMRIRequest) {
-    const { analyticsConnection } = req.dbConnections;
-    return analyticsConnection;
+    const { analyticsConnection, sourceConnection } = req.dbConnections;
+    return sourceConnection ?? analyticsConnection;
 }
 
 export async function getAllCohorts(req: IMRIRequest, res: Response) {

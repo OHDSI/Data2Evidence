@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/NumberUtils'
 import { onMounted, computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
@@ -534,7 +535,7 @@ onErrorCaptured((err, instance, info) => {
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Patient Count:</div>
-                  <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.patientCount }}</div>
+                  <div class="ui-light-text">{{ formatNumber(bookmarkDisplay.cohortDefinition.patientCount) }}</div>
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Created On:</div>
@@ -596,7 +597,7 @@ onErrorCaptured((err, instance, info) => {
                 : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="addCohort(bookmarkDisplay)"
+            @click.stop="canDatasetMaterializeCohorts && addCohort(bookmarkDisplay)"
             :title="
               ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')

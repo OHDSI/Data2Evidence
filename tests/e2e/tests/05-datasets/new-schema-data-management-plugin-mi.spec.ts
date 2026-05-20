@@ -28,6 +28,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
+  // Switch to source mode so non-OMOP data models are selectable and cache fields appear
+  await page.locator('#mui-component-select-managementMode').click()
+  await page.getByRole('option', { name: 'Source (with cache dataset)' }).click()
   // Uncheck the "Use default result schema name" checkbox to enable custom input
   await page.getByRole('checkbox', { name: /use default result schema name/i }).uncheck()
   await page.getByRole('textbox', { name: 'Result Schema Name' }).fill(`result_schema_${randomString}`)

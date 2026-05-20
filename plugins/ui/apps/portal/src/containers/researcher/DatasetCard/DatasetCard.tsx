@@ -13,6 +13,7 @@ import {
 import { HighlightText } from "../../../components";
 import { Study } from "../../../types";
 import { DatasetAttribute } from "../../../constant";
+import { createTooltipFormatter } from "../../../components/Charts/util";
 import { useActiveDataset, useTranslation, useUser } from "../../../contexts";
 import { formatNumber } from "../../../utils";
 import "./DatasetCard.scss";
@@ -49,7 +50,7 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
 
   const getAttributeValue = useCallback(
     (id: string) => dataset.attributes?.find((att) => att.attributeId === id)?.value,
-    [dataset.attributes]
+    [dataset.attributes],
   );
 
   const patientCount = getAttributeValue(DatasetAttribute.PATIENT_COUNT);
@@ -64,7 +65,7 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
       return {
         tooltip: {
           trigger: "item",
-          formatter: "{a} <br/>{b}: {c} ({d}%)",
+          formatter: createTooltipFormatter("{a} <br/>{b}: {c} ({d}%)"),
         },
         series: [
           {
@@ -88,7 +89,7 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
         ],
       };
     },
-    [getText, i18nKeys]
+    [getText, i18nKeys],
   );
 
   const entityCounts = getAttributeValue(DatasetAttribute.ENTITY_COUNT_DISTRIBUTION);
@@ -136,7 +137,7 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
         <div className="dataset-card__attributes">
           <div className="dataset-card__attribute">
             <UsersIcon />
-            {getText(i18nKeys.DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || '0'}
+            {getText(i18nKeys.DATASET_CARD__PATIENT_COUNT)}: {formatNumber(patientCount) || "0"}
           </div>
           <div className="dataset-card__attribute">
             <CalendarIcon />
