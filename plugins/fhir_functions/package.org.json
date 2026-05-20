@@ -19,36 +19,57 @@
       ],
       "api": [
         {
-          "source": "/gateway/api/fhir",
-          "function": "/alp-fhir-gateway",
-          "env": "alp-fhir-gateway",
-          "imports": "/alp-fhir-gateway/deno.json"
+          "source": "/fhir-gateway",
+          "function": "/fhir-gateway",
+          "env": "fhir-gateway",
+          "imports": "/fhir-gateway/deno.json"
         }
       ],
       "env": { 
         "_shared": {},
-        "alp-fhir-gateway": {
-          "FHIR__LOG_LEVEL": "debug",
-          "FHIR__CLIENT_ID": "${FHIR__CLIENT_ID:-${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}}",
-          "FHIR__CLIENT_SECRET": "${FHIR__CLIENT_SECRET}",
-          "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}"
+        "fhir-gateway": {
+          "BINARY_UPLOAD_LIMIT_SIZE": "${BINARY_UPLOAD_LIMIT_SIZE:-50mb}",
+          "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}"
         }
       },
       "roles": {
         "ALP_SYSTEM_ADMIN": [
           "gateway.fhir.create",
           "gateway.fhir.delete",
-          "gateway.fhir.forward"
+          "gateway.fhir.forward",
+          "gateway.fhir.get"
         ],
         "IDP_ALP_DATA_CLIENT_ID": [
           "gateway.fhir.create",
           "portal.dataset.read",
-          "gateway.fhir.forward"
+          "gateway.fhir.forward",
+          "gateway.fhir.get",
+          "trex"
         ]
       },
       "scopes": [
         {
-          "path": "^/gateway/api/fhir/createProject",
+          "path": "^/fhir-gateway/healthcheck",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/datasets/list",
+          "scopes": [
+            "gateway.fhir.get"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/createDataset$",
           "scopes": [
             "gateway.fhir.create"
           ],
@@ -57,20 +78,7 @@
           ]
         },
         {
-          "path": "^/gateway/api/fhir/project/[a-zA-Z0-9_]+/(?!Project|ProjectMembership|ClientApplication|User|Login|PasswordChangeRequest|JsonWebKey|Bot|AccessPolicy|UserConfiguration|BulkDataExport|SmartAppLaunch|DomainConfiguration|AsyncJob|Agent|IdentityProvider|UserSecurityRequest|ViewDefinition)(.*)",
-          "scopes": [
-            "gateway.fhir.forward"
-          ],
-          "httpMethods": [
-            "POST",
-            "GET",
-            "PUT",
-            "PATCH",
-            "DELETE"
-          ]
-        },
-        {
-          "path": "^/gateway/api/fhir/deleteProject",
+          "path": "^/fhir-gateway/deleteDataset/[a-zA-Z0-9_-]+$",
           "scopes": [
             "gateway.fhir.delete"
           ],
@@ -85,6 +93,28 @@
           ],
           "httpMethods": [
             "GET"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_-]+/(.*)",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_-]+$",
+          "scopes": [
+            "gateway.fhir.forward"
+          ],
+          "httpMethods": [
+            "POST"
           ]
         }
       ]
