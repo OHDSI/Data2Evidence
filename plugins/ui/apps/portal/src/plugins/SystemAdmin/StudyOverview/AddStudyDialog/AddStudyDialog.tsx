@@ -309,8 +309,10 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
   );
 
   const displayCacheConfiguration = useMemo(() => {
-    return formData.dialect !== "hana" && formData.managementMode === "source";
-  }, [formData.dialect, formData.managementMode]);
+    return (
+      formData.dialect !== "hana" && formData.managementMode === "source" && formData.type !== SourceDatasetType.FHIR
+    );
+  }, [formData.dialect, formData.managementMode, formData.type]);
 
   const displayManagementMode = useMemo(() => {
     return formData.dialect !== "hana";
