@@ -183,19 +183,34 @@ services:
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
       TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
-      # Activates TrexSQLAutoConfiguration in trexsql-ext, which calls Trexsql/init.
-      # When TREX_INIT is set, init() starts the Trexas (port 33001) + PgWire servers
-      # in-process via the DuckDB extension, so WebAPI's JVM runs trex — no separate container.
       TREXSQL_ENABLED: "true"
-      TREX_INIT: |-
+      SWARM_NODE: d2e
+      SWARM_CONFIG: |-
         {
-          "tlsCert": "/usr/src/cert/cert.pem",
-          "tlsKey": "/usr/src/cert/key.pem",
-          "tlsPort": 33000,
-          "trexasPort": 33001,
-          "pgwirePort": 5434,
-          "mainPath": "/usr/src/core/server/index.eszip",
-          "eventWorkerPath": "/usr/src/core/event/index.eszip"
+          "cluster_id": "d2e",
+          "nodes": {
+            "d2e": {
+              "gossip_addr": "0.0.0.0:4200",
+              "extensions": [
+                {
+                  "name": "trexas",
+                  "config": {
+                    "host": "0.0.0.0",
+                    "port": 33001,
+                    "main_service_path": "/usr/src/core/server/index.eszip",
+                    "event_worker_path": "/usr/src/core/event/index.eszip",
+                    "tls_port": 33000,
+                    "tls_cert_path": "/usr/src/cert/cert.pem",
+                    "tls_key_path": "/usr/src/cert/key.pem"
+                  }
+                },
+                {
+                  "name": "pgwire",
+                  "config": { "host": "0.0.0.0", "port": 5433 }
+                }
+              ]
+            }
+          }
         }
       REP_PG: postgres://postgres:${DEMO__DB_PASSWORD:-mypass}@demodb:5432/postgres
       TPM_USE_NODE_MODULES: "false"

@@ -4,6 +4,7 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./PieChart.scss";
 import { chartColors } from "./chartColors";
+import { createTooltipFormatter } from "../util";
 import { useTranslation } from "../../../contexts";
 
 interface PieChartProps {
@@ -24,6 +25,7 @@ const PieChart: FC<PieChartProps> = ({ data, title, extraChartConfigs }) => {
 
   const option = {
     tooltip: {
+      formatter: createTooltipFormatter("{b}: {c} ({d}%)"),
       trigger: "item",
     },
     legend: {
