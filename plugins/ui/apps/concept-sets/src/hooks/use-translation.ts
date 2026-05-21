@@ -1,4 +1,4 @@
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useEffect, useRef } from "react";
 import { ConceptSetsDispatchContext } from "../context/ConceptSetsContext";
 import { i18nDefault, i18nKeys } from "../context/state";
 import { ACTION_TYPES } from "../context/reducers/reducer";
@@ -18,13 +18,21 @@ export const useTranslation = (): {
   const { translation } = useContext(ConceptSetsContext);
   const dispatch = useContext(ConceptSetsDispatchContext);
   const { translations } = translation;
+
+  // Keep a ref to the latest translations so changeLocale stays stable
+  const translationsRef = useRef(translations);
+  useEffect(() => {
+    translationsRef.current = translations;
+  }, [translations]);
+
   const changeLocale = useCallback(
     (newLocale: string): void => {
       const getTranslation = async (localeToGet: string) => {
-        if (localeToGet in translations) {
+        const latestTranslations = translationsRef.current;
+        if (localeToGet in latestTranslations) {
           dispatch({
             type: ACTION_TYPES.CHANGE_LOCALE,
-            payload: { locale: localeToGet, translations },
+            payload: { locale: localeToGet, translations: latestTranslations },
           });
           return;
         }
@@ -37,7 +45,7 @@ export const useTranslation = (): {
             ...newTranslation.data,
           };
           const updatedTranslations = JSON.parse(
-            JSON.stringify(translations),
+            JSON.stringify(translationsRef.current),
           ) as typeof translations;
           updatedTranslations[localeToGet] = newTranslations;
           dispatch({
@@ -55,13 +63,16 @@ export const useTranslation = (): {
           }
           dispatch({
             type: ACTION_TYPES.CHANGE_LOCALE,
-            payload: { locale: "default", translations: translations },
+            payload: {
+              locale: "default",
+              translations: translationsRef.current,
+            },
           });
         }
       };
       getTranslation(newLocale);
     },
-    [translations, dispatch],
+    [dispatch],
   );
 
   // Temporarily exposing function for demo. Remove when language selector is added
