@@ -285,6 +285,16 @@ describe("deepLinks", () => {
     const defaultFields: FieldDefinition[] = [
       { id: "age", type: "num", label: "Age", required: false, configPath: "patient.attributes.Age" },
     ];
+    const conditionField = (overrides: Partial<FieldDefinition> = {}): FieldDefinition => ({
+      id: "condition1",
+      type: "text",
+      label: "Condition",
+      required: true,
+      isWizardField: true,
+      ...overrides,
+    });
+    const getWizardConfig = (url: string) =>
+      decompress<any>(new URL(url, "https://example.com").searchParams.get("wizards")!);
 
     it("should generate URL with correct format", () => {
       const formData = { age: 65 };
@@ -354,6 +364,60 @@ describe("deepLinks", () => {
       // After URL decoding, should be base64url (no +, /, =)
       const raw = decodeURIComponent(queryMatch![1]);
       expect(raw).toMatch(/^[A-Za-z0-9_-]+$/);
+    });
+
+    it("should include descendants by default when no exclude checkbox value exists", () => {
+      const wizardFields: FieldDefinition[] = [conditionField()];
+
+      const result = generateFormSubmitDeepLink(
+        defaultFields,
+        { condition1: "I63" },
+        defaultMeta,
+        "ds-1",
+        undefined,
+        undefined,
+        wizardFields,
+        "test-wizard",
+      );
+      const wizards = getWizardConfig(result);
+
+      expect(wizards.conditions).toEqual([{ value: "I63", displayName: "I63", useDescendants: true }]);
+    });
+
+    it("should use excludeDescendantsByDefault when no checkbox value exists", () => {
+      const wizardFields: FieldDefinition[] = [conditionField({ excludeDescendantsByDefault: true })];
+
+      const result = generateFormSubmitDeepLink(
+        defaultFields,
+        { condition1: "I63" },
+        defaultMeta,
+        "ds-1",
+        undefined,
+        undefined,
+        wizardFields,
+        "test-wizard",
+      );
+      const wizards = getWizardConfig(result);
+
+      expect(wizards.conditions).toEqual([{ value: "I63", displayName: "I63", useDescendants: false }]);
+    });
+
+    it("should let checked exclude-descendants state override default inclusion", () => {
+      const wizardFields: FieldDefinition[] = [conditionField()];
+
+      const result = generateFormSubmitDeepLink(
+        defaultFields,
+        { condition1: "I63", condition1_excludeDescendants: true },
+        defaultMeta,
+        "ds-1",
+        undefined,
+        undefined,
+        wizardFields,
+        "test-wizard",
+      );
+      const wizards = getWizardConfig(result);
+
+      expect(wizards.conditions).toEqual([{ value: "I63", displayName: "I63", useDescendants: false }]);
     });
   });
 });
