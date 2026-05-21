@@ -978,6 +978,7 @@ export const i18nDefault = {
     SOURCE_INFORMATION_DIALOG__DATABASE_CODE: "Database code",
     SOURCE_INFORMATION_DIALOG__DATASET_NAME: "Dataset name",
     SOURCE_INFORMATION_DIALOG__TITLE: "Source information",
+    SOURCE_INFORMATION_DIALOG__TOKEN_CODE: "Token dataset code",
     STUDY_CARD__BACK: "Back",
     STUDY_CARD__CLEANING_UP: "Cleaning up...",
     STUDY_CARD__CLEANUP_STUDY: "Cleanup study",
