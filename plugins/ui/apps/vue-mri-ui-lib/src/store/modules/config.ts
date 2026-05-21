@@ -55,6 +55,13 @@ const actions = {
     if (configRequestPromise) {
       return configRequestPromise
     }
+    // Skip fetch while no dataset is selected yet — the backend endpoint
+    // requires datasetId/tokenDatasetCode and returns 400 otherwise. The
+    // dataset change watcher re-fires this action once a real id arrives.
+    if (!rootGetters.getSelectedDataset?.id) {
+      console.debug('[config] requestMriConfig skipped: no datasetId yet')
+      return Promise.resolve(null)
+    }
     const processData = aData => {
       if (aData.length === 0) {
         // there is no config assigned
