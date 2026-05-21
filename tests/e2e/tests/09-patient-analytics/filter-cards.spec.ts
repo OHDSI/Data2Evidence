@@ -62,7 +62,6 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').first().click()
   const ageBox = page.getByTitle('Basic Data - Age', { exact: true }).locator('div')
   await ageBox.hover()
   await expect(page.getByText('').first()).toBeVisible()

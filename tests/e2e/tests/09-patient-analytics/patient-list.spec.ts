@@ -23,9 +23,12 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
-    await page.locator('div[title="Basic Data - Month of Birth"]').click()
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('>2')
-    await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
+    await page.getByRole('button', { name: '' }).first().click()
+    await page.getByText('Month of Birth').click()
+    await page.getByRole('button', { name: '' }).first().click()
+    await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
+    await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('>2')
+    await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
     await expect(page.getByText('2,255 / 2,694')).toBeVisible()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
