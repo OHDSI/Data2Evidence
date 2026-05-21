@@ -120,6 +120,7 @@ export const ConceptSetResponseDto = z.object({
   id: z.number(),
   name: z.string(),
   shared: z.boolean(),
+  source: z.enum(["legacy", "webapi"]),
 });
 export type IConceptSetResponseDto = z.infer<typeof ConceptSetResponseDto>;
 
