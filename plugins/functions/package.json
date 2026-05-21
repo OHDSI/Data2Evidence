@@ -710,6 +710,8 @@
           "dataflowmgmt.prefect.flowRun.cancel",
           "dataflowmgmt.prefect.flowRun.add",
           "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.delete",
           "dataflowmgmt.prefect.testRun.add",
           "dataflowmgmt.prefect.taskRun.read",
           "dataflowmgmt.jobHistory.filter.read",
@@ -2380,6 +2382,17 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/:id/input-auth-token",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.delete"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
           ]
         },
         {

@@ -344,4 +344,14 @@ export class PrefectService {
     );
     return flowRunId;
   }
+
+  public async createInputAuthToken(flowrunId: string, token: string) {
+    this.prefectApi = new PrefectAPI(token);
+    await this.prefectApi.createInputAuthToken(flowrunId);
+  }
+  
+  public async deleteInputAuthToken(flowrunId: string, token: string) {
+    this.prefectApi = new PrefectAPI(token);
+    await this.prefectApi.deleteInputAuthToken(flowrunId);
+  }
 }
