@@ -71,6 +71,7 @@ export class HanaHDBDao {
   }
 
   private getTrexConnection = async () => {
+    // Original dbm.getConnection routed to the HANA engine for HANA datasets, which can't run DuckDB hybrid SQL
     // TREX__SQL__* are optional in env.ts because terminology-svc deployments
     // without HANA hybrid search don't need them.
     const required = {
@@ -108,35 +109,6 @@ export class HanaHDBDao {
       end: () => client.end(),
     };
   };
-
-  // Original dbm.getConnection routed to the HANA engine for HANA datasets, which can't run DuckDB hybrid SQL
-  // private getTrexConnection = () => {
-  //   const dbm = Trex.databaseManager();
-  //   const conn = dbm.getConnection(
-  //     this.databaseCode,
-  //     this.schemaName,
-  //     this.vocabSchemaName,
-  //     this.resultsSchemaName,
-  //     {
-  //       duckdb: (e: unknown) => e,
-  //       hana: (e: unknown) => e,
-  //     },
-  //   );
-  //   return {
-  //     query: (sql: string, params: any[] = []) =>
-  //       new Promise<{ rows: any[]; rowCount: number }>((resolve, reject) => {
-  //         conn.execute(
-  //           sql,
-  //           params.map((e) => ({ value: e })),
-  //           (err: any, res: any) => {
-  //             if (err) return reject(err);
-  //             resolve({ rows: res, rowCount: res.length ?? 0 });
-  //           },
-  //         );
-  //       }),
-  //     end: () => conn.close(),
-  //   };
-  // };
 
   private asyncExec(
     client: any,
@@ -353,8 +325,11 @@ export class HanaHDBDao {
   }
 
   // Hybrid mode "union": run FTS on HANA and a top-K cosine scan on DuckDB
-  // independently, FULL OUTER JOIN the two candidate sets, then blend
-  // scores.
+  // independently, filter-check the semantic side on HANA (the cache only
+  // carries concept_id + embedding, so filter columns live on HANA), then
+  // FULL OUTER JOIN the two filtered candidate sets and blend scores.
+  // Both sides feed scoring already filtered, which is what makes totalHits
+  // and OFFSET/LIMIT correct.
   private async getConceptsHybridUnion(
     hanaClient: any,
     pageNumber: number,
@@ -381,42 +356,88 @@ export class HanaHDBDao {
 
       const embedding = (await getGTEEmbedding(searchText)).join(",");
 
-      const valuesClause =
+      // Top-K cosine on DuckDB. Unfiltered here because the HANA cache only
+      // stores concept_id + concept_name_embedding — filter columns aren't
+      // available in DuckDB, so we filter-check this set on HANA below.
+      const semTopKSql = `
+        SELECT
+          e.concept_id,
+          array_cosine_similarity(
+            e.concept_name_embedding,
+            string_split('${embedding}', ',')::FLOAT[384]
+          ) AS embd_score
+        FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
+        ORDER BY embd_score DESC
+        LIMIT ${HANA_HYBRID_COSINE_TOPK}
+      `;
+      const semTopK = await trexClient.query(semTopKSql);
+
+      // Apply user filters to the semantic candidates via a HANA round-trip,
+      // so the union below contains only filter-passing concepts on both
+      // sides. Skip the round-trip when no filters are set.
+      let semKept: Array<{ concept_id: number; embd_score: number }> = [];
+      if (semTopK.rows.length > 0) {
+        if (!filterWhere) {
+          semKept = semTopK.rows.map((r: any) => ({
+            concept_id: Number(r.concept_id),
+            embd_score: Number(r.embd_score),
+          }));
+        } else {
+          const semIds = semTopK.rows.map((r: any) => Number(r.concept_id));
+          const filterCheckSql = `
+            SELECT concept_id
+            FROM ${this.vocabSchemaName}.concept
+            WHERE concept_id IN (${semIds.join(",")})
+            ${ftsAndFilter}
+          `;
+          const passed = (await this.asyncExec(
+            hanaClient,
+            filterCheckSql,
+          )) as Array<{ CONCEPT_ID: string }>;
+          const passedSet = new Set(passed.map((r) => Number(r.CONCEPT_ID)));
+          semKept = semTopK.rows
+            .filter((r: any) => passedSet.has(Number(r.concept_id)))
+            .map((r: any) => ({
+              concept_id: Number(r.concept_id),
+              embd_score: Number(r.embd_score),
+            }));
+        }
+      }
+
+      if (ftsRows.length === 0 && semKept.length === 0) {
+        return { hits: [], totalHits: 0 };
+      }
+
+      const ftsValues =
         ftsRows.length > 0
           ? ftsRows.map((r) => `(${r.CONCEPT_ID}, ${r.FTS_SCORE})`).join(",")
           : "(NULL::INTEGER, NULL::DOUBLE)";
+      const semValues =
+        semKept.length > 0
+          ? semKept.map((r) => `(${r.concept_id}, ${r.embd_score})`).join(",")
+          : "(NULL::INTEGER, NULL::DOUBLE)";
 
-      // Union hybrid score over (HANA FTS hits) ⋃ (top-K cosine over whole cache):
+      // Union hybrid score over (filtered FTS hits) ⋃ (filtered top-K cosine):
       //   hybrid_score = α · norm(embd_score) + (1 − α) · norm(fts_score)
       // where
       //   α               = this.semanticRatio          (0..1, from hybridSearchConfig)
-      //   candidates      = FTS_hits ∪ sem_topk(top HANA_HYBRID_COSINE_TOPK by cosine)
+      //   candidates      = filtered_FTS_hits ∪ filtered_sem_topk
       //   fts_score (FTS-miss row)  = 0   ┐ filled by COALESCE before normalization,
       //   embd_score (sem-miss row) = 0   ┘ so the missing side contributes nothing
       //   norm(x)         = (x − min(x)) / (max(x) − min(x))  over the unioned set
-      // Pipeline: HANA FTS → fts_input;  DuckDB top-K cosine over full
-      //           concept_embeddings → sem_topk;  FULL OUTER JOIN on concept_id
-      //           → min-max normalize → blend by α → ORDER BY hybrid_score DESC → LIMIT/OFFSET
+      // Both inputs are already filter-checked, so count(*) OVER () matches
+      // the filtered totalHits and pagination is over filtered ranks.
+      const offset = pageNumber * rowsPerPage;
       const duckdbSql = `
-        WITH fts_input(concept_id, fts_score) AS (VALUES ${valuesClause}),
-             sem_topk AS (
-               SELECT
-                 e.concept_id,
-                 array_cosine_similarity(
-                   e.concept_name_embedding,
-                   string_split('${embedding}', ',')::FLOAT[384]
-                 ) AS embd_score
-               FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
-               ORDER BY embd_score DESC
-               LIMIT ${HANA_HYBRID_COSINE_TOPK}
-             ),
+        WITH fts_input(concept_id, fts_score) AS (VALUES ${ftsValues}),
+             sem_input(concept_id, embd_score) AS (VALUES ${semValues}),
              combined AS (
                SELECT
                  COALESCE(f.concept_id, s.concept_id) AS concept_id,
                  COALESCE(f.fts_score, 0) AS fts_score,
                  COALESCE(s.embd_score, 0) AS embd_score
                FROM fts_input f
-               FULL OUTER JOIN sem_topk s USING (concept_id)
+               FULL OUTER JOIN sem_input s USING (concept_id)
                WHERE COALESCE(f.concept_id, s.concept_id) IS NOT NULL
              ),
              stats AS (
@@ -441,9 +462,8 @@ export class HanaHDBDao {
         SELECT concept_id, count(*) OVER () AS total_hits
         FROM scored
         ORDER BY hybrid_score DESC NULLS LAST
-        LIMIT ${rowsPerPage * 2} OFFSET ${pageNumber * rowsPerPage}
+        LIMIT ${rowsPerPage} OFFSET ${offset}
       `;
-      const offset = pageNumber * rowsPerPage;
       const ranked = await trexClient.query(duckdbSql);
       const rankedIds: number[] = ranked.rows.map((r: any) => r.concept_id);
       const totalHits = ranked.rows[0]
@@ -451,13 +471,14 @@ export class HanaHDBDao {
         : 0;
       if (rankedIds.length === 0) return { hits: [], totalHits };
 
+      // No filter needed here — both candidate sides were already
+      // filter-checked above, so every rankedId is guaranteed to pass.
       const fullRowsSql = `
         SELECT concept_id, concept_name, domain_id, vocabulary_id,
                concept_class_id, standard_concept, concept_code,
                valid_start_date, valid_end_date, invalid_reason
         FROM ${this.vocabSchemaName}.concept
         WHERE concept_id IN (${rankedIds.join(",")})
-        ${ftsAndFilter ? ftsAndFilter.replace(/^\s*AND/, " AND") : ""}
       `;
       const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
 
@@ -467,8 +488,7 @@ export class HanaHDBDao {
       for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
       const orderedRows = rankedIds
         .map((id) => byId.get(Number(id)))
-        .filter((r) => r !== undefined)
-        .slice(0, rowsPerPage);
+        .filter((r) => r !== undefined);
 
       return {
         hits: this.mapHanaConcepts(orderedRows),
