@@ -11,12 +11,16 @@ function makeDeps(opts: {
   link: { userId: string; tokenValid: boolean } | null
   gated: GatedSpec[]
   initialGrants: Grant[]
+  tokenError?: Error
 }) {
   const grants: Grant[] = [...opts.initialGrants]
   const events: string[] = []
 
   const linkedSvc = {
-    getDecryptedAccessToken: async () => opts.link?.tokenValid ? 'AT' : null,
+    getDecryptedAccessToken: async () => {
+      if (opts.tokenError) throw opts.tokenError
+      return opts.link?.tokenValid ? 'AT' : null
+    },
   }
   const linkedRepo = {
     findByUserAndProvider: async () => opts.link ? { id: 'la-1', userId: opts.link.userId } : null,
@@ -157,6 +161,19 @@ Deno.test('LINK_DEAD revokes ALL physionet_sync grants and exits early', async (
   await makeSvc(t.deps).reconcile('u1')
   assertEquals(t.grants.length, 0)
   assertArrayIncludes(t.events, ['revoke-all:physionet_sync:2', 'sync:link revoked upstream'])
+})
+
+Deno.test('Token retrieval throws (transient) → grants preserved, sync error recorded', async () => {
+  const t = makeDeps({
+    link: { userId: 'u1', tokenValid: true },
+    gated: [{ datasetId: 'd1', studyGroupId: 'g1', slug: 's1', version: 'v1', access: 'ok-yes' }],
+    initialGrants: [{ groupId: 'g1', createdBy: 'physionet_sync' }],
+    tokenError: new Error('upstream 503'),
+  })
+  await makeSvc(t.deps).reconcile('u1')
+  assertEquals(t.grants.length, 1)
+  assertEquals(t.grants[0].createdBy, 'physionet_sync')
+  assertArrayIncludes(t.events, ['sync:token refresh failed: upstream 503'])
 })
 
 Deno.test('Token retrieval fails (null) → treated as LINK_DEAD', async () => {

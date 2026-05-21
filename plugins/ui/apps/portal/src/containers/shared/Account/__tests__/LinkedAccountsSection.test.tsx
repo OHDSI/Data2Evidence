@@ -6,6 +6,27 @@ jest.mock("../../../../hooks/useLinkedAccounts", () => ({
   useLinkedAccounts: jest.fn(),
 }));
 
+// Stub the translation context so the component can render in isolation.
+jest.mock("../../../../contexts", () => ({
+  useTranslation: () => ({
+    getText: (key: string, params?: string[]) => {
+      const map: Record<string, string> = {
+        LINKED_ACCOUNTS__TITLE: "Linked accounts",
+        LINKED_ACCOUNTS__LOADING: "Loading…",
+        LINKED_ACCOUNTS__LINKED_AS: "Linked as {0}",
+        LINKED_ACCOUNTS__UNKNOWN_USERNAME: "(unknown)",
+        LINKED_ACCOUNTS__LAST_SYNCED: "Last synced: {0}",
+        LINKED_ACCOUNTS__NEVER: "never",
+        LINKED_ACCOUNTS__REFRESH_NOW: "Refresh now",
+        LINKED_ACCOUNTS__UNLINK: "Unlink",
+        LINKED_ACCOUNTS__LINK_PHYSIONET: "Link PhysioNet account",
+      };
+      const phrase = map[key] || key;
+      return params ? params.reduce((s, p, i) => s.replace(`{${i}}`, p), phrase) : phrase;
+    },
+  }),
+}));
+
 import { LinkedAccountsSection } from "../LinkedAccountsSection";
 import { useLinkedAccounts } from "../../../../hooks/useLinkedAccounts";
 

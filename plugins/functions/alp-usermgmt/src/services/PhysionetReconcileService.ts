@@ -9,12 +9,6 @@ const PROVENANCE = 'physionet_sync'
 
 @Service()
 export class PhysionetReconcileService {
-  // In-flight reconciles keyed by userId. A second caller for the same user
-  // joins the first call's promise instead of running concurrently. This is
-  // strictly stronger than serialising via a DB lock (no waiting) and matches
-  // our needs: we don't span Node processes today, and the underlying writes
-  // are idempotent anyway (registerUserToGroup short-circuits when a row exists;
-  // provenance-scoped revoke targets specific rows).
   private readonly inFlight = new Map<string, Promise<void>>()
 
   constructor(
@@ -39,7 +33,14 @@ export class PhysionetReconcileService {
     const link = await this.linkedRepo.findByUserAndProvider(userId, 'physionet')
     if (!link) return
 
-    const accessToken = await this.linkedSvc.getDecryptedAccessToken(userId, 'physionet')
+    let accessToken: string | null
+    try {
+      accessToken = await this.linkedSvc.getDecryptedAccessToken(userId, 'physionet')
+    } catch (e) {
+      // Transient upstream/refresh failure: keep grants intact, surface in sync status.
+      await this.linkedRepo.updateSyncStatus(link.id, null, `token refresh failed: ${(e as Error).message}`)
+      return
+    }
     if (!accessToken) {
       await this.groupSvc.withdrawAllByProvenance(userId, PROVENANCE)
       await this.linkedRepo.updateSyncStatus(link.id, null, 'link revoked upstream')

@@ -82,9 +82,7 @@ export class LinkedAccountRouter {
       try {
         const userId = await this.resolveUserId(req)
         if (!userId) return res.status(400).send({ message: 'user not found' })
-        // 1. revoke physionet_sync grants (also syncs to Logto)
         await this.groupSvc.withdrawAllByProvenance(userId, PROVENANCE)
-        // 2. revoke upstream tokens + delete linked_account
         await this.linkedSvc.unlink(userId, 'physionet')
         res.json({ ok: true })
       } catch (e) { next(e) }

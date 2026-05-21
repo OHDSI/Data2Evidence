@@ -24,6 +24,25 @@ export type DatasetAccessResult =
   | { kind: 'invalid_token' }
   | { kind: 'upstream_error'; status?: number }
 
+export class PhysionetHttpError extends Error {
+  constructor(message: string, public readonly status: number, public readonly transient: boolean) {
+    super(message)
+    this.name = 'PhysionetHttpError'
+  }
+}
+
+const DEFAULT_TIMEOUT_MS = 10_000
+
+async function withTimeout<T>(fn: (signal: AbortSignal) => Promise<T>, ms = DEFAULT_TIMEOUT_MS): Promise<T> {
+  const ctrl = new AbortController()
+  const t = setTimeout(() => ctrl.abort(), ms)
+  try {
+    return await fn(ctrl.signal)
+  } finally {
+    clearTimeout(t)
+  }
+}
+
 export class PhysionetAPI {
   constructor(
     private readonly cfg: PhysionetClientConfig,
@@ -51,12 +70,13 @@ export class PhysionetAPI {
       client_secret: this.cfg.clientSecret,
       code_verifier: p.codeVerifier,
     })
-    const res = await this.fetchFn(new URL('/oauth/token/', this.cfg.baseUrl).toString(), {
+    const res = await withTimeout(signal => this.fetchFn(new URL('/oauth/token/', this.cfg.baseUrl).toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
-    })
-    if (!res.ok) throw new Error(`physionet token exchange failed: ${res.status}`)
+      signal,
+    }))
+    if (!res.ok) throw new PhysionetHttpError(`physionet token exchange failed: ${res.status}`, res.status, res.status >= 500)
     const j = await res.json()
     return {
       accessToken: j.access_token,
@@ -73,12 +93,16 @@ export class PhysionetAPI {
       client_id: this.cfg.clientId,
       client_secret: this.cfg.clientSecret,
     })
-    const res = await this.fetchFn(new URL('/oauth/token/', this.cfg.baseUrl).toString(), {
+    const res = await withTimeout(signal => this.fetchFn(new URL('/oauth/token/', this.cfg.baseUrl).toString(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
-    })
-    if (!res.ok) throw new Error(`physionet refresh failed: ${res.status}`)
+      signal,
+    }))
+    if (!res.ok) {
+      // 400/401 on refresh = invalid_grant (link revoked upstream). 5xx = transient.
+      throw new PhysionetHttpError(`physionet refresh failed: ${res.status}`, res.status, res.status >= 500)
+    }
     const j = await res.json()
     return {
       accessToken: j.access_token,
@@ -95,21 +119,23 @@ export class PhysionetAPI {
       client_secret: this.cfg.clientSecret,
     })
     try {
-      await this.fetchFn(new URL('/oauth/revoke-token/', this.cfg.baseUrl).toString(), {
+      await withTimeout(signal => this.fetchFn(new URL('/oauth/revoke-token/', this.cfg.baseUrl).toString(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body.toString(),
-      })
+        signal,
+      }))
     } catch {
       // best-effort; ignore failures so unlink still proceeds
     }
   }
 
   async userinfo(accessToken: string): Promise<PhysionetUserinfo> {
-    const res = await this.fetchFn(new URL('/oauth/userinfo/', this.cfg.baseUrl).toString(), {
+    const res = await withTimeout(signal => this.fetchFn(new URL('/oauth/userinfo/', this.cfg.baseUrl).toString(), {
       headers: { Authorization: `Bearer ${accessToken}` },
-    })
-    if (!res.ok) throw new Error(`physionet userinfo failed: ${res.status}`)
+      signal,
+    }))
+    if (!res.ok) throw new PhysionetHttpError(`physionet userinfo failed: ${res.status}`, res.status, res.status >= 500)
     return await res.json()
   }
 
@@ -118,9 +144,10 @@ export class PhysionetAPI {
       const u = new URL('/oauth/dataset-access/', this.cfg.baseUrl)
       u.searchParams.set('slug', p.slug)
       u.searchParams.set('version', p.version)
-      const res = await this.fetchFn(u.toString(), {
+      const res = await withTimeout(signal => this.fetchFn(u.toString(), {
         headers: { Authorization: `Bearer ${p.accessToken}` },
-      })
+        signal,
+      }))
       if (res.status === 401 || res.status === 403) return { kind: 'invalid_token' }
       if (res.status >= 500) return { kind: 'upstream_error', status: res.status }
       if (res.status === 200 || res.status === 404) {

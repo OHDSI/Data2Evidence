@@ -128,13 +128,19 @@ export const DatasetCard: FC<DatasetCardProps> = ({ dataset, path, highlightText
           )}
           <HighlightText text={dataset.studyDetail?.name || "Untitled"} searchText={highlightText} />
           {dataset.grantedVia === "physionet_sync" && (
-            <span className="dataset-card__provenance-badge" title="Access granted via PhysioNet">
-              Access via PhysioNet
+            <span
+              className="dataset-card__provenance-badge"
+              title={getText(i18nKeys.DATASET_CARD__PHYSIONET_GRANTED_TITLE)}
+            >
+              {getText(i18nKeys.DATASET_CARD__PHYSIONET_GRANTED_BADGE)}
             </span>
           )}
           {dataset.physionetGated && !user.isDatasetResearcher[dataset.id] && (
-            <span className="dataset-card__provenance-badge dataset-card__provenance-badge--locked" title="Requires PhysioNet credentialing">
-              🔒 PhysioNet
+            <span
+              className="dataset-card__provenance-badge dataset-card__provenance-badge--locked"
+              title={getText(i18nKeys.DATASET_CARD__PHYSIONET_LOCKED_TITLE)}
+            >
+              {getText(i18nKeys.DATASET_CARD__PHYSIONET_LOCKED_BADGE)}
             </span>
           )}
         </div>

@@ -2,7 +2,7 @@ import { Inject, Service } from 'typedi'
 import { randomBytes, createHash } from 'crypto'
 import { Buffer } from 'buffer'
 import { v4 as uuidv4 } from 'uuid'
-import { PhysionetAPI } from '../api/PhysionetAPI'
+import { PhysionetAPI, PhysionetHttpError } from '../api/PhysionetAPI'
 import { LinkedAccountRepository } from '../repositories/LinkedAccountRepository'
 import { OauthStateRepository } from '../repositories/OauthStateRepository'
 import { encryptToken, decryptToken } from '../utils/crypto'
@@ -49,8 +49,7 @@ export class LinkedAccountService {
 
   async handleCallback(p: { state: string; code: string }): Promise<LinkedAccount> {
     const stateRow = await this.stateRepo.consume(p.state)
-    if (!stateRow) throw new Error('invalid state')
-    if (stateRow.expiresAt.getTime() < Date.now()) throw new Error('state expired')
+    if (!stateRow) throw new Error('invalid or expired state')
 
     const tokens = await this.api.exchangeCode({ code: p.code, codeVerifier: stateRow.codeVerifier })
     const userinfo = await this.api.userinfo(tokens.accessToken)
@@ -73,11 +72,11 @@ export class LinkedAccountService {
   async getDecryptedAccessToken(userId: string, provider: 'physionet'): Promise<string | null> {
     const acc = await this.linkedRepo.findByUserAndProvider(userId, provider)
     if (!acc) return null
-    const expiresAt = acc.accessTokenExpires?.getTime() ?? 0
-    const needsRefresh = expiresAt - this.cfg.refreshSkewSeconds * 1000 < Date.now()
-    if (!needsRefresh) {
-      return decryptToken(acc.accessTokenEnc.toString('base64'), this.cfg.encryptionKey)
-    }
+    const currentToken = () => decryptToken(acc.accessTokenEnc.toString('base64'), this.cfg.encryptionKey)
+    // No expiry recorded → we have no evidence the token is stale; don't auto-refresh.
+    if (!acc.accessTokenExpires) return currentToken()
+    const needsRefresh = acc.accessTokenExpires.getTime() - this.cfg.refreshSkewSeconds * 1000 < Date.now()
+    if (!needsRefresh) return currentToken()
     if (!acc.refreshTokenEnc) return null
     const rt = decryptToken(acc.refreshTokenEnc.toString('base64'), this.cfg.encryptionKey)
     try {
@@ -96,8 +95,9 @@ export class LinkedAccountService {
         scopes: tokens.scope ?? acc.scopes,
       })
       return tokens.accessToken
-    } catch {
-      return null
+    } catch (e) {
+      if (e instanceof PhysionetHttpError && !e.transient) return null
+      throw e
     }
   }
 

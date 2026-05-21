@@ -522,12 +522,6 @@ export class UserGroupService {
     }
   }
 
-  // Provenance-scoped revoke: deletes only the user_group row whose
-  // `created_by` matches `createdBy` (so admin grants on the same group are
-  // not touched), then syncs the Logto role-remove ONLY when no rows remain
-  // for (user, group). If another grant from a different source still exists,
-  // the Logto role assignment stays intact so the user keeps access via that
-  // other source.
   async withdrawUserFromGroupByProvenance(
     userId: string,
     groupId: string,

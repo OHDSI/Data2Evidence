@@ -25,11 +25,14 @@ export class OauthStateRepository {
     })
   }
 
-  // Atomic: select-and-delete in a single transaction. Returns null if not found.
-  async consume(state: string): Promise<OauthState | null> {
+  async consume(state: string, now: Date = new Date()): Promise<OauthState | null> {
     const trx = await this.db.transaction()
     try {
-      const row = await trx(this.tableName).where({ state }).first()
+      await trx(this.tableName).where('expires_at', '<', now).del()
+      const row = await trx(this.tableName)
+        .where({ state })
+        .andWhere('expires_at', '>=', now)
+        .first()
       if (!row) {
         await trx.commit()
         return null

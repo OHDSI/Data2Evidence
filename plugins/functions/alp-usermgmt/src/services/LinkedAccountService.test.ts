@@ -1,6 +1,7 @@
 import { assertEquals, assertRejects, assertExists } from 'jsr:@std/assert'
 import { Buffer } from 'buffer'
 import { LinkedAccountService } from './LinkedAccountService.ts'
+import { PhysionetHttpError } from '../api/PhysionetAPI.ts'
 import { generateKey, encryptToken, decryptToken } from '../utils/crypto.ts'
 
 const encryptionKey = generateKey()
@@ -22,7 +23,13 @@ function fakeStateRepo() {
   const rows = new Map<string, any>()
   return {
     create: async (r: any) => { rows.set(r.state, r) },
-    consume: async (s: string) => { const r = rows.get(s); rows.delete(s); return r ?? null },
+    consume: async (s: string) => {
+      const r = rows.get(s)
+      if (!r) return null
+      rows.delete(s)
+      if (r.expiresAt.getTime() < Date.now()) return null
+      return r
+    },
     deleteExpired: async () => 0,
     _peek: (s: string) => rows.get(s),
   }
@@ -79,7 +86,7 @@ Deno.test('startLink stores state + verifier and returns an authorize url with P
 
 Deno.test('handleCallback rejects unknown state', async () => {
   const svc = new LinkedAccountService(fakeApi() as any, fakeStateRepo() as any, fakeLinkedRepo() as any, cfg)
-  await assertRejects(() => svc.handleCallback({ state: 'nope', code: 'c' }), Error, 'invalid state')
+  await assertRejects(() => svc.handleCallback({ state: 'nope', code: 'c' }), Error, 'invalid')
 })
 
 Deno.test('handleCallback exchanges code + stores encrypted tokens', async () => {
@@ -103,7 +110,7 @@ Deno.test('handleCallback rejects expired state', async () => {
   const state = new URL(url).searchParams.get('state')!
   // mutate stored expiry to the past
   stateRepo._peek(state).expiresAt = new Date(Date.now() - 1000)
-  await assertRejects(() => svc.handleCallback({ state, code: 'c' }), Error, 'state expired')
+  await assertRejects(() => svc.handleCallback({ state, code: 'c' }), Error, 'invalid')
 })
 
 Deno.test('getDecryptedAccessToken returns the stored token when not near expiry', async () => {
@@ -139,8 +146,8 @@ Deno.test('getDecryptedAccessToken returns null when no link exists', async () =
   assertEquals(at, null)
 })
 
-Deno.test('getDecryptedAccessToken returns null when refresh fails', async () => {
-  const api = fakeApi({ refresh: async () => { throw new Error('upstream') } })
+Deno.test('getDecryptedAccessToken returns null on invalid_grant (link revoked upstream)', async () => {
+  const api = fakeApi({ refresh: async () => { throw new PhysionetHttpError('invalid_grant', 400, false) } })
   const stateRepo = fakeStateRepo(); const linkedRepo = fakeLinkedRepo()
   const svc = new LinkedAccountService(api as any, stateRepo as any, linkedRepo as any, cfg)
   const { url } = await svc.startLink('u', 'physionet')
@@ -150,6 +157,30 @@ Deno.test('getDecryptedAccessToken returns null when refresh fails', async () =>
   stored.accessTokenExpires = new Date(Date.now() - 60_000)
   const at = await svc.getDecryptedAccessToken('u', 'physionet')
   assertEquals(at, null)
+})
+
+Deno.test('getDecryptedAccessToken rethrows on transient refresh failure (no destructive null)', async () => {
+  const api = fakeApi({ refresh: async () => { throw new PhysionetHttpError('upstream 503', 503, true) } })
+  const stateRepo = fakeStateRepo(); const linkedRepo = fakeLinkedRepo()
+  const svc = new LinkedAccountService(api as any, stateRepo as any, linkedRepo as any, cfg)
+  const { url } = await svc.startLink('u', 'physionet')
+  const state = new URL(url).searchParams.get('state')!
+  await svc.handleCallback({ state, code: 'c' })
+  const stored = await linkedRepo.findByUserAndProvider('u', 'physionet')
+  stored.accessTokenExpires = new Date(Date.now() - 60_000)
+  await assertRejects(() => svc.getDecryptedAccessToken('u', 'physionet'), PhysionetHttpError)
+})
+
+Deno.test('getDecryptedAccessToken returns current token when access_token_expires is null', async () => {
+  const api = fakeApi(); const stateRepo = fakeStateRepo(); const linkedRepo = fakeLinkedRepo()
+  const svc = new LinkedAccountService(api as any, stateRepo as any, linkedRepo as any, cfg)
+  const { url } = await svc.startLink('u', 'physionet')
+  const state = new URL(url).searchParams.get('state')!
+  await svc.handleCallback({ state, code: 'c' })
+  const stored = await linkedRepo.findByUserAndProvider('u', 'physionet')
+  stored.accessTokenExpires = null
+  const at = await svc.getDecryptedAccessToken('u', 'physionet')
+  assertEquals(at, 'AT')
 })
 
 Deno.test('unlink revokes tokens upstream and deletes the row', async () => {

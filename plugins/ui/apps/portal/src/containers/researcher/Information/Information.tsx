@@ -323,10 +323,10 @@ export const Information: FC = () => {
 
               {dataset?.physionetGated && !user.isDatasetResearcher[activeDatasetId] && (
                 <div className="information__physionet-hint" role="note">
-                  <strong>PhysioNet credentialing required.</strong>{" "}
-                  This dataset is mirrored from PhysioNet. To access it,{" "}
-                  <a href="/portal/researcher/account">link your PhysioNet account</a>{" "}
-                  on the Account page.
+                  <strong>{getText(i18nKeys.INFORMATION__PHYSIONET_HINT_TITLE)}</strong>{" "}
+                  {getText(i18nKeys.INFORMATION__PHYSIONET_HINT_BODY)}{" "}
+                  <a href="/portal/researcher/account">{getText(i18nKeys.INFORMATION__PHYSIONET_HINT_LINK)}</a>{" "}
+                  {getText(i18nKeys.INFORMATION__PHYSIONET_HINT_TAIL)}
                 </div>
               )}
               {dataset?.studyDetail?.showRequestAccess && [Access.None, Access.Pending].includes(getAccess()) && (
