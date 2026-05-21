@@ -84,22 +84,18 @@ export class DemoService {
     const portalAPI = new PortalAPI(token);
     const datasets = await portalAPI.getDatasets();
 
-    const sourceDataset = datasets.find(
+    const existingDataset = datasets.find(
       (dataset) =>
         dataset.databaseCode === env.DEMO_DB_CODE &&
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
-        dataset.visibilityStatus === "HIDDEN" &&
-        dataset.sourceStudyId == null
+        dataset.sourceStudyId == null &&
+        dataset.visibilityStatus !== "HIDDEN"
     );
 
-    const cacheDataset = datasets.find(
-      (dataset) => dataset.sourceStudyId === sourceDataset?.id
-    );
-
-    if (sourceDataset && cacheDataset) {
-      this.logger.info(`Dataset exists: ${JSON.stringify(sourceDataset)}`);
-      return { ...sourceDataset, cacheId: cacheDataset.id };
+    if (existingDataset) {
+      this.logger.info(`Dataset exists: ${JSON.stringify(existingDataset)}`);
+      return existingDataset;
     }
 
     const datasetAPI = new DatasetAPI(token);
@@ -113,7 +109,72 @@ export class DemoService {
 
     const result = await datasetAPI.createDataset(dataset);
     this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
-    return { ...dataset, ...result };
+
+    // Look the dataset back up so we always carry the server-assigned id forward,
+    // regardless of which fields the gateway echoes in its response.
+    const refreshed = await portalAPI.getDatasets();
+    const createdDataset =
+      (result?.id && refreshed.find((d) => d.id === result.id)) ||
+      refreshed.find(
+        (d) =>
+          d.databaseCode === env.DEMO_DB_CODE &&
+          d.schemaName === env.DEMO_DB_CDM_SCHEMA &&
+          d.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
+          d.sourceStudyId == null &&
+          d.visibilityStatus !== "HIDDEN"
+      );
+
+    if (!createdDataset?.id) {
+      throw new Error(
+        `Dataset created but not visible in portal (result=${JSON.stringify(result)})`
+      );
+    }
+    this.logger.info(`Dataset confirmed in portal: ${JSON.stringify(createdDataset)}`);
+    return createdDataset;
+  }
+
+  // Poll cache status until bao reports COMPLETED. The dataset POST returns as
+  // soon as the row is inserted, so DQD/DC would otherwise race against the
+  // still-building TrexSQL cache and fail with cache-not-ready errors.
+  public async waitForCache(token: string, _input: any, progress?: IProgress) {
+    this.logger.info("Waiting for cache");
+
+    const dataset = progress?.steps?.find(
+      (step) => step.code === "dataset"
+    )?.result;
+    if (!dataset?.id) {
+      throw new Error("Dataset not found in progress; cannot wait for cache");
+    }
+
+    const portalAPI = new PortalAPI(token);
+    const pollTimeoutMs = 15 * 60 * 1000;
+    const pollIntervalMs = 5000;
+    const deadline = Date.now() + pollTimeoutMs;
+    let lastStatus;
+    while (Date.now() < deadline) {
+      lastStatus = await portalAPI.getCacheStatus(dataset.id);
+      if (lastStatus.ready) {
+        this.logger.info(
+          `Cache ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
+        );
+        return lastStatus;
+      }
+      if (
+        lastStatus.activeJobStatus &&
+        ["FAILED", "STOPPED", "ABANDONED"].includes(lastStatus.activeJobStatus)
+      ) {
+        throw new Error(
+          `Cache build for dataset ${dataset.id} ${lastStatus.activeJobStatus}: ${lastStatus.lastJobError ?? "no error message"}`
+        );
+      }
+      this.logger.info(
+        `Cache not ready yet for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
+      );
+      await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+    throw new Error(
+      `Cache build for dataset ${dataset.id} did not become ready within ${pollTimeoutMs}ms (last=${JSON.stringify(lastStatus)})`
+    );
   }
 
   public async runDQD(token: string, _input: IDemoInput, progress?: IProgress) {
@@ -128,11 +189,11 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { cacheId: datasetId, vocabSchemaName } = dataset;
+    const { id: datasetId, vocabSchemaName } = dataset;
     const dqdFlowRun = await jobPluginsAPI.createDqdFlowRun({
       datasetId,
       releaseId: "",
-      vocabSchemaName: datasetId,
+      vocabSchemaName,
       comment: "Demo setup",
     });
 
@@ -186,7 +247,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
 
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
     const result = await jobPluginsAPI.createDcFlowRun({
       datasetId,
       releaseId: "",
@@ -250,7 +311,7 @@ export class DemoService {
       throw new Error("Dataset not found");
     }
     const portalAPI = new PortalAPI(token);
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
 
     const cacheDataset = await portalAPI.getDataset(datasetId);
 
@@ -332,7 +393,7 @@ export class DemoService {
     const dataset = progress?.steps?.find(
       (step) => step.code === "dataset"
     )?.result;
-    const { cacheId: datasetId } = dataset;
+    const { id: datasetId } = dataset;
 
     if (!dataset) {
       this.logger.error("Dataset not found in progress");
