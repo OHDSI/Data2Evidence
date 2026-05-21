@@ -19,6 +19,9 @@ vi.mock("@portal/components", () => ({
     <button onClick={onClick}>{startIcon}</button>
   ),
   VisibilityOnIcon: () => <span>VisibilityOnIcon</span>,
+  Chip: ({ label, title }: { label: string; title?: string }) => (
+    <span data-testid={`chip-${label}`} title={title}>{label}</span>
+  ),
 }));
 
 vi.mock("material-react-table", () => ({
@@ -31,9 +34,9 @@ vi.mock("material-react-table", () => ({
       {table.data.map((row: any) => (
         <div key={row.id} data-testid={`row-${row.id}`}>
           {table.columns
-            .filter((column: any) => column.id === "actions")
+            .filter((column: any) => column.Cell)
             .map((column: any) => (
-              <div key={column.id}>{column.Cell({ row: { original: row } })}</div>
+              <div key={column.id || column.accessorKey}>{column.Cell({ row: { original: row } })}</div>
             ))}
         </div>
       ))}
@@ -118,5 +121,63 @@ describe("ConceptSetsTable", () => {
     expect(onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ id: 1000000007, hasWriteAccess: true })
     );
+  });
+
+  it("renders legacy badge for legacy concept sets", () => {
+    const onAddEdit = vi.fn();
+    const onDelete = vi.fn();
+
+    render(
+      <ConceptSetsTable
+        data={[
+          {
+            id: 15,
+            name: "Legacy set",
+            concepts: [],
+            shared: false,
+            createdBy: "owner",
+            userName: "owner",
+            hasWriteAccess: false,
+            source: "legacy",
+          },
+        ]}
+        isLoading={false}
+        userName="owner"
+        onAddEdit={onAddEdit}
+        onDelete={onDelete}
+      />
+    );
+
+    expect(screen.getByTestId("chip-CONCEPT_SETS__LEGACY")).toBeTruthy();
+    expect(screen.queryByTestId("chip-CONCEPT_SETS__WEBAPI")).toBeNull();
+  });
+
+  it("renders WebAPI badge for native concept sets", () => {
+    const onAddEdit = vi.fn();
+    const onDelete = vi.fn();
+
+    render(
+      <ConceptSetsTable
+        data={[
+          {
+            id: 1000000007,
+            name: "Native set",
+            concepts: [],
+            shared: false,
+            createdBy: "owner",
+            userName: "owner",
+            hasWriteAccess: true,
+            source: "webapi",
+          },
+        ]}
+        isLoading={false}
+        userName="owner"
+        onAddEdit={onAddEdit}
+        onDelete={onDelete}
+      />
+    );
+
+    expect(screen.getByTestId("chip-CONCEPT_SETS__WEBAPI")).toBeTruthy();
+    expect(screen.queryByTestId("chip-CONCEPT_SETS__LEGACY")).toBeNull();
   });
 });
