@@ -1,10 +1,3 @@
-CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.cohort
- (COHORT_DEFINITION_ID int NOT NULL,
-	SUBJECT_ID bigint NOT NULL,
-	cohort_start_date date NOT NULL,
-	cohort_end_date date NOT NULL);
-
-
 CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.cohort_censor_stats (cohort_definition_id int NOT NULL,
   lost_count BIGINT NOT NULL
 );
