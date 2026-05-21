@@ -128,8 +128,15 @@
 						selected="{analyticsModel>config/chartOptions/stacked/imageDownloadEnabled}" />
 					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_COLLECTION}" 
 						selected="{analyticsModel>config/chartOptions/stacked/collectionEnabled}" visible="false" />
-					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_FILL_MISSING_VALUES}" 
+					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_FILL_MISSING_VALUES}"
 						selected="{analyticsModel>config/chartOptions/stacked/fillMissingValuesEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_OVERLAPPING_HISTOGRAM_SETTING_LABEL}"
+						selected="{analyticsModel>config/chartOptions/stacked/overlappingHistogramEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_OVERLAPPING_BAR_CHART_SETTING_LABEL}"
+						selected="{analyticsModel>config/chartOptions/stacked/overlappingBarChartEnabled}" />
+					<CheckBox text="{i18n>MRI_PA_CFG_KERNEL_DENSITY_PLOT_SETTING_LABEL}"
+						selected="{analyticsModel>config/chartOptions/stacked/kernelDensityPlotEnabled}" />
+
 				</l:VerticalLayout>
 			</Panel>
 		</CustomListItem>
