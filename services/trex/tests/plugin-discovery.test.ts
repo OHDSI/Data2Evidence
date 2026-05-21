@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
 // The trex runtime injects `Trex` as a global and `LOGTO__ISSUER` via env.
 // Stub them so the module graph loads under plain `deno test`.

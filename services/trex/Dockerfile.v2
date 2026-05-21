@@ -87,11 +87,16 @@ RUN set -eu; \
     rm -rf /tmp/plugin-artifacts
 
 # Fetch and extract external @data2evidence/* plugins not built from this repo.
+# PLUGINS_REGISTRY is delivered as a BuildKit secret (build-push-action `secrets:`),
+# materialised at /run/secrets/PLUGINS_REGISTRY only inside this RUN.
 COPY scripts/fetch-external-plugins.sh /scripts/
 COPY external-plugins.txt /scripts/
-RUN set -eu; \
-    if [ -n "${PLUGINS_REGISTRY:-}" ]; then \
-      npm config set @data2evidence:registry "$PLUGINS_REGISTRY"; \
+RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
+    if [ -f /run/secrets/PLUGINS_REGISTRY ]; then \
+      REG="$(cat /run/secrets/PLUGINS_REGISTRY)"; \
+      if [ -n "$REG" ]; then \
+        npm config set @data2evidence:registry "$REG"; \
+      fi; \
     fi; \
     sh /scripts/fetch-external-plugins.sh /scripts/external-plugins.txt /usr/src/bundled-plugins
 
