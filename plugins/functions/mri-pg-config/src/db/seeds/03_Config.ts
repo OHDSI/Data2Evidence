@@ -13302,7 +13302,10 @@ const paConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -13365,7 +13368,7 @@ const paConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -27169,7 +27172,10 @@ const paConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -27232,7 +27238,7 @@ const paConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": true,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -28798,6 +28804,9 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -28859,7 +28868,7 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
-    intersectViewInclusionReport: false
+    intersectViewInclusionReport: false,
   },
 };
 
@@ -34643,7 +34652,10 @@ const pajsonfhirConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -34706,7 +34718,7 @@ const pajsonfhirConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -38129,7 +38141,10 @@ const omopHanaLeanPAConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -38192,6 +38207,6 @@ const omopHanaLeanPAConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
