@@ -5,26 +5,28 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { HandleIOType } from "../type";
-import { DbWriterDrawer } from "./DbWriterDrawer";
-import { SourceHandle, TargetHandle } from "../../CustomHandle/CustomHandle";
-import "./DbWriterNode.scss";
+import { FhirMappingDrawer } from "./FhirMappingDrawer";
+import { TargetHandle } from "../../CustomHandle/CustomHandle";
 
-export interface DbWriterNodeData extends NodeDataState {
-  database: string;
-  schemaname: string;
-  dataframe: string;
-  dbtablename: string;
-  truncate: boolean;
+export interface FhirMappingNodeData extends NodeDataState {
+  database_code: string;
+  schema_name: string;
+  omop_table_name: string;
+  fhir_resource_type: string;
+  write_key_map: boolean;
+  source_value_col?: string;
 }
 
-export const DbWriterNode = (node: NodeProps<DbWriterNodeData>) => {
+export const FhirMappingNode = (
+  node: NodeProps<FhirMappingNodeData>
+) => {
   const { data } = node;
   const [settingVisible, openSetting, closeSetting] = useBooleanHelper(false);
   const [resultVisible, openResult, closeResult] = useBooleanHelper(false);
 
   return (
     <>
-      <NodeLayout<DbWriterNodeData>
+      <NodeLayout<FhirMappingNodeData>
         className="db-writer-node"
         name={data.name}
         onSettingClick={openSetting}
@@ -32,17 +34,15 @@ export const DbWriterNode = (node: NodeProps<DbWriterNodeData>) => {
         onResultClick={data.result ? openResult : null}
         node={node}
         LeftHandle={
-          <TargetHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />
+          <TargetHandle ioType={HandleIOType.Any} nodeId={node.id} />
         }
-        RightHandle={
-          <SourceHandle ioType={HandleIOType.Any} nodeId={node.id} />
-        }
+        RightHandle={null}
       >
         {data.description}
       </NodeLayout>
-      <DbWriterDrawer
+      <FhirMappingDrawer
         node={node}
-        title="Configure database writer"
+        title="Configure FHIR Mapping Writer"
         className="db-writer-drawer"
         open={settingVisible}
         onClose={closeSetting}
