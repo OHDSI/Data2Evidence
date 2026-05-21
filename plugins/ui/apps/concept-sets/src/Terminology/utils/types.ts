@@ -63,6 +63,7 @@ export type ConceptSet = {
   modifiedBy?: string;
   modifiedDate?: string;
   userName?: string;
+  source?: "legacy" | "webapi";
 };
 
 export type ConceptSetWithConceptDetails = ConceptSet & {
