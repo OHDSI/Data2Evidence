@@ -274,9 +274,6 @@ jobs:
           - PKGPATH: ./plugins/ui
             NPM: bun
             NODE_VERSION: "20.x"
-          - PKGPATH: ./plugins/atlas
-            NPM: bun
-            NODE_VERSION: "20.x"
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
