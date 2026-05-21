@@ -282,7 +282,8 @@ class DaoBase(ABC):
             # Add APPLICATION and APPLICATIONUSER as session variables for Hana
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
-            base_url = f"{base_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.email if token_user.email else token_user.user_id}"
+            hana_connect_args["sessionVariable:APPLICATION"] = app_name
+            hana_connect_args["sessionVariable:APPLICATIONUSER"] = token_user.email if token_user.email else token_user.user_id
             return base_url, hana_connect_args
 
         return base_url, connect_args
