@@ -55,6 +55,18 @@ export const useTranslation = (): {
         } catch (e: any) {
           if (e instanceof AxiosError && e.response?.status === 404) {
             const fallbackLocale = getFallbackLocale(localeToGet);
+            if (fallbackLocale === localeToGet) {
+              // Already at the base locale and it's missing/misconfigured;
+              // dispatch the default state to avoid infinite recursion.
+              dispatch({
+                type: ACTION_TYPES.CHANGE_LOCALE,
+                payload: {
+                  locale: "default",
+                  translations: translationsRef.current,
+                },
+              });
+              return;
+            }
             console.log(
               `Locale "${localeToGet}" not found, trying fallback locale "${fallbackLocale}"`,
             );
