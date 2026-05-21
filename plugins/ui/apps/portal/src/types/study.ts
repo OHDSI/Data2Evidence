@@ -96,6 +96,7 @@ export interface NewStudyInput {
   tags: string[];
   cacheDatasetName: string;
   cacheDatasetType: string;
+  webApiManaged?: boolean;
 }
 
 export interface CopyStudyInput {

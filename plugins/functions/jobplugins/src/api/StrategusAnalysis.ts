@@ -16,7 +16,7 @@ export class StrategusAnalysisApi {
   }
 
   public async saveAnalysis(
-    studyId: string,
+    tokenStudyCode: string,
     notebookName: string,
     analysisSpec: any,
     databaseCode: string,
@@ -27,7 +27,7 @@ export class StrategusAnalysisApi {
       Authorization: this.token,
     };
     const body = JSON.stringify({
-      studyId,
+      tokenStudyCode,
       analysisSpec,
       notebookName,
       mode,
@@ -43,6 +43,26 @@ export class StrategusAnalysisApi {
     if (response.status !== 200) {
       throw new Error(
         `Failed to save analysis: ${response.status} ${response.statusText}`
+      );
+    }
+
+    return await response.data;
+  }
+
+  public async getStudyByDatasetId(datasetId: string): Promise<any> {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: this.token,
+    };
+
+    const response = await this.channel.get(
+      `${this.baseUrl}/strategus/analysis?datasetId=${encodeURIComponent(datasetId)}`,
+      { headers }
+    );
+
+    if (response.status !== 200) {
+      throw new Error(
+        `Failed to get analysis for datasetId ${datasetId}: ${response.status} ${response.statusText}`
       );
     }
 
