@@ -29,7 +29,7 @@ from .types import (NodeType,
                     ConceptMappingType)
 
 from .nodeutils.querygenerator import *
-from .nodeutils.csvutils import convert_csv_to_dataframe
+from .nodeutils.csvutils import load_csv_from_storage
 from .fhirutils.utils import omop_transform_utils
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import SupportedDatabaseDialects
@@ -313,29 +313,27 @@ class CsvNode(Node):
         self.hasheader = _node["hasheader"]
         self.encoding = _node.get("encoding", "utf8")
 
-
-    def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        supabase_api = SupabaseStorageAPI()
-
-        downloads_dir = "/app/downloads"
-
-        csv_file_path = supabase_api.download_file_to_path(self.id, self.file, downloads_dir)   
-        
-        return convert_csv_to_dataframe(
-            csv_file_path, 
-            hasheader=self.hasheader, 
-            delimiter=self.delimiter, 
-            names=self.names, 
+    def test(self, task_run_context):
+        df = load_csv_from_storage(
+            node_id=self.id,
+            filename=self.file,
+            hasheader=self.hasheader,
+            delimiter=self.delimiter,
+            names=self.names,
             encoding=self.encoding
         )
-
-    def test(self, task_run_context):
-        df = self._load_csv_into_dataframe()
         return df
 
     def task(self, task_run_context) -> Result:
         try:
-            df = self._load_csv_into_dataframe()
+            df = load_csv_from_storage(
+                node_id=self.id,
+                filename=self.file,
+                hasheader=self.hasheader,
+                delimiter=self.delimiter,
+                names=self.names,
+                encoding=self.encoding
+            )
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -628,6 +626,24 @@ class ConceptMappingNode(Node):
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
+
+class WhiteRabbitNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.scan_metadata = _node["scanMetadata"]
+    
+    def test(self, task_run_context) -> Result:
+        return Result(False,  "White Rabbit Node Test Successful", self, task_run_context)
+
+    def task(self, task_run_context) -> Result:
+        try:
+            scan_metadata = self.scan_metadata
+            scan_metadata["node_id"] = self.id
+            return Result(False,  scan_metadata, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
 class DataMappingNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
@@ -636,33 +652,32 @@ class DataMappingNode(Node):
         # Fail node generation if scan report data validation fails
         self.etl_mapping = DataMappingType(**_node["data"])
 
-    def create_target_table_df(self, target_table_name: str) -> pd.DataFrame:
+    def create_target_table_df(self, target_table_name: str, scan_metadata: dict) -> pd.DataFrame:
         """
         Creates and returns a pandas DataFrame for the specified target table.
         Args:
             target_table_name (str): The name of the target table.
+            scan_metadata (dict): The scan metadata from the White Rabbit Node.
         Returns:
             pd.DataFrame: A DataFrame containing the data from the target table.
         Raises:
             Exception: Propagates any exceptions encountered during database connection or querying.
         """
-       
-        # Todo: Remove hard code after scan report json is updated
-        table_source = "csv"
-        database_code = "demodb"
+        table_source = scan_metadata.get("dataType")
 
         db_con = None
         try:
             if table_source == TableSourceType.CSV:
                 # Use duckdb as ibis backend for csv files
                 db_con = ibis.duckdb.connect()
-                target_df = self.generate_query(db_con, target_table_name, table_source)
+                target_df = self.generate_query(db_con, target_table_name, table_source, scan_metadata)
 
             if table_source  == TableSourceType.DB:
+                database_code = scan_metadata.get("databaseCode")
                 # Use db as ibis backend depending on database_code
                 db_con = DBDao(use_cache_db=False, database_code=database_code).ibis_connect()
                 with db_con as con:
-                    target_df = self.generate_query(con, target_table_name, table_source)
+                    target_df = self.generate_query(con, target_table_name, table_source, scan_metadata)
 
         except Exception as e:
             raise
@@ -672,129 +687,223 @@ class DataMappingNode(Node):
 
         return target_df
     
-    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, ) -> pd.DataFrame:
-        table_mappings = self.etl_mapping.table.edges
-        column_mappings = self.etl_mapping.field.edges
-
-        # Todo: Remove hard code after scan report json is updated
-        schema_name = "synthea"
-        hasheader = True
-        delimiter = ","
-        encoding = "utf8"
+    def _load_source_table(self, con, source_table_name: str, table_source: TableSourceType, scan_metadata: dict):
+        """
+        Loads source table data and registers it in the connection.
         
-        source_table_queries = {}
-        for mapping in table_mappings:
-            if mapping.targetHandle == target_table_name:
-                source_table_name = mapping.sourceHandle
-                field_map_key = mapping.id
-
-            if mapping.targetHandle == target_table_name:
-                if table_source == TableSourceType.CSV:
-                    # Register source table from CSV
-                    csv_file_name = source_table_name + ".csv"
-                    csv_response = SupabaseStorageAPI().get_csv_file(self.id, csv_file_name)
-                    source_df = convert_csv_to_dataframe(
-                        csv_response,
-                        hasheader=hasheader,
-                        delimiter=delimiter,
-                        names=None,
-                        encoding=encoding
-                        )
-                    temp_table_obj = con.create_table(source_table_name, source_df)
-                elif table_source == TableSourceType.DB:
-                    temp_table_obj = con.table(source_table_name, database=schema_name)
-                
-                source_table_obj = temp_table_obj.mutate({
-                        name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
-                        for name, dtype in temp_table_obj.schema().items()
-                    })
-
-                selected_columns = []
-                mapped_target_columns = set()
-
-                target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
-                
-                for column_mapping in column_mappings:
-                    if column_mapping.sourceHandle.startswith(source_table_name) \
-                        and column_mapping.targetHandle.startswith(target_table_name):
-
-                        source_column_name = column_mapping.sourceHandle.split("-")[-1]
-                        target_column_name = column_mapping.targetHandle.split("-")[-1]
-
-                        mapped_target_columns.add(target_column_name)
-
-                        # Todo: Update to apply function to column if specified in mapping
-                        selected_columns.append(
-                            apply_ibis_func(
-                                expr=source_table_obj[source_column_name],
-                                table_columns=target_column_properties,
-                                target_column=target_column_name
-                            ) \
-                            .cast(convert_column_type(target_column_name, target_column_properties)) \
-                            .name(target_column_name)
-                        )
-                        
-                # Select target columns with a constant value
-                for col in target_column_properties:
-                    if col.data.constantValue:
-                        selected_columns.append(
-                            ibis.literal(
-                                convert_value( # Convert to dtype of target column
-                                    col.data.constantValue, col.data.columnType
-                                )
-                            ).name(col.data.label)
-                        )
-
-                        mapped_target_columns.add(col.data.label)
-
-                # For unmapped target columns, cast null value as appropriate type columns
-                target_column_names = [col.data.label for col in target_column_properties]
-
-                unmapped_target_columns: set[str] = set(target_column_names) - mapped_target_columns
-                selected_columns.extend(
-                    ibis.null() \
-                        .cast(convert_column_type(col_name, target_column_properties)) \
-                        .name(col_name) for col_name in unmapped_target_columns
-                )
-
-                query = source_table_obj.select(selected_columns)
-                # Todo: Add where clause for lookup columns
-                # sql = query.compile() # Uncomment to see individual table compiled query
-                source_table_queries[source_table_name] = query
-
-        # Use UNION ALL on source tables for the same target table as there is no join information
-        if len(source_table_queries) > 1:
-            union_all_query = union_all_tables(source_table_queries)
+        Args:
+            con: Database connection
+            source_table_name: Name of the source table
+            table_source: Type of source (CSV or DB)
+            scan_metadata: Metadata containing source information
             
-        else:
-            union_all_query = list(source_table_queries.values())[0]
+        Returns:
+            Ibis table expression for the source table
+        """
+        if table_source == TableSourceType.CSV:
+            csv_file_name = scan_metadata.get("fileName")
+            delimiter = scan_metadata.get("delimiter", ",")
+            node_id = scan_metadata.get("node_id")
 
-        union_all_sql = union_all_query.compile(pretty=True)
-
-        print(f"SQL Query for {target_table_name}:")
-        print(union_all_sql)
-
-        if table_source == TableSourceType.DB:
-            target_df = con.execute(union_all_query)
-        else:
-            target_df = con.execute(union_all_query)
-        return target_df
+            source_df = load_csv_from_storage(
+                node_id=node_id,
+                filename=csv_file_name,
+                delimiter=delimiter,
+                names=None,
+                encoding="utf8"
+            )
+            temp_table_obj = con.create_table(source_table_name, source_df)
+        else:  # TableSourceType.DB
+            schema_name = scan_metadata.get("schemaName")
+            temp_table_obj = con.table(source_table_name, database=schema_name)
+        
+        # Cast integer columns to int64 for consistency
+        return temp_table_obj.mutate({
+            name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
+            for name, dtype in temp_table_obj.schema().items()
+        })
+    
+    def _process_column_mappings(self, source_table_obj, source_table_name: str, 
+                                 target_table_name: str, target_column_properties):
+        """
+        Processes column mappings between source and target tables.
+        
+        Args:
+            source_table_obj: Ibis table expression for source data
+            source_table_name: Name of the source table
+            target_table_name: Name of the target table
+            target_column_properties: List of target column properties
+            
+        Returns:
+            Tuple of (selected_columns list, mapped_target_columns set)
+        """
+        column_mappings = self.etl_mapping.field.edges
+        selected_columns = []
+        mapped_target_columns = set()
+        
+        for column_mapping in column_mappings:
+            if (column_mapping.sourceHandle.startswith(source_table_name) and 
+                column_mapping.targetHandle.startswith(target_table_name)):
+                
+                source_column_name = column_mapping.sourceHandle.split("-")[-1]
+                target_column_name = column_mapping.targetHandle.split("-")[-1]
+                
+                mapped_target_columns.add(target_column_name)
+                
+                selected_columns.append(
+                    apply_ibis_func(
+                        expr=source_table_obj[source_column_name],
+                        table_columns=target_column_properties,
+                        target_column=target_column_name
+                    )
+                    .cast(convert_column_type(target_column_name, target_column_properties))
+                    .name(target_column_name)
+                )
+        
+        return selected_columns, mapped_target_columns
+    
+    def _add_constant_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds columns with constant values to the selection.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set to track mapped columns
+            
+        Returns:
+            List of constant value column expressions
+        """
+        constant_columns = []
+        
+        for col in target_column_properties:
+            if col.data.constantValue:
+                constant_columns.append(
+                    ibis.literal(
+                        convert_value(col.data.constantValue, col.data.columnType)
+                    ).name(col.data.label)
+                )
+                mapped_target_columns.add(col.data.label)
+        
+        return constant_columns
+    
+    def _add_unmapped_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds null-valued columns for unmapped target columns.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set of already mapped column names
+            
+        Returns:
+            List of null column expressions with appropriate types
+        """
+        target_column_names = [col.data.label for col in target_column_properties]
+        unmapped_target_columns = set(target_column_names) - mapped_target_columns
+        
+        return [
+            ibis.null()
+            .cast(convert_column_type(col_name, target_column_properties))
+            .name(col_name)
+            for col_name in unmapped_target_columns
+        ]
     
 
+    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, scan_metadata: dict) -> pd.DataFrame:
+        """
+        Generates and executes a query to transform source table(s) to a target table.
         
-    def test(self, task_run_context) -> Result:
-        return self.task(task_run_context)
+        This method processes ETL mappings to generate SQL queries that transform source data
+        into the target table format. It handles column mappings, type conversions, constant values,
+        and unmapped columns. For multiple source tables, it combines them using UNION ALL.
+        
+        Args:
+            con: Database connection (ibis or duckdb connection object)
+            target_table_name: Name of the target table to generate data for
+            table_source: Source type (CSV or DB) from TableSourceType enum
+            scan_metadata: Metadata dictionary containing source information:
+                - For CSV: 'fileName', 'delimiter', 'node_id'
+                - For DB: 'schemaName', 'databaseCode'
+        
+        Returns:
+            pd.DataFrame: Transformed data matching the target table schema
+        
+        Raises:
+            Exception: If there are issues loading source data, creating tables, or executing queries
+        
+        Note:
+            - Loads CSV files using load_csv_from_storage for CSV sources
+            - Automatically handles type casting and null values for unmapped columns
+            - Applies transformation functions specified in the ETL mapping
+            - Uses UNION ALL to combine multiple source tables mapped to the same target
+        """
+        table_mappings = self.etl_mapping.table.edges
+        source_table_queries = {}
+        
+        # Process each source table mapped to the target table
+        for mapping in table_mappings:
+            if mapping.targetHandle != target_table_name:
+                continue
+            
+            source_table_name = mapping.sourceHandle
+            field_map_key = mapping.id
+            target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
+            
+            # Load source table data
+            source_table_obj = self._load_source_table(
+                con, source_table_name, table_source, scan_metadata
+            )
+            
+            # Process column mappings
+            selected_columns, mapped_target_columns = self._process_column_mappings(
+                source_table_obj, source_table_name, target_table_name, target_column_properties
+            )
+            
+            # Add constant value columns
+            constant_columns = self._add_constant_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(constant_columns)
+            
+            # Add null columns for unmapped target columns
+            unmapped_columns = self._add_unmapped_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(unmapped_columns)
+            
+            # Create query for this source table
+            query = source_table_obj.select(selected_columns)
+            source_table_queries[source_table_name] = query
+
+        # Combine multiple source tables using UNION ALL if needed
+        union_all_query = (
+            union_all_tables(source_table_queries) 
+            if len(source_table_queries) > 1 
+            else list(source_table_queries.values())[0]
+        )
+        
+        # Log the generated SQL for debugging
+        union_all_sql = union_all_query.compile(pretty=True)
+        print(f"SQL Query for {target_table_name}:")
+        print(union_all_sql)
+        
+        # Execute and return the result
+        return con.execute(union_all_query)
+
+        
+    def test(self, _input: dict[str, Result], task_run_context) -> Result:
+        return self.task(_input, task_run_context)
 
 
-    def task(self, task_run_context) -> Result:
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
             table_mapping = self.etl_mapping.table.edges
             target_table_list = set(t.targetHandle for t in table_mapping)
+            scan_metadata = next(iter(_input.values())).result
 
             # store output dataframes for each target table
             target_table_dfs = {}
             for target_table in target_table_list:
-                target_table_dfs[target_table] = self.create_target_table_df(target_table)
+                target_table_dfs[target_table] = self.create_target_table_df(target_table, scan_metadata)
 
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -1005,6 +1114,8 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DBReader(nodename, node)
         case NodeType.DBWRITER:
             nodeobj = DbWriter(nodename, node)
+        case NodeType.WHITERABBIT:
+            nodeobj = WhiteRabbitNode(nodename, node)
         case NodeType.DATAMAPPING:
             nodeobj = DataMappingNode(nodename, node)
         case NodeType.CONCEPTMAPPING:

@@ -259,6 +259,9 @@ export class Property extends AstElement {
 
                     // const conRelAliasObj = this.scopeEntityDef.getTableAliasByBaseEntity("@REF0");
                     const conRelAliasObj = this.scopeEntityDef.getTableAlias(attrConfig.placeholderMap[conceptRelationshipPlaceholder]);
+
+                    // Not used for now
+                    // Intention is to be used to map non standard inputs from frontend, e.g E11 to standard concept ids or codes via the concept_relationship table.
                     const relationships = Deno.env.get("OMOP_RELATIONSHIPS_FOR_DESCENDANTS") || `'Maps to','Subsumes'`;
                     
                     
@@ -280,10 +283,21 @@ export class Property extends AstElement {
                     const descendantColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.INTERACTION_TEXT_ID`]
                     const conceptColumn = attrConfig.placeholderMap[`${conceptRelationshipPlaceholder}.VALUE`]
 
-                    const finalDescendantsJoinExpression = QueryObject.format("%UNSAFE", 
-                                            `${conRelAliasObj.alias}.${descendantColumn} = ${descendantsFilterExpression} AND 
-                                             ${conRelAliasObj.alias}.${ancestorColumn} = ${refAlias}.CONCEPT_ID AND 
-                                             ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`)
+                    let finalDescendantsJoinExpressionSql = `${conRelAliasObj.alias}.${ancestorColumn} = ${refAlias}.CONCEPT_ID AND 
+                                                             ${conRelAliasObj.alias}.${descendantColumn} = ${descendantsFilterExpression}`;
+
+                    // Add AND Conditional on columnConceptIDEntityPlaceholderMap if @TEXT value includes the word facet
+                    if (
+                        attrConfig.placeholderMap["@TEXT"]
+                            .toLowerCase()
+                            .includes("facet")
+                    ) {
+                        finalDescendantsJoinExpressionSql += ` AND ${conRelAliasObj.alias}.${conceptColumn} = ${columnConceptIDEntityPlaceholderMap[descendantsPlaceholder]}`;
+                    }
+                    const finalDescendantsJoinExpression = QueryObject.format(
+                        "%UNSAFE",
+                        finalDescendantsJoinExpressionSql
+                    );
 
                     conRelAliasObj.on = []; //initialize
                     this.pushOnCondition(
