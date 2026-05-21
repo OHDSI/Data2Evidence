@@ -492,6 +492,7 @@
         "terminology-svc": {
           "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
           "HANA_HYBRID_MODE": "${HANA_HYBRID_MODE:-rerank}",
+          "HANA_HYBRID_TOPK": "${HANA_HYBRID_TOPK:-1000}",
           "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",

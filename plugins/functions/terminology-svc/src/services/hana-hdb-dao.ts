@@ -20,9 +20,7 @@ import { individualFilterWhereOR } from "./cachedb.ts";
 import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
-// Take the K nearest neighbors by cosine distance and let the FULL OUTER JOIN
-// with FTS results decide the final shortlist. K is a balance between recall and performance.
-const HANA_HYBRID_COSINE_TOPK = 5000;
+const HANA_TOPK = env.HANA_HYBRID_TOPK;
 
 function buildOrderByClause(
   sortBy: string | undefined,
@@ -49,7 +47,6 @@ export class HanaHDBDao {
   private readonly databaseCode: string;
   private readonly semanticRatio: number;
   private readonly schemaName: string;
-  private readonly resultsSchemaName: string;
 
   constructor(
     jwt: string,
@@ -57,14 +54,12 @@ export class HanaHDBDao {
     databaseCode: string,
     semanticRatio: number = 0,
     schemaName: string = "",
-    resultsSchemaName: string = "",
   ) {
     this.jwt = jwt;
     this.vocabSchemaName = vocabSchemaName;
     this.databaseCode = databaseCode;
     this.semanticRatio = semanticRatio;
     this.schemaName = schemaName;
-    this.resultsSchemaName = resultsSchemaName;
     if (!jwt) {
       throw new Error("No token passed for HanaHDBDao!");
     }
@@ -97,10 +92,20 @@ export class HanaHDBDao {
       password: required.TREX__SQL__PASSWORD,
       database: required.TREX__SQL__DBNAME,
     });
-    await client.connect();
-    await client.query(
-      `ATTACH IF NOT EXISTS '/usr/src/data/cache/${this.databaseCode}.db' AS "${this.databaseCode}"`,
-    );
+
+    try {
+      await client.connect();
+      await client.query(
+        `ATTACH IF NOT EXISTS '/usr/src/data/cache/${this.databaseCode}.db' AS "${this.databaseCode}"`,
+      );
+    } catch (err) {
+      try {
+        await client.end();
+      } catch (_) {
+        // best-effort: client may already be in an error state
+      }
+      throw err;
+    }
     return {
       query: async (sql: string, params: any[] = []) => {
         const res = await client.query(sql, params);
@@ -231,6 +236,8 @@ export class HanaHDBDao {
         FROM ${this.vocabSchemaName}.concept
         WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
         ${ftsAndFilter}
+        ORDER BY SCORE() DESC
+        LIMIT ${HANA_TOPK}
       `;
       const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
         `*${searchText}*`,
@@ -349,6 +356,8 @@ export class HanaHDBDao {
         FROM ${this.vocabSchemaName}.concept
         WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
         ${ftsAndFilter}
+        ORDER BY SCORE() DESC
+        LIMIT ${HANA_TOPK}
       `;
       const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
         `*${searchText}*`,
@@ -368,7 +377,7 @@ export class HanaHDBDao {
           ) AS embd_score
         FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
         ORDER BY embd_score DESC
-        LIMIT ${HANA_HYBRID_COSINE_TOPK}
+        LIMIT ${env.HANA_HYBRID_TOPK}
       `;
       const semTopK = await trexClient.query(semTopKSql);
 

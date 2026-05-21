@@ -8,6 +8,7 @@ function initEnv(__env) {
     HANA_FTS_FUZZY: z.string().transform(Number),
 
     HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("rerank"),
+    HANA_HYBRID_TOPK: z.string().transform(Number).default("1000"),
 
     TREX__SQL__HOST: z.string().optional(),
     TREX__SQL__PORT: z.string().optional(),
