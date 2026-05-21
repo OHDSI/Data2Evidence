@@ -98,11 +98,16 @@ export async function unloadSingleSpaApp(appId: string): Promise<void> {
     if (status === MOUNTED || status === NOT_MOUNTED || status === NOT_LOADED) {
       await unregisterApplication(appId);
       console.debug(`[singleSpaRegistry] ${appId} - unregistered successfully`);
+      registeredApps.delete(appId);
+      moduleCache.delete(appId);
+      propsStore.delete(appId);
+    } else {
+      // App is mid-lifecycle (e.g. LOADING_SOURCE_CODE). single-spa still
+      // owns it, so leave our Map entry intact to stay in sync — otherwise
+      // the next register call would call registerApplication again and
+      // single-spa would throw #21.
+      console.warn(`[singleSpaRegistry] ${appId} in status ${status}, deferring cleanup`);
     }
-
-    registeredApps.delete(appId);
-    moduleCache.delete(appId);
-    propsStore.delete(appId);
   } catch (error) {
     console.error(`[singleSpaRegistry] Failed to unregister app ${appId}:`, error);
   }
