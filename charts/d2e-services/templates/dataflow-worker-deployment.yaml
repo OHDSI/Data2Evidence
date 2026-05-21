@@ -1,0 +1,292 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    profile: d2e-dataflow-worker
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}-dataflow-worker"
+  namespace: d2e
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      profile: d2e-dataflow-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        profile: d2e-dataflow-worker
+    spec:
+      serviceAccountName: dataflow-gen-svc-acc
+      restartPolicy: Always
+      # nodeSelector:
+      #   "kubernetes.io/os": linux
+      #   "system": "d2e"
+      # tolerations:
+      #   - key: "app"
+      #     operator: "Equal"
+      #     value: "d2e"
+      #     effect: "NoExecute"
+      # volumes:
+      #   - name: trex-volume
+      #     persistentVolumeClaim:
+      #       claimName: trex-pvc
+      initContainers:
+        - name: dependencies-check
+          image: busybox:latest
+          command:
+            [
+              "sh",
+              "-c",
+              "while :;do sleep {{ .Values.dataflowWorker.readinessSleep }} && wget -O success-trex http://trex-http.d2e.svc.cluster.local:443/_internal/health && wget -O success-dataflow http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api/health && if test -f success-trex; then if test -f success-dataflow; then exit 0; fi; fi; done",
+            ]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 50Mi
+            limits:
+              cpu: 100m
+              memory: 100Mi
+        - name: supabase-storage-post-init
+          env:
+            - name: PGPORT
+              value: "5432"
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
+          command: ["/bin/sh"]
+          args:
+            [
+              "-c",
+              "echo 'Updating public.objects view to include user_metadata column...' &&
+               psql -c 'ALTER TABLE IF EXISTS storage.objects DISABLE ROW LEVEL SECURITY;' &&
+               psql -c 'DROP VIEW IF EXISTS public.objects CASCADE;' &&
+               psql -c 'CREATE VIEW public.objects AS SELECT * FROM storage.objects;' &&
+               psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO service_role;' &&
+               psql -c 'GRANT SELECT, INSERT, UPDATE, DELETE ON public.objects TO authenticated;' &&
+               psql -c 'GRANT SELECT ON public.objects TO anon;' &&
+               echo 'Supabase Storage post-initialization complete!' &&
+               exit 0"
+            ]
+          image: postgres:15-alpine
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 200m
+              memory: 200Mi
+        - name: dataflow-gen-post-init
+          env:
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PG__USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PG__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: PG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PREFECT_API_DATABASE_CONNECTION_URL
+              value: postgresql+asyncpg://$(PG__USER):$(PG__PASSWORD)@$(PG__HOST):5432/$(PG__DB_NAME)
+            - name: PREFECT_LOGGING_LEVEL
+              value: DEBUG
+            - name: PREFECT_LOGGING_SERVER_LEVEL
+              value: WARNING
+          command: ["/bin/sh"]
+          args: ["-c", "prefect server database upgrade -y"]
+          image: prefecthq/prefect:3.6.10-python3.12
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 200m
+              memory: 200Mi
+            limits:
+              cpu: 500m
+              memory: 500Mi
+          ports:
+            - containerPort: 41120
+              protocol: TCP
+      volumes:
+        - name: d2e-worker-cm
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+      containers:
+        - name: dataflow-gen-worker
+          env:
+            - name: D2E_MEMORY_LIMIT
+              value: "1G"
+            - name: D2E_SWAP_LIMIT
+              value: "4G"
+            - name: D2E_DUCKDB_MEMORY_LIMIT
+              value: {{ .Values.dataflowWorker.duckdb.memoryLimit | quote }}
+            - name: D2E_DUCKDB_THREADS
+              value: {{ .Values.dataflowWorker.duckdb.threads | quote }}
+            - name: DOCKER_REGISTRY_URL
+              value: {{ .Values.global.dockerRegistryUrl | quote }}
+            - name: NODE_ENV
+              value: development
+            - name: DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME
+              value: flow-results
+            - name: DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH
+              value: s3://flows/results
+            - name: R_LIBS_USER
+              value: /home/docker/plugins/R/site-library
+            - name: IDP__ALP_DATA__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_ID
+            - name: IDP__ALP_DATA__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__DATA_CLIENT_SECRET
+            - name: DUCKDB__DATA_FOLDER
+              value: /app/duckdb_data
+            - name: CDW_CONFIG_DUCKDB__DATA_FOLDER
+              value: /app/cdw-config/duckdb_data
+            - name: ALP__SYSTEM_ID
+              value: alp-research
+            - name: OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL
+              value: https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R
+            - name: OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL
+              value: https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R
+            - name: FHIR_SCHEMA_JSON_PATH
+              value: /home/docker/fhir
+            - name: ACHILLES_THREAD_COUNT
+              value: "5"
+            - name: PYTHON_VERIFY_SSL
+              value: "false"
+            - name: PG__HOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PG__USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: PG__PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
+            - name: PG__DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PREFECT_API_DATABASE_CONNECTION_URL
+              value: postgresql+asyncpg://$(PG__USER):$(PG__PASSWORD)@$(PG__HOST):5432/$(PG__DB_NAME)
+            - name: PREFECT_API_URL
+              value: http://dataflow-gen.d2e.svc.cluster.local:443/d2e/api
+            - name: PREFECT_API_ENABLE_HTTP2
+              value: "False"
+            - name: PREFECT_WORKER_WEBSERVER_HOST
+              value: "0.0.0.0"
+            - name: PREFECT_TASKS_CACHE_ENABLED
+              value: "false"
+            - name: PREFECT_FLOW_RUN_CACHE_ENABLED
+              value: "false"
+            - name: PREFECT_RESULTS_PERSIST_BY_DEFAULT
+              value: "false"
+            - name: PREFECT_EVENTS_ENABLED
+              value: "false"
+            - name: DB_CREDENTIALS_MGR__API_URL
+              value: "http://trex-http.d2e.svc.cluster.local:443/db-credentials/db/"
+            - name: DOCKER_REGISTRY_USERNAME
+              value: dummy
+            - name: DOCKER_REGISTRY_PASSWORD
+              value: ""
+            - name: DB_CREDENTIALS__PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DB_CREDENTIALS__PRIVATE_KEY
+            - name: IDP__ALP_SVC__CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
+            - name: IDP__ALP_SVC__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: IDP__SCOPE
+              value: "https://alp-default"
+            - name: IDP_SUBJECT_PROP
+              value: "sub"
+            - name: INSTALL_SQLALCHEMY
+              value: "bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"
+            - name: SERVICE_ROUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SERVICE_ROUTES
+            - name: TLS__INTERNAL__CA_CRT
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TLS__INTERNAL__CA_CRT
+          command: ["/bin/sh"]
+          args:
+            [
+              "-c",
+              "rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db; pip install prefect[kubernetes]==3.6.10 && prefect work-pool create 'docker-pool' --type kubernetes; prefect worker start --pool 'docker-pool' --type kubernetes --name prefect-docker-worker --with-healthcheck",
+            ]
+          image: prefecthq/prefect:3.6.10-python3.12
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /opt/prefect/libs/baseJobTemplate.json
+              name: d2e-worker-cm
+              subPath: baseJobTemplate.json
+          resources:
+            requests:
+              cpu: 250m
+              memory: 250Mi
+            limits:
+              cpu: 1000m
+              memory: 1000Mi
+          livenessProbe:
+            exec:
+              command:
+                - wget
+                - -O
+                - liveness
+                - http://localhost:8080/health
+            failureThreshold: 5
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            timeoutSeconds: 30
