@@ -331,6 +331,7 @@ export const mapLegacyConceptSetToWebApiConceptSet = (
     id: conceptSet.id,
     name: conceptSet.name,
     shared: conceptSet.shared,
+    source: "legacy",
   };
 };
 
@@ -353,5 +354,6 @@ export const mapWebApiConceptSetToFacadeConceptSet = (
     name: conceptSet.name,
     shared: false,
     description: conceptSet.description ?? undefined,
+    source: "webapi",
   };
 };
