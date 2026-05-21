@@ -2,13 +2,11 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import FormHelperText from "@mui/material/FormHelperText";
-import { Box, TextInput } from "@portal/components";
+import { Box, Checkbox, TextInput } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
 import { useGetDatabasesQuery } from "~/features/flow/slices";
 import {
@@ -21,16 +19,15 @@ import { NodeState } from "~/features/flow/types";
 import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
-import { SelectSource } from "../../SelectSource/SelectSource";
-import { NodeChoiceMap } from "../../NodeTypes";
-import { DbWriterNodeData } from "./DbWriterNode";
+import { FhirMappingNodeData } from "./FhirMappingNode";
 
-export interface DbWriterDrawerProps extends Omit<NodeDrawerProps, "children"> {
-  node: NodeProps<DbWriterNodeData>;
+export interface FhirMappingDrawerProps
+  extends Omit<NodeDrawerProps, "children"> {
+  node: NodeProps<FhirMappingNodeData>;
   onClose: () => void;
 }
 
-interface FormData extends DbWriterNodeData {}
+interface FormData extends FhirMappingNodeData {}
 
 interface FormError {
   name: { duplicate: boolean };
@@ -39,18 +36,19 @@ interface FormError {
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   description: "",
-  database: "",
-  schemaname: "",
-  dataframe: "",
-  dbtablename: "",
-  truncate: false,
+  database_code: "",
+  schema_name: "",
+  omop_table_name: "",
+  fhir_resource_type: "",
+  write_key_map: true,
+  source_value_col: "",
 };
 
 const EMPTY_FORM_ERROR: FormError = {
   name: { duplicate: false },
 };
 
-export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
+export const FhirMappingDrawer: FC<FhirMappingDrawerProps> = ({
   node,
   onClose,
   ...props
@@ -60,7 +58,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   const { data: databases = [], isLoading: isLoadingDatabases } =
     useGetDatabasesQuery();
   const nodeState = useSelector((state: RootState) =>
-    selectNodeById(state, node.id),
+    selectNodeById(state, node.id)
   );
   const [formError, setFormError] = useState<FormError>(EMPTY_FORM_ERROR);
   const allNodes = useSelector(selectNodes);
@@ -70,17 +68,15 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       setFormData({
         name: node.data.name,
         description: node.data.description,
-        dataframe: node.data.dataframe,
-        dbtablename: node.data.dbtablename,
-        database: node.data.database,
-        schemaname: node.data.schemaname,
-        truncate: node.data.truncate ?? false,
+        database_code: node.data.database_code,
+        schema_name: node.data.schema_name,
+        omop_table_name: node.data.omop_table_name,
+        fhir_resource_type: node.data.fhir_resource_type,
+        write_key_map: node.data.write_key_map ?? true,
+        source_value_col: node.data.source_value_col ?? `${node.data.omop_table_name}_source_value`,
       });
     } else {
-      setFormData({
-        ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["db_writer_node"].defaultData,
-      });
+      setFormData({ ...EMPTY_FORM_DATA });
     }
   }, [node.data]);
 
@@ -90,13 +86,12 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       return;
     }
     setFormError(EMPTY_FORM_ERROR);
-    const updated: NodeState<DbWriterNodeData> = {
+    const updated: NodeState<FhirMappingNodeData> = {
       ...nodeState,
       data: formData,
     };
     dispatch(setNode(updated));
     dispatch(markStatusAsDraft());
-
     typeof onClose === "function" && onClose();
   }, [formData, allNodes, node.id, nodeState, onClose]);
 
@@ -131,20 +126,11 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         />
       </Box>
       <Box mb={4}>
-        <SelectSource
-          nodeId={node.id}
-          sourceOptions={null}
-          label="Dataframe"
-          value={formData.dataframe}
-          onChange={(dataframe: string) => onFormDataChange({ dataframe })}
-        />
-      </Box>
-      <Box mb={4}>
         <TextInput
-          label="Database table name"
-          value={formData.dbtablename}
+          label="FHIR resource type"
+          value={formData.fhir_resource_type}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ dbtablename: e.target.value })
+            onFormDataChange({ fhir_resource_type: e.target.value })
           }
         />
       </Box>
@@ -152,9 +138,9 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         <FormControl variant="standard" fullWidth>
           <InputLabel>Database</InputLabel>
           <Select
-            value={formData.database}
+            value={formData.database_code}
             onChange={(e: SelectChangeEvent<string>) =>
-              onFormDataChange({ database: e.target.value })
+              onFormDataChange({ database_code: e.target.value })
             }
             disabled={isLoadingDatabases}
           >
@@ -168,24 +154,43 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       </Box>
       <Box mb={4}>
         <TextInput
-          label="Schema name"
-          value={formData.schemaname}
+          label="Schema"
+          value={formData.schema_name}
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ schemaname: e.target.value })
+            onFormDataChange({ schema_name: e.target.value })
           }
         />
       </Box>
       <Box mb={4}>
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={formData.truncate}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                onFormDataChange({ truncate: e.target.checked })
-              }
-            />
+        <TextInput
+          label="OMOP table name"
+          value={formData.omop_table_name}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({
+              omop_table_name: e.target.value,
+              source_value_col: formData.source_value_col === `${formData.omop_table_name}_source_value`
+                ? `${e.target.value}_source_value`
+                : formData.source_value_col,
+            })
           }
-          label="Truncate table before writing"
+        />
+      </Box>
+      <Box mb={4}>
+        <TextInput
+          label="FHIR ID column"
+          value={formData.source_value_col}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ source_value_col: e.target.value })
+          }
+        />
+      </Box>
+      <Box mb={4}>
+        <Checkbox
+          label="Write FHIR-OMOP key mapping"
+          checked={formData.write_key_map}
+          onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onFormDataChange({ write_key_map: e.target.checked })
+          }
         />
       </Box>
     </NodeDrawer>
