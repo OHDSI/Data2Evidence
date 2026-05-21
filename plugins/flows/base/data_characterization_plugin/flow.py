@@ -82,6 +82,8 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # Resolve to absolute path so R uses the same directory regardless of its working directory
+    achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
@@ -214,7 +216,15 @@ def execute_sql_script(sql_script: str, dbdao):
             try:
                 for statement in sql_script.strip().split(";"):
                     if statement.strip():
-                        conn.execute(text(statement))
+                        try:
+                            conn.execute(text(statement))
+                        except Exception as stmt_e:
+                            if (
+                                dbdao.dialect == SupportedDatabaseDialects.HANA
+                                and "index already exists" in str(stmt_e).lower()
+                            ):
+                                continue
+                            raise
             except Exception as e:
                 raise
             else:
@@ -288,7 +298,9 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             )
         
 
-    except RRuntimeError:
+    except RRuntimeError as e:
+        logger.error(f"RRuntimeError from Achilles: {e}")
+
         error_file_name = "errorReportR.txt"
 
         error_message = (
@@ -344,7 +356,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 def drop_existing_achilles_tables(results_schema: str, dbdao):
     logger = get_run_logger()
     tables = [
-        "cohort",
+        #"cohort",
         "cohort_censor_stats",
         "cohort_inclusion",
         "cohort_inclusion_result",
