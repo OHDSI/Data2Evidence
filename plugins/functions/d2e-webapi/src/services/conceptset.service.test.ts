@@ -36,6 +36,7 @@ Deno.test("legacy concept sets stay readable but become read-only in facade resp
   assertEquals(conceptSet.hasWriteAccess, false);
   assertEquals(conceptSet.createdBy.name, "legacy-owner");
   assertEquals(conceptSet.shared, true);
+  assertEquals(conceptSet.source, "legacy");
 });
 
 Deno.test("native WebAPI concept sets are exposed with encoded facade ids", () => {
@@ -57,6 +58,7 @@ Deno.test("native WebAPI concept sets are exposed with encoded facade ids", () =
   assertEquals(conceptSet.createdBy.name, "webapi-user");
   assertEquals(conceptSet.description, "Stored in OHDSI WebAPI");
   assertEquals(conceptSet.shared, false);
+  assertEquals(conceptSet.source, "webapi");
 });
 
 Deno.test("legacy concept sets cannot be updated or deleted anymore", () => {
