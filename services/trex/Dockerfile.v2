@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y \
     tar \
     zip \
     jq \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ONNX Runtime
@@ -72,6 +73,13 @@ RUN mkdir -p ./cert ./core
 # Each *.tgz is an npm-packed plugin from ./plugins/*. They are extracted to
 # /usr/src/bundled-plugins/<short-name>/ so trex's plugin discovery can register
 # them at startup without contacting an npm registry.
+#
+# Plugin tarballs from Deno-installed function packages contain cross-subdirectory
+# hardlinks (Deno's `.deno/` cache deduplicates module files across plugins).
+# node-tar emits these in walk order, so links can precede their targets — GNU
+# tar then aborts with "Cannot hard link to". extract-plugin-tarball.py does a
+# two-pass extraction: regular files first, then hardlinks once targets exist.
+COPY scripts/extract-plugin-tarball.py /scripts/
 RUN mkdir -p /usr/src/bundled-plugins
 COPY plugin-artifacts/ /tmp/plugin-artifacts/
 RUN set -eu; \
@@ -79,9 +87,10 @@ RUN set -eu; \
       for TGZ in /tmp/plugin-artifacts/*.tgz; do \
         NAME="$(tar -xzOf "$TGZ" package/package.json | jq -r .name)"; \
         SHORT="$(printf '%s' "$NAME" | sed 's|@[^/]*/||')"; \
-        rm -rf "/usr/src/bundled-plugins/$SHORT"; \
-        mkdir -p "/usr/src/bundled-plugins/$SHORT"; \
-        tar -xzf "$TGZ" -C "/usr/src/bundled-plugins/$SHORT" --strip-components=1; \
+        DEST="/usr/src/bundled-plugins/$SHORT"; \
+        rm -rf "$DEST"; \
+        mkdir -p "$DEST"; \
+        python3 /scripts/extract-plugin-tarball.py "$TGZ" "$DEST" 1; \
       done; \
     fi; \
     rm -rf /tmp/plugin-artifacts
