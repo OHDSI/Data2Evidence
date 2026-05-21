@@ -1,5 +1,3 @@
-// Must be first import to set up sap mock before any component uses it
-import './globals'
 import { createApp, Component } from 'vue'
 import vuetify from './plugins/vuetify'
 

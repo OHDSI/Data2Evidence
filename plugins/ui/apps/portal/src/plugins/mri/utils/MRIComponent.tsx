@@ -36,7 +36,12 @@ const MRIComponent: FC<{ componentName: string; getToken?: () => Promise<string>
         initComponent();
       };
 
-      if (typeof sap !== "undefined") {
+      const isRealUi5Loaded =
+        typeof sap !== "undefined" &&
+        sap?.ui?.core?.ComponentContainer &&
+        typeof sap.ui.getCore === "function";
+
+      if (isRealUi5Loaded) {
         // sapui5 script already loaded
         reuseOrRecreateContainer();
         return;

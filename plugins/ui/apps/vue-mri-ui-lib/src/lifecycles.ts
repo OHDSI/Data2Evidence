@@ -1,4 +1,3 @@
-import './globals'
 import singleSpaVue from 'single-spa-vue'
 import { createApp, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
