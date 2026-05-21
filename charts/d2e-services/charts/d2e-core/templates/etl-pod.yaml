@@ -1,0 +1,46 @@
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   labels:
+#     profile: etl-flow
+#   name: "d2e-etl"
+#   namespace: d2e
+# spec:
+#   replicas: 1
+#   selector:
+#      matchLabels:
+#        profile: etl-flow
+#   strategy:
+#     type: Recreate
+#   template:
+#     metadata:
+#       labels:
+#         profile: etl-flow
+#     spec:
+#       nodeSelector:
+#         "kubernetes.io/os": linux
+#       restartPolicy: Always
+#       containers:
+#         - name: etl-copy
+#           command: ["tail"]
+#           volumeMounts:
+#             - mountPath: /data
+#               name: etl-volume
+#           args:
+#             [
+#               "-f",
+#               "/dev/null"
+#             ]
+#           image: mcr.microsoft.com/azure-cli:azurelinux3.0
+#           imagePullPolicy: IfNotPresent
+#           resources:
+#             requests:
+#               cpu: 100m
+#               memory: 100Mi
+#             limits:
+#               cpu: 2
+#               memory: 16000Mi
+#       volumes:
+#         - name: etl-volume
+#           persistentVolumeClaim:
+#             claimName: etl-pvc
