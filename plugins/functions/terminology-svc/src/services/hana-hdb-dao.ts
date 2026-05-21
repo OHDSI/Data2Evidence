@@ -272,7 +272,7 @@ export class HanaHDBDao {
                    string_split('${embedding}', ',')::FLOAT[384]
                  ) AS embd_score
                FROM fts_input f
-               JOIN "${this.databaseCode}"."${this.schemaName}".concept_embeddings e USING (concept_id)
+               JOIN "${this.databaseCode}"."${this.schemaName}".concept_name_embeddings e USING (concept_id)
              ),
              stats AS (
                SELECT
@@ -375,7 +375,7 @@ export class HanaHDBDao {
             e.concept_name_embedding,
             string_split('${embedding}', ',')::FLOAT[384]
           ) AS embd_score
-        FROM "${this.databaseCode}"."${this.schemaName}".concept_embeddings e
+        FROM "${this.databaseCode}"."${this.schemaName}".concept_name_embeddings e
         ORDER BY embd_score DESC
         LIMIT ${env.HANA_HYBRID_TOPK}
       `;
