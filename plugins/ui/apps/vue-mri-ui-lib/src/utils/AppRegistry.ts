@@ -65,6 +65,7 @@ function registerNavigationApps() {
               username: contextProps.username,
               datasetId: contextProps.datasetId,
               locale: contextProps.locale,
+              isAtlas: import.meta.env.VITE_STANDALONE_ATLAS === 'true',
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }

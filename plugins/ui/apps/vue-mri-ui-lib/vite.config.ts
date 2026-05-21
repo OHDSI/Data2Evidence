@@ -105,8 +105,6 @@ export default defineConfig(({ command, mode }) => {
         }),
       // Replace %VITE_*% placeholders in HTML with env values
       htmlEnvPlugin(env),
-      // Generate assets.json only for serve/dev flow
-      isServe && generateAssetsJsonPlugin(env.VITE_HOST || ''),
     ] as PluginOption[],
 
     // Expose VITE_ prefixed env variables to the client
@@ -255,46 +253,6 @@ function htmlEnvPlugin(env: Record<string, string>): PluginOption {
       return html.replace(/%VITE_([A-Z_]+)%/g, (_match, envName) => {
         const value = env[`VITE_${envName}`] || ''
         return value
-      })
-    },
-  }
-}
-
-/**
- * Plugin to generate assets.json file during build
- * This replicates the HtmlWebpackPlugin behavior from the webpack config
- */
-function generateAssetsJsonPlugin(hostUrl: string): PluginOption {
-  return {
-    name: 'generate-assets-json',
-    apply: 'build',
-    generateBundle(_options, bundle) {
-      const assets: { js: string[]; css: string[] } = {
-        js: [],
-        css: [],
-      }
-
-      // Always include /d2e/mri/ prefix so assets resolve correctly when loaded from portal
-      const basePath = hostUrl ? `${hostUrl}/d2e/mri/` : '/d2e/mri/'
-
-      // Iterate over the bundle to find JS and CSS assets
-      for (const [filename, file] of Object.entries(bundle)) {
-        if (file.type === 'asset' && /\.css$/.test(filename)) {
-          assets.css.push(`${basePath}${filename}`)
-        } else if (file.type === 'chunk' && /\.js$/.test(filename)) {
-          // For ES modules, only include entry points - dependencies are loaded via import
-          // This prevents loading chunks that have side effects before DOM is ready
-          if (file.isEntry) {
-            assets.js.push(`${basePath}${filename}`)
-          }
-        }
-      }
-
-      // Emit assets.json file
-      this.emitFile({
-        type: 'asset',
-        fileName: 'assets.json',
-        source: JSON.stringify(assets, null, 2),
       })
     },
   }

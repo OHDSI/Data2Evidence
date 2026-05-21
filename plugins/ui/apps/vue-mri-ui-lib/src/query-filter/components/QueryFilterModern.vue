@@ -67,6 +67,7 @@ interface TerminologyEventProps {
 
 const store = useStore()
 const { canShare } = useUserRole()
+const portalContext = usePortalContext()
 const isAtlas = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 
 const showDebug = ref(false)

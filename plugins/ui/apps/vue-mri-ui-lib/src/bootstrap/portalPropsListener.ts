@@ -1,4 +1,4 @@
-import type { usePortalContextStore } from '@/stores/portalContext'
+import { usePortalContextStore } from '@/stores/portalContext'
 import type { PortalContextState } from '@/types/portal-props'
 
 type PortalContextLike = ReturnType<typeof usePortalContextStore>

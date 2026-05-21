@@ -12,7 +12,7 @@ export function useAtlasIframe(iframeRef: Ref<HTMLIFrameElement | null>) {
   const originUrl = `${window.location.protocol}//${window.location.hostname}${
     window.location.port ? ':' + window.location.port : ''
   }`
-  const targetOrigin = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`
+  const targetOrigin = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
 
   const preloadToken = async () => {
     const token = await portalContext.getToken()

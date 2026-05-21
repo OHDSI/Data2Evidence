@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:local": "VITE_HOST=http://localhost:8085 vite build",
     "build:watch": "vite build --mode=development --watch",
-    "dev": "concurrently --kill-others \"npm run build:watch\" \"vite preview --port 8085 --mode=development\"",
+    "dev": "vite build --mode=development && concurrently --kill-others \"npm run build:watch\" \"vite preview --port 8085 --mode=development\"",
     "build:mock": "bash build-mock.sh",
     "start:mock": "cd src/query-filter/mock-server && SERVER_URL=${SERVER_URL:-http://localhost:3131} USE_CACHE=${USE_CACHE:-true} npm start",
     "preview": "vite preview --port 8085",

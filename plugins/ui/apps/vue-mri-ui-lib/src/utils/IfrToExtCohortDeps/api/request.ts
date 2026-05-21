@@ -11,6 +11,7 @@ client.interceptors.request.use(
 
     if (portalContext?.getToken) {
       const token = await portalContext.getToken()
+      config.headers = config.headers || {}
       config.headers.Authorization = `Bearer ${token}`
     }
     return config

@@ -1,5 +1,5 @@
 import type { Store } from 'vuex'
-import type { usePortalContextStore } from '@/stores/portalContext'
+import { usePortalContextStore } from '@/stores/portalContext'
 import { SET_DATASET_RELOAD_IN_PROGRESS } from '@/store/mutation-types'
 
 type PortalContextLike = ReturnType<typeof usePortalContextStore>
