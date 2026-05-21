@@ -136,29 +136,39 @@ export class DatasetCommandService {
     // even if the upstream WebAPI sync takes longer than the caller's HTTP timeout.
     const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
 
-    // Then register the source and kick off the TrexSQL cache build. The cache build
-    // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
-    // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
-    // before issuing queries that read the cache catalog.
-    await this.syncDatasetToWebApi({
-      id: datasetDto.id,
-      databaseCode: datasetDto.databaseCode,
-      dialect: datasetDto.dialect,
-      schemaName: datasetDto.schemaName,
-      vocabSchemaName: datasetDto.vocabSchemaName,
-      resultSchemaName: datasetDto.resultSchemaName,
-    }, datasetDto.detail);
+    
+    if (datasetDto.type !== "fhir") {
+      // Then register the source and kick off the TrexSQL cache build. The cache build
+      // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
+      // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
+      // before issuing queries that read the cache catalog.
+      await this.syncDatasetToWebApi(
+        {
+          id: datasetDto.id,
+          databaseCode: datasetDto.databaseCode,
+          dialect: datasetDto.dialect,
+          schemaName: datasetDto.schemaName,
+          vocabSchemaName: datasetDto.vocabSchemaName,
+          resultSchemaName: datasetDto.resultsSchemaName,
+        },
+        datasetDto.detail,
+      );
 
-    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
-    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
-    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
-    // doesn't supply one.
-    const cacheId = datasetDto.cacheId
-      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
-    await this.trexApiService.attach({
-      cacheIds: cacheId ? [cacheId] : [],
-      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
-    });
+      // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+      // so a freshly-set cache_id becomes available without a trex restart. The cache_id
+      // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
+      // doesn't supply one.
+      const cacheId =
+        datasetDto.cacheId ??
+        (datasetDto.id
+          ? sanitizeIdForCacheId(datasetDto.id)
+          : datasetDto.databaseCode);
+
+      await this.trexApiService.attach({
+        cacheIds: cacheId ? [cacheId] : [],
+        connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+      });
+    }
 
     return result;
   }

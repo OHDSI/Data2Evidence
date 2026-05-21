@@ -38,8 +38,8 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
   @IsUUID()
   paConfigId: string
 
-  @IsUUID()
-  fhir_project_id?: string
+
+  fhirDatasetId?: string
 
   vocabSchemaName?: string
 

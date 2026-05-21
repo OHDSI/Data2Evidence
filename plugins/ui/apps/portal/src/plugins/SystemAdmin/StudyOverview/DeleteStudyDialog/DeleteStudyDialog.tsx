@@ -52,8 +52,8 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
       if (study.children && study.children.length > 0) {
         for (const child of study.children) {
           try {
-            if (child.fhir_project_id != null) {
-              await api.fhirGateway.deleteFhirDataset(child.fhir_project_id);
+            if (child.fhir_dataset_id != null) {
+              await api.fhirGateway.deleteFhirDataset(child.fhir_dataset_id);
             }
             await api.systemPortal.deleteDataset(child.id);
           } catch (err: any) {
@@ -63,7 +63,7 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
       }
       
       // Delete the parent dataset
-      if (study.fhir_project_id != null) await api.fhirGateway.deleteFhirDataset(study.fhir_project_id);
+      if (study.fhir_dataset_id != null) await api.fhirGateway.deleteFhirDataset(study.fhir_dataset_id);
       await api.systemPortal.deleteDataset(study.id);
       handleClose("success");
     } catch (err: any) {
