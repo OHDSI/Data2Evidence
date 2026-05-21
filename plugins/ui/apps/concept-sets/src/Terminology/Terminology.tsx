@@ -101,6 +101,7 @@ const NameSection = ({
   onClickClose,
   errorMsg,
   canShare,
+  conceptSetSource,
 }: {
   conceptSetName: string;
   setConceptSetName: React.Dispatch<React.SetStateAction<string>>;
@@ -113,6 +114,7 @@ const NameSection = ({
   onClickClose(): void;
   errorMsg: string;
   canShare: boolean;
+  conceptSetSource: "legacy" | "webapi" | null;
 }) => {
   const { getText } = useTranslation();
 
@@ -193,6 +195,23 @@ const NameSection = ({
           />
         </Box>
       </Box>
+      {conceptSetSource === "legacy" && (
+        <Box
+          sx={{
+            backgroundColor: "#fff3cd",
+            color: "#856404",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            margin: "8px 0",
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          <Typography variant="body2">
+            {getText(i18nKeys.TERMINOLOGY__LEGACY_READ_ONLY)}
+          </Typography>
+        </Box>
+      )}
       {errorMsg ? (
         <div style={{ color: "red", textAlign: "center", maxWidth: "62ch" }}>
           {errorMsg}
@@ -360,6 +379,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const [conceptsResult, setConceptsResult] =
     useState<TerminologyResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [conceptSetSource, setConceptSetSource] = useState<"legacy" | "webapi" | null>(null);
   const { datasetId, userName, features, featuresLoading } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
@@ -401,6 +421,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setErrorMsg("");
     setConceptSetShared(false);
     setIsUserConceptSet(false);
+    setConceptSetSource(null);
     setConceptsResult(null);
   }, []);
 
@@ -579,6 +600,7 @@ export const Terminology: FC<TerminologyProps> = ({
         setConceptSetName(conceptSet.name);
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
+        setConceptSetSource(conceptSet.source || null);
         setConceptSetShared(conceptSet.shared);
         setIsUserConceptSet(!!conceptSet.hasWriteAccess);
         setErrorMsg(
@@ -812,6 +834,7 @@ export const Terminology: FC<TerminologyProps> = ({
             onClickClose={onClickClose}
             errorMsg={errorMsg}
             canShare={canShare}
+            conceptSetSource={conceptSetSource}
           />
         ) : null}
         <div
