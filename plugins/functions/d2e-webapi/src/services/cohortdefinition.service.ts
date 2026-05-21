@@ -27,6 +27,61 @@ import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
+const MATERIALIZED_COHORT_FETCH_ATTEMPTS = 5;
+const MATERIALIZED_COHORT_FETCH_DELAYS_MS = [500, 500, 500, 500];
+
+const delay = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, delayMs));
+
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  delaysMs: number[],
+): Promise<T> => {
+  for (let attemptIndex = 0; attemptIndex <= delaysMs.length; attemptIndex++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const nextDelayMs = delaysMs[attemptIndex];
+      if (nextDelayMs === undefined) {
+        throw error;
+      }
+      await delay(nextDelayMs);
+    }
+  }
+
+  throw new Error("Retry operation failed without an error");
+};
+
+const getErrorDetails = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const apiError = error as {
+      message?: unknown;
+      status?: unknown;
+      code?: unknown;
+      response?: { status?: unknown; data?: unknown };
+    };
+
+    return {
+      message:
+        typeof apiError.message === "string" ? apiError.message : String(error),
+      status: apiError.status ?? apiError.response?.status,
+      code: apiError.code,
+      responseData: apiError.response?.data,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+};
+
 export const generateCohort = async (
   token: string,
   datasetId: string,
@@ -200,6 +255,7 @@ export const getCohortDefinitionList = async (
   }
   const bookmarksApi = new BookmarksAPI(token);
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
+  const materializedCohortFetchStartedAt = Date.now();
 
   const [
     atlasCohortDefinitions,
@@ -222,13 +278,20 @@ export const getCohortDefinitionList = async (
       );
       return { bookmarks: [], schemaName: "" };
     }),
-    analyticsSvcAPI
-      .getFilteredCohorts(datasetId, { datasetId }) // Try to get materialized cohorts, but continue with empty list if it fails
-      .then((result) => (Array.isArray(result) ? result : [])) // Handle undefined or non-array results
+    withRetry(
+      () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
+      MATERIALIZED_COHORT_FETCH_DELAYS_MS,
+    )
+      .then((result) => (Array.isArray(result) ? result : []))
       .catch((error) => {
         console.error(
-          "Failed to fetch materialized cohorts, continuing with empty list:",
-          error,
+          "Failed to fetch materialized cohorts after retries, continuing with empty list:",
+          {
+            datasetId,
+            attempts: MATERIALIZED_COHORT_FETCH_ATTEMPTS,
+            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+            error: getErrorDetails(error),
+          },
         );
         return [] as IBaseMaterializedCohort[];
       }),
