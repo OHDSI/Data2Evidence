@@ -1,6 +1,6 @@
 import { Injectable, SCOPE } from "@danet/core";
 import axios from "npm:axios";
-import { services } from "../env.ts";
+import { env, services } from "../env.ts";
 import { createLogger } from "../logger.ts";
 import { UserGroup } from "../types.d.ts";
 
@@ -41,6 +41,10 @@ export class UserMgmtApi {
   }
 
   async getPhysionetGrantedDatasetIds(jwt: string): Promise<string[]> {
+    // Skip the round trip entirely when the feature is off — every dataset
+    // query would otherwise generate a 404 and noisy logs.
+    if (!env.PHYSIONET_LINKING_ENABLED) return [];
+
     const requestConfig = this.getRequestConfig(jwt);
     const url = `${this.url}/me/physionet-granted-dataset-ids`;
     try {

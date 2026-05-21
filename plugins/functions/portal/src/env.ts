@@ -74,6 +74,8 @@ export const env = {
 
   USE_PUBLIC_WEBAPI: _env.USE_PUBLIC_WEBAPI || false,
   PUBLIC_WEBAPI_PROXY_URL: _env.PUBLIC_WEBAPI_PROXY_URL,
+
+  PHYSIONET_LINKING_ENABLED: (_env.PHYSIONET__LINKING_ENABLED ?? "false") === "true",
 };
 
 export const services = JSON.parse(env.SERVICE_ROUTES);
