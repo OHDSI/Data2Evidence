@@ -409,6 +409,8 @@ export class UserGroupService {
     const user = await this.userService.getUserByIdpUserId(idpUserId)
     const userId = user?.id || idpUserId
 
+    if (user) this.maybeTriggerPhysionetSync(user.id)
+
     return {
       userId,
       groups,
