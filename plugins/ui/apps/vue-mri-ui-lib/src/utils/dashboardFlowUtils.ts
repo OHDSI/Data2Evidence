@@ -17,6 +17,7 @@ export interface WizardFieldDefinition {
   isWizardField?: boolean
   allowFreeText?: boolean
   placeholder?: string
+  excludeDescendantsByDefault?: boolean
 }
 
 export interface WizardDefinitionLike {
