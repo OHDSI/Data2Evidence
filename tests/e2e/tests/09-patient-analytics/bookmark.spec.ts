@@ -23,7 +23,10 @@ async function openDatasetCohorts(page) {
       await cohortsLink.click()
       return
     } catch {
-      await page.getByRole('link', { name: 'Dataset' }).click().catch(() => {})
+      await page
+        .getByRole('link', { name: 'Dataset' })
+        .click()
+        .catch(() => {})
     }
   }
   throw new Error('Cohorts link did not appear for selected dataset within ~60s')
@@ -297,7 +300,7 @@ test(TEST_NAME, async ({ page }) => {
     //Click on the saved cohort
     await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText(NAME.patientListFilters).nth(1).click()
-    await expect(page.getByText('FEMALE')).toBeVisible()
+    await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
     await expect(page.getByText('Death A')).toBeVisible()
