@@ -28,13 +28,14 @@ export class FhirGatewayAPI {
     };
   }
 
-  async createFhirDataset(id: string, description: string): Promise<string> {
+  async createFhirDataset(id: string, name: string): Promise<string> {
     this.logger.info(`Creating FHIR dataset for portal dataset '${id}'`);
     try {
       const options = this.getRequestConfig();
       const url = `${this.baseURL}/createDataset`;
-      const result = await this.channel.post(url, { id, description }, options);
-      const fhirDatasetId = result.data?.datasetId;
+      const fhirDatasetDetails = { id: `fhir-${id}`, name };
+      const result = await this.channel.post(url, fhirDatasetDetails, options);
+      const fhirDatasetId = result.data?.fhirDatasetId;
       if (!fhirDatasetId) {
         throw new Error(
           `No data returned from FHIR gateway for portal dataset '${id}'`,
