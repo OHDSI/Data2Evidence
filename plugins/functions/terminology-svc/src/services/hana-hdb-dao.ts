@@ -21,6 +21,14 @@ import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.t
 import { getGTEEmbedding } from "../utils/helperUtil.ts";
 
 const HANA_TOPK = env.HANA_HYBRID_TOPK;
+const SAFE_IDENTIFIER = /^[A-Za-z0-9_]+$/;
+function assertSafeIdentifier(name: string, value: string) {
+  if (!SAFE_IDENTIFIER.test(value)) {
+    throw new Error(
+      `Invalid ${name}: must match ${SAFE_IDENTIFIER} (alphanumerics and underscore only), got ${JSON.stringify(value)}`,
+    );
+  }
+}
 
 function buildOrderByClause(
   sortBy: string | undefined,
@@ -55,14 +63,19 @@ export class HanaHDBDao {
     semanticRatio: number = 0,
     schemaName: string = "",
   ) {
+    if (!jwt) {
+      throw new Error("No token passed for HanaHDBDao!");
+    }
+    assertSafeIdentifier("databaseCode", databaseCode);
+    assertSafeIdentifier("vocabSchemaName", vocabSchemaName);
+    // schemaName is "" for non-hybrid callers; only validate when actually set.
+    if (schemaName !== "") assertSafeIdentifier("schemaName", schemaName);
+
     this.jwt = jwt;
     this.vocabSchemaName = vocabSchemaName;
     this.databaseCode = databaseCode;
     this.semanticRatio = semanticRatio;
     this.schemaName = schemaName;
-    if (!jwt) {
-      throw new Error("No token passed for HanaHDBDao!");
-    }
   }
 
   private getTrexConnection = async () => {
@@ -243,6 +256,7 @@ export class HanaHDBDao {
         `*${searchText}*`,
       ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
 
+      // totalHits = min(trueCount, HANA_TOPK)
       const totalHits = ftsRows.length;
       if (totalHits === 0) return { hits: [], totalHits: 0 };
 
