@@ -42,7 +42,7 @@
             :iconGroup="chart.iconGroup"
             :title="getText(chart.tooltip)"
             :activeChart="getActiveChart"
-          ></chartButton>
+          />
           <span class="separator"></span>
         </template>
 

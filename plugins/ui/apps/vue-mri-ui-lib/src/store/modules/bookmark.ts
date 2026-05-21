@@ -11,6 +11,7 @@ import {
   formatAtlasCohortDefinition,
   processBookmarksData,
 } from '@/utils/BookmarkUtils'
+import { getEffectiveBarChartMode, modeOrder } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
 let cancel
@@ -113,13 +114,21 @@ const getters = {
 
     const metadata = { version: 3 }
 
-    return {
+    const data: any = {
       filter,
       chartType,
       axisSelection,
       metadata,
       datasetId: rootGetters.getSelectedDataset.id,
     }
+    // Add barChartType only for stacked-bar charts.
+    if (chartType === 'stacked') {
+      data.barChartType = {
+        mode: rootGetters.getBarChartType,
+        showDistributionOverlay: rootGetters.getShowDistributionOverlay,
+      }
+    }
+    return data
   },
   getBookmarkById: modulestate => bmkId =>
     JSON.parse(modulestate.bookmarks.find(b => b.bmkId === bmkId).bookmark || '{}'),
@@ -139,7 +148,7 @@ const getters = {
   getBookmarkByNameAndUsername: modulestate => (name, username) => {
     return modulestate.bookmarks.find(b => b.bookmarkname === name && b.user_id === username)
   },
-  getCurrentBookmarkHasChanges: (modulestate, moduleGetters) => {
+  getCurrentBookmarkHasChanges: (modulestate, moduleGetters, rootState, rootGetters) => {
     if (modulestate.activeBookmark == null) {
       return false
     }
@@ -152,9 +161,24 @@ const getters = {
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection
     const currentBookmarksAxisSelection = bookmark?.axisSelection
+    // Only compare barChartType for stacked-bar bookmarks
+    let barChartTypeChanged = false
+    if (bookmark?.chartType === 'stacked') {
+      const mriFrontendConfig = rootGetters.getMriFrontendConfig
+      const defaultBarChartType = { mode: 'stack', showDistributionOverlay: false }
+      const newRaw = moduleGetters.getBookmarksData.barChartType ?? defaultBarChartType
+      const curRaw = bookmark?.barChartType ?? defaultBarChartType
+      // Normalize disabled modes to 'stack' on both sides so a freshly-loaded bookmark whose
+      // saved mode is disabled by the current config does not appear dirty.
+      barChartTypeChanged = !isEqual(
+        { ...newRaw, mode: getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig) },
+        { ...curRaw, mode: getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig) }
+      )
+    }
     return (
       !isEqual(newBookmarksFilter, currentBookmarksFilter) ||
-      !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection)
+      !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection) ||
+      barChartTypeChanged
     )
   },
   getDisplayBookmarks: modulestate => (showSharedBookmarks, username) => {
@@ -426,6 +450,23 @@ const actions = {
       }
       dispatch('setIFRState', { ifr })
         .then(() => {
+          // Restore bar chart mode BEFORE axis restoration so that setNewAxisValue's KDP guard
+          // (which forces X1 binsize=0 when getBarChartType === 'distribution') sees the
+          // bookmark's mode, not the stale pre-load mode. Otherwise loading a stacked bookmark
+          // over a KDP session would clobber the saved X1 binsize with 0, then leave it there
+          // because the direct SET_BAR_DISPLAY_MODE commit below bypasses setBarChartType's
+          // binsize-restoration path. If the saved mode is disabled by the current config,
+          // fall back to 'stack'.
+          const barChartType = parsedBookmark.barChartType ?? { mode: 'stack', showDistributionOverlay: false }
+          const effectiveMode = getEffectiveBarChartMode(barChartType.mode, rootGetters.getMriFrontendConfig)
+          commit(types.SET_BAR_DISPLAY_MODE, effectiveMode)
+          // Clear the overlay flag when the effective mode does not support distribution overlays.
+          // This prevents the Chart type menu showing a checked, disabled Distribution Curve option
+          // when a saved overlay-capable mode is disabled by the current config and falls back to stack.
+          const effectiveModeMeta = modeOrder.find(m => m.id === effectiveMode)
+          const overlayAllowed = !!effectiveModeMeta?.hasDistributionOverlay
+          commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, overlayAllowed && !!barChartType.showDistributionOverlay)
+
           if (parsedBookmark.axisSelection) {
             for (let i = 0; i < 5; i += 1) {
               if (parsedBookmark.axisSelection[i].attributeId !== 'n/a') {
@@ -491,6 +532,25 @@ const actions = {
               sorting_directions: parsedBookmark.filter.sorting_directions,
               sorted_attributes: parsedBookmark.filter.sorted_attributes,
             })
+          }
+          // Reconcile X1/X2 'disabled' state with the restored mode: in non-stack modes
+          // exactly one of X1/X2 is selectable, the empty one must be disabled. The axis
+          // set/clear dispatches above don't manage 'disabled', and stale state may persist
+          // across bookmark loads.
+          const X1 = Constants.MRIChartDimensions.X1
+          const X2 = Constants.MRIChartDimensions.X2
+          const axisSel = parsedBookmark.axisSelection
+          const x1HasSelection = !!(axisSel?.[X1]?.attributeId && axisSel[X1].attributeId !== 'n/a')
+          const x2HasSelection = !!(axisSel?.[X2]?.attributeId && axisSel[X2].attributeId !== 'n/a')
+          if (effectiveMode !== 'stack' && x1HasSelection && !x2HasSelection) {
+            dispatch('setAxisValue', { id: X1, props: { disabled: false } })
+            dispatch('setAxisValue', { id: X2, props: { disabled: true } })
+          } else if (effectiveMode !== 'stack' && !x1HasSelection && x2HasSelection) {
+            dispatch('setAxisValue', { id: X1, props: { disabled: true } })
+            dispatch('setAxisValue', { id: X2, props: { disabled: false } })
+          } else {
+            dispatch('setAxisValue', { id: X1, props: { disabled: false } })
+            dispatch('setAxisValue', { id: X2, props: { disabled: false } })
           }
           if (chartType) {
             // Guard: if the bookmark's saved chartType is not visible in the current config

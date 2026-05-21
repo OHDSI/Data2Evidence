@@ -192,6 +192,19 @@ export function useTreemapChart(
     { flush: 'post' } // Ensure <div ref="treemapChartRef"> exists
   )
 
+  // Re-render when chart container is mounted (e.g. after the loading spinner hides).
+  // The treemapData watcher may fire while showLoader keeps the chart div out of the DOM,
+  // leaving treemapChartRef null. Once the spinner finishes and the div is mounted, render now.
+  watch(
+    treemapChartRef,
+    newRef => {
+      if (newRef && selectedVisualization.value === 'INTERSECT' && treemapData.value) {
+        renderTreemap()
+      }
+    },
+    { flush: 'post' }
+  )
+
   // Watch for changes in filtering options
   watch(
     () => [allAnyOption.value, passedFailedOption.value, checkedRulesIds.value],
