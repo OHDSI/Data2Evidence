@@ -34,6 +34,7 @@ try {
   console.log(`FATAL ${envfile} not found`);
   process.exit(1);
 }
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO__ALP_APP__CLIENT_ID;
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;

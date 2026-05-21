@@ -84,6 +84,7 @@ try {
   console.log(`FATAL ${envfile} not found`);
   process.exit(1);
 }
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO__ALP_APP__CLIENT_ID;
 let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
