@@ -192,7 +192,7 @@ export class MeRouter {
         const datasetIds = await this.userGroupRepo.findGrantedStudyIdsByProvenance(user.id, 'physionet_sync')
         return res.status(200).json({ datasetIds })
       } catch (err) {
-        this.logger.error(`Error when getting physionet-granted dataset IDs for ${idpUserId}: ${JSON.stringify(err)}`)
+        this.logger.error(`Error when getting physionet-granted dataset IDs for ${idpUserId}: ${(err as Error).message ?? err}`)
         return next(err)
       }
     })

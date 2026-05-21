@@ -38,9 +38,16 @@ export const useLinkedAccounts = () => {
   }, [reload]);
 
   const linkPhysionet = useCallback(async () => {
-    const { url } = await api.linkedAccounts.startPhysionet();
-    window.location.href = url;
-  }, []);
+    setLoading(true);
+    setError(undefined);
+    try {
+      const { url } = await api.linkedAccounts.startPhysionet();
+      window.location.href = url;
+    } catch (e) {
+      captureError(e);
+      setLoading(false);
+    }
+  }, [captureError]);
 
   const refreshPhysionet = useCallback(async () => {
     setLoading(true);

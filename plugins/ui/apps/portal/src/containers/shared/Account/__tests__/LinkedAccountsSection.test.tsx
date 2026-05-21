@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 
 // Mock the hook to isolate this component from network/effects
 jest.mock("../../../../hooks/useLinkedAccounts", () => ({

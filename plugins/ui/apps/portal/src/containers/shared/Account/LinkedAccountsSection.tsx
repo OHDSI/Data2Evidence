@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Card } from "@portal/components";
+import { Button } from "@portal/components";
 import { useLinkedAccounts } from "../../../hooks/useLinkedAccounts";
 import { useTranslation } from "../../../contexts";
 import { i18nKeys } from "../../../contexts/app-context/states";

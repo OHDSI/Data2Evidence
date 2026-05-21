@@ -56,10 +56,13 @@ export class LinkedAccountRepository extends Repository<LinkedAccount, LinkedAcc
   }
 
   async upsert(field: Partial<LinkedAccountField>, trx?: Knex): Promise<LinkedAccount> {
+    // Exclude `id` from the merge: on conflict we want to keep the existing
+    // primary key, not replace it with whatever new uuid the caller generated.
+    const mergeColumns = Object.keys(field).filter(k => k !== 'id') as (keyof LinkedAccountField)[]
     const [row] = await (trx || this.db)(this.tableName)
       .insert(field)
       .onConflict(['user_id', 'provider'])
-      .merge()
+      .merge(mergeColumns)
       .returning('*')
     return this.reducer(row)
   }
