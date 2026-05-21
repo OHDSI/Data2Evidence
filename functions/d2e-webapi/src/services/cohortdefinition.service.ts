@@ -27,6 +27,61 @@ import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
+const MATERIALIZED_COHORT_FETCH_ATTEMPTS = 5;
+const MATERIALIZED_COHORT_FETCH_DELAYS_MS = [500, 1000, 1500, 2000];
+
+const delay = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, delayMs));
+
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  delaysMs: number[],
+): Promise<T> => {
+  for (let attemptIndex = 0; attemptIndex <= delaysMs.length; attemptIndex++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const nextDelayMs = delaysMs[attemptIndex];
+      if (nextDelayMs === undefined) {
+        throw error;
+      }
+      await delay(nextDelayMs);
+    }
+  }
+
+  throw new Error("Retry operation failed without an error");
+};
+
+const getErrorDetails = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const apiError = error as {
+      message?: unknown;
+      status?: unknown;
+      code?: unknown;
+      response?: { status?: unknown; data?: unknown };
+    };
+
+    return {
+      message:
+        typeof apiError.message === "string" ? apiError.message : String(error),
+      status: apiError.status ?? apiError.response?.status,
+      code: apiError.code,
+      responseData: apiError.response?.data,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+};
+
 export const generateCohort = async (
   token: string,
   datasetId: string,
