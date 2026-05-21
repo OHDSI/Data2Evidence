@@ -1,0 +1,2 @@
+@data2evidence/d2e-fhir-server@latest
+@data2evidence/storage@latest

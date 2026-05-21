@@ -35,8 +35,6 @@ resources:
 
 config:
   OMOP_RELATIONSHIPS_FOR_DESCENDANTS: "'Maps to','Subsumes'"
-  PLUGINS_SEED_UPDATE: "false"
-  PLUGINS_SEED: "[]"
   PLUGINS_API_VERSION: "~0.15.0"
   PLUGINS_IMAGE_TAG: "0.15.0-beta"
   PLUGINS_REGISTRY: ""
