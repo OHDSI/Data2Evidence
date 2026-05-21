@@ -6,7 +6,7 @@ export const client = axios.create()
 client.interceptors.request.use(
   async config => {
     const portalContext = usePortalContext()
-    const baseUrl = portalContext.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
+    const baseUrl = portalContext.qeSvcUrl || import.meta.env.VITE_API_BASE_URL || ''
     config.baseURL = baseUrl
 
     if (portalContext?.getToken) {
