@@ -63,7 +63,7 @@ export interface Study {
   studyDetail?: StudyDetail;
   attributes?: StudyAttribute[];
   tags?: StudyTag[];
-  fhir_dataset_id?: string;
+  fhirStudyId?: string;
   sourceStudyId?: string;
   flowParameters?: DatasetFlowParameters | null;
   strategusAnalysis?: NetworkStrategusStudy | null;
