@@ -53,7 +53,6 @@ export const publicURLs = [
     '^/prefect/docs$',
     '^/openapi.json$',
     '^/fhir-server/healthcheck$',
-    '^/fhir-server/.*$',
     '^/gateway/api/dataset/shiny-live/.*$'
   ]
 
