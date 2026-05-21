@@ -4,9 +4,9 @@ import ReactECharts from "echarts-for-react";
 import ChartContainer from "./ChartContainer";
 import "./BoxPlotChart.scss";
 import { useTranslation } from "../../../contexts";
+import { formatNumber } from "../../../utils";
 import { chartColors } from "./chartColors";
 import { getAxisNameGap } from "../util";
-
 interface BoxPlotChartProps {
   data: any[];
   title: string;
@@ -60,13 +60,13 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       trigger: "item",
       formatter: function (params: any) {
         return `
-        Max: ${params.data["MAXVALUE"]} <br />
-        P90: ${params.data["P90VALUE"]} <br />
-        P75: ${params.data["P75VALUE"]} <br />
-        Median: ${params.data["MEDIANVALUE"]} <br />
-        P25: ${params.data["P25VALUE"]} <br />
-        P10: ${params.data["P10VALUE"]} <br />
-        Min: ${params.data["MINVALUE"]} <br />
+        Max: ${formatNumber(params.data["MAXVALUE"])} <br />
+        P90: ${formatNumber(params.data["P90VALUE"])} <br />
+        P75: ${formatNumber(params.data["P75VALUE"])} <br />
+        Median: ${formatNumber(params.data["MEDIANVALUE"])} <br />
+        P25: ${formatNumber(params.data["P25VALUE"])} <br />
+        P10: ${formatNumber(params.data["P10VALUE"])} <br />
+        Min: ${formatNumber(params.data["MINVALUE"])} <br />
         `;
       },
       confine: true,
@@ -86,6 +86,9 @@ const BoxPlotChart: FC<BoxPlotChartProps> = ({ data, title, xAxisName, yAxisName
       },
     },
     yAxis: {
+      axisLabel: {
+        formatter: (value: number) => formatNumber(value),
+      },
       name: yAxisName,
       nameLocation: "middle",
       nameGap: yAxisNameGap,

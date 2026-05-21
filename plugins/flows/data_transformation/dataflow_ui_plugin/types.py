@@ -14,7 +14,8 @@ class NodeType(str, Enum):
     DBREADER = "db_reader_node"
     DBWRITER = "db_writer_node"
     SQLQUERY = "sql_query_node"
-    DATAMAPPING = "data_mapping_node"
+    WHITERABBIT = "white_rabbit_node"
+    DATAMAPPING = "rabbit_in_a_hat"
     CONCEPTMAPPING = "concept_mapping_node"
     SUBFLOW = "subflow"
     TRANSFORMFHIRDATA = "transform_fhir_data_node"
@@ -133,7 +134,7 @@ class DatePartType(str, Enum):
 
 class TableSourceType(str, Enum):
     CSV = "csv"
-    DB = "database"
+    DB = "postgresql"
 
 
 class SqlViewMode(str, Enum):
