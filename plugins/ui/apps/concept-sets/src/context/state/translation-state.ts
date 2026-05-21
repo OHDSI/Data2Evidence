@@ -9,11 +9,15 @@ export const i18nDefault = {
     CONCEPT_SETS__ERROR_DESCRIPTION: "Please try again.",
     CONCEPT_SETS__ERROR: "An error has occurred",
     CONCEPT_SETS__ID: "ID",
+    CONCEPT_SETS__LEGACY: "Legacy",
+    CONCEPT_SETS__LEGACY_TOOLTIP: "Stored in legacy terminology service",
     CONCEPT_SETS__LIST: "Concept set list",
     CONCEPT_SETS__Name: "Name",
     CONCEPT_SETS__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     CONCEPT_SETS__SHARED: "Shared",
     CONCEPT_SETS__UPDATED: "Updated",
+    CONCEPT_SETS__WEBAPI: "WebAPI",
+    CONCEPT_SETS__WEBAPI_TOOLTIP: "Stored in OHDSI WebAPI",
     CONCEPT_SETS__NO_CONCEPT_SETS: "No concept sets to display",
     CONCEPT_SET_DELETE_DIALOG__DELETE_CONCEPT_SET: "Delete concept set",
     CONCEPT_SET_DELETE_DIALOG__ARE_YOU_SURE:
@@ -43,6 +47,8 @@ export const i18nDefault = {
     TERMINOLOGY__CREATE: "Create",
     TERMINOLOGY__CREATING: "creating",
     TERMINOLOGY__ERROR: "Error {0} concept set.",
+    TERMINOLOGY__LEGACY_READ_ONLY:
+      "This concept set is stored in the legacy terminology service and is read-only.",
     TERMINOLOGY__CONCEPT_SET_NAME_USED_ERROR:
       "Concept set name {0} already exists. Please enter another name.",
     TERMINOLOGY__CONCEPT_SET_NAME_EMPTY_ERROR: "Please enter a name.",
