@@ -156,9 +156,10 @@ export default {
   },
   watch: {
     getActiveBookmark(newVal, oldVal) {
-      // Reset default color axis flag only when switching to a different cohort,
-      // not when saving/updating the currently active bookmark (same bmkId).
-      if (newVal?.bmkId !== oldVal?.bmkId) {
+      // Reset only when  switching to a different cohort.
+      // Do NOT reset when a new cohort is saved for the first time:
+      const isSavingNewCohort = !oldVal?.bmkId && !!newVal?.bmkId
+      if (!isSavingNewCohort && newVal?.bmkId !== oldVal?.bmkId) {
         this.hasSetDefaultColorAxis = false
         this.setColorAxisIndex(null)
       }
@@ -166,7 +167,7 @@ export default {
     getBarChartType(newVal: string) {
       // Clear the X-axis color selection whenever the chart type stops being stacked bar chart
       if (newVal !== 'stack') {
-        this.colorAxisIndex = null
+        this.setColorAxisIndex(null)
       }
     },
   },
@@ -184,7 +185,11 @@ export default {
       'getKMDisplayInfo',
       'getActiveBookmark',
       'getBarChartType',
+      'getColorAxisIndex',
     ]),
+    colorAxisIndex() {
+      return this.getColorAxisIndex
+    },
     isColorButtonDisabled() {
       return this.getBarChartType !== 'stack'
     },
