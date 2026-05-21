@@ -195,6 +195,8 @@ test(TEST_NAME, async ({ page }) => {
   // Switch to list view
   await page.locator('button.chartButton').nth(1).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByRole('cell', { name: 'Person id' }).locator('span').nth(1).click()
+  await page.getByText('Sort Ascending').click()
   await expect(page).toHaveScreenshot()
 
   // Export to ZIP file
