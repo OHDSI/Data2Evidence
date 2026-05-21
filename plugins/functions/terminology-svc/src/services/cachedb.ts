@@ -90,8 +90,7 @@ export class CachedbService {
         vocabSchemaName,
         databaseCode,
         semanticRatio,
-        schemaName,
-        resultsSchemaName,
+        schemaName
       );
     }
 
