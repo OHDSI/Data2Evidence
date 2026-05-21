@@ -145,7 +145,6 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
             <ConceptSetsTable
               data={data}
               isLoading={isLoading}
-              userName={userName}
               onAddEdit={handleAddAndEditConceptSet}
               onDelete={handleDeleteClick}
             />

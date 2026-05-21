@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState } from "react";
+import { FC, useCallback, useState } from "react";
 import { Feedback } from "../types";
 import Divider from "@mui/material/Divider";
 import { Button, Dialog } from "@portal/components";

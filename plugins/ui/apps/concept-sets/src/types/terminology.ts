@@ -233,6 +233,7 @@ export interface IWebapiConceptSet {
   };
   description?: string | undefined;
   tags?: unknown;
+  source?: "legacy" | "webapi";
 }
 
 export interface IWebapiConceptSetExpression {

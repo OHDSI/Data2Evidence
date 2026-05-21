@@ -151,7 +151,7 @@ function requestWithDedup<T = any>(options: AxiosRequestConfig): Promise<T> {
   // Deduplicate: if an identical request is in-flight, piggyback on it
   const inflight = inflightRequests.get(key);
   if (inflight) {
-    return wrapWithSignal(inflight, options.signal);
+    return wrapWithSignal(inflight, options.signal as AbortSignal);
   }
 
   // Make the actual request (without the caller's signal — we manage cancellation separately)
@@ -166,7 +166,7 @@ function requestWithDedup<T = any>(options: AxiosRequestConfig): Promise<T> {
     });
 
   inflightRequests.set(key, shared);
-  return wrapWithSignal(shared, options.signal);
+  return wrapWithSignal(shared, options.signal as AbortSignal);
 }
 
 // Wraps a shared promise so that the caller's AbortSignal can reject it

@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import SearchBar from "../components/SearchBar/SearchBar";
 import {
   MaterialReactTable,
@@ -22,7 +22,6 @@ import "./ConceptSets.scss";
 interface ConceptSetsTableProps {
   data: ConceptSet[];
   isLoading: boolean;
-  userName: string | undefined;
   onAddEdit: (conceptSetId?: number) => void;
   onDelete: (conceptSet: ConceptSet) => void;
 }
@@ -30,7 +29,6 @@ interface ConceptSetsTableProps {
 export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   data,
   isLoading,
-  userName,
   onAddEdit,
   onDelete,
 }) => {

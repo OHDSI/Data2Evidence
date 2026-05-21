@@ -97,8 +97,8 @@ export class PublicWebapiProxyAPI {
   }
 
   async getTerminologies(
-    page: number,
-    rowsPerPage: number,
+    _page: number,
+    _rowsPerPage: number,
     dataSource: string,
     searchText: string,
     conceptClassId: string[],

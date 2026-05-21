@@ -752,11 +752,11 @@ export const Terminology: FC<TerminologyProps> = ({
       // Return concept set for concept set mode
       const onCloseReturnValues: OnCloseReturnValues = {
         currentConceptSet: currentConceptSet
-          ? {
+          ? ({
               ...currentConceptSet,
               id: currentConceptSet.id.toString(),
-            }
-          : currentConceptSet,
+            } as OnCloseReturnValues["currentConceptSet"])
+          : null,
       };
       onClose(onCloseReturnValues);
     } else {
