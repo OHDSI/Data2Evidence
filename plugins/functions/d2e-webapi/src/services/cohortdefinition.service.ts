@@ -28,7 +28,7 @@ import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
 const MATERIALIZED_COHORT_FETCH_ATTEMPTS = 5;
-const MATERIALIZED_COHORT_FETCH_DELAYS_MS = [500, 500, 500, 500];
+const MATERIALIZED_COHORT_FETCH_DELAYS_MS = [500, 1000, 1500, 2000];
 
 const delay = (delayMs: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, delayMs));
