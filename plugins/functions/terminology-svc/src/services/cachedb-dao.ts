@@ -121,11 +121,15 @@ export class CachedbDAO {
     synonym_scores as (
       select
         cs.concept_id,${exactScoreColumn}
-        MAX(${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, $1)) as syn_bm25
-      from
-        ${this.vocabSchemaName}.concept_synonym cs
-      where
-        ${this.fts_concept_synonym_identifier}.match_bm25(cs.fts_document_identifier_id, $1) IS NOT NULL${exactWhereDisjuncts}
+        MAX(cs.raw_bm25) as syn_bm25
+      from (
+        select
+          concept_id,
+          concept_synonym_name,
+          ${this.fts_concept_synonym_identifier}.match_bm25(fts_document_identifier_id, $1) as raw_bm25
+        from ${this.vocabSchemaName}.concept_synonym
+      ) cs
+      where cs.raw_bm25 IS NOT NULL${exactWhereDisjuncts}
       group by cs.concept_id
     )
   `;
@@ -425,8 +429,8 @@ export class CachedbDAO {
       ];
     } else if (this.semanticRatio > 0) {
       const duckdbFtsWhereClause = filterWhereClause
-        ? `${filterWhereClause} AND score is not null`
-        : "WHERE score is not null ";
+        ? `${filterWhereClause} AND fts_score is not null`
+        : "WHERE fts_score is not null ";
 
       // Facet base query, hybrid: includes a concept if either its concept_name
       // or any synonym matches FTS. fts_score uses the strongest BM25 signal
@@ -648,7 +652,7 @@ export class CachedbDAO {
               (
                 ${this.semanticRatio} * GREATEST(embd_score, 0) +
                 (1 - ${this.semanticRatio}) *
-                (fts_score / (fts_score + ${this.bm25SaturationK}))
+                COALESCE(fts_score / (fts_score + ${this.bm25SaturationK}), 0)
               ) as search_score
             from
               sem_fts_scores
