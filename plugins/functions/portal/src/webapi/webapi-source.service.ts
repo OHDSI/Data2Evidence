@@ -28,7 +28,7 @@ export class WebApiSourceService {
       }
 
       if (dataset.schemaName) {
-        this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
       }
     } catch (error) {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
@@ -36,6 +36,11 @@ export class WebApiSourceService {
     }
   }
 
+  // Kick off the TrexSQL cache build. We deliberately do NOT await
+  // `waitForCacheReady` here: bao's COMPLETED transition can take minutes, and
+  // edge-function HTTP callers (e.g. the dataset gateway) time out well before
+  // that. Consumers that depend on a hot cache (DQD, DC, analytics-svc
+  // cdmversion) must wait for readiness explicitly via `waitForCacheReady`.
   private async triggerCacheCreation(
     sourceKey: string,
     schemaName: string,
@@ -48,6 +53,45 @@ export class WebApiSourceService {
       }
     } catch (error) {
       this.logger.error(`Failed to create TrexSQL cache for ${sourceKey}: ${error}`)
+    }
+  }
+
+  // Block until the TrexSQL cache for the given dataset is COMPLETED.
+  // Call this from consumers that explicitly need a hot cache (DQD/DC kickoff).
+  async waitForCacheReady(sourceKey: string, authToken?: string): Promise<void> {
+    try {
+      await this.webApiSourceApi.waitForCacheReady(sourceKey, authToken)
+    } catch (error) {
+      this.logger.error(`Cache wait failed for ${sourceKey}: ${error}`)
+      throw error
+    }
+  }
+
+  // Snapshot the TrexSQL cache state for a dataset. Callers poll this and decide
+  // when it's safe to issue queries that read from the cache catalog.
+  //
+  // bao returns a single :activeJob field (no separate :lastJob). For postgres/
+  // bigquery dialects the cache POST builds synchronously and never inserts a
+  // job row, so activeJob is null and the cache is ready as soon as the file
+  // exists + is attached. For JDBC dialects, the job row persists after the
+  // batch finishes with status=COMPLETED — treat that as ready too.
+  async getCacheStatus(sourceKey: string, authToken?: string): Promise<{
+    ready: boolean
+    cacheExists: boolean
+    cacheAttached: boolean
+    activeJobStatus?: string | null
+    lastJobError?: string | null
+  }> {
+    const status = await this.webApiSourceApi.getCacheStatus(sourceKey, authToken)
+    const jobStatus = status.activeJob?.status ?? null
+    const jobDone = jobStatus === null || jobStatus === 'COMPLETED'
+    const ready = !!status.cacheExists && !!status.cacheAttached && jobDone
+    return {
+      ready,
+      cacheExists: !!status.cacheExists,
+      cacheAttached: !!status.cacheAttached,
+      activeJobStatus: jobStatus,
+      lastJobError: status.activeJob?.error ?? null,
     }
   }
 
