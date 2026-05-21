@@ -116,5 +116,6 @@ export const mapd2eWebapiConceptSet = (
       ? new Date(conceptSet.modifiedDate).toISOString().split("T")[0]
       : undefined,
     userName: conceptSet.createdBy.name,
+    source: conceptSet.source,
   };
 };
