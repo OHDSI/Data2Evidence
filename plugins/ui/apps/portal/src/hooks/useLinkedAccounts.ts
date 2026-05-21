@@ -7,8 +7,15 @@ export const useLinkedAccounts = () => {
   const [accounts, setAccounts] = useState<LinkedAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<AppError | undefined>();
+  const [disabled, setDisabled] = useState(false);
 
   const captureError = useCallback((e: unknown) => {
+    const status = (e as { response?: { status?: number }; status?: number })?.response?.status
+      ?? (e as { status?: number })?.status;
+    if (status === 404) {
+      setDisabled(true);
+      return;
+    }
     const message = e instanceof Error ? e.message : typeof e === "string" ? e : "Unexpected error";
     setError({ message });
   }, []);
@@ -18,6 +25,7 @@ export const useLinkedAccounts = () => {
     setError(undefined);
     try {
       setAccounts(await api.linkedAccounts.list());
+      setDisabled(false);
     } catch (e) {
       captureError(e);
     } finally {
@@ -51,5 +59,5 @@ export const useLinkedAccounts = () => {
     await reload();
   }, [reload]);
 
-  return { accounts, loading, error, reload, linkPhysionet, refreshPhysionet, unlinkPhysionet };
+  return { accounts, loading, error, disabled, reload, linkPhysionet, refreshPhysionet, unlinkPhysionet };
 };

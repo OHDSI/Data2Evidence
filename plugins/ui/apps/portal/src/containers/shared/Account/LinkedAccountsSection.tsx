@@ -6,9 +6,11 @@ import { i18nKeys } from "../../../contexts/app-context/states";
 
 export const LinkedAccountsSection: React.FC = () => {
   const { getText } = useTranslation();
-  const { accounts, loading, error, linkPhysionet, refreshPhysionet, unlinkPhysionet } = useLinkedAccounts();
+  const { accounts, loading, error, disabled, linkPhysionet, refreshPhysionet, unlinkPhysionet } = useLinkedAccounts();
   const physionet = accounts.find(a => a.provider === "physionet");
   const title = getText(i18nKeys.LINKED_ACCOUNTS__TITLE);
+
+  if (disabled) return null;
 
   return (
     <section aria-label={title} className="account__linked-accounts">
@@ -19,11 +21,11 @@ export const LinkedAccountsSection: React.FC = () => {
         </div>
       )}
       <div className="account__linked-row">
-        <strong>PhysioNet</strong>
         {loading ? (
           <span>{getText(i18nKeys.LINKED_ACCOUNTS__LOADING)}</span>
         ) : physionet ? (
           <>
+            <strong>PhysioNet</strong>
             <div>
               {getText(i18nKeys.LINKED_ACCOUNTS__LINKED_AS, [
                 physionet.username ?? getText(i18nKeys.LINKED_ACCOUNTS__UNKNOWN_USERNAME),
@@ -41,11 +43,11 @@ export const LinkedAccountsSection: React.FC = () => {
                 {physionet.lastSyncError}
               </div>
             )}
-            <Button variant="outlined" text={getText(i18nKeys.LINKED_ACCOUNTS__REFRESH_NOW)} onClick={refreshPhysionet} />
-            <Button variant="outlined" text={getText(i18nKeys.LINKED_ACCOUNTS__UNLINK)} onClick={unlinkPhysionet} />
+            <Button block variant="outlined" text={getText(i18nKeys.LINKED_ACCOUNTS__REFRESH_NOW)} onClick={refreshPhysionet} />
+            <Button block variant="outlined" text={getText(i18nKeys.LINKED_ACCOUNTS__UNLINK)} onClick={unlinkPhysionet} />
           </>
         ) : (
-          <Button text={getText(i18nKeys.LINKED_ACCOUNTS__LINK_PHYSIONET)} onClick={linkPhysionet} />
+          <Button block text={getText(i18nKeys.LINKED_ACCOUNTS__LINK_PHYSIONET)} onClick={linkPhysionet} />
         )}
       </div>
     </section>

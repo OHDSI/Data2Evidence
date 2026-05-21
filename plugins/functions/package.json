@@ -1227,6 +1227,17 @@
           ]
         },
         {
+          "path": "^/usermgmt/api/linked-account(.*)",
+          "scopes": [
+            "usermgmt.me"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST",
+            "DELETE"
+          ]
+        },
+        {
           "path": "^/usermgmt/api/me/is_token_valid_internal",
           "scopes": [
             "usermgmt.me.jupyter"

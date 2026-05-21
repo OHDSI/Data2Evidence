@@ -45,6 +45,35 @@
     }
   }
 
+  .account__linked-accounts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+  }
+
+  .account__linked-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    strong {
+      font-size: 0.95rem;
+    }
+  }
+
+  .account__linked-error {
+    color: var(--color-error, #c62828);
+    font-size: 0.875rem;
+  }
+
   .alp-card {
     flex: 1;
 
