@@ -1,0 +1,196 @@
+secrets:
+  DB_CREDENTIALS__PUBLIC_KEYS: "{}"
+  DB_CREDENTIALS__PRIVATE_KEY: ""
+  API_TLS_CA: ""
+  API_TLS_CERT: ""
+  API_TLS_KEY: ""
+  API_COHORT_CLIENT_CRT: ""
+  API_COHORT_CLIENT_KEY: ""
+  LOGTO__CONNECTOR_CONFIG: "{}"
+  LOGTO__CUSTOM_JWT: "{}"
+  ROOT__PKI__CA_CRT: ""
+  ROOT__PKI__CA_KEY: ""
+  SERVER__CRT: ""
+  SERVER__KEY: ""
+
+idp:
+  IDP__RELYING_PARTY: logto
+  IDP__REQUIRED_CLAIM: ""
+  LOGTO__DISABLE_BASIC_AUTH: "false"
+  LOGTO__CUSTOM_CSS: ""
+  LOGTO__TERM_OF_USE_URL: ""
+  LOGTO__PRIVACY_POLICY_URL: ""
+  LOGTO__SCOPE: "openid offline_access profile email role.systemadmin"
+  LOGTO__ROLES: '[{"name":"role.systemadmin","description":"sysadmin","type":"User"}]'
+  LOGTO__SCOPES: '[{"name":"role.systemadmin","description":"sysadmin"}]'
+
+resources:
+  trex:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+
+config:
+  OMOP_RELATIONSHIPS_FOR_DESCENDANTS: "'Maps to','Subsumes'"
+  PLUGINS_SEED_UPDATE: "false"
+  PLUGINS_SEED: "[]"
+  PLUGINS_API_VERSION: "~0.15.0"
+  PLUGINS_IMAGE_TAG: "0.15.0-beta"
+  PLUGINS_REGISTRY: ""
+  PLUGINS_INFORMATION_URL: ""
+  PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '{"current": "ghcr.io/ohdsi/d2e", "new": "ghcr.io/ohdsi/d2e"}'
+  CADDY_INTERNAL_CUSTOM_ROOT_CA: ""
+  APP__GATEWAY__PUBLIC_CERT: ""
+  TREX_NPMRC: ""
+  TREX_PACKAGE_JSON_PLUGIN: "{}"
+  TREX_BUNFIG: ""
+  SERVICE_ROUTES: |
+    {
+      "alpdb": "http://trex-http.d2e.svc.cluster.local:443/gateway/api/db",
+      "analytics": "http://trex-http.d2e.svc.cluster.local:443",
+      "trex": "http://trex-http.d2e.svc.cluster.local:443",
+      "logto": "http://idp.d2e.svc.cluster.local:443"
+    }
+  baseJobTemplate:
+    configuration: |
+      {
+        "job_configuration": {
+          "command": "{{ command }}",
+          "env": "{{ env }}",
+          "labels": "{{ labels }}",
+          "name": "{{ name }}",
+          "namespace": "{{ namespace }}",
+          "job_manifest": {
+            "apiVersion": "batch/v1",
+            "kind": "Job",
+            "metadata": {
+              "labels": "{{ labels }}",
+              "namespace": "{{ namespace }}",
+              "generateName": "{{ name }}-"
+            },
+            "spec": {
+              "backoffLimit": 0,
+              "ttlSecondsAfterFinished": "{{ finished_job_ttl }}",
+              "template": {
+                "spec": {
+                  "parallelism": 1,
+                  "completions": 1,
+                  "restartPolicy": "Never",
+                  "serviceAccountName": "{{ service_account_name }}",
+                  "containers": [
+                    {
+                      "name": "prefect-job",
+                      "env": "{{ env }}",
+                      "image": "{{ image }}",
+                      "imagePullPolicy": "{{ image_pull_policy }}",
+                      "args": "{{ command }}"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "variables": {
+          "type": "object",
+          "properties": {
+            "namespace": { "default": "d2e" },
+            "image": { "default": "ghcr.io/ohdsi/d2e-flow-base:0.15.0-beta" },
+            "service_account_name": { "default": "dataflow-gen-svc-acc" },
+            "image_pull_policy": { "default": "IfNotPresent" }
+          }
+        }
+      }
+  ACHILLES_THREAD_COUNT: "1"
+  EXCLUDE_ANALYSIS_IDS: ""
+  AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ""
+
+d2e-core:
+  config:
+    CADDY_INTERNAL_CUSTOM_ROOT_CA: ""
+    APP__GATEWAY__PUBLIC_CERT: ""
+  secrets:
+    ROOT__PKI__CA_CRT: ""
+    ROOT__PKI__CA_KEY: ""
+    SERVER__CRT: ""
+    SERVER__KEY: ""
+  disableIngress: true
+  gateway:
+    serviceType: ClusterIP
+
+global:
+  tenantId: "00000000-0000-0000-0000-000000000000"
+  pgSSLMode: disable
+  disableVolumeName: true
+  storageClassName: standard
+  dockerRegistryUrl: "ghcr.io/ohdsi"
+  image:
+    tag: "0.15.0-beta"
+  images:
+    materializeCohorts: "ghcr.io/ohdsi/d2e-materialize-cohorts"
+  config:
+    CADDY__D2E__INTERNAL_FQDN: d2e.cluster.local
+    CADDY__D2E__PUBLIC_FQDN: d2e.cluster.local
+  idp:
+    LOGTO_ROLES_AZ_GROUPS_MAPPING: "{}"
+  secrets:
+    PG__SSL: "false"
+    POSTGRES_HOST: "postgres.d2e.svc.cluster.local"
+    POSTGRES_SUPERUSER: "postgres"
+    POSTGRES_SUPERUSER_PASSWORD: "postgres"
+    POSTGRES_CONFIG_DB: "alp"
+    POSTGRES_CONFIG_ADMIN_USER: "alp_admin"
+    POSTGRES_CONFIG_ADMIN_PASSWORD: "alp_admin_pw"
+    POSTGRES_CONFIG_WRITE_USER: "alp_writer"
+    POSTGRES_CONFIG_WRITE_PASSWORD: "alp_writer_pw"
+    POSTGRES_IDP_ADMIN_USER: "logto_admin"
+    POSTGRES_IDP_ADMIN_PASSWORD: "logto_admin_pw"
+    TLS__INTERNAL__CA_CRT: ""
+    TLS__INTERNAL__CRT: ""
+    TLS__INTERNAL__KEY: ""
+    LOGTO_API_M2M_CLIENT_ID: "ci-m2m"
+    LOGTO_API_M2M_CLIENT_SECRET: "ci-m2m-secret"
+    LOGTO__APP_CLIENT_ID: "ci-app"
+    LOGTO__APP_CLIENT_SECRET: "ci-app-secret"
+    LOGTO__SVC_CLIENT_ID: "ci-svc"
+    LOGTO__SVC_CLIENT_SECRET: "ci-svc-secret"
+    LOGTO__DATA_CLIENT_ID: "ci-data"
+    LOGTO__DATA_CLIENT_SECRET: "ci-data-secret"
+    # base64("ci-m2m:ci-m2m-secret") — matches LOGTO_API_M2M_CLIENT_ID/SECRET above
+    LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: "Y2ktbTJtOmNpLW0ybS1zZWNyZXQ="
+    SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
+    SUPABASE_STORAGE_JWT_TOKEN: ""
+  resources:
+    caddy:
+      requests: { cpu: 25m, memory: 50Mi }
+      limits:   { cpu: 200m, memory: 200Mi }
+    logtoSeedInit:
+      requests: { cpu: 50m, memory: 100Mi }
+      limits:   { cpu: 500m, memory: 500Mi }
+    logto:
+      requests: { cpu: 50m, memory: 100Mi }
+      limits:   { cpu: 500m, memory: 500Mi }
+    logtoCheck:
+      requests: { cpu: 50m, memory: 50Mi }
+      limits:   { cpu: 200m, memory: 200Mi }
+    logtoPostInit:
+      requests: { cpu: 50m, memory: 50Mi }
+      limits:   { cpu: 500m, memory: 500Mi }
+    dataflowGen:
+      requests: { cpu: 50m, memory: 150Mi }
+      limits:   { cpu: 500m, memory: 500Mi }
+
+features:
+  materializeCohorts: false
+
+local:
+  extraServices: false
+
+dataflowWorker:
+  readinessSleep: 20
+  duckdb:
+    memoryLimit: "1"
+    threads: "1"
