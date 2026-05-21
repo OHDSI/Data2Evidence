@@ -5,6 +5,7 @@ import TrellisChart from "../../TrellisChart";
 import "./DrilldownTrellisChart.scss";
 import { groupBy } from "lodash";
 import { useTranslation } from "../../../../../contexts";
+import { formatNumber } from "../../../../../utils";
 
 interface DrilldownTrellisChartProps {
   data: any;
@@ -170,6 +171,7 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
       // Only show y axis label for leftmost chart in each row
       axisLabel: {
         show: colIndex === 0,
+        formatter: (value: number) => formatNumber(value),
       },
       // Only show y axis name for leftmost chart in each row
       ...(colIndex === 0 && {

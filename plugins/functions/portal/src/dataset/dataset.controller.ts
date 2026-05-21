@@ -43,12 +43,15 @@ export class DatasetController {
 
   @Get()
   async getDataset(@Query() queryParams: any): Promise<IDataset> {
-    const id = queryParams.datasetId;
-    if (!id) {
-      console.error(`No datasetId provided ${JSON.stringify(queryParams)}`);
-      throw new HttpException(400, "datasetId is required");
+    const { datasetId, tokenDatasetCode } = queryParams;
+    if (datasetId) {
+      return await this.datasetQueryService.getDataset({ id: datasetId });
     }
-    return await this.datasetQueryService.getDataset(id);
+    if (tokenDatasetCode) {
+      return await this.datasetQueryService.getDataset({ tokenDatasetCode });
+    }
+    console.error(`No datasetId or tokenDatasetCode provided ${JSON.stringify(queryParams)}`);
+    throw new HttpException(400, "datasetId or tokenDatasetCode is required");
   }
 
   @Get("exist")
