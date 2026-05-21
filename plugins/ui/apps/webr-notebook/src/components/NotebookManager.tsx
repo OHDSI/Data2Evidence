@@ -5,11 +5,11 @@ import {
   type NotebookHandle,
   type NotebookData,
   type NotebookTheme,
-  PyodideKernel,
   WebRKernel,
   createEmptyNotebook,
   serializeIpynb,
 } from 'react-notebook/src/index'
+import { PyqeReadyPyodideKernel } from '../kernels/pyqeReadyPyodideKernel'
 import * as notebookApi from '../api/notebook-api'
 import type { NotebookRecord } from '../types'
 import { parseNotebookContent } from '../utils/starboard'
@@ -21,7 +21,16 @@ import { CreateNotebookDialog } from './CreateNotebookDialog'
 import { CodingAssistant } from './CodingAssistant'
 import { Snackbar } from './Snackbar'
 
-const pyodideKernel = new PyodideKernel()
+// __PYODIDE_VERSION__ is injected by Vite at build time (see vite.config.ts).
+// Matches the resolved version of the `pyodide` npm package the submodule
+// depends on, so the CDN URL we pass to loadPyodide cannot drift.
+declare const __PYODIDE_VERSION__: string
+const pyodideIndexUrl =
+  typeof __PYODIDE_VERSION__ !== 'undefined'
+    ? `https://cdn.jsdelivr.net/pyodide/v${__PYODIDE_VERSION__}/full/`
+    : undefined
+
+const pyodideKernel = new PyqeReadyPyodideKernel()
 const webRKernel = new WebRKernel()
 
 const portalTheme: NotebookTheme = {
@@ -90,7 +99,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       webREnvVars.TREX__AUTHORIZATION_TOKEN = token
     }
     return [
-      { type: 'pyodide' as const, envVars },
+      { type: 'pyodide' as const, envVars, indexUrl: pyodideIndexUrl },
       { type: 'webr' as const, envVars: webREnvVars },
     ]
   }, [token, datasetId])

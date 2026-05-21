@@ -25,11 +25,14 @@
             v-if="!sub.hasSubMenu && !sub.isSeperator"
             :icon="sub.icon"
             :text="sub.text"
+            :selected="sub.selected"
             :disabled="sub.disabled"
             @clickEv="clickEvent(sub.data)"
             @hoverEv="handleHover(sub.idx, false)"
             :isTitle="sub.isTitle"
-          ></dropDownMenuItem>
+          >
+            <slot name="item" :item="sub">{{ sub.text }}</slot>
+          </dropDownMenuItem>
         </template>
       </ul>
     </div>

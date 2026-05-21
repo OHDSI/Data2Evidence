@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+spec:
+  ports:
+    - name: caddy
+      port: 443
+      targetPort: 443
+  selector:
+    profile: d2e-core-caddy
+  type: {{ .Values.gateway.serviceType | default "ClusterIP" }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idp
+spec:
+  ports:
+    - name: logto
+      port: 443
+      targetPort: 3001
+    - name: logto-http
+      port: 80
+      targetPort: 3001
+  selector:
+    profile: d2e-core
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idp-admin
+spec:
+  ports:
+    - name: logto-admin
+      port: 443
+      targetPort: 3002
+  selector:
+    profile: d2e-core
+  type: ClusterIP
