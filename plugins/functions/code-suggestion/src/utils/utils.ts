@@ -22,7 +22,7 @@ export const getModels = async (llm) => {
           })
       ),
     ollama: () =>
-      import("@langchain_ollama").then(
+      import("@langchain/ollama").then(
         ({ ChatOllama }) =>
           new ChatOllama({
             model: llm.replace("ollama:", ""),
