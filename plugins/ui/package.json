@@ -193,7 +193,7 @@
             "name": "Cohorts",
             "nameI18nKey": "UI_PLUGIN_COHORTS",
             "type": "app",
-            "autoMount": true,
+            "autoMount": false,
             "pluginPath": "/mri/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
