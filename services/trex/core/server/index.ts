@@ -10,7 +10,7 @@ import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
 import { authn } from "./auth/authn.ts"
-import { ensureAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
+import { ensureAttached, ensureCacheAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -91,17 +91,17 @@ export async function initTrex() {
       const dbm = await DatabaseManager.get();
       const datasets = await dbm.getCredentialsDecrypted();
       const hanaConn = new Trex.TrexDB("memory");
+      const hanaExec: ExecFn = (sql) => hanaConn.execute(sql, []);
       for (const ds of datasets) {
         if (ds.dialect !== "hana") continue;
-        const cacheFile = `/usr/src/data/cache/${ds.code}.db`;
         try {
-          await hanaConn.execute(
-            `ATTACH IF NOT EXISTS '${cacheFile}' AS "${ds.code}"`,
-            [],
-          );
-          logger.log(`Attached HANA cache for '${ds.code}' at ${cacheFile}`);
+          await ensureCacheAttached(ds.code, {
+            cacheDir: "/usr/src/data/cache",
+            exec: hanaExec,
+          });
+          logger.log(`zmAttached HANA cache for '${ds.code}'`);
         } catch (e) {
-          logger.error(`Failed to attach HANA cache for '${ds.code}': ${e}`);
+          logger.error(`zmFailed to attach HANA cache for '${ds.code}': ${e}`);
         }
       }
     } catch (e) {
