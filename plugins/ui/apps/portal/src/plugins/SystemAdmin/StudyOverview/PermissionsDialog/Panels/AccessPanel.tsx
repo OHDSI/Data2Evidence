@@ -1,9 +1,10 @@
 import React, { FC, useCallback, useState, useEffect } from "react";
 import { SelectChangeEvent } from "@mui/material/Select";
 import { UserWithRoles } from "../../../../../types";
-import { Button, Feedback, TableCell, TableRow, RejectIcon, IconButton } from "@portal/components";
+import { Button, Feedback, Loader, TableCell, TableRow, RejectIcon, IconButton } from "@portal/components";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import CircularProgress from "@mui/material/CircularProgress";
 import { useMenuAnchor } from "../../../../../hooks";
 import { api } from "../../../../../axios/api";
 import { Roles, STUDY_ROLES } from "../../../../../config";
@@ -12,7 +13,6 @@ import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import TableContainer from "@mui/material/TableContainer";
 import { useTranslation, useUser } from "../../../../../contexts";
-import RolesSelect from "./RolesSelect";
 import { RoleEdit, StudyAccessRequest } from "../PermissionsDialog";
 import "./PanelTables.scss";
 
@@ -21,6 +21,7 @@ interface AcessPanelProps {
   tenantId: string;
   selectedAction: string;
   users: UserWithRoles[];
+  usersLoading: boolean;
   handleActionChange: (event: SelectChangeEvent<string>, request: StudyAccessRequest) => void;
   grantRolesList: RoleEdit[];
   withdrawRolesList: RoleEdit[];
@@ -35,10 +36,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
   studyId,
   tenantId,
   users,
-  grantRolesList,
-  withdrawRolesList,
-  setGrantRolesList,
-  setWithdrawRolesList,
+  usersLoading,
   setFeedback,
   fetchStudyUsers,
   setLoading,
@@ -48,12 +46,15 @@ const AcessPanel: FC<AcessPanelProps> = ({
   const [anchorEl, openMenu, closeMenu] = useMenuAnchor();
   const [allowedUsers, setAllowedUsers] = useState<UserWithRoles[]>([]);
   const [tenantUsers, setTenantUsers] = useState<UserWithRoles[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
 
   const { setUserGroup, user: ctxUser } = useUser();
 
   const fetchUserOverview = useCallback(
     async (tenantId: string) => {
       try {
+        setMenuLoading(true);
         const users = await api.userMgmt.getUsersWithRoles(tenantId);
         setTenantUsers(users);
       } catch (err: any) {
@@ -67,6 +68,8 @@ const AcessPanel: FC<AcessPanelProps> = ({
           });
         }
         console.error("err", err);
+      } finally {
+        setMenuLoading(false);
       }
     },
     [setFeedback]
@@ -95,6 +98,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
 
       try {
         setLoading(true);
+        setBusyUserId(user.userId ?? null);
 
         // Do a check first
         addedUsers.forEach((u) => {
@@ -118,6 +122,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
         setFeedback({ type: "error", message: err.message });
         console.error("err", err);
       } finally {
+        setBusyUserId(null);
         setLoading(false);
       }
     },
@@ -131,6 +136,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
 
       try {
         setLoading(true);
+        setBusyUserId(user.userId);
 
         await api.userMgmt.withdrawStudyRoles(user.userId, tenantId, studyId, user.roles);
 
@@ -149,6 +155,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
         setFeedback({ type: "error", message: err.message });
         console.error("err", err);
       } finally {
+        setBusyUserId(null);
         setLoading(false);
       }
     },
@@ -173,12 +180,21 @@ const AcessPanel: FC<AcessPanelProps> = ({
             }}
           >
             <div className="access-panel__menu-content">
-              {allowedUsers.length === 0 && <MenuItem disabled>{getText(i18nKeys.ACCESS_PANEL__NO_USERS)}</MenuItem>}
-              {allowedUsers.map((u) => (
-                <MenuItem key={u.userId} onClick={() => handleAdd(u)}>
-                  {u.username}
+              {menuLoading && (
+                <MenuItem disabled style={{ justifyContent: "center" }}>
+                  <CircularProgress size={20} />
                 </MenuItem>
-              ))}
+              )}
+              {!menuLoading && allowedUsers.length === 0 && (
+                <MenuItem disabled>{getText(i18nKeys.ACCESS_PANEL__NO_USERS)}</MenuItem>
+              )}
+              {!menuLoading &&
+                allowedUsers.map((u) => (
+                  <MenuItem key={u.userId} onClick={() => handleAdd(u)} disabled={busyUserId === u.userId}>
+                    {u.username}
+                    {busyUserId === u.userId && <CircularProgress size={14} style={{ marginLeft: 8 }} />}
+                  </MenuItem>
+                ))}
             </div>
           </Menu>
         </div>
@@ -197,25 +213,33 @@ const AcessPanel: FC<AcessPanelProps> = ({
               </TableRow>
             </TableHead>
             <TableBody>
-              {(!users || users.length === 0) && (
+              {usersLoading && (
+                <TableRow>
+                  <TableCell colSpan={3} align="center">
+                    <Loader />
+                  </TableCell>
+                </TableRow>
+              )}
+              {!usersLoading && (!users || users.length === 0) && (
                 <TableRow>
                   <TableCell colSpan={3} align="center">
                     {getText(i18nKeys.ACCESS_PANEL__NO_DATA)}
                   </TableCell>
                 </TableRow>
               )}
-              {users?.map((user, index) => (
-                <TableRow key={user.username}>
-                  <TableCell style={{ wordBreak: "break-all", color: "#000e7e" }}>{user.username}</TableCell>
-                  <TableCell style={{ color: "#000e7e" }}>
-                    {user.roles
-                      .sort((a, b) => a.localeCompare(b))
-                      .map((role) => (
-                        <div key={role}>{STUDY_ROLES[role]}</div>
-                      ))}
-                  </TableCell>
-                  <TableCell className="col-action">
-                    {/* <RolesSelect
+              {!usersLoading &&
+                users?.map((user) => (
+                  <TableRow key={user.username}>
+                    <TableCell style={{ wordBreak: "break-all", color: "#000e7e" }}>{user.username}</TableCell>
+                    <TableCell style={{ color: "#000e7e" }}>
+                      {user.roles
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((role) => (
+                          <div key={role}>{STUDY_ROLES[role]}</div>
+                        ))}
+                    </TableCell>
+                    <TableCell className="col-action">
+                      {/* <RolesSelect
                       user={user}
                       tenantId={tenantId}
                       studyId={studyId}
@@ -224,16 +248,18 @@ const AcessPanel: FC<AcessPanelProps> = ({
                       setGrantRolesList={setGrantRolesList}
                       setWithdrawRolesList={setWithdrawRolesList}
                     /> */}
-                    <div className="button-group">
-                      <IconButton
-                        startIcon={<RejectIcon />}
-                        title={getText(i18nKeys.ACCESS_PANEL__REVOKE)}
-                        onClick={() => handleRevoke(user)}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      <div className="button-group">
+                        <IconButton
+                          startIcon={<RejectIcon />}
+                          title={getText(i18nKeys.ACCESS_PANEL__REVOKE)}
+                          onClick={() => handleRevoke(user)}
+                          loading={busyUserId === user.userId}
+                          disabled={busyUserId !== null && busyUserId !== user.userId}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </TableContainer>
