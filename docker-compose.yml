@@ -406,7 +406,7 @@ services:
             "+white_rabbit": {},
             "+trex": {},
             "+storage": {},
-            "+strategus": {},
+            "+strategus": {}
            }
           }
          }
@@ -415,7 +415,6 @@ services:
         {
          "databases": {
           }
-         }
         }
       POSTGRES_MANAGE_USERS: |-
         {
