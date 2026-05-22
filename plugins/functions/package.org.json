@@ -326,7 +326,6 @@
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
-          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",

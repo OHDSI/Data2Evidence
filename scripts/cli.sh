@@ -281,8 +281,6 @@ EOF
             echo CADDY__D2E__PUBLIC_FQDN=$CADDY__D2E__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-            echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
-            echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
             echo LOGTO__D2E_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
             echo LOGTO__D2E_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
             echo LOGTO__D2E_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE

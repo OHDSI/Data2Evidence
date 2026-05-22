@@ -36,10 +36,6 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-    PG__FHIR_DB_NAME: alp
-  fhir: &x-fhir
-    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
-    FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
     REDIS_PORT: ${REDIS_PORT:-6379}
@@ -107,7 +103,6 @@ services:
       <<:
         - *x-converter
         - *x-tls
-        - *x-fhir
         - *x-pg
         - *x-trex-sql
       # Plugin paths for trex - must match volume mount at /usr/src/data
@@ -412,7 +407,6 @@ services:
             "+trex": {},
             "+storage": {},
             "+strategus": {},
-            "+fhir": {}
            }
           }
          }
@@ -420,9 +414,6 @@ services:
       POSTGRES_ALTER_EXTENSION_CONFIG: |-
         {
          "databases": {
-          "${PG__FHIR_DB_NAME:-alp}": {
-             "schema": "pg_catalog",
-             "extension": "pg_trgm"
           }
          }
         }
