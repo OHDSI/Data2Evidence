@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { PortalAPI } from "../api/PortalAPI.ts";
 import dataSource from "../db/datasource.ts";
 import { getDummyDataset } from "../utils/utils.ts";
+import { env } from "../env.ts";
 
 export default class StrategusAnalysisService {
 
@@ -80,7 +81,7 @@ export default class StrategusAnalysisService {
             tokenDatasetCode: tokenStudyCode,
             tenantId: tenantId,
             schemaName: `results_${studyId}`,
-            databaseCode: "strategus_results",
+            databaseCode: env.TREX__STRATEGUS_RESULTS_DB_NAME,
             detail: {
                 ...getDummyDataset().detail,
                 name: studyId,
