@@ -99,9 +99,9 @@ export async function initTrex() {
             cacheDir: "/usr/src/data/cache",
             exec: hanaExec,
           });
-          logger.log(`zmAttached HANA cache for '${ds.code}'`);
+          logger.log(`Attached HANA cache for '${ds.code}'`);
         } catch (e) {
-          logger.error(`zmFailed to attach HANA cache for '${ds.code}': ${e}`);
+          logger.error(`Failed to attach HANA cache for '${ds.code}': ${e}`);
         }
       }
     } catch (e) {

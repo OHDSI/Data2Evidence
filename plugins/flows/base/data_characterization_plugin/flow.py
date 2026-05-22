@@ -47,7 +47,6 @@ def data_characterization_plugin(options: DCOptionsType):
     if dbdao.dialect != SupportedDatabaseDialects.HANA:
         dbdao = DBDao(
             dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-            use_cache_db=options.use_cache_db,
             database_code=options.databaseCode,
             cache_id=options.cacheId,
         )

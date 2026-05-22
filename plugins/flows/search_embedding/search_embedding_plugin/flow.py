@@ -38,7 +38,6 @@ def search_embedding_plugin(options: SearchEmbeddingType):
     db_parameters = {
         'database_code': database_code,
         'cache_id': cache_id,
-        'use_cache_db': False
     }
     if use_trex_connection:
         # -------------------- Trex connection to cache --------------------
@@ -77,7 +76,7 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name, chunksize):
     select_sql = sqla.text(f'SELECT CONCEPT_ID, CONCEPT_NAME FROM {quoted_schema}.CONCEPT')
     count_sql = sqla.text(f'SELECT COUNT(*) FROM {quoted_schema}.CONCEPT')
 
-    cache_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=database_code)
+    cache_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
     cache_dao.execute_sql("LOAD vss")
 
     embedding_table = 'concept_name_embeddings'

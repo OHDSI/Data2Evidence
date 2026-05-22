@@ -22,7 +22,7 @@ def create_hana_cache_flow(options: CreateHanaCacheOptions):
     database_code = options.database_code
     schema_name = options.schema_name.upper()
 
-    src_dao = DBDao(use_cache_db=False, database_code=database_code)
+    src_dao = DBDao(database_code=database_code)
     if src_dao.dialect != SupportedDatabaseDialects.HANA.value:
         raise ValueError(
             f"create_cachedb_hana_plugin requires a HANA dataset, "
@@ -41,7 +41,7 @@ def create_schema_via_trex(database_code: str, schema_name: str):
     # duckdb_data_folder = Variable.get("duckdb_data_folder")
     # duckdb_file_path = str(Path(duckdb_data_folder) / f"{database_code}.db")
 
-    trex_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=database_code)                             
+    trex_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)                             
     trex_dao.execute_sql("CALL pg_clear_cache();") 
     trex_dao.create_schema(f"{database_code}.{schema_name}")
 
