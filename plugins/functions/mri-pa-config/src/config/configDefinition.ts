@@ -427,6 +427,21 @@ function _getValidDefinition(cdwConfig) {
             mandatory: false,
             type: "boolean",
         },
+        overlappingHistogramEnabled: {
+            name: "overlappingHistogramEnabled",
+            mandatory: false,
+            type: "boolean",
+        },
+        overlappingBarChartEnabled: {
+            name: "overlappingBarChartEnabled",
+            mandatory: false,
+            type: "boolean",
+        },
+        kernelDensityPlotEnabled: {
+            name: "kernelDensityPlotEnabled",
+            mandatory: false,
+            type: "boolean",
+        },
         confidenceInterval: {
             name: "confidenceInterval",
             mandatory: false,
@@ -619,6 +634,9 @@ function _getValidDefinition(cdwConfig) {
                     chartAttributes.collectionEnabled,
                     chartAttributes.beginVisible,
                     chartAttributes.fillMissingValuesEnabled,
+                    chartAttributes.overlappingHistogramEnabled,
+                    chartAttributes.overlappingBarChartEnabled,
+                    chartAttributes.kernelDensityPlotEnabled,
                 ],
             },
             {
