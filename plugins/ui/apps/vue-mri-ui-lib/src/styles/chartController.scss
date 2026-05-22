@@ -47,11 +47,28 @@
     text-align: left;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 0 24px 0;
 
+    .axis-menu-button-wrapper {
+      position: static;
+    }
+    .axis-group {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .axis-subgroup {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .sort-label {
-      position: absolute;
-      top: 10px;
-      left: 40px;
+      position: static;
+      padding-left: 40px;
+      padding-bottom: 4px;
       direction: inherit;
       text-align: left;
       color: var(--color-mri-header-text-dark);
