@@ -110,7 +110,7 @@ class TrexDao(DaoBase):
                 if cur:
                     cur.close()
 
-    def clear_pg_cache(self) -> bool:
+    def clear_pg_cache(self) -> None:   
         try:
             sql = '''CALL pg_clear_cache();'''
             self.execute_sql(sql)
