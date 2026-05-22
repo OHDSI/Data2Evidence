@@ -37,6 +37,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   const { getText, i18nKeys } = useTranslation();
   const [tabIndex, setTabIndex] = useState(0);
   const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
   const [loading, setLoading] = useState(false);
 
@@ -64,8 +65,13 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   //FETCH STUDY USERS
   const fetchStudyUsers = useCallback(async () => {
     if (study?.id) {
-      const users = await api.userMgmt.getUsersByStudy(study?.id);
-      setUsers(users);
+      try {
+        setUsersLoading(true);
+        const users = await api.userMgmt.getUsersByStudy(study?.id);
+        setUsers(users);
+      } finally {
+        setUsersLoading(false);
+      }
     }
   }, [study?.id]);
 
@@ -302,6 +308,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
             selectedAction={selectedAction}
             handleActionChange={handleActionChange}
             users={users}
+            usersLoading={usersLoading}
             grantRolesList={grantRolesList}
             withdrawRolesList={withdrawRolesList}
             setGrantRolesList={setGrantRolesList}

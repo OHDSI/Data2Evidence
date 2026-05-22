@@ -286,11 +286,13 @@ const PlotlyConsts = {
       ticks: 'outside',
       tickangle: 'auto',
       dividercolor: 'rgba(0,0,0,0.3)',
+      // gridcolor: 'rgba(0, 0, 0, 0.3)',
       type: 'multicategory', // Dynamically toggled with "category" while converting data into Plotly traces
     },
     yaxis: {
       showline: true,
       ticks: 'outside',
+      gridcolor: 'rgba(0, 0, 0, 0.3)',
     },
   },
   config: {

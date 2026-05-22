@@ -109,11 +109,11 @@
                     }
                   "
                 />
-                <!-- Condition field include descendants toggle - matches Wizards -->
+                <!-- Condition fields store includeDescendants, but the UI exposes an exclude opt-out. -->
                 <div v-if="isConditionField(field.id) && formValues[field.id]" class="include-descendants-toggle">
                   <label class="checkbox-label">
-                    <input type="checkbox" v-model="formValues[`${field.id}_includeDescendants` as string]" />
-                    <span>{{ getText('MRI_PA_INCLUDE_DESCENDANTS') }}</span>
+                    <input type="checkbox" v-model="formValues[`${field.id}_excludeDescendants` as string]" />
+                    <span>{{ getText('MRI_PA_EXCLUDE_DESCENDANTS') }}</span>
                   </label>
                 </div>
               </div>
@@ -401,11 +401,14 @@ watch(
         initialSnapshot[field.id] = formValues[field.id]
       }
 
-      // Initialize includeDescendants for condition fields
+      // Initialize excludeDescendants for condition fields
       if (isConditionField(field.id)) {
         const includeDescendantsValue = props.initialValues[`${field.id}_includeDescendants`]
-        formValues[`${field.id}_includeDescendants`] = includeDescendantsValue === true
-        initialSnapshot[`${field.id}_includeDescendants`] = formValues[`${field.id}_includeDescendants`]
+        formValues[`${field.id}_excludeDescendants`] =
+          includeDescendantsValue === undefined
+            ? field.excludeDescendantsByDefault === true
+            : includeDescendantsValue !== true
+        initialSnapshot[`${field.id}_excludeDescendants`] = formValues[`${field.id}_excludeDescendants`]
       }
     })
   },
@@ -494,7 +497,7 @@ function handleSubmit() {
 
     // Include includeDescendants for condition fields
     if (isConditionField(field.id)) {
-      payload[`${field.id}_includeDescendants`] = formValues[`${field.id}_includeDescendants`] || false
+      payload[`${field.id}_includeDescendants`] = formValues[`${field.id}_excludeDescendants`] !== true
     }
   })
 

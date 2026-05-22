@@ -86,12 +86,28 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                     queryResponse.measures;
                 let categories: MRIEndpointResultCategoryType[] =
                     queryResponse.categories;
+                const cdmConfigMetaData: any = queryResponse.cdmConfigMetaData;
 
                 // set settings to BaseQueryEngineEndpoint
                 this.setSettings(config.advancedSettings.settings);
 
                 let qeCallback = (err, result: MRIEndpointResultType) => {
                     if (err) {
+                        log.error(
+                            JSON.stringify({
+                                event: "analytics_sql_trace",
+                                endpoint: "aggquery",
+                                outcome: "error",
+                                stage: "query_execute",
+                                paConfigId: configId,
+                                paConfigVersion: configVersion,
+                                cdmConfigId: cdmConfigMetaData?.id ?? null,
+                                cdmConfigVersion:
+                                    cdmConfigMetaData?.version ?? null,
+                                sql: finalQueryObject?.queryString ?? null,
+                                error: err?.message ?? String(err),
+                            })
+                        );
                         reject(err);
                         return;
                     }
@@ -127,6 +143,19 @@ export class StackedBarchartEndpoint extends BaseQueryEngineEndpoint {
                         FAST: fast.statement,
                         nql,
                     });
+                    log.info(
+                        JSON.stringify({
+                            event: "analytics_sql_trace",
+                            endpoint: "aggquery",
+                            outcome: "success",
+                            stage: "query_execute",
+                            paConfigId: configId,
+                            paConfigVersion: configVersion,
+                            cdmConfigId: cdmConfigMetaData?.id ?? null,
+                            cdmConfigVersion: cdmConfigMetaData?.version ?? null,
+                            sql: result?.sql ?? finalQueryObject?.queryString ?? null,
+                        })
+                    );
 
                     result.postProcessingConfig = {
                         fillMissingValuesEnabled:

@@ -133,6 +133,7 @@ export const EditDbDetailsDialog: FC<EditDbDialogProps> = ({ open, onClose, db }
             typeof extraHashmap.Internal === "string" ? JSON.parse(extraHashmap.Internal) : extraHashmap.Internal;
           sslmode = internalObj.sslmode || "";
           ca = internalObj.ca || "";
+          if (ca && !sslmode) sslmode = "allow";
           // Remove TLS fields so they don't appear in the Extra textarea
           delete internalObj.sslmode;
           delete internalObj.ca;

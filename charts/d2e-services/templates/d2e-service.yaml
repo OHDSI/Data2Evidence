@@ -1,0 +1,113 @@
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kpi
+# spec:
+#   ports:
+#     - name: http
+#       port: 443
+#       targetPort: 8050
+#   selector:
+#     profile: d2e-kpi
+#   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trex
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: 33000
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trex-http
+spec:
+  ports:
+    - name: http
+      port: 443
+      targetPort: 33001
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+{{- if .Values.local.extraServices }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: d2e-trex
+spec:
+  ports:
+    - name: http
+      port: 443
+      targetPort: 33001
+    - name: sql
+      port: 5433
+      targetPort: 5433
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: d2e-trex
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: d2e-trex.d2e.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demodb
+  namespace: default
+spec:
+  type: ExternalName
+  externalName: demodb.d2e.svc.cluster.local
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dataflow-gen
+spec:
+  ports:
+    - name: http
+      port: 443
+      targetPort: 41120
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage
+spec:
+  ports:
+    - name: storage
+      port: 443
+      targetPort: 9000
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: logging
+# spec:
+#   ports:
+#     - name: http
+#       port: 443
+#       targetPort: 8080
+#   selector:
+#     profile: d2e-functions
+#   type: ClusterIP
