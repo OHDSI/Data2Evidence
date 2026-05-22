@@ -52,7 +52,6 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
         selected_dialect = SupportedDatabaseDialects.HANA
     else:
         selected_dialect = dialect if dialect is not None else test_instance.dialect
-    print(f"Selected database dialect: {selected_dialect}")
     # Get the DAO class from registry
     dao_class = _DAO_REGISTRY.get(selected_dialect)
     if not dao_class:
