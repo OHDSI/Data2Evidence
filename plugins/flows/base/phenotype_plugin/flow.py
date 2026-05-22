@@ -200,7 +200,6 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     materialize = options.materialize
     dataset_id = options.dataset_id
     user_name = options.user_name
-    use_cache_db = options.use_cache_db
     user = UserType.ADMIN_USER
 
     # Validate cohorts_id if not default
@@ -221,7 +220,7 @@ def phenotype_plugin(options: PhenotypeOptionsType):
     if materialize:
         logger.info("Materializing cohort definitions to database")
         # Setup database connection only when needed for materialization
-        dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
+        dbdao = DBDao(database_code=database_code, cache_id=cache_id)
 
         materialize_cohort_definitions(
             cohort_definitions=cohort_definitions,

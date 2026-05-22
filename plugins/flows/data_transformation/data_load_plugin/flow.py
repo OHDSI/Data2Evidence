@@ -27,15 +27,13 @@ def data_load_plugin(options: DataloadOptions):
     files = options.files
     database_code = options.database_code
     cache_id = options.cache_id
-    use_cache_db = options.use_cache_db
     header = 0 if options.header else None
     escape_char = options.escape_character if options.escape_character else None
     schema = options.schema_name
     tables_to_truncate = [f.table_name for f in files if f.truncate]
     chunksize = options.chunksize if options.chunksize else None
 
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
+    dbdao = DBDao(database_code=database_code,
                   cache_id=cache_id)
 
     truncate_tables(table_list=tables_to_truncate,
