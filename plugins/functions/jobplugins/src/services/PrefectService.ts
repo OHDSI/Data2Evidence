@@ -8,7 +8,7 @@ import {
 } from "../utils/DataflowParser.ts";
 import { AnalysisService } from "./AnalysisService.ts";
 import { TransformationService } from "./DataTransformationService.ts";
-import env from "../env.ts";
+import { env } from "../env.ts";
 
 export class PrefectService {
   private dataflowService;
