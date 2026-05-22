@@ -1,10 +1,3 @@
-CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.cohort
- (COHORT_DEFINITION_ID int NOT NULL,
-	SUBJECT_ID bigint NOT NULL,
-	cohort_start_date date NOT NULL,
-	cohort_end_date date NOT NULL);
-
-
 CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.cohort_censor_stats (cohort_definition_id int NOT NULL,
   lost_count BIGINT NOT NULL
 );
@@ -2709,16 +2702,13 @@ CREATE INDEX HR_IDX_COHORT_DEF_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RE
 CREATE INDEX HR_IDX_COHORT_ID_ANALYSIS_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, analysis_id);
 
 CREATE INDEX HR_IDX_COHORT_DEF_ID_DT ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, last_update_time);
-
 CREATE INDEX HR_IDX_COHORT_ID_FIRST_RES ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_RESULTS (cohort_definition_id, analysis_id, count_value, stratum_1);
 
 CREATE INDEX HH_IDX_COHORT_ID_ANALYSIS_ID ON ${DATA_CHARACTERIZATION_SCHEMA}.HERACLES_HEEL_RESULTS (cohort_definition_id, analysis_id);
 
-
 CREATE INDEX idx_heracles_periods_startdate ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods (period_start_date);
 
 CREATE INDEX idx_heracles_periods_end_date ON ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods (period_end_date);
-
 
 CREATE INDEX idx_cohort_sample_element_rank ON ${DATA_CHARACTERIZATION_SCHEMA}.cohort_sample_element (cohort_sample_id, rank_value);
 

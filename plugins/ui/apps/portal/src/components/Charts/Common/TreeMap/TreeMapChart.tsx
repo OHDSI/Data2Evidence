@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import "./TreeMapChart.scss";
 import { useTranslation } from "../../../../contexts";
 import { useTheme } from "@mui/material";
+import { formatNumber } from "../../../../utils";
 
 interface TreeMapChartProps {
   data: any[];
@@ -66,7 +67,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         };
       });
     },
-    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]
+    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor],
   );
 
   // Compute chart data on each render, reading the current visualMap range from the ECharts instance.
@@ -109,7 +110,9 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
 
         // Only show records per person if the data has meaningful values
         if (hasRecordsPerPerson) {
-          tooltipLines.push(`${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${recordsPerPerson}`);
+          tooltipLines.push(
+            `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${formatNumber(recordsPerPerson)}`,
+          );
         }
 
         return tooltipLines.join("");

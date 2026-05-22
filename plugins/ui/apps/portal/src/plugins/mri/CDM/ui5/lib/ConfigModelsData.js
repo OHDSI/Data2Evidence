@@ -93,7 +93,8 @@ sap.ui.define([
 
 			deleteModeConfig: false,
 			deleteModeConfigAll: false,
-			deleteModeVersion: false
+			deleteModeVersion: false,
+			deleteSelectionCount: 0
 		};
 	};
 
@@ -451,4 +452,3 @@ sap.ui.define([
 
 	return ConfigModelsData;
 });
-

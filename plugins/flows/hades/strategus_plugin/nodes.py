@@ -1189,7 +1189,6 @@ class StrategusNode(Node):
                 dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
                 dbdao = DBDao(
                     dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                    use_cache_db=False,
                     database_code=dbSettings['database_code']
                 )
                 db_credentials = dbdao.tenant_configs
@@ -1255,7 +1254,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                use_cache_db=False,
                 database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
@@ -1317,7 +1315,6 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                use_cache_db=False,
                 database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
@@ -1417,7 +1414,6 @@ def drop_strategus_results_schema(dbSettings):
     results_schema = f'results_{dbSettings["study_id"]}'
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-        use_cache_db=False,
         database_code=database_code
     )
 

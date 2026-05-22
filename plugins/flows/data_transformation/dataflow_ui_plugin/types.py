@@ -19,15 +19,11 @@ class NodeType(str, Enum):
     CONCEPTMAPPING = "concept_mapping_node"
     SUBFLOW = "subflow"
     TRANSFORMFHIRDATA = "transform_fhir_data_node"
+    FHIRMAPPING = "fhir_mapping_node"
 
 class DataflowUITraceConfigType(BaseModel):
     trace_db: str
     trace_mode: bool
-    
-    @property
-    def use_cache_db(self) -> bool:
-        return False
-
 
 class DataflowUIOptionsType(BaseModel):
     test_mode: bool
