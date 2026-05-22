@@ -1,4 +1,4 @@
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useEffect, useRef } from "react";
 import { ConceptSetsDispatchContext } from "../context/ConceptSetsContext";
 import { i18nDefault, i18nKeys } from "../context/state";
 import { ACTION_TYPES } from "../context/reducers/reducer";
@@ -18,48 +18,74 @@ export const useTranslation = (): {
   const { translation } = useContext(ConceptSetsContext);
   const dispatch = useContext(ConceptSetsDispatchContext);
   const { translations } = translation;
-  const changeLocale = (newLocale: string): void => {
-    const getTranslation = async (localeToGet: string) => {
-      if (localeToGet in translations) {
-        dispatch({
-          type: ACTION_TYPES.CHANGE_LOCALE,
-          payload: { locale: localeToGet, translations },
-        });
-        return;
-      }
-      try {
-        const newTranslation = await api.translation.getTranslation(
-          localeToGet
-        );
-        const newTranslations = {
-          ...i18nDefault.default,
-          ...newTranslation.data,
-        };
-        const updatedTranslations = JSON.parse(
-          JSON.stringify(translations)
-        ) as typeof translations;
-        updatedTranslations[localeToGet] = newTranslations;
-        dispatch({
-          type: ACTION_TYPES.CHANGE_LOCALE,
-          payload: { locale: localeToGet, translations: updatedTranslations },
-        });
-      } catch (e: any) {
-        if (e instanceof AxiosError && e.response?.status === 404) {
-          const fallbackLocale = getFallbackLocale(localeToGet);
-          console.log(
-            `Locale "${localeToGet}" not found, trying fallback locale "${fallbackLocale}"`
-          );
-          getTranslation(fallbackLocale);
+
+  // Keep a ref to the latest translations so changeLocale stays stable
+  const translationsRef = useRef(translations);
+  useEffect(() => {
+    translationsRef.current = translations;
+  }, [translations]);
+
+  const changeLocale = useCallback(
+    (newLocale: string): void => {
+      const getTranslation = async (localeToGet: string) => {
+        const latestTranslations = translationsRef.current;
+        if (localeToGet in latestTranslations) {
+          dispatch({
+            type: ACTION_TYPES.CHANGE_LOCALE,
+            payload: { locale: localeToGet, translations: latestTranslations },
+          });
           return;
         }
-        dispatch({
-          type: ACTION_TYPES.CHANGE_LOCALE,
-          payload: { locale: "default", translations: translations },
-        });
-      }
-    };
-    getTranslation(newLocale);
-  };
+        try {
+          const newTranslation = await api.translation.getTranslation(
+            localeToGet,
+          );
+          const newTranslations = {
+            ...i18nDefault.default,
+            ...newTranslation.data,
+          };
+          const updatedTranslations = JSON.parse(
+            JSON.stringify(translationsRef.current),
+          ) as typeof translations;
+          updatedTranslations[localeToGet] = newTranslations;
+          dispatch({
+            type: ACTION_TYPES.CHANGE_LOCALE,
+            payload: { locale: localeToGet, translations: updatedTranslations },
+          });
+        } catch (e: any) {
+          if (e instanceof AxiosError && e.response?.status === 404) {
+            const fallbackLocale = getFallbackLocale(localeToGet);
+            if (fallbackLocale === localeToGet) {
+              // Already at the base locale and it's missing/misconfigured;
+              // dispatch the default state to avoid infinite recursion.
+              dispatch({
+                type: ACTION_TYPES.CHANGE_LOCALE,
+                payload: {
+                  locale: "default",
+                  translations: translationsRef.current,
+                },
+              });
+              return;
+            }
+            console.log(
+              `Locale "${localeToGet}" not found, trying fallback locale "${fallbackLocale}"`,
+            );
+            getTranslation(fallbackLocale);
+            return;
+          }
+          dispatch({
+            type: ACTION_TYPES.CHANGE_LOCALE,
+            payload: {
+              locale: "default",
+              translations: translationsRef.current,
+            },
+          });
+        }
+      };
+      getTranslation(newLocale);
+    },
+    [dispatch],
+  );
 
   // Temporarily exposing function for demo. Remove when language selector is added
   //@ts-ignore
@@ -73,7 +99,7 @@ export const useTranslation = (): {
       const text = replaceParams(phrase, params);
       return text;
     },
-    [translations, translation.locale]
+    [translations, translation.locale],
   );
 
   return { getText, changeLocale, locale: translation.locale };

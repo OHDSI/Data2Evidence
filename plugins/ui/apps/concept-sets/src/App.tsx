@@ -6,6 +6,7 @@ import {
 } from "./context/ConceptSetsContext";
 import { ACTION_TYPES } from "./context/reducers/reducer";
 import { PortalProps } from "./types/portal";
+import { useTranslation } from "./hooks";
 import { parseJwtToken } from "./utils/jwt";
 import { ConceptSets } from "./ConceptSets/ConceptSets";
 import { TerminologyWithEventListener } from "./Terminology/TerminologyWithEventListener";
@@ -17,9 +18,10 @@ const CONCEPTS_ROUTE = "/concepts";
 
 function AppContent(props: PortalProps) {
   const dispatch = useContext(ConceptSetsDispatchContext);
+  const { changeLocale } = useTranslation();
   const [userId, setUserId] = useState<string | undefined>();
   const [isActiveRoute, setIsActiveRoute] = useState(
-    location.pathname.endsWith(CONCEPTS_ROUTE)
+    location.pathname.endsWith(CONCEPTS_ROUTE),
   );
 
   const initializeUserId = useCallback(async () => {
@@ -69,12 +71,9 @@ function AppContent(props: PortalProps) {
 
   useEffect(() => {
     if (props.locale) {
-      dispatch({
-        type: ACTION_TYPES.CHANGE_LOCALE,
-        payload: props.locale,
-      });
+      changeLocale(props.locale);
     }
-  }, [dispatch, props.locale]);
+  }, [changeLocale, props.locale]);
 
   useEffect(() => {
     const handleRouteChange: EventListener = (event: Event) => {
@@ -117,14 +116,14 @@ export default function App(props: PortalProps) {
 
   const mergedProps = useMemo(
     () => ({ ...props, ...customProps }),
-    [props, customProps]
+    [props, customProps],
   );
 
   const mockGetToken = async () => {
     // Mock JWT token with sub: 'testuser'
     const mockPayload = { sub: "testuser" };
     const mockToken = `eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.${btoa(
-      JSON.stringify(mockPayload)
+      JSON.stringify(mockPayload),
     )}.mock_signature`;
     return mockToken;
   };

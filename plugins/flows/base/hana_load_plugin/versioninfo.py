@@ -15,7 +15,6 @@ from _shared_flow_utils.update_dataset_metadata import (
 def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
     logger = get_run_logger()
     dataset_list = options.datasets
-    use_cache_db = options.use_cache_db
     
     if (dataset_list is None) or (len(dataset_list) == 0):
         logger.info("No datasets fetched from portal")
@@ -23,9 +22,9 @@ def update_dataset_metadata_flow(options: OmopCDMPluginOptions):
         logger.info(f"Successfully fetched {len(dataset_list)} datasets from portal")
 
         for dataset in dataset_list:
-            get_and_update_attributes(dataset, use_cache_db)
+            get_and_update_attributes(dataset)
 
-def get_and_update_attributes(dataset: dict, use_cache_db: bool):
+def get_and_update_attributes(dataset: dict):
     logger = get_run_logger()
     try:
         dataset_id = dataset.get("id")
@@ -38,7 +37,6 @@ def get_and_update_attributes(dataset: dict, use_cache_db: bool):
     else:
         try:
             dbdao = DBDao(
-                use_cache_db=use_cache_db,
                 database_code=database_code,
                 cache_id=cache_id,
             )

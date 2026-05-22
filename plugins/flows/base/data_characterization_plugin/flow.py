@@ -39,7 +39,7 @@ def data_characterization_plugin(options: DCOptionsType):
     flow_run_id = runtime.flow_run.id
 
     dbdao = DBDao(
-        use_cache_db=options.use_cache_db,
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
@@ -256,7 +256,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         if achilles_params.use_trex_connection:
             memory_limit = Variable.get("duckdb_memory_limit", "")
             if memory_limit:
-                trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode, cache_id=achilles_params.cacheId)
+                trex_dao = TrexDao(database_code=achilles_params.databaseCode, cache_id=achilles_params.cacheId)
                 trex_dao.execute_sql(f"SET memory_limit = '{memory_limit}'")
                 logger.info(f"Set DuckDB memory_limit to {memory_limit}")
 

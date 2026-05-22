@@ -32,7 +32,7 @@ def dqd_plugin(options: DqdOptionsType):
     flow_run_id = runtime.flow_run.id
 
     dbdao = DBDao(
-        use_cache_db=options.use_cache_db,
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
