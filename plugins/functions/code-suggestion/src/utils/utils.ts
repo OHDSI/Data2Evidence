@@ -15,7 +15,9 @@ export const getModels = async (llm) => {
   const pattern = {
     gpt: () =>
       import("@langchain/openai").then(
-        ({ ChatOpenAI }) => new ChatOpenAI({ model: llm }),
+        ({ ChatOpenAI }) => new ChatOpenAI({ 
+          model: llm.replace("gpt:", "")
+        }),
       ),
     azure: () =>
       import("@langchain/openai").then(

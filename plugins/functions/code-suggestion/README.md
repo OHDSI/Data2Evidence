@@ -26,7 +26,7 @@ Values can be extracted from "Endpoint" of the deployment.
 
 #### Set AI_MODEL environment variable
 The provider is selected by the prefix on `AI_MODEL`:
-- OpenAI: model name as-is, e.g. `AI_MODEL='gpt-4o'`
+- OpenAI: model name as-is, e.g. `AI_MODEL='gpt:GPT-4o'`
 - Azure OpenAI: `AI_MODEL='azure:gpt-4o'`
 - Anthropic: `AI_MODEL='anthropic:claude-sonnet-4-5'`
 - Google Gemini: `AI_MODEL='gemini:gemini-2.0-flash'`
