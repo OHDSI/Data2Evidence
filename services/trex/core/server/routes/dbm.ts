@@ -132,4 +132,5 @@ export function addRoutes(app: Hono) {
         return c.text(String(e), 500);
       }
     });
+
 }
