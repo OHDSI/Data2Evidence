@@ -46,7 +46,11 @@ def create_results_cache_flow(options: CreateCacheOptions):
 
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
-    logger.info(f"Flow parameters received: {options.json()}")
+    # Log parameters excluding sensitive patient and timestamp data
+    log_data = options.model_dump(exclude={
+        'snapshot_copy_config': {'patients_to_be_copied', 'timestamp'}
+    })
+    logger.info(f"Flow parameters received: {log_data}")
 
     dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code, cache_id=options.cache_id)
     logger.info(f"Database dialect identified as '{dbdao.dialect}' for database code '{options.database_code}'.")
