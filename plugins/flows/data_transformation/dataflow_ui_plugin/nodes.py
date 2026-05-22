@@ -541,7 +541,6 @@ class DbWriter(Node):
         self.database = _node["database"]
         self.dataframe = _node["dataframe"]
         self.truncate = _node.get("truncate", False)
-        self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
         return False
@@ -556,7 +555,8 @@ class DbWriter(Node):
                 conn.execute(sql.text(f'TRUNCATE TABLE "{self.schema_name}"."{self.table_name}"'))
 
     def task(self, _input: dict[str, Result], task_run_context):
-        dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
+        dbutils = DBDao(database_code=self.database)
+
         dbconn = dbutils.engine
 
         try:
@@ -588,7 +588,7 @@ class DBReader(Node):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(use_cache_db=False, database_code=self.database) 
+        dbutils = DBDao(database_code=self.database) 
         dbconn = dbutils.engine
 
         try:
@@ -675,7 +675,7 @@ class DataMappingNode(Node):
             if table_source  == TableSourceType.DB:
                 database_code = scan_metadata.get("databaseCode")
                 # Use db as ibis backend depending on database_code
-                db_con = DBDao(use_cache_db=False, database_code=database_code).ibis_connect()
+                db_con = DBDao(database_code=database_code).ibis_connect()
                 with db_con as con:
                     target_df = self.generate_query(con, target_table_name, table_source, scan_metadata)
 
