@@ -44,7 +44,11 @@ test(TEST_NAME, async ({ page }) => {
   if (await agreement.isVisible()) {
     await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('button', { name: 'Accept' }).click()
   }
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByText('New Cohort').click()
+  await page
+    .locator('iframe[title="Atlas Lite"]')
+    .contentFrame()
+    .getByRole('button', { name: 'New Cohort', exact: true })
+    .click()
   await page
     .locator('iframe[title="Atlas Lite"]')
     .contentFrame()
