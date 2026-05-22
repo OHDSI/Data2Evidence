@@ -43,7 +43,7 @@ class _StarboardApi():
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'GET {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url=url, method="GET", headers=headers, **kwargs)
+        response = await pyfetch(url, method="GET", headers=headers, **kwargs)
         return response
 
     async def _post(self, path: str, data=None, **kwargs) -> FetchResponse:
@@ -54,7 +54,7 @@ class _StarboardApi():
         headers = {
             "Authorization": f'Bearer {os.getenv("TOKEN")}', "Content-Type": "application/json"}
 
-        response = await pyfetch(url=url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
+        response = await pyfetch(url, method="POST", body=json.dumps(data), headers=headers, **kwargs)
         return response
 
     async def _put(self, path: str, data=None) -> FetchResponse:
@@ -64,7 +64,7 @@ class _StarboardApi():
         logger.debug(f'PUT {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
         response = await pyfetch(
-            url=url, method="PUT", body=json.dumps(data), headers=headers)
+            url, method="PUT", body=json.dumps(data), headers=headers)
         return response
 
     async def _delete(self, path: str, **kwargs) -> FetchResponse:
@@ -73,7 +73,7 @@ class _StarboardApi():
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'DELETE {url}')
         headers = {"Authorization": f'Bearer {os.getenv("TOKEN")}'}
-        response = await pyfetch(url=url, method="DELETE", headers=headers, **kwargs)
+        response = await pyfetch(url, method="DELETE", headers=headers, **kwargs)
         return response
 
     def _load_environment_variables(self) -> None:

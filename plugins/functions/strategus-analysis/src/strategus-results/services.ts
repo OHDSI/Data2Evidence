@@ -136,12 +136,13 @@ const getKernel = async (
     await manager.ready;
     await manager.refreshRunning();
 
-    const runningKernels: Kernel.IModel[] = manager.running();
+    const runningKernels: Kernel.IModel[] = await manager.running();
 
     return runningKernels.find(
       (kernel: IKernelModel) => kernel.username === studyId
     );
   } catch (error) {
+    console.log("Error in getKernel for study %s: %o", studyId, error);
     throw new Error("Failed to get kernel");
   }
 };
@@ -168,6 +169,7 @@ const getKernelConnection = async (
       });
     }
   } catch (error) {
+    console.log("Error in getKernelConnection for study %s: %o", studyId, error);
     throw Error(`Failed to create or connect to kernel for study ${studyId}`);
   }
 };

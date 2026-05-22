@@ -45,6 +45,7 @@ export class PluginEndpoint {
     private settingsObj: Settings;
     private pholderTableMap: any;
     private cdmConfigMetaData: any;
+    private paConfigMetaData: { id: string; version: string };
     private request: IMRIRequest;
     private selectedAttributes: PluginSelectedAttributeType[];
     private entityQueryMap: any;
@@ -72,6 +73,38 @@ export class PluginEndpoint {
             return true;
         }
         return false;
+    }
+
+    private logSqlTrace({
+        endpoint = "patient",
+        outcome,
+        stage,
+        sql,
+        error,
+    }: {
+        endpoint?: string;
+        outcome: "success" | "error";
+        stage: string;
+        sql: string | null;
+        error?: string;
+    }) {
+        const payload: any = {
+            event: "analytics_sql_trace",
+            endpoint,
+            outcome,
+            stage,
+            paConfigId: this.paConfigMetaData?.id ?? null,
+            paConfigVersion: this.paConfigMetaData?.version ?? null,
+            cdmConfigId: this.cdmConfigMetaData?.id ?? null,
+            cdmConfigVersion: this.cdmConfigMetaData?.version ?? null,
+            sql,
+        };
+        if (error) {
+            payload.error = error;
+            log.error(JSON.stringify(payload));
+        } else {
+            log.info(JSON.stringify(payload));
+        }
     }
 
     private mapRequestDataFormat(format: string) {
@@ -195,12 +228,29 @@ export class PluginEndpoint {
                                 this.connection,
                                 (err, result) => {
                                     if (err) {
+                                        this.logSqlTrace({
+                                            outcome: "error",
+                                            stage: "query_execute",
+                                            sql:
+                                                query?.queryString ??
+                                                null,
+                                            error:
+                                                err?.message ?? String(err),
+                                        });
                                         console.error(
                                             "Extension service - Interaction query failed",
                                             err
                                         );
                                         return reject(err);
                                     }
+                                    this.logSqlTrace({
+                                        outcome: "success",
+                                        stage: "query_execute",
+                                        sql:
+                                            result?.sql ??
+                                            query?.queryString ??
+                                            null,
+                                    });
                                     resolve({
                                         entity,
                                         data: result.data,
@@ -467,9 +517,20 @@ export class PluginEndpoint {
                                     this.connection,
                                     this.schemaName
                                 );
+                            this.logSqlTrace({
+                                outcome: "success",
+                                stage: "stream_query_execute",
+                                sql: query?.queryString ?? null,
+                            });
 
                             return { entity, data };
                         } catch (err) {
+                            this.logSqlTrace({
+                                outcome: "error",
+                                stage: "stream_query_execute",
+                                sql: query?.queryString ?? null,
+                                error: err?.message ?? String(err),
+                            });
                             log.error(err);
                             throw err;
                         }
@@ -674,6 +735,10 @@ export class PluginEndpoint {
         }>(async (resolve, reject) => {
             try {
                 const { configId, configVersion } = cohortDefinition.configData;
+                this.paConfigMetaData = {
+                    id: configId,
+                    version: configVersion,
+                };
                 cohortDefinition[`uniquePatientTempTableName`] =
                     this.uniquePatientTempTableName;
                 const querySvcParams = {

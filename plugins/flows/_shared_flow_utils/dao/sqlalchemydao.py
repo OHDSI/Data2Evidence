@@ -18,11 +18,10 @@ class SqlAlchemyDao(DaoBase):
 
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
     ):
-        super().__init__(use_cache_db, database_code, user_type)
+        super().__init__(database_code, user_type)
 
     # --- Property methods ---
 
@@ -38,17 +37,6 @@ class SqlAlchemyDao(DaoBase):
                 )
             case _:
                 database_name = configs.databaseName
-
-        # For connecting to cachedb
-        # if self.use_cache_db:
-        #     connection_string = self.create_cachedb_connection_url(
-        #         user=configs.adminUser,
-        #         host=configs.host,
-        #         port=configs.port,
-        #         database_name=database_name,
-        #         password=configs.adminPassword.get_secret_value()
-        #     )
-        #     return sql.create_engine(connection_string, isolation_level="AUTOCOMMIT")
 
         connection_string, connect_args = self.create_sqlalchemy_connection_url(
             dialect=configs.dialect,
@@ -140,7 +128,6 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table = sql.Table(table, metadata_obj, autoload_with=connection)
@@ -197,7 +184,7 @@ class SqlAlchemyDao(DaoBase):
         if self.dialect == SupportedDatabaseDialects.HANA:
             schema = schema.upper()
             table = table.upper()
-            column = column.upper()
+            # column = column.upper()
         with self.engine.connect() as connection:
             metadata_obj = sql.MetaData(schema=schema)
             table_obj = sql.Table(table, metadata_obj, autoload_with=connection)

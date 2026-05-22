@@ -17,10 +17,8 @@ def update_omop_cdm_dataset_flow(options: OmopCDMPluginOptions):
     database_code = options.database_code
     cache_id = options.cache_id
     schema_name = options.schema_name
-    use_cache_db = options.use_cache_db
 
-    schema_dao = DBDao(use_cache_db=use_cache_db,
-                       database_code=database_code,
+    schema_dao = DBDao(database_code=database_code,
                        cache_id=cache_id)
     
     # check schema exists

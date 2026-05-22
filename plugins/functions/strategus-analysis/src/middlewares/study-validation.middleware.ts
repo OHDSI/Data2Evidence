@@ -49,7 +49,7 @@ export async function validateStudyId(
     try {
       const portalAPI = new PortalServerAPI(token);
       const analysisService = new StrategusAnalysisService();
-      const existingAnalysis = await analysisService.getStudyAnalysis(studyId);
+      const existingAnalysis = await analysisService.getStudyAnalysis(studyId, token);
       const datasets = await portalAPI
         .getDatasets()
         .then((data) =>

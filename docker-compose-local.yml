@@ -21,32 +21,45 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core # For debugging trex with local code
-      - ./services/trex/deno.json:/usr/src/deno.json
+      # - ./services/trex/core:/usr/src/core
+      # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage", "d2e-notebook-plugin"]}
+      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage"]}
       PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
       PLUGINS_DEV_PATH: "/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
-      TREX_INIT: |-
+      SWARM_CONFIG: |-
         {
-          "tlsCert": "/usr/src/cert/cert.pem",
-          "tlsKey": "/usr/src/cert/key.pem",
-          "tlsPort": 33000,
-          "trexasPort": 33001,
-          "pgwirePort": 5433,
-          "mainPath": "/usr/src/core/server",
-          "eventWorkerPath": "/usr/src/core/event",
-          "enableInspector": true,
-          "inspectorHost": "0.0.0.0",
-          "inspectorPort": 9229,
-          "allowMainInspector": true,
-          "maxParallelism": 1
+          "cluster_id": "d2e",
+          "nodes": {
+            "d2e": {
+              "gossip_addr": "0.0.0.0:4200",
+              "extensions": [
+                {
+                  "name": "trexas",
+                  "config": {
+                    "host": "0.0.0.0",
+                    "port": 33001,
+                    "main_service_path": "/usr/src/core/server",
+                    "event_worker_path": "/usr/src/core/event",
+                    "tls_port": 33000,
+                    "tls_cert_path": "/usr/src/cert/cert.pem",
+                    "tls_key_path": "/usr/src/cert/key.pem",
+                    "inspector": "inspect:0.0.0.0:9229"
+                  }
+                },
+                {
+                  "name": "pgwire",
+                  "config": { "host": "0.0.0.0", "port": 5433 }
+                }
+              ]
+            }
+          }
         }
       WATCH: |-
         {

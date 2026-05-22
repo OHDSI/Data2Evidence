@@ -121,10 +121,6 @@ class CreateCacheOptions(BaseModel):
     def use_trex_connection(self) -> bool:
         return True
 
-    @property
-    def use_cache_db(self) -> bool:
-        return False
-
     @model_validator(mode="after")
     def check_required_fields(self) -> Self:
         # Mapping of required fields for each flow action type
@@ -176,7 +172,3 @@ class CreateCDWValidationConfig(BaseModel):
     @property
     def use_trex_connection(self) -> bool:
         return True
-
-    @property
-    def use_cache_db(self) -> bool:
-        return False
