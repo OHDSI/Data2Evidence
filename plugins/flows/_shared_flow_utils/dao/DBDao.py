@@ -35,6 +35,10 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     Raises:
         ValueError: If the dialect is not supported.
     """
+    # Database code FHIR always use TrexDao regardless of dialect
+    if (kwargs.get("database_code") or "").lower() == "fhir":
+        return TrexDao(use_cache_db=False, database_code="FHIR")
+
     # Only DaoBase and TrexDao __init__ accept cache_id; pop it so the
     # SqlAlchemyDao probe constructor doesn't reject it, then re-attach
     # to the probe so vars(test_instance) carries it forward.
