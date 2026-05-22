@@ -762,6 +762,13 @@ jobs:
         if: success() || failure()
         run: npm install
 
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm install
+
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
 
@@ -1008,6 +1015,13 @@ jobs:
 
       - name: npm install
         if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Initialise d2e
