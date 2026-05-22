@@ -24,11 +24,6 @@ class NodeType(str, Enum):
 class DataflowUITraceConfigType(BaseModel):
     trace_db: str
     trace_mode: bool
-    
-    @property
-    def use_cache_db(self) -> bool:
-        return False
-
 
 class DataflowUIOptionsType(BaseModel):
     test_mode: bool
