@@ -21,7 +21,7 @@ Values can be extracted from "Endpoint" of the deployment.
 - `AZURE_OPENAI_API_DEPLOYMENT_NAME=<YOUR_DEPLOYMENT_NAME>`
 
 #### If use Ollama, set the server URL
-- `OLLAMA_BASE_URL=http://localhost:11434` (default)
+- `OLLAMA_BASE_URL=http://host.docker.internal:11434`
 - `OLLAMA_API_KEY=xxx` (optional — required for Ollama Cloud / Turbo or self-hosted Ollama behind an auth proxy. Sent as `Authorization: Bearer <key>`.)
 
 #### Set AI_MODEL environment variable

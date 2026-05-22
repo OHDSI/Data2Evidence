@@ -27,7 +27,7 @@ const Env = z.object({
   AZURE_OPENAI_API_DEPLOYMENT_NAME: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_API_KEY: z.string().optional(),
-  OLLAMA_BASE_URL: z.string().optional().default("http://localhost:11434"),
+  OLLAMA_BASE_URL: z.string().optional(),
   OLLAMA_API_KEY: z.string().optional(),
 });
 
