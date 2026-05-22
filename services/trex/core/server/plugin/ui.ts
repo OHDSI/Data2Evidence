@@ -10,6 +10,8 @@ const portalRoutes = [
   "/portal/public/*",
 ];
 
+const WEBR_NOTEBOOK_I18N_KEY = "UI_PLUGIN_WEBR_NOTEBOOKS";
+
 function _addStatic(app: Hono, url: string, path: string) {
   logger.log(url + "   " + path);
   app.use(
@@ -48,6 +50,33 @@ export function addPlugin(app: Hono, value: any, dir: string) {
     );
     logger.log(global.PLUGINS_JSON);
   }
+}
+
+function removeWebRNotebookItems(items: any[]): any[] {
+  return items
+    .filter((item: any) => item?.nameI18nKey !== WEBR_NOTEBOOK_I18N_KEY)
+    .map((item: any) => {
+      if (Array.isArray(item?.children)) {
+        item.children = removeWebRNotebookItems(item.children);
+      }
+      return item;
+    });
+}
+
+export function removeWebRNotebookUiPluginConfig(trexConfig: any): any {
+  const uiPlugins = trexConfig?.ui?.uiplugins;
+
+  if (!uiPlugins || typeof uiPlugins !== "object") {
+    return trexConfig;
+  }
+
+  for (const [key, value] of Object.entries(uiPlugins)) {
+    if (Array.isArray(value)) {
+      uiPlugins[key] = removeWebRNotebookItems(value);
+    }
+  }
+
+  return trexConfig;
 }
 
 /**

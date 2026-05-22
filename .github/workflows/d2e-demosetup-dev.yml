@@ -237,7 +237,6 @@ jobs:
         run: |
           docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
           docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp /usr/src/plugins/d2e-ui/package.json /usr/src/data/plugins/\@data2evidence/d2e-ui/package.json"
 
       - name: Build e2e Docker image
         run: |

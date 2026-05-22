@@ -3,7 +3,7 @@ import {addPlugin as addFlowPlugin} from "./flow.ts"
 import {addPlugin as addCorePlugin} from "./core.ts"
 import {env, logger} from "../env.ts"
 import {addPlugin as addFunctionPlugin} from "./function.ts"
-import {addPlugin as addUIPlugin} from "./ui.ts"
+import {addPlugin as addUIPlugin, removeWebRNotebookUiPluginConfig} from "./ui.ts"
 import {addPlugin as addDBPlugin} from "./db.ts"
 import pg from "npm:pg"
 import { Hono } from "npm:hono";
@@ -120,6 +120,7 @@ export class Plugins {
 	
 	async addPlugin(app: Hono, dir: string, pkg:any, url:string) {
 		try {
+			pkg.trex = removeWebRNotebookUiPluginConfig(pkg.trex);
 			for (const [key, value] of Object.entries(pkg.trex)) {
 				switch(key) {
 					case "knex":
@@ -160,6 +161,5 @@ export class Plugins {
 		}
 	}
 }
-
 
 
