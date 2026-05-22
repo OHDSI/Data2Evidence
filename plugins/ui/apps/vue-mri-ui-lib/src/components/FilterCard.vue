@@ -61,16 +61,15 @@
               class="btn-filtercard-menu"
               no-caret
               align="right"
+              trigger-testid="filter-card-menu-trigger"
               @show="onDropdownShow"
             >
               <template v-slot:button-content>
-                <span data-testid="filter-card-menu-trigger">
-                  <appIcon
-                    icon="menu"
-                    :title="getText('MRI_PA_TOOLTIP_FILTERCARD_MOREMENU_BUTTON')"
-                    style="margin-right: 16px"
-                  ></appIcon>
-                </span>
+                <appIcon
+                  icon="menu"
+                  :title="getText('MRI_PA_TOOLTIP_FILTERCARD_MOREMENU_BUTTON')"
+                  style="margin-right: 16px"
+                ></appIcon>
               </template>
               <!-- operations -->
               <div class="dropdown-scroll" :style="dropdownScrollStyle">
