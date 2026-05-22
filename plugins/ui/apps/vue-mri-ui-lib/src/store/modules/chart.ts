@@ -51,6 +51,8 @@ const state = {
   // saved X1 binsize and attributeId prior to entering Kernel Density Plot mode (for restoration)
   previousXAxisBinsize: null,
   previousXAxisAttributeId: null,
+  // index into getAllAxes for the axis used to color bars (0 = x1, 1 = x2, null = none)
+  colorAxisIndex: null as number | null,
 }
 
 // Cancel tokens
@@ -103,6 +105,7 @@ const getters = {
   isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
   getBarChartType: modulestate => modulestate.barDisplayMode,
   getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
+  getColorAxisIndex: modulestate => modulestate.colorAxisIndex,
 }
 
 // actions
@@ -356,6 +359,9 @@ const actions = {
   setRightPaneMounted({ commit }, value: boolean) {
     commit(types.SET_RIGHT_PANE_MOUNTED, value)
   },
+  setColorAxisIndex({ commit }, index: number | null) {
+    commit(types.SET_COLOR_AXIS_INDEX, index)
+  },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
   },
@@ -545,6 +551,9 @@ const mutations = {
   },
   [types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID](modulestate, value) {
     modulestate.previousXAxisAttributeId = value
+  },
+  [types.SET_COLOR_AXIS_INDEX](modulestate, index: number | null) {
+    modulestate.colorAxisIndex = index
   },
 }
 

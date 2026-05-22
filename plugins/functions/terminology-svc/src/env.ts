@@ -7,6 +7,15 @@ function initEnv(__env) {
   const envSchema = z.object({
     HANA_FTS_FUZZY: z.string().transform(Number),
 
+    HANA_HYBRID_MODE: z.enum(["rerank", "union"]).default("rerank"),
+    HANA_HYBRID_TOPK: z.string().transform(Number).default("1000"),
+
+    TREX__SQL__HOST: z.string().optional(),
+    TREX__SQL__PORT: z.string().optional(),
+    TREX__SQL__USER: z.string().optional(),
+    TREX__SQL__PASSWORD: z.string().optional(),
+    TREX__SQL__DBNAME: z.string().optional(),
+
     PROJECT_NAME: z.string(),
   
     SERVICE_ROUTES: z

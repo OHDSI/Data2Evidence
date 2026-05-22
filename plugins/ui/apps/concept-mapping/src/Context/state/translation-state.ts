@@ -14,7 +14,7 @@ export const i18nDefault = {
     IMPORT_DIALOG__CANCEL: "Cancel",
     IMPORT_DIALOG__COLUMN_MAPPING: "Column mapping",
     IMPORT_DIALOG__IMPORT: "Import",
-    IMPORT_DIALOG__SOURCE_CODE_COLUMN: "Source code colum",
+    IMPORT_DIALOG__SOURCE_CODE_COLUMN: "Source code column",
     IMPORT_DIALOG__SOURCE_CODE_NAME: "Source name column",
     IMPORT_DIALOG__SOURCE_FREQUENCY_COLUMN: "Source frequency column",
     IMPORT_DIALOG__SHOW_SOURCE_DOMAIN_COLUMN: "Show source domain column selection",
