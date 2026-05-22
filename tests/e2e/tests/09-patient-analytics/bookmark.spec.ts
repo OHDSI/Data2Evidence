@@ -34,7 +34,7 @@ async function openDatasetCohorts(page) {
 
 test(TEST_NAME, async ({ page }) => {
   test.slow()
-  await page.goto('/d2e/portal')
+  await page.goto('https://localhost:41100/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -56,7 +56,7 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^Month of Birth$/ })
       .first()
       .click()
-    await page.keyboard.press('Escape')
+    await page.getByTestId('filter-card-menu-trigger').first().click()
     await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('>2')
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
