@@ -41,7 +41,7 @@ export const ExportFlowButton: FC<ExportFlowButtonProps> = () => {
     if (!dataflow) return;
 
     const { revisions } = dataflow;
-    let { flow, createdDate, createdBy } = isLatest
+    let { flow } = isLatest
       ? revisions[0]
       : revisions.find((revision) => revision.id === revisionId) || {
           flow: { nodes: [], edges: [], variables: [], importLibs: [] },
