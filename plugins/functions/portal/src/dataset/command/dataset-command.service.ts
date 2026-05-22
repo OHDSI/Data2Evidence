@@ -148,7 +148,7 @@ export class DatasetCommandService {
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultsSchemaName: datasetDto.resultsSchemaName,
       type: datasetDto.type,
-      fhirProjectId: datasetDto.fhir_project_id
+      fhirDatasetId: datasetDto.fhirDatasetId
     }, datasetDto.detail);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
@@ -1006,7 +1006,7 @@ export class DatasetCommandService {
       vocabSchemaName?: string;
       resultsSchemaName?: string;
       type?: string;
-      fhirProjectId: string | null;
+      fhirDatasetId: string | null;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
@@ -1014,7 +1014,7 @@ export class DatasetCommandService {
     // Skip sync for FHIR and Strategus_study dataset
     const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
     if (
-      datasetInfo.fhirProjectId ||
+      datasetInfo.fhirDatasetId ||
       normalizedType === "fhir" ||
       normalizedType === "strategus_analysis"
     ) {
