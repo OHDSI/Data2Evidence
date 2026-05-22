@@ -25,7 +25,7 @@
     "./src/code-suggestion/prompts": "./src/code-suggestion/prompts.ts",
     "./src/utils/utils": "./src/utils/utils.ts",
     "langchain": "npm:langchain@^1.2.3",
-    "@langchain/core": "npm:@langchain/core@^1.1.8",
+    "@langchain/core": "npm:@langchain/core@^1.1.30",
     "@langchain/openai": "npm:@langchain/openai@^1.2.0",
     "@langchain/ollama": "npm:@langchain/ollama@^1.2.7",
     "@langchain/anthropic": "npm:@langchain/anthropic@^1.4.0",
