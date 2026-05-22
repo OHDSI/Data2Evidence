@@ -33,6 +33,7 @@
     "create-postgres-cdm-schemas": "bash scripts/create-cdm-schema.sh",
     "inittestdb-hana": "node tests/backend_integration_tests/build/initdb-hana.js test",
     "removetestdb-hana": "node tests/backend_integration_tests/build/initdb-hana.js rmonly",
+    "init-e2e-testdb-hana": "node tests/e2e/hana/build/initdb-hana.js test",
     "inittestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js test",
     "removetestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal",

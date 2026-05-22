@@ -1,0 +1,126 @@
+VOCABULARY_ID,VOCABULARY_NAME,case vocabulary_reference when null then '' else vocabulary_id end,VOCABULARY_VERSION,VOCABULARY_CONCEPT_ID
+ABMS,Provider Specialty (American Board of Medical Specialties),ABMS,2018-06-26 ABMS,45756746
+AMT,Australian Medicines Terminology (NEHTA),AMT,AMT 01-SEP-17,238
+APC,Ambulatory Payment Classification (CMS),APC,2018-January-Addendum-A,44819132
+ATC,WHO Anatomic Therapeutic Chemical Classification,ATC,RXNORM 2018-08-12,44819117
+BDPM,Public Database of Medications (Social-Sante),BDPM,BDPM 17-JUL-17,236
+CDM,OMOP Common DataModel,CDM,CDM v6.0.0,32485
+CDT,Current Dental Terminology (ADA),CDT,2018 Release,581438
+CIEL,Columbia International eHealth Laboratory (Columbia University),CIEL,Openmrs 1.11.0 20150227,45905710
+Cohort,Legacy OMOP HOI or DOI cohort,Cohort,,44819123
+Cohort Type,OMOP Cohort Type,Cohort Type,,44819234
+Concept Class,OMOP Concept Class,Concept Class,,44819233
+Condition Type,OMOP Condition Occurrence Type,Condition Type,,44819127
+Cost,OMOP Cost,Cost,,581457
+Cost Type,OMOP Cost Type,Cost Type,,5029
+CPT4,Current Procedural Terminology version 4 (AMA),CPT4,2018 Release,44819100
+Currency,International Currency Symbol (ISO 4217),Currency,2008,44819153
+CVX,CDC Vaccine Administered CVX (NCIRD),CVX,CVX code set 31-JUL-17,581400
+DA_France,Disease Analyzer France (IMS),DA_France,DA_France2018-11-19,204
+Death Type,OMOP Death Type,Death Type,,44819135
+Device Type,OMOP Device Type,Device Type,,44819151
+dm+d,Dictionary of Medicines and Devices (NHS),dm+d,dm+d Version 6.0.0 20180604,232
+Domain,OMOP Domain,Domain,,44819147
+DPD,Drug Product Database (Health Canada),DPD,DPD 25-JUN-17,231
+DRG,Diagnosis-related group (CMS),DRG,2011-18-02,44819130
+Drug Type,OMOP Drug Exposure Type,Drug Type,,44819126
+EphMRA ATC,Anatomical Classification of Pharmaceutical Products (EphMRA),EphMRA ATC,EphMRA ATC 2016,243
+Episode,OMOP Episode,Episode,,32523
+ETC,Enhanced Therapeutic Classification (FDB),ETC,20151119 Release,44819116
+Ethnicity,OMOP Ethnicity,Ethnicity,,44819134
+GCN_SEQNO,Clinical Formulation ID (FDB),GCN_SEQNO,20151119 Release,44819141
+Gemscript,Gemscript (Resip),Gemscript,Gemscript 2018-07-01,44819144
+Gender,OMOP Gender,Gender,,44819108
+GGR,Commented Drug Directory (BCFI),GGR,GGR 20180901,581450
+GPI,Medi-Span Generic Product Identifier (Wolters Kluwer Health),GPI,GPI 2017,44819106
+GRR,Global Reference Repository (IMS),GRR,GRR 2019-01-17,5047
+HCPCS,Healthcare Common Procedure Coding System (CMS),HCPCS,20180101 Alpha Numeric HCPCS File,44819101
+HES Specialty,Hospital Episode Statistics Specialty (NHS),HES Specialty,2018-06-26 HES Specialty,44819145
+ICD10,"International Classification of Diseases, Tenth Revision (WHO)",ICD10,2016 Release,44819124
+ICD10CM,"International Classification of Diseases, Tenth Revision, Clinical Modification (NCHS)",ICD10CM,ICD10CM FY2019 code descriptions,44819098
+ICD10PCS,ICD-10 Procedure Coding System (CMS),ICD10PCS,ICD10PCS 2019,44819125
+ICD9CM,"International Classification of Diseases, Ninth Revision, Clinical Modification, Volume 1 and 2 (NCHS)",ICD9CM,ICD9CM v32 master descriptions,5046
+ICD9Proc,"International Classification of Diseases, Ninth Revision, Clinical Modification, Volume 3 (NCHS)",ICD9Proc,ICD9CM v32 master descriptions,44819099
+ICDO3,"International Classification of Diseases for Oncology, Third Edition (WHO)",ICDO3,ICDO3 SEER Site/Histology Released 09/18/2015,581426
+Indication,Indications and Contraindications (FDB),Indication,20151119 Release,44819115
+JNJ_CPRD_ET_LOINC,CPRD Additional Enttypes Mapped to LOINC Concepts,JNJ_CPRD_ET_LOINC,,0
+JNJ_CPRD_GS_RXN,CPRD Prodcode (Gemscript Dictionary) Mapped to RxNorm Concepts,JNJ_CPRD_GS_RXN,,0
+JNJ_CPRD_HES_LOINC,CPRD HES Observation Fields to LOINC,JNJ_CPRD_HES_LOINC,,0
+JNJ_CPRD_PROV_CMS2,CPRD Provider to CMS2,JNJ_CPRD_PROV_CMS2,,0
+JNJ_CPRD_PROV_SPEC,CPRD Provider Roles Mapped to CMS Specialty,JNJ_CPRD_PROV_SPEC,,0
+JNJ_CPRD_SCORE_LOINC,CPRD Scoring Method Plus Read Codes Mapped to LOINC,JNJ_CPRD_SCORE_LOINC,,0
+JNJ_CPRD_T_ET_LOINC,CPRD Test Enttypes Mapped to LOINC Concepts,JNJ_CPRD_T_ET_LOINC,,0
+JNJ_DEATH,Death Source Code List,JNJ_DEATH,,0
+JNJ_JMDC_DRUGS,JMDC Drug codes,JNJ_JMDC_DRUGS,,0
+JNJ_JMDC_OBSERVATION,JMDC Observation codes,JNJ_JMDC_OBSERVATION,,0
+JNJ_JMDC_SPECIALTIES,JMDC Specialty codes,JNJ_JMDC_SPECIALTIES,,0
+JNJ_LAB_UNIT,Lab Unit,JNJ_LAB_UNIT,,0
+JNJ_NHANES_DRUG,NHANES Drug Codes,JNJ_NHANES_DRUG,,0
+JNJ_OPTUM_DPOS,OPTUM Discharge Codes,JNJ_OPTUM_DPOS,,0
+JNJ_OPTUM_EHR_LABNAM,OPTUM Oncology EHR Lab Names,JNJ_OPTUM_EHR_LABNAM,,0
+JNJ_OPTUM_EHR_LABRES,OPTUM Oncology EHR Lab Results,JNJ_OPTUM_EHR_LABRES,,0
+JNJ_OPTUM_EHR_OBTYPE,OPTUM Oncology EHR Observation Type,JNJ_OPTUM_EHR_OBTYPE,,0
+JNJ_OPTUM_EHR_ROUTE,OPTUM Oncology EHR Route,JNJ_OPTUM_EHR_ROUTE,,0
+JNJ_OPTUM_EHR_SPCLTY,OPTUM Oncology EHR Specialty,JNJ_OPTUM_EHR_SPCLTY,,0
+JNJ_OPTUM_EHR_VISIT,OPTUM Oncology EHR Visit,JNJ_OPTUM_EHR_VISIT,,0
+JNJ_OPTUM_NLP_DRUG,OPTUM Oncology EHR Drug,JNJ_OPTUM_NLP_DRUG,,0
+JNJ_OPTUM_P_SPCLTY,Optum Provider Specialty,JNJ_OPTUM_P_SPCLTY,,0
+JNJ_PMR_COST_CHRG_CD,Premier Cost Charge Codes,JNJ_PMR_COST_CHRG_CD,,0
+JNJ_PMR_DRUG_CHRG_CD,Premier Standard Charge Code - Drugs,JNJ_PMR_DRUG_CHRG_CD,,0
+JNJ_PMR_OBS_CODE,Premier Observation Code,JNJ_PMR_OBS_CODE,,0
+JNJ_PMR_P_SPCLTY,Premier Provider Specialty,JNJ_PMR_P_SPCLTY,,0
+JNJ_PMR_PROC_CHRG_CD,Premier Standard Charge Code - Procedures,JNJ_PMR_PROC_CHRG_CD,,0
+JNJ_TREAT_OBS,TREAT Observations,JNJ_TREAT_OBS,,0
+JNJ_TRU_HRA,Truven Health Risk Assessment (HRA),JNJ_TRU_HRA,,0
+JNJ_TRU_HRA_QUESTION,Truven Health Risk Assessment (HRA) Questions,JNJ_TRU_HRA_QUESTION,,0
+JNJ_TRU_P_SPCLTY,Truven Provider Specialty,JNJ_TRU_P_SPCLTY,,0
+LOINC,Logical Observation Identifiers Names and Codes (Regenstrief Institute),LOINC,2.65,44819102
+LPD_Australia,Longitudinal Patient Data Australia (IMS),LPD_Australia,LPD_Australia_052018,5045
+LPD_Belgium,LPD_Belgium,LPD_Belgium,LPD_Belgium 18-JAN-18,581451
+MDC,Major Diagnostic Categories (CMS),MDC,2013-01-06,44819131
+Meas Type,OMOP Measurement Type,Meas Type,,44819152
+MedDRA,Medical Dictionary for Regulatory Activities (MSSO),MedDRA,MedDRA version 19.1,44819111
+MEDRT,Medication Reference Terminology MED-RT (VA),MEDRT,MED-RT 2018-09-04,32537
+MeSH,Medical Subject Headings (NLM),MeSH,2018 Release,44819136
+MMI,Modernizing Medicine (MMI),MMI,,581367
+Multilex,Multilex (FDB),Multilex,2013-05-06,44819118
+Multum,Cerner Multum (Cerner),Multum,2013-07-10,44819112
+NDC,National Drug Code (FDA and manufacturers),NDC,NDC 20190113,44819105
+NDFRT,National Drug File - Reference Terminology (VA),NDFRT,RXNORM 2018-08-12,44819103
+NFC,New Form Code (EphMRA),NFC,NFC 20160704,245
+None,OMOP Standardized Vocabularies,None,v5.0 18-JAN-19,44819096
+Note Type,OMOP Note Type,Note Type,,44819146
+NUCC,National Uniform Claim Committee Health Care Provider Taxonomy Code Set (NUCC),NUCC,2018-06-26 NUCC,44819137
+Obs Period Type,OMOP Observation Period Type,Obs Period Type,,44819149
+Observation Type,OMOP Observation Type,Observation Type,,44819129
+OPCS4,OPCS Classification of Interventions and Procedures version 4 (NHS),OPCS4,2018 Release,44819143
+OXMIS,Oxford Medical Information System (OCHP),OXMIS,,44819114
+PCORNet,National Patient-Centered Clinical Research Network (PCORI),PCORNet,,44819148
+PHDSC,Source of Payment Typology (PHDSC),PHDSC,Version 3.0,32473
+Place of Service,Place of Service Codes for Professional Claims (CMS),Place of Service,2009-01-11,44819110
+Plan,"Health Plan - contract to administer healthcare transactions by the payer, facilitated by the sponsor",Plan,,32471
+Plan Stop Reason,Plan Stop Reason - Reason for termination of the Health Plan,Plan Stop Reason,,32474
+PPI,AllOfUs_PPI (Columbia),PPI,Codebook Version 0.3.12,581404
+Procedure Type,OMOP Procedure Occurrence Type,Procedure Type,,44819128
+Race,Race and Ethnicity Code Set (USBC),Race,Version 1.0,44819109
+Read,NHS UK Read Codes Version 2 (HSCIC),Read,NHS READV2 21.0.0 20160401000001 + DATAMIGRATION_25.0.0_20180403000001,44819113
+Relationship,OMOP Relationship,Relationship,,44819235
+Revenue Code,UB04/CMS1450 Revenue Codes (CMS),Revenue Code,2010 Release,44819133
+RxNorm,RxNorm (NLM),RxNorm,RxNorm 20181203,44819104
+RxNorm Extension,RxNorm Extension (OMOP),RxNorm Extension,RxNorm Extension 2019-01-17,252
+SMQ,Standardised MedDRA Queries (MSSO),SMQ,Version 14.0,44819121
+SNOMED,Systematic Nomenclature of Medicine - Clinical Terms (IHTSDO),SNOMED,Snomed Release 20180731,44819097
+Specialty,Medicare provider/supplier specialty codes (CMS),Specialty,2018-06-26 Specialty,44819138
+Specimen Type,OMOP Specimen Type,Specimen Type,,581376
+SPL,Structured Product Labeling (FDA),SPL,NDC 20190113,44819140
+Sponsor,Sponsor - institution or individual financing healthcare transactions,Sponsor,,32472
+UB04 Point of Origin,UB04 Claim Source Inpatient Admission Code (CMS),UB04 Point of Origin,,32045
+UB04 Pri Typ of Adm,UB04 Claim Inpatient Admission Type Code (CMS),UB04 Pri Typ of Adm,,32046
+UB04 Pt dis status,UB04 Patient Discharge Status Code (CMS),UB04 Pt dis status,,32047
+UB04 Typ bill,UB04 Type of Bill - Institutional (USHIK),UB04 Typ bill,,32044
+UCUM,Unified Code for Units of Measure (Regenstrief Institute),UCUM,Version 1.8.2,44819107
+VA Class,VA National Drug File Class (VA),VA Class,RXNORM 2018-08-12,44819122
+VA Product,VA National Drug File Product (VA),VA Product,RXNORM 2018-08-12,44819120
+Visit,OMOP Visit,Visit,,44819119
+Visit Type,OMOP Visit Type,Visit Type,,44819150
+Vocabulary,OMOP Vocabulary,Vocabulary,,44819232
