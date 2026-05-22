@@ -51,10 +51,9 @@ def create_cache_flow(options: CreateCacheOptions):
         'snapshot_copy_config': {'patients_to_be_copied', 'timestamp'}
     })
     logger.info(f"Flow parameters received: {log_data}")
-
-    dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code, cache_id=options.cache_id)
+    dbdao = DBDao(database_code=options.database_code, cache_id=options.cache_id)
     logger.info(f"Database dialect identified as '{dbdao.dialect}' for database code '{options.database_code}'.")
-    
+
     db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
@@ -153,12 +152,11 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     database_code = options.database_code
     schema_to_copy = options.schema_name
-    use_cache_db = options.use_cache_db
     cache_id = options.cacheId
 
     cdw_db = "cdw_config_svc_validation_schema"
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
 
     check_supported_dialects(dbdao.dialect)
 

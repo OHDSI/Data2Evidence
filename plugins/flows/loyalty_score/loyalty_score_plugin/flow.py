@@ -50,18 +50,16 @@ def calculate_loyalty_score(options:CalculateConfig):
     cache_id = options.cache_id
     schema_name = options.schema_name
     result_schema_name = f"{schema_name}_results"
-    use_cache_db = options.use_cache_db
     index_datetime = datetime.fromisoformat(index_date)
     cal_st = index_datetime.replace(year=index_datetime.year-lookback_years).strftime("%Y-%m-%d")
     cal_ed = index_datetime.strftime("%Y-%m-%d")
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
+    dbdao = DBDao(database_code=database_code,
                   cache_id=cache_id)
     if not dbdao.check_schema_exists(result_schema_name):
         logger.info(f"Schema {result_schema_name} does not exist, created")
         dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
-        data = data_prep(conn, cal_st, cal_ed, database_code, schema_name, use_cache_db)
+        data = data_prep(conn, cal_st, cal_ed, database_code, schema_name)
         coef, feature = load_coef_table(conn, coeff_table_name, result_schema_name)
         data['loyalty_score'] = data[feature].dot(coef.loc[feature]) + coef.loc['Intercept']
         logger.info(f'Loyalty score calculation completed')
@@ -87,19 +85,17 @@ def retrain_algo(options:RetrainConfig):
     cache_id = options.cache_id
     schema_name = options.schema_name
     result_schema_name = f"{schema_name}_results"
-    use_cache_db = options.use_cache_db
     test_ratio = options.test_ratio
     index_datetime = datetime.fromisoformat(index_date)
     train_st = index_datetime.replace(year=index_datetime.year-train_years-return_years).strftime("%Y-%m-%d")
     train_ed = index_datetime.replace(year=index_datetime.year-return_years).strftime("%Y-%m-%d")
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code,
+    dbdao = DBDao(database_code=database_code,
                   cache_id=cache_id)
     if not dbdao.check_schema_exists(result_schema_name):
         logger.info(f"Schema {result_schema_name} does not exist, created")
         dbdao.create_schema(result_schema_name)
     with dbdao.ibis_connect() as conn:
-        data = data_prep(conn, train_st, train_ed, database_code, schema_name, use_cache_db)
+        data = data_prep(conn, train_st, train_ed, database_code, schema_name)
         feature = list(set(data.columns) - set(['person_id']))
         get_gold_label(conn, data, schema_name, train_ed, index_date)
         X_train, X_test, y_train, y_test = train_test_split(data[feature], data.Return, test_size=test_ratio, 
@@ -148,7 +144,7 @@ def retrain_algo(options:RetrainConfig):
         logger.info(f'Retrain auc roc is stored at {result_schema_name}.{retrain_coeff_table_name}_summary_table')
 
 @task(log_prints=True)
-def data_prep(conn, index_st, index_ed, database_code, schema_name, use_cache_db):
+def data_prep(conn, index_st, index_ed, database_code, schema_name):
     index_st_datetime = datetime.fromisoformat(index_st)
     age18 = index_st_datetime.replace(year=index_st_datetime.year-18).strftime("%Y-%m-%d")
     logger = get_run_logger()

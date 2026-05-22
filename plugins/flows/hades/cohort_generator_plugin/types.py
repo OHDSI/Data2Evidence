@@ -25,7 +25,3 @@ class CohortGeneratorOptionsType(BaseModel):
 
     # Optional, if provided, will not create cohort definition
     cohortDefinitionId: Optional[int] = None
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
