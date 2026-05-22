@@ -1,6 +1,15 @@
 import { object, z } from "zod";
 
 const _env = Object.assign({}, Deno.env.toObject());
+
+// Treat unset, empty string, and the literal string "null" (produced by
+// `${VAR:-null}` templating in plugins/functions/package.json) as undefined,
+// so downstream code can use plain `!env.X` / `env.X === undefined` checks.
+const optionalSecret = z
+  .string()
+  .optional()
+  .transform((v) => (v && v !== "null" ? v : undefined));
+
 const Env = z.object({
   SERVICE_ROUTES: z
     .string()
@@ -19,16 +28,16 @@ const Env = z.object({
         }
       }
     ),
-  AI_MODEL: z.string().optional(),
-  OPENAI_API_KEY: z.string().optional(),
-  AZURE_OPENAI_API_KEY: z.string().optional(),
-  AZURE_OPENAI_API_VERSION: z.string().optional(),
-  AZURE_OPENAI_API_INSTANCE_NAME: z.string().optional(),
-  AZURE_OPENAI_API_DEPLOYMENT_NAME: z.string().optional(),
-  ANTHROPIC_API_KEY: z.string().optional(),
-  GOOGLE_API_KEY: z.string().optional(),
-  OLLAMA_BASE_URL: z.string().optional(),
-  OLLAMA_API_KEY: z.string().optional(),
+  AI_MODEL: optionalSecret,
+  OPENAI_API_KEY: optionalSecret,
+  AZURE_OPENAI_API_KEY: optionalSecret,
+  AZURE_OPENAI_API_VERSION: optionalSecret,
+  AZURE_OPENAI_API_INSTANCE_NAME: optionalSecret,
+  AZURE_OPENAI_API_DEPLOYMENT_NAME: optionalSecret,
+  ANTHROPIC_API_KEY: optionalSecret,
+  GOOGLE_API_KEY: optionalSecret,
+  OLLAMA_BASE_URL: optionalSecret,
+  OLLAMA_API_KEY: optionalSecret,
 });
 
 export const env = Env.parse(_env);

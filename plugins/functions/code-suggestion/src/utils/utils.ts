@@ -1,23 +1,51 @@
 import { env } from "../env";
 
 export const getModels = async (llm) => {
-  if (
-    env.AZURE_OPENAI_API_KEY === null &&
-    env.OPENAI_API_KEY === null &&
-    env.ANTHROPIC_API_KEY === null &&
-    env.GOOGLE_API_KEY === null &&
-    env.OLLAMA_API_KEY === null &&
-    env.OLLAMA_BASE_URL === null
-  ) {
+  console.info(`AI: ${llm}`);
+  if (llm === null || llm === undefined || llm === "null") {
+    console.info(
+      "No AI_MODEL specified in environment variables. Defaulting to 'local' model.",
+    );
+
+    return "local";
+  }
+
+  const requiredKeys: Record<string, (keyof typeof env)[]> = {
+    gpt: ["OPENAI_API_KEY"],
+    azure: [
+      "AZURE_OPENAI_API_KEY",
+      "AZURE_OPENAI_API_VERSION",
+      "AZURE_OPENAI_API_DEPLOYMENT_NAME",
+      "AZURE_OPENAI_API_INSTANCE_NAME",
+    ],
+    ollama: ["OLLAMA_BASE_URL"],
+    anthropic: ["ANTHROPIC_API_KEY"],
+    gemini: ["GOOGLE_API_KEY"],
+  };
+
+  const providerKey = Object.keys(requiredKeys).find((k) => llm.startsWith(k));
+  if (!providerKey) {
+    console.warn(
+      `AI_MODEL '${llm}' has no known provider prefix. Defaulting to 'local'.`,
+    );
+    return "local";
+  }
+  const missing = requiredKeys[providerKey].filter((k) => !env[k]);
+  if (missing.length > 0) {
+    console.warn(
+      `AI_MODEL '${llm}' needs ${missing.join(", ")} but they are not set. Defaulting to 'local'.`,
+    );
     return "local";
   }
 
   const pattern = {
     gpt: () =>
       import("@langchain/openai").then(
-        ({ ChatOpenAI }) => new ChatOpenAI({ 
-          model: llm.replace("gpt:", "")
-        }),
+        ({ ChatOpenAI }) =>
+          new ChatOpenAI({
+            model: llm.replace("gpt:", ""),
+            apiKey: env.OPENAI_API_KEY,
+          }),
       ),
     azure: () =>
       import("@langchain/openai").then(
@@ -59,5 +87,5 @@ export const getModels = async (llm) => {
       ),
   };
   const key = Object.keys(pattern).find((k) => llm.startsWith(k));
-  return key ? await pattern[key]() : null; // `Selected LLM model name '${llm}' is not supported`
+  return await pattern[key]();
 };
