@@ -121,12 +121,17 @@ const getters = {
       metadata,
       datasetId: rootGetters.getSelectedDataset.id,
     }
-    // Add barChartType only for stacked-bar charts.
+    // Add stacked-bar-only fields (barChartType, colorAxis) only when relevant.
     if (chartType === 'stacked') {
       data.barChartType = {
         mode: rootGetters.getBarChartType,
         showDistributionOverlay: rootGetters.getShowDistributionOverlay,
       }
+      const colorAxisStoreIndex = rootGetters.getColorAxisIndex
+      data.colorAxis =
+        colorAxisStoreIndex !== null && allAxes[colorAxisStoreIndex]?.props?.attributeId
+          ? allAxes[colorAxisStoreIndex].props.attributeId
+          : null
     }
     return data
   },
@@ -148,6 +153,7 @@ const getters = {
   getBookmarkByNameAndUsername: modulestate => (name, username) => {
     return modulestate.bookmarks.find(b => b.bookmarkname === name && b.user_id === username)
   },
+  // rootState and rootGetters are used by the overlapping-histogram-2 branch for barChartType comparison
   getCurrentBookmarkHasChanges: (modulestate, moduleGetters, rootState, rootGetters) => {
     if (modulestate.activeBookmark == null) {
       return false
@@ -175,10 +181,13 @@ const getters = {
         { ...curRaw, mode: getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig) }
       )
     }
+    const newColorAxis = moduleGetters.getBookmarksData.colorAxis ?? null
+    const currentColorAxis = bookmark?.colorAxis ?? null
     return (
       !isEqual(newBookmarksFilter, currentBookmarksFilter) ||
       !isEqual(newBookmarksAxisSelection, currentBookmarksAxisSelection) ||
-      barChartTypeChanged
+      barChartTypeChanged ||
+      newColorAxis !== currentColorAxis
     )
   },
   getDisplayBookmarks: modulestate => (showSharedBookmarks, username) => {
@@ -542,6 +551,18 @@ const actions = {
           } else {
             dispatch('setAxisValue', { id: X1, props: { disabled: false } })
             dispatch('setAxisValue', { id: X2, props: { disabled: false } })
+          }
+          // Restore per-bar color axis from bookmark
+          if ('colorAxis' in parsedBookmark) {
+            if (parsedBookmark.colorAxis) {
+              const restoredAxes = rootGetters.getAllAxes
+              const colorAxisIndex = restoredAxes.findIndex(
+                (axis: any) => axis?.props?.attributeId === parsedBookmark.colorAxis
+              )
+              dispatch('setColorAxisIndex', colorAxisIndex >= 0 ? colorAxisIndex : null)
+            } else {
+              dispatch('setColorAxisIndex', null)
+            }
           }
           if (chartType) {
             // Guard: if the bookmark's saved chartType is not visible in the current config
