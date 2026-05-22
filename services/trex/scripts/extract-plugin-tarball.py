@@ -23,6 +23,18 @@ def strip(name: str, n: int) -> str | None:
     return parts[n] if len(parts) > n else None
 
 
+def safe_join(dest_real: str, name: str) -> str | None:
+    # Reject absolute paths and any name that escapes dest after normalisation.
+    # Used for member paths, symlink targets, and hardlink targets so a malicious
+    # archive can't write or link outside the destination directory.
+    if os.path.isabs(name) or name.startswith("/"):
+        return None
+    candidate = os.path.realpath(os.path.join(dest_real, name))
+    if candidate != dest_real and not candidate.startswith(dest_real + os.sep):
+        return None
+    return candidate
+
+
 def main() -> int:
     if len(sys.argv) != 4:
         print(
@@ -32,11 +44,13 @@ def main() -> int:
         return 2
     tgz, dest, strip_components = sys.argv[1], sys.argv[2], int(sys.argv[3])
     os.makedirs(dest, exist_ok=True)
+    dest_real = os.path.realpath(dest)
 
     extracted = 0
     linked = 0
     missing = 0
     skipped = 0
+    rejected = 0
 
     with tarfile.open(tgz, "r:gz") as tf:
         members = tf.getmembers()
@@ -45,6 +59,14 @@ def main() -> int:
                 continue
             new_name = strip(m.name, strip_components)
             if not new_name:
+                continue
+            if safe_join(dest_real, new_name) is None:
+                print(f"reject: unsafe path: {new_name}", file=sys.stderr)
+                rejected += 1
+                continue
+            if m.issym() and safe_join(dest_real, os.path.join(os.path.dirname(new_name), m.linkname)) is None:
+                print(f"reject: unsafe symlink target: {new_name} -> {m.linkname}", file=sys.stderr)
+                rejected += 1
                 continue
             m.name = new_name
             try:
@@ -61,8 +83,12 @@ def main() -> int:
             target_name = strip(m.linkname, strip_components)
             if not link_name or not target_name:
                 continue
-            link_path = os.path.join(dest, link_name)
-            target_path = os.path.join(dest, target_name)
+            link_path = safe_join(dest_real, link_name)
+            target_path = safe_join(dest_real, target_name)
+            if link_path is None or target_path is None:
+                print(f"reject: unsafe hardlink: {link_name} -> {target_name}", file=sys.stderr)
+                rejected += 1
+                continue
             if os.path.lexists(link_path):
                 continue
             if not os.path.exists(target_path):
@@ -77,7 +103,7 @@ def main() -> int:
                 skipped += 1
 
     print(
-        f"extracted={extracted} linked={linked} missing={missing} skipped={skipped}",
+        f"extracted={extracted} linked={linked} missing={missing} skipped={skipped} rejected={rejected}",
         file=sys.stderr,
     )
     return 0

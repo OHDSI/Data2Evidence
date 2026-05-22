@@ -1,7 +1,11 @@
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
 
+// Run with: deno test --no-check --allow-env --allow-read --allow-write plugin-discovery.test.ts
+// Tests use Deno.makeTempDir / mkdir / writeTextFile / remove and Deno.env to
+// stub the trex globals; all three permissions are required.
+//
 // The trex runtime injects `Trex` as a global and `LOGTO__ISSUER` via env.
-// Stub them so the module graph loads under plain `deno test`.
+// Stub them so the module graph loads.
 (globalThis as any).Trex ??= { createRequestListener: () => {}, PluginManager: class {} };
 if (!Deno.env.get("LOGTO__ISSUER")) Deno.env.set("LOGTO__ISSUER", "https://localhost/oidc");
 

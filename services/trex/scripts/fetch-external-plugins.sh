@@ -1,10 +1,13 @@
 #!/usr/bin/env sh
 # Fetch each pinned external plugin tarball and extract it to /usr/src/bundled-plugins/<short-name>/.
 # Run inside the trex image build with PLUGINS_REGISTRY set.
+# Uses extract-plugin-tarball.py to handle cross-directory hardlinks in npm-packed
+# tarballs (which GNU tar's -x aborts on) and to guard against path traversal.
 set -eu
 
 MANIFEST="${1:-/scripts/external-plugins.txt}"
 DEST="${2:-/usr/src/bundled-plugins}"
+EXTRACTOR="${3:-/scripts/extract-plugin-tarball.py}"
 
 if [ ! -f "$MANIFEST" ]; then
   echo "external-plugins manifest not found at $MANIFEST"
@@ -28,6 +31,6 @@ while IFS= read -r LINE || [ -n "$LINE" ]; do
   TGZ="$(ls -1t "$WORK"/*.tgz | head -n 1)"
   rm -rf "$DEST/$SHORT"
   mkdir -p "$DEST/$SHORT"
-  tar -xzf "$TGZ" -C "$DEST/$SHORT" --strip-components=1
+  python3 "$EXTRACTOR" "$TGZ" "$DEST/$SHORT" 1
   rm -f "$TGZ"
 done < "$MANIFEST"

@@ -61,3 +61,29 @@ jobs:
       - name: Run Load UI Plugin Tests
         working-directory: services/trex
         run: deno test --no-check --allow-env ./core/server/plugin/tests/ui.test.ts
+
+  test-plugin-discovery:
+    name: Run Plugin Discovery Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Show current commit for verification
+        run: |
+          echo "Testing commit:"
+          git rev-parse HEAD
+          git log -1 --format="%an: %s"
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.5.6
+
+      - name: Run Plugin Discovery Tests
+        working-directory: services/trex
+        run: deno test --no-check --allow-env --allow-read --allow-write ./tests/plugin-discovery.test.ts
