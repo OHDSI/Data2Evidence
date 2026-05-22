@@ -28,13 +28,13 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.getByRole('button', { name: '' }).first().click()
+  await page.getByTestId('filter-card-menu-trigger').first().click()
   await page
     .locator('div')
     .filter({ hasText: /^Month of Birth$/ })
     .first()
     .click()
-  await page.getByRole('button', { name: '' }).first().click()
+  await page.keyboard.press('Escape')
   await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('6')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')

@@ -64,11 +64,13 @@
               @show="onDropdownShow"
             >
               <template v-slot:button-content>
-                <appIcon
-                  icon="menu"
-                  :title="getText('MRI_PA_TOOLTIP_FILTERCARD_MOREMENU_BUTTON')"
-                  style="margin-right: 16px"
-                ></appIcon>
+                <span data-testid="filter-card-menu-trigger">
+                  <appIcon
+                    icon="menu"
+                    :title="getText('MRI_PA_TOOLTIP_FILTERCARD_MOREMENU_BUTTON')"
+                    style="margin-right: 16px"
+                  ></appIcon>
+                </span>
               </template>
               <!-- operations -->
               <div class="dropdown-scroll" :style="dropdownScrollStyle">
