@@ -1,12 +1,13 @@
 {
   "version": "5",
   "specifiers": {
-    "npm:@langchain/anthropic@*": "1.4.0_@langchain+core@1.1.8__zod@3.25.76_zod@3.25.76",
+    "npm:@langchain/anthropic@^1.4.0": "1.4.0_@langchain+core@1.1.8__zod@3.25.76_zod@3.25.76",
     "npm:@langchain/core@*": "1.1.8_zod@3.25.76",
     "npm:@langchain/core@^1.1.8": "1.1.8_zod@3.25.76",
-    "npm:@langchain/google@*": "0.1.12_@langchain+core@1.1.8__zod@3.25.76",
+    "npm:@langchain/google@~0.1.12": "0.1.12_@langchain+core@1.1.8__zod@3.25.76",
     "npm:@langchain/langgraph@^1.0.7": "1.0.7_@langchain+core@1.1.8__zod@3.25.76_zod@3.25.76",
     "npm:@langchain/mcp-adapters@^1.1.1": "1.1.1_@langchain+core@1.1.8__zod@3.25.76_@langchain+langgraph@1.0.7__@langchain+core@1.1.8___zod@3.25.76__zod@3.25.76_zod@3.25.76",
+    "npm:@langchain/ollama@^1.2.7": "1.2.7_@langchain+core@1.1.8__zod@3.25.76",
     "npm:@langchain/openai@^1.2.0": "1.2.0_@langchain+core@1.1.8__zod@3.25.76_zod@3.25.76_openai@6.15.0__zod@3.25.76",
     "npm:@modelcontextprotocol/sdk@^1.20.2": "1.25.1_zod@3.25.76_ajv@8.17.1_express@5.2.1",
     "npm:@types/node@*": "24.2.0",
@@ -143,6 +144,13 @@
       ],
       "optionalDependencies": [
         "extended-eventsource"
+      ]
+    },
+    "@langchain/ollama@1.2.7_@langchain+core@1.1.8__zod@3.25.76": {
+      "integrity": "sha512-7Gu17q1dn4nKGB3ZYJyaaL8H/2k7LHvcL6V25S8cVDniTTSvd0fWzI5MzPJvbf9WPxBhvmf+rDDLAhOWljHEtQ==",
+      "dependencies": [
+        "@langchain/core@1.1.8_zod@3.25.76",
+        "ollama"
       ]
     },
     "@langchain/openai@1.2.0_@langchain+core@1.1.8__zod@3.25.76_zod@3.25.76_openai@6.15.0__zod@3.25.76": {
@@ -944,6 +952,12 @@
     "object-inspect@1.13.4": {
       "integrity": "sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew=="
     },
+    "ollama@0.6.3": {
+      "integrity": "sha512-KEWEhIqE5wtfzEIZbDCLH51VFZ6Z3ZSa6sIOg/E/tBV8S51flyqBOXi+bRxlOYKDf8i327zG9eSTb8IJxvm3Zg==",
+      "dependencies": [
+        "whatwg-fetch"
+      ]
+    },
     "on-finished@2.4.1": {
       "integrity": "sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==",
       "dependencies": [
@@ -1273,6 +1287,9 @@
     "web-streams-polyfill@3.3.3": {
       "integrity": "sha512-d2JWLCivmZYTSIoge9MsgFCZrt571BikcWGYkjC1khllbTeDlGqZ2D8vD8E/lJa8WGWbb7Plm8/XJYV7IJHZZw=="
     },
+    "whatwg-fetch@3.6.20": {
+      "integrity": "sha512-EqhiFU6daOA8kpjOWTL0olhVOF3i7OrFzSYiGsEMB8GcXS+RrzauAERX65xMeNWVqxA6HXH2m69Z9LaKKdisfg=="
+    },
     "which@2.0.2": {
       "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
       "dependencies": [
@@ -1319,12 +1336,13 @@
   },
   "workspace": {
     "dependencies": [
-      "npm:@langchain/anthropic@*",
+      "npm:@langchain/anthropic@^1.4.0",
       "npm:@langchain/core@*",
       "npm:@langchain/core@^1.1.8",
-      "npm:@langchain/google@*",
+      "npm:@langchain/google@~0.1.12",
       "npm:@langchain/langgraph@^1.0.7",
       "npm:@langchain/mcp-adapters@^1.1.1",
+      "npm:@langchain/ollama@^1.2.7",
       "npm:@langchain/openai@^1.2.0",
       "npm:@modelcontextprotocol/sdk@^1.20.2",
       "npm:async@*",
