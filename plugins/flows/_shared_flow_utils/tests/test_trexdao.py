@@ -14,7 +14,7 @@ def test_pgwire_dbname_uses_cache_id(secret_mock, var_mock, connect_mock):
     }[k]
     secret_mock.load.return_value.get.return_value = "p"
 
-    dao = TrexDao(use_cache_db=True, database_code="db_a", cache_id="cache_a")
+    dao = TrexDao(database_code="db_a", cache_id="cache_a")
     with dao._get_connection():
         pass
     assert connect_mock.call_args.kwargs["dbname"] == "cache_a"
@@ -31,7 +31,7 @@ def test_pgwire_dbname_falls_back_to_database_code(secret_mock, var_mock, connec
     }[k]
     secret_mock.load.return_value.get.return_value = "p"
 
-    dao = TrexDao(use_cache_db=True, database_code="db_a")  # cache_id omitted
+    dao = TrexDao(database_code="db_a")  # cache_id omitted
     with dao._get_connection():
         pass
     assert connect_mock.call_args.kwargs["dbname"] == "db_a"
@@ -54,7 +54,7 @@ def test_use_cache_id_issued_when_cache_id_differs_from_database_code(secret_moc
     cursor_mock = MagicMock()
     connect_mock.return_value.cursor.return_value.__enter__.return_value = cursor_mock
 
-    dao = TrexDao(use_cache_db=True, database_code="db_a", cache_id="cache_a")
+    dao = TrexDao(database_code="db_a", cache_id="cache_a")
     with dao._get_connection():
         pass
 
@@ -81,7 +81,7 @@ def test_use_skipped_when_cache_id_equals_database_code(secret_mock, var_mock, c
     cursor_mock = MagicMock()
     connect_mock.return_value.cursor.return_value.__enter__.return_value = cursor_mock
 
-    dao = TrexDao(use_cache_db=True, database_code="db_a")  # cache_id defaults to db_a
+    dao = TrexDao(database_code="db_a")  # cache_id defaults to db_a
     with dao._get_connection():
         pass
 
@@ -105,7 +105,7 @@ def test_use_failure_does_not_break_connection(secret_mock, var_mock, connect_mo
     cursor_mock.execute.side_effect = RuntimeError("catalog 'cache_x' does not exist")
     connect_mock.return_value.cursor.return_value.__enter__.return_value = cursor_mock
 
-    dao = TrexDao(use_cache_db=True, database_code="db_a", cache_id="cache_x")
+    dao = TrexDao(database_code="db_a", cache_id="cache_x")
     # Must not raise — the failed USE is swallowed.
     with dao._get_connection() as con:
         assert con is connect_mock.return_value
