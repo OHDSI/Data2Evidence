@@ -28,6 +28,25 @@ export class FhirGatewayAPI {
     };
   }
 
+  async deleteFhirDataset(fhirDatasetId: string): Promise<void> {
+    this.logger.info(`Deleting FHIR dataset with id '${fhirDatasetId}'`);
+    try {
+      const options = this.getRequestConfig();
+      const url = `${this.baseURL}/deleteDataset/${fhirDatasetId}`;
+      const result = await this.channel.delete(url, options);
+      this.logger.info(
+        `Deleted FHIR dataset with id '${fhirDatasetId}' successfully`,
+      );
+    } catch (error: any) {
+      const status = error.status || error.response?.status;
+      const responseData = error.response?.data;
+      this.logger.error(
+        `Failed to delete FHIR dataset with id '${fhirDatasetId}': ${error.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
+      );
+      throw error;
+    }
+  }
+
   async createFhirDataset(id: string, name: string): Promise<string> {
     this.logger.info(`Creating FHIR dataset for portal dataset '${id}'`);
     try {

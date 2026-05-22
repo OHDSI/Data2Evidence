@@ -311,6 +311,24 @@ export class DatasetRouter {
             this.logger.error(
               `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
             );
+
+            if (isFhirDataset && fhirDatasetId) {
+              this.logger.info(
+                `Cleaning up FHIR dataset with id '${fhirDatasetId}' due to portal dataset creation failure`,
+              );
+              try {
+                const fhirGatewayAPI = new FhirGatewayAPI(token);
+                await fhirGatewayAPI.deleteFhirDataset(fhirDatasetId);
+                this.logger.info(
+                  `Successfully cleaned up FHIR dataset with id '${fhirDatasetId}'`,
+                );
+              } catch (deleteError) {
+                this.logger.error(
+                  `Failed to clean up FHIR dataset with id '${fhirDatasetId}'! It must be manually deleted. ${deleteError}`,
+                );
+              }
+            }
+
             // Return 400 for client errors, 500 for server errors
             const httpStatus = status >= 400 && status < 500 ? status : 500;
             return res
@@ -440,53 +458,30 @@ export class DatasetRouter {
 
         // Copy schema if it exist
         if (sourceHasSchema) {
-          if (
-            type === CacheDatasetType.NON_OMOP &&
-            sourceType === SourceDatasetType.FHIR
-          ) {
-            this.logger.info(
-              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`,
+          this.logger.info(
+            `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
+              snapshotCopyConfig,
+            )})`,
+          );
+
+          try {
+            const dataModels = await jobpluginsAPI.getDatamodels();
+            const dataModelInfo = dataModels.find(
+              (model) => model.datamodel === dataModel,
             );
-            try {
-              const fhirCacheFlowRunDto = {
-                databaseCode: databaseCode,
-                schemaName: schemaName,
-                cacheSchemaName: parsedNewSchemaName,
-                studyCode: tokenStudyCode,
-              };
-              const fhirResult =
-                await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
-              flowRunId = fhirResult?.flowRunId;
-            } catch (error) {
-              this.logger.error(`Error copying source FHIR schema! ${error}`);
-              throw new Error(`Error copying source FHIR schema! ${error}`);
-            }
-          } else {
-            this.logger.info(
-              `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
+
+            const datamartResult =
+              await jobpluginsAPI.createDatamartCacheFlowRun(
+                sourceStudyId,
+                newDataset.id,
                 snapshotCopyConfig,
-              )})`,
-            );
-
-            try {
-              const dataModels = await jobpluginsAPI.getDatamodels();
-              const dataModelInfo = dataModels.find(
-                (model) => model.datamodel === dataModel,
+                dataModelInfo.flowId,
+                `datamart-snapshot-${schemaName}`,
               );
-
-              const datamartResult =
-                await jobpluginsAPI.createDatamartCacheFlowRun(
-                  sourceStudyId,
-                  newDataset.id,
-                  snapshotCopyConfig,
-                  dataModelInfo.flowId,
-                  `datamart-snapshot-${schemaName}`,
-                );
-              flowRunId = datamartResult?.flowRunId;
-            } catch (error) {
-              this.logger.error(`Error copying CDM schema! ${error}`);
-              throw new Error(`Error copying CDM schema! ${error}`);
-            }
+            flowRunId = datamartResult?.flowRunId;
+          } catch (error) {
+            this.logger.error(`Error copying CDM schema! ${error}`);
+            throw new Error(`Error copying CDM schema! ${error}`);
           }
         }
 
