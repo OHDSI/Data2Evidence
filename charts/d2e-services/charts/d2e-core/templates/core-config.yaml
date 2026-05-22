@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-caddy
+  namespace: d2e
+data:
+  Caddyfile: |
+    {
+    	debug
+    	pki {
+            ca local {
+                name "ALP Local CA"
+                root_cn "ALP Local CA - 2024 ECC Root"
+            }
+            ca alp-internal {
+                name "ALP Internal CA"
+                root_cn "ALP Internal CA - 2024 ECC Root"
+                intermediate_cn "ALP Internal CA - ECC Intermediate"
+            }
+    	}
+    }
+
+    (portal) {
+        log {
+            format console {
+               level_format color
+            }
+        }
+
+        @aliasbasepaths {
+            path_regexp portal_basepath ^/(d2e|portal)(/)?$
+        }
+        redir @aliasbasepaths /d2e/portal
+
+        # Logto api server
+        @logto {
+            path /api/*
+            path /oidc/*
+            path /sign-in
+            path /consent
+            path /callback/* # For azure connector
+            
+            path /d2e/logto/index.*
+            path /d2e/logto/assets/* # logto assets are moved to this path
+        }
+
+        handle @logto {
+            uri strip_prefix /d2e/logto
+            reverse_proxy http://idp.d2e.svc.cluster.local {
+            	header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+                header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
+            	transport http {
+                    read_buffer 8192
+                }
+            }
+        }
+
+        @portalpath {
+            path /d2e/portal/researcher/*
+            path /d2e/portal/systemadmin/*
+        }
+
+        handle @portalpath {
+            rewrite * /d2e/portal/index.html
+            reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
+                header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+            	transport http {
+                    tls_insecure_skip_verify
+            	}
+            }
+        }
+
+
+        ## call gateway if there are no matched files
+        handle {
+            reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
+                header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+            	transport http {
+                    tls
+                    tls_insecure_skip_verify
+                    read_buffer 8192
+            	}
+            }
+        }
+    }
+
+    https://{$CADDY__D2E__INTERNAL_FQDN} {
+        tls /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.crt /data/caddy/certificates/local/k8s.d2e.sg/k8s.d2e.sg.key {
+           issuer internal {
+              ca local
+           }
+        }
+
+        handle /check-liveness {
+            respond "OK-FQDN"
+        }
+
+        handle /check-liveness* {
+            respond "OK-FQDN"
+        }
+
+        import portal
+    }
+
+    :8080 {
+        handle /check-liveness {
+            respond "OK-HTTP"
+        }
+    }
+
+    https://localhost {
+       tls {
+            issuer internal {
+                ca alp-internal
+                lifetime 360d
+                sign_with_root
+            }
+    	}
+       handle /check-liveness {
+          respond "OK-HTTPS"
+       }
+    }
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}
+  namespace: d2e
+data:
+  CADDY__D2E__INTERNAL_FQDN: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+  CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
+  CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL: "{{ printf "https://%s" .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
+  LOGTO_ROLES_AZ_GROUPS_MAPPING: {{ .Values.global.idp.LOGTO_ROLES_AZ_GROUPS_MAPPING | quote }}
+
+
+

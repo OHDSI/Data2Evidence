@@ -19,12 +19,11 @@ from _shared_flow_utils.dao.daobase import DialectDrivers
 class TrexDao(DaoBase):
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
         cache_id: Optional[str] = None,
     ):
-        super().__init__(use_cache_db, database_code, user_type, cache_id=cache_id)
+        super().__init__(database_code, user_type, cache_id=cache_id)
 
     @property
     def dialect(self):
@@ -249,22 +248,24 @@ class TrexDao(DaoBase):
     ):
         pass
 
-    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None):
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None, on_conflict: str = ""):
         """
         Insert multiple rows into a specified table in one operation.
-        
+
         Args:
             schema_name: Schema containing the target table
             table_name: Target table name
             columns: List of column names to insert into
             values: List of tuples, each tuple representing a row to insert
             con: Optional existing connection to reuse (skips opening a new connection)
+            on_conflict: Optional ON CONFLICT clause, e.g. "ON CONFLICT DO NOTHING"
         """
         columns_str = ", ".join(columns)
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s").format(
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s{conflict}").format(
             schema_name=pg_sql.Identifier(schema_name),
             table_name=pg_sql.Identifier(table_name),
             columns_str=pg_sql.SQL(columns_str),
+            conflict=pg_sql.SQL(f" {on_conflict}" if on_conflict else ""),
         )
 
         def _execute(con):
