@@ -1,5 +1,5 @@
-import { test, expect } from '../fixtures'
 import path from 'path'
+import { expect, test } from '../fixtures'
 
 test('concept-mapping', async ({ page }) => {
   // Authentication
@@ -74,7 +74,7 @@ test('concept-mapping', async ({ page }) => {
   await page.waitForTimeout(2000)
 
   // First dropdown - Source code column (keep as Source)
-  const sourceCodeGroup = page.getByText('Source code colum').locator('..')
+  const sourceCodeGroup = page.getByText('Source code column').locator('..')
   const sourceCombo = sourceCodeGroup.locator('[role="combobox"]')
   await expect(sourceCombo).toBeVisible()
   await expect(sourceCombo).toBeEnabled()

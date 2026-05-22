@@ -41,13 +41,14 @@ def update_parameters(options: CreateCacheOptions,
 
 def create_results_cache_flow(options: CreateCacheOptions):
     new_options = update_parameters(options, 'schema_name', options.results_schema_name)
+    new_options = update_parameters(new_options, 'vocab_schema_name', None)
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
     create_cache_flow(final_options)
 
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
 
-    dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code, cache_id=options.cache_id)
+    dbdao = DBDao(database_code=options.database_code, cache_id=options.cache_id)
     db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
@@ -145,12 +146,11 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
 
     database_code = options.database_code
     schema_to_copy = options.schema_name
-    use_cache_db = options.use_cache_db
     cache_id = options.cacheId
 
     cdw_db = "cdw_config_svc_validation_schema"
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
 
     check_supported_dialects(dbdao.dialect)
 

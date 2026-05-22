@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
-import https from "node:https";
 import readline from "node:readline";
-import fetch from "node-fetch";
+import { Agent } from "undici";
+
 
 // Helper functions
 function getCookie(setCookieHeaders, name) {
@@ -84,12 +84,13 @@ try {
   console.log(`FATAL ${envfile} not found`);
   process.exit(1);
 }
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO__ALP_APP__CLIENT_ID;
 let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
 let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
 let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
-const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 console.log('\nSyncing usermgmt roles to Logto...\n');
 
@@ -104,10 +105,10 @@ if (!password) {
 var url = `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`;
 var response = await fetch(url, {
   method: "GET",
-  agent: insecureAgent,
+  dispatcher: insecureAgent,
   redirect: 'manual',
 });
-var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var setCookieHeaders = response.headers.getSetCookie();
 var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
 var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
 var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
@@ -132,7 +133,7 @@ var response = await fetch(url, {
   },
   body: JSON.stringify(body),
   redirect: 'manual',
-  agent: insecureAgent
+  dispatcher: insecureAgent
 });
 
 // Submit sign in page
@@ -147,7 +148,7 @@ var response = await fetch(url, {
                `_logto=$ `
   },
   body: JSON.stringify(body),
-  agent: insecureAgent
+  dispatcher: insecureAgent
 });
 
 // Get session
@@ -159,10 +160,10 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={"appId":"${app_client_id}"}`
     },
     redirect: 'manual',
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 
-var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var setCookieHeaders = response.headers.getSetCookie();
 var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
 var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
 var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
@@ -180,7 +181,7 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
     },
     redirect: 'manual',
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 
 // Get authorization code
@@ -192,7 +193,7 @@ var response = await fetch(url, {
         "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
     },
-    agent: insecureAgent,
+    dispatcher: insecureAgent,
     redirect: 'manual',
 });
 
@@ -208,7 +209,7 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={"appId":"${app_client_id}"}`
     },
     redirect: 'manual',
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 
 // Get Bearer token
@@ -229,7 +230,7 @@ var response = await fetch(url, {
         "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback`
     },
     body: params,
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 const tokenResponse = await response.json();
 const BEARER_TOKEN = tokenResponse.access_token;
@@ -248,7 +249,7 @@ var response = await fetch(url, {
         "Authorization": `Bearer ${BEARER_TOKEN}`,
         "content-type": "application/json"
     },
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 
 if (!response.ok) {
