@@ -732,6 +732,7 @@
           "gateway.dataset.dashboards.read",
           "gateway.dataset.cohorts.read",
           "gateway.dataset.create",
+          "gateway.dataset.cdmMetadata.read",
           "gateway.dataset.snapshot.create",
           "gateway.db.dataModels.read",
           "gateway.db.vocabSchemas.read",
@@ -791,7 +792,8 @@
           "portal.config.read",
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
-          "d2e.webapi.public"
+          "d2e.webapi.public",
+          "strategus.results.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -836,7 +838,8 @@
           "jobplugins.dqd.execute",
           "d2e.webapi",
           "usermgmt.me.jupyter",
-          "gateway.dataset.shinylive.read"
+          "gateway.dataset.shinylive.read",
+          "gateway.dataset.dashboards.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -873,13 +876,7 @@
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read"
         ],
-        "STUDY_RESULTS_READ_RESEARCHER": [
-          "strategus.analysis.read",
-          "strategus.results.read",
-          "strategus.results.write",
-          "strategus.results.delete",
-          "gateway.dataset.dashboards.read"
-        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [],
         "ETL_MAPPING_CONTRIBUTOR": [
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.prefect.flowRun.state",
@@ -2716,7 +2713,7 @@
         {
           "path": "^/gateway/api/dataset/cdm-schema/snapshot/metadata$",
           "scopes": [
-            "gateway.dataset.dashboards.read"
+            "gateway.dataset.cdmMetadata.read"
           ],
           "httpMethods": [
             "GET"
@@ -2950,9 +2947,7 @@
         {
           "path": "^/strategus-results",
           "scopes": [
-            "strategus.results.read",
-            "strategus.results.write",
-            "strategus.results.delete"
+            "strategus.results.read"
           ],
           "httpMethods": [
             "GET",
@@ -2964,7 +2959,10 @@
         {
           "path": "^/strategus/template",
           "scopes": [
-            "strategus.results.read"
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {
