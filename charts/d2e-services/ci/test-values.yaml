@@ -28,10 +28,10 @@ resources:
   trex:
     requests:
       cpu: "100m"
-      memory: "256Mi"
+      memory: "512Mi"
     limits:
       cpu: "1"
-      memory: "1Gi"
+      memory: "2Gi"
 
 config:
   OMOP_RELATIONSHIPS_FOR_DESCENDANTS: "'Maps to','Subsumes'"
