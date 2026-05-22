@@ -60,18 +60,20 @@ def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_co
         chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
         current = end + 1
     
+    # Log chunking strategy details: min/max values, range span, and resulting chunk count
+    range_span = max_val - min_val + 1
+    logger.info(f"Chunking strategy for '{table}.{chunk_col}': min={min_val}, max={max_val}, range_span={range_span:,}, target_chunk_size={chunk_size:,}, resulting_chunks={len(chunks)}")
+    
     if row_count and len(chunks) > 0:
         avg_rows_per_chunk = row_count / len(chunks)
         if avg_rows_per_chunk > (chunk_size * 2):
             logger.info(f"Data is too dense for range chunking (avg {int(avg_rows_per_chunk)} rows/chunk vs target {chunk_size}). Cannot chunk efficiently.")
             return None
         else:
-            logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
-            logger.info(f"Chunks: {chunks}")
+            logger.info(f"Chunk validation: {row_count:,} total rows / {len(chunks)} chunks = ~{int(avg_rows_per_chunk):,} rows per chunk (target: {chunk_size:,})")
             return chunks
     else:
-         logger.info(f"Planned {len(chunks)} chunks for table '{table}': chunk_size={chunk_size}")
-         logger.info(f"Chunks: {chunks}")
+         logger.info(f"Planned {len(chunks)} chunks for table '{table}' (row count not available for validation)")
          return chunks
 
 
