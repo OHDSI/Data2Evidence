@@ -4,6 +4,7 @@ import { ConfigEntity, IConfigEntity } from "./ConfigEntity";
 
 export class AttributeConfig extends ConfigEntity {
     public useDefaultFilter: boolean = false;
+    private readonly noMatchingConceptText = "No matching concept";
 
     constructor(
         __config: IConfigEntity,
@@ -32,6 +33,38 @@ export class AttributeConfig extends ConfigEntity {
         }
 
         return this.getConfig().measureExpression;
+    }
+
+    /**
+     * - If the original config expression is empty, returns `renderedExpression`.
+     * - If the original expression is already COALESCE-wrapped, returns `renderedExpression` unchanged.
+     * - If the original expression starts with @REF, @REF0, @REF1, etc., wraps the rendered
+     *   expression as: COALESCE(<renderedExpression>, 'this.noMatchingConceptText').
+     * - Otherwise returns `renderedExpression` unchanged.
+     *
+     * This is required as expressions starting with @REF are LEFT JOIN and for rows that have no matches, instead of rendering NULL, COALESCE value to a hardcoded text value.
+     */
+
+    private wrapLeadingRefExpression(
+        originalExpression: string,
+        renderedExpression: string
+    ): string {
+        if (!originalExpression || !renderedExpression) {
+            return renderedExpression;
+        }
+        if (/^\s*COALESCE\s*\(/i.test(originalExpression)) {
+            return renderedExpression;
+        }
+        if (/^\s*@REF\d*(\.|$)/i.test(originalExpression)) {
+            return (
+                "COALESCE(" +
+                renderedExpression +
+                ", '" +
+                this.noMatchingConceptText +
+                "')"
+            );
+        }
+        return renderedExpression;
     }
 
     public getMeasureExpressionWithReplacedPlaceholder2(
@@ -82,13 +115,19 @@ export class AttributeConfig extends ConfigEntity {
             return null;
         }
 
-        let table = [
-            this.__config.expression.replace(/@[^.^\s]+/g, (x) =>
+        const renderedExpression = this.__config.expression.replace(
+            /@[^.^\s]+/g,
+            (x) =>
                 self._replacePlaceholderInSQLString(
                     x,
                     getTableAliasFunc,
                     scopeTableAlias
                 )
+        );
+        let table = [
+            this.wrapLeadingRefExpression(
+                this.__config.expression,
+                renderedExpression
             ),
         ];
 
@@ -152,13 +191,19 @@ export class AttributeConfig extends ConfigEntity {
             return null;
         }
 
-        let table = [
-            this.__config.expression.replace(/@[^.^\s]+/g, (x) =>
+        const renderedExpression = this.__config.expression.replace(
+            /@[^.^\s]+/g,
+            (x) =>
                 self._replacePlaceholderInSQLString(
                     x,
                     getTableAliasFunc,
                     scopeTableAlias
                 )
+        );
+        let table = [
+            this.wrapLeadingRefExpression(
+                this.__config.expression,
+                renderedExpression
             ),
         ];
 
@@ -226,18 +271,19 @@ export class AttributeConfig extends ConfigEntity {
         getTableAliasFunc,
         scopeTableAlias
     ) {
-        let table = null;
+        let table: null | string = null;
         let self = this;
 
         let df: string = this.__config.expression;
         if (df) {
-            table = df.replace(/@[^.^\s]+/g, (x) =>
+            const renderedExpression = df.replace(/@[^.^\s]+/g, (x) =>
                 self._replacePlaceholderInSQLString(
                     x,
                     getTableAliasFunc,
                     scopeTableAlias
                 )
             );
+            table = this.wrapLeadingRefExpression(df, renderedExpression);
         }
         return table;
     }
@@ -368,7 +414,8 @@ export class AttributeConfig extends ConfigEntity {
             if (
                 this.settings.getAttributesTablePlaceholders().indexOf(x) >
                     -1 ||
-                x === "@TEXT" ||  x.startsWith("@REF")
+                x === "@TEXT" ||
+                x.startsWith("@REF")
             ) {
                 this.useDefaultFilter = true;
                 tmp = getTableAliasFunc(
@@ -390,7 +437,8 @@ export class AttributeConfig extends ConfigEntity {
             if (
                 (this.settings.getAttributesTablePlaceholders().indexOf(x) >
                     -1 ||
-                    x === "@TEXT" ||  x.startsWith("@REF")) &&
+                    x === "@TEXT" ||
+                    x.startsWith("@REF")) &&
                 this.getExpressionHash().length > 0
             ) {
                 tmp = getTableAliasFunc(
