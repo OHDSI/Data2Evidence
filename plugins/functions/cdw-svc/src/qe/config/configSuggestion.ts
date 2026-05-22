@@ -442,12 +442,13 @@ export function generateConfigWithDefaultAttributes(
 }
 
 export function generateEmptyConfig(callback: CallBackInterface) {
-  callback(
-    null,
-    getEmptyConfig(
-      EnvVarUtils.getAnalyticsConnectionParameters({ tag: "analytics" })
-    )
-  );
+  let params: any = { vocabSchema: "" };
+  try {
+    params = EnvVarUtils.getAnalyticsConnectionParameters({ tag: "analytics" });
+  } catch {
+    // No analytics-tagged service in VCAP_SERVICES (local/CI); UI fills these.
+  }
+  callback(null, getEmptyConfig(params));
 }
 
 /**

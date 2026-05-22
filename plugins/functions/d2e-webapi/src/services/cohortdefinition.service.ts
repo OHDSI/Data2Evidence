@@ -206,22 +206,8 @@ export const getCohortDefinitionList = async (
     rawDataFromBookmarks,
     baseMaterializedCohorts,
   ] = await Promise.all([
-    portalServerApi.getAtlasCohortDefinitionList(datasetId).catch((error) => {
-      console.error(
-        "Failed to fetch atlas cohort definitions, continuing with empty list:",
-        error,
-      );
-      return [] as Awaited<
-        ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
-      >;
-    }),
-    bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
-      console.error(
-        "Failed to fetch bookmarks, continuing with empty list:",
-        error,
-      );
-      return { bookmarks: [], schemaName: "" };
-    }),
+    portalServerApi.getAtlasCohortDefinitionList(datasetId),
+    bookmarksApi.getAllBookmarks(datasetId),
     analyticsSvcAPI
       .getFilteredCohorts(datasetId, { datasetId }) // Try to get materialized cohorts, but continue with empty list if it fails
       .then((result) => (Array.isArray(result) ? result : [])) // Handle undefined or non-array results
@@ -235,16 +221,7 @@ export const getCohortDefinitionList = async (
   ]);
 
   // Parse bookmark and atlas cohort definition
-  const bookmarksParse = BookmarksSchema.safeParse(rawDataFromBookmarks);
-  if (!bookmarksParse.success) {
-    console.error(
-      "BookmarksSchema parse failed, continuing with empty bookmarks:",
-      bookmarksParse.error,
-    );
-  }
-  const parsedbookmarks = bookmarksParse.success
-    ? bookmarksParse.data.bookmarks
-    : [];
+  const parsedbookmarks = BookmarksSchema.parse(rawDataFromBookmarks).bookmarks;
   const parsedAtlasCohortDefinitions = mapAtlasCohortDefinitions(
     atlasCohortDefinitions,
   );
@@ -253,16 +230,7 @@ export const getCohortDefinitionList = async (
   const bookmarkIdToCohortId = new Map<string, number>();
   const atlasDefIdToCohortId = new Map<number, number>();
   for (const cohort of baseMaterializedCohorts) {
-    let syntax: { bookmarkId?: string; atlasCohortDefinitionId?: number };
-    try {
-      syntax = JSON.parse(cohort.syntax);
-    } catch (error) {
-      console.error(
-        `Failed to parse syntax for materialized cohort ${cohort.id}, skipping:`,
-        error,
-      );
-      continue;
-    }
+    const syntax = JSON.parse(cohort.syntax);
     if (syntax.bookmarkId !== undefined) {
       bookmarkIdToCohortId.set(syntax.bookmarkId, cohort.id);
     }

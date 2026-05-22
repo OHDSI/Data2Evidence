@@ -8,7 +8,7 @@ const expect = baseExpect.configure({ timeout: 60000 })
 test.use({ actionTimeout: 60000 })
 
 const TEST_NAME = 'CDM configuration creation'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
