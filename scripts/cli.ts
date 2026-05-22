@@ -6,8 +6,16 @@ import * as crypto from "crypto";
 import * as path from "path";
 import * as fs from "fs";
 import * as readline from "readline";
-import { execSync, spawnSync } from "child_process";
+import { execSync } from "child_process";
 import { LibUtils } from "./lib";
+import { dockerComposeContent } from "./docker-compose-embed";
+import { setupDemo } from "./setupdemo";
+import { checkSetupDemoFlow } from "./check-setupdemo-flow";
+import { setupHTTPTestEnv as runSetupHTTPTestEnv } from "./setuphttptestenv";
+import { syncRoles as runSyncRoles } from "./syncroles";
+import { setupDemoHana } from "./setupdemohana";
+import { checkSetupDemoHanaFlow } from "./check-setupdemohana-flow";
+import { getNoProxy as runGetNoProxy } from "./get-noproxy";
 
 interface CliOptions {
   functionPath?: string;
@@ -37,6 +45,7 @@ class D2ECli {
   ENV_TYPE: string;
   DOCKER_LOG_LEVEL: string;
   node_modules_path: string;
+  compose_dir: string;
   script_full_path: string;
   program: Command;
   port: string;
@@ -58,10 +67,23 @@ class D2ECli {
 
   constructor() {
     this.script_full_path = path.resolve(__dirname, "..");
-    this.node_modules_path = this.initialise_node_modules_path();
+    this.node_modules_path = (globalThis as any).Bun
+      ? (process.env.D2ECLI_NODE_MODULES_PATH ?? process.cwd())
+      : this.initialise_node_modules_path();
+    this.compose_dir = (globalThis as any).Bun
+      ? process.cwd()
+      : this.node_modules_path;
+    this.extract_compose_file();
     this.program = new Command();
     this.libUtils = new LibUtils();
     this.install_options();
+  }
+
+  extract_compose_file(): void {
+    const dest = path.join(this.compose_dir, "docker-compose.yml");
+    if (!fs.existsSync(dest)) {
+      fs.writeFileSync(dest, dockerComposeContent);
+    }
   }
 
   // Functions
@@ -405,7 +427,7 @@ class D2ECli {
     dockerbasecmd.push("compose");
     dockerbasecmd.push(
       "--file",
-      `${this.node_modules_path}/docker-compose.yml`,
+      `${this.compose_dir}/docker-compose.yml`,
     );
     if (options.demo) dockerbasecmd.push("--profile", "demodb");
     if (options.dicom) dockerbasecmd.push("--profile", "dicom");
@@ -414,7 +436,7 @@ class D2ECli {
     if (options.hana) dockerbasecmd.push("--profile", "hana");
     if (options.minio) dockerbasecmd.push("--profile", "minio");
     if (options.functionPath) {
-      const dev = `--file ${this.node_modules_path}/docker-compose-local.yml`;
+      const dev = `--file ${this.compose_dir}/docker-compose-local.yml`;
       dockerbasecmd.push(dev);
     }
     dockerbasecmd.push("--env-file", this.ENVFILE);
@@ -482,34 +504,6 @@ class D2ECli {
       }),
     );
   }
-  setup_zx_cmd() {
-    // console.log("Setting up zx command...");
-    let zx_cmd: string;
-    const zxBin = path.join(
-      `${this.node_modules_path}`,
-      "node_modules",
-      ".bin",
-      "zx",
-    );
-    const zxCliJs = path.join(
-      `${this.node_modules_path}`,
-      "node_modules",
-      "zx",
-      "build",
-      "cli.js",
-    );
-
-    if (fs.existsSync(zxCliJs)) {
-      zx_cmd = `node ${zxCliJs}`;
-      return zx_cmd;
-    } else if (fs.existsSync(zxBin)) {
-      zx_cmd = process.platform === "win32" ? `${zxBin}.cmd` : zxBin;
-      return zx_cmd;
-    } else {
-      console.error("Error: zx not found in node_modules");
-      process.exit(1);
-    }
-  }
   patch_demodb() {
     console.log("Patching demodb...");
     const database_host = `${this.PROJECT_NAME}-demodb`;
@@ -533,188 +527,57 @@ class D2ECli {
       console.error("Error running patch_demodb:", error);
     }
   }
-  setupdemo() {
+  async setupdemo(): Promise<void> {
     console.log("Setting up demo database...");
     this.patch_demodb();
-    const database_host = `${this.PROJECT_NAME}-demodb`;
-    const zx_cmd = this.setup_zx_cmd();
-    const setupdemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemo.mjs -n ${this.ENVFILE}`;
-    const setupdemo = spawnSync(setupdemoCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (setupdemo.error) {
-      console.error("Failed to run script:", setupdemo.error);
-      process.exit(1);
-    }
-    if (setupdemo.status !== 0) {
-      console.error(`setupdemo exited with code ${setupdemo.status}`);
-      process.exit(1);
-    }
-
-    const checkSetupDemoCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
-    const check_setupdemo = spawnSync(checkSetupDemoCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (check_setupdemo.error) {
-      console.error("Failed to run script:", check_setupdemo.error);
-      process.exit(1);
-    }
-    if (check_setupdemo.status !== 0) {
-      console.error(
-        `check_setupdemo exited with code ${check_setupdemo.status}`,
-      );
-      process.exit(1);
-    }
+    process.env.PORT = this.port;
+    await setupDemo(this.ENVFILE).catch((e) => { console.error("setupDemo failed:", e); process.exit(1); });
+    await checkSetupDemoFlow(this.ENVFILE).catch((e) => { console.error("checkSetupDemoFlow failed:", e); process.exit(1); });
   }
-  setupHTTPTestEnv() {
+
+  async setupHTTPTestEnv(): Promise<void> {
     console.log("Setting up http test database...");
     this.patch_demodb();
-    const database_host = `${this.PROJECT_NAME}-demodb`;
-    const zx_cmd = this.setup_zx_cmd();
-    const setupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setuphttptestenv.mjs -n ${this.ENVFILE}`;
-    const setupHTTPTestEnv = spawnSync(setupHTTPTestEnvCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (setupHTTPTestEnv.error) {
-      console.error("Failed to run script:", setupHTTPTestEnv.error);
-      process.exit(1);
-    }
-    if (setupHTTPTestEnv.status !== 0) {
-      console.error(`setupdemo exited with code ${setupHTTPTestEnv.status}`);
-      process.exit(1);
-    }
-
-    const checkSetupHTTPTestEnvCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE}`;
-    const check_setuphttptestenv = spawnSync(checkSetupHTTPTestEnvCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (check_setuphttptestenv.error) {
-      console.error("Failed to run script:", check_setuphttptestenv.error);
-      process.exit(1);
-    }
-    if (check_setuphttptestenv.status !== 0) {
-      console.error(
-        `check_setupdemo exited with code ${check_setuphttptestenv.status}`,
-      );
-      process.exit(1);
-    }
+    process.env.PORT = this.port;
+    await runSetupHTTPTestEnv(this.ENVFILE).catch(() => process.exit(1));
+    await checkSetupDemoFlow(this.ENVFILE).catch(() => process.exit(1));
   }
 
-  getbearertoken() {
-    // console.log("getting bearer token...");
-    // console.log(`===> all env vars: \n ${JSON.stringify(process.env)}`);
-    // this.patch_demodb();
-    const database_host = `${this.PROJECT_NAME}-demodb`;
-    const zx_cmd = this.setup_zx_cmd();
-    const getBearerTokenCmd = `${zx_cmd} ${this.node_modules_path}/scripts/get-bearer-token.mjs -n ${this.ENVFILE}`;
-    const getBearerToken = spawnSync(getBearerTokenCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (getBearerToken.error) {
-      console.error("Failed to run script:", getBearerToken.error);
-      process.exit(1);
-    }
-    if (getBearerToken.status !== 0) {
-      console.error(`setupdemo exited with code ${getBearerToken.status}`);
-      process.exit(1);
-    }
+  getbearertoken(): void {
+    console.error("getbearertoken: script not available in this build");
+    process.exit(1);
   }
 
-  setupdemohana() {
+  async setupdemohana(): Promise<void> {
     console.log("Setting up demo database for hana...");
-    const zx_cmd = this.setup_zx_cmd();
-    const setupdemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/setupdemohana.mjs -n ${this.ENVFILE}`;
-    const setupdemohana = spawnSync(setupdemohanaCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (setupdemohana.error) {
-      console.error("Failed to run script:", setupdemohana.error);
-      process.exit(1);
-    }
-    if (setupdemohana.status !== 0) {
-      console.error(`setupdemohana exited with code ${setupdemohana.status}`);
-      process.exit(1);
-    }
-
-    const checkSetupDemohanaCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemohana-flow.mjs -n ${this.ENVFILE}`;
-    const check_setupdemohana = spawnSync(checkSetupDemohanaCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (check_setupdemohana.error) {
-      console.error("Failed to run script:", check_setupdemohana.error);
-      process.exit(1);
-    }
-    if (check_setupdemohana.status !== 0) {
-      console.error(
-        `check_setupdemohana exited with code ${check_setupdemohana.status}`,
-      );
-      process.exit(1);
-    }
+    process.env.PORT = this.port;
+    await setupDemoHana(this.ENVFILE).catch(() => process.exit(1));
+    await checkSetupDemoHanaFlow(this.ENVFILE).catch(() => process.exit(1));
   }
 
-  checkflow() {
+  async checkflow(): Promise<void> {
     console.log("Checking flow...");
-    const zx_cmd = this.setup_zx_cmd();
-    const checkflowCmd = `${zx_cmd} ${this.node_modules_path}/scripts/check-setupdemo-flow.mjs -n ${this.ENVFILE} -b ${this.PROJECT_NAME}-demodb`;
-    const checkflow = spawnSync(checkflowCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (checkflow.error) {
-      console.error("Failed to run script:", checkflow.error);
-      process.exit(1);
-    }
+    process.env.PORT = this.port;
+    await checkSetupDemoFlow(this.ENVFILE).catch(() => process.exit(1));
   }
 
-  getnoproxy() {
-    const zx_cmd = this.setup_zx_cmd();
-    const getnoproxyCmd = `${zx_cmd} ${this.node_modules_path}/scripts/get-noproxy.mjs --script_full_path ${this.node_modules_path}`;
-    const getnoproxy = spawnSync(getnoproxyCmd, [], {
-      env: { ...process.env, DOTENV_FILE: this.ENVFILE, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (getnoproxy.error) {
-      console.error("Failed to run script:", getnoproxy.error);
-      process.exit(1);
-    }
+  async getnoproxy(): Promise<void> {
+    process.env.PORT = this.port;
+    process.env.DOTENV_FILE = this.ENVFILE;
+    await runGetNoProxy(this.compose_dir).catch(() => process.exit(1));
   }
 
-  syncRoles(): { ok: boolean } {
+  async syncRoles(): Promise<{ ok: boolean }> {
     console.log("Syncing roles...");
     dotenvConfig({ path: this.ENVFILE });
     this.load_env_variables();
-    const zx_cmd = this.setup_zx_cmd();
-    const syncrolesCmd = `${zx_cmd} ${this.node_modules_path}/scripts/syncroles.mjs -n ${this.ENVFILE}`;
-    const syncrolesProc = spawnSync(syncrolesCmd, [], {
-      env: { ...process.env, PORT: this.port },
-      stdio: "inherit",
-      shell: true,
-    });
-    if (syncrolesProc.error) {
-      console.error("Failed to run script:", syncrolesProc.error);
+    process.env.PORT = this.port;
+    try {
+      await runSyncRoles(this.ENVFILE);
+      return { ok: true };
+    } catch {
       return { ok: false };
     }
-    if (syncrolesProc.status !== 0) {
-      console.error(`syncroles exited with code ${syncrolesProc.status}`);
-      return { ok: false };
-    }
-    return { ok: true };
   }
 
   needsSyncRoles(): boolean {
@@ -817,7 +680,7 @@ class D2ECli {
           shell: true,
           env: env,
         });
-        proc.on("close", (code) => {
+        proc.on("close", async (code) => {
           if (code !== 0) {
             console.log(`Process exited with code ${code}`);
             return;
@@ -830,7 +693,7 @@ class D2ECli {
           console.log(
             "Detected pending one-time role migration. Running syncroles...",
           );
-          const r = this.syncRoles();
+          const r = await this.syncRoles();
           if (!r.ok) {
             console.warn(
               "Auto role sync failed. Services are running, but login may be broken " +
@@ -987,9 +850,7 @@ class D2ECli {
       .command("version")
       .description("Displays d2e CLI version")
       .action(() => {
-        const pkgPath = path.join(this.node_modules_path, "package.json");
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-        console.log(`d2e CLI version:    ${pkg.version}`);
+        console.log(`d2e CLI version:    ${this.default_version}`);
         console.log(`Docker Image tag:   ${this.DOCKER_TAG_NAME}`);
         console.log(`Plugins API version: ${this.PLUGINS_API_VERSION}`);
       });
@@ -1141,7 +1002,7 @@ class D2ECli {
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
-        this.setupdemo();
+        await this.setupdemo();
       });
     this.program
       .command("setuphttptestenv")
@@ -1151,7 +1012,7 @@ class D2ECli {
       .action(async () => {
         dotenvConfig({ path: this.ENVFILE });
         this.load_env_variables();
-        this.setupHTTPTestEnv();
+        await this.setupHTTPTestEnv();
       });
     this.program
       .command("getbearertoken")
@@ -1159,8 +1020,6 @@ class D2ECli {
         "Load d2e services. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
-        dotenvConfig({ path: this.ENVFILE });
-        this.load_env_variables();
         this.getbearertoken();
       });
     this.program
@@ -1169,14 +1028,14 @@ class D2ECli {
         "Load d2e services for hana. Requires d2e init and d2e setup to be run.",
       )
       .action(async () => {
-        this.setupdemohana();
+        await this.setupdemohana();
       });
     const checkflow_cmd = this.program
       .command("checkflow")
       .description("Check setupdemo flow")
       .action(async () => {
         console.log("Checking setupdemo flow...");
-        this.checkflow();
+        await this.checkflow();
       });
     (checkflow_cmd as any)._hidden = true;
     const getnoproxy_cmd = this.program
@@ -1184,14 +1043,14 @@ class D2ECli {
       .description("Getting noproxy for d2e services")
       .action(async () => {
         console.log("Getting no proxy setup...");
-        this.getnoproxy();
+        await this.getnoproxy();
       });
     (getnoproxy_cmd as any)._hidden = true;
     this.program
       .command("syncroles")
       .description("Sync usermgmt roles to Logto (one-time migration)")
       .action(async () => {
-        const r = this.syncRoles();
+        const r = await this.syncRoles();
         if (!r.ok) process.exit(1);
       });
     const update_tag = this.program
