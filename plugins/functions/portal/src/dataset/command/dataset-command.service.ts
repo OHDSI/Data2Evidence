@@ -148,7 +148,7 @@ export class DatasetCommandService {
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultsSchemaName: datasetDto.resultsSchemaName,
       type: datasetDto.type,
-      fhirDatasetId: datasetDto.fhirDatasetId
+      fhirDatasetId: datasetDto.fhirDatasetId ?? null,
     }, datasetDto.detail);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
