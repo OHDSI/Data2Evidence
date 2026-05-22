@@ -643,7 +643,7 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
+      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "i2b2-flow", "data-management-flow"]'
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
