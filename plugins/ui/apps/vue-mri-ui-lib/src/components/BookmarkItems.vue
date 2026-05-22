@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatNumber } from '../utils/NumberUtils'
 import { onMounted, computed, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
@@ -17,6 +18,7 @@ import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
 import { getBookmarkType, canModifyBookmark } from '../utils/BookmarkUtils'
 import { getPortalAPI } from '../utils/PortalUtils'
+import { modeOrder } from './StackBarModes/modes'
 
 const store = useStore()
 
@@ -143,7 +145,7 @@ const totalPages = computed(() => {
   return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
-const paginatedBookmarks = computed(() => {  
+const paginatedBookmarks = computed(() => {
   if (!isAtlas) {
     return bookmarksDisplaySorted.value
   }
@@ -151,6 +153,16 @@ const paginatedBookmarks = computed(() => {
   const start = (currentPage.value - 1) * Number(itemsPerPage.value)
   const end = start + Number(itemsPerPage.value)
   return bookmarksDisplaySorted.value.slice(start, end)
+})
+
+const barChartModeLabels = computed(() => {
+  const map = new WeakMap<Bookmark, string>()
+  for (const bd of paginatedBookmarks.value) {
+    if (bd.bookmark) {
+      map.set(bd.bookmark, getBarChartModeLabel(bd.bookmark))
+    }
+  }
+  return map
 })
 
 // Watch for changes in bookmarks and reset pagination if needed
@@ -243,6 +255,17 @@ const getChartInfo = (chart: string, type: string) => {
     return Constants.chartInfo[chart][type]
   }
   return ''
+}
+
+const getBarChartModeLabel = (bookmark: Bookmark): string => {
+  if (!bookmark || bookmark.chartType !== 'stacked' || !bookmark.data) return ''
+  try {
+    const mode = JSON.parse(bookmark.data)?.barChartType?.mode
+    const meta = modeOrder.find(m => m.id === mode)
+    return meta?.labelKey ? getText(meta.labelKey) : (meta?.label ?? '')
+  } catch {
+    return ''
+  }
 }
 
 const getConstraint = (constraint: any): string => {
@@ -439,7 +462,12 @@ onErrorCaptured((err, instance, info) => {
                         :style="'font-family:' + getChartInfo(bookmarkDisplay.bookmark.chartType, 'iconGroup')"
                         >{{ getChartInfo(bookmarkDisplay.bookmark.chartType, 'icon') }}</span
                       >
-                      <div>{{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}</div>
+                      <div>
+                        {{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}
+                        <template v-if="barChartModeLabels.get(bookmarkDisplay.bookmark)">
+                          - {{ barChartModeLabels.get(bookmarkDisplay.bookmark) }}
+                        </template>
+                      </div>
                     </div>
                     <div style="display: flex">
                       <div>
@@ -468,12 +496,6 @@ onErrorCaptured((err, instance, info) => {
                           </div>
                         </template>
                       </div>
-                    </div>
-                    <div style="display: flex">
-                      <div>
-                        <span class="icon"></span>
-                      </div>
-                      <div>{{ getText('MRI_PA_EXTENSION_EXPORT_HEADER') }}</div>
                     </div>
                   </div>
                 </div>
@@ -534,7 +556,7 @@ onErrorCaptured((err, instance, info) => {
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Patient Count:</div>
-                  <div class="ui-light-text">{{ bookmarkDisplay.cohortDefinition.patientCount }}</div>
+                  <div class="ui-light-text">{{ formatNumber(bookmarkDisplay.cohortDefinition.patientCount) }}</div>
                 </div>
                 <div style="display: flex">
                   <div class="ui-darkest-text" style="font-weight: bold; margin-right: 10px">Created On:</div>
@@ -596,7 +618,7 @@ onErrorCaptured((err, instance, info) => {
                 : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="addCohort(bookmarkDisplay)"
+            @click.stop="canDatasetMaterializeCohorts && addCohort(bookmarkDisplay)"
             :title="
               ['D', 'D+M', 'A', 'A+M'].includes(getBookmarkType(bookmarkDisplay)) && canDatasetMaterializeCohorts
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')

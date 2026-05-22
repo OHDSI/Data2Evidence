@@ -1,17 +1,19 @@
 import React, { FC, useCallback, useState } from "react";
+import CircularProgress from "@mui/material/CircularProgress";
 import { UserWithRolesInfoExt } from "../../../types";
 import { EllipsisVerticalIcon, IconButton, Menu, MenuItem } from "@portal/components";
 import { useTranslation } from "../../../contexts";
 
 interface MoreActionButtonProps {
   user: UserWithRolesInfoExt;
-  onActivateClick: () => void;
+  onActivateClick: () => Promise<void> | void;
   onChangePasswordClick: () => void;
 }
 
 export const MoreActionButton: FC<MoreActionButtonProps> = ({ user, onActivateClick, onChangePasswordClick }) => {
   const { getText, i18nKeys } = useTranslation();
   const [actionEl, setActionEl] = useState<null | HTMLElement>(null);
+  const [activating, setActivating] = useState(false);
 
   const handleOpenAction = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setActionEl(event.currentTarget);
@@ -21,19 +23,31 @@ export const MoreActionButton: FC<MoreActionButtonProps> = ({ user, onActivateCl
     setActionEl(null);
   }, []);
 
-  const handleMenuClick = useCallback((fn: () => void) => {
+  const handleActivate = useCallback(async () => {
     setActionEl(null);
-    typeof fn === "function" && fn();
-  }, []);
+    try {
+      setActivating(true);
+      await onActivateClick();
+    } finally {
+      setActivating(false);
+    }
+  }, [onActivateClick]);
+
+  const handleChangePassword = useCallback(() => {
+    setActionEl(null);
+    onChangePasswordClick();
+  }, [onChangePasswordClick]);
 
   return (
     <>
-      <IconButton startIcon={<EllipsisVerticalIcon />} onClick={handleOpenAction} />
+      <IconButton
+        startIcon={activating ? <CircularProgress size={16} /> : <EllipsisVerticalIcon />}
+        onClick={handleOpenAction}
+        disabled={activating}
+      />
       <Menu anchorEl={actionEl} open={Boolean(actionEl)} onClose={handleCloseAction}>
-        <MenuItem onClick={() => handleMenuClick(onActivateClick)}>{user.active ? "Deactivate" : "Activate"}</MenuItem>
-        <MenuItem onClick={() => handleMenuClick(onChangePasswordClick)}>
-          {getText(i18nKeys.MORE_ACTION_BUTTON__CHANGE_PASSWORD)}
-        </MenuItem>
+        <MenuItem onClick={handleActivate}>{user.active ? "Deactivate" : "Activate"}</MenuItem>
+        <MenuItem onClick={handleChangePassword}>{getText(i18nKeys.MORE_ACTION_BUTTON__CHANGE_PASSWORD)}</MenuItem>
       </Menu>
     </>
   );

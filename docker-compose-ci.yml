@@ -1,0 +1,4 @@
+services:
+  trex:
+    volumes:
+      - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr

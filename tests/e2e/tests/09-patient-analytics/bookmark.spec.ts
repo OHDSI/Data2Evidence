@@ -23,7 +23,10 @@ async function openDatasetCohorts(page) {
       await cohortsLink.click()
       return
     } catch {
-      await page.getByRole('link', { name: 'Dataset' }).click().catch(() => {})
+      await page
+        .getByRole('link', { name: 'Dataset' })
+        .click()
+        .catch(() => {})
     }
   }
   throw new Error('Cohorts link did not appear for selected dataset within ~60s')
@@ -79,6 +82,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('textbox', { name: 'search terms' }).click()
       await page.getByRole('textbox', { name: 'search terms' }).fill('Chronic sinusitis')
       await page.getByRole('button', { name: 'Search' }).click()
+      await expect(page.getByRole('row', { name: /40055000.*Chronic sinusitis/ })).toBeVisible({ timeout: 60_000 })
       await page
         .getByRole('row', { name: /40055000.*Chronic sinusitis/ })
         .locator('td')
@@ -114,7 +118,11 @@ test(TEST_NAME, async ({ page }) => {
     //   .filter({ hasText: /^Select an Attribute$/ })
     //   .getByRole('button')
     //   .click()
-    await page.locator('button.axisMenuButton', { hasText: 'Gender' }).first().click()
+    await page
+      .locator('.axis-group--bottom .axis-subgroup')
+      .last()
+      .locator('button.axisMenuButton', { hasText: 'Gender' })
+      .click()
     await page.locator('#pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
@@ -149,7 +157,11 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
-    await page.getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' }).click()
+    await page
+      .locator('.axis-group--bottom .axis-subgroup')
+      .last()
+      .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
+      .click()
     await page.getByText('Reset Selection').click()
     await expect(page.locator('.loading-animation-component')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
@@ -235,9 +247,9 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
-    await page.getByText('Remove').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Remove').click()
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
-    await page.getByText(' Sort Descending').click()
+    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
     //Add basic filters
     await page.getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
@@ -367,7 +379,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('cell', { name: NAME.testUserB })).toBeVisible()
     //Grant permissions to testuserB
     await page.getByRole('link', { name: 'Datasets' }).click()
-    await page.getByRole('cell', { name: 'omop', exact: true }).nth(0).locator('..').getByText('Select action').click()
+    await page.locator('tr', { hasText: 'Demo dataset' }).first().getByText('Select action').click()
     await page.getByRole('option', { name: 'Permissions' }).click()
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
