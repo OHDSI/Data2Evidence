@@ -343,13 +343,14 @@ export class HanaHDBDao {
             SCORE() as score
           from
             ${this.vocabSchemaName}.concept
-            WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}))
+            WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}, 'similarCalculationMode=substringsearch'))
             ${filterWhereClause.replace("WHERE", "AND")}
             order by score desc
           )
         `,
-        // Surround searchText with asteriks for greedy search
-        [`*${searchText}*`],
+        // Use similarCalculationMode=substringsearch so that fuzzy search works on search text as a subpart
+        // Wrap searchText with double quotes as it might contains spaces
+        [`"${searchText}"`],
       ];
     }
   };
