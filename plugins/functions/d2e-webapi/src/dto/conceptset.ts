@@ -63,60 +63,68 @@ export const ConceptSetItemDto = z.object({
 export const ConceptSetItemListDto = z.array(ConceptSetItemDto);
 export type IConceptSetItemListDto = z.infer<typeof ConceptSetItemListDto>;
 
-export const ConceptSetTagGroup = z.object({
-  createdDate: z.number(),
-  modifiedDate: z.number(),
-  hasWriteAccess: z.boolean(),
-  hasReadAccess: z.boolean(),
+const ConceptSetTagBase = z.object({
+  createdBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  modifiedBy: z
+    .object({
+      name: z.string().optional(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  createdDate: z.number().nullable().optional(),
+  modifiedDate: z.number().nullable().optional(),
+  writeAccess: z.boolean().nullable().optional(),
+  readAccess: z.boolean().nullable().optional(),
   id: z.number(),
-  // TODO add types for groups
-  groups: z.array(z.unknown()),
   name: z.string(),
   type: z.string(),
   count: z.number(),
   showGroup: z.boolean(),
   multiSelection: z.boolean(),
   permissionProtected: z.boolean(),
-  icon: z.string(),
-  color: z.string(),
+  icon: z.string().nullable().optional(),
+  color: z.string().nullable().optional(),
   mandatory: z.boolean(),
   allowCustom: z.boolean(),
-  description: z.string(),
+  description: z.string().nullable().optional(),
 });
 
-export const ConceptSetTag = z.object({
-  createdDate: z.number(),
-  hasWriteAccess: z.boolean(),
-  hasReadAccess: z.boolean(),
-  id: z.number(),
-  groups: z.array(ConceptSetTagGroup),
-  name: z.string(),
-  type: z.string(),
-  count: z.number(),
-  showGroup: z.boolean(),
-  multiSelection: z.boolean(),
-  permissionProtected: z.boolean(),
-  mandatory: z.boolean(),
-  allowCustom: z.boolean(),
+export const ConceptSetTag: z.ZodType<any> = ConceptSetTagBase.extend({
+  groups: z.lazy(() => z.array(ConceptSetTag).nullable().optional()),
 });
 
 export const ConceptSetResponseDto = z.object({
-  createdDate: z.number(),
-  createdBy: z.object({
-    name: z.string(),
-    id: z.number().optional(),
-    login: z.string().optional(),
-  }),
-  modifiedDate: z.number(),
-  modifiedBy: z.object({
-    name: z.string(),
-    id: z.number().optional(),
-    login: z.string().optional(),
-  }),
-  hasWriteAccess: z.boolean(),
-  hasReadAccess: z.boolean(),
-  tags: z.array(ConceptSetTag).optional(),
-  description: z.string().optional(),
+  createdDate: z.number().nullable().optional(),
+  createdBy: z
+    .object({
+      name: z.string(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  modifiedDate: z.number().nullable().optional(),
+  modifiedBy: z
+    .object({
+      name: z.string(),
+      id: z.number().optional(),
+      login: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
+  hasWriteAccess: z.boolean().nullable().optional(),
+  hasReadAccess: z.boolean().nullable().optional(),
+  tags: z.array(ConceptSetTag).nullable().optional(),
+  description: z.string().nullable().optional(),
   id: z.number(),
   name: z.string(),
   shared: z.boolean(),

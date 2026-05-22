@@ -12,7 +12,6 @@ import {
   IConceptSetCheckResponseDto,
 } from "../dto/conceptset.ts";
 import { ConceptSetInUseError } from "../errors/ConceptSetErrors.ts";
-import { LegacyConceptSetReadOnlyError } from "../errors/ConceptSetErrors.ts";
 
 import {
   getConceptSet,
@@ -139,25 +138,14 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      try {
-        const { id } = req.params;
-        const results = await updateConceptSet(
-          req.token,
-          req.datasetId,
-          id,
-          req.body
-        );
-        res.send(results);
-      } catch (error) {
-        if (error instanceof LegacyConceptSetReadOnlyError) {
-          res.status(403).send({
-            error: "LEGACY_CONCEPT_SET_READ_ONLY",
-            message: error.message,
-          });
-          return;
-        }
-        throw error;
-      }
+      const { id } = req.params;
+      const results = await updateConceptSet(
+        req.token,
+        req.datasetId,
+        id,
+        req.body
+      );
+      res.send(results);
     }
   );
 
@@ -237,24 +225,13 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       },
     },
     async (req, res) => {
-      try {
-        const result = await updateConceptSetItems(
-          req.token,
-          req.datasetId,
-          req.params.id,
-          req.body
-        );
-        res.send(result);
-      } catch (error) {
-        if (error instanceof LegacyConceptSetReadOnlyError) {
-          res.status(403).send({
-            error: "LEGACY_CONCEPT_SET_READ_ONLY",
-            message: error.message,
-          });
-          return;
-        }
-        throw error;
-      }
+      const result = await updateConceptSetItems(
+        req.token,
+        req.datasetId,
+        req.params.id,
+        req.body
+      );
+      res.send(result);
     }
   );
 
@@ -284,13 +261,6 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         await deleteConceptSet(req.token, req.datasetId, id);
         res.status(204).send();
       } catch (error) {
-        if (error instanceof LegacyConceptSetReadOnlyError) {
-          res.status(403).send({
-            error: "LEGACY_CONCEPT_SET_READ_ONLY",
-            message: error.message,
-          });
-          return;
-        }
         if (error instanceof ConceptSetInUseError) {
           const cohortCount = error.cohortDefinitions.length;
           const bookmarkCount = error.bookmarks.length;

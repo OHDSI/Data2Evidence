@@ -52,7 +52,7 @@ vi.mock("@mui/icons-material/Delete", () => ({
 import { ConceptSetsTable } from "./ConceptSetsTable";
 
 describe("ConceptSetsTable", () => {
-  it("renders view-only actions for read-only legacy concept sets", () => {
+  it("renders edit and delete actions for writable legacy concept sets", () => {
     const onAddEdit = vi.fn();
     const onDelete = vi.fn();
 
@@ -66,7 +66,7 @@ describe("ConceptSetsTable", () => {
             shared: false,
             createdBy: "owner",
             userName: "owner",
-            hasWriteAccess: false,
+            hasWriteAccess: true,
           },
         ]}
         isLoading={false}
@@ -76,13 +76,17 @@ describe("ConceptSetsTable", () => {
       />
     );
 
-    expect(screen.getByText("VisibilityOnIcon")).toBeTruthy();
-    expect(screen.queryByText("EditIcon")).toBeNull();
-    expect(screen.queryByTestId("DeleteIcon")).toBeNull();
+    const row = screen.getByTestId("row-15");
+    const buttons = within(row).getAllByRole("button");
+    expect(screen.getByText("EditIcon")).toBeTruthy();
+    expect(buttons).toHaveLength(2);
 
-    fireEvent.click(screen.getByText("VisibilityOnIcon"));
+    fireEvent.click(buttons[0]);
+    fireEvent.click(buttons[1]);
     expect(onAddEdit).toHaveBeenCalledWith(15);
-    expect(onDelete).not.toHaveBeenCalled();
+    expect(onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 15, hasWriteAccess: true })
+    );
   });
 
   it("renders edit and delete actions for writable WebAPI concept sets", () => {
@@ -137,7 +141,7 @@ describe("ConceptSetsTable", () => {
             shared: false,
             createdBy: "owner",
             userName: "owner",
-            hasWriteAccess: false,
+            hasWriteAccess: true,
             source: "legacy",
           },
         ]}

@@ -1,9 +1,7 @@
-import { assertEquals, assertThrows } from "@std/assert";
+import { assertEquals } from "@std/assert";
 
 import {
-  LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE,
   WEBAPI_CONCEPT_SET_ID_OFFSET,
-  assertConceptSetWritable,
   encodeWebApiConceptSetId,
   isWebApiConceptSetId,
   mapLegacyConceptSetToWebApiConceptSet,
@@ -18,7 +16,7 @@ Deno.test("encodes native WebAPI concept set ids into a dedicated facade namespa
   assertEquals(isWebApiConceptSetId(42), false);
 });
 
-Deno.test("legacy concept sets stay readable but become read-only in facade responses", () => {
+Deno.test("legacy concept sets remain writable in facade responses", () => {
   const conceptSet = mapLegacyConceptSetToWebApiConceptSet({
     id: 15,
     name: "Legacy set",
@@ -33,7 +31,7 @@ Deno.test("legacy concept sets stay readable but become read-only in facade resp
 
   assertEquals(conceptSet.id, 15);
   assertEquals(conceptSet.hasReadAccess, true);
-  assertEquals(conceptSet.hasWriteAccess, false);
+  assertEquals(conceptSet.hasWriteAccess, true);
   assertEquals(conceptSet.createdBy.name, "legacy-owner");
   assertEquals(conceptSet.shared, true);
   assertEquals(conceptSet.source, "legacy");
@@ -44,27 +42,28 @@ Deno.test("native WebAPI concept sets are exposed with encoded facade ids", () =
     id: 7,
     name: "Native set",
     description: "Stored in OHDSI WebAPI",
-    createdBy: "webapi-user",
-    modifiedBy: "webapi-user",
+    createdBy: {
+      id: 9,
+      login: "webapi-user",
+      name: "WebAPI User",
+    },
+    modifiedBy: {
+      id: 9,
+      login: "webapi-user",
+      name: "WebAPI User",
+    },
     createdDate: 1714521600000,
     modifiedDate: 1714608000000,
-    hasReadAccess: true,
-    hasWriteAccess: true,
+    readAccess: true,
+    writeAccess: true,
     tags: [],
   });
 
   assertEquals(conceptSet.id, WEBAPI_CONCEPT_SET_ID_OFFSET + 7);
   assertEquals(conceptSet.hasWriteAccess, true);
-  assertEquals(conceptSet.createdBy.name, "webapi-user");
+  assertEquals(conceptSet.createdBy.name, "WebAPI User");
+  assertEquals(conceptSet.createdBy.login, "webapi-user");
   assertEquals(conceptSet.description, "Stored in OHDSI WebAPI");
   assertEquals(conceptSet.shared, false);
   assertEquals(conceptSet.source, "webapi");
-});
-
-Deno.test("legacy concept sets cannot be updated or deleted anymore", () => {
-  assertThrows(
-    () => assertConceptSetWritable(99),
-    Error,
-    LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE
-  );
 });

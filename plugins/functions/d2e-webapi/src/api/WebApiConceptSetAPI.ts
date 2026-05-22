@@ -4,12 +4,20 @@ export interface IWebApiConceptSetHeader {
   id: number;
   name: string;
   description?: string | null;
-  createdBy: string;
-  modifiedBy: string;
-  createdDate: number;
-  modifiedDate: number;
-  hasWriteAccess: boolean;
-  hasReadAccess: boolean;
+  createdBy?: {
+    id?: number;
+    login?: string;
+    name?: string;
+  } | null;
+  modifiedBy?: {
+    id?: number;
+    login?: string;
+    name?: string;
+  } | null;
+  createdDate?: number | null;
+  modifiedDate?: number | null;
+  writeAccess?: boolean | null;
+  readAccess?: boolean | null;
   tags?: unknown[];
 }
 
@@ -147,7 +155,8 @@ export class WebApiConceptSetAPI {
       throw new Error(`Failed to create WebAPI concept set: ${response.status}`);
     }
 
-    return response.json();
+    const created = await response.json();
+    return this.getConceptSet(created.id);
   }
 
   async updateConceptSet(
