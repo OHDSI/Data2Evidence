@@ -2385,7 +2385,7 @@
           ]
         },
         {
-          "path": "^/jobplugins/prefect/flow-run/:id/input-auth-token",
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/input-auth-token",
           "scopes": [
             "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
             "dataflowmgmt.prefect.flowRun.inputAuthToken.delete"
