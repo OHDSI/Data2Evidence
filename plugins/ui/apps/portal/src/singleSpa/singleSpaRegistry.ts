@@ -28,24 +28,23 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
 
   propsStore.set(config.id, initialProps);
 
+  const loadModule = (): Promise<any> => {
+    if (moduleCache.has(config.id)) {
+      return moduleCache.get(config.id)!;
+    }
+    console.debug(`[singleSpaRegistry] ${config.id} - loading module`);
+    const resolvedUrl = resolveModuleUrl(config.url);
+    const modulePromise = window.System.import(resolvedUrl).then((module: any) => {
+      console.debug(`[singleSpaRegistry] ${config.id} - module loaded`);
+      return module.default || module;
+    });
+    moduleCache.set(config.id, modulePromise);
+    return modulePromise;
+  };
+
   const registration = {
     name: config.id,
-    app: () => {
-      console.debug(`[singleSpaRegistry] ${config.id} - loading module`);
-
-      if (moduleCache.has(config.id)) {
-        return moduleCache.get(config.id)!;
-      }
-
-      const resolvedUrl = resolveModuleUrl(config.url);
-      const modulePromise = window.System.import(resolvedUrl).then((module: any) => {
-        console.debug(`[singleSpaRegistry] ${config.id} - module loaded`);
-        return module.default || module;
-      });
-
-      moduleCache.set(config.id, modulePromise);
-      return modulePromise;
-    },
+    app: loadModule,
     activeWhen,
     customProps: () => ({
       ...propsStore.get(config.id),
@@ -59,6 +58,16 @@ export async function registerSingleSpaApp(config: SingleSpaPluginConfig): Promi
     config,
     registration,
     isActive: false,
+  });
+
+  // Eagerly kick off the bundle download so the module is cached in
+  // moduleCache by the time activeWhen first fires. Fire-and-forget — if
+  // the load fails, single-spa will surface the error when it calls
+  // app() through its normal lifecycle path. This eliminates the
+  // LOADING_SOURCE_CODE race window where a portal switch can catch a
+  // heavy bundle (e.g. vue-mri) mid-download.
+  loadModule().catch(error => {
+    console.debug(`[singleSpaRegistry] ${config.id} - preload failed (will retry on activation):`, error);
   });
 }
 
