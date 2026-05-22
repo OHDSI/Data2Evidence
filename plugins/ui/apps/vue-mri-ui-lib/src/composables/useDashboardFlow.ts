@@ -785,10 +785,14 @@ export function useDashboardFlow(
       if (field.id.toLowerCase().startsWith('condition')) {
         const value = formValues[field.id]
         if (value !== undefined && value !== null && value !== '') {
+          const includeDescendantsValue = formValues[`${field.id}_includeDescendants`]
           conditions.push({
             value,
             displayName: displayValues?.[field.id] || value,
-            useDescendants: formValues[`${field.id}_includeDescendants`] === true,
+            useDescendants:
+              includeDescendantsValue === undefined
+                ? field.excludeDescendantsByDefault !== true
+                : includeDescendantsValue === true,
           })
         }
         continue

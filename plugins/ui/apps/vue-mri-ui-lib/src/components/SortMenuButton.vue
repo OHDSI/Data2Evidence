@@ -60,18 +60,18 @@ export default {
     },
     componentStyle() {
       const chartPropertyModel = this.chartPropertyModel
-      const result: any = {
-        position: 'absolute',
-      }
-      if (chartPropertyModel && chartPropertyModel.props) {
-        if (chartPropertyModel.props.layoutLeft) {
-          result.left = chartPropertyModel.props.layoutLeft
+      const props = chartPropertyModel && chartPropertyModel.props
+      const hasLayout = !!(props && (props.layoutLeft || props.layoutTop || props.layoutBottom))
+      const result: any = hasLayout ? { position: 'absolute' } : {}
+      if (hasLayout) {
+        if (props.layoutLeft) {
+          result.left = props.layoutLeft
         }
-        if (chartPropertyModel.props.layoutTop) {
-          result.top = chartPropertyModel.props.layoutTop
+        if (props.layoutTop) {
+          result.top = props.layoutTop
         }
-        if (chartPropertyModel.props.layoutBottom) {
-          result.bottom = chartPropertyModel.props.layoutBottom
+        if (props.layoutBottom) {
+          result.bottom = props.layoutBottom
         }
       }
       return result
