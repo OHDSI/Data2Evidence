@@ -28,6 +28,7 @@ if (!isHanaInstalled()) {
     [
       "install",
       "--no-save",
+      "--no-package-lock",
       "--no-audit",
       "--no-fund",
       "--omit=dev",
@@ -35,6 +36,10 @@ if (!isHanaInstalled()) {
     ],
     { cwd: appDir, stdio: "inherit" },
   );
+  if (result.error) {
+    console.error(`Failed to spawn npm: ${result.error.message}`);
+    process.exit(1);
+  }
   if (result.status !== 0) {
     console.error(`Failed to install ${hanaPkg}@${hanaVersion}`);
     process.exit(result.status || 1);

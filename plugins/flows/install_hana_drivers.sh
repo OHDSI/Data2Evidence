@@ -25,7 +25,7 @@ jdbc_path="${HANA_JDBC_DRIVER_PATH:-/app/inst/drivers/ngdbc-latest.jar}"
 jdbc_url="${HANA_JDBC_DRIVER_URL:-https://repo1.maven.org/maven2/com/sap/cloud/db/jdbc/ngdbc/${jdbc_version}/ngdbc-${jdbc_version}.jar}"
 
 if [ "$install_hana" = "true" ]; then
-  installed_version="$(uv pip show sqlalchemy-hana 2>/dev/null | awk '/^Version:/ {print $2}')"
+  installed_version="$(uv pip show sqlalchemy-hana 2>/dev/null | awk '/^Version:/ {print $2}' || true)"
   if [ "$installed_version" = "$sqlalchemy_hana_version" ]; then
     echo "sqlalchemy-hana==$sqlalchemy_hana_version already installed."
   else
@@ -33,15 +33,21 @@ if [ "$install_hana" = "true" ]; then
     uv pip install "sqlalchemy-hana==$sqlalchemy_hana_version"
   fi
 
-  if [ -s "$jdbc_path" ]; then
-    echo "HANA JDBC driver already present at $jdbc_path."
+  jdbc_version_marker="${jdbc_path}.version"
+  installed_jdbc_version=""
+  if [ -f "$jdbc_version_marker" ]; then
+    installed_jdbc_version="$(cat "$jdbc_version_marker")"
+  fi
+  if [ -s "$jdbc_path" ] && [ "$installed_jdbc_version" = "$jdbc_version" ]; then
+    echo "HANA JDBC driver $jdbc_version already present at $jdbc_path."
   else
     echo "Downloading SAP HANA JDBC driver $jdbc_version from $jdbc_url..."
     mkdir -p "$(dirname "$jdbc_path")"
     tmp_path="${jdbc_path}.partial"
     curl --fail --location --silent --show-error --output "$tmp_path" "$jdbc_url"
     mv "$tmp_path" "$jdbc_path"
-    echo "HANA JDBC driver installed at $jdbc_path."
+    printf '%s' "$jdbc_version" > "$jdbc_version_marker"
+    echo "HANA JDBC driver $jdbc_version installed at $jdbc_path."
   fi
 fi
 
