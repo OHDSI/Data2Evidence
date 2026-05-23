@@ -251,7 +251,7 @@ spec:
             - name: INSTALL_SQLALCHEMY_HANA
               value: "true"
             - name: INSTALL_SQLALCHEMY
-              value: "/app/install_hana_drivers.sh prefect flow-run execute"
+              value: "INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute"
             - name: SERVICE_ROUTES
               valueFrom:
                 configMapKeyRef:

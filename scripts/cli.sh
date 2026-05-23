@@ -174,7 +174,7 @@ case $cmd in
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cat >> $ENVFILE << 'EOF'
 INSTALL_SQLALCHEMY_HANA=true
-INSTALL_SQLALCHEMY="/app/install_hana_drivers.sh prefect flow-run execute"
+INSTALL_SQLALCHEMY="INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute"
 EOF
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
