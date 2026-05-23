@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures'
 const TEST_NAME = 'atlas-lite cohort creation'
-const SHOULD_SKIP = true
+const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
