@@ -38,12 +38,12 @@ on:
           - "OSS-develop"
           - "OSS-release"
           - "Project"
-  pull_request:
-    types: [opened, ready_for_review, reopened, synchronize]
-  merge_group:
-  push:
-    branches:
-      - develop
+  # pull_request:
+  #   types: [opened, ready_for_review, reopened, synchronize]
+  # merge_group:
+  # push:
+  #   branches:
+  #     - develop
 
 env:
   GIT_BRANCH_NAME: ${{ github.event.inputs.GIT_BRANCH_NAME || github.head_ref || github.ref_name }} # workflow_dispatch || pull_request || push
