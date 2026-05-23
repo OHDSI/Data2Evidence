@@ -20,20 +20,24 @@ export async function discoverPlugins(paths: string[]): Promise<DiscoveredPlugin
 			for await (const child of Deno.readDir(root)) {
 				if (!child.isDirectory) continue;
 				const pkgPath = `${root}/${child.name}/package.json`;
+				let pkg: any;
 				try {
-					const pkg = JSON.parse(await Deno.readTextFile(pkgPath));
-					if (!pkg.name) {
-						logger.error(`${pkgPath}: package.json missing "name"`);
-						continue;
-					}
-					if (!pkg.trex) {
-						logger.error(`${pkgPath}: package.json missing "trex" key, skipping`);
-						continue;
-					}
-					byName.set(pkg.name, { dir: `${root}/${child.name}`, pkg });
+					pkg = JSON.parse(await Deno.readTextFile(pkgPath));
 				} catch (e) {
+					if (e instanceof Deno.errors.NotFound) continue;
+					if (e instanceof SyntaxError) {
+						logger.error(`${pkgPath}: invalid JSON: ${e.message}`);
+						continue;
+					}
 					logger.error(`${pkgPath}: ${e instanceof Error ? e.message : e}`);
+					continue;
 				}
+				if (!pkg.name) {
+					logger.error(`${pkgPath}: package.json missing "name"`);
+					continue;
+				}
+				if (!pkg.trex) continue;
+				byName.set(pkg.name, { dir: `${root}/${child.name}`, pkg });
 			}
 		} catch (e) {
 			logger.log(`Plugins path ${root} not readable, skipping: ${e instanceof Error ? e.message : e}`);

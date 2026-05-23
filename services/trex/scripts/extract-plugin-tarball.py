@@ -57,6 +57,13 @@ def main() -> int:
         for m in members:
             if m.islnk():
                 continue
+            # Allow only regular files, directories, and symlinks. Reject FIFOs,
+            # block/character devices, and any other special member type so a
+            # malicious tarball can't create device nodes during root-time build.
+            if not (m.isfile() or m.isdir() or m.issym()):
+                print(f"reject: unsupported tar member type {m.type!r}: {m.name}", file=sys.stderr)
+                rejected += 1
+                continue
             new_name = strip(m.name, strip_components)
             if not new_name:
                 continue

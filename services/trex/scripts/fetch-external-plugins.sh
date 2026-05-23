@@ -22,13 +22,23 @@ while IFS= read -r LINE || [ -n "$LINE" ]; do
   CLEAN="$(printf '%s' "$LINE" | sed 's/#.*$//' | tr -d '[:space:]')"
   [ -z "$CLEAN" ] && continue
   PKG="$CLEAN"
-  SHORT="$(printf '%s' "$PKG" | sed 's|@[^/]*/||' | sed 's|@[^@]*$||')"
-  echo "Fetching $PKG -> $DEST/$SHORT"
   (
     cd "$WORK"
     npm pack "$PKG" --silent
   )
   TGZ="$(ls -1t "$WORK"/*.tgz | head -n 1)"
+  # Derive SHORT from the tarball's own package.json (not the manifest line)
+  # so it remains safe even if PKG is a URL, git spec, or other npm-pack input.
+  NAME="$(tar -xzOf "$TGZ" package/package.json | python3 -c 'import json,sys; print(json.load(sys.stdin)["name"])')"
+  SHORT="$(printf '%s' "$NAME" | sed 's|^@[^/]*/||')"
+  case "$SHORT" in
+    ""|*/*|*..*|.|..)
+      echo "reject: unsafe plugin short-name '$SHORT' from $PKG" >&2
+      rm -f "$TGZ"
+      exit 1
+      ;;
+  esac
+  echo "Fetching $PKG -> $DEST/$SHORT"
   rm -rf "$DEST/$SHORT"
   mkdir -p "$DEST/$SHORT"
   python3 "$EXTRACTOR" "$TGZ" "$DEST/$SHORT" 1
