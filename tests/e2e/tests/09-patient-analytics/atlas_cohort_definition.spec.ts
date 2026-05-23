@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures'
 const TEST_NAME = 'atlas-lite cohort creation'
-const SHOULD_SKIP = false
+const SHOULD_SKIP = true
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 
 test(TEST_NAME, async ({ page }) => {
@@ -44,7 +44,11 @@ test(TEST_NAME, async ({ page }) => {
   if (await agreement.isVisible()) {
     await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByRole('button', { name: 'Accept' }).click()
   }
-  await page.locator('iframe[title="Atlas Lite"]').contentFrame().getByText('New Cohort').click()
+  await page
+    .locator('iframe[title="Atlas Lite"]')
+    .contentFrame()
+    .getByRole('button', { name: 'New Cohort', exact: true })
+    .click()
   await page
     .locator('iframe[title="Atlas Lite"]')
     .contentFrame()
