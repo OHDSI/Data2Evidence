@@ -204,12 +204,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Restart d2e services
-        if: success() || failure()
-        run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml -p 41100 start
-
       - name: Wait for services to be ready to avoid mounting race condition
         if: inputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
         run: sleep 10

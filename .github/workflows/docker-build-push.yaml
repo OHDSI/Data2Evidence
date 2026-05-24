@@ -888,13 +888,6 @@ jobs:
         run: |
           sed -i 's|# - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|- ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json|' docker-compose-local.yml
 
-      - name: Restart d2e services
-        if: success() || failure()
-        run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
-
-
       - name: Wait for webapi-init to complete
         run: |
           echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
