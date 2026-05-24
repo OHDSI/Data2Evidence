@@ -248,10 +248,6 @@ spec:
               value: "https://alp-default"
             - name: IDP_SUBJECT_PROP
               value: "sub"
-            - name: INSTALL_SQLALCHEMY_HANA
-              value: "true"
-            - name: INSTALL_SQLALCHEMY
-              value: "INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute"
             - name: SERVICE_ROUTES
               valueFrom:
                 configMapKeyRef:
