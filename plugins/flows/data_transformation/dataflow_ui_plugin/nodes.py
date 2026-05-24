@@ -14,6 +14,7 @@ from asyncio import iscoroutine, run
 
 import pandas as pd
 from pandas.api.types import is_list_like, is_dict_like
+import sqlalchemy as sql
 
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
@@ -28,11 +29,12 @@ from .types import (NodeType,
                     ConceptMappingType)
 
 from .nodeutils.querygenerator import *
-from .nodeutils.csvutils import convert_csv_to_dataframe
+from .nodeutils.csvutils import load_csv_from_storage
 from .fhirutils.utils import omop_transform_utils
 from _shared_flow_utils.dao.DBDao import DBDao
+from _shared_flow_utils.types import SupportedDatabaseDialects
 from _shared_flow_utils.api.SupabaseStorageAPI import SupabaseStorageAPI
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 
 class Node:
     def __init__(self, name, node):
@@ -311,29 +313,27 @@ class CsvNode(Node):
         self.hasheader = _node["hasheader"]
         self.encoding = _node.get("encoding", "utf8")
 
-
-    def _load_csv_into_dataframe(self) -> pd.DataFrame:
-        supabase_api = SupabaseStorageAPI()
-
-        downloads_dir = "/app/downloads"
-
-        csv_file_path = supabase_api.download_file_to_path(self.id, self.file, downloads_dir)   
-        
-        return convert_csv_to_dataframe(
-            csv_file_path, 
-            hasheader=self.hasheader, 
-            delimiter=self.delimiter, 
-            names=self.names, 
+    def test(self, task_run_context):
+        df = load_csv_from_storage(
+            node_id=self.id,
+            filename=self.file,
+            hasheader=self.hasheader,
+            delimiter=self.delimiter,
+            names=self.names,
             encoding=self.encoding
         )
-
-    def test(self, task_run_context):
-        df = self._load_csv_into_dataframe()
         return df
 
     def task(self, task_run_context) -> Result:
         try:
-            df = self._load_csv_into_dataframe()
+            df = load_csv_from_storage(
+                node_id=self.id,
+                filename=self.file,
+                hasheader=self.hasheader,
+                delimiter=self.delimiter,
+                names=self.names,
+                encoding=self.encoding
+            )
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -344,19 +344,50 @@ class TransformFhirDataNode(Node):
         super().__init__(name, _node)
         self.structure_map = _node["structure_map"]
         self.dataframe = _node["dataframe"]
+
+    def _expand_list_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        expanded_rows = []
+
+        for _, row in df.iterrows():
+            row_dict = row.to_dict()
+            list_lengths = [len(value) for value in row_dict.values() if isinstance(value, list)]
+
+            if not list_lengths:
+                expanded_rows.append(row_dict)
+                continue
+
+            max_len = max(list_lengths)
+            for index in range(max_len):
+                expanded_row = {}
+                for column, value in row_dict.items():
+                    if isinstance(value, list):
+                        if not value:
+                            expanded_row[column] = None
+                        elif len(value) == 1:
+                            expanded_row[column] = value[0]
+                        else:
+                            expanded_row[column] = value[index] if index < len(value) else None
+                    else:
+                        expanded_row[column] = value
+                expanded_rows.append(expanded_row)
+
+        if not expanded_rows:
+            return df.iloc[0:0].copy()
+
+        return pd.DataFrame(expanded_rows)
         
     def get_fhir_structure_definition(self, url: str) -> dict:
         fhir_api = FhirAPI()
+        print("Getting source structure definition from FHIR server...")
+        print(f"URL: {url}")
         query = f"?url={url}"
         response = fhir_api.get(resource_type="StructureDefinition", query=query)
-        if(response):
-            response_json = response.get("entry", [])[0].get("resource", {})
-        else:
-            response_json = {}
-        return response_json
+        if response:
+            entries = response.get("entry", [])
+            return entries[0].get("resource", {}) if entries else {}
+        return {}
     
     def get_omop_structure_definition_by_url(self, folder: str, incoming_url: str) -> dict:
-        omop_structureDefinition = {}
         for fname in os.listdir(folder):
             if fname.endswith('.json'):
                 file_path = os.path.join(folder, fname)
@@ -366,20 +397,18 @@ class TransformFhirDataNode(Node):
                     except Exception:
                         raise Exception("Target omop structure definition file not found")
                     if data.get("url") == incoming_url:
-                        omop_structureDefinition = data
-        if omop_structureDefinition == {}:
-            raise Exception(f"OMOP Structure Definition not found for url: {incoming_url}")
-        return omop_structureDefinition
+                        return data
+        raise Exception(f"OMOP Structure Definition not found for url: {incoming_url}")
 
     def omop_table_name(self, target_structure_definition_url: str) -> str:
-        omop_table = omop_transform_utils.omop_tables[target_structure_definition_url]
-        return omop_table
+        return omop_transform_utils.omop_tables.get(target_structure_definition_url)
 
-    def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame:
-        if(input_fhir_df is None):
+    def transform_fhir_data(self, input_fhir_df: pd.DataFrame = None) -> pd.DataFrame | None:
+        if input_fhir_df is None:
             raise Exception("Input FHIR Dataframe is None")
-        elif self.structure_map is None:
+        if self.structure_map is None:
             raise Exception("Structure map is not defined")
+
         source_structure_definition_url = ""
         target_structure_definition_url = ""
         structure_list = json.loads(self.structure_map).get("structure", [])
@@ -388,54 +417,74 @@ class TransformFhirDataNode(Node):
                 source_structure_definition_url = struct['url']
             elif struct['mode'] == 'target':
                 target_structure_definition_url = struct['url']
-        # Call FHIR server to get source structure definition
+
+        if not source_structure_definition_url:
+            raise Exception("Source Structure Definition URL is missing in structure map")
+        if not target_structure_definition_url:
+            raise Exception("Target Structure Definition URL is missing in structure map")
+
+        omop_table_name = self.omop_table_name(target_structure_definition_url)
+        if omop_table_name is None:
+            raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
+
         source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
+        if not source_structure_definition:
+            raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
+
         folder = "/app/flows/dataflow_ui_plugin/fhirutils/omop_structureDefinition"
         target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
-        transformed_omop = []
-        if input_fhir_df is not None and "content" in input_fhir_df.columns:
+
+        fhir_resource = None
+        if "content" in input_fhir_df.columns:
             content_list = input_fhir_df["content"].tolist()
             fhir_resource = content_list if content_list else None
-        else:
-            fhir_resource = None
+
+        transformed_omop = []
         script_path = '/app/flows/dataflow_ui_plugin/fhirutils/fhir_transform.js'
-        omop_table_name = self.omop_table_name(target_structure_definition_url)
-        if source_structure_definition_url is None or source_structure_definition_url == "":
-            raise Exception("Source Structure Definition URL is missing in structure map")
-        elif target_structure_definition_url is None or target_structure_definition_url == "":
-            raise Exception("Target Structure Definition URL is missing in structure map")
-        elif not source_structure_definition:
-            raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
-        elif not target_structure_definition:   
-            raise Exception(f"Target Structure Definition not found for url: {target_structure_definition_url}")
-        elif omop_table_name is None:
-            raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
+
         print("Starting FHIR Transform...")
         if fhir_resource:
-            for key in fhir_resource:
-                with Popen(
-                    [
-                        'node',
-                        script_path,
-                        self.structure_map,
-                        json.dumps(key),
-                        json.dumps(source_structure_definition),
-                        json.dumps(target_structure_definition)
-                    ],
-                    stdout=PIPE,
-                    stderr=STDOUT,
-                    text=True
-                ) as process:
-                    try:
-                        stdout, _ = process.communicate()
-                        if process.returncode != 0:
-                            raise Exception(f"FHIR Transform failed with error: {stdout}")
-                        transformed_data = json.loads(stdout)
-                        transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
-                        transformed_omop.append(transformed_data)
-                    except Exception as e:
-                        raise e
+            with Popen(
+                [
+                    'node',
+                    script_path,
+                    self.structure_map,
+                    json.dumps(fhir_resource),
+                    json.dumps(source_structure_definition),
+                    json.dumps(target_structure_definition)
+                ],
+                stdout=PIPE,
+                stderr=PIPE,
+                text=True
+            ) as process:
+                stdout, stderr = process.communicate()
+                if process.returncode != 0:
+                    raise Exception(f"FHIR Transform failed with error: {stderr or stdout}")
+                results = json.loads(stdout)
+                for transformed_data in results:
+                    transformed_data = omop_transform_utils.apply_casts(transformed_data, omop_transform_utils.target_field_types.get(omop_table_name, {}))
+                    transformed_omop.append(transformed_data)
             df = pd.json_normalize(transformed_omop)
+            df = self._expand_list_columns(df)
+            data_columns = [col for col in df.columns if col != "meta.profile"]
+            if data_columns:
+                non_empty_mask = df[data_columns].notna().any(axis=1)
+                filtered_count = int((~non_empty_mask).sum())
+                if filtered_count:
+                    print(f"Filtered {filtered_count} empty transformed rows")
+                df = df.loc[non_empty_mask].reset_index(drop=True)
+            print(f"FHIR Transform completed successfully")
+            print(f"Transformed DataFrame shape: {df.shape}")
+            print("Transformed DataFrame dtypes:")
+            print(df.dtypes.to_string())
+            print("Transformed DataFrame rows:")
+            with pd.option_context(
+                "display.max_rows", None,
+                "display.max_columns", None,
+                "display.width", None,
+                "display.max_colwidth", None,
+            ):
+                print(df.to_string(index=False))
         else:
             df = None
         return df
@@ -443,7 +492,7 @@ class TransformFhirDataNode(Node):
     def test(self, task_run_context) -> Result:
         try:
             df = self.transform_fhir_data()
-            return Result(False,  df, self, task_run_context)
+            return Result(False, df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -457,7 +506,7 @@ class TransformFhirDataNode(Node):
                 raise Exception("Transformation resulted in empty dataframe")
             df = df.drop(columns=["meta.profile"], errors='ignore')
             df = df.drop(columns=["resourceType"], errors='ignore')
-            return Result(False,  df, self, task_run_context)
+            return Result(False, df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -489,26 +538,41 @@ class DbWriter(Node):
         super().__init__(name, _node)
         self.schema_name = _node["schemaname"]
         self.table_name = _node["dbtablename"]
-        self.database = _node["database"] 
+        self.database = _node["database"]
         self.dataframe = _node["dataframe"]
+        self.truncate = _node.get("truncate", False)
         self.use_cache_db = False
 
     def test(self, _input: dict[str, Result], task_run_context):
         return False
 
-    def task(self, _input: dict[str, Result], task_run_context):        
+    def _truncate_table(self, dbconn, dialect: str) -> None:
+        if dialect == SupportedDatabaseDialects.BIGQUERY.value:
+            truncate_sql = f"TRUNCATE TABLE `{self.schema_name}`.`{self.table_name}`"
+            with dbconn.connect() as conn:
+                conn.execute(sql.text(truncate_sql))
+        else:
+            with dbconn.begin() as conn:
+                conn.execute(sql.text(f'TRUNCATE TABLE "{self.schema_name}"."{self.table_name}"'))
+
+    def task(self, _input: dict[str, Result], task_run_context):
         dbutils = DBDao(use_cache_db=self.use_cache_db, database_code=self.database)
         dbconn = dbutils.engine
 
         try:
             df_to_write = _input[self.dataframe].result
-            result = df_to_write.to_sql(self.table_name, 
-                                        dbconn, 
-                                        schema=self.schema_name, 
-                                        if_exists='append',
-                                        index=False)
-            
-            return Result(False,  result, self, task_run_context)
+
+            if self.truncate:
+                self._truncate_table(dbconn, dbutils.dialect)
+
+            result = df_to_write.to_sql(
+                self.table_name,
+                dbconn,
+                schema=self.schema_name,
+                if_exists='append',
+                index=False,
+            )
+            return Result(False, result, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
 
@@ -563,6 +627,23 @@ class ConceptMappingNode(Node):
             return Result(True, tb.format_exc(), self, task_run_context)
 
 
+class WhiteRabbitNode(Node):
+    def __init__(self, name, _node):
+        super().__init__(name, _node)
+        self.scan_metadata = _node["scanMetadata"]
+    
+    def test(self, task_run_context) -> Result:
+        return Result(False,  "White Rabbit Node Test Successful", self, task_run_context)
+
+    def task(self, task_run_context) -> Result:
+        try:
+            scan_metadata = self.scan_metadata
+            scan_metadata["node_id"] = self.id
+            return Result(False,  scan_metadata, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
+
+
 class DataMappingNode(Node):
     def __init__(self, name, _node):
         super().__init__(name, _node)
@@ -571,33 +652,32 @@ class DataMappingNode(Node):
         # Fail node generation if scan report data validation fails
         self.etl_mapping = DataMappingType(**_node["data"])
 
-    def create_target_table_df(self, target_table_name: str) -> pd.DataFrame:
+    def create_target_table_df(self, target_table_name: str, scan_metadata: dict) -> pd.DataFrame:
         """
         Creates and returns a pandas DataFrame for the specified target table.
         Args:
             target_table_name (str): The name of the target table.
+            scan_metadata (dict): The scan metadata from the White Rabbit Node.
         Returns:
             pd.DataFrame: A DataFrame containing the data from the target table.
         Raises:
             Exception: Propagates any exceptions encountered during database connection or querying.
         """
-       
-        # Todo: Remove hard code after scan report json is updated
-        table_source = "csv"
-        database_code = "demodb"
+        table_source = scan_metadata.get("dataType")
 
         db_con = None
         try:
             if table_source == TableSourceType.CSV:
                 # Use duckdb as ibis backend for csv files
                 db_con = ibis.duckdb.connect()
-                target_df = self.generate_query(db_con, target_table_name, table_source)
+                target_df = self.generate_query(db_con, target_table_name, table_source, scan_metadata)
 
             if table_source  == TableSourceType.DB:
+                database_code = scan_metadata.get("databaseCode")
                 # Use db as ibis backend depending on database_code
                 db_con = DBDao(use_cache_db=False, database_code=database_code).ibis_connect()
                 with db_con as con:
-                    target_df = self.generate_query(con, target_table_name, table_source)
+                    target_df = self.generate_query(con, target_table_name, table_source, scan_metadata)
 
         except Exception as e:
             raise
@@ -607,134 +687,376 @@ class DataMappingNode(Node):
 
         return target_df
     
-    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, ) -> pd.DataFrame:
-        table_mappings = self.etl_mapping.table.edges
-        column_mappings = self.etl_mapping.field.edges
-
-        # Todo: Remove hard code after scan report json is updated
-        schema_name = "synthea"
-        hasheader = True
-        delimiter = ","
-        encoding = "utf8"
+    def _load_source_table(self, con, source_table_name: str, table_source: TableSourceType, scan_metadata: dict):
+        """
+        Loads source table data and registers it in the connection.
         
-        source_table_queries = {}
-        for mapping in table_mappings:
-            if mapping.targetHandle == target_table_name:
-                source_table_name = mapping.sourceHandle
-                field_map_key = mapping.id
-
-            if mapping.targetHandle == target_table_name:
-                if table_source == TableSourceType.CSV:
-                    # Register source table from CSV
-                    csv_file_name = source_table_name + ".csv"
-                    csv_response = SupabaseStorageAPI().get_csv_file(self.id, csv_file_name)
-                    source_df = convert_csv_to_dataframe(
-                        csv_response,
-                        hasheader=hasheader,
-                        delimiter=delimiter,
-                        names=None,
-                        encoding=encoding
-                        )
-                    temp_table_obj = con.create_table(source_table_name, source_df)
-                elif table_source == TableSourceType.DB:
-                    temp_table_obj = con.table(source_table_name, database=schema_name)
-                
-                source_table_obj = temp_table_obj.mutate({
-                        name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
-                        for name, dtype in temp_table_obj.schema().items()
-                    })
-
-                selected_columns = []
-                mapped_target_columns = set()
-
-                target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
-                
-                for column_mapping in column_mappings:
-                    if column_mapping.sourceHandle.startswith(source_table_name) \
-                        and column_mapping.targetHandle.startswith(target_table_name):
-
-                        source_column_name = column_mapping.sourceHandle.split("-")[-1]
-                        target_column_name = column_mapping.targetHandle.split("-")[-1]
-
-                        mapped_target_columns.add(target_column_name)
-
-                        # Todo: Update to apply function to column if specified in mapping
-                        selected_columns.append(
-                            apply_ibis_func(
-                                expr=source_table_obj[source_column_name],
-                                table_columns=target_column_properties,
-                                target_column=target_column_name
-                            ) \
-                            .cast(convert_column_type(target_column_name, target_column_properties)) \
-                            .name(target_column_name)
-                        )
-                        
-                # Select target columns with a constant value
-                for col in target_column_properties:
-                    if col.data.constantValue:
-                        selected_columns.append(
-                            ibis.literal(
-                                convert_value( # Convert to dtype of target column
-                                    col.data.constantValue, col.data.columnType
-                                )
-                            ).name(col.data.label)
-                        )
-
-                        mapped_target_columns.add(col.data.label)
-
-                # For unmapped target columns, cast null value as appropriate type columns
-                target_column_names = [col.data.label for col in target_column_properties]
-
-                unmapped_target_columns: set[str] = set(target_column_names) - mapped_target_columns
-                selected_columns.extend(
-                    ibis.null() \
-                        .cast(convert_column_type(col_name, target_column_properties)) \
-                        .name(col_name) for col_name in unmapped_target_columns
-                )
-
-                query = source_table_obj.select(selected_columns)
-                # Todo: Add where clause for lookup columns
-                # sql = query.compile() # Uncomment to see individual table compiled query
-                source_table_queries[source_table_name] = query
-
-        # Use UNION ALL on source tables for the same target table as there is no join information
-        if len(source_table_queries) > 1:
-            union_all_query = union_all_tables(source_table_queries)
+        Args:
+            con: Database connection
+            source_table_name: Name of the source table
+            table_source: Type of source (CSV or DB)
+            scan_metadata: Metadata containing source information
             
-        else:
-            union_all_query = list(source_table_queries.values())[0]
+        Returns:
+            Ibis table expression for the source table
+        """
+        if table_source == TableSourceType.CSV:
+            csv_file_name = scan_metadata.get("fileName")
+            delimiter = scan_metadata.get("delimiter", ",")
+            node_id = scan_metadata.get("node_id")
 
-        union_all_sql = union_all_query.compile(pretty=True)
-
-        print(f"SQL Query for {target_table_name}:")
-        print(union_all_sql)
-
-        if table_source == TableSourceType.DB:
-            target_df = con.execute(union_all_query)
-        else:
-            target_df = con.execute(union_all_query)
-        return target_df
+            source_df = load_csv_from_storage(
+                node_id=node_id,
+                filename=csv_file_name,
+                delimiter=delimiter,
+                names=None,
+                encoding="utf8"
+            )
+            temp_table_obj = con.create_table(source_table_name, source_df)
+        else:  # TableSourceType.DB
+            schema_name = scan_metadata.get("schemaName")
+            temp_table_obj = con.table(source_table_name, database=schema_name)
+        
+        # Cast integer columns to int64 for consistency
+        return temp_table_obj.mutate({
+            name: temp_table_obj[name].cast("int64") if dtype.is_integer() else temp_table_obj[name]
+            for name, dtype in temp_table_obj.schema().items()
+        })
+    
+    def _process_column_mappings(self, source_table_obj, source_table_name: str, 
+                                 target_table_name: str, target_column_properties):
+        """
+        Processes column mappings between source and target tables.
+        
+        Args:
+            source_table_obj: Ibis table expression for source data
+            source_table_name: Name of the source table
+            target_table_name: Name of the target table
+            target_column_properties: List of target column properties
+            
+        Returns:
+            Tuple of (selected_columns list, mapped_target_columns set)
+        """
+        column_mappings = self.etl_mapping.field.edges
+        selected_columns = []
+        mapped_target_columns = set()
+        
+        for column_mapping in column_mappings:
+            if (column_mapping.sourceHandle.startswith(source_table_name) and 
+                column_mapping.targetHandle.startswith(target_table_name)):
+                
+                source_column_name = column_mapping.sourceHandle.split("-")[-1]
+                target_column_name = column_mapping.targetHandle.split("-")[-1]
+                
+                mapped_target_columns.add(target_column_name)
+                
+                selected_columns.append(
+                    apply_ibis_func(
+                        expr=source_table_obj[source_column_name],
+                        table_columns=target_column_properties,
+                        target_column=target_column_name
+                    )
+                    .cast(convert_column_type(target_column_name, target_column_properties))
+                    .name(target_column_name)
+                )
+        
+        return selected_columns, mapped_target_columns
+    
+    def _add_constant_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds columns with constant values to the selection.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set to track mapped columns
+            
+        Returns:
+            List of constant value column expressions
+        """
+        constant_columns = []
+        
+        for col in target_column_properties:
+            if col.data.constantValue:
+                constant_columns.append(
+                    ibis.literal(
+                        convert_value(col.data.constantValue, col.data.columnType)
+                    ).name(col.data.label)
+                )
+                mapped_target_columns.add(col.data.label)
+        
+        return constant_columns
+    
+    def _add_unmapped_columns(self, target_column_properties, mapped_target_columns: set):
+        """
+        Adds null-valued columns for unmapped target columns.
+        
+        Args:
+            target_column_properties: List of target column properties
+            mapped_target_columns: Set of already mapped column names
+            
+        Returns:
+            List of null column expressions with appropriate types
+        """
+        target_column_names = [col.data.label for col in target_column_properties]
+        unmapped_target_columns = set(target_column_names) - mapped_target_columns
+        
+        return [
+            ibis.null()
+            .cast(convert_column_type(col_name, target_column_properties))
+            .name(col_name)
+            for col_name in unmapped_target_columns
+        ]
     
 
+    def generate_query(self, con, target_table_name: str, table_source: TableSourceType, scan_metadata: dict) -> pd.DataFrame:
+        """
+        Generates and executes a query to transform source table(s) to a target table.
         
-    def test(self, task_run_context) -> Result:
-        return self.task(task_run_context)
+        This method processes ETL mappings to generate SQL queries that transform source data
+        into the target table format. It handles column mappings, type conversions, constant values,
+        and unmapped columns. For multiple source tables, it combines them using UNION ALL.
+        
+        Args:
+            con: Database connection (ibis or duckdb connection object)
+            target_table_name: Name of the target table to generate data for
+            table_source: Source type (CSV or DB) from TableSourceType enum
+            scan_metadata: Metadata dictionary containing source information:
+                - For CSV: 'fileName', 'delimiter', 'node_id'
+                - For DB: 'schemaName', 'databaseCode'
+        
+        Returns:
+            pd.DataFrame: Transformed data matching the target table schema
+        
+        Raises:
+            Exception: If there are issues loading source data, creating tables, or executing queries
+        
+        Note:
+            - Loads CSV files using load_csv_from_storage for CSV sources
+            - Automatically handles type casting and null values for unmapped columns
+            - Applies transformation functions specified in the ETL mapping
+            - Uses UNION ALL to combine multiple source tables mapped to the same target
+        """
+        table_mappings = self.etl_mapping.table.edges
+        source_table_queries = {}
+        
+        # Process each source table mapped to the target table
+        for mapping in table_mappings:
+            if mapping.targetHandle != target_table_name:
+                continue
+            
+            source_table_name = mapping.sourceHandle
+            field_map_key = mapping.id
+            target_column_properties = self.etl_mapping.fieldMap[field_map_key].targetHandles
+            
+            # Load source table data
+            source_table_obj = self._load_source_table(
+                con, source_table_name, table_source, scan_metadata
+            )
+            
+            # Process column mappings
+            selected_columns, mapped_target_columns = self._process_column_mappings(
+                source_table_obj, source_table_name, target_table_name, target_column_properties
+            )
+            
+            # Add constant value columns
+            constant_columns = self._add_constant_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(constant_columns)
+            
+            # Add null columns for unmapped target columns
+            unmapped_columns = self._add_unmapped_columns(
+                target_column_properties, mapped_target_columns
+            )
+            selected_columns.extend(unmapped_columns)
+            
+            # Create query for this source table
+            query = source_table_obj.select(selected_columns)
+            source_table_queries[source_table_name] = query
+
+        # Combine multiple source tables using UNION ALL if needed
+        union_all_query = (
+            union_all_tables(source_table_queries) 
+            if len(source_table_queries) > 1 
+            else list(source_table_queries.values())[0]
+        )
+        
+        # Log the generated SQL for debugging
+        union_all_sql = union_all_query.compile(pretty=True)
+        print(f"SQL Query for {target_table_name}:")
+        print(union_all_sql)
+        
+        # Execute and return the result
+        return con.execute(union_all_query)
+
+        
+    def test(self, _input: dict[str, Result], task_run_context) -> Result:
+        return self.task(_input, task_run_context)
 
 
-    def task(self, task_run_context) -> Result:
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
             table_mapping = self.etl_mapping.table.edges
             target_table_list = set(t.targetHandle for t in table_mapping)
+            scan_metadata = next(iter(_input.values())).result
 
             # store output dataframes for each target table
             target_table_dfs = {}
             for target_table in target_table_list:
-                target_table_dfs[target_table] = self.create_target_table_df(target_table)
+                target_table_dfs[target_table] = self.create_target_table_df(target_table, scan_metadata)
 
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
         else:
             return Result(False, target_table_dfs, self, task_run_context)
+
+class FhirMappingNode(Node):
+    """
+    Queries {omop_table_name}_source_value and {omop_table_name}_id
+    from the OMOP table, then upserts the FHIR→OMOP lineage into the fhir_mapping schema.
+    Re-runs are idempotent via ON CONFLICT DO UPDATE.
+    Schema: {database_code}_{schema_name}_fhir_mapping
+    """
+    def __init__(self, name, node):
+        super().__init__(name, node)
+        self.database_code = node["database_code"]
+        self.schema_name = node["schema_name"]
+        self.omop_table_name = node["omop_table_name"]
+        self.fhir_resource_type = node["fhir_resource_type"]
+        self.write_key_map = node.get("write_key_map", True)
+        self.source_value_col = node.get("source_value_col") or f"{self.omop_table_name}_source_value"
+    
+    def _ensure_mapping_schema(self, database_code: str, schema_name: str, dao: DBDao) -> None:
+        schema = f"{database_code}_{schema_name}_fhir_mapping"
+
+        # dao is the trexDao
+        if not dao.check_schema_exists(schema):
+            dao.create_schema(schema)
+
+        escaped_schema = schema.replace('"', '""')
+
+        dao.execute_sql(f"""
+            CREATE TABLE IF NOT EXISTS "{escaped_schema}".data_source (
+                fhir_resource_type VARCHAR NOT NULL,
+                fhir_resource_id   VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                flow_run_id        VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        dao.execute_sql(f"""
+            CREATE TABLE IF NOT EXISTS "{escaped_schema}".fhir_omop_key_map (
+                fhir_id            VARCHAR NOT NULL,
+                fhir_resource_type VARCHAR NOT NULL,
+                omop_table_name    VARCHAR NOT NULL,
+                omop_id            VARCHAR,
+                transformed_at     TIMESTAMP DEFAULT NOW()
+            )
+        """)
+
+        dao.execute_sql(f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS fhir_omop_key_map_fhir_id_fhir_resource_type_idx
+            ON "{escaped_schema}".fhir_omop_key_map (fhir_id, fhir_resource_type)
+        """)
+
+    def task(self, _input: dict[str, Result], task_run_context) -> Result:
+        try:
+            mapping_schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
+            # connect to source db to get omop_id and source_value pairs from the omop table, then connect to mapping db to upsert the lineage mapping
+            omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
+            # mapping schema is in cache
+            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
+            self._ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
+
+            source_value_col = self.source_value_col
+            omop_id_col = f"{self.omop_table_name}_id"
+            flow_run_id = str(task_run_context.get("flow_run_id"))
+
+            inspector = sql.inspect(omop_dao.engine)
+            existing_columns = [col["name"] for col in inspector.get_columns(self.omop_table_name, schema=self.schema_name)]
+            if source_value_col not in existing_columns:
+                raise ValueError(
+                    f"Column '{source_value_col}' does not exist in {self.schema_name}.{self.omop_table_name}. "
+                    f"Available columns: {existing_columns}"
+                )
+
+            escaped_schema = self.schema_name.replace('"', '""')
+            escaped_table = self.omop_table_name.replace('"', '""')
+            escaped_source_value_col = source_value_col.replace('"', '""')
+            escaped_omop_id_col = omop_id_col.replace('"', '""')
+
+            omop_rows_df = pd.read_sql_query(
+                sql.text(
+                    f'''SELECT "{escaped_source_value_col}" AS fhir_id, "{escaped_omop_id_col}" AS omop_id
+                        FROM "{escaped_schema}"."{escaped_table}"
+                        WHERE "{escaped_source_value_col}" IS NOT NULL'''
+                ),
+                omop_dao.engine,
+            )
+            omop_rows = list(omop_rows_df.itertuples(index=False, name=None))
+
+            if not omop_rows:
+                return Result(False, {"inserted": 0, "updated": 0}, self, task_run_context)
+
+            data_source_values = [
+                {
+                    "fhir_resource_type": self.fhir_resource_type,
+                    "fhir_resource_id": str(fhir_id),
+                    "omop_table_name": self.omop_table_name,
+                    "omop_id": str(omop_id),
+                    "flow_run_id": flow_run_id,
+                }
+                for fhir_id, omop_id in omop_rows
+            ]
+
+            key_map_values = [
+                {
+                    "fhir_id": str(fhir_id),
+                    "fhir_resource_type": self.fhir_resource_type,
+                    "omop_table_name": self.omop_table_name,
+                    "omop_id": str(omop_id),
+                }
+                for fhir_id, omop_id in omop_rows
+            ]
+
+            mapping_dao.batch_insert_values(
+                mapping_schema,
+                "data_source",
+                ["fhir_resource_type", "fhir_resource_id", "omop_table_name", "omop_id", "flow_run_id"],
+                [
+                    (
+                        row["fhir_resource_type"],
+                        row["fhir_resource_id"],
+                        row["omop_table_name"],
+                        row["omop_id"],
+                        row["flow_run_id"],
+                    )
+                    for row in data_source_values
+                ],
+            )
+
+            if self.write_key_map:
+                mapping_dao.batch_insert_values(
+                    mapping_schema,
+                    "fhir_omop_key_map",
+                    ["fhir_id", "fhir_resource_type", "omop_table_name", "omop_id"],
+                    [
+                        (
+                            row["fhir_id"],
+                            row["fhir_resource_type"],
+                            row["omop_table_name"],
+                            row["omop_id"],
+                        )
+                        for row in key_map_values
+                    ],
+                    on_conflict="ON CONFLICT (fhir_id, fhir_resource_type) DO NOTHING",
+                )
+
+            return Result(False, {"inserted": len(omop_rows), "updated": len(omop_rows)}, self, task_run_context)
+        except Exception as e:
+            return Result(True, tb.format_exc(), self, task_run_context)
 
 
 @flow(name="generate-nodes",
@@ -792,12 +1114,16 @@ def generate_node_task(nodename, node, nodetype):
             nodeobj = DBReader(nodename, node)
         case NodeType.DBWRITER:
             nodeobj = DbWriter(nodename, node)
+        case NodeType.WHITERABBIT:
+            nodeobj = WhiteRabbitNode(nodename, node)
         case NodeType.DATAMAPPING:
             nodeobj = DataMappingNode(nodename, node)
         case NodeType.CONCEPTMAPPING:
             nodeobj = ConceptMappingNode(nodename, node)
         case NodeType.TRANSFORMFHIRDATA:
             nodeobj = TransformFhirDataNode(nodename, node)
+        case NodeType.FHIRMAPPING:
+            nodeobj = FhirMappingNode(nodename, node)
         case _:
             logging.error("ERR: Unknown Node "+node["type"])
             logging.error(tb.StackSummary())

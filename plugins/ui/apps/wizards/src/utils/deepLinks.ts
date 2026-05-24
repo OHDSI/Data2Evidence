@@ -124,7 +124,11 @@ export function generateFormSubmitDeepLink(
 
         // Check if this is a condition field (id starts with "condition")
         if (field.id.startsWith("condition")) {
-          const useDescendants = formData[`${field.id}_wildcard`] === true;
+          const excludeDescendantsValue = formData[`${field.id}_excludeDescendants`];
+          const useDescendants =
+            excludeDescendantsValue === undefined
+              ? field.excludeDescendantsByDefault !== true
+              : excludeDescendantsValue !== true;
           conditions.push({
             value,
             displayName: displayName || value,

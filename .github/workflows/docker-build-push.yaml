@@ -451,6 +451,187 @@ jobs:
           tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
           provenance: false
 
+  helm_lint:
+    needs: [setup]
+    runs-on: ubuntu-latest
+    env:
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Helm lint
+        run: helm lint "$CHART_DIR" -f "$CI_VALUES"
+
+      - name: Render templates
+        run: |
+          mkdir -p /tmp/rendered
+          helm template d2e "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --namespace d2e \
+            > /tmp/rendered/all.yaml
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL -o /tmp/kubeconform.tgz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tgz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/
+
+      - name: Validate rendered manifests
+        run: |
+          kubeconform -summary -strict \
+            -skip CustomResourceDefinition \
+            -ignore-missing-schemas \
+            /tmp/rendered/all.yaml
+
+  test_helm_kind:
+    needs: [setup, build_images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+      RELEASE: d2e
+      NAMESPACE: d2e
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Recreate /opt/hostedtoolcache
+        # free-disk-space deletes /opt/hostedtoolcache; helm/kind-action needs it.
+        run: sudo mkdir -p /opt/hostedtoolcache
+
+      - uses: actions/checkout@v4
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: helm-test
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Show cluster info
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+      - name: Create ghcr image-pull secret
+        run: |
+          kubectl create namespace "$NAMESPACE"
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            -n "$NAMESPACE"
+          kubectl patch serviceaccount default -n "$NAMESPACE" \
+            -p '{"imagePullSecrets":[{"name":"ghcr-pull"}]}'
+
+      - name: Deploy Postgres for CI
+        run: |
+          kubectl apply -n "$NAMESPACE" -f "$CHART_DIR/ci/postgres.yaml"
+          kubectl rollout status deployment/postgres -n "$NAMESPACE" --timeout=3m
+
+      - name: Generate throwaway TLS material
+        run: |
+          set -euo pipefail
+          D=/tmp/ci-tls
+          mkdir -p "$D"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$D/ca.key" -out "$D/ca.crt" \
+            -days 30 -subj "/CN=d2e-ci-ca" 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes \
+            -keyout "$D/srv.key" -out "$D/srv.csr" \
+            -subj "/CN=d2e.cluster.local" 2>/dev/null
+          openssl x509 -req -in "$D/srv.csr" \
+            -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
+            -out "$D/srv.crt" -days 30 2>/dev/null
+
+      - name: Helm install (using just-built images)
+        run: |
+          D=/tmp/ci-tls
+          helm install "$RELEASE" "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --set "global.image.tag=${RUN_TAG}" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_CRT=$D/ca.crt" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_KEY=$D/ca.key" \
+            --set-file "d2e-core.secrets.SERVER__CRT=$D/srv.crt" \
+            --set-file "d2e-core.secrets.SERVER__KEY=$D/srv.key" \
+            --set-file "global.secrets.TLS__INTERNAL__CA_CRT=$D/ca.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__CRT=$D/srv.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__KEY=$D/srv.key" \
+            --namespace "$NAMESPACE" \
+            --wait --timeout 20m
+
+      - name: Wait for pods Ready
+        run: |
+          kubectl wait \
+            --for=condition=Ready pod \
+            --all \
+            -n "$NAMESPACE" \
+            --timeout=5m
+
+      - name: Show final state
+        if: always()
+        run: |
+          echo "=== pods ==="
+          kubectl get pods -n "$NAMESPACE" -o wide || true
+          echo "=== services ==="
+          kubectl get svc -n "$NAMESPACE" || true
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          echo "=== events ==="
+          kubectl get events -A --sort-by=.lastTimestamp | tail -100 || true
+          for pod in $(kubectl get pods -n "$NAMESPACE" -o name); do
+            echo "------------------------------"
+            echo "DESCRIBE $pod"
+            echo "------------------------------"
+            kubectl describe -n "$NAMESPACE" "$pod" || true
+            echo "------------------------------"
+            echo "LOGS $pod"
+            echo "------------------------------"
+            kubectl logs -n "$NAMESPACE" "$pod" --all-containers --tail=200 || true
+          done
+
+      - name: Mark helm kind attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload helm kind attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-kind-attempt
+          path: ./_attempt/
+          overwrite: true
+
+      - name: Cleanup
+        if: always()
+        run: helm uninstall "$RELEASE" -n "$NAMESPACE" || true
+
   test_demosetup_dev:
     needs: [setup, build_images, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
@@ -1006,6 +1187,24 @@ jobs:
           echo "All HTTP hana attempts failed."
           exit 1
 
+  test_helm_kind_gate:
+    needs: [test_helm_kind]
+    if: always() && needs.test_helm_kind.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: helm-kind-attempt
+          path: ./_attempts
+      - name: Pass if helm kind attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "Helm kind attempt succeeded."
+            exit 0
+          fi
+          echo "Helm kind attempt failed."
+          exit 1
+
   promote:
     needs: [setup, build_images]
     if: |
@@ -1070,7 +1269,7 @@ jobs:
           delete-only-untagged-versions: "true"
 
   docker-success:
-    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    needs: [build_images, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1079,13 +1278,15 @@ jobs:
           R_BUILD_IMAGES: ${{ needs.build_images.result }}
           R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
           R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
+          R_HELM_LINT: ${{ needs.helm_lint.result }}
+          R_HELM_KIND: ${{ needs.test_helm_kind_gate.result }}
           R_DEMO_DEV: ${{ needs.test_demosetup_dev_gate.result }}
           R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;
