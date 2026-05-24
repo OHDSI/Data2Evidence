@@ -32,6 +32,11 @@ data:
         }
         redir @aliasbasepaths /d2e/portal
 
+        @atlas_uppercase {
+            path_regexp atlas_case ^/Atlas(.*)$
+        }
+        redir @atlas_uppercase /atlas{re.atlas_case.1} 301
+
         # Logto api server
         @logto {
             path /api/*
@@ -62,10 +67,13 @@ data:
 
         handle @portalpath {
             rewrite * /d2e/portal/index.html
-            reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
+            reverse_proxy http://{$TREX__D2E__INTERNAL_FQDN} {
                 header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+                header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
+                header_up X-Forwarded-Proto https
+                header_up X-Forwarded-For {remote}
             	transport http {
-                    tls_insecure_skip_verify
+                    read_buffer 8192
             	}
             }
         }
@@ -73,11 +81,12 @@ data:
 
         ## call gateway if there are no matched files
         handle {
-            reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
+            reverse_proxy http://{$TREX__D2E__INTERNAL_FQDN} {
                 header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+                header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
+                header_up X-Forwarded-Proto https
+                header_up X-Forwarded-For {remote}
             	transport http {
-                    tls
-                    tls_insecure_skip_verify
                     read_buffer 8192
             	}
             }
@@ -106,6 +115,15 @@ data:
         handle /check-liveness {
             respond "OK-HTTP"
         }
+
+        @oidc {
+            path /oidc/*
+        }
+        handle @oidc {
+            reverse_proxy http://idp.d2e.svc.cluster.local
+        }
+
+        respond 404
     }
 
     https://localhost {

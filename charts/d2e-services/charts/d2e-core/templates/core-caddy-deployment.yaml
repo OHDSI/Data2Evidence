@@ -42,7 +42,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: CADDY__D2E__PUBLIC_FQDN
             - name: TREX__D2E__INTERNAL_FQDN
-              value: trex.d2e.svc.cluster.local:443 # NOT trex-http!!
+              value: trex-http.d2e.svc.cluster.local:443
             - name: TLS__CADDY_DIRECTIVE
               value: tls internal
           image: caddy:2.11-alpine

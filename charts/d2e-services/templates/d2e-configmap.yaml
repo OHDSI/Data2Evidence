@@ -25,6 +25,15 @@ data:
   ACHILLES_THREAD_COUNT: {{ .Values.config.ACHILLES_THREAD_COUNT | quote }}
   EXCLUDE_ANALYSIS_IDS: {{ .Values.config.EXCLUDE_ANALYSIS_IDS | quote }}
   AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: {{ .Values.config.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | quote }}
+  AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: {{ .Values.config.AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | default .Values.config.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | quote }}
   LOGTO__TERM_OF_USE_URL: {{ .Values.idp.LOGTO__TERM_OF_USE_URL | quote }}
   LOGTO__PRIVACY_POLICY_URL: {{ .Values.idp.LOGTO__PRIVACY_POLICY_URL | quote }}
   LOGTO__CUSTOM_CSS: {{ .Values.idp.LOGTO__CUSTOM_CSS | quote }}
+  USER_MGMT__ROLE_SOURCE: {{ .Values.idp.USER_MGMT__ROLE_SOURCE | default "logto" | quote }}
+  PG__MAX_POOL: {{ .Values.config.PG__MAX_POOL | default 10 | quote }}
+  PG__MIN_POOL: {{ .Values.config.PG__MIN_POOL | default 1 | quote }}
+  PG__IDLE_TIMEOUT_IN_MS: {{ .Values.config.PG__IDLE_TIMEOUT_IN_MS | default 30000 | quote }}
+  IDP__AUTO_PROVISION_USERS: {{ .Values.idp.IDP__AUTO_PROVISION_USERS | default false | quote }}
+  TREX_POOL_SIZE: {{ .Values.config.TREX_POOL_SIZE | default 64 | quote }}
+  TREXSQL_ENABLED: {{ .Values.config.TREXSQL_ENABLED | default true | quote }}
+  PORTAL__LOG_DISCLAIMER: {{ .Values.config.PORTAL__LOG_DISCLAIMER | default false | quote }}

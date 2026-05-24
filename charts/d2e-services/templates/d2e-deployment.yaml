@@ -331,8 +331,16 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            - name: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
             - name: USER_MGMT__ROLE_SOURCE
-              value: "usermgmt"
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: USER_MGMT__ROLE_SOURCE
             - name: CADDY__D2E__PUBLIC_FQDN
               valueFrom:
                 configMapKeyRef:
@@ -460,7 +468,7 @@ spec:
             - name: LOGTO__TOKEN_URL
               value: http://idp.d2e.svc.cluster.local:443/oidc/token
             - name: LOGTO__ISSUER
-              value: http://idp.d2e.svc.cluster.local:443/oidc
+              value: "http://gateway:8080/oidc"
             - name: NODE_ENV
               value: development
             - name: NOT_EQ_CHECK_FILTERCARDS
@@ -519,11 +527,20 @@ spec:
             - name: PG_HOST
               value: "$(PG__HOST)"
             - name: PG__IDLE_TIMEOUT_IN_MS
-              value: "300000"
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PG__IDLE_TIMEOUT_IN_MS
             - name: PG__MAX_POOL
-              value: "10"
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PG__MAX_POOL
             - name: PG__MIN_POOL
-              value: "0"
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PG__MIN_POOL
             - name: PG__PORT
               value: "5432"
             - name: PG_MANAGE_PASSWORD
@@ -636,6 +653,26 @@ spec:
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
+            - name: IDP__AUTO_PROVISION_USERS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__AUTO_PROVISION_USERS
+            - name: TREX_POOL_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREX_POOL_SIZE
+            - name: TREXSQL_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREXSQL_ENABLED
+            - name: PORTAL__LOG_DISCLAIMER
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: PORTAL__LOG_DISCLAIMER
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
