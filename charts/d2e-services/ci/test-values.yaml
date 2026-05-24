@@ -98,7 +98,16 @@ config:
             "namespace": { "default": "d2e" },
             "image": { "default": "ghcr.io/ohdsi/d2e-flow-base:0.15.0-beta" },
             "service_account_name": { "default": "dataflow-gen-svc-acc" },
-            "image_pull_policy": { "default": "IfNotPresent" }
+            "image_pull_policy": { "default": "IfNotPresent" },
+            "command": {
+              "type": "string",
+              "default": "/app/install_hana_drivers.sh prefect flow-run execute"
+            },
+            "env": {
+              "type": "object",
+              "default": { "INSTALL_SQLALCHEMY_HANA": "true" },
+              "additionalProperties": { "type": "string" }
+            }
           }
         }
       }

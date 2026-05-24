@@ -206,6 +206,7 @@ services:
       - services/materialize-cohorts/PKI/ca.crt:/app/PKI/ca.crt
     environment:
       PORT: 3333
+      INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-false}
       API_MTLS_ENABLED: ${MATERIALIZE_COHORTS_API_MTLS_ENABLED:-true}
       API_TLS_KEY_PATH: ${MATERIALIZE_COHORTS_API_TLS_KEY_PATH:-/app/PKI/server.key}
       API_TLS_CERT_PATH: ${MATERIALIZE_COHORTS_API_TLS_CERT_PATH:-/app/PKI/server.crt}

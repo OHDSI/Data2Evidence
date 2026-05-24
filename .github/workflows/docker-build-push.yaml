@@ -205,6 +205,9 @@ jobs:
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
+          - AZ_REG_REPOSITORY: d2e-materialize-cohorts
+            DOCKER_BUILD_FILE_PATH: ./services/materialize-cohorts/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -1334,6 +1337,7 @@ jobs:
           - d2e-trex
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage
+          - d2e-materialize-cohorts
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
