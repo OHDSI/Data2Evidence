@@ -748,7 +748,7 @@ class D2ECli {
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
           INSTALL_SQLALCHEMY_HANA: "true",
-          INSTALL_SQLALCHEMY: `"INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute"`,
+          INSTALL_SQLALCHEMY: `"bash -c 'INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute'"`,
           PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data"]'`,
         };
         const envContent = Object.entries(envVariables)
