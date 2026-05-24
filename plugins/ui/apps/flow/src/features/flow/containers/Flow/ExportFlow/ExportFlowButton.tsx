@@ -50,9 +50,10 @@ export const ExportFlowButton: FC<ExportFlowButtonProps> = () => {
     const exportDataflow: DataflowExportDto = {
       id: dataflowId,
       name: dataflow.name,
-      flow,
-      createdBy,
-      createdDate,
+      nodes: flow.nodes,
+      edges: flow.edges,
+      variables: flow.variables,
+      importLibs: flow.importLibs,
     };
 
     const jsonData = JSON.stringify(exportDataflow);

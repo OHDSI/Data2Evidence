@@ -107,7 +107,7 @@ test('export-import-dataflow', async ({ page }) => {
 
     // Verify data integrity: imported code matches exactly what was exported
     const exported = JSON.parse(await fs.readFile(exportedFilePath, 'utf-8'))
-    const exportedScript = exported.flow.nodes[0].data.python_code
+    const exportedScript = exported.nodes[0].data.python_code
     console.log('Exported script:', exportedScript)
 
     const editor = page.getByRole('textbox', { name: 'Editor content;Press Alt+F1' })

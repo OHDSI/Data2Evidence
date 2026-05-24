@@ -713,14 +713,12 @@ class D2ECli {
         console.log(
           "You can view the license at: https://www.sap.com/docs/download/cmp/2016/06/sap-hana-express-dev-agmt-and-exhibit.pdf",
         );
-        console.log("\nNote that SAP HANA JDBC driver is required. Please:");
         console.log(
-          "  1. Download ngdbc-latest.jar from https://tools.hana.ondemand.com/additional/ngdbc-latest.jar",
+          "\nThe SAP HANA JDBC driver (ngdbc) will be downloaded automatically",
         );
         console.log(
-          "  2. Create a tmp/drivers/ directory in your current working directory",
+          "from Maven Central on first start of each flow container.",
         );
-        console.log("  3. Place the downloaded .jar file in tmp/drivers/");
         let license_agreement: string;
         if (process.env.ACCEPT_SAP_LICENSE) {
           console.log(
@@ -749,8 +747,9 @@ class D2ECli {
         this.hanapw = hanapw;
         const envVariables = {
           HANA_SYSTEM_PASSWORD: this.hanapw,
-          INSTALL_SQLALCHEMY: `"bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"`,
-          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data", "${cwd}/tmp/drivers/ngdbc-latest.jar:/app/inst/drivers/ngdbc-latest.jar"]'`,
+          INSTALL_SQLALCHEMY_HANA: "true",
+          INSTALL_SQLALCHEMY: `"bash -c 'INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute'"`,
+          PREFECT_DOCKER_VOLUMES_CUSTOM: `'["${this.PROJECT_NAME}_trex:/app/duckdb_data"]'`,
         };
         const envContent = Object.entries(envVariables)
           .map(([key, value]) => `${key}=${value}`)
