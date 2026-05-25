@@ -19,9 +19,9 @@ except ImportError:
         logger.warning("Prefect artifacts not available in this Prefect version.")
 
 class Table1Generator:
-    def __init__(self, study_id, dataset_id, cohort_ids, database_code, cdm_schema_name):
+    def __init__(self, token_study_code, dataset_id, cohort_ids, database_code, cdm_schema_name):
         self.logger = Logger()
-        self.study_id = study_id
+        self.token_study_code = token_study_code
         self.dataset_id = dataset_id
         self.cohort_ids = cohort_ids
         self.database_code = database_code
@@ -121,7 +121,7 @@ class Table1Generator:
 
     def save_table1_results(self):
         # Code to save Table 1 results to the database
-        self.logger.info(f"Saving Table 1 results to database for study_id={self.study_id}")
+        self.logger.info(f"Saving Table 1 results to database for token_study_code={self.token_study_code}")
         with ro.default_converter.context():
             try:
                 rDatabaseConnector = importr('DatabaseConnector')
@@ -129,9 +129,9 @@ class Table1Generator:
                 for cohort_id, table1_json_str in self.results.items():
                     self.logger.info(f"Inserting Table 1 results for cohort_id={cohort_id}")
                     insert_sql = f"""
-                    INSERT INTO results_{self.study_id}.tb1_results (study_id, dataset_id, cohort_id, table1_json)
-                    VALUES ('{self.study_id}', '{self.dataset_id}', {cohort_id}, '{table1_json_str}')
-                    ON CONFLICT (study_id, dataset_id, cohort_id)
+                    INSERT INTO results_{self.token_study_code}.tb1_results (token_study_code, dataset_id, cohort_id, table1_json)
+                    VALUES ('{self.token_study_code}', '{self.dataset_id}', {cohort_id}, '{table1_json_str}')
+                    ON CONFLICT (token_study_code, dataset_id, cohort_id)
                     DO UPDATE SET table1_json = EXCLUDED.table1_json;
                     """
                     rDatabaseConnector.executeSql(conn, convert_py_to_R(insert_sql))
@@ -148,7 +148,7 @@ class Table1Generator:
         results_list = []
         for cohort_id, table1_json_str in self.results.items():
             results_list.append({
-                "study_id": self.study_id,
+                "token_study_code": self.token_study_code,
                 "dataset_id": self.dataset_id,
                 "cohort_id": cohort_id,
                 "table1_json": table1_json_str
