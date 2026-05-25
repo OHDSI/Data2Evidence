@@ -28,7 +28,7 @@ def _default_cache_id_from_dataset_id(dataset_id):
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
-
+    logger.info(f"Flow parameters received: {options.json()}")
     flow_run_id = runtime.flow_run.id
 
     dbdao = DBDao(

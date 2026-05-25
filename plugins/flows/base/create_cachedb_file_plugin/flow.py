@@ -47,14 +47,21 @@ def create_results_cache_flow(options: CreateCacheOptions):
 
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
-
+    # Log parameters excluding sensitive patient and timestamp data
+    log_data = options.model_dump(exclude={
+        'snapshot_copy_config': {'patients_to_be_copied', 'timestamp'}
+    })
+    logger.info(f"Flow parameters received: {log_data}")
     dbdao = DBDao(database_code=options.database_code, cache_id=options.cache_id)
+    logger.info(f"Database dialect identified as '{dbdao.dialect}' for database code '{options.database_code}'.")
+
     db_credentials = dbdao.tenant_configs
     # Check if dialect is supported for cache/datamart creations
     check_supported_dialects(dbdao.dialect)
 
     # Load Google service account credentials for BigQuery access.
     if dbdao.dialect == SupportedDatabaseDialects.BIGQUERY.value:
+        logger.info("Loading Google service account credentials for BigQuery access...")
         DaoBase.create_service_account_credentials_file(db_credentials)
 
     copy_params = CopyParameters(
@@ -79,6 +86,7 @@ def create_cache_flow(options: CreateCacheOptions):
         logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
 
         # Creates file if it does not exist
+        logger.info(f"Checking if cache file exists at '{duckdb_file_path}'...")
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
 
@@ -94,16 +102,15 @@ def create_cache_flow(options: CreateCacheOptions):
                 copy_all_schemas(duckdb_file_path, dbdao, copy_params)
 
 
-    logger.info(
-        f"Creating cache for '{options.schema_name}' schema in '{options.database_code}'"
-    )
 
+    else:
+        logger.info("Using TREX SQL connection to cache")
 
-    create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
+        create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
-    create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
+        create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
 
-    create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
+        create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
 @task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
