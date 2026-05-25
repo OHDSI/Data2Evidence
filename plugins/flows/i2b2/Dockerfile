@@ -91,6 +91,7 @@ COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.ven
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./i2b2/i2b2_plugin /app/flows/i2b2_plugin
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 RUN chmod -R 755 /app
 

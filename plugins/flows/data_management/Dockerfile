@@ -84,11 +84,13 @@ COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.ve
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_management/data_management_plugin /app/flows/data_management_plugin
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 
 WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 USER docker

@@ -18,8 +18,6 @@ data:
   TREX_BUNFIG: {{ .Values.config.TREX_BUNFIG | quote }}
   LOGTO__DISABLE_BASIC_AUTH: {{ .Values.idp.LOGTO__DISABLE_BASIC_AUTH | quote }}
   OMOP_RELATIONSHIPS_FOR_DESCENDANTS: {{ .Values.config.OMOP_RELATIONSHIPS_FOR_DESCENDANTS | quote }}
-  PLUGINS_SEED_UPDATE: {{ .Values.config.PLUGINS_SEED_UPDATE | quote }}
-  PLUGINS_SEED: {{ .Values.config.PLUGINS_SEED | quote }}
   PLUGINS_IMAGE_TAG: {{ .Values.config.PLUGINS_IMAGE_TAG | quote }}
   PLUGINS_API_VERSION: {{ .Values.config.PLUGINS_API_VERSION | quote }}
   PLUGINS_REGISTRY: {{ .Values.config.PLUGINS_REGISTRY | quote }}

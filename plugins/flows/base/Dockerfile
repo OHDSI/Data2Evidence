@@ -166,10 +166,12 @@ COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.ve
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./base /app/flows/
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 # DataQualityDashboard writes errorReportSql.txt to CWD (/app) at runtime.
 RUN chown docker:docker /app

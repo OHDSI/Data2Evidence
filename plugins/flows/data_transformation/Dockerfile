@@ -134,6 +134,7 @@ WORKDIR /app
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 RUN chmod -R 755 /app
 
