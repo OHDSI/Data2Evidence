@@ -1,5 +1,4 @@
 import { test, expect } from '../fixtures'
-
 const TEST_NAME = 'patient-analytics-extended-query-logic'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)

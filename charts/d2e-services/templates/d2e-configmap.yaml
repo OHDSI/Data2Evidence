@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  namespace: d2e
+data:
+  CADDY__D2E__INTERNAL_FQDN: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
+  CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
+  SERVICE_ROUTES: {{ .Values.config.SERVICE_ROUTES | quote }}
+  IDP__RELYING_PARTY: {{ .Values.idp.IDP__RELYING_PARTY | quote }}
+  IDP__REQUIRED_CLAIM: {{ .Values.idp.IDP__REQUIRED_CLAIM | quote }}
+  LOGTO__SCOPE: {{ .Values.idp.LOGTO__SCOPE | quote }}
+  LOGTO__SCOPES: {{ .Values.idp.LOGTO__SCOPES | quote }}
+  LOGTO__ROLES: {{ .Values.idp.LOGTO__ROLES | quote }}
+  baseJobTemplate.json: {{ .Values.config.baseJobTemplate.configuration | toJson }}
+  TREX_PACKAGE_JSON_PLUGIN: {{ .Values.config.TREX_PACKAGE_JSON_PLUGIN | toJson }}
+  TREX_NPMRC: {{ .Values.config.TREX_NPMRC | quote }}
+  TREX_BUNFIG: {{ .Values.config.TREX_BUNFIG | quote }}
+  LOGTO__DISABLE_BASIC_AUTH: {{ .Values.idp.LOGTO__DISABLE_BASIC_AUTH | quote }}
+  OMOP_RELATIONSHIPS_FOR_DESCENDANTS: {{ .Values.config.OMOP_RELATIONSHIPS_FOR_DESCENDANTS | quote }}
+  PLUGINS_IMAGE_TAG: {{ .Values.config.PLUGINS_IMAGE_TAG | quote }}
+  PLUGINS_API_VERSION: {{ .Values.config.PLUGINS_API_VERSION | quote }}
+  PLUGINS_REGISTRY: {{ .Values.config.PLUGINS_REGISTRY | quote }}
+  PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: {{ .Values.config.PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG | quote }}
+  ACHILLES_THREAD_COUNT: {{ .Values.config.ACHILLES_THREAD_COUNT | quote }}
+  EXCLUDE_ANALYSIS_IDS: {{ .Values.config.EXCLUDE_ANALYSIS_IDS | quote }}
+  AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: {{ .Values.config.AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES | quote }}
+  LOGTO__TERM_OF_USE_URL: {{ .Values.idp.LOGTO__TERM_OF_USE_URL | quote }}
+  LOGTO__PRIVACY_POLICY_URL: {{ .Values.idp.LOGTO__PRIVACY_POLICY_URL | quote }}
+  LOGTO__CUSTOM_CSS: {{ .Values.idp.LOGTO__CUSTOM_CSS | quote }}

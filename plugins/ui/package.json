@@ -8,11 +8,10 @@
   },
   "license": "Apache-2.0",
   "scripts": {
-    "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin && bun build-ui5 && bun build-starboard && bun build-gateway && bun build-wizards",
+    "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,react-notebook && bun build-ui5 && bun build-starboard && bun build-wizards",
     "build-docker": "docker build -f Dockerfile.build -t d2e-ui-builder . && docker run --rm -v \"$(pwd):/app\" d2e-ui-builder",
-    "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin --skip-nx-cache && bun build-ui5",
+    "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,react-notebook --skip-nx-cache && bun build-ui5",
     "build-ui5": "bunx ui5 build -a --clean-dest --dest ./resources/ui5",
-    "build-gateway": "cd apps/gateway-proxy && bun run build",
     "build-starboard": "node scripts/build-starboard.js",
     "build-wizards": "cd apps/wizards && bun run test && bun run build",
     "mri-vue": "bun install; bunx nx build vue-mri",
@@ -56,6 +55,10 @@
         {
           "source": "/resources/notebook-ui",
           "target": "/resources/notebook-ui"
+        },
+        {
+          "source": "/resources/notebook",
+          "target": "/resources/notebook"
         },
         {
           "source": "/resources/analysis-ui",
@@ -104,10 +107,6 @@
         {
           "source": "/hc/mri/pa/config/i18n",
           "target": "/resources/mri-ui5/PatientAnalyticsConfig/ui5/i18n/"
-        },
-        {
-          "source": "/ui/gateway/dashboard",
-          "target": "/resources/gateway/dist"
         },
         {
           "source": "/ui/core",
@@ -211,10 +210,10 @@
             "route": "cohorts"
           },
           {
-            "visible": true,
+            "visible": false,
             "type": "app",
             "featureFlag": "starboard",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "name": "Notebooks",
             "nameI18nKey": "UI_PLUGIN_NOTEBOOKS",
             "pluginPath": "/resources/notebook-ui/lifecycles.js",
@@ -222,6 +221,22 @@
               "RESEARCHER"
             ],
             "route": "starboard",
+            "data": {
+              "uiFilesUrl": "https://$$FQDN$$/"
+            }
+          },
+          {
+            "visible": true,
+            "type": "app",
+            "featureFlag": "notebook",
+            "defaultEnabled": true,
+            "name": "Notebooks",
+            "nameI18nKey": "UI_PLUGIN_WEBR_NOTEBOOKS",
+            "pluginPath": "/resources/notebook/lifecycles.js",
+            "requiredRoles": [
+              "RESEARCHER"
+            ],
+            "route": "notebook",
             "data": {
               "uiFilesUrl": "https://$$FQDN$$/"
             }
@@ -265,11 +280,11 @@
             "visible": false
           },
           {
-            "name": "Dashboard",
+            "name": "Dashboards",
             "route": "shiny-live",
             "pluginPath": "plugins/Researcher/ShinyLive/module",
             "featureFlag": "shinyLive",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "requiredRoles": [
               "RESEARCHER"
             ],
@@ -375,6 +390,8 @@
             "description": "Manage plugins",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION",
             "visible": true,
+            "featureFlag": "trexPlugins",
+            "defaultEnabled": false,
             "name": "Plugins",
             "nameI18nKey": "UI_PLUGIN_PLUGINS",
             "notes": "",

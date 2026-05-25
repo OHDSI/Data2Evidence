@@ -1225,6 +1225,9 @@ export const paFHIRConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,

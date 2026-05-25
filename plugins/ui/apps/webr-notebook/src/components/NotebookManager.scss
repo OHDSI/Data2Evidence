@@ -1,0 +1,68 @@
+$primary: #000080;
+
+.notebook-manager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  &__card {
+    margin: 32px;
+    overflow: hidden;
+    padding: 32px;
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  &__content {
+    display: flex;
+    gap: 10px;
+    height: calc(100vh - 240px);
+    position: relative;
+
+    // When chat is not rendered, notebook root takes full width
+    &:not(:has(.chat-container)) .notebook-manager__root {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+  }
+
+  &__root {
+    flex: 6 1 0%;
+    overflow: auto;
+  }
+
+  &__empty {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    min-height: 0;
+  }
+
+  &__fab {
+    position: absolute;
+    right: 50px;
+    bottom: 0;
+  }
+}
+
+.notebook-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background-color: $primary;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+  outline: none;
+
+  &:hover {
+    background-color: rgba(0, 0, 128, 0.9);
+  }
+}

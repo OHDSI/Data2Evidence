@@ -149,6 +149,7 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                 nql.executeQuery(this.connection, (err, result) => {
                     if (err) {
                         reject(err);
+                        return;
                     }
                     result.measures = measures;
                     result.categories = categories;

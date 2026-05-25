@@ -47,6 +47,7 @@ COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.ven
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./loyalty_score/loyalty_score_plugin /app/flows/loyalty_score_plugin
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 WORKDIR /app
 

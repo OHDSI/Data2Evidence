@@ -8,6 +8,44 @@ import {addPlugin as addDBPlugin} from "./db.ts"
 import pg from "npm:pg"
 import { Hono } from "npm:hono";
 
+export type DiscoveredPlugin = {
+	dir: string;
+	pkg: any;
+};
+
+export async function discoverPlugins(paths: string[]): Promise<DiscoveredPlugin[]> {
+	const byName = new Map<string, DiscoveredPlugin>();
+	for (const root of paths) {
+		try {
+			for await (const child of Deno.readDir(root)) {
+				if (!child.isDirectory) continue;
+				const pkgPath = `${root}/${child.name}/package.json`;
+				let pkg: any;
+				try {
+					pkg = JSON.parse(await Deno.readTextFile(pkgPath));
+				} catch (e) {
+					if (e instanceof Deno.errors.NotFound) continue;
+					if (e instanceof SyntaxError) {
+						logger.error(`${pkgPath}: invalid JSON: ${e.message}`);
+						continue;
+					}
+					logger.error(`${pkgPath}: ${e instanceof Error ? e.message : e}`);
+					continue;
+				}
+				if (!pkg.name) {
+					logger.error(`${pkgPath}: package.json missing "name"`);
+					continue;
+				}
+				if (!pkg.trex) continue;
+				byName.set(pkg.name, { dir: `${root}/${child.name}`, pkg });
+			}
+		} catch (e) {
+			logger.log(`Plugins path ${root} not readable, skipping: ${e instanceof Error ? e.message : e}`);
+		}
+	}
+	return [...byName.values()];
+}
+
 export class Plugins {
 
 	private constructor() {
@@ -47,21 +85,26 @@ export class Plugins {
 		return res;
 	}
 
-	private static async initPluginsDev(app: Hono) {
-		for await (const plugin of Deno.readDir(`${env.PLUGINS_DEV_PATH}`)) {
-			if(plugin.isDirectory)
-				logger.log(`Add Plugin ${plugin.name} from ${env.PLUGINS_DEV_PATH}`)
-				try {
-					const pkg = JSON.parse(await Deno.readTextFile(`${env.PLUGINS_DEV_PATH}/${plugin.name}/package.json`));
-					pkg.version = pkg.version+"-dev"
-					await (await Plugins.get()).addPlugin(app, `${env.PLUGINS_DEV_PATH}/${plugin.name}`, pkg, pkg.name.split("/")[1]);
-				} catch(e) {
-					logger.error(`${plugin.name} does not have a package.json`)
-				}
+	private static async initPluginsDiscovered(app: Hono) {
+		const paths = env.PLUGINS_DEV_PATH.split(":").map(s => s.trim()).filter(Boolean);
+		const discovered = await discoverPlugins(paths);
+		logger.log(`Discovered ${discovered.length} plugin(s) across ${paths.length} path(s): ${paths.join(", ")}`);
+		const plugin = await Plugins.get();
+		for (const { dir, pkg } of discovered) {
+			const shortName = pkg.name.split("/").pop();
+			try {
+				await plugin.addPlugin(app, `${dir}/`, pkg, shortName);
+			} catch (e) {
+				logger.error(`Failed to register plugin ${pkg.name}: ${e instanceof Error ? e.message : e}`);
+			}
 		}
 	}
 
 	private static async initPluginsEnv(app: Hono) {
+		if (!env.PLUGINS_INIT || env.PLUGINS_INIT.length === 0) {
+			return;
+		}
+		logger.log(`PLUGINS_SEED set: installing ${env.PLUGINS_INIT.length} plugin(s) from registry: ${env.PLUGINS_INIT.join(", ")}`);
 		const plugin = await Plugins.get();
 		const failed: string[] = [];
 		for(const name of env.PLUGINS_INIT) {
@@ -174,15 +217,9 @@ export class Plugins {
 	}
 
 	static async initPlugins(app: Hono) {
-		logger.log("Add plugins");
+		logger.log("Initialising plugins");
+		await Plugins.initPluginsDiscovered(app);
 		await Plugins.initPluginsEnv(app);
-		if(env.NODE_ENV === 'development') {
-			try {
-				await Plugins.initPluginsDev(app);
-			} catch (e) {
-				logger.error(e)
-			}
-		}
 	}
 }
 

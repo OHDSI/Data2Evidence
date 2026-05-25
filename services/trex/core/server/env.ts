@@ -11,6 +11,11 @@ export let global = {
         "trex"
       ]
     },{
+      "path": "^/trex/attach$",
+      "scopes": [
+        "trex"
+      ]
+    },{
       "path": "^/trex/log",
       "scopes": [
         "trex.log.write"
@@ -83,7 +88,7 @@ export const env = {
     LOGTO__DEFAULT_TENANT__FQDN_URL : _env.LOGTO__DEFAULT_TENANT__FQDN_URL || "https://default.logto.app/api",
     LOGTO_RESOURCE_API: _env.LOGTO__RESOURCE_API,
     GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP,
-    PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "./plugins",
+    PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "/usr/src/bundled-plugins:/usr/src/plugins",
     REP_PG: _env.REP_PG,
     PORTAL__LOG_DISCLAIMER: _env.PORTAL__LOG_DISCLAIMER,
     PREFECT_DOCKER_NETWORK: _env.PREFECT_DOCKER_NETWORK || `${_env.PROJECT_NAME}_data`,

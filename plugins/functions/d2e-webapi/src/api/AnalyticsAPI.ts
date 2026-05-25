@@ -6,6 +6,8 @@ import {
   IBaseMaterializedCohort,
 } from "./types.ts";
 
+const materializableCohortDatasetIds = new Set<string>();
+
 export class AnalyticsSvcAPI {
   private readonly baseURL: string;
   private readonly token: string;
@@ -153,6 +155,30 @@ export class AnalyticsSvcAPI {
       }
     } catch (error) {
       console.error(`Error while getting all cohorts: ${error}`);
+      throw error;
+    }
+  }
+
+  async canMaterializeCohort(datasetId: string): Promise<boolean> {
+    try {
+      if (materializableCohortDatasetIds.has(datasetId)) {
+        return true;
+      }
+
+      const url = new URL(`${this.baseURL}/cohort/can-materialize-cohort`);
+      console.log(`Calling ${url} to check if cohort can be materialized`);
+      const options = this.getRequestConfig();
+      url.searchParams.set("datasetId", datasetId);
+      const result = await this.analyticsapi.get(url.toString(), options);
+      const canMaterialize = result.data === true;
+      if (canMaterialize) {
+        materializableCohortDatasetIds.add(datasetId);
+      }
+      return canMaterialize;
+    } catch (error) {
+      console.error(
+        `Error while checking if cohort can be materialized: ${error}`,
+      );
       throw error;
     }
   }
