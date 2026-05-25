@@ -1516,14 +1516,14 @@ def upload_results_from_storage(options):
     
     Args:
         options: Dictionary containing:
-            - tokenstudyCode: Study identifier (required)
+            - tokenStudyCode: Study identifier (required)
             - datasetId: Dataset identifier (required)
             - databaseCode: Database code (required)
             - storageFileName: Filename in storage (required, e.g., "results.zip")
             - analysisSpec: Analysis specification JSON (optional)
             - parentFlowRunId: Parent flow run ID for auth (optional)
     """
-    token_study_code = options.get('tokenstudyCode')
+    token_study_code = options.get('tokenStudyCode')
     dataset_id = options.get('datasetId')
     database_code = options.get('databaseCode')
     storage_file_name = options.get('storageFileName', 'results.zip')
@@ -1532,7 +1532,7 @@ def upload_results_from_storage(options):
     analysis_spec = options.get('analysisSpec')
     
     if not token_study_code:
-        raise ValueError("Missing required parameter: tokenstudyCode")
+        raise ValueError("Missing required parameter: tokenStudyCode")
     if not dataset_id:
         raise ValueError("Missing required parameter: datasetId")
     if not database_code:

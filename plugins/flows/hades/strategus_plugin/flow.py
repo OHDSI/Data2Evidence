@@ -54,7 +54,7 @@ def strategus_plugin(json_graph, options):
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
     studyName = options.get("studyName", "")
-    tokenstudyCode = options.get('tokenstudyCode', None)
+    tokenStudyCode = options.get('tokenStudyCode', None)
 
     generate_nodes_flow_wo = generate_nodes_flow.with_options(
         on_completion=[
@@ -97,7 +97,7 @@ def strategus_plugin(json_graph, options):
             result_db_settings = {
                 'database_code': databaseCode,
                 "dataset_id": datasetId,
-                "token_study_code": tokenstudyCode
+                "token_study_code": tokenStudyCode
             }
             upload_strategus_results(study_analysis_result.data, f'/tmp/{flow_run_id}/results', result_db_settings)
 
@@ -106,7 +106,7 @@ def strategus_plugin(json_graph, options):
     finally:
         if study_analysis_result is not None:
             strategus_api = StrategusAnalysisAPI()
-            token_study_code = tokenstudyCode
+            token_study_code = tokenStudyCode
             if(strategus_api.update_study_analysis(token_study_code, databaseCode, studyName, study_analysis_result.data)):
                 logger.info(f"Successfully updated strategus analysis specification for study '{token_study_code}'")
         else:
@@ -212,7 +212,7 @@ def runStrategus(json_graph, options):
         root_flow_run_context = {"id":uuid4()}
     flow_run_id = str(root_flow_run_context.get("id"))
     
-    token_study_code = options.get('tokenstudyCode', None)
+    token_study_code = options.get('tokenStudyCode', None)
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
     schema_name = options.get('schemaName', None)
@@ -287,7 +287,7 @@ def drop_strategus_results(options):
     """
     Drops the Strategus results from the database.
     """
-    token_study_code = options.get('tokenstudyCode', None)
+    token_study_code = options.get('tokenStudyCode', None)
     database_code = options.get('databaseCode', None)
     if(not token_study_code):
         raise Exception('TokenStudyCode is missing')
@@ -304,7 +304,7 @@ def drop_strategus_results(options):
 # Enables to run the flow as a simple method, and not a prefect flow 
 if __name__ == "__main__":
     # analysis-flow options
-    options = {"tokenstudyCode":"treatment_patterns","datasetId":"88a35008-c89e-4779-9155-6d8f2db8f6e1","studyName":"treatment_patterns","test_mode":False,"schemaName":"demo_cdm","databaseCode":"demo_database","trace_config":{"trace_db":"alp","trace_mode":True},"uploadResults":True}
+    options = {"tokenStudyCode":"treatment_patterns","datasetId":"88a35008-c89e-4779-9155-6d8f2db8f6e1","studyName":"treatment_patterns","test_mode":False,"schemaName":"demo_cdm","databaseCode":"demo_database","trace_config":{"trace_db":"alp","trace_mode":True},"uploadResults":True}
 
     json_graph = {}
 

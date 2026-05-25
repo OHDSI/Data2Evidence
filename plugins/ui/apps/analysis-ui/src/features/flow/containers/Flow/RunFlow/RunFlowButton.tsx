@@ -91,12 +91,12 @@ export const RunFlowButton: FC = () => {
 
   const runFlow = useCallback(
     async (datasetId: string) => {
-      const studyId = portalProps?.datasetId;
-      if (!studyId) {
-        console.error("No studyId available from plugin metadata");
+      const tokenStudyCode = portalProps?.datasetId;
+      if (!tokenStudyCode) {
+        console.error("No tokenStudyCode available from plugin metadata");
         return;
       }
-      await runDataflow({ id: dataflowId, datasetId, studyId, uploadResults });
+      await runDataflow({ id: dataflowId, datasetId, tokenStudyCode, uploadResults });
     },
     [dataflowId, uploadResults]
   );

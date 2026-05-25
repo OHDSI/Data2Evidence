@@ -45,7 +45,7 @@ export class PrefectService {
   public async createAnalysisFlowRun(
     id: string,
     datasetId: string,
-    studyId: string,
+    tokenStudyCode: string,
     uploadResults: boolean | undefined,
     token: string,
   ) {
@@ -62,7 +62,7 @@ export class PrefectService {
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
-      studyId,
+      tokenStudyCode,
       revision.canvas.name,
       JSON.stringify(prefectParams),
       databaseCode,
@@ -86,7 +86,7 @@ export class PrefectService {
           databaseCode,
           cacheId,
           studyName,
-          studyId,
+          tokenStudyCode,
           ...(uploadResults !== undefined ? { uploadResults } : {}),
         },
       },
@@ -188,10 +188,10 @@ export class PrefectService {
   public async uploadResultsFromStorage(
     token: string,
     {
-      studyId,
+      tokenStudyCode,
       datasetId,
       analysisSpec,
-    }: { studyId: string; datasetId: string; analysisSpec?: string },
+    }: { tokenStudyCode: string; datasetId: string; analysisSpec?: string },
   ) {
     this.prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
@@ -208,24 +208,24 @@ export class PrefectService {
     try {
       const files = await portalServerApi.listFilesFromStrategusResults(
         STRATEGUS_RESULTS_BUCKET,
-        studyId,
+        tokenStudyCode,
       );
 
       if (files && files.length > 0) {
         const fileName = files[0].name.split("/").pop();
         storageFileName = fileName;
         console.log(
-          `Found storage file for study ${studyId}: ${storageFileName}`,
+          `Found storage file for study ${tokenStudyCode}: ${storageFileName}`,
         );
       } else {
         throw new Error(
-          `No files found in storage for study: ${studyId}. Please upload a results file first.`,
+          `No files found in storage for study: ${tokenStudyCode}. Please upload a results file first.`,
         );
       }
     } catch (error) {
-      console.error("Error querying storage for study %s:", studyId, error);
+      console.error("Error querying storage for study %s:", tokenStudyCode, error);
       throw new Error(
-        `Failed to find results file in storage for study ${studyId}: ${error.message}`,
+        `Failed to find results file in storage for study ${tokenStudyCode}: ${error.message}`,
       );
     }
 
@@ -241,7 +241,7 @@ export class PrefectService {
             mode: "upload-results-from-storage",
             databaseCode,
             cacheId,
-            studyId,
+            tokenStudyCode,
             datasetId,
             storageFileName,
             analysisSpec, // Pass analysisSpec to the flow
@@ -279,7 +279,7 @@ export class PrefectService {
 
   public async dropResultsFromStorage(
     token: string,
-    { studyId, datasetId }: { studyId: string; datasetId: string },
+    { tokenStudyCode, datasetId }: { tokenStudyCode: string; datasetId: string },
   ) {
     this.prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
@@ -302,7 +302,7 @@ export class PrefectService {
             mode: "drop-results",
             databaseCode,
             cacheId,
-            studyId,
+            tokenStudyCode,
             datasetId,
           },
         ),
@@ -324,7 +324,7 @@ export class PrefectService {
 
   public async removeAnalysisResultsSchema(
     token: string,
-    { studyId }: { studyId: string },
+    { tokenStudyCode }: { tokenStudyCode: string },
   ) {
     this.prefectApi = new PrefectAPI(token);
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
@@ -338,7 +338,7 @@ export class PrefectService {
         json_graph: {},
         options: {
           mode: "drop-results",
-          studyId,
+          tokenStudyCode,
         },
       },
     );

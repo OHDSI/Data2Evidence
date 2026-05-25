@@ -123,6 +123,15 @@ const UploadStrategusResultsDialog: FC<UploadStrategusResultsDialogProps> = ({ s
       return;
     }
 
+    if (!study.tokenStudyCode) {
+      setFeedback({
+        type: "error",
+        message: "Study is missing tokenStudyCode",
+        autoClose: 5000,
+      });
+      return;
+    }
+
     setUploading(true);
     setFeedback({});
 
@@ -133,7 +142,7 @@ const UploadStrategusResultsDialog: FC<UploadStrategusResultsDialogProps> = ({ s
       console.log("Upload response:", uploadResponse);
 
       const flowResponse = await api.strategusResults.uploadResultsFromStorage(
-        study.studyId,
+        study.tokenStudyCode,
         selectedDatasetId,
         analysisSpec || undefined
       );

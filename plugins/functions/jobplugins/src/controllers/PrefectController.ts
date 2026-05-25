@@ -25,7 +25,7 @@ export class PrefectController {
   private async createAnalysisRun(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { datasetId, studyId, uploadResults } = req.body;
+      const { datasetId, tokenStudyCode, uploadResults } = req.body;
       const token = this.getToken(req);
 
       if (!datasetId) {
@@ -37,7 +37,7 @@ export class PrefectController {
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
         datasetId,
-        studyId,
+        tokenStudyCode,
         uploadResults,
         token,
       );
@@ -111,12 +111,12 @@ export class PrefectController {
 
   private async removeAnalysisResultsSchema(req: Request, res: Response) {
     try {
-      const { id: studyId } = req.params;
+      const { id: tokenStudyCode } = req.params;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
       const flowrunId = await this.prefectService.removeAnalysisResultsSchema(
         token,
-        { studyId },
+        { tokenStudyCode },
       );
       return res
         .status(200)
@@ -129,19 +129,19 @@ export class PrefectController {
 
   private async uploadResultsFromStorage(req: Request, res: Response) {
     try {
-      const { studyId, datasetId, analysisSpec } = req.body;
+      const { tokenStudyCode, datasetId, analysisSpec } = req.body;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
 
-      if (!studyId || !datasetId) {
+      if (!tokenStudyCode || !datasetId) {
         return res
           .status(400)
-          .send({ message: "Missing required fields: studyId or datasetId" });
+          .send({ message: "Missing required fields: tokenStudyCode or datasetId" });
       }
 
       const flowrunId = await this.prefectService.uploadResultsFromStorage(
         token,
-        { studyId, datasetId, analysisSpec },
+        { tokenStudyCode, datasetId, analysisSpec },
       );
       return res
         .status(200)
@@ -154,13 +154,13 @@ export class PrefectController {
 
   private async dropResultsFromStorage(req: Request, res: Response) {
     try {
-      const { id: studyId, datasetid: datasetId } = req.params;
+      const { id: tokenStudyCode, datasetid: datasetId } = req.params;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
 
       const flowrunId = await this.prefectService.dropResultsFromStorage(
         token,
-        { studyId, datasetId },
+        { tokenStudyCode, datasetId },
       );
       return res
         .status(200)
