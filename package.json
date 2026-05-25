@@ -36,7 +36,7 @@
     "inittestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js test",
     "removetestdb-pg": "node tests/backend_integration_tests/build/initdb-pg.js rmonly",
     "internal": "npm run-script --prefix internal",
-    "build:ts": "tsc ./scripts/cli.ts --outDir ./scripts/dist",
+    "build:ts": "node scripts/embed-assets.mjs && tsc -p scripts/tsconfig.json",
     "prepare": "npm run build:ts"
   },
   "optionalDependencies": {
@@ -57,6 +57,7 @@
     "node-fetch": "^3.3.2",
     "node-forge": "^1.4.0",
     "typescript": "^5.0.0",
+    "undici": "^6.25.0",
     "uuid": "^14.0.0",
     "zx": "^8.8.5"
   }

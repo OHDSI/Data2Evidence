@@ -75,6 +75,7 @@ COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.ve
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./search_embedding/search_embedding_plugin /app/flows/search_embedding_plugin
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 WORKDIR /app
 
