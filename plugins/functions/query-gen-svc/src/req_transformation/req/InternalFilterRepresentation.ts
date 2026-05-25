@@ -789,7 +789,7 @@ export class InternalFilterRepresentation implements Request {
                     // check for the parent interaction value type
                     // if it is of string type => a single parent interaction
                     // if it is of array of string type => multiple parent interactions
-                    if (typeof filtercard._parentInteraction.id == "string") {
+                    if (typeof filtercard._parentInteraction.id === "string") {
                         node.attributeList.push(
                             new BaseNode(Keys.MRITERM_PARENTINTERACTION)
                                 .withAlias(
