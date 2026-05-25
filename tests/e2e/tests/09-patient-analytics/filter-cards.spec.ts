@@ -124,14 +124,6 @@ test(TEST_NAME, async ({ browser }) => {
   expect(conditionOccuErrorBgcolor).toBe('rgb(226, 49, 1)')
 
   // Step 8 - Entering month of birth with correct input
-  await page.getByTestId('filter-card-menu-trigger').first().click()
-  await page
-    .locator('div')
-    .filter({ hasText: /^Month of Birth$/ })
-    .first()
-    .click()
-  await page.getByTestId('filter-card-menu-trigger').first().click()
-
   await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('[1-10]')
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')

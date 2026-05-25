@@ -168,13 +168,6 @@ async function addMonthOfBirthFilter(page, ageRange) {
   // AGE FILTER CONFIGURATION
   // ========================
   // Add age restriction filter: patients between 35-80 years old
-  await page.getByTestId('filter-card-menu-trigger').first().click()
-  await page
-    .locator('div')
-    .filter({ hasText: /^Month of Birth$/ })
-    .first()
-    .click()
-  await page.getByTestId('filter-card-menu-trigger').first().click()
   await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill(ageRange)
   await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')

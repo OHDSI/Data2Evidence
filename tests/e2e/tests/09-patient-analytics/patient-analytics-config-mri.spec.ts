@@ -29,7 +29,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('filter-card-menu-trigger').click()
   await page.getByRole('menu').getByText('Age').click()
   await page.locator('div:nth-child(11) > .bs-checkbox > .bs-checkbox__input').click()
-  await page.keyboard.press('Escape')
+  await page.getByTestId('filter-card-menu-trigger').click()
   await page.getByTitle('Basic Data - Age').click()
   await page.getByRole('textbox').fill('[35-80]')
   await page.getByRole('textbox').press('Enter')
