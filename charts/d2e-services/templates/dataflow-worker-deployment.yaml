@@ -248,8 +248,6 @@ spec:
               value: "https://alp-default"
             - name: IDP_SUBJECT_PROP
               value: "sub"
-            - name: INSTALL_SQLALCHEMY
-              value: "bash -c 'if [[ $INSTALL_SQLALCHEMY_HANA = true ]]; then uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute; else prefect flow-run execute; fi'"
             - name: SERVICE_ROUTES
               valueFrom:
                 configMapKeyRef:

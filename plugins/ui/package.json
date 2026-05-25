@@ -392,6 +392,8 @@
             "description": "Manage plugins",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION",
             "visible": true,
+            "featureFlag": "trexPlugins",
+            "defaultEnabled": false,
             "name": "Plugins",
             "nameI18nKey": "UI_PLUGIN_PLUGINS",
             "notes": "",
