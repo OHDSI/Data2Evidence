@@ -29,6 +29,7 @@ index_col = 'embedding_cos_idx'
 @flow(log_prints=True)
 def search_embedding_plugin(options: SearchEmbeddingType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters: {options.json()}")
     logger.info(f'Device: {device} | PyTorch threads: {torch.get_num_threads()}')
     schema_name = options.schema_name
     database_code = options.database_code
@@ -40,6 +41,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
         'cache_id': cache_id,
     }
     if use_trex_connection:
+        logger.info("Using TREX connection")
         # -------------------- Trex connection to cache --------------------
         dbdao = DBDao(**db_parameters)
         if dbdao.dialect == SupportedDatabaseDialects.HANA:
@@ -51,6 +53,7 @@ def search_embedding_plugin(options: SearchEmbeddingType):
             dbdao.execute_sql("LOAD vss")
             create_embeddings_cache(dbdao, schema_name, chunksize)
     else:
+        logger.info("Using direct DuckDB connection")
         # -------------------- Direct file connection to cache --------------------
         duckdb_file_path = resolve_duckdb_file_path(database_code, Variable.get("duckdb_data_folder"))
         vss_extension_path = f'{DUCKDB_EXTENSIONS_FILEPATH}/vss.duckdb_extension';
