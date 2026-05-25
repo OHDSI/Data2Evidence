@@ -109,6 +109,14 @@ class TrexDao(DaoBase):
                 if cur:
                     cur.close()
 
+    def clear_pg_cache(self) -> None:   
+        try:
+            sql = '''CALL pg_clear_cache();'''
+            self.execute_sql(sql)
+            return
+        except psycopg2.Error as e:
+            raise
+
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:

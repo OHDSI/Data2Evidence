@@ -512,6 +512,10 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-null}",
+          "OLLAMA_BASE_URL": "${OLLAMA_BASE_URL:-null}",
+          "OLLAMA_API_KEY": "${OLLAMA_API_KEY:-null}",
+          "GOOGLE_API_KEY": "${GOOGLE_API_KEY:-null}",
           "AI_MODEL": "${AI_MODEL:-null}"
         },
         "data-mapping": {
