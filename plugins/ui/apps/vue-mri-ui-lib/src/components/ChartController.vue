@@ -123,7 +123,6 @@ export default {
       showErrorLines: false,
       series: [],
       activeChartCollections: false,
-      colorAxisIndex: null as number | null,
       hasSetDefaultColorAxis: false,
       showClearConfirmation: false,
       clearConfirmationMessage: '',
@@ -157,17 +156,18 @@ export default {
   },
   watch: {
     getActiveBookmark(newVal, oldVal) {
-      // Reset default color axis flag only when switching to a different cohort,
-      // not when saving/updating the currently active bookmark (same bmkId).
-      if (newVal?.bmkId !== oldVal?.bmkId) {
+      // Reset only when  switching to a different cohort.
+      // Do NOT reset when a new cohort is saved for the first time:
+      const isSavingNewCohort = !oldVal?.bmkId && !!newVal?.bmkId
+      if (!isSavingNewCohort && newVal?.bmkId !== oldVal?.bmkId) {
         this.hasSetDefaultColorAxis = false
-        this.colorAxisIndex = null
+        this.setColorAxisIndex(null)
       }
     },
     getBarChartType(newVal: string) {
       // Clear the X-axis color selection whenever the chart type stops being stacked bar chart
       if (newVal !== 'stack') {
-        this.colorAxisIndex = null
+        this.setColorAxisIndex(null)
       }
     },
   },
@@ -185,7 +185,11 @@ export default {
       'getKMDisplayInfo',
       'getActiveBookmark',
       'getBarChartType',
+      'getColorAxisIndex',
     ]),
+    colorAxisIndex() {
+      return this.getColorAxisIndex
+    },
     isColorButtonDisabled() {
       return this.getBarChartType !== 'stack'
     },
@@ -247,7 +251,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue']),
+    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue', 'setColorAxisIndex']),
     setChartBusy(status) {
       this.$emit('setChartBusy', status)
     },
@@ -270,7 +274,7 @@ export default {
       return null
     },
     confirmStackingOverColor(): Promise<boolean> {
-      if (this.colorAxisIndex === null) {
+      if (this.getColorAxisIndex === null) {
         return Promise.resolve(true)
       }
       this.clearConfirmationMessage = this.getText('MRI_PA_CONFIRM_CLEAR_COLOR')
@@ -278,7 +282,7 @@ export default {
       return new Promise<boolean>(resolve => {
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
-            this.colorAxisIndex = null
+            this.setColorAxisIndex(null)
           }
           resolve(confirmed)
         }
@@ -291,14 +295,14 @@ export default {
         this.pendingCancelRevert = null
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
-            this.colorAxisIndex = axisIndex
+            this.setColorAxisIndex(axisIndex)
             this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
             this.setFireRequest()
           }
         }
         this.showClearConfirmation = true
       } else {
-        this.colorAxisIndex = axisIndex
+        this.setColorAxisIndex(axisIndex)
         this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
       }
     },
@@ -324,6 +328,8 @@ export default {
       this.pendingCancelRevert = null
     },
     onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
+      // If colorAxisIndex is already set (restored from bookmark or chosen by the user), don't override
+      if (this.getColorAxisIndex !== null) return
       if (this.hasSetDefaultColorAxis || xAxisCategoryCounts.length === 0) return
       if (this.stackAttributeHasSelection) return
       if (this.isColorButtonDisabled) return
@@ -337,7 +343,7 @@ export default {
       if (smallest.count > 5) return
 
       this.$nextTick(() => {
-        this.colorAxisIndex = smallest.axisIndex
+        this.setColorAxisIndex(smallest.axisIndex)
       })
     },
   },

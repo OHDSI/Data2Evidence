@@ -45,7 +45,6 @@ def get_and_update_attributes(options: CreateCacheOptions, dataset: dict):
             dialect=SupportedDatabaseDialects.TREX
             if options.use_trex_connection
             else None,
-            use_cache_db=options.use_cache_db,
             database_code=database_code,
             cache_id=cache_id,
         )
