@@ -603,6 +603,7 @@ services:
 
         # Enable if need to access admin console
         # http://localhost:3002 {
+        #   uri strip_prefix /d2e/logto
         #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
         #     header_up Host {host}
         #     header_up X-Forwarded-Proto http
@@ -858,7 +859,6 @@ services:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3002 # Enable if need to access admin console
-      # ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
       # ENDPOINT is the server-side base URL Logto stamps into token iss/discovery issuer (stable identity).
       # It must be reachable by backend services (e.g. WebAPI) that validate iss by fetching discovery.
