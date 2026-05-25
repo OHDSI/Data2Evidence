@@ -14,6 +14,7 @@ os.environ["plugin_name"] = "create_cachedb_fhir_plugin"
 @flow(log_prints=True)
 def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     logger.info(
         f"Starting FHIR cache creation from medplum for database "
         f"'{options.databaseCode}' → schema '{options.cacheSchemaName}'"
