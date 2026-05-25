@@ -30,9 +30,6 @@ const pyodideIndexUrl =
     ? `https://cdn.jsdelivr.net/pyodide/v${__PYODIDE_VERSION__}/full/`
     : undefined;
 
-const pyodideKernel = new PyqeReadyPyodideKernel();
-const webRKernel = new WebRKernel();
-
 const portalTheme: NotebookTheme = {
   primary: "#000080",
   primaryForeground: "#ffffff",
