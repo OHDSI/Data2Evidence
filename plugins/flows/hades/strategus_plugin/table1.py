@@ -38,7 +38,6 @@ class Table1Generator:
 
                 dbdao = DBDao(
                     dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                    use_cache_db=False,
                     database_code=self.database_code
                 )
                 db_credentials = dbdao.tenant_configs

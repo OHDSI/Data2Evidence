@@ -33,17 +33,16 @@ def hana_load_plugin(options: OmopCDMPluginOptions):
 
 def create_datamodel(options: OmopCDMPluginOptions):
     logger = get_run_logger()
-
+    logger.info(f"Flow parameters received: {options.json()}")
     database_code = options.database_code
     cache_id = options.cache_id
-    use_cache_db = options.use_cache_db
     schema = options.schema_name.upper()
     results_schema = options.results_schema.upper()
     load_csvs = options.load_csvs
     data_model = options.data_model
     cdm_version = options.cdm_version
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code, cache_id=cache_id)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
 
     logger.info(f"Creating OMOP CDM schema '{schema}' in database '{database_code}'..")
     create_schema_task(dbdao, schema)

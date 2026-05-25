@@ -35,7 +35,10 @@ export const configDefaultValues = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,

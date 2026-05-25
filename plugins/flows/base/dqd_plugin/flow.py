@@ -28,12 +28,11 @@ def _default_cache_id_from_dataset_id(dataset_id):
 @flow(log_prints=True)
 def dqd_plugin(options: DqdOptionsType):
     logger = get_run_logger()
-
+    logger.info(f"Flow parameters received: {options.json()}")
     flow_run_id = runtime.flow_run.id
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-        use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )

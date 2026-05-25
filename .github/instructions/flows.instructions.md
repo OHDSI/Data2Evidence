@@ -85,7 +85,7 @@ yarn build  # Builds Docker image locally with local tag
 **Integration testing with D2E:**
 1. **Directly modify docker-compose-local.yml:**
    - Uncomment: `- ./plugins/flows/[plugin_group]/package.json:/usr/src/plugins/d2e-flows/package.json`
-   - Change: `PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}` to `PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}`
+   - Plugins are baked into the trex image; no env toggle is required to pick up new flow versions — rebuild the image.
 
 2. **Restart trex service:**
    ```bash

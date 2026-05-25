@@ -29,18 +29,20 @@ os.environ["plugin_name"] = "data_characterization_plugin"
 @flow(log_prints=True)
 def data_characterization_plugin(options: DCOptionsType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
 
     threads = int(Variable.get("achilles_thread_count", 1))
+    logger.info(f"Using {threads} threads for Achilles execution")
 
     exclude_analysis_ids = Variable.get(
         "exclude_analysis_ids", ""
     )  # comma separated values in a string
+    logger.info(f"These analysis IDs will be excluded from Achilles run: {exclude_analysis_ids}")
 
     flow_run_id = runtime.flow_run.id
 
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-        use_cache_db=options.use_cache_db,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
@@ -75,6 +77,8 @@ def data_characterization_plugin(options: DCOptionsType):
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
     )
+    # Resolve to absolute path so R uses the same directory regardless of its working directory
+    achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
     # For TREX connections, set vocabSchemaName to schemaName
     if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
@@ -85,6 +89,10 @@ def data_characterization_plugin(options: DCOptionsType):
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
+
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        if hasattr(dbdao, "clear_pg_cache"):
+            dbdao.clear_pg_cache()
 
     if dc_schema:
         execute_achilles_wo = execute_achilles.with_options(
@@ -207,7 +215,15 @@ def execute_sql_script(sql_script: str, dbdao):
             try:
                 for statement in sql_script.strip().split(";"):
                     if statement.strip():
-                        conn.execute(text(statement))
+                        try:
+                            conn.execute(text(statement))
+                        except Exception as stmt_e:
+                            if (
+                                dbdao.dialect == SupportedDatabaseDialects.HANA
+                                and "index already exists" in str(stmt_e).lower()
+                            ):
+                                continue
+                            raise
             except Exception as e:
                 raise
             else:
@@ -239,7 +255,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         if achilles_params.use_trex_connection:
             memory_limit = Variable.get("duckdb_memory_limit", "")
             if memory_limit:
-                trex_dao = TrexDao(use_cache_db=False, database_code=achilles_params.databaseCode, cache_id=achilles_params.cacheId)
+                trex_dao = TrexDao(database_code=achilles_params.databaseCode, cache_id=achilles_params.cacheId)
                 trex_dao.execute_sql(f"SET memory_limit = '{memory_limit}'")
                 logger.info(f"Set DuckDB memory_limit to {memory_limit}")
 
@@ -281,7 +297,9 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             )
         
 
-    except RRuntimeError:
+    except RRuntimeError as e:
+        logger.error(f"RRuntimeError from Achilles: {e}")
+
         error_file_name = "errorReportR.txt"
 
         error_message = (
@@ -337,7 +355,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 def drop_existing_achilles_tables(results_schema: str, dbdao):
     logger = get_run_logger()
     tables = [
-        "cohort",
+        #"cohort",
         "cohort_censor_stats",
         "cohort_inclusion",
         "cohort_inclusion_result",

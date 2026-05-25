@@ -44,6 +44,15 @@ const state = {
   fireRequestHeld: false,
   // tracks whether the right pane has ever been opened (used to avoid double setFireRequest on bookmark load)
   rightPaneMounted: false,
+
+  // stacked bar chart display mode and overlay toggle
+  barDisplayMode: 'stack',
+  showDistributionOverlay: false,
+  // saved X1 binsize and attributeId prior to entering Kernel Density Plot mode (for restoration)
+  previousXAxisBinsize: null,
+  previousXAxisAttributeId: null,
+  // index into getAllAxes for the axis used to color bars (0 = x1, 1 = x2, null = none)
+  colorAxisIndex: null as number | null,
 }
 
 // Cancel tokens
@@ -94,6 +103,9 @@ const getters = {
   getFireRequest: modulestate => modulestate.fireRequest,
   isFireRequestHeld: modulestate => modulestate.fireRequestHeld,
   isRightPaneMounted: modulestate => modulestate.rightPaneMounted,
+  getBarChartType: modulestate => modulestate.barDisplayMode,
+  getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
+  getColorAxisIndex: modulestate => modulestate.colorAxisIndex,
 }
 
 // actions
@@ -347,6 +359,9 @@ const actions = {
   setRightPaneMounted({ commit }, value: boolean) {
     commit(types.SET_RIGHT_PANE_MOUNTED, value)
   },
+  setColorAxisIndex({ commit }, index: number | null) {
+    commit(types.SET_COLOR_AXIS_INDEX, index)
+  },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
   },
@@ -358,6 +373,124 @@ const actions = {
     const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
     dispatch('setIFRState', { ifr: initialIFR })
     dispatch('setupChartDefaults')
+  },
+  setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
+    const previousMode = state.barDisplayMode
+    const X1 = Constants.MRIChartDimensions.X1
+    const X2 = Constants.MRIChartDimensions.X2
+    let binsizeChanged = false
+    let xAxisCleared = false
+
+    // Resolve the active KDP x-axis slot: the non-disabled one when a slot is already
+    // disabled, otherwise predict it by mirroring the disable logic below.
+    const allAxesInit = rootGetters.getAllAxes
+    const x1Init = allAxesInit?.[X1]
+    const x2Init = allAxesInit?.[X2]
+    const x1DisabledInit = !!x1Init?.props?.disabled
+    const x2DisabledInit = !!x2Init?.props?.disabled
+    let activeXSlot: number
+    if (x1DisabledInit !== x2DisabledInit) {
+      activeXSlot = x1DisabledInit ? X2 : X1
+    } else {
+      const x1HasSelection = !!(x1Init?.props?.filterCardId && x1Init?.props?.key)
+      const x2HasSelection = !!(x2Init?.props?.filterCardId && x2Init?.props?.key)
+      if (x1HasSelection && x2HasSelection) {
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Init.props.attributeId)?.isBinnable?.()
+        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Init.props.attributeId)?.isBinnable?.()
+        activeXSlot = x1Binnable && !x2Binnable ? X1 : X2
+      } else if (x2HasSelection && !x1HasSelection) {
+        activeXSlot = X2
+      } else {
+        activeXSlot = X1
+      }
+    }
+
+    if (modeId === 'distribution' && previousMode !== 'distribution') {
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(activeXSlot) : null
+      const currentBinsize = xAxis?.props?.binsize ?? null
+      commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, currentBinsize)
+      commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, xAxis?.props?.attributeId ?? null)
+      if (currentBinsize !== 0) {
+        dispatch('setAxisValue', { id: activeXSlot, props: { binsize: 0 } })
+        binsizeChanged = true
+      }
+    } else if (previousMode === 'distribution' && modeId !== 'distribution') {
+      const xAxis = rootGetters.getAxis ? rootGetters.getAxis(activeXSlot) : null
+      const currentBinsize = xAxis?.props?.binsize ?? null
+      const attributeId = xAxis?.props?.attributeId
+      // Restore the saved binsize only if the attribute on the active slot is unchanged.
+      const attributeMatches = attributeId && attributeId === state.previousXAxisAttributeId
+      let restoreBinsize = attributeMatches ? state.previousXAxisBinsize : null
+      if (restoreBinsize === null || restoreBinsize === undefined) {
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        if (attributeId && mriFrontendConfig) {
+          const attrCfg = mriFrontendConfig.getAttributeByPath(attributeId)
+          const defaultBin = attrCfg && attrCfg.getDefaultBinSize ? attrCfg.getDefaultBinSize() : undefined
+          restoreBinsize = defaultBin === undefined || defaultBin === null ? '' : defaultBin
+        } else {
+          restoreBinsize = ''
+        }
+      }
+      if (restoreBinsize !== currentBinsize) {
+        dispatch('setAxisValue', { id: activeXSlot, props: { binsize: restoreBinsize } })
+        binsizeChanged = true
+      }
+      commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)
+      commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, null)
+    }
+
+    if (previousMode === 'stack' && modeId !== 'stack') {
+      const allAxes = rootGetters.getAllAxes
+      const x1Axis = allAxes?.[X1]
+      const x2Axis = allAxes?.[X2]
+      const x1HasSelection = !!(x1Axis?.props?.filterCardId && x1Axis?.props?.key)
+      const x2HasSelection = !!(x2Axis?.props?.filterCardId && x2Axis?.props?.key)
+
+      let targetId: number | null = null
+      let needsClear = false
+
+      if (x1HasSelection && x2HasSelection) {
+        const mriFrontendConfig = rootGetters.getMriFrontendConfig
+        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Axis.props.attributeId)?.isBinnable?.()
+        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Axis.props.attributeId)?.isBinnable?.()
+        if (!x1Binnable && x2Binnable) {
+          targetId = X1
+        } else if (x1Binnable && !x2Binnable) {
+          targetId = X2
+        } else {
+          targetId = X1
+        }
+        needsClear = true
+      } else if (x1HasSelection && !x2HasSelection) {
+        targetId = X2
+      } else if (!x1HasSelection && x2HasSelection) {
+        targetId = X1
+      } else {
+        // When both X1 and X2 are empty, disable X2 by default
+        targetId = X2
+      }
+
+      if (targetId !== null) {
+        if (needsClear) {
+          dispatch('clearAxisValue', targetId)
+          xAxisCleared = true
+        }
+        dispatch('setAxisValue', { id: targetId, props: { disabled: true } })
+      }
+    } else if (previousMode !== 'stack' && modeId === 'stack') {
+      dispatch('setAxisValue', { id: X1, props: { disabled: false } })
+      dispatch('setAxisValue', { id: X2, props: { disabled: false } })
+    }
+
+    commit(types.SET_BAR_DISPLAY_MODE, modeId)
+
+    if (binsizeChanged || xAxisCleared) {
+      dispatch('setFireRequest')
+    }
+  },
+  setShowDistributionOverlay({ commit }, value: boolean) {
+    commit(types.SET_SHOW_DISTRIBUTION_OVERLAY, value)
   },
 }
 
@@ -406,6 +539,21 @@ const mutations = {
   },
   [types.SET_RIGHT_PANE_MOUNTED](modulestate, value: boolean) {
     modulestate.rightPaneMounted = value
+  },
+  [types.SET_BAR_DISPLAY_MODE](modulestate, modeId: string) {
+    modulestate.barDisplayMode = modeId
+  },
+  [types.SET_SHOW_DISTRIBUTION_OVERLAY](modulestate, value: boolean) {
+    modulestate.showDistributionOverlay = value
+  },
+  [types.SET_PREVIOUS_X_AXIS_BINSIZE](modulestate, value) {
+    modulestate.previousXAxisBinsize = value
+  },
+  [types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID](modulestate, value) {
+    modulestate.previousXAxisAttributeId = value
+  },
+  [types.SET_COLOR_AXIS_INDEX](modulestate, index: number | null) {
+    modulestate.colorAxisIndex = index
   },
 }
 

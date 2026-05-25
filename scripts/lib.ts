@@ -153,15 +153,18 @@ export class LibUtils {
     console.log(". INFO generate x509 certs - TLS__INTERNAL_*");
 
     try {
+      if (typeof globalThis.crypto === "undefined") {
+        (globalThis as any).crypto = crypto.webcrypto;
+      }
+
       const pki = forge.pki;
-      const { v4: uuidv4 } = await import("uuid");
 
       // Generate CA keypair
       const caKeyPair = pki.rsa.generateKeyPair({ bits: 2048 });
       const caCert = pki.createCertificate();
 
       caCert.publicKey = caKeyPair.publicKey;
-      caCert.serialNumber = uuidv4().replace(/-/g, "").substring(0, 16);
+      caCert.serialNumber = globalThis.crypto.randomUUID().replace(/-/g, "").substring(0, 16);
 
       const caSubject = [
         {
@@ -199,7 +202,7 @@ export class LibUtils {
       const serverCert = pki.createCertificate();
 
       serverCert.publicKey = serverKeyPair.publicKey;
-      serverCert.serialNumber = uuidv4().replace(/-/g, "").substring(0, 16);
+      serverCert.serialNumber = globalThis.crypto.randomUUID().replace(/-/g, "").substring(0, 16);
 
       const serverSubject = [
         {

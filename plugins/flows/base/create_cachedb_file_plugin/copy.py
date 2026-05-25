@@ -115,7 +115,7 @@ def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParam
 
 
 def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, logger):
-    logger.info(f"Starting creation of schema '{copy_params.target_schema}' in database '{copy_params.target_database}' if it doesn't exist...")
+    logger.info(f"Creating schema '{copy_params.target_schema}' in cache database '{copy_params.target_database}' if it doesn't exist...")
     sql = f'CREATE SCHEMA IF NOT EXISTS "{copy_params.target_database}"."{copy_params.target_schema}";'
     execute_statement(write_conn, sql)
     logger.info(f"Schema '{copy_params.target_schema}' created.")
@@ -303,6 +303,7 @@ def copy_table(write_conn: Any, read_conn: Any, copy_params: CopyParameters, que
             mark_complete(write_conn, table, copy_params)
             return row_count
         else:
+            logger.info(f"Copying table '{table}' (large, {row_count} rows)")
             create_empty_target_table(write_conn, copy_params, query_columns, source_schema)
             # If columns_to_copy is "*", replace with actual column names for proper chunking
             if query_columns.columns_to_copy == ["*"]:
