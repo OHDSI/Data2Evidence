@@ -1,6 +1,5 @@
 import React, { FC, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowCircleLeftIcon, IconButton } from "@portal/components";
 import { IPlugin, NavLink, Plugins } from "../../types";
 import MenuTab from "./MenuTab/MenuTab";
 import PublicStudyOverviewNav from "./PublicStudyOverviewNav/PublicStudyOverviewNav";
@@ -74,7 +73,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {portalType === "public" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectPublicDataset />
               </li>
               <PublicStudyOverviewNav />
@@ -84,7 +82,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {isAuth && portalType === "researcher" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectDataset />
                 <SelectRelease />
               </li>
