@@ -1,5 +1,3 @@
-import os
-import re
 import traceback
 from functools import partial
 import json
@@ -11,7 +9,7 @@ from prefect.context import TaskRunContext, FlowRunContext, get_run_context
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
-from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile
+from .flowutils import get_node_list, get_incoming_edges, install_r_packages_from_lockfile, validate_token_study_code
 from .nodes import generate_nodes_flow, execute_r_strategus, upload_strategus_results, drop_strategus_results_schema, get_strategus_node, getRCdmExecutionSettings, upload_results_from_storage
 from _shared_flow_utils.logger.logger import Logger
 from _shared_flow_utils.api.StrategusAnalysisAPI import StrategusAnalysisAPI
@@ -80,6 +78,7 @@ def strategus_plugin(json_graph, options):
 
     n = execute_nodes_flow_wo(generated_nodes, sorted_nodes, testmode)  # flow
 
+    study_analysis_result = None
     try:
         study_analysis_result = execute_strategus_task(generated_nodes, n, options)
         logger.debug(f"Study analysis result: {study_analysis_result}")
@@ -105,11 +104,13 @@ def strategus_plugin(json_graph, options):
     except Exception as e:
         logger.error(f"Error executing Strategus analysis: {tb.format_exc()}")
     finally:
-        strategus_api = StrategusAnalysisAPI()
-        study_name = studyName
-        token_study_code = tokenstudyCode
-        if(strategus_api.update_study_analysis(token_study_code, study_name, study_analysis_result.data)):
-            logger.info(f"Successfully updated strategus analysis specification for study '{token_study_code}'")
+        if study_analysis_result is not None:
+            strategus_api = StrategusAnalysisAPI()
+            token_study_code = tokenstudyCode
+            if(strategus_api.update_study_analysis(token_study_code, databaseCode, studyName, study_analysis_result.data)):
+                logger.info(f"Successfully updated strategus analysis specification for study '{token_study_code}'")
+        else:
+            logger.warning("Skipping update_study_analysis: execute_strategus_task did not produce a result")
 
 @task(task_run_name="execute-strategus-taskrun")
 def execute_strategus_task(generated_nodes, results, options):
@@ -219,11 +220,7 @@ def runStrategus(json_graph, options):
     update_results_schema = options.get('updateResultsSchema', True)
     runTable1 = options.get('runTable1', False)
 
-    if(not token_study_code):
-       raise Exception('TokenStudyCode is missing')
-    pattern = r'^[a-zA-Z0-9_]+$'
-    if not re.fullmatch(pattern, token_study_code):
-        raise Exception(f'TokenStudyCode - {token_study_code} is not valid. It should only contain alphanumeric characters and underscores.')
+    validate_token_study_code(token_study_code)
     if(not datasetId):
        raise Exception('DatasetId is missing')
     if(not database_code):

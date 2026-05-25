@@ -29,7 +29,7 @@ from prefect.artifacts import create_markdown_artifact
 
 from .custom_types import CohortNodeType, USE_TREX_CONNECTION
 from .hooks import node_task_generation_hook
-from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, is_strategus_upload_successful, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file
+from .flowutils import get_node_list, convert_py_to_R, convert_R_to_py, is_strategus_upload_successful, serialize_to_json, is_strategus_execution_successful, save_strategus_log_file, validate_token_study_code
 
 from _shared_flow_utils.dao.daobase import DialectDrivers
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -1307,7 +1307,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            results_schema = f'results_{dbSettings["token_study_code"]}'
+            results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -1411,7 +1411,7 @@ def construct_jdbc_url(db_credentials):
 @flow(name="drop-strategus-results-schema", log_prints=True)
 def drop_strategus_results_schema(dbSettings):
     database_code = dbSettings['database_code']
-    results_schema = f'results_{dbSettings["token_study_code"]}'
+    results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
         database_code=database_code
