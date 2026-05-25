@@ -842,9 +842,6 @@ export class InternalFilterRepresentation implements Request {
                                     ])
                             );
                         }
-                        console.log(
-                            `==>node.attributeList: ${JSON.stringify(node.attributeList)}`
-                        );
                     }
                 }
                 if (filtercard._advanceTimeFilter) {
