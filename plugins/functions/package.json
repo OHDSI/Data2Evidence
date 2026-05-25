@@ -323,6 +323,7 @@
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
           "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",
@@ -445,6 +446,7 @@
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
           "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
@@ -604,6 +606,7 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
