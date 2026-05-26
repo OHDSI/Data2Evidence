@@ -1,5 +1,6 @@
 import { Request, Response, Router } from "express";
 import { PrefectService } from "../services/PrefectService.ts";
+import { validateFlowrunId } from "../middlewares/PrefectValidatorMiddlewares.ts";
 
 export class PrefectController {
   private prefectService: PrefectService;
@@ -215,10 +216,12 @@ export class PrefectController {
     );
     this.router.post(
       "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
       this.createPrefectInputAuthToken.bind(this),
     );
     this.router.delete(
       "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
       this.deletePrefectInputAuthToken.bind(this),
      );
     // Admin-only endpoints for uploading/dropping results from storage
