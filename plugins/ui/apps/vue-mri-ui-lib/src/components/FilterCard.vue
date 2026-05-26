@@ -467,6 +467,10 @@ export default {
         })
       } else if (key === 'clear') {
         this.clearAllConstraintsOfFilterCard({ filterCardId: this.id })
+        if (this.displayAdvanceTime) {
+          this.displayAdvanceTime = false
+          this.clearFilterCardTimeFilter({ filterCardId: this.id })
+        }
       } else if (key === 'rename') {
         this.openRenameDialog()
       } else if (this.getFilterCardConstraints(this.id).findIndex(fcconst => fcconst.props.attrKey === key) > -1) {
