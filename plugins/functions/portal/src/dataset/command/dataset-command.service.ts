@@ -542,7 +542,7 @@ export class DatasetCommandService {
       tokenDatasetCode,
       paConfigId,
       visibilityStatus,
-      fhir_project_id,
+      fhirDatasetId,
       vocabSchemaName,
       resultsSchemaName,
     } = datasetUpdateDto;
@@ -558,7 +558,7 @@ export class DatasetCommandService {
       tokenDatasetCode,
       visibilityStatus,
       paConfigId,
-      fhir_project_id,
+      fhirDatasetId,
     };
 
     if (vocabSchemaName !== undefined) {

@@ -14,6 +14,7 @@ import {
   DbDialect,
   SourceDatasetType,
 } from "./const.ts";
+import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
 import { ShinyLiveService } from "./services/shinylive.service.ts";
 
@@ -285,8 +286,8 @@ export class DatasetRouter {
             type: isWebApiManaged ? "webapi" : type,
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
-            dialect: isFhirDataset ? "duckdb" : (dialect as DbDialect),
-            databaseCode: isFhirDataset ? "FHIR" : databaseCode,
+            dialect: isFhirDataset ? DbDialect.Duckdb : (dialect as DbDialect),
+            databaseCode: isFhirDataset ? env.FHIR_DATABASE_CODE : databaseCode,
             schemaName: isFhirDataset ? fhirDatasetId : schemaName,
             vocabSchemaName: vocabSchema,
             resultsSchemaName,

@@ -52,7 +52,7 @@ export class FhirGatewayAPI {
     try {
       const options = this.getRequestConfig();
       const url = `${this.baseURL}/createDataset`;
-      const fhirDatasetDetails = { id: `fhir-${id}`, name };
+      const fhirDatasetDetails = { id, name };
       const result = await this.channel.post(url, fhirDatasetDetails, options);
       const fhirDatasetId = result.data?.fhirDatasetId;
       if (!fhirDatasetId) {

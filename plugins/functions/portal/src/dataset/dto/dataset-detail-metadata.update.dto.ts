@@ -38,7 +38,7 @@ export class DatasetDetailMetadataUpdateDto implements IDatasetDetailMetadataUpd
   @IsUUID()
   paConfigId: string
 
-
+  @IsUUID()
   fhirDatasetId?: string
 
   vocabSchemaName?: string

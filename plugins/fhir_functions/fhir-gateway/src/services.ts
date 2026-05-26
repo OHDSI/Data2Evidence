@@ -33,12 +33,6 @@ const checkPortalDatasetExists = async (
   return (await getPortalDataset(portalDatasetId, token)) !== null;
 };
 
-const stripFhirPrefix = (fhirDatasetId: string): string => {
-  return fhirDatasetId.startsWith("fhir-")
-    ? fhirDatasetId.slice("fhir-".length)
-    : fhirDatasetId;
-};
-
 const checkFhirDatasetExists = async (
   fhirDatasetId: string,
   fhirAPI: FhirServerAPI,
@@ -50,7 +44,8 @@ const checkFhirDatasetExists = async (
       : false;
   } catch (error: any) {
     console.error(
-      `Error checking if FHIR dataset with id '${fhirDatasetId}' exists`,
+      "Error checking if FHIR dataset with id '%s' exists",
+      fhirDatasetId,
       error,
     );
     throw error;
@@ -74,6 +69,17 @@ export const createFhirDataset = async (
   token: string,
 ): Promise<IFhirCreatedDataset> => {
   const fhirServerAPI = new FhirServerAPI(token);
+
+  const datasetId = datasetPayload.id;
+
+  const portalDataset = await getPortalDataset(datasetId, token);
+
+  if (portalDataset?.fhirDatasetId) {
+    throw new Error(
+      `Portal dataset with id '${datasetId}' is already linked to a FHIR dataset!`,
+    );
+  }
+
   const fhirDatasetExists = await checkFhirDatasetExists(
     datasetPayload.id,
     fhirServerAPI,
@@ -81,16 +87,6 @@ export const createFhirDataset = async (
   if (fhirDatasetExists) {
     throw new Error(
       `FHIR dataset with id '${datasetPayload.id}' already exists!`,
-    );
-  }
-
-  const datasetId = stripFhirPrefix(datasetPayload.id);
-
-  const portalDataset = await getPortalDataset(datasetId, token);
-
-  if (portalDataset?.fhirDatasetId) {
-    throw new Error(
-      `Portal dataset with id '${datasetId}' is already linked to a FHIR dataset!`,
     );
   }
 
@@ -128,13 +124,11 @@ export const ingestBundle = async (
   bundle: any,
   token: string,
 ): Promise<IFhirApiResponse<Record<string, unknown>>> => {
-  const portalDatasetId = stripFhirPrefix(datasetId);
-
-  const datasetExists = await checkPortalDatasetExists(portalDatasetId, token);
+  const datasetExists = await checkPortalDatasetExists(datasetId, token);
 
   if (!datasetExists) {
     throw new Error(
-      `Portal dataset with id '${portalDatasetId}' does not exist!`,
+      `Portal dataset with id '${datasetId}' does not exist!`,
     );
   }
 
@@ -163,12 +157,10 @@ export const forwardFhirRequest = async (
   incomingHeaders: Headers,
   token: string,
 ): Promise<IFhirApiResponse<Record<string, unknown>>> => {
-  const portalDatasetId = stripFhirPrefix(datasetId);
-
-  const datasetExists = await checkPortalDatasetExists(portalDatasetId, token);
+  const datasetExists = await checkPortalDatasetExists(datasetId, token);
   if (!datasetExists) {
     throw new Error(
-      `Portal dataset with id '${portalDatasetId}' does not exist!`,
+      `Portal dataset with id '${datasetId}' does not exist!`,
     );
   }
 
