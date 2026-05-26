@@ -29,12 +29,15 @@ os.environ["plugin_name"] = "data_characterization_plugin"
 @flow(log_prints=True)
 def data_characterization_plugin(options: DCOptionsType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
 
     threads = int(Variable.get("achilles_thread_count", 1))
+    logger.info(f"Using {threads} threads for Achilles execution")
 
     exclude_analysis_ids = Variable.get(
         "exclude_analysis_ids", ""
     )  # comma separated values in a string
+    logger.info(f"These analysis IDs will be excluded from Achilles run: {exclude_analysis_ids}")
 
     flow_run_id = runtime.flow_run.id
 
@@ -43,6 +46,13 @@ def data_characterization_plugin(options: DCOptionsType):
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
+    
+    if dbdao.dialect != SupportedDatabaseDialects.HANA:
+        dbdao = DBDao(
+            dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+            database_code=options.databaseCode,
+            cache_id=options.cacheId,
+        )
 
     # Todo: Update implementation if Hana uses trex
     # If the actual dialect is HANA, force use_trex_connection to False
@@ -86,6 +96,10 @@ def data_characterization_plugin(options: DCOptionsType):
     dc_schema = create_results_schema(
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
+
+    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+        if hasattr(dbdao, "clear_pg_cache"):
+            dbdao.clear_pg_cache()
 
     if dc_schema:
         execute_achilles_wo = execute_achilles.with_options(

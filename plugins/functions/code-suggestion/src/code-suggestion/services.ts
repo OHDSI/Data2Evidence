@@ -60,9 +60,6 @@ export const getChatResponse = async (req: any) => {
   const token = req.headers.authorization;
   const datasetId = req.query.datasetId; // datasetId is passed as a query parameter
   const model = await getModels(uiChat.model);
-  if (model === null) {
-    throw Error(`LLM Model - ${uiChat.model} not found.`);
-  }
 
   try {
     const chatStart = performance.now();

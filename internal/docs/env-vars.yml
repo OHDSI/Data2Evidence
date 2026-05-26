@@ -140,8 +140,25 @@ PG__LOGTO_MANAGER_PASSWORD:
   comment: null
   publish: true
   type: string
+PLUGINS_DEV_PATH:
+  comment: |
+    Colon-separated list of directories scanned for plugins at startup. Each direct
+    child directory containing a package.json with a "trex" section is registered.
+    Later paths override earlier ones by package name (so local bind-mounts win
+    over bundled-in-image plugins). Default: /usr/src/bundled-plugins:/usr/src/plugins
+  publish: false
+  type: string
+PLUGINS_SEED:
+  comment: |
+    Opt-in registry-install seed list. No longer set by the d2e compose / helm
+    defaults; plugins are now bundled into the trex image at build time. Set this
+    only to install additional plugins from the registry on top of the bundled set.
+  publish: false
+  type: string
 PLUGINS_SEED_UPDATE:
-  comment: boolean
+  comment: |
+    boolean. Opt-in toggle for registry-install behavior; no longer set by the
+    d2e compose / helm defaults since plugins are bundled into the trex image.
   publish: false
   type: string
 PROJECT_NAME:

@@ -619,6 +619,7 @@ export const i18nDefault = {
     FEATURE__STRATEGUS: "Strategus",
     FEATURE__SUCCESS: "Changes saved",
     FEATURE__TERMINOLOGY: "Terminology",
+    FEATURE__TREX_PLUGINS: "Plugin management",
     FEATURE__WIZARDS: "Wizards",
     GIT_CONFIG__BRANCH_LABEL: "Default Branch",
     GIT_CONFIG__CONFIGURE_FIRST: "Please configure the dataflow Git repository URL and branch first.",

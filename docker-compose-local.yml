@@ -30,9 +30,8 @@ services:
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "storage"]}
-      PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
-      PLUGINS_DEV_PATH: "/usr/src/plugins"
+      # Bind-mounted source plugins win over bundled ones with the same package name.
+      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       SWARM_CONFIG: |-
         {
@@ -196,6 +195,7 @@ services:
       - services/materialize-cohorts/PKI/ca.crt:/app/PKI/ca.crt
     environment:
       PORT: 3333
+      INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-false}
       API_MTLS_ENABLED: ${MATERIALIZE_COHORTS_API_MTLS_ENABLED:-true}
       API_TLS_KEY_PATH: ${MATERIALIZE_COHORTS_API_TLS_KEY_PATH:-/app/PKI/server.key}
       API_TLS_CERT_PATH: ${MATERIALIZE_COHORTS_API_TLS_CERT_PATH:-/app/PKI/server.crt}

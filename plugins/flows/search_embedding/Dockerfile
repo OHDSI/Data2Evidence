@@ -12,7 +12,8 @@ RUN apt-get update && \
 
 ENV UV_LINK_MODE=copy \
     UV_COMPILE_BYTECODE=1 \
-    UV_PYTHON_DOWNLOADS=never
+    UV_PYTHON_INSTALL_DIR=/app/python \
+    UV_PYTHON_PREFERENCE=only-managed
 
 COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /uvx /bin/
 
@@ -66,16 +67,19 @@ RUN \
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
 
-COPY --from=python-dependencies-build --chown=docker:docker /app/.venv /app/.venv
+# Copy the Python virtual environment and uv binary from the build stage
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /bin/uv /usr/local/bin/uv
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/python /app/python
+COPY --from=python-dependencies-build --chown=docker:docker --chmod=711 /app/.venv /app/.venv
 
 # Application files
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils /app/_shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./search_embedding/search_embedding_plugin /app/flows/search_embedding_plugin
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 WORKDIR /app
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=false
 
-# USER docker
+USER docker

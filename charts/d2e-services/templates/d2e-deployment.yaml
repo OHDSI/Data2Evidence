@@ -481,16 +481,6 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: PLUGINS_API_VERSION
-            - name: PLUGINS_SEED_UPDATE
-              valueFrom:
-                configMapKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: PLUGINS_SEED_UPDATE
-            - name: PLUGINS_SEED
-              valueFrom:
-                configMapKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: PLUGINS_SEED
             - name: PLUGINS_REGISTRY
               valueFrom:
                 configMapKeyRef:

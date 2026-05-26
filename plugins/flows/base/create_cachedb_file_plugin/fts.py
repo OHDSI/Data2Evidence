@@ -25,7 +25,6 @@ def create_fts_index_task(
     Create duckdb full text search indexes based on columns specified in tables_to_create_duckdb_fts_index
     """
     logger = get_run_logger()
-
     task_run_ctx = TaskRunContext.get()
     logger.info(f"This is task run attempt: {task_run_ctx.task_run.run_count} for task '{task_run_ctx.task.name}'.")
 
@@ -149,7 +148,7 @@ def get_duckdb_fts_creation_sql(
             {", ".join(columns)},
             stemmer='english', 
             stopwords='english',
-            ignore='(\\.|[^a-z0-9!@#$%^&*()`+,"\-\\\/])+',
+            ignore='(\\.|[^a-z0-9!@#$%^&*()`+"\-\\\/])+',
             strip_accents=1, 
             lower=1, 
             overwrite=1)
