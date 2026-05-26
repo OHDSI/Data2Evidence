@@ -1,32 +1,24 @@
-import { env } from "../env";
-import axios from "axios";
 import { D2ECohortDefinition } from "../types/tool-schemas";
 import { getUserName } from "../utils/request-helpers";
+import { BaseAPI, CallOptions } from "./BaseAPI";
 
-export class WebAPIAPI {
-  private readonly token: string;
-  private readonly channel: any;
-  private readonly baseURL: string;
-  private readonly datasetId: string;
+export class WebAPIAPI extends BaseAPI {
+  // These dummy defaults match the original class and are required for GET/PUT
+  // endpoints that don't enforce auth (e.g. getAtlasCohortDefinition).
+  private readonly defaultToken = "bearer";
+  private readonly defaultDatasetId = "id";
 
   constructor() {
-    // Initialize with default token and datasetId for internal service communication
-    this.token = "bearer";
-    this.datasetId = "id";
-    // @ts-ignore To ignore Cannot find name 'Trex'
-    this.channel = Trex.tokioChannel("d2e-functions/d2e-webapi");
-    this.baseURL = env.SERVICE_ROUTES["d2e-webapi"];
+    super("d2e-webapi", "d2e-webapi");
   }
 
-  private async getRequestConfig() {
-    let options = {
-      headers: {
-        Authorization: this.token,
-        datasetId: this.datasetId,
-      },
-      timeout: 20000,
-    };
-    return options;
+  // Always include the dummy defaults so downstream behavior is unchanged.
+  protected buildRequestConfig(opts: CallOptions) {
+    return super.buildRequestConfig({
+      authorization: this.defaultToken,
+      datasetId: this.defaultDatasetId,
+      ...opts,
+    });
   }
 
   async getAtlasCohortDefinitionList(
@@ -34,12 +26,11 @@ export class WebAPIAPI {
     datasetId: string
   ): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cohortdefinition?source=pa`;
-      options.headers["Authorization"] = authorization;
-      options.headers["datasetId"] = datasetId;
-      const response = await this.channel.get(url, options);
-      return response.data;
+      const { data } = await this.call<any>("get", "/cohortdefinition?source=pa", {
+        authorization,
+        datasetId,
+      });
+      return data;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while getting atlas cohort definition`);
@@ -48,15 +39,11 @@ export class WebAPIAPI {
 
   async getAtlasCohortDefinition(cohortId: number): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
-      const response = await this.channel.get(url, options);
-      return response.status === 200 ? response.data : null;
+      const { data, status } = await this.call<any>("get", `/cohortdefinition/${cohortId}`, {});
+      return status === 200 ? data : null;
     } catch (error) {
       console.error(error);
-      throw new Error(
-        `Error while get info of atlas cohort definition: ${error}`
-      );
+      throw new Error(`Error while get info of atlas cohort definition: ${error}`);
     }
   }
 
@@ -65,31 +52,26 @@ export class WebAPIAPI {
     authorization: string
   ): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorization;
-      const url = `${this.baseURL}/cohortdefinition`;
-
       const currentTime = Date.now();
       const userName = await getUserName(authorization);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
           : cohortDefinition.expression;
-
       const payload: D2ECohortDefinition = {
         id: 1,
         name: `${cohortDefinition.cohortInfo}`,
         description: `${cohortDefinition.cohortInfo}`,
         expressionType: "SIMPLE_EXPRESSION",
-        expression: expression,
+        expression,
         createdBy: userName,
         createdDate: currentTime,
         modifiedBy: userName,
         modifiedDate: currentTime,
         tags: [],
       };
-      const response = await this.channel.post(url, payload, options);
-      return response.status === 200 ? response.data : null;
+      const { data, status } = await this.call<any>("post", "/cohortdefinition", { authorization }, payload);
+      return status === 200 ? data : null;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while creating atlas cohort definition: ${error}`);
@@ -102,30 +84,30 @@ export class WebAPIAPI {
     datasetId: string
   ): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorization;
-      options.headers["datasetId"] = datasetId;
-      const url = `${this.baseURL}/cohortdefinition/checkV2`;
       const expression =
         typeof cohortDefinitionExpression === "string"
           ? JSON.parse(cohortDefinitionExpression)
           : cohortDefinitionExpression;
       const currentTime = Date.now();
       const payload: D2ECohortDefinition = {
-        id: 1, // Dummy ID for validation
-        name: "For validation only", // Dummy name for validation
-        description: "For validation only", // Dummy description for validation
+        id: 1,
+        name: "For validation only",
+        description: "For validation only",
         expressionType: "SIMPLE_EXPRESSION",
-        expression: expression, // Cohort definition to be validated
-        createdBy: "For validation only", // Dummy creator for validation
-        createdDate: currentTime, // Dummy creation date for validation
-        modifiedBy: "For validation only", // Dummy modifier for validation
-        modifiedDate: currentTime, // Dummy modification date for validation
+        expression,
+        createdBy: "For validation only",
+        createdDate: currentTime,
+        modifiedBy: "For validation only",
+        modifiedDate: currentTime,
         tags: [],
       };
-      
-      const response = await this.channel.post(url, payload, options);
-      return response.status === 200 ? response.data : null;
+      const { data, status } = await this.call<any>(
+        "post",
+        "/cohortdefinition/checkV2",
+        { authorization, datasetId },
+        payload
+      );
+      return status === 200 ? data : null;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while checking atlas cohort definition: ${error}`);
@@ -137,30 +119,31 @@ export class WebAPIAPI {
     authorization: string
   ): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      const url = `${this.baseURL}/cohortdefinition/${cohortDefinition.cohortId}`;
-
       const currentTime = Date.now();
       const userName = await getUserName(authorization);
       const expression =
         typeof cohortDefinition.expression === "string"
           ? JSON.parse(cohortDefinition.expression)
           : cohortDefinition.expression;
-
       const payload: D2ECohortDefinition = {
         id: cohortDefinition.cohortId,
         name: cohortDefinition.name,
         description: cohortDefinition.description,
         expressionType: "SIMPLE_EXPRESSION",
-        expression: expression,
+        expression,
         createdBy: cohortDefinition.createdBy,
         createdDate: cohortDefinition.createdDate,
         modifiedBy: userName,
         modifiedDate: currentTime,
         tags: [],
       };
-      const response = await this.channel.put(url, payload, options);
-      return response.status === 200 ? response.data : null;
+      const { data, status } = await this.call<any>(
+        "put",
+        `/cohortdefinition/${cohortDefinition.cohortId}`,
+        { authorization },
+        payload
+      );
+      return status === 200 ? data : null;
     } catch (error) {
       console.error(error);
       throw new Error(`Error while updating atlas cohort definition: ${error}`);
@@ -173,12 +156,11 @@ export class WebAPIAPI {
     datasetId: string
   ): Promise<any> {
     try {
-      const options = await this.getRequestConfig();
-      options.headers["Authorization"] = authorization;
-      options.headers["datasetId"] = datasetId;
-      const url = `${this.baseURL}/cohortdefinition/${cohortId}`;
-      const res = await axios.delete(url, options);
-      return res.status === 204;
+      const { status } = await this.call<any>("delete", `/cohortdefinition/${cohortId}`, {
+        authorization,
+        datasetId,
+      });
+      return status === 204;
     } catch (error) {
       console.error("DELETE Error:", error);
       throw new Error(`Error while deleting atlas cohort definition: ${error}`);

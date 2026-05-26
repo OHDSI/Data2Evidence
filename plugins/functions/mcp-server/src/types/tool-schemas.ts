@@ -177,3 +177,61 @@ export const CohortIdNameOutput = z.object({
   cohortName: z.string(),
   cohortDescription: z.string(),
 });
+
+// ==================== Concept Set Tool Schemas ====================
+
+const ConceptItemSchema = z.object({
+  id: z.number().describe("OMOP concept ID"),
+  useDescendants: z.boolean().describe("Include all descendant concepts"),
+  useMapped: z.boolean().describe("Include mapped concepts"),
+  isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
+});
+
+export const ListConceptSetsInput = {};
+
+export const GetConceptSetInput = {
+  conceptSetId: z.number().describe("The concept set ID to retrieve"),
+};
+
+export const CreateConceptSetInput = {
+  name: z
+    .string()
+    .min(1)
+    .describe("Unique name for the concept set within this dataset"),
+  concepts: z
+    .array(ConceptItemSchema)
+    .describe("List of OMOP concept items that define the set"),
+};
+
+export const UpdateConceptSetInput = {
+  conceptSetId: z.number().describe("The concept set ID to update"),
+  name: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("New name for the concept set"),
+  concepts: z
+    .array(ConceptItemSchema)
+    .optional()
+    .describe("Replacement concept list"),
+  shared: z
+    .boolean()
+    .optional()
+    .describe("Whether to share this concept set with all users in the dataset"),
+};
+
+export const DeleteConceptSetInput = {
+  conceptSetId: z.number().describe("The concept set ID to delete"),
+};
+
+export const GetIncludedConceptsInput = {
+  conceptSetId: z.number().describe("The saved concept set ID to resolve"),
+};
+
+export const PreviewConceptSetResolutionInput = {
+  concepts: z
+    .array(ConceptItemSchema)
+    .describe(
+      "Candidate concept expression to preview — same format as the concepts array in create_concept_set. Use this to validate the expression BEFORE saving."
+    ),
+};
