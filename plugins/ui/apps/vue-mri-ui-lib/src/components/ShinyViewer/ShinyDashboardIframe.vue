@@ -26,6 +26,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { getPortalAPI } from '@/utils/PortalUtils'
+import { buildShinyLiveDashboardUrl } from '@/utils/shinyLiveUrl'
 
 const props = defineProps<{
   datasetId: string
@@ -53,7 +54,7 @@ const iframeUrl = computed(() => {
   }
 
   const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
-  const url = `/gateway/api/dataset/shiny-live/${resourceId}/`
+  const url = buildShinyLiveDashboardUrl(resourceId)
   return url
 })
 
