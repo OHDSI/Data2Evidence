@@ -31,6 +31,27 @@ export class FhirServerAPI {
     };
   }
 
+  private sanitizeDatasetId(id: string): string {
+    const trimmed = id?.trim();
+    if (!trimmed || !/^[A-Za-z0-9._-]+$/.test(trimmed)) {
+      throw new Error("Invalid dataset id");
+    }
+    return encodeURIComponent(trimmed);
+  }
+
+  private sanitizeResourcePath(resourcePath: string): string {
+    if (!resourcePath) {
+      return "";
+    }
+    const segments = resourcePath
+      .split("/")
+      .filter((segment) => segment.length > 0);
+    if (segments.some((segment) => segment === "." || segment === "..")) {
+      throw new Error("Invalid resource path");
+    }
+    return segments.map((segment) => encodeURIComponent(segment)).join("/");
+  }
+
   async healthCheck(): Promise<IFhirHealthCheckAPI> {
     const url = `${this.baseURL}/health`;
     this.logger.info(`Checking FHIR server health at ${url}`);
@@ -68,7 +89,8 @@ export class FhirServerAPI {
   async deleteFhirDataset(datasetId: string): Promise<void> {
     this.logger.info("Deleting FHIR dataset with id:", datasetId);
     const options = this.getRequestConfig();
-    const url = `${this.baseURL}/datasets/${datasetId}`;
+    const safeDatasetId = this.sanitizeDatasetId(datasetId);
+    const url = `${this.baseURL}/datasets/${safeDatasetId}`;
     const result = await axios.delete(url, options);
     // FHIR server returns 204 No Content on successful delete
     if (result.status === 204) {
@@ -83,7 +105,8 @@ export class FhirServerAPI {
     try {
       this.logger.info("Posting FHIR bundle");
       const options = this.getRequestConfig();
-      const url = `${this.baseURL}/${id}`;
+      const safeId = this.sanitizeDatasetId(id);
+      const url = `${this.baseURL}/${safeId}`;
       const result = await axios.post(url, bundle, options);
       return {
         status: result.status,
@@ -118,8 +141,9 @@ export class FhirServerAPI {
     body: any,
     fhirHeaders: Headers,
   ): Promise<IFhirApiResponse<Record<string, unknown>>> {
-    const normalizedResourcePath = resourcePath?.replace(/^\/+/, "");
-    const url = `${this.baseURL}/${id}${normalizedResourcePath ? "/" + normalizedResourcePath : ""}`;
+    const safeId = this.sanitizeDatasetId(id);
+    const normalizedResourcePath = this.sanitizeResourcePath(resourcePath);
+    const url = `${this.baseURL}/${safeId}${normalizedResourcePath ? "/" + normalizedResourcePath : ""}`;
     const statusLogMsg = `Received response after forwarding ${httpMethod} request to ${url}`;
     this.logger.info(
       `Forwarding ${httpMethod} request to FHIR server at URL: ${url}`,

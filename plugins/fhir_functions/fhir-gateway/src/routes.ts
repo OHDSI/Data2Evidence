@@ -23,6 +23,17 @@ export class FhirRouter {
     this.registerRoutes();
   }
 
+  private requireToken(req: Request, res: Response): string | null {
+    const token = req.headers.authorization;
+    if (!token) {
+      res
+        .status(401)
+        .json({ error: true, message: "Authorization header is required" });
+      return null;
+    }
+    return token;
+  }
+
   private registerRoutes() {
     this.router.get("/healthcheck", async (req: Request, res: Response) => {
       try {
@@ -37,7 +48,8 @@ export class FhirRouter {
     });
 
     this.router.get("/datasets/list", async (req: Request, res: Response) => {
-      const token = req.headers.authorization;
+      const token = this.requireToken(req, res);
+      if (!token) return;
       try {
         const response = await getFhirDatasets(token);
         return res.status(200).json(response);
@@ -62,7 +74,8 @@ export class FhirRouter {
           });
         }
 
-        const token = req.headers.authorization;
+        const token = this.requireToken(req, res);
+        if (!token) return;
 
         try {
           const result = await createFhirDataset(req.body, token);
@@ -92,7 +105,8 @@ export class FhirRouter {
         }
 
         const datasetId = req.params.id;
-        const token = req.headers.authorization;
+        const token = this.requireToken(req, res);
+        if (!token) return;
 
         try {
           await deleteFhirDataset(datasetId, token);
@@ -118,7 +132,8 @@ export class FhirRouter {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const token = req.headers.authorization;
+        const token = this.requireToken(req, res);
+        if (!token) return;
         const { id } = req.params;
         const bundle = req.body;
 
@@ -144,7 +159,8 @@ export class FhirRouter {
           return res.status(400).json({ errors: errors.array() });
         }
 
-        const token = req.headers.authorization;
+        const token = this.requireToken(req, res);
+        if (!token) return;
         const { "0": resourcePath, id } = req.params;
         const method = req.method;
         const queryParams = req.query ? req.query : {};
