@@ -57,6 +57,11 @@
                   "database_code": {
                     "type": "string",
                     "title": "Database Code"
+                  },
+                  "chunksize": {
+                    "type": "integer",
+                    "title": "Chunk Size",
+                    "default": 1024
                   }
                 }
               }

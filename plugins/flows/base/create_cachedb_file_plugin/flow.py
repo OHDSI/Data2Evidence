@@ -26,7 +26,8 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
-            if options.results_schema_name and options.schema_name != options.results_schema_name:
+            has_snapshot_config = bool(options.snapshot_copy_config)
+            if options.results_schema_name and options.schema_name != options.results_schema_name and not has_snapshot_config:
                 create_results_cache_flow(options)
 
         case CacheFlowAction.GET_VERSION_INFO:
@@ -42,6 +43,7 @@ def update_parameters(options: CreateCacheOptions,
 def create_results_cache_flow(options: CreateCacheOptions):
     new_options = update_parameters(options, 'schema_name', options.results_schema_name)
     new_options = update_parameters(new_options, 'vocab_schema_name', None)
+    new_options = update_parameters(new_options, 'snapshot_copy_config', None)
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
     create_cache_flow(final_options)
 
