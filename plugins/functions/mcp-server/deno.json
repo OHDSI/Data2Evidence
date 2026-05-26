@@ -16,6 +16,7 @@
     "./src/routes/routes": "./src/routes/routes.ts",
     "./src/services/server": "./src/services/server.ts",
     "./src/env": "./src/env.ts",
+    "./src/api/BaseAPI": "./src/api/BaseAPI.ts",
     "./src/api/WebAPIAPI": "./src/api/WebAPIAPI.ts",
     "./src/tools/cohort-management.tools": "./src/tools/cohort-management.tools.ts",
     "./src/tools/cohort-instruction.tools": "./src/tools/cohort-instruction.tools.ts",
