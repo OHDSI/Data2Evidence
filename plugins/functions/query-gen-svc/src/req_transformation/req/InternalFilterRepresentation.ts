@@ -790,56 +790,20 @@ export class InternalFilterRepresentation implements Request {
                     // if it is of string type => a single parent interaction
                     // if it is of array of string type => multiple parent interactions
                     if (typeof filtercard._parentInteraction.id === "string") {
-                        node.attributeList.push(
-                            new BaseNode(Keys.MRITERM_PARENTINTERACTION)
-                                .withAlias(
-                                    FastUtil.tokenizeAndJoin(
-                                        filtercard._instanceID,
-                                        Keys.TERM_DELIMITER_PRD,
-                                        2
-                                    )
-                                )
-                                .withFilter([
-                                    new Expression(
-                                        Keys.SQLTERM_INEQUALITY_SYMBOL_EQUAL,
-                                        FastUtil.tokenizeAndJoin(
-                                            filtercard._parentInteraction.id,
-                                            Keys.TERM_DELIMITER_PRD,
-                                            2
-                                        )
-                                    )
-                                        .withType("expressionOp")
-                                        .withPath(Keys.MRITERM_INTERACTIONID),
-                                ])
+                        this.addParentInteractionToAttributeList(
+                            filtercard._instanceID,
+                            filtercard._parentInteraction.id,
+                            node.attributeList
                         );
                     } else if (
                         Array.isArray(filtercard._parentInteraction.id)
                     ) {
-                        for (const parentInteraction of filtercard
+                        for (const parentInteractionId of filtercard
                             ._parentInteraction.id) {
-                            node.attributeList.push(
-                                new BaseNode(Keys.MRITERM_PARENTINTERACTION)
-                                    .withAlias(
-                                        FastUtil.tokenizeAndJoin(
-                                            filtercard._instanceID,
-                                            Keys.TERM_DELIMITER_PRD,
-                                            2
-                                        )
-                                    )
-                                    .withFilter([
-                                        new Expression(
-                                            Keys.SQLTERM_INEQUALITY_SYMBOL_EQUAL,
-                                            FastUtil.tokenizeAndJoin(
-                                                parentInteraction,
-                                                Keys.TERM_DELIMITER_PRD,
-                                                2
-                                            )
-                                        )
-                                            .withType("expressionOp")
-                                            .withPath(
-                                                Keys.MRITERM_INTERACTIONID
-                                            ),
-                                    ])
+                            this.addParentInteractionToAttributeList(
+                                filtercard._instanceID,
+                                parentInteractionId,
+                                node.attributeList
                             );
                         }
                     }
@@ -1224,6 +1188,35 @@ export class InternalFilterRepresentation implements Request {
                 .getEntityByPath(FastUtil.getId(pathToken, true, true))
                 .getConfig()[Keys.MRITERM_MEASUREEXPRESSION] !==
             Keys.TERM_UNDEFINED
+        );
+    }
+
+    private addParentInteractionToAttributeList(
+        instanceId,
+        parentInteractionId,
+        attributeList
+    ) {
+        attributeList.push(
+            new BaseNode(Keys.MRITERM_PARENTINTERACTION)
+                .withAlias(
+                    FastUtil.tokenizeAndJoin(
+                        instanceId,
+                        Keys.TERM_DELIMITER_PRD,
+                        2
+                    )
+                )
+                .withFilter([
+                    new Expression(
+                        Keys.SQLTERM_INEQUALITY_SYMBOL_EQUAL,
+                        FastUtil.tokenizeAndJoin(
+                            parentInteractionId,
+                            Keys.TERM_DELIMITER_PRD,
+                            2
+                        )
+                    )
+                        .withType("expressionOp")
+                        .withPath(Keys.MRITERM_INTERACTIONID),
+                ])
         );
     }
 }
