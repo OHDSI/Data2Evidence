@@ -20,9 +20,11 @@ import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   ConceptSetInUseError,
+  ConceptSetExpressionError,
   LegacyConceptSetReadOnlyError,
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
+import { resolveSourceKey } from "./source.service.ts";
 
 export const WEBAPI_CONCEPT_SET_ID_OFFSET = 1_000_000_000;
 export const LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE =
@@ -309,10 +311,34 @@ export const getConceptSetExpression = async (
 ): Promise<IConceptSetItemsResponseDto> => {
   if (isWebApiConceptSetId(conceptSetId)) {
     const webApiConceptSetApi = new WebApiConceptSetAPI(token);
-    return await webApiConceptSetApi.getConceptSetExpression(
-      decodeWebApiConceptSetId(conceptSetId),
-      datasetId,
-    );
+
+    let sourceKey: string;
+    try {
+      sourceKey = await resolveSourceKey(token, datasetId);
+    } catch (error) {
+      console.error(
+        `[ConceptSetExpression] Failed to resolve source key for dataset ${datasetId}`,
+        error,
+      );
+      throw new ConceptSetExpressionError(
+        `Failed to resolve source configuration for dataset ${datasetId}`,
+      );
+    }
+
+    try {
+      return await webApiConceptSetApi.getConceptSetExpression(
+        decodeWebApiConceptSetId(conceptSetId),
+        sourceKey,
+      );
+    } catch (error) {
+      console.error(
+        `[ConceptSetExpression] Failed to fetch expression for WebAPI concept set ${conceptSetId} using source key ${sourceKey}`,
+        error,
+      );
+      throw new ConceptSetExpressionError(
+        `Failed to fetch concept set expression for source ${sourceKey}`,
+      );
+    }
   }
 
   const terminologySvcApi = new TerminologySvcAPI(token);

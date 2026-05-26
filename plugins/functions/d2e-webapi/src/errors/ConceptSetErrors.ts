@@ -38,3 +38,14 @@ export class LegacyConceptSetReadOnlyError extends Error {
     this.name = "LegacyConceptSetReadOnlyError";
   }
 }
+
+/**
+ * Thrown when fetching a concept set expression fails, typically due to
+ * missing source configuration in WebAPI.
+ */
+export class ConceptSetExpressionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConceptSetExpressionError";
+  }
+}
