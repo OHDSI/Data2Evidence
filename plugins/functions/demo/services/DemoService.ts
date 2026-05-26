@@ -35,12 +35,12 @@ export class DemoService {
         this.credentialsPublicKeys = JSON.parse(input.encryptionKeys);
         this.logger.debug(
           `Loaded credentials public keys: ${JSON.stringify(
-            this.credentialsPublicKeys
-          )}`
+            this.credentialsPublicKeys,
+          )}`,
         );
       } catch (err) {
         this.logger.error(
-          `Error while loading credentials public keys: ${JSON.stringify(err)}`
+          `Error while loading credentials public keys: ${JSON.stringify(err)}`,
         );
         throw new Error("Error while configuring for credential encryption");
       }
@@ -62,7 +62,7 @@ export class DemoService {
           serviceScope: "Internal",
           salt,
           userScope: "Read",
-        }
+        },
       );
     }
 
@@ -90,7 +90,7 @@ export class DemoService {
         dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
         dataset.sourceStudyId == null &&
-        dataset.visibilityStatus !== "HIDDEN"
+        dataset.visibilityStatus !== "HIDDEN",
     );
 
     if (existingDataset) {
@@ -121,15 +121,17 @@ export class DemoService {
           d.schemaName === env.DEMO_DB_CDM_SCHEMA &&
           d.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
           d.sourceStudyId == null &&
-          d.visibilityStatus !== "HIDDEN"
+          d.visibilityStatus !== "HIDDEN",
       );
 
     if (!createdDataset?.id) {
       throw new Error(
-        `Dataset created but not visible in portal (result=${JSON.stringify(result)})`
+        `Dataset created but not visible in portal (result=${JSON.stringify(result)})`,
       );
     }
-    this.logger.info(`Dataset confirmed in portal: ${JSON.stringify(createdDataset)}`);
+    this.logger.info(
+      `Dataset confirmed in portal: ${JSON.stringify(createdDataset)}`,
+    );
     return createdDataset;
   }
 
@@ -140,7 +142,7 @@ export class DemoService {
     this.logger.info("Waiting for cache");
 
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
     if (!dataset?.id) {
       throw new Error("Dataset not found in progress; cannot wait for cache");
@@ -155,7 +157,7 @@ export class DemoService {
       lastStatus = await portalAPI.getCacheStatus(dataset.id);
       if (lastStatus.ready) {
         this.logger.info(
-          `Cache ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
+          `Cache ready for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`,
         );
         return lastStatus;
       }
@@ -164,16 +166,16 @@ export class DemoService {
         ["FAILED", "STOPPED", "ABANDONED"].includes(lastStatus.activeJobStatus)
       ) {
         throw new Error(
-          `Cache build for dataset ${dataset.id} ${lastStatus.activeJobStatus}: ${lastStatus.lastJobError ?? "no error message"}`
+          `Cache build for dataset ${dataset.id} ${lastStatus.activeJobStatus}: ${lastStatus.lastJobError ?? "no error message"}`,
         );
       }
       this.logger.info(
-        `Cache not ready yet for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`
+        `Cache not ready yet for dataset ${dataset.id}: ${JSON.stringify(lastStatus)}`,
       );
       await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
     throw new Error(
-      `Cache build for dataset ${dataset.id} did not become ready within ${pollTimeoutMs}ms (last=${JSON.stringify(lastStatus)})`
+      `Cache build for dataset ${dataset.id} did not become ready within ${pollTimeoutMs}ms (last=${JSON.stringify(lastStatus)})`,
     );
   }
 
@@ -182,7 +184,7 @@ export class DemoService {
 
     const jobPluginsAPI = new JobPluginsAPI(token);
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
 
     if (!dataset) {
@@ -205,7 +207,7 @@ export class DemoService {
       result = { flowRunId: dqdFlowRun.data.flowRunId };
     } else {
       throw new Error(
-        `No flowRunId found in response: ${JSON.stringify(dqdFlowRun)}`
+        `No flowRunId found in response: ${JSON.stringify(dqdFlowRun)}`,
       );
     }
 
@@ -223,11 +225,11 @@ export class DemoService {
       dqdResults?.total?.total?.correctedPassPercentage;
     const pct = parseInt(
       String(correctedPassPercentage ?? "").replace("%", ""),
-      10
+      10,
     );
     if (Number.isNaN(pct) || pct < 94) {
       throw new Error(
-        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected >= 94`
+        `DQD results assertion failed: correctedPassPercentage is ${correctedPassPercentage}, expected >= 94`,
       );
     }
 
@@ -240,7 +242,7 @@ export class DemoService {
 
     const jobPluginsAPI = new JobPluginsAPI(token);
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
 
     if (!dataset) {
@@ -261,13 +263,13 @@ export class DemoService {
   public async createCache(
     token: string,
     _input: IDemoInput,
-    progress?: IProgress
+    progress?: IProgress,
   ) {
     this.logger.info("Creating cache");
 
     const jobPluginsAPI = new JobPluginsAPI(token);
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
 
     if (!dataset) {
@@ -283,11 +285,10 @@ export class DemoService {
     this.logger.info(`Cache flow-run created: ${JSON.stringify(result.data)}`);
     const flowRunId = result.flowRunId ? result : result.data;
 
-    const cacheStatusResponse = await jobPluginsAPI.getCacheFlowRunStatus(
-      flowRunId
-    );
+    const cacheStatusResponse =
+      await jobPluginsAPI.getCacheFlowRunStatus(flowRunId);
     this.logger.info(
-      `Cache flow-run status: ${JSON.stringify(cacheStatusResponse)}`
+      `Cache flow-run status: ${JSON.stringify(cacheStatusResponse)}`,
     );
 
     return cacheStatusResponse.flowRunId
@@ -298,13 +299,13 @@ export class DemoService {
   public async updateDatasetMetadata(
     token: string,
     _input: any,
-    progress?: IProgress
+    progress?: IProgress,
   ) {
     this.logger.info("Updating metadata");
 
     const jobPluginsAPI = new JobPluginsAPI(token);
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
 
     if (!dataset) {
@@ -342,7 +343,7 @@ export class DemoService {
     });
 
     this.logger.info(
-      `Dataset metadata updated: ${JSON.stringify(result.data)}`
+      `Dataset metadata updated: ${JSON.stringify(result.data)}`,
     );
     return result.flowRunId ? result : result.data;
   }
@@ -350,7 +351,7 @@ export class DemoService {
   public async runPhenotype(
     token: string,
     _input: IDemoInput,
-    progress?: IProgress
+    progress?: IProgress,
   ) {
     this.logger.info("Running Phenotype");
 
@@ -358,9 +359,11 @@ export class DemoService {
     const userMgmtAPI = new UserMgmtAPI(token);
     const user = await userMgmtAPI.getMe();
     const roles = await userMgmtAPI.getMyRoles();
+    console.log("User roles:", roles);
+    console.log("User info:", user);
     const accessibleDatasetIds = new Set(
       roles.datasetRoles
-        .filter((r) => r.role === "RESEARCHER")
+        .filter((r) => r.role === "STUDY_RESEARCHER")
         .map((r) => r.datasetId),
     );
     // For standalone phenotype flow, get the first dataset the user has access to
@@ -379,7 +382,7 @@ export class DemoService {
     });
 
     this.logger.info(
-      `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`
+      `Phenotype flow-run created: ${JSON.stringify(result.data || result)}`,
     );
     return result.flowRunId ? result : result.data;
   }
@@ -387,11 +390,11 @@ export class DemoService {
   public async addResearcherRoleToDataset(
     token: string,
     _input: any,
-    progress?: IProgress
+    progress?: IProgress,
   ) {
     this.logger.info("Adding researcher role to demo dataset");
     const dataset = progress?.steps?.find(
-      (step) => step.code === "dataset"
+      (step) => step.code === "dataset",
     )?.result;
     const { id: datasetId } = dataset;
 
@@ -408,7 +411,7 @@ export class DemoService {
       roles: ["RESEARCHER"],
     });
     this.logger.info(
-      `Researcher role added to admin: ${JSON.stringify(result)}`
+      `Researcher role added to admin: ${JSON.stringify(result)}`,
     );
     return result;
   }
@@ -427,7 +430,7 @@ export class DemoService {
         this.convertPEMtoBinary(pub),
         { ...algo, hash: "SHA-256" },
         true,
-        ["encrypt"]
+        ["encrypt"],
       );
 
       const dataText = this.setupData(data, salt);
@@ -436,7 +439,7 @@ export class DemoService {
       const buffer = await window.crypto.subtle.encrypt(
         algo,
         publicKey,
-        encoded
+        encoded,
       );
       return this.convertBufferToBase64(buffer);
     } catch (error) {
