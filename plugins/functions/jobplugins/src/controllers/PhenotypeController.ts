@@ -2,6 +2,7 @@ import { Request, Response, Router } from "express";
 import { validationResult } from "express-validator";
 import { validatePhenotypeFlowRunDto } from "../middlewares/PhenotypeValidatorMiddlewares.ts";
 import { PhenotypeService } from "../services/PhenotypeService.ts";
+import { ensureOptionsCacheId } from "../utils/cacheIdResolver.ts";
 
 export class PhenotypeController {
   private phenotypeService: PhenotypeService;
@@ -32,6 +33,7 @@ export class PhenotypeController {
     try {
       const token = req.headers.authorization!;
       const phenotypeFlowRunDto = req.body;
+      await ensureOptionsCacheId(phenotypeFlowRunDto, token);
       const result = await this.phenotypeService.createPhenotypeFlowRun(
         phenotypeFlowRunDto,
         token

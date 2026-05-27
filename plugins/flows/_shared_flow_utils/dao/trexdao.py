@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 from pydantic import SecretStr
 from contextlib import contextmanager
 
@@ -18,11 +19,11 @@ from _shared_flow_utils.dao.daobase import DialectDrivers
 class TrexDao(DaoBase):
     def __init__(
         self,
-        use_cache_db: bool,
         database_code: str,
         user_type: UserType = UserType.ADMIN_USER,
+        cache_id: Optional[str] = None,
     ):
-        super().__init__(use_cache_db, database_code, user_type)
+        super().__init__(database_code, user_type, cache_id=cache_id)
 
     @property
     def dialect(self):
@@ -62,9 +63,22 @@ class TrexDao(DaoBase):
                 port=configs.port,
                 user=configs.user,
                 password=configs.password.get_secret_value(),
-                dbname=self.database_code,
+                dbname=self.cache_id,
             )
             con.autocommit = True
+            # Trex pgwire only auto-issues `USE <dbname>` when dbname matches
+            # a credential id. When cache_id differs from database_code it's a
+            # DuckDB ATTACH alias rather than a credential id, so we issue USE
+            # ourselves to route unqualified queries to the cache catalog.
+            # Tolerate failure (e.g. catalog not yet attached) — the connection
+            # still works against the default catalog.
+            if self.cache_id != self.database_code:
+                with con.cursor() as cur:
+                    try:
+                        cur.execute(pg_sql.SQL("USE {}").format(pg_sql.Identifier(self.cache_id)))
+                    except Exception as e:
+                        # Caller may still query qualified catalogs; don't break the connection.
+                        print(f"[TrexDao] USE {self.cache_id} skipped: {e}")
             yield con
         except Exception:
             if con and not con.autocommit:
@@ -75,6 +89,14 @@ class TrexDao(DaoBase):
         finally:
             if con:
                 con.close()
+
+    @staticmethod
+    def _schema_ident(schema: str) -> pg_sql.Identifier:
+        """
+        `Identifier("a.b")` would quote the dot literally
+        (`"a.b"`); we need `Identifier("a", "b")` → `"a"."b"`.
+        """
+        return pg_sql.Identifier(*schema.split("."))
 
     def execute_sql(self, sql: str, fetch: bool = False):
         """Execute SQL using a context manager for connection and cursor."""
@@ -95,14 +117,22 @@ class TrexDao(DaoBase):
                 if cur:
                     cur.close()
 
+    def clear_pg_cache(self) -> None:   
+        try:
+            sql = '''CALL pg_clear_cache();'''
+            self.execute_sql(sql)
+            return
+        except psycopg2.Error as e:
+            raise
+
 
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
-        self.validate_schema_name(schema)
+        self.validate_schema_name(self._split_catalog_schema(schema)[-1])
         sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
-                .format(pg_sql.Identifier(schema))
+            .format(self._schema_ident(schema))
+            
         self.execute_sql(sql)
-
 
     def create_table(self, schema: str, table: str, columns: dict) -> None:
         columns_with_types = [
@@ -112,7 +142,7 @@ class TrexDao(DaoBase):
             ) for col_name, col_type in columns.items()
         ]
         create_table_query = pg_sql.SQL("CREATE TABLE IF NOT EXISTS {schema}.{table} ({columns_with_types});").format(
-            schema = pg_sql.Identifier(schema),
+            schema = self._schema_ident(schema),
             table = pg_sql.Identifier(table),
             columns_with_types = pg_sql.SQL(", ").join(columns_with_types)
         )
@@ -137,16 +167,39 @@ class TrexDao(DaoBase):
         pass
 
 
+    @staticmethod
+    def _split_catalog_schema(schema: str) -> tuple[str | None, str]:
+        """Split a possibly-dotted schema string into (catalog, schema)."""
+        parts = schema.split(".")
+        if len(parts) == 2:
+            return parts[0], parts[1]
+        if len(parts) == 1:
+            return None, parts[0] 
+        raise ValueError(f"Invalid schema format: {schema}. Expected 'schema' or 'catalog.schema'.")
+
     def check_table_exists(self, schema: str, table: str) -> bool:
         try:
-            sql_query = pg_sql.SQL("""
-                                    SELECT table_name FROM information_schema.tables
-                                    WHERE table_schema = {schema} AND table_name = {table};""")\
-                                .format(
-                                    schema = pg_sql.Literal(schema),
-                                    table = pg_sql.Literal(table)
-                                )
-                
+            catalog, schema_only = self._split_catalog_schema(schema)
+            if catalog is not None:
+                sql_query = pg_sql.SQL("""
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_catalog = {catalog}
+                      AND table_schema = {schema}
+                      AND table_name = {table};
+                """).format(
+                    catalog=pg_sql.Literal(catalog),
+                    schema=pg_sql.Literal(schema_only),
+                    table=pg_sql.Literal(table),
+                )
+            else:
+                sql_query = pg_sql.SQL("""
+                    SELECT table_name FROM information_schema.tables
+                    WHERE table_schema = {schema} AND table_name = {table};""")\
+                .format(
+                    schema = pg_sql.Literal(schema_only),
+                    table = pg_sql.Literal(table)
+                )
+
             result = self.execute_sql(sql_query, fetch=True)
             tables = {row[0] for row in result}
             return table in tables
@@ -167,15 +220,30 @@ class TrexDao(DaoBase):
         return [row[0] for row in result]
 
     def get_columns(self, schema: str, table: str) -> list[str]:
-        sql = pg_sql.SQL("""
-            SELECT column_name
-            FROM information_schema.columns
-            WHERE table_schema = {schema} AND table_name = {table}
-            ORDER BY ordinal_position;
-        """).format(
-            schema=pg_sql.Literal(schema),
-            table=pg_sql.Literal(table)
-        )
+        catalog, schema_only = self._split_catalog_schema(schema)
+        if catalog is not None:
+            sql = pg_sql.SQL("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_catalog = {catalog}
+                  AND table_schema = {schema}
+                  AND table_name = {table}
+                ORDER BY ordinal_position;
+            """).format(
+                catalog=pg_sql.Literal(catalog),
+                schema=pg_sql.Literal(schema_only),
+                table=pg_sql.Literal(table),
+            )
+        else:
+            sql = pg_sql.SQL("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = {schema} AND table_name = {table}
+                ORDER BY ordinal_position;
+            """).format(
+                schema=pg_sql.Literal(schema_only),
+                table=pg_sql.Literal(table)
+            )
         result = self.execute_sql(sql, fetch=True)
         return [row[0] for row in result]   
 
@@ -183,7 +251,7 @@ class TrexDao(DaoBase):
     def get_table_row_count(self, schema: str, table: str) -> int:
         sql = pg_sql.SQL("SELECT COUNT(*) FROM {schema}.{table}")\
             .format(
-                schema=pg_sql.Identifier(schema),
+                schema=self._schema_ident(schema),
                 table=pg_sql.Identifier(table)
             )
         result = self.execute_sql(sql, fetch=True)
@@ -194,7 +262,7 @@ class TrexDao(DaoBase):
         sql = pg_sql.SQL("SELECT COUNT(DISTINCT {column}) FROM {schema}.{table}")\
             .format(
                 column=pg_sql.Identifier(column),
-                schema=pg_sql.Identifier(schema),
+                schema=self._schema_ident(schema),
                 table=pg_sql.Identifier(table)
             )
         result = self.execute_sql(sql, fetch=True)
@@ -205,7 +273,7 @@ class TrexDao(DaoBase):
         sql = pg_sql.SQL("SELECT {column} FROM {schema}.{table} LIMIT 1")\
             .format(
                 column=pg_sql.Identifier(column),
-                schema=pg_sql.Identifier(schema),
+                schema=self._schema_ident(schema),
                 table=pg_sql.Identifier(table)
             )
         result = self.execute_sql(sql, fetch=True)
@@ -234,22 +302,24 @@ class TrexDao(DaoBase):
     ):
         pass
 
-    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None):
+    def batch_insert_values(self, schema_name: str, table_name: str, columns: list, values: list[tuple], con=None, on_conflict: str = ""):
         """
         Insert multiple rows into a specified table in one operation.
-        
+
         Args:
             schema_name: Schema containing the target table
             table_name: Target table name
             columns: List of column names to insert into
             values: List of tuples, each tuple representing a row to insert
             con: Optional existing connection to reuse (skips opening a new connection)
+            on_conflict: Optional ON CONFLICT clause, e.g. "ON CONFLICT DO NOTHING"
         """
         columns_str = ", ".join(columns)
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s").format(
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s{conflict}").format(
             schema_name=pg_sql.Identifier(schema_name),
             table_name=pg_sql.Identifier(table_name),
             columns_str=pg_sql.SQL(columns_str),
+            conflict=pg_sql.SQL(f" {on_conflict}" if on_conflict else ""),
         )
 
         def _execute(con):
@@ -276,14 +346,14 @@ class TrexDao(DaoBase):
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
         sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
-            schema=pg_sql.Identifier(schema),
+            schema=self._schema_ident(schema),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
         )
         self.execute_sql(sql)
 
     def drop_table(self, schema: str, table: str, cascade: bool = False):
         sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
-            schema=pg_sql.Identifier(schema),
+            schema=self._schema_ident(schema),
             table=pg_sql.Identifier(table),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
         )
@@ -291,7 +361,7 @@ class TrexDao(DaoBase):
 
     def truncate_table(self, schema: str, table: str):
         sql = pg_sql.SQL("TRUNCATE TABLE {schema}.{table};").format(
-            schema=pg_sql.Identifier(schema), 
+            schema=self._schema_ident(schema), 
             table=pg_sql.Identifier(table)
             )
         self.execute_sql(sql)
@@ -309,8 +379,9 @@ class TrexDao(DaoBase):
         user = self.tenant_configs.user
         password = self.tenant_configs.password.get_secret_value()
 
-        # Use jdbc:postgresql for DatabaseConnector
-        conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+        # Match Python's _get_connection: connect on cache_id so unqualified queries resolve there.
+        jdbc_dbname = self.cache_id or self.database_code
+        conn_url = f"{DialectDrivers.jdbc.trex}://{host}:{port}/{jdbc_dbname}?preferQueryMode=simple&autocommit=true"
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{DialectDrivers.database_connector.trex}', connectionString = '{conn_url}', user = '{user}', password = '{password}', pathToDriver = '{self.path_to_driver}')"""
 

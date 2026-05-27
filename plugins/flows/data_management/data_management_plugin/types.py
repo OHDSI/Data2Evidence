@@ -23,6 +23,7 @@ class FlowActionType(str, Enum):
 class DataModelType(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     data_model: Optional[str] = None
     schema_name: Optional[str] = None
     vocab_schema: Optional[str] = None
@@ -30,10 +31,6 @@ class DataModelType(BaseModel):
     rollback_tag: Optional[str] = None
     update_count: Optional[int] = None
     datasets: Optional[List] = None
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
 
     @property
     def flow_name(self) -> str:
@@ -57,8 +54,8 @@ class DataModelType(BaseModel):
 
 
 class DataModelBase(BaseModel):
-    use_cache_db: bool
     database_code: str = Field(...)
+    cache_id: Optional[str] = None
     data_model: str = Field(...)
     schema_name: str = Optional[str]
     dialect: str = Field(...)

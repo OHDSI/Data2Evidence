@@ -14,6 +14,7 @@ os.environ["plugin_name"] = "create_cachedb_fhir_plugin"
 @flow(log_prints=True)
 def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
     logger.info(
         f"Starting FHIR cache creation from medplum for database "
         f"'{options.databaseCode}' → schema '{options.cacheSchemaName}'"
@@ -24,7 +25,7 @@ def create_cachedb_fhir_plugin(options: CreateDuckdbDatabaseFileType):
     fhir_project_id = options.fhirProjectId or get_fhir_project_id_task(study_code=options.studyCode)
 
     # ── Step 2: Copy FHIR resource tables directly from medplum postgres ─────
-    dbdao = DBDao(use_cache_db=options.use_cache_db, database_code=options.database_code)
+    dbdao = DBDao(database_code=options.database_code, cache_id=options.cacheId)
     copy_fhir_resources_task(
         fhir_project_id=fhir_project_id,
         src_con=dbdao,

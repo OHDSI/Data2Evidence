@@ -8,6 +8,7 @@ import {
 } from "../utils/DataflowParser.ts";
 import { AnalysisService } from "./AnalysisService.ts";
 import { TransformationService } from "./DataTransformationService.ts";
+import { env } from "../env.ts";
 
 export class PrefectService {
   private dataflowService;
@@ -56,15 +57,16 @@ export class PrefectService {
       revision.flow,
     );
     const portalServerApi = new PortalServerAPI(token);
-    const { schemaName, databaseCode } =
-      await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { schemaName, databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
     await this.strategusAnalysisApi.saveAnalysis(
       studyId,
       revision.canvas.name,
       JSON.stringify(prefectParams),
-      databaseCode,
+      env.TREX__STRATEGUS_RESULTS_DB_NAME,
       "analysis-ui",
     );
 
@@ -83,6 +85,7 @@ export class PrefectService {
           datasetId,
           schemaName,
           databaseCode,
+          cacheId,
           studyName,
           studyId,
           ...(uploadResults !== undefined ? { uploadResults } : {}),
@@ -123,23 +126,24 @@ export class PrefectService {
     const portalServerApi = new PortalServerAPI(token);
 
     // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
-    const { schemaName, databaseCode } = await portalServerApi.getDataset(
-      options["datasetId"],
-    );
+    const dataset = await portalServerApi.getDataset(options["datasetId"]);
+    const { schemaName, databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
-    // Save analysis specification for researcher workflows
+    // Resolve study by token and validate it exists
     this.strategusAnalysisApi = new StrategusAnalysisApi(token);
-    // if study does not exist, throw error. This ensures that we only create flow runs for valid studies.
-    const study = await this.strategusAnalysisApi.getStudy(options["studyId"]);
+    const studyDataset = await portalServerApi.getDatasetByToken(options["tokenStudyCode"]);
+    const study = await this.strategusAnalysisApi.getStudyByDatasetId(studyDataset.id);
     if (!study) {
-      throw new Error(`Study ${options["studyId"]} does not exist.`);
+      throw new Error(`Study with token ${options["tokenStudyCode"]} does not exist.`);
     }
 
     await this.strategusAnalysisApi.saveAnalysis(
-      options["studyId"],
+      options["tokenStudyCode"],
       options["notebookName"],
       json_graph["analysisSpecification"],
-      databaseCode,
+      env.TREX__STRATEGUS_RESULTS_DB_NAME,
+      options["mode"],
     );
 
     const flowRunId = await this.prefectApi.createFlowRun(
@@ -151,6 +155,7 @@ export class PrefectService {
         options: Object.assign(options, {
           schemaName,
           databaseCode,
+          cacheId,
         }),
       },
     );
@@ -194,7 +199,9 @@ export class PrefectService {
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
 
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     const STRATEGUS_RESULTS_BUCKET = "strategus-results";
     let storageFileName: string | undefined;
@@ -234,6 +241,7 @@ export class PrefectService {
           {
             mode: "upload-results-from-storage",
             databaseCode,
+            cacheId,
             studyId,
             datasetId,
             storageFileName,
@@ -279,7 +287,9 @@ export class PrefectService {
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
 
-    const { databaseCode } = await portalServerApi.getDataset(datasetId);
+    const dataset = await portalServerApi.getDataset(datasetId);
+    const { databaseCode } = dataset;
+    const cacheId = dataset.cacheId ?? databaseCode;
 
     const flowRunId = await this.prefectApi.createFlowRun(
       "strategus-analysis-drop-results",
@@ -292,6 +302,7 @@ export class PrefectService {
           {
             mode: "drop-results",
             databaseCode,
+            cacheId,
             studyId,
             datasetId,
           },

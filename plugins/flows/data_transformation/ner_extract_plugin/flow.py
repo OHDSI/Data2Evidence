@@ -18,12 +18,12 @@ def ner_extract_plugin(options: NerExtractOptions):
 
     logger.info("Start the connection to database")
     database_code = options.database_code
+    cache_id = options.cache_id
     schema_name = options.schema_name
     note_table = options.note_table
     note_nlp_table = options.note_nlp_table
-    use_cache_db = options.use_cache_db
 
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
 
     with dbdao.ibis_connect() as conn:
         logger.info("Loading Notes")

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
+from typing import Optional
 
 class FlowActionType(str, Enum):
     MIMIC_TO_DATABASE = "mimic_to_database"
@@ -12,12 +13,8 @@ class MimicOMOPOptionsType(BaseModel):
     vocab_dir: str = "/app/mimic_omop/vocab"
     load_mimic_vocab: bool = True
     database_code: None | str = None
+    cache_id: Optional[str] = None
     schema_name: None | str = None
     overwrite_schema: bool = False
     chunk_size: int = 5000
     flow_action_type: FlowActionType
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
-    

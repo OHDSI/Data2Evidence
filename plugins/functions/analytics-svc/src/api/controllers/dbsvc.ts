@@ -9,15 +9,21 @@ const logger = Logger.CreateLogger("analytics-log");
 
 export async function getCDMVersion(req, res, next) {
     const datasetId = req.query.datasetId;
-    const { dialect, schemaName, databaseCode } = await new PortalServerAPI().getStudy(
-        datasetId
-    );
+    const { dialect, schemaName, databaseCode, cacheId } =
+        await new PortalServerAPI().getStudy(datasetId);
 
     try {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
-        const cdmVersion = await dbDao.getCDMVersion(databaseCode, schemaName, dialect);
-
+        const trexAlias = cacheId ?? databaseCode;
+        const cdmVersion = await dbDao.getCDMVersion(
+            trexAlias,
+            schemaName,
+            dialect
+        );
+        logger.info(
+            `CDM version retrieved for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${JSON.stringify(cdmVersion)}`
+        );
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
             dialect === ANALYTICS_DB_DIALECTS.HANA
@@ -32,6 +38,9 @@ export async function getCDMVersion(req, res, next) {
         } else {
             throw new Error("Invalid cdm version value");
         }
+        logger.info(
+            `CDM version returned for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${cdmVersionValue}`
+        );
         res.status(200).json(cdmVersionValue);
     } catch (err) {
         logger.error(`Error retrieving CDM version: ${err}`);

@@ -15,6 +15,7 @@ class CohortJsonType(BaseModel):
 
 class CohortGeneratorOptionsType(BaseModel):
     databaseCode: str
+    cacheId: Optional[str] = None
     schemaName: str
     vocabSchemaName: str
     resultsSchemaName: str
@@ -24,7 +25,3 @@ class CohortGeneratorOptionsType(BaseModel):
 
     # Optional, if provided, will not create cohort definition
     cohortDefinitionId: Optional[int] = None
-
-    @property
-    def use_cache_db(self) -> str:
-        return False

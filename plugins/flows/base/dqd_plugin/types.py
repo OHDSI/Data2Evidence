@@ -6,6 +6,7 @@ class DqdOptionsType(BaseModel):
     datasetId: str
     schemaName: str
     databaseCode: str
+    cacheId: Optional[str] = None
     cdmVersionNumber: str
     vocabSchemaName: str
     resultsSchemaName: str
@@ -14,10 +15,6 @@ class DqdOptionsType(BaseModel):
     checkNames: Optional[List[str]] = None
     cohortDatabaseSchema: Optional[str] = None
     cohortTableName: Optional[str] = "cohort"
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
 
     @property
     def use_trex_connection(self) -> bool:

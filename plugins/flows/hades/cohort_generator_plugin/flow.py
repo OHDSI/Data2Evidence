@@ -17,17 +17,17 @@ def cohort_generator_plugin(options: CohortGeneratorOptionsType):
     logger.info('Running Cohort Generator')
 
     database_code = options.databaseCode
+    cache_id = options.cacheId
     schema_name = options.schemaName
     cohort_schema_name = options.resultsSchemaName
     vocab_schema_name = options.vocabSchemaName
     cohort_json = options.cohortJson
     dataset_id = options.datasetId
     description = options.description
-    use_cache_db = options.use_cache_db
     cohort_definition_id = options.cohortDefinitionId
     
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+    dbdao = DBDao(database_code=database_code,
+                  cache_id=cache_id)
 
     cohort_json_expression = json.dumps(cohort_json.expression)
     cohort_name = cohort_json.name

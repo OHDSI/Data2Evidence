@@ -5,15 +5,12 @@ from pydantic import BaseModel
 class DCOptionsType(BaseModel):
     schemaName: str
     databaseCode: str
+    cacheId: Optional[str] = None
     cdmVersionNumber: str
     vocabSchemaName: str
     releaseDate: Optional[str] = None
     resultsSchema: str
     executeConceptRecordCount: Optional[bool] = True
-
-    @property
-    def use_cache_db(self) -> bool:
-        return False
 
     @property
     def use_trex_connection(self) -> bool:

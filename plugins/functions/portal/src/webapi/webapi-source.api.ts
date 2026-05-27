@@ -1,6 +1,7 @@
 import { Injectable } from '@danet/core'
 import { services } from '../env.ts'
 import { createLogger } from '../logger.ts'
+import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
 import { ISourceInfo, ISourceRequest } from './types.ts'
 
 const DEFAULT_WEBAPI_URL = 'http://localhost:33001/WebAPI'
@@ -110,7 +111,7 @@ export class WebApiSourceApi {
     schemaName: string,
     authToken?: string
   ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+    const databaseCode = sanitizeIdForCacheId(sourceKey)
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache`
 
     const response = await fetch(url, {
@@ -130,8 +131,12 @@ export class WebApiSourceApi {
   async getCacheStatus(
     sourceKey: string,
     authToken?: string
-  ): Promise<{ cacheExists: boolean; cacheAttached: boolean }> {
-    const databaseCode = sourceKey.replace(/-/g, '_')
+  ): Promise<{
+    cacheExists: boolean
+    cacheAttached: boolean
+    activeJob?: { status: string; error?: string } | null
+  }> {
+    const databaseCode = sanitizeIdForCacheId(sourceKey)
     const url = `${this.baseUrl}/trexsql/${sourceKey}/cache/status?databaseCode=${databaseCode}`
 
     const response = await fetch(url, {
@@ -144,5 +149,33 @@ export class WebApiSourceApi {
     }
 
     return response.json()
+  }
+
+  // Poll cache/status until the cache file exists+attached and any tracked
+  // build job is terminal-success. bao returns a single :activeJob row (no
+  // :lastJob) — for postgres/bigquery the row is never inserted (sync build),
+  // for JDBC dialects it persists after the batch with status=COMPLETED.
+  async waitForCacheReady(
+    sourceKey: string,
+    authToken?: string,
+    options: { timeoutMs?: number; pollIntervalMs?: number } = {}
+  ): Promise<void> {
+    const timeoutMs = options.timeoutMs ?? 15 * 60 * 1000
+    const pollIntervalMs = options.pollIntervalMs ?? 2000
+    const deadline = Date.now() + timeoutMs
+
+    while (Date.now() < deadline) {
+      const status = await this.getCacheStatus(sourceKey, authToken)
+      const jobStatus = status.activeJob?.status
+      if (jobStatus && ['FAILED', 'STOPPED', 'ABANDONED'].includes(jobStatus)) {
+        throw new Error(`Cache build for ${sourceKey} ${jobStatus}: ${status.activeJob?.error ?? 'no error message'}`)
+      }
+      const jobDone = !jobStatus || jobStatus === 'COMPLETED'
+      if (jobDone && status.cacheExists && status.cacheAttached) {
+        return
+      }
+      await new Promise(resolve => setTimeout(resolve, pollIntervalMs))
+    }
+    throw new Error(`Cache build for ${sourceKey} did not become ready within ${timeoutMs}ms`)
   }
 }

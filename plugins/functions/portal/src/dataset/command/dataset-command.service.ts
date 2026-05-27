@@ -3,7 +3,7 @@ import { EntityManager, In } from "npm:typeorm";
 import { v4 as uuidv4 } from "uuid";
 import { TransactionRunner } from "../../common/data-source/transaction-runner.ts";
 import { RequestContextService } from "../../common/request-context.service.ts";
-import { getDbCredentialsByCode } from "../../env.ts";
+import { getDbCredentialsByCode, toUpperCaseIfHana } from "../../env.ts";
 import { createLogger } from "../../logger.ts";
 import { TenantService } from "../../tenant/tenant.service.ts";
 import {
@@ -17,7 +17,15 @@ import {
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
-import { Dataset, DatasetDetail, DatasetTag } from "../entity/index.ts";
+import {
+  Dataset,
+  DatasetAttribute,
+  DatasetDashboard,
+  DatasetDetail,
+  DatasetTag,
+} from "../entity/index.ts";
+import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
+import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
   DatasetCodeQueryRepository,
@@ -52,11 +60,17 @@ export class DatasetCommandService {
     private readonly datasetCodeQueryRepo: DatasetCodeQueryRepository,
     private readonly requestContextService: RequestContextService,
     private readonly webApiSourceService: WebApiSourceService,
+    private readonly trexApiService: TrexApiService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
 
   async createDataset(datasetDto: IDatasetDto) {
+    
+    // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
+    datasetDto.vocabSchemaName = toUpperCaseIfHana(datasetDto.vocabSchemaName, datasetDto.dialect);
+    datasetDto.resultsSchemaName = toUpperCaseIfHana(datasetDto.resultsSchemaName, datasetDto.dialect);
+
     const createDatasetFn = async (
       entityMgr: EntityManager,
       datasetDto: IDatasetDto,
@@ -74,6 +88,10 @@ export class DatasetCommandService {
       const entity = this.datasetRepo.create(
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
+      // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror Dataset.applyCacheIdDefault explicitly.
+      if (entity.cacheId == null && entity.id) {
+        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
         this.addOwner(entity, true),
@@ -114,18 +132,35 @@ export class DatasetCommandService {
 
       return result;
     };
-    // First sync to WebAPI - fail fast if WebAPI is not accessible
+    // Insert the dataset row first so its id is visible to callers as soon as we return,
+    // even if the upstream WebAPI sync takes longer than the caller's HTTP timeout.
+    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+
+    // Then register the source and kick off the TrexSQL cache build. The cache build
+    // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
+    // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
+    // before issuing queries that read the cache catalog.
     await this.syncDatasetToWebApi({
       id: datasetDto.id,
       databaseCode: datasetDto.databaseCode,
       dialect: datasetDto.dialect,
       schemaName: datasetDto.schemaName,
       vocabSchemaName: datasetDto.vocabSchemaName,
-      resultSchemaName: datasetDto.resultSchemaName,
+      resultsSchemaName: datasetDto.resultsSchemaName,
+      type: datasetDto.type,
+      fhirProjectId: datasetDto.fhir_project_id
     }, datasetDto.detail);
 
-    // Then create dataset in database
-    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+    // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
+    // so a freshly-set cache_id becomes available without a trex restart. The cache_id
+    // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
+    // doesn't supply one.
+    const cacheId = datasetDto.cacheId
+      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
+    await this.trexApiService.attach({
+      cacheIds: cacheId ? [cacheId] : [],
+      connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
+    });
 
     return result;
   }
@@ -178,6 +213,119 @@ export class DatasetCommandService {
     }
 
     return result;
+  }
+
+  async transformToWebApi(
+    sourceId: string,
+  ): Promise<{ id: string; transformed: boolean; reason?: string }> {
+    const run = async (entityMgr: EntityManager) => {
+      const source = await entityMgr.findOne(Dataset, { where: { id: sourceId } });
+      if (!source) {
+        throw new HttpException(404, `Dataset ${sourceId} not found`);
+      }
+      if (source.sourceDatasetId) {
+        throw new HttpException(
+          400,
+          `Dataset ${sourceId} is a snapshot (sourceDatasetId=${source.sourceDatasetId}); transform must be invoked on the source row.`,
+        );
+      }
+
+      const snapshots = await entityMgr.find(Dataset, {
+        where: { sourceDatasetId: sourceId },
+      });
+      if (snapshots.length === 0) {
+        this.logger.info(
+          `Dataset ${sourceId} is already webapi-managed; no-op.`,
+        );
+        return {
+          id: sourceId,
+          transformed: false,
+          reason: "already webapi-managed",
+        };
+      }
+      if (snapshots.length > 1) {
+        throw new HttpException(
+          400,
+          `Dataset ${sourceId} has ${snapshots.length} snapshots; manual inspection required (multiple snapshots).`,
+        );
+      }
+      const snapshot = snapshots[0];
+
+      const targetVisibility =
+        snapshot.visibilityStatus && snapshot.visibilityStatus !== "HIDDEN"
+          ? snapshot.visibilityStatus
+          : "DEFAULT";
+      await this.datasetRepo.updateRowShape(entityMgr, sourceId, {
+        visibilityStatus: targetVisibility,
+        type: "webapi",
+      });
+
+      const snapshotDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: snapshot.id } });
+      if (snapshotDetail) {
+        const sourceDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: sourceId } });
+        if (sourceDetail) {
+          await entityMgr.update(
+            DatasetDetail,
+            { id: sourceDetail.id },
+            {
+              name: snapshotDetail.name,
+              description: snapshotDetail.description,
+              summary: snapshotDetail.summary,
+              showRequestAccess: snapshotDetail.showRequestAccess,
+            },
+          );
+        } else {
+          await entityMgr.update(
+            DatasetDetail,
+            { id: snapshotDetail.id },
+            { datasetId: sourceId },
+          );
+        }
+      }
+
+      // Skip rows whose identity-key already exists on the source.
+      const moveTable = async (entityCls: any, conflictField: string) => {
+        const fromSnapshot = await entityMgr.find(entityCls, {
+          where: { datasetId: snapshot.id },
+        });
+        const onSource = await entityMgr.find(entityCls, {
+          where: { datasetId: sourceId },
+        });
+        const existingKeys = new Set(
+          (onSource as any[]).map((r) => r[conflictField]),
+        );
+        for (const row of fromSnapshot as any[]) {
+          if (existingKeys.has(row[conflictField])) {
+            this.logger.info(
+              `Skipping ${entityCls.name} row ${row.id} on snapshot — key ${conflictField}=${row[conflictField]} already on source.`,
+            );
+            continue;
+          }
+          await entityMgr.update(
+            entityCls,
+            { id: row.id },
+            { datasetId: sourceId },
+          );
+        }
+      };
+      await moveTable(DatasetAttribute, "attributeId");
+      await moveTable(DatasetDashboard, "name");
+      await moveTable(DatasetTag, "name");
+
+      // user-mgmt has no role-listing endpoint, so snapshot grants are orphaned — re-grant on sourceId manually.
+      this.logger.warn(
+        `transformToWebApi(${sourceId}): role grants on snapshot ${snapshot.id} are orphaned; re-grant roles on ${sourceId} manually.`,
+      );
+
+      await entityMgr.delete(Dataset, { id: snapshot.id });
+
+      this.logger.info(
+        `Transformed dataset ${sourceId}: merged snapshot ${snapshot.id}, visibility=${targetVisibility}.`,
+      );
+      return { id: sourceId, transformed: true };
+    };
+
+    return this.transactionRunner.run(run, undefined);
   }
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
@@ -241,6 +389,8 @@ export class DatasetCommandService {
         type: newType,
         tenantId,
         databaseCode,
+        // Snapshot points at the same cache catalog as its source (falls back to source id for legacy rows).
+        cacheId: sourceDataset.cacheId ?? sanitizeIdForCacheId(sourceDatasetId),
         dialect,
         schemaName,
         vocabSchemaName: finalVocabSchemaName,
@@ -412,11 +562,11 @@ export class DatasetCommandService {
     };
 
     if (vocabSchemaName !== undefined) {
-      dataset.vocabSchemaName = vocabSchemaName;
+      dataset.vocabSchemaName = toUpperCaseIfHana(vocabSchemaName, dataset.dialect);
     }
 
     if (resultsSchemaName !== undefined) {
-      dataset.resultsSchemaName = resultsSchemaName;
+      dataset.resultsSchemaName = toUpperCaseIfHana(resultsSchemaName, dataset.dialect);
     }
 
     await this.datasetRepo.updateDataset(
@@ -854,10 +1004,26 @@ export class DatasetCommandService {
       dialect?: string;
       schemaName?: string;
       vocabSchemaName?: string;
-      resultSchemaName?: string;
+      resultsSchemaName?: string;
+      type?: string;
+      fhirProjectId: string | null;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
+
+    // Skip sync for FHIR and Strategus_study dataset
+    const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
+    if (
+      datasetInfo.fhirProjectId ||
+      normalizedType === "fhir" ||
+      normalizedType === "strategus_analysis"
+    ) {
+      this.logger.info(
+        `Skipping WebAPI sync for non-OMOP dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+      );
+      return;
+    }
+
     const dbCredentials = getDbCredentialsByCode(datasetInfo.databaseCode);
     if (!dbCredentials) {
       throw new HttpException(400, `No database credentials found for ${datasetInfo.databaseCode}`);
@@ -873,7 +1039,7 @@ export class DatasetCommandService {
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
-      resultSchemaName: datasetInfo.resultSchemaName,
+      resultsSchemaName: datasetInfo.resultsSchemaName,
     } as Dataset;
 
     const detailEntity = "datasetId" in detail

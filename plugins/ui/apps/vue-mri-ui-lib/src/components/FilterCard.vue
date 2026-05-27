@@ -344,7 +344,7 @@ export default {
 
       // item for Advanced Time Filter
       // Advance Time filter is not supported if filter is in exclusion tab
-      if (!this.isExcluded) {
+      if (!this.isExcluded && !this.isBasic) {
         menu.push({
           text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
           key: 'advancedTime',
@@ -399,8 +399,8 @@ export default {
       return this.filterCardModel.props.isEntry
         ? this.getText('MRI_PA_CHART_ENTRY')
         : this.filterCardModel.props.isExit
-        ? this.getText('MRI_PA_CHART_EXIT')
-        : ''
+          ? this.getText('MRI_PA_CHART_EXIT')
+          : ''
     },
     constraints() {
       return this.filterCardModel.props.constraints
@@ -586,6 +586,6 @@ export default {
 
 <style scoped>
 .filter-card-badge {
-  color: var(--color-primary, #000080)!important;
+  color: var(--color-primary, #000080) !important;
 }
 </style>

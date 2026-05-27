@@ -34,6 +34,7 @@ export class TestConnectionService {
 
     // @ts-ignore Trex is a global provided by the runtime
     const dbm = Trex.databaseManager();
+    // Pre-dataset / infra path: no datasetId in scope, so databaseCode doubles as the cache_id alias.
     const databaseCredentials =
       dbm.getDatabaseCredentials() as IDatabaseCredential[];
 

@@ -58,6 +58,30 @@ export class PortalAPI {
     return options;
   }
 
+  async getDataset(datasetId: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(datasetId)}`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error fetching dataset ${datasetId}. ${error}`);
+      throw new Error(`Error fetching dataset ${datasetId}. ${error}`);
+    }
+  }
+
+  async getDatasetByToken(tokenStudyCode: string) {
+    try {
+      const options = await this.getRequestConfig();
+      const url = `${this.baseURL}/dataset?tokenDatasetCode=${encodeURIComponent(tokenStudyCode)}`;
+      const result = await this.channel.get(url, options);
+      return result.data;
+    } catch (error) {
+      this.logger.error(`Error fetching dataset by token ${tokenStudyCode}. ${error}`);
+      throw new Error(`Error fetching dataset by token ${tokenStudyCode}. ${error}`);
+    }
+  }
+
   async createDataset(data: CreateDatasetInput) {
     try {
       const options = await this.getRequestConfig();

@@ -1,5 +1,9 @@
 <template>
-  <div class="axis-menu-button-wrapper" v-bind:style="componentStyle">
+  <div
+    class="axis-menu-button-wrapper"
+    :class="{ 'axis-menu-button-wrapper--disabled': isDisabled }"
+    v-bind:style="componentStyle"
+  >
     <div class="iconWrapper">
       <label class="iconLabel">
         <span class="icon cursorDefault" v-bind:style="'font-family:' + iconFamily">{{ icon }}</span>
@@ -8,10 +12,12 @@
     <div class="buttonWrapper" ref="menuButtonWrapper">
       <button
         class="axisMenuButton"
+        :class="{ 'axisMenuButton--disabled': isDisabled }"
         ref="menuButton"
         v-click-focus
         v-on:click="toggleAxisMenu"
         v-bind:title="axisDisplay.axisSelectionTooltip"
+        :disabled="isDisabled"
         tabindex="0"
       >
         <span class="axisMenuText" :class="[axisDisplay.isEmpty ? 'axisTextPlaceholder' : '']">{{
@@ -65,7 +71,6 @@ export default {
       axisMenuVisible: false,
       menuButton: null,
       axisMenuOpenParam: '',
-      cachedBinValue: '',
     }
   },
   mounted() {
@@ -85,20 +90,23 @@ export default {
       }
       return {}
     },
+    isDisabled() {
+      return !!this.axisModel?.props?.disabled
+    },
     componentStyle() {
       const axisModel = this.axisModel
-      const result: any = {
-        position: 'absolute',
-      }
-      if (axisModel && axisModel.props) {
-        if (axisModel.props.layoutLeft) {
-          result.left = axisModel.props.layoutLeft
+      const props = axisModel && axisModel.props
+      const hasLayout = !!(props && (props.layoutLeft || props.layoutTop || props.layoutBottom))
+      const result: any = hasLayout ? { position: 'absolute' } : {}
+      if (hasLayout) {
+        if (props.layoutLeft) {
+          result.left = props.layoutLeft
         }
-        if (axisModel.props.layoutTop) {
-          result.top = axisModel.props.layoutTop
+        if (props.layoutTop) {
+          result.top = props.layoutTop
         }
-        if (axisModel.props.layoutBottom) {
-          result.bottom = axisModel.props.layoutBottom
+        if (props.layoutBottom) {
+          result.bottom = props.layoutBottom
         }
       }
       return result
@@ -169,20 +177,15 @@ export default {
     },
     binningValue() {
       const axisModel = this.axisModel
-      if (this.cachedBinValue) {
-        return this.cachedBinValue
-      } else if (axisModel && axisModel.props && axisModel.props.filterCardId && axisModel.props.key) {
+      if (axisModel && axisModel.props && axisModel.props.filterCardId && axisModel.props.key) {
+        if (axisModel.props.binsize !== null && axisModel.props.binsize !== undefined) {
+          return `${axisModel.props.binsize}`
+        }
         const defaultBinningVal = this.getMriFrontendConfig
           .getAttributeByPath(axisModel.props.attributeId)
           .getDefaultBinSize()
-        if (axisModel.props.binsize !== null && axisModel.props.binsize !== undefined) {
-          this.cachedBinValue = `${axisModel.props.binsize}`
-          return `${axisModel.props.binsize}`
-        } else if (defaultBinningVal) {
-          this.cachedBinValue = `${defaultBinningVal}`
+        if (defaultBinningVal) {
           return `${defaultBinningVal}`
-        } else {
-          return ''
         }
       }
       return ''
@@ -258,6 +261,9 @@ export default {
       this.closeAxisMenu()
     },
     toggleAxisMenu(event) {
+      if (this.isDisabled) {
+        return
+      }
       const sourceEvent = event || window.event
 
       const chartableFilterCards = this.getChartableFilterCards
@@ -449,9 +455,8 @@ export default {
       this.axismenuData = menuData
     },
     setBinSize(arg) {
-      if (arg !== this.cachedBinValue) {
-        this.cachedBinValue = arg
-        this.binningValue = arg
+      const current = this.axisModel?.props?.binsize
+      if (arg !== current) {
         this.setAxisValue({
           id: this.dimensionIndex,
           props: { binsize: arg },

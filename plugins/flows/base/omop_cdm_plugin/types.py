@@ -26,16 +26,13 @@ class CDMVersion(str, Enum):
 class OmopCDMPluginOptions(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     data_model: Optional[str] = None  # omop5-3, omop5-4
     schema_name: Optional[str] = None
     results_schema: Optional[str] = None
     vocab_schema: Optional[str] = None
     cache_schema_name: Optional[str] = None
     datasets: Optional[List] = None
-
-    @property
-    def use_cache_db(self) -> str:
-        return False
 
     @property
     def cdm_version(self) -> str | None:

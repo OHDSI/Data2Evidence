@@ -27,6 +27,61 @@ import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
+const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
+const MATERIALIZED_COHORT_RETRY_DELAYS_MS = [500, 1000, 1500, 2000];
+
+const delay = (delayMs: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, delayMs));
+
+const withRetry = async <T>(
+  operation: () => Promise<T>,
+  delaysMs: number[],
+): Promise<T> => {
+  for (let attemptIndex = 0; attemptIndex <= delaysMs.length; attemptIndex++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const nextDelayMs = delaysMs[attemptIndex];
+      if (nextDelayMs === undefined) {
+        throw error;
+      }
+      await delay(nextDelayMs);
+    }
+  }
+
+  throw new Error("Retry operation failed without an error");
+};
+
+const getErrorDetails = (error: unknown) => {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+    };
+  }
+
+  if (typeof error === "object" && error !== null) {
+    const apiError = error as {
+      message?: unknown;
+      status?: unknown;
+      code?: unknown;
+      response?: { status?: unknown; data?: unknown };
+    };
+
+    return {
+      message:
+        typeof apiError.message === "string" ? apiError.message : String(error),
+      status: apiError.status ?? apiError.response?.status,
+      code: apiError.code,
+      responseData: apiError.response?.data,
+    };
+  }
+
+  return {
+    message: String(error),
+  };
+};
+
 export const generateCohort = async (
   token: string,
   datasetId: string,
@@ -34,8 +89,10 @@ export const generateCohort = async (
 ) => {
   const portalServerApi = new PortalServerAPI(token);
   // Get dataset
+  const dataset = await portalServerApi.getStudy(datasetId);
   const { databaseCode, schemaName, vocabSchemaName, resultsSchemaName } =
-    await portalServerApi.getStudy(datasetId);
+    dataset;
+  const cacheId = dataset.cacheId ?? dataset.databaseCode;
 
   // Get atlas cohort definition from user artifacts via cohort definition id
   const userArtifactAtlasCohortDefinition =
@@ -78,6 +135,7 @@ export const generateCohort = async (
   const cohortGeneratorFlowRun: ICohortGeneratorFlowRun = {
     datasetId,
     databaseCode,
+    cacheId,
     schemaName,
     resultsSchemaName,
     vocabSchemaName,
@@ -197,6 +255,7 @@ export const getCohortDefinitionList = async (
   }
   const bookmarksApi = new BookmarksAPI(token);
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
+  const materializedCohortFetchStartedAt = Date.now();
 
   const [
     atlasCohortDefinitions,
@@ -219,16 +278,49 @@ export const getCohortDefinitionList = async (
       );
       return { bookmarks: [], schemaName: "" };
     }),
-    analyticsSvcAPI
-      .getFilteredCohorts(datasetId, { datasetId }) // Try to get materialized cohorts, but continue with empty list if it fails
-      .then((result) => (Array.isArray(result) ? result : [])) // Handle undefined or non-array results
-      .catch((error) => {
+    (async (): Promise<IBaseMaterializedCohort[]> => {
+      const canMaterializeCohort = await withRetry(
+        () => analyticsSvcAPI.canMaterializeCohort(datasetId),
+        MATERIALIZED_COHORT_RETRY_DELAYS_MS,
+      ).catch((error) => {
         console.error(
-          "Failed to fetch materialized cohorts, continuing with empty list:",
-          error,
+          "Failed to check whether cohort can be materialized after retries:",
+          {
+            datasetId,
+            attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
+            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+            error: getErrorDetails(error),
+          },
         );
-        return [] as IBaseMaterializedCohort[];
-      }),
+        throw error;
+      });
+
+      if (!canMaterializeCohort) {
+        return [];
+      }
+
+      const result = await withRetry(
+        () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
+        MATERIALIZED_COHORT_RETRY_DELAYS_MS,
+      ).catch((error) => {
+        console.error(
+          "Failed to fetch materialized cohorts after retries:",
+          {
+            datasetId,
+            attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
+            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+            error: getErrorDetails(error),
+          },
+        );
+        throw error;
+      });
+
+      if (!Array.isArray(result)) {
+        throw new Error("Filtered cohorts response was not an array");
+      }
+
+      return result;
+    })(),
   ]);
 
   // Parse bookmark and atlas cohort definition

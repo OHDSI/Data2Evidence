@@ -9,6 +9,7 @@ class FileType(BaseModel):
 class DataloadOptions(BaseModel):
     files: List[FileType]
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: str
     header: Optional[bool] = True
     delimiter: Optional[str] = ','
@@ -16,7 +17,3 @@ class DataloadOptions(BaseModel):
     encoding: Optional[str] = None
     empty_string_to_null: Optional[bool] = None
     chunksize: Optional[int] = None
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False

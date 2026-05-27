@@ -408,6 +408,70 @@
           "type": "create_cdw_config"
         },
         {
+          "name": "create_cachedb_hana_plugin",
+          "entrypoint": "flows.create_cachedb_hana_plugin.flow.create_cachedb_hana_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CreateHanaCacheOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "HanaCacheFlowAction": {
+                "enum": [
+                  "create_hana_cache"
+                ],
+                "title": "HanaCacheFlowAction",
+                "type": "string"
+              },
+              "CreateHanaCacheOptions": {
+                "properties": {
+                  "flowActionType": {
+                    "$ref": "#/definitions/HanaCacheFlowAction"
+                  },
+                  "databaseCode": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Databasecode"
+                  },
+                  "schemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Schemaname"
+                  }
+                },
+                "required": [
+                  "flowActionType"
+                ],
+                "title": "CreateHanaCacheOptions",
+                "type": "object"
+              }
+            }
+          },
+          "type": "create_cachedb_hana"
+        },
+        {
           "name": "data_characterization_plugin",
           "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
           "parameter_openapi_schema": {
@@ -842,11 +906,6 @@
                       { "type": "null" }
                     ],
                     "default": null
-                  },
-                  "use_cache_db": {
-                    "title": "Use Cache Db",
-                    "type": "boolean",
-                    "default": false
                   }
                 },
                 "required": [

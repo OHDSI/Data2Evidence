@@ -72,12 +72,10 @@ export class CachedbService {
       dialect,
       vocabSchemaName,
       databaseCode,
+      cacheId,
       schemaName,
       resultsSchemaName,
     } = this.datasetDB;
-    if (dialect === DatasetDialects.HANA) {
-      return new HanaHDBDao(this.token, vocabSchemaName, databaseCode);
-    }
     if (this.hybridSearchConfig == undefined) {
       throw new Error("hybridSearchConfig undefined!");
     }
@@ -86,11 +84,23 @@ export class CachedbService {
       ? parseFloat(this.hybridSearchConfig.semanticRatio)
       : 0;
 
+    if (dialect === DatasetDialects.HANA) {
+      return new HanaHDBDao(
+        this.token,
+        vocabSchemaName,
+        databaseCode,
+        semanticRatio,
+        schemaName
+      );
+    }
+
+
     // By default return CachedbDAO
+    // cacheId is the DuckDB ATTACH alias for webapi-managed datasets.
     return new CachedbDAO(
       vocabSchemaName,
       semanticRatio,
-      databaseCode,
+      cacheId,
       schemaName,
       resultsSchemaName
     );

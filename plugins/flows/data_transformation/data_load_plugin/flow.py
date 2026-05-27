@@ -26,15 +26,15 @@ def data_load_plugin(options: DataloadOptions):
     
     files = options.files
     database_code = options.database_code
-    use_cache_db = options.use_cache_db
+    cache_id = options.cache_id
     header = 0 if options.header else None
     escape_char = options.escape_character if options.escape_character else None
     schema = options.schema_name
     tables_to_truncate = [f.table_name for f in files if f.truncate]
     chunksize = options.chunksize if options.chunksize else None
-    
-    dbdao = DBDao(use_cache_db=use_cache_db,
-                  database_code=database_code)
+
+    dbdao = DBDao(database_code=database_code,
+                  cache_id=cache_id)
 
     truncate_tables(table_list=tables_to_truncate,
                     schema=schema,
@@ -63,7 +63,7 @@ def etl_task(dbdao: DaoBase, schema: str, file: FileType, escapechar: str, heade
 
     total_chunks = None
     if chunksize:
-        with open(file.path, 'rb') as f:
+        with open(file.path, 'r', encoding=encoding) as f:
             total_rows = max(0, sum(1 for _ in f) - (1 if header == 0 else 0))
         total_chunks = math.ceil(total_rows / chunksize) if total_rows > 0 else 0
 

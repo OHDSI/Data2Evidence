@@ -23,7 +23,7 @@ def embedding_concept_table(concept_name_list: List[str],tokenizer:Any, model:An
     Generate embeddings for a list of concept names using the provided tokenizer and model.
     """
     # Tokenize the input texts
-    batch_dict = tokenizer(concept_name_list, max_length=128, padding=True, truncation=True, return_tensors='pt') # max_length based on longest concept name (255 chars ~ 64 token), set to 128 for some buffer    
+    batch_dict = tokenizer(concept_name_list, max_length=64, padding=True, truncation=True, return_tensors='pt') # max_length based on longest concept name (255 chars ~ 64 token), set to 128 for some buffer    
     batch_dict = {k: v.to(device) for k, v in batch_dict.items()} 
     with torch.no_grad():  # prevents building the computation graph
         outputs = model(**batch_dict)
@@ -67,12 +67,34 @@ def add_embedding_column(dbdao: DBDao, schema_name: str, embedding_col: str) -> 
     )
     dbdao.execute_sql(sql)
     
+def count_concept_rows(dbdao: DBDao, schema_name: str) -> int:
+    """
+    Return COUNT(*) of `{schema_name}.concept`, with the schema identifier
+    safely quoted via psycopg2.sql. `schema_name` may be dotted
+    (catalog.schema); each part is quoted separately.
+    """
+    sql = pg_sql.SQL("SELECT COUNT(*) FROM {schema}.{table}").format(
+        schema=pg_sql.Identifier(*schema_name.split(".")),
+        table=pg_sql.Identifier("concept"),
+    )
+    return dbdao.execute_sql(sql, fetch=True)[0][0]
+
+def build_concept_select_sql(schema_name: str) -> pg_sql.Composable:
+    """
+    Build a safely-quoted `SELECT concept_id, concept_name FROM {schema}.concept`
+    Composable for use with a psycopg2 cursor. `schema_name` may be dotted.
+    """
+    return pg_sql.SQL("SELECT concept_id, concept_name FROM {schema}.{table}").format(
+        schema=pg_sql.Identifier(*schema_name.split(".")),
+        table=pg_sql.Identifier("concept"),
+    )
+
 def drop_embedding_index(dbdao: DBDao, schema_name: str, index_col: str)-> None:
     """ 
     Drop the existing GTE index on the concept table if it exists.
     """
     sql = pg_sql.SQL("DROP INDEX IF EXISTS {schema_name}.{index_col};").format(
-        schema_name=pg_sql.Identifier(schema_name),
+        schema_name=pg_sql.Identifier(*schema_name.split(".")),
         index_col=pg_sql.Identifier(index_col)
         )
     dbdao.execute_sql(sql)
@@ -93,16 +115,17 @@ def update_concept_embedding(dbdao:DBDao, schema_name:str, emb_tmp_table:str, em
         )
     dbdao.execute_sql(sql)
     
-def create_embedding_index(dbdao, schema_name:str, embedding_col:str, index_col: str) -> None:
+def create_embedding_index(dbdao, schema_name:str, embedding_table: str, embedding_col:str, index_col: str) -> None:
     """ 
-    Create a GTE index on the embedding column of the concept table.
+    Create a GTE index on the embedding column of the concept embedding table.
     """ 
     sql = pg_sql.SQL("""
                      SET hnsw_enable_experimental_persistence=TRUE;
-                     CREATE INDEX {index_col} ON {schema_name}.concept USING HNSW ({embedding_col}) WITH (metric = 'cosine');
+                     CREATE INDEX {index_col} ON {schema_name}.{embedding_table} USING HNSW ({embedding_col}) WITH (metric = 'cosine');
                      """).format(
         index_col=pg_sql.Identifier(index_col),
-        schema_name=pg_sql.Identifier(schema_name),
+        schema_name=pg_sql.Identifier(*schema_name.split(".")),
+        embedding_table=pg_sql.Identifier(embedding_table),
         embedding_col=pg_sql.Identifier(embedding_col),
         )   
     dbdao.execute_sql(sql)

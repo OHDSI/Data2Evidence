@@ -23,14 +23,10 @@ class QuestionnaireBaseModel(BaseModel):
 class QuestionnaireOptionsType(BaseModel):
     flow_action_type: FlowActionType
     database_code: str
+    cache_id: Optional[str] = None
     schema_name: Optional[str]
     questionnaire_definition: Optional[Dict]
     questionnaire_id: Optional[str]
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False
-
 
 class QuestionnaireResponseType(QuestionnaireBaseModel):
     questionnaire_id: str

@@ -1,5 +1,6 @@
 from functools import partial
 from datetime import datetime
+from typing import Optional
 
 from prefect import task
 from prefect.logging import get_run_logger
@@ -24,7 +25,7 @@ def create_datamodel(
     dialect: str,
     count: int = 0,
 ):
-    dbdao = DBDao(use_cache_db=False, database_code=database_code)
+    dbdao = DBDao(database_code=database_code)
     tenant_configs = dbdao.tenant_configs
 
     create_schema_tasks(
@@ -52,7 +53,7 @@ def create_schema_tasks(
     count: int,
 ) -> bool:
     try:
-        schema_dao = DBDao(database_code=database_code, use_cache_db=False)
+        schema_dao = DBDao(database_code=database_code)
 
         create_db_schema_wo = create_schema_task.with_options(
             on_completion=[
@@ -143,7 +144,7 @@ def update_datamodel(
 ):
     logger = get_run_logger()
 
-    schema_dao = DBDao(use_cache_db=False, database_code=database_code)
+    schema_dao = DBDao(database_code=database_code)
     tenant_configs = schema_dao.tenant_configs
 
     match flow_action_type:
@@ -211,7 +212,6 @@ def update_datamodel(
 
 
 def rollback_count_task(
-    use_cache_db: bool,
     database_code: str,
     data_model: str,
     schema_name: str,
@@ -220,8 +220,9 @@ def rollback_count_task(
     plugin_classpath: str,
     dialect: str,
     rollback_count: int,
+    cache_id: Optional[str] = None,
 ):
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
     tenant_configs = dbdao.tenant_configs
 
     try:
@@ -255,7 +256,6 @@ def rollback_count_task(
 
 
 def rollback_tag_task(
-    use_cache_db: bool,
     database_code: str,
     data_model: str,
     schema_name: str,
@@ -264,8 +264,9 @@ def rollback_tag_task(
     plugin_classpath: str,
     dialect: str,
     rollback_tag: str,
+    cache_id: Optional[str] = None,
 ):
-    dbdao = DBDao(use_cache_db=use_cache_db, database_code=database_code)
+    dbdao = DBDao(database_code=database_code, cache_id=cache_id)
     tenant_configs = dbdao.tenant_configs
 
     try:
@@ -349,7 +350,7 @@ def create_cdm_schema_tasks(
 ):
     logger = get_run_logger()
 
-    dbdao = DBDao(use_cache_db=False, database_code=database_code)
+    dbdao = DBDao(database_code=database_code)
 
     vocab_schema_exists = dbdao.check_schema_exists(vocab_schema)
 

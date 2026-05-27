@@ -8,6 +8,7 @@ class PhenotypeOptionsType(BaseModel):
     
     # Database materialization parameters (required when materialize=True)
     database_code: Optional[str] = None  # alpdev_pg
+    cache_id: Optional[str] = None
     cdmschema_name: Optional[str] = None   # cdmdefault
     cohortschema_name: Optional[str] = None   # cdmdefault
     
@@ -31,7 +32,3 @@ class PhenotypeOptionsType(BaseModel):
                     raise ValueError(f'{field} is required when materialize=False')
         
         return self
-    
-    @property
-    def use_cache_db(self) -> str:
-        return False
