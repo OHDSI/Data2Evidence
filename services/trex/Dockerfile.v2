@@ -113,6 +113,7 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
     sh /scripts/fetch-external-plugins.sh /scripts/external-plugins.txt /usr/src/bundled-plugins; \
     WORK="$(mktemp -d)"; \
     cd "$WORK" && npm init -y >/dev/null 2>&1; \
+    echo "@data2evidence:registry=$REG" > .npmrc; \
     npm install @data2evidence/d2e-atlas --no-save; \
     mv "node_modules/@data2evidence/d2e-atlas" /usr/src/bundled-plugins/d2e-atlas; \
     rm -rf "$WORK"
