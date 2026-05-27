@@ -100,13 +100,16 @@ RUN set -eu; \
 # materialised at /run/secrets/PLUGINS_REGISTRY only inside this RUN.
 COPY scripts/fetch-external-plugins.sh /scripts/
 COPY external-plugins.txt /scripts/
+ARG PLUGINS_FEED=d2e
 RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
+    REG="https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/${PLUGINS_FEED}/npm/registry/"; \
     if [ -f /run/secrets/PLUGINS_REGISTRY ]; then \
-      REG="$(cat /run/secrets/PLUGINS_REGISTRY)"; \
-      if [ -n "$REG" ]; then \
-        npm config set @data2evidence:registry "$REG"; \
+      SECRET_REG="$(cat /run/secrets/PLUGINS_REGISTRY)"; \
+      if [ -n "$SECRET_REG" ]; then \
+        REG="$SECRET_REG"; \
       fi; \
     fi; \
+    npm config set @data2evidence:registry "$REG"; \
     sh /scripts/fetch-external-plugins.sh /scripts/external-plugins.txt /usr/src/bundled-plugins
 
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
