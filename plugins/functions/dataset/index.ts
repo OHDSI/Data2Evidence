@@ -152,6 +152,7 @@ export class DatasetRouter {
 
         let vocabSchema: string | undefined;
         let resultsSchemaName: string | undefined;
+        let fhirSchemaName: string | undefined;
         let fhirDatasetId: string | undefined;
         let flowRunId: string | undefined;
 
@@ -196,8 +197,7 @@ export class DatasetRouter {
             return res.status(500).send("Failed to create FHIR dataset");
           }
 
-          vocabSchema = fhirDatasetId;
-          resultsSchemaName = fhirDatasetId;
+          fhirSchemaName = fhirDatasetId.replace(/-/g, "_");
         } else {
           const newCacheSchemaName = schemaName
             ? schemaName
@@ -288,9 +288,11 @@ export class DatasetRouter {
             schemaOption,
             dialect: isFhirDataset ? DbDialect.Duckdb : (dialect as DbDialect),
             databaseCode: isFhirDataset ? env.FHIR_DATABASE_CODE : databaseCode,
-            schemaName: isFhirDataset ? fhirDatasetId : schemaName,
-            vocabSchemaName: vocabSchema,
-            resultsSchemaName,
+            schemaName: isFhirDataset ? fhirSchemaName : schemaName,
+            vocabSchemaName: isFhirDataset ? fhirSchemaName : vocabSchema,
+            resultsSchemaName: isFhirDataset
+              ? fhirSchemaName
+              : resultsSchemaName,
             dataModel,
             plugin,
             tenantId,
