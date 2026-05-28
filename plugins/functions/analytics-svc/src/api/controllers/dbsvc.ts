@@ -16,8 +16,14 @@ export async function getCDMVersion(req, res, next) {
         const { analyticsConnection } = req.dbConnections;
         let dbDao = new DBDAO(analyticsConnection);
         const trexAlias = cacheId ?? databaseCode;
-        const cdmVersion = await dbDao.getCDMVersion(trexAlias, schemaName, dialect);
-
+        const cdmVersion = await dbDao.getCDMVersion(
+            trexAlias,
+            schemaName,
+            dialect
+        );
+        logger.info(
+            `CDM version retrieved for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${JSON.stringify(cdmVersion)}`
+        );
         let hanaKey = "CDM_VERSION";
         let cdmVersionKey =
             dialect === ANALYTICS_DB_DIALECTS.HANA
@@ -32,6 +38,9 @@ export async function getCDMVersion(req, res, next) {
         } else {
             throw new Error("Invalid cdm version value");
         }
+        logger.info(
+            `CDM version returned for dataset ${datasetId} with schema name ${schemaName} with dialect ${dialect} is ${cdmVersionValue}`
+        );
         res.status(200).json(cdmVersionValue);
     } catch (err) {
         logger.error(`Error retrieving CDM version: ${err}`);
