@@ -199,15 +199,15 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
-          - AZ_REG_REPOSITORY: d2e-trex
-            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
-            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen-worker
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
+          - AZ_REG_REPOSITORY: d2e-materialize-cohorts
+            DOCKER_BUILD_FILE_PATH: ./services/materialize-cohorts/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -395,6 +395,20 @@ jobs:
             done
           fi
 
+      - name: Slugify PKGPATH for artifact name
+        id: slug
+        run: |
+          slug=$(echo "${{ matrix.PKGPATH }}" | sed 's|^\./||; s|/$||; s|/|-|g')
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Upload plugin tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-tgz-${{ steps.slug.outputs.slug }}
+          path: ${{ matrix.DESTPATH || matrix.PKGPATH }}/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Upload UI resources
         if: matrix.PKGPATH == './plugins/ui'
         uses: actions/upload-artifact@v4
@@ -412,6 +426,79 @@ jobs:
           path: ./plugins/ui/*.tgz
           if-no-files-found: error
           retention-days: 7
+
+  build_trex_image:
+    needs: [setup, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download plugin artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: plugin-tgz-*
+          path: ./services/trex/plugin-artifacts
+          merge-multiple: true
+
+      - name: Inspect bundled tarballs
+        run: |
+          ls -lh ./services/trex/plugin-artifacts/
+          echo "---"
+          for f in ./services/trex/plugin-artifacts/*.tgz; do
+            echo "$(basename "$f"): $(tar -xzOf "$f" package/package.json | jq -r '.name + " " + .version')"
+          done
+
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build and Push trex image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./services/trex
+          file: ./services/trex/Dockerfile.v2
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}
+          provenance: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+          secrets: |
+            "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
 
   build_e2e_image:
     needs: [setup]
@@ -451,8 +538,189 @@ jobs:
           tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
           provenance: false
 
+  helm_lint:
+    needs: [setup]
+    runs-on: ubuntu-latest
+    env:
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Helm lint
+        run: helm lint "$CHART_DIR" -f "$CI_VALUES"
+
+      - name: Render templates
+        run: |
+          mkdir -p /tmp/rendered
+          helm template d2e "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --namespace d2e \
+            > /tmp/rendered/all.yaml
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL -o /tmp/kubeconform.tgz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tgz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/
+
+      - name: Validate rendered manifests
+        run: |
+          kubeconform -summary -strict \
+            -skip CustomResourceDefinition \
+            -ignore-missing-schemas \
+            /tmp/rendered/all.yaml
+
+  test_helm_kind:
+    needs: [setup, build_images, build_trex_image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+      RELEASE: d2e
+      NAMESPACE: d2e
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Recreate /opt/hostedtoolcache
+        # free-disk-space deletes /opt/hostedtoolcache; helm/kind-action needs it.
+        run: sudo mkdir -p /opt/hostedtoolcache
+
+      - uses: actions/checkout@v4
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: helm-test
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Show cluster info
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+      - name: Create ghcr image-pull secret
+        run: |
+          kubectl create namespace "$NAMESPACE"
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            -n "$NAMESPACE"
+          kubectl patch serviceaccount default -n "$NAMESPACE" \
+            -p '{"imagePullSecrets":[{"name":"ghcr-pull"}]}'
+
+      - name: Deploy Postgres for CI
+        run: |
+          kubectl apply -n "$NAMESPACE" -f "$CHART_DIR/ci/postgres.yaml"
+          kubectl rollout status deployment/postgres -n "$NAMESPACE" --timeout=3m
+
+      - name: Generate throwaway TLS material
+        run: |
+          set -euo pipefail
+          D=/tmp/ci-tls
+          mkdir -p "$D"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$D/ca.key" -out "$D/ca.crt" \
+            -days 30 -subj "/CN=d2e-ci-ca" 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes \
+            -keyout "$D/srv.key" -out "$D/srv.csr" \
+            -subj "/CN=d2e.cluster.local" 2>/dev/null
+          openssl x509 -req -in "$D/srv.csr" \
+            -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
+            -out "$D/srv.crt" -days 30 2>/dev/null
+
+      - name: Helm install (using just-built images)
+        run: |
+          D=/tmp/ci-tls
+          helm install "$RELEASE" "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --set "global.image.tag=${RUN_TAG}" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_CRT=$D/ca.crt" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_KEY=$D/ca.key" \
+            --set-file "d2e-core.secrets.SERVER__CRT=$D/srv.crt" \
+            --set-file "d2e-core.secrets.SERVER__KEY=$D/srv.key" \
+            --set-file "global.secrets.TLS__INTERNAL__CA_CRT=$D/ca.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__CRT=$D/srv.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__KEY=$D/srv.key" \
+            --namespace "$NAMESPACE" \
+            --wait --timeout 20m
+
+      - name: Wait for pods Ready
+        run: |
+          kubectl wait \
+            --for=condition=Ready pod \
+            --all \
+            -n "$NAMESPACE" \
+            --timeout=5m
+
+      - name: Show final state
+        if: always()
+        run: |
+          echo "=== pods ==="
+          kubectl get pods -n "$NAMESPACE" -o wide || true
+          echo "=== services ==="
+          kubectl get svc -n "$NAMESPACE" || true
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          echo "=== events ==="
+          kubectl get events -A --sort-by=.lastTimestamp | tail -100 || true
+          for pod in $(kubectl get pods -n "$NAMESPACE" -o name); do
+            echo "------------------------------"
+            echo "DESCRIBE $pod"
+            echo "------------------------------"
+            kubectl describe -n "$NAMESPACE" "$pod" || true
+            echo "------------------------------"
+            echo "LOGS $pod"
+            echo "------------------------------"
+            kubectl logs -n "$NAMESPACE" "$pod" --all-containers --tail=200 || true
+          done
+
+      - name: Mark helm kind attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload helm kind attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-kind-attempt
+          path: ./_attempt/
+          overwrite: true
+
+      - name: Cleanup
+        if: always()
+        run: helm uninstall "$RELEASE" -n "$NAMESPACE" || true
+
   test_demosetup_dev:
-    needs: [setup, build_images, build_plugins, build_e2e_image]
+    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -462,7 +730,6 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -497,6 +764,13 @@ jobs:
 
       - name: npm install
         if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Patch seed config for e2e tests
@@ -710,7 +984,7 @@ jobs:
         run: docker system prune -af
 
   test_demosetup_hana:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
     strategy:
       fail-fast: false
@@ -745,6 +1019,13 @@ jobs:
 
       - name: npm install
         if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Initialise d2e
@@ -861,7 +1142,7 @@ jobs:
         run: docker system prune -af
 
   test_http_duckdb:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
       needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
@@ -879,7 +1160,7 @@ jobs:
     secrets: inherit
 
   test_http_duckdb_retry:
-    needs: [setup, build_images, build_plugins, test_http_duckdb]
+    needs: [setup, build_images, build_trex_image, build_plugins, test_http_duckdb]
     if: |
       always() && needs.test_http_duckdb.result == 'failure' && (
         needs.setup.outputs.is_publish_push == 'true' ||
@@ -899,7 +1180,7 @@ jobs:
     secrets: inherit
 
   test_http_hana:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
       needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
@@ -916,7 +1197,7 @@ jobs:
     secrets: inherit
 
   test_http_hana_retry:
-    needs: [setup, build_images, build_plugins, test_http_hana]
+    needs: [setup, build_images, build_trex_image, build_plugins, test_http_hana]
     if: |
       always() && needs.test_http_hana.result == 'failure' && (
         needs.setup.outputs.is_publish_push == 'true' ||
@@ -1006,11 +1287,30 @@ jobs:
           echo "All HTTP hana attempts failed."
           exit 1
 
+  test_helm_kind_gate:
+    needs: [test_helm_kind]
+    if: always() && needs.test_helm_kind.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: helm-kind-attempt
+          path: ./_attempts
+      - name: Pass if helm kind attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "Helm kind attempt succeeded."
+            exit 0
+          fi
+          echo "Helm kind attempt failed."
+          exit 1
+
   promote:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_trex_image]
     if: |
       always() &&
       needs.build_images.result == 'success' &&
+      needs.build_trex_image.result == 'success' &&
       needs.setup.outputs.is_publish_push == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -1038,6 +1338,7 @@ jobs:
           - d2e-trex
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage
+          - d2e-materialize-cohorts
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -1070,22 +1371,25 @@ jobs:
           delete-only-untagged-versions: "true"
 
   docker-success:
-    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Check upstream job results
         env:
           R_BUILD_IMAGES: ${{ needs.build_images.result }}
+          R_BUILD_TREX: ${{ needs.build_trex_image.result }}
           R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
           R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
+          R_HELM_LINT: ${{ needs.helm_lint.result }}
+          R_HELM_KIND: ${{ needs.test_helm_kind_gate.result }}
           R_DEMO_DEV: ${{ needs.test_demosetup_dev_gate.result }}
           R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;

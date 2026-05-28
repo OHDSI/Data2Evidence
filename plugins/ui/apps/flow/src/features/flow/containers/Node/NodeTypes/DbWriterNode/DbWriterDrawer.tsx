@@ -2,6 +2,8 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
@@ -41,6 +43,7 @@ const EMPTY_FORM_DATA: FormData = {
   schemaname: "",
   dataframe: "",
   dbtablename: "",
+  truncate: false,
 };
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -71,6 +74,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         dbtablename: node.data.dbtablename,
         database: node.data.database,
         schemaname: node.data.schemaname,
+        truncate: node.data.truncate ?? false,
       });
     } else {
       setFormData({
@@ -169,6 +173,19 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
           onChange={(e: ChangeEvent<HTMLInputElement>) =>
             onFormDataChange({ schemaname: e.target.value })
           }
+        />
+      </Box>
+      <Box mb={4}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={formData.truncate}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onFormDataChange({ truncate: e.target.checked })
+              }
+            />
+          }
+          label="Truncate table before writing"
         />
       </Box>
     </NodeDrawer>

@@ -2,6 +2,7 @@ import * as mFormatter from "../../../src/mri/config/formatter";
 import { MockHdb } from "../../testutils/mockHdb";
 import * as qeFormatter from "../../../src/mri/config/qe-formatter";
 import { CONFIG_FORMATTER_SETTINGS } from "../../../src/mri/config/config";
+import * as customRules from "../../../../src/config/customRules";
 
 let fakeConnection;
 let formatter;
@@ -185,6 +186,41 @@ describe("Check the Admin Formatter functionality", () => {
         });
 
         expect(formattedConfig.patient.attributes.smoker.name).toEqual("Smoker");
+    });
+
+    describe("chartOptions.initialAttributes.stackCategory is optional", () => {
+        let mriConfigWithoutStackCategory;
+
+        beforeEach(() => {
+            mriConfigWithoutStackCategory = JSON.parse(JSON.stringify(fp2Config));
+            delete mriConfigWithoutStackCategory.chartOptions.initialAttributes.stackCategory;
+        });
+
+        it("validation rules pass when stackCategory is omitted", () => {
+            const attrRule = new customRules.InitialAttributesRule();
+            expect(attrRule.selectObjects(mriConfigWithoutStackCategory)).toEqual([true]);
+
+            const visibleRule = new customRules.InitialChartCategoriesVisibleRule(cdwConfig);
+            expect(visibleRule.selectObjects(mriConfigWithoutStackCategory)).toEqual([true]);
+        });
+
+        it("formatAdminConfig preserves the absence of stackCategory in initialAttributes", () => {
+            const result = formatter.formatAdminConfig({
+                mriConfig: mriConfigWithoutStackCategory,
+                dmConfig: JSON.parse(JSON.stringify(cdwConfig)),
+                lang: "en",
+            });
+            expect(result.chartOptions.initialAttributes.hasOwnProperty("stackCategory")).toBe(false);
+        });
+
+        it("formatFrontendConfig preserves the absence of stackCategory in initialAttributes", () => {
+            const result = formatter.formatFrontendConfig({
+                mriConfig: mriConfigWithoutStackCategory,
+                dmConfig: JSON.parse(JSON.stringify(cdwConfig)),
+                lang: "en",
+            });
+            expect(result.chartOptions.initialAttributes.hasOwnProperty("stackCategory")).toBe(false);
+        });
     });
 
 });

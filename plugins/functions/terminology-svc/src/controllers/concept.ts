@@ -353,7 +353,7 @@ export const getStandardConcepts = async (
             filters
           );
 
-          if (!concepts?.expansion.contains) {
+          if (!concepts?.expansion.contains?.length) {
             return {};
           }
 

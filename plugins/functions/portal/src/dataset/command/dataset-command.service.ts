@@ -146,7 +146,9 @@ export class DatasetCommandService {
       dialect: datasetDto.dialect,
       schemaName: datasetDto.schemaName,
       vocabSchemaName: datasetDto.vocabSchemaName,
-      resultSchemaName: datasetDto.resultSchemaName,
+      resultsSchemaName: datasetDto.resultsSchemaName,
+      type: datasetDto.type,
+      fhirProjectId: datasetDto.fhir_project_id
     }, datasetDto.detail);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
@@ -1002,10 +1004,26 @@ export class DatasetCommandService {
       dialect?: string;
       schemaName?: string;
       vocabSchemaName?: string;
-      resultSchemaName?: string;
+      resultsSchemaName?: string;
+      type?: string;
+      fhirProjectId: string | null;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
+
+    // Skip sync for FHIR and Strategus_study dataset
+    const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
+    if (
+      datasetInfo.fhirProjectId ||
+      normalizedType === "fhir" ||
+      normalizedType === "strategus_analysis"
+    ) {
+      this.logger.info(
+        `Skipping WebAPI sync for non-OMOP dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+      );
+      return;
+    }
+
     const dbCredentials = getDbCredentialsByCode(datasetInfo.databaseCode);
     if (!dbCredentials) {
       throw new HttpException(400, `No database credentials found for ${datasetInfo.databaseCode}`);
@@ -1021,7 +1039,7 @@ export class DatasetCommandService {
       dialect: datasetInfo.dialect,
       schemaName: datasetInfo.schemaName,
       vocabSchemaName: datasetInfo.vocabSchemaName,
-      resultSchemaName: datasetInfo.resultSchemaName,
+      resultsSchemaName: datasetInfo.resultsSchemaName,
     } as Dataset;
 
     const detailEntity = "datasetId" in detail

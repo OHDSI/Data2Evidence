@@ -14,11 +14,14 @@ import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.t
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
-  hasSearchTerm: boolean
+  hasSearchTerm: boolean,
 ): string {
-  const defaultOrder = hasSearchTerm ? "ORDER BY score DESC" : "ORDER BY concept_name ASC";
+  const defaultOrder = hasSearchTerm
+    ? "ORDER BY score DESC"
+    : "ORDER BY concept_name ASC";
   if (!sortBy) return defaultOrder;
-  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy)) return defaultOrder;
+  if (!(ALLOWED_SORT_COLUMNS as readonly string[]).includes(sortBy))
+    return defaultOrder;
   if (sortBy === "score" && !hasSearchTerm) return "ORDER BY concept_name ASC";
 
   const direction = sortOrder === "asc" || sortOrder === "ASC" ? "ASC" : "DESC";
@@ -44,7 +47,8 @@ export class CachedbDAO {
   // It is kept below 500 so the ranking invariants hold:
   //   - exact concept_name (1000) and prefix match (800) always outrank pure
   //     semantic hits
-  //   - exact synonym (600) and synonym prefix (500) likewise outrank them
+  //   - exact synonym (700), concept_name contains-anywhere (600), and
+  //     synonym prefix (500) likewise outrank them
   //   - but a hybrid hit still beats standard_boost (100) on its own, which
   //     is what recovers token-disjoint matches such as
   //     "high blood sugar" -> "Hyperglycemia"
@@ -81,10 +85,11 @@ export class CachedbDAO {
   // synonym_scores CTE below by max-aggregating across all synonym rows that
   // belong to a concept:
   //
-  //   syn_exact_score - discrete exact/prefix boost (600 / 500), scaled below
-  //                     the concept_name boost (1000 / 800) so that a
+  //   syn_exact_score - discrete exact/prefix boost (700 / 500), scaled below
+  //                     the concept_name boost (1000 / 800 / 600) so that a
   //                     canonical-name match always outranks a synonym match
-  //                     of the same string.
+  //                     of the same string. Synonym-exact (700) sits above
+  //                     concept_name contains-anywhere (600).
   //   syn_bm25        - best BM25 score from the synonym FTS index, folded
   //                     into the concept-level fts_score via
   //                     GREATEST(concept_bm25, syn_bm25). To the downstream
@@ -103,19 +108,21 @@ export class CachedbDAO {
   //   true  -> emits syn_exact_score AND syn_bm25
   //   false -> emits only syn_bm25 
   
+  // When includeExactScore is true the caller MUST bind $1=searchText and
+  // $2=escapedSearchText (LIKE-safe). When false only $1 is referenced.
   private getSynonymScoresCTE = (includeExactScore: boolean): string => {
     const exactScoreColumn = includeExactScore
       ? `
         MAX(CASE
-          WHEN LOWER(cs.concept_synonym_name) = LOWER($1) THEN 600
-          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER($1) || '%' THEN 500
+          WHEN LOWER(cs.concept_synonym_name) = LOWER($1) THEN 700
+          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN 500
           ELSE 0
         END) as syn_exact_score,`
       : "";
     const exactWhereDisjuncts = includeExactScore
       ? `
         OR LOWER(cs.concept_synonym_name) = LOWER($1)
-        OR LOWER(cs.concept_synonym_name) LIKE LOWER($1) || '%'`
+        OR LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\'`
       : "";
     return `
     synonym_scores as (
@@ -164,7 +171,11 @@ export class CachedbDAO {
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
         this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
-      const orderByClause = buildOrderByClause(sortBy, sortOrder, searchText !== "");
+      const orderByClause = buildOrderByClause(
+        sortBy,
+        sortOrder,
+        searchText !== "",
+      );
       // LIMIT/OFFSET reuse the positional numbering started by the base query —
       // empty searchText: $1/$2; FTS-only: $2/$3; hybrid: $3/$4.
       const limitIdx = duckdbFtsBaseQueryParams.length + 1;
@@ -178,7 +189,11 @@ export class CachedbDAO {
       `;
 
       const offset = pageNumber * rowsPerPage;
-      const conceptsSqlParams = [...duckdbFtsBaseQueryParams, rowsPerPage, offset];
+      const conceptsSqlParams = [
+        ...duckdbFtsBaseQueryParams,
+        rowsPerPage,
+        offset,
+      ];
       const countSql = `${duckdbFtsBaseQuery} select count(concept_id) as count from fts`;
       const countSqlParams = duckdbFtsBaseQueryParams;
       const sqlPromises = [
@@ -208,8 +223,11 @@ export class CachedbDAO {
         this.semanticRatio > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
-      const [baseQuery, baseParams] =
-        this.getOptimizedSearchQuery(searchText, textEmbedding, filters);
+      const [baseQuery, baseParams] = this.getOptimizedSearchQuery(
+        searchText,
+        textEmbedding,
+        filters,
+      );
 
       const sql = `${baseQuery} select concept_id as id from fts`;
       const result = await client.query(sql, baseParams);
@@ -445,9 +463,10 @@ export class CachedbDAO {
             `${this.fts_concept_identifier}.match_bm25(c.concept_id, $1)`,
             "sy.syn_bm25",
           )} as fts_score,
-          array_cosine_similarity(concept_name_embedding, string_split($2, ',')::FLOAT[384]) as embd_score
+          array_cosine_similarity(e.concept_name_embedding, string_split($2, ',')::FLOAT[384]) as embd_score
         from
           ${this.vocabSchemaName}.concept c
+          JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
           left join synonym_scores sy on sy.concept_id = c.concept_id
           ${duckdbFtsWhereClause}
       ),
@@ -510,10 +529,11 @@ export class CachedbDAO {
    *
    *   exact_match_score = 1000  if LOWER(concept_name) = LOWER(query)
    *                       800   if concept_name starts with query
+   *                       600   if concept_name contains query anywhere
    *                       0     otherwise
    *
    *   syn_exact_score   = max over this concept's synonym rows of
-   *                       600   if LOWER(syn) = LOWER(query)
+   *                       700   if LOWER(syn) = LOWER(query)
    *                       500   if syn starts with query
    *                       0     otherwise
    *
@@ -562,8 +582,11 @@ export class CachedbDAO {
    *
    *   - concept_name exact (1000) / prefix (800) always outrank any pure
    *     hybrid hit, which is bounded by ~400.
-   *   - synonym exact (600) / prefix (500) outrank pure hybrid hits as
-   *     well, but lose to a concept_name match for the same string.
+   *   - synonym exact (700), concept_name contains-anywhere (600), and
+   *     synonym prefix (500) all outrank pure hybrid hits as well. The
+   *     synonym-exact tier sits above contains-anywhere on the canonical
+   *     name so a concept whose synonym matches the query as a whole
+   *     beats a concept whose canonical name merely contains the query.
    *   - pure hybrid hits still beat standard_boost (100) alone, which is
    *     what lets token-disjoint queries surface via embedding similarity
    *     (e.g. "high blood sugar" -> "Hyperglycemia").
@@ -596,12 +619,14 @@ export class CachedbDAO {
     } else {
       // CTE chain (rendered inside `with fts as (...)`):
       //   synonym_scores  -> per-concept synonym signals (exact boost + BM25)
-      //   concept_with_scores -> concept_name exact/starts-with + standard boost
+      //   concept_with_scores -> concept_name exact/starts-with/contains + standard boost
       //   sem_fts_scores  -> only when semanticRatio > 0; merges the strongest
       //                      concept/synonym BM25 into fts_score before normalization
       //   search_scores   -> final fts/embedding combination per concept
       //   (final select) -> sums boost + effective BM25, keeps any-signal rows
       const synonymCte = this.getSynonymScoresCTE(true);
+      // Escape SQL LIKE special characters so user-supplied % and _ are treated literally
+      const escapedSearchText = searchText.replace(/[%_\\]/g, "\\$&");
 
       const conceptWithScores = `
         with ${synonymCte},
@@ -611,7 +636,8 @@ export class CachedbDAO {
             -- Exact match scoring (highest priority)
             CASE
               WHEN LOWER(concept_name) = LOWER($1) THEN 1000
-              WHEN LOWER(concept_name) LIKE LOWER($1) || '%' THEN 800
+              WHEN LOWER(concept_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN 800
+              WHEN LOWER(concept_name) LIKE '%' || LOWER($2) || '%' ESCAPE '\\' THEN 600
               ELSE 0
             END as exact_match_score,
             -- Standard concept boost
@@ -638,10 +664,11 @@ export class CachedbDAO {
                 `${this.fts_concept_identifier}.match_bm25(concept_id, $1)`,
                 "sy.syn_bm25",
               )} as fts_score,
-              array_cosine_similarity(concept_name_embedding, string_split($2, ',')::FLOAT[384]) as embd_score,
+              array_cosine_similarity(e.concept_name_embedding, string_split($3, ',')::FLOAT[384]) as embd_score,
               sy.syn_exact_score as syn_exact_score
             from
               ${this.vocabSchemaName}.concept c
+              JOIN ${this.vocabSchemaName}.concept_name_embeddings e USING (concept_id)
               left join synonym_scores sy on sy.concept_id = c.concept_id
               ${filterWhereClause}
             ),
@@ -658,7 +685,11 @@ export class CachedbDAO {
               sem_fts_scores
           )
         `;
-        queryParams = [searchText, textEmbedding]; // $1, $2
+        queryParams = [
+          searchText, // $1: exact (=) and BM25 (concept + synonym)
+          escapedSearchText, // $2: LIKE patterns (starts-with / contains, concept + synonym)
+          textEmbedding, // $3: embedding cosine similarity
+        ];
       } else {
         searchScores = `
           search_scores as (
@@ -669,7 +700,10 @@ export class CachedbDAO {
               ${this.vocabSchemaName}.concept c
           )
         `;
-        queryParams = [searchText]; // $1
+        queryParams = [
+          searchText, // $1: exact (=) and BM25 (concept + synonym)
+          escapedSearchText, // $2: LIKE patterns (starts-with / contains, concept + synonym)
+        ];
       }
 
       // For hybrid, search_scores already merges synonym BM25 into search_score
@@ -689,7 +723,7 @@ export class CachedbDAO {
           ) as score
         from
           concept_with_scores c
-        join search_scores ss
+        left join search_scores ss
           on ss.concept_id = c.concept_id
         WHERE (
           ss.search_score IS NOT NULL

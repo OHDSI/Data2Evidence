@@ -4,21 +4,56 @@
     <div class="chartControllerContent">
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
-        <template v-for="(item, index) in getAllAxes" :key="index">
-          <axisMenuButton
-            v-if="item.props.active"
-            :dimensionIndex="index"
-            :beforeSelect="getBeforeSelectHandler(index)"
-          ></axisMenuButton>
-        </template>
-        <xAxisColorButton
-          :parentContainer="$refs.axisContainer"
-          :selectedAxis="colorAxisIndex"
-          @colorAxisSelected="onColorAxisSelected"
-        ></xAxisColorButton>
-        <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div>
-        <sortMenuButton v-if="displaySort"></sortMenuButton>
-        <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
+        <div class="axis-group axis-group--top">
+          <chartTypeAxisButton
+            v-if="getActiveChart === 'stacked' && chartTypeAxisButtonVisible"
+            :parentContainer="$refs.axisContainer"
+          ></chartTypeAxisButton>
+          <div class="axis-subgroup">
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.Y]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.Y"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.Y)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.StackAttribute]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.StackAttribute"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.StackAttribute)"
+            ></axisMenuButton>
+          </div>
+          <cohortEntryExit v-if="displayShowCohortEntryExit"></cohortEntryExit>
+        </div>
+        <div class="axis-group axis-group--bottom">
+          <div class="axis-subgroup">
+            <div class="sort-button">
+              <!-- <div class="sort-label" v-if="displaySort">{{ getText('MRI_PA_CHART_SORT_LABEL') }}</div> -->
+              <sortMenuButton v-if="displaySort"></sortMenuButton>
+            </div>
+            <xAxisColorButton
+              :parentContainer="$refs.axisContainer"
+              :selectedAxis="colorAxisIndex"
+              :disabled="isColorButtonDisabled"
+              @colorAxisSelected="onColorAxisSelected"
+            ></xAxisColorButton>
+          </div>
+          <div class="axis-subgroup">
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X2]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X2"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X2)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X1]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X1"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X1)"
+            ></axisMenuButton>
+            <axisMenuButton
+              v-if="getAllAxes[Constants.MRIChartDimensions.X3]?.props.active"
+              :dimensionIndex="Constants.MRIChartDimensions.X3"
+              :beforeSelect="getBeforeSelectHandler(Constants.MRIChartDimensions.X3)"
+            ></axisMenuButton>
+          </div>
+        </div>
       </div>
       <div class="chartContainer">
         <loadingAnimation v-if="chartBusy"></loadingAnimation>
@@ -26,7 +61,7 @@
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
           :shouldRerenderChart="shouldRerenderChart"
-          :colorAxisIndex="colorAxisIndex"
+          :colorAxisIndex="effectiveColorAxisIndex"
           @chartDataReady="onChartDataReady"
         ></stackBarChart>
         <!-- <variantBrowser v-if="getActiveChart === 'vb'" :response="response" @busyEv="setChartBusy"></variantBrowser> -->
@@ -67,6 +102,7 @@ import appButton from '../lib/ui/app-button.vue'
 import AxisMenuButton from './AxisMenuButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import XAxisColorButton from './XAxisColorButton.vue'
+import ChartTypeAxisButton from './ChartTypeAxisButton.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import PatientListContainer from './PatientListContainer.vue'
 import SacChart from './SACChart.vue'
@@ -81,12 +117,12 @@ export default {
   props: ['shouldRerenderChart', 'showLeftPane', 'chartBusy'],
   data() {
     return {
+      Constants,
       response: {},
       showCensoring: false,
       showErrorLines: false,
       series: [],
       activeChartCollections: false,
-      colorAxisIndex: null as number | null,
       hasSetDefaultColorAxis: false,
       showClearConfirmation: false,
       clearConfirmationMessage: '',
@@ -120,11 +156,18 @@ export default {
   },
   watch: {
     getActiveBookmark(newVal, oldVal) {
-      // Reset default color axis flag only when switching to a different cohort,
-      // not when saving/updating the currently active bookmark (same bmkId).
-      if (newVal?.bmkId !== oldVal?.bmkId) {
+      // Reset only when  switching to a different cohort.
+      // Do NOT reset when a new cohort is saved for the first time:
+      const isSavingNewCohort = !oldVal?.bmkId && !!newVal?.bmkId
+      if (!isSavingNewCohort && newVal?.bmkId !== oldVal?.bmkId) {
         this.hasSetDefaultColorAxis = false
-        this.colorAxisIndex = null
+        this.setColorAxisIndex(null)
+      }
+    },
+    getBarChartType(newVal: string) {
+      // Clear the X-axis color selection whenever the chart type stops being stacked bar chart
+      if (newVal !== 'stack') {
+        this.setColorAxisIndex(null)
       }
     },
   },
@@ -141,7 +184,18 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getActiveBookmark',
+      'getBarChartType',
+      'getColorAxisIndex',
     ]),
+    colorAxisIndex() {
+      return this.getColorAxisIndex
+    },
+    isColorButtonDisabled() {
+      return this.getBarChartType !== 'stack'
+    },
+    effectiveColorAxisIndex() {
+      return this.isColorButtonDisabled ? null : this.colorAxisIndex
+    },
     stackAttributeHasSelection() {
       const axis = this.getAllAxes[Constants.MRIChartDimensions.StackAttribute]
       return !!(axis?.props?.filterCardId && axis?.props?.key)
@@ -186,9 +240,18 @@ export default {
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig?._internalConfig?.panelOptions?.cohortEntryExit || false
     },
+    chartTypeAxisButtonVisible() {
+      const stackedOptions = this.getMriFrontendConfig?._internalConfig?.chartOptions?.stacked
+      if (!stackedOptions) return false
+      return (
+        !!stackedOptions.overlappingHistogramEnabled ||
+        !!stackedOptions.overlappingBarChartEnabled ||
+        !!stackedOptions.kernelDensityPlotEnabled
+      )
+    },
   },
   methods: {
-    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue']),
+    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue', 'setColorAxisIndex']),
     setChartBusy(status) {
       this.$emit('setChartBusy', status)
     },
@@ -211,7 +274,7 @@ export default {
       return null
     },
     confirmStackingOverColor(): Promise<boolean> {
-      if (this.colorAxisIndex === null) {
+      if (this.getColorAxisIndex === null) {
         return Promise.resolve(true)
       }
       this.clearConfirmationMessage = this.getText('MRI_PA_CONFIRM_CLEAR_COLOR')
@@ -219,7 +282,7 @@ export default {
       return new Promise<boolean>(resolve => {
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
-            this.colorAxisIndex = null
+            this.setColorAxisIndex(null)
           }
           resolve(confirmed)
         }
@@ -232,14 +295,14 @@ export default {
         this.pendingCancelRevert = null
         this.pendingConfirmResolve = (confirmed: boolean) => {
           if (confirmed) {
-            this.colorAxisIndex = axisIndex
+            this.setColorAxisIndex(axisIndex)
             this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
             this.setFireRequest()
           }
         }
         this.showClearConfirmation = true
       } else {
-        this.colorAxisIndex = axisIndex
+        this.setColorAxisIndex(axisIndex)
         this.clearAxisValue(Constants.MRIChartDimensions.StackAttribute)
       }
     },
@@ -265,8 +328,11 @@ export default {
       this.pendingCancelRevert = null
     },
     onChartDataReady(xAxisCategoryCounts: { axisIndex: number; count: number }[]) {
+      // If colorAxisIndex is already set (restored from bookmark or chosen by the user), don't override
+      if (this.getColorAxisIndex !== null) return
       if (this.hasSetDefaultColorAxis || xAxisCategoryCounts.length === 0) return
       if (this.stackAttributeHasSelection) return
+      if (this.isColorButtonDisabled) return
       this.hasSetDefaultColorAxis = true
 
       // Find the axis with the smaller number of categories
@@ -277,7 +343,7 @@ export default {
       if (smallest.count > 5) return
 
       this.$nextTick(() => {
-        this.colorAxisIndex = smallest.axisIndex
+        this.setColorAxisIndex(smallest.axisIndex)
       })
     },
   },
@@ -287,6 +353,7 @@ export default {
     AxisMenuButton,
     DropDownMenu,
     XAxisColorButton,
+    ChartTypeAxisButton,
     LoadingAnimation,
     SortMenuButton,
     CohortEntryExit,

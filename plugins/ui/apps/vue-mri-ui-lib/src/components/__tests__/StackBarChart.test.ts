@@ -44,7 +44,17 @@ const getters = {
         selectedpoints: selection && index in selection ? selection[index] : [],
       })),
     }),
-  getMriFrontendConfig: () => ({}),
+  getMriFrontendConfig: () => ({
+    _internalConfig: {
+      chartOptions: {
+        stacked: {
+          overlappingHistogramEnabled: true,
+          overlappingBarChartEnabled: true,
+          kernelDensityPlotEnabled: true,
+        },
+      },
+    },
+  }),
   getChartSize: () => ({}),
   getCsvFireDownload: () => false,
   getText: () => (key: string) => key,
@@ -56,13 +66,21 @@ const getters = {
   sortProperty: () => ({ props: { value: null } }),
   processResponse: () => chartData => chartData,
   getChartProperty: () => () => ({ props: { active: true } }),
+  getAllAxes: () => [],
+  getBarChartType: () => 'stack',
+  getShowDistributionOverlay: () => false,
 }
 
 const getLastSelectionPayload = () => selectionAction.mock.calls.at(-1)?.[1]
 
 describe('StackBarChart selection handling', () => {
-  const mountComponent = () => {
-    const store = createStore({ actions, getters })
+  const mountComponent = (barDisplayMode = 'stack', showDistributionOverlay = false) => {
+    const customGetters = {
+      ...getters,
+      getBarChartType: () => barDisplayMode,
+      getShowDistributionOverlay: () => showDistributionOverlay,
+    }
+    const store = createStore({ actions, getters: customGetters })
     const pinia = createPinia()
 
     return shallowMount(StackBarChart as any, {
@@ -92,10 +110,10 @@ describe('StackBarChart selection handling', () => {
   it('captures selection after deselect and clears drilldown state', async () => {
     const wrapper = mountComponent()
 
-    const handlers: Record<string, () => void> = {}
+    const handlers: Record<string, (...args: any[]) => void> = {}
     const fakePlotElement = {
       clientWidth: 800,
-      on: vi.fn((event: string, cb: () => void) => {
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
         handlers[event] = cb
       }),
     }
@@ -123,7 +141,9 @@ describe('StackBarChart selection handling', () => {
     }
     ;(wrapper.vm as any).setupPlotly()
 
-    handlers.plotly_selected()
+    // selectionUpdate now reads from the eventData payload, not from
+    // trace.selectedpoints on the canonical traces.
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
     const firstSelection = getLastSelectionPayload()
     expect(firstSelection.selection).toEqual([
       { id: 'cat.id', value: 'Alpha' },
@@ -133,24 +153,24 @@ describe('StackBarChart selection handling', () => {
     handlers.plotly_deselect()
     const afterDeselect = getLastSelectionPayload()
     expect(afterDeselect.selection).toEqual([])
-    ;(wrapper.vm as any).chartData.traces[0].selectedpoints = [1]
-    handlers.plotly_selected()
+    // Plotly.react is called by clearSelectionState (deselect), not by the selection handler.
+    expect(Plotly.react).toHaveBeenCalled()
+
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 1, data: { type: 'bar' } }] })
     const secondSelection = getLastSelectionPayload()
     expect(secondSelection.selection).toEqual([
       { id: 'cat.id', value: 'Beta' },
       { id: 'grp.id', value: 'Group One' },
     ])
-
-    expect(Plotly.react).toHaveBeenCalled()
   })
 
   it('resets to default state when plotly_selected has no selected points', async () => {
     const wrapper = mountComponent()
 
-    const handlers: Record<string, () => void> = {}
+    const handlers: Record<string, (...args: any[]) => void> = {}
     const fakePlotElement = {
       clientWidth: 800,
-      on: vi.fn((event: string, cb: () => void) => {
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
         handlers[event] = cb
       }),
     }
@@ -190,10 +210,7 @@ describe('StackBarChart selection handling', () => {
     const fakePlotElement = { id: 'plot' }
     ;(wrapper.vm as any).chartData = {
       axisType: 'category',
-      traces: [
-        {
-        },
-      ],
+      traces: [{}],
       tickvals: ['A'],
       ticktext: ['A'],
       ticktextFull: ['A'],
@@ -250,5 +267,154 @@ describe('StackBarChart selection handling', () => {
       'Very Long Label A': 'Very Long...',
       'Very Long Label B': 'Very Long...',
     })
+  })
+
+  const wireSelectionHandlers = (wrapper: ReturnType<typeof shallowMount>) => {
+    const handlers: Record<string, (...args: any[]) => void> = {}
+    const fakePlotElement = {
+      clientWidth: 800,
+      on: vi.fn((event: string, cb: (...args: any[]) => void) => {
+        handlers[event] = cb
+      }),
+    }
+    Object.defineProperty((wrapper.vm as any).$el, 'querySelector', {
+      value: vi.fn(() => fakePlotElement),
+    })
+    return { handlers, fakePlotElement }
+  }
+
+  const lastReactArgs = () => (Plotly.react as any).mock.calls.at(-1)
+
+  it('preserves overlay barmode and trace opacity through selection', async () => {
+    const wrapper = mountComponent('overlay')
+    const { handlers } = wireSelectionHandlers(wrapper)
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          name: 'A',
+          meta: { fullName: 'A' },
+          selectedpoints: [0],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).setupPlotly()
+
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
+    handlers.plotly_deselect()
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(layout.bargap).toBe(0)
+    expect(traces[0].marker.opacity).toBe(0.3)
+  })
+
+  it('preserves partialOverlaySolid mode through selection with multiple traces', async () => {
+    const wrapper = mountComponent('partialOverlaySolid')
+    const { handlers } = wireSelectionHandlers(wrapper)
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          name: 'A',
+          meta: { fullName: 'A' },
+          selectedpoints: [0],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+        {
+          name: 'B',
+          meta: { fullName: 'B' },
+          selectedpoints: [],
+          x: ['Alpha'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [], values: ['Alpha'] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).setupPlotly()
+
+    handlers.plotly_selected({ points: [{ curveNumber: 0, pointIndex: 0, data: { type: 'bar' } }] })
+    handlers.plotly_deselect()
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(traces[0].width).toBeGreaterThan(0)
+    expect(typeof traces[0].offset).toBe('number')
+    expect(traces[1].width).toBeGreaterThan(0)
+    expect(typeof traces[1].offset).toBe('number')
+    expect(traces[0].offset).not.toBe(traces[1].offset)
+  })
+
+  it('preserves overlay barmode through clearSelectionState with active selection', async () => {
+    const wrapper = mountComponent('overlay')
+    const fakePlotElement = { id: 'plot' }
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [
+        {
+          selectedpoints: [0],
+          x: ['A'],
+          customdata: [{ x: [{ id: 'cat.id' }], y: [] }],
+        },
+      ],
+    }
+    ;(wrapper.vm as any).clearSelectionState({ plotElement: fakePlotElement, resetAxes: true })
+
+    const [, traces, layout] = lastReactArgs()
+    expect(layout.barmode).toBe('overlay')
+    expect(traces[0].marker.opacity).toBe(0.3)
+  })
+
+  it('sets y-axis title to selected measure name in non-KDP modes', async () => {
+    const wrapper = mountComponent('stack')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('Patient Count')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'Patient Count' })
+  })
+
+  it('sets y-axis title to the density translation key when bar display mode is KDP', async () => {
+    const wrapper = mountComponent('distribution')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('MRI_PA_CHART_YAXIS_DENSITY')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'MRI_PA_CHART_YAXIS_DENSITY' })
+  })
+
+  it('falls back to measure name in KDP mode when there is only one bin', async () => {
+    const wrapper = mountComponent('distribution')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [{ x: ['A'], y: [5] }],
+      measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('Patient Count')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: 'Patient Count' })
+  })
+
+  it('falls back to empty y-axis title when no measure is available', async () => {
+    const wrapper = mountComponent('stack')
+    ;(wrapper.vm as any).chartData = {
+      axisType: 'category',
+      traces: [],
+    }
+
+    expect((wrapper.vm as any).yAxisTitle).toBe('')
+    const layout = (wrapper.vm as any).buildPlotlyLayout()
+    expect(layout.yaxis.title).toEqual({ text: '' })
   })
 })

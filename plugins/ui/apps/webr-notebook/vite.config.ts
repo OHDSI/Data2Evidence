@@ -15,6 +15,18 @@ const rD2ESource = readFileSync(
   'utf-8'
 )
 
+// Read the resolved pyodide npm version. The submodule's pyodide-worker.ts
+// hardcodes a CDN indexURL pinned to v0.29.0 by default. If the npm package
+// resolves to anything else (currently 0.29.3), loadPyodide rejects with
+// "Pyodide version does not match". Inject the resolved version here and pass
+// it through as indexUrl from NotebookManager so the two cannot drift.
+const pyodideVersion: string = JSON.parse(
+  readFileSync(
+    path.resolve(__dirname, '../../node_modules/pyodide/package.json'),
+    'utf-8'
+  )
+).version
+
 /**
  * Post-build plugin that patches the entry chunk on disk:
  * 1. Prepends a `process` polyfill (some deps reference process.env.NODE_ENV)
@@ -117,6 +129,7 @@ export default defineConfig({
   },
   define: {
     __RD2E_SOURCE__: JSON.stringify(rD2ESource),
+    __PYODIDE_VERSION__: JSON.stringify(pyodideVersion),
   },
   base: './',
   build: {

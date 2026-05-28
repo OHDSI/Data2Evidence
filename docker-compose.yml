@@ -45,7 +45,7 @@ x-envs:
     REDIS_PORT: ${REDIS_PORT:-6379}
   trex_sql: &x-trex-sql
     TREX__SQL__HOST: ${PROJECT_NAME:-d2e}-trex
-    TREX__SQL__PORT: 5433
+    TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
     TREX__SQL__USER: postgres
     TREX__SQL__PASSWORD: ${TREX__SQL__PASSWORD:-pencil} # Password for the trex sql interface
     TREX__SQL__DBNAME: postgres
@@ -56,7 +56,7 @@ x-envs:
     TLS__INTERNAL__DOMAIN: ${TLS__INTERNAL__DOMAIN:-alp.local}
     TLS__INTERNAL__KEY: ${TLS__INTERNAL__KEY}
   enterprise-gateway: &x-enterprise-gateway
-    EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-60}
+    EG_KERNEL_LAUNCH_TIMEOUT: ${EG_KERNEL_LAUNCH_TIMEOUT:-180}
     EG_KERNEL_INFO_TIMEOUT: ${EG_KERNEL_INFO_TIMEOUT:-60}
     EG_CULL_IDLE_TIMEOUT: ${EG_CULL_IDLE_TIMEOUT:-3600}
     # Use double-defaulting for B/C.  Support for EG_KERNEL_WHITELIST will be removed in a future release
@@ -91,6 +91,8 @@ services:
         priority: 20
       data:
         priority: 10
+      enterprise-gateway-viewer:
+        priority: 20
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
@@ -178,6 +180,7 @@ services:
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:-pencil}
+      TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
@@ -298,9 +301,7 @@ services:
       PREFECT_DOCKER_NETWORK: "${PROJECT_NAME:-d2e}_data"
       PREFECT_DOCKER_VOLUMES: '${PREFECT_DOCKER_VOLUMES_CUSTOM:-["${PROJECT_NAME:-d2e}_trex:/app/duckdb_data"]}'
       GH_TOKEN: ${GH_TOKEN}
-      PLUGINS_SEED: '${PLUGINS_SEED:-["d2e-functions", "d2e-ui", "d2e-flows", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "fhir"]}'
       PLUGINS_API_VERSION: ${PLUGINS_API_VERSION:-latest}
-      PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-false}
       PLUGINS_REGISTRY: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       TPM_REGISTRY_URL: ${PLUGINS_REGISTRY:-https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/}
       PLUGINS_IMAGE_TAG: ${PLUGINS_IMAGE_TAG:-develop}
@@ -343,7 +344,11 @@ services:
       AZURE_OPENAI_API_DEPLOYMENT_NAME: ${AZURE_OPENAI_API_DEPLOYMENT_NAME:-}
       AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
       AZURE_OPENAI_API_INSTANCE_NAME: ${AZURE_OPENAI_API_INSTANCE_NAME:-}
-      AI_MODEL: ${AI_MODEL:-azure:gpt-4o}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       D2E_DUCKDB_MEMORY_LIMIT: ${D2E_DUCKDB_MEMORY_LIMIT:-}
@@ -598,6 +603,7 @@ services:
 
         # Enable if need to access admin console
         # http://localhost:3002 {
+        #   uri strip_prefix /d2e/logto
         #   reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3002 {
         #     header_up Host {host}
         #     header_up X-Forwarded-Proto http
@@ -853,7 +859,6 @@ services:
         - *x-tls
       ADMIN_DISABLE_LOCALHOST: ${LOGTO__DISABLE_ADMIN_CONSOLE:-false}
       # ADMIN_ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3002 # Enable if need to access admin console
-      # ENDPOINT: http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:3001 # Enable if need to access admin console
       DB_URL: postgres://${PG__LOGTO_MANAGER_USER:-logto_postgres}:${PG__LOGTO_MANAGER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/${PG_DB_NAME:-alp}?options=-c%20search_path%3Dlogto
       # ENDPOINT is the server-side base URL Logto stamps into token iss/discovery issuer (stable identity).
       # It must be reachable by backend services (e.g. WebAPI) that validate iss by fetching discovery.
