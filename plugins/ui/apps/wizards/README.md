@@ -1,112 +1,126 @@
-# Wizards Configuration Guide
+# Wizards Single-SPA App
 
-This guide explains how to configure and customize wizards for different CDW (Clinical Data Warehouse) configurations.
+A micro-frontend application for guided, step-by-step workflows for creating cohorts and analyses in Data2Evidence (D2E).
 
 ## Overview
 
-Wizards use `configPath` values to map to CDW config attribute names. The default `wizards-config.json` is based on standard OMOP CDW configurations, but different systems (like HANA Lean) may use different attribute names.
+The Wizards app provides template-based cohort creation with a 4-step guided workflow:
 
-## Pre-built Config Examples
+1. Wizard Selection - Choose analysis type
+2. Introduction - Review wizard details
+3. Form Entry - Configure parameters
+4. Results - View summary and deep links
 
-- **`wizards-config.json`** - Standard OMOP configuration (default)
-- **`wizards-config-hana-lean.json`** - HANA Lean with corrected attribute paths
+## Tech Stack
 
-## When You Need to Customize
+- React 18
+- TypeScript
+- Single-SPA (micro-frontend framework)
+- Vite (build tool)
+- React Hook Form (form management)
 
-You should customize the wizards configuration when:
-- Using HANA Lean or non-standard OMOP configurations
-- Your CDW config uses different attribute names
-- Attributes have UUID suffixes (auto-generated per system)
+## Development
 
-## Discovering Your Attribute Paths
+### Prerequisites
 
-### Method 1: Browser Dev Tools
+- Node.js 18+
+- bun
 
-1. Open the portal and navigate to **Analytics**
-2. Open browser developer tools (F12)
-3. Go to the **Network** tab and filter for `analytics.xsjs`
-4. Look for the `getMyConfig` request and click on it
-5. In the **Response** tab, search for the interaction name (e.g., `conditionoccurrence`)
-6. Extract the attribute keys under the `attributes` section
-
-**Screenshot placeholder: Browser dev tools showing getMyConfig response with conditionoccurrence attributes**
-
-### Method 2: Direct API Call
+### Local Development
 
 ```bash
-curl "https://your-domain/d2e/analytics-svc/pa/services/analytics.xsjs?action=getMyConfig&datasetId=YOUR_DATASET_ID" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+# Install dependencies
+bun install
+
+# Start development server (port 8084)
+bun start
+
+# Build for production
+bun run build
+
+# Build for development
+bun run build:dev
+
+# Lint code
+bun run lint
+
+# Format code
+bun run format
+
+# Test
+bun run test
 ```
 
-Search the JSON response for the interaction name to find available attribute names.
+### Local Testing with Portal (Recommended)
 
-## Common Attribute Mappings
+The preferred development workflow is to build and copy files into the local Trex resources directory:
 
-| Standard OMOP | HANA Lean |
-|---------------|-----------|
-| `Gender_concept_name` | `Gender` |
-| `ethnicityName` | `ethnicity` |
-| `raceName` | `race` |
-| `meas_concept_name` | `measurementconceptname` |
-| `condition_occ_concept_name` | `Condition_source_concept_code_...` (UUID varies) |
+1. Build the app: `bun run build`
+2. The production build outputs to `../../resources/wizards/` which Trex serves directly
+3. Access via portal at `/researcher/wizards`
+4. Rebuild after changes with `bun run build`
 
-## Customizing the Config File
+This ensures styles and behavior match production exactly. The `bun start` dev server may have CSS differences due to Vite's dev mode style injection.
 
-1. Download the appropriate template (`wizards-config.json` or `wizards-config-hana-lean.json`)
-2. Replace attribute paths using the names discovered in the previous step
-3. For UUID-suffixed attributes, replace the placeholder with your system's specific UUID
+### Alternative: Dev Server
 
-**Example replacement:**
+1. Start the wizards dev server: `bun start`
+2. Use import-map-overrides browser extension to point to localhost:8084
+3. Access via portal at `/researcher/wizards`
+
+Note: Dev server styles may differ from production.
+
+## Build Output
+
+- **Development**: `dist/lifecycles.js`
+- **Production**: `../../resources/wizards/lifecycles.js`
+
+## Portal Integration
+
+The app is registered in the portal via `REACT_APP_PLUGINS` configuration:
+
 ```json
-// Before (from template):
-"configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9"
-
-// After (your system's UUID):
-"configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_YOUR_UUID_HERE"
+{
+  "enabled": true,
+  "type": "app",
+  "featureFlag": "wizards",
+  "name": "Wizards",
+  "pluginPath": "/resources/wizards/lifecycles.js",
+  "requiredRoles": ["RESEARCHER"],
+  "route": "wizards"
+}
 ```
 
-## Uploading the Config
+## Directory Structure
 
-### Via Portal
-1. Go to **Settings** → **PA Config**
-2. Navigate to the **Wizards** tab
-3. Click **Upload JSON** and select your customized config file
-
-### Via API
-```bash
-curl -X POST "https://your-domain/pa-config-svc/wizards/config?datasetId=YOUR_DATASET_ID" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d @your-custom-wizards-config.json
+```
+wizards/
+├── src/
+│   ├── lifecycles.tsx      # Single-SPA entry point
+│   ├── App.tsx             # Root component
+│   ├── context/            # React Context for state
+│   ├── components/         # UI components
+│   ├── config/             # Wizard definitions
+│   ├── types/              # TypeScript types
+│   └── utils/              # Helper functions
+├── vite.config.ts          # Vite configuration
+├── tsconfig.json           # TypeScript configuration
+└── package.json            # Dependencies
 ```
 
-## Verification Steps
+## Architecture
 
-After uploading the configuration:
+- **Single-SPA Integration**: Exports bootstrap, mount, unmount lifecycle functions
+- **State Management**: React Context API
+- **Form Handling**: React Hook Form
+- **Authentication**: Handled by portal (OIDC)
+- **Authorization**: RESEARCHER role required
 
-1. Open **Analytics** → **Wizards** tab
-2. Verify wizard cards load without errors
-3. Check the browser console - there should be no red error messages
-4. Click into a wizard and verify fields render correctly
-5. Test running a wizard query
-6. If fields are empty or missing, check the `configPath` values in your config
+## CDW Configuration
 
-## Troubleshooting
+For customizing wizards to work with different CDW configurations (e.g., HANA Lean), see [CONFIGURATION.md](CONFIGURATION.md).
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `TypeError: Cannot read properties of undefined` | Attribute path is incorrect | Verify the `configPath` matches an existing attribute in your CDW config |
-| Empty dropdowns | `configPath` doesn't match CDW attribute | Use browser dev tools to discover correct attribute names |
-| Wizards not loading | Config upload failed | Check API response for errors and re-upload |
+## Related Documentation
 
-### Rollback
-
-If you need to revert to the previous configuration:
-- Via Portal: Settings → PA Config → Wizards tab → Restore previous version
-- Via API: Re-upload the previous working config file
-
-## Notes
-
-- UUID-suffixed attributes are auto-generated per system and cannot be hardcoded universally
-- Always verify attribute paths against your specific CDW configuration
-- Keep a backup of working configurations before making changes
+- [PRD: Wizards Single-SPA App](docs/projects/2026-01-19_1633_cohort-explorer-scenarios/1633-prd.md)
+- [Implementation Plan](docs/projects/2026-01-19_1633_cohort-explorer-scenarios/plan-implementation.md)

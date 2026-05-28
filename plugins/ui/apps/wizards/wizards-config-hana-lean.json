@@ -157,7 +157,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -166,7 +166,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -175,7 +175,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -184,7 +184,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -193,7 +193,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -356,7 +356,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -365,7 +365,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -374,7 +374,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -383,7 +383,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -392,7 +392,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -555,7 +555,7 @@
           "type": "text",
           "label": "Condition 1",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -564,7 +564,7 @@
           "type": "text",
           "label": "Condition 2",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -573,7 +573,7 @@
           "type": "text",
           "label": "Condition 3",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -582,7 +582,7 @@
           "type": "text",
           "label": "Condition 4",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
@@ -591,7 +591,7 @@
           "type": "text",
           "label": "Condition 5",
           "required": false,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         }
@@ -607,7 +607,7 @@
           "type": "text",
           "label": "Disease/Condition",
           "required": true,
-          "configPath": "patient.interactions.conditionoccurrence.attributes.Condition_source_concept_code_580df080_3141_4ff3_bbb3_3461042995f9",
+          "configPath": "patient.interactions.conditionoccurrence.attributes.conditionconceptname",
           "isWizardField": true,
           "allowFreeText": true
         },
