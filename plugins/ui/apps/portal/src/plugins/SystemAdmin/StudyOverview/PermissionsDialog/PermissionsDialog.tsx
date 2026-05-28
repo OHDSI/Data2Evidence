@@ -44,7 +44,6 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   //Request states
   const [approvedReqs, setApprovedReqs] = useState<StudyAccessRequest[]>([]);
   const [rejectedReqs, setRejectedReqs] = useState<StudyAccessRequest[]>([]);
-  const [selectedAction, setSelectedAction] = useState("");
 
   //Edit roles states
   const [grantRolesList, setGrantRolesList] = useState<RoleEdit[]>([]);
@@ -122,15 +121,12 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
   const handleActionChange = useCallback(
     (event: SelectChangeEvent<string>, request: StudyAccessRequest) => {
       if (event.target.value === "approve") {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
         setApprovedReqs([...approvedReqs, request]);
       } else if (event.target.value === "reject") {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
         setRejectedReqs([...rejectedReqs, request]);
       } else {
-        setSelectedAction(event.target.value);
         removeFromPendingArr(request);
       }
     },
@@ -276,7 +272,8 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
           <>
             <RequestPanel
               studyId={study?.id!}
-              selectedAction={selectedAction}
+              approvedReqs={approvedReqs}
+              rejectedReqs={rejectedReqs}
               handleActionChange={handleActionChange}
               accessRequests={accessRequests}
               fetchStudyAccessRequests={fetchStudyAccessRequests}
@@ -305,8 +302,6 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
           <AccessPanel
             studyId={study?.id!}
             tenantId={study?.tenant?.id!}
-            selectedAction={selectedAction}
-            handleActionChange={handleActionChange}
             users={users}
             usersLoading={usersLoading}
             grantRolesList={grantRolesList}

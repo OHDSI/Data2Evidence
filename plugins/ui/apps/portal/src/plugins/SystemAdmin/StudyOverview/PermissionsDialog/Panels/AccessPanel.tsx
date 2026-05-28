@@ -1,5 +1,4 @@
 import React, { FC, useCallback, useState, useEffect } from "react";
-import { SelectChangeEvent } from "@mui/material/Select";
 import { UserWithRoles } from "../../../../../types";
 import { Button, Feedback, Loader, TableCell, TableRow, RejectIcon, IconButton } from "@portal/components";
 import Menu from "@mui/material/Menu";
@@ -13,16 +12,14 @@ import TableBody from "@mui/material/TableBody";
 import TableHead from "@mui/material/TableHead";
 import TableContainer from "@mui/material/TableContainer";
 import { useTranslation, useUser } from "../../../../../contexts";
-import { RoleEdit, StudyAccessRequest } from "../PermissionsDialog";
+import { RoleEdit } from "../PermissionsDialog";
 import "./PanelTables.scss";
 
 interface AcessPanelProps {
   studyId: string;
   tenantId: string;
-  selectedAction: string;
   users: UserWithRoles[];
   usersLoading: boolean;
-  handleActionChange: (event: SelectChangeEvent<string>, request: StudyAccessRequest) => void;
   grantRolesList: RoleEdit[];
   withdrawRolesList: RoleEdit[];
   setGrantRolesList: React.Dispatch<React.SetStateAction<RoleEdit[]>>;
