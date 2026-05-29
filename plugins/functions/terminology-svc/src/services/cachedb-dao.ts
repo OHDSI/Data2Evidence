@@ -82,16 +82,9 @@ export class CachedbDAO {
 
   private readonly escapeLike = (s: string): string => s.replace(/[%_\\]/g, "\\$&");
 
-  // Per-concept synonym signals, max-aggregated across all synonym rows.
-  // Always emits both columns; callers ignore whichever they don't need.
-  // Callers MUST bind $1=searchText and $2=escapedSearchText (LIKE-safe).
-  //   syn_exact_score: 700 if a synonym equals the query, 500 on prefix, else 0.
-  //                    Sits below the concept_name exact/prefix tier (1000/800)
-  //                    so canonical-name matches always outrank synonym matches
-  //                    of the same string.
-  //   syn_bm25:        best BM25 from the synonym FTS index. Folded into the
-  //                    concept-level fts_score via GREATEST(concept_bm25, syn_bm25),
-  //                    so synonym-only FTS hits rank like concept_name FTS hits.
+  //   syn_exact_score: 700 if a synonym equals the query,
+  //                    500 on prefix, else 0.
+  //   syn_bm25:        BM25 from the synonym FTS index.
   private readonly getSynonymScoresCTE = (): string => `
     synonym_scores as (
       select
@@ -404,8 +397,9 @@ export class CachedbDAO {
 
     const columnsToSelect =
       columns.length === 0
-        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
-        : columns.join(", ");
+        ? "c.concept_id, c.concept_name, c.domain_id, c.vocabulary_id, c.concept_class_id, c.standard_concept, c.concept_code, c.valid_start_date, c.valid_end_date, c.invalid_reason" // Exclude embeddings from results
+        : columns.map((col) => `c.${col}`).join(", ");
+    const columnsBare = columnsToSelect.replace(/\bc\./g, "");
     if (searchText === "") {
       return [
         `
@@ -419,14 +413,27 @@ export class CachedbDAO {
       `,
         [],
       ];
+    } else if (isIdentifierQuery(searchText)) {
+      const filterAnd = filterWhereClause
+        ? ` AND ${filterWhereClause.substring(7)}`
+        : "";
+      return [
+        `
+      with fts as (
+        select
+          ${columnsToSelect}
+        from
+          ${this.vocabSchemaName}.concept c
+        where (c.concept_id::VARCHAR = $1 OR LOWER(c.concept_code) = LOWER($1))${filterAnd}
+        )
+      `,
+        [searchText],
+      ];
     } else if (semanticRatio > 0) {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND fts_score is not null`
         : "WHERE fts_score is not null ";
 
-      // Facet base query, hybrid path: include a concept if concept_name or
-      // any synonym hits FTS. fts_score = strongest BM25 across both indexes.
-      // syn_exact_score from the CTE is unused here (facet counts ignore it).
       const escapedSearchText = this.escapeLike(searchText);
       return [
         `
@@ -447,7 +454,7 @@ export class CachedbDAO {
       ),
       fts as (
         select
-          sem_fts_scores.${columnsToSelect},
+          ${columnsBare},
           (
             ${semanticRatio} * GREATEST(embd_score, 0) +
             (1 - ${semanticRatio}) * (fts_score / (fts_score + ${this.bm25SaturationK}))
@@ -464,8 +471,7 @@ export class CachedbDAO {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND score is not null`
         : "WHERE score is not null ";
-      // Facet base query, FTS-only: same shape, no embedding leg.
-      // syn_exact_score from the CTE is unused here (facet counts ignore it).
+
       const escapedSearchText = this.escapeLike(searchText);
       return [
         `
@@ -493,30 +499,18 @@ export class CachedbDAO {
    * Build the SQL used by the /concept search endpoint.
    *
    *   score = relevance + exact_match_score + syn_exact_score + standard_boost
-   *
-   * Discrete boosts on the canonical name and synonyms, ordered so
-   * canonical-name matches always outrank synonym matches of the same string:
    *   exact_match_score (concept_name): 1000 equals / 800 prefix / 600 contains
    *   syn_exact_score   (concept_synonym, max over rows): 700 equals / 500 prefix
    *   standard_boost                                    : 100 if standard_concept = 'S'
    *
    * Relevance term:
-   *   fts_score = GREATEST(concept_bm25, syn_bm25)  -- synonym-only FTS hits
-   *                                                    rank like concept_name hits
+   *   fts_score = GREATEST(concept_bm25, syn_bm25)
    *   FTS-only       : relevance = COALESCE(fts_score, 0)
-   *   hybrid (>0)    : relevance = hybridBoostScale * (
-   *                       semanticRatio * MAX(embd_cos_sim, 0)              -- in [0, 1]
+   *   hybrid (>0)    : relevance = 
+   *                     hybridBoostScale                                    -- 400
+   *                     * (semanticRatio * MAX(embd_cos_sim, 0)
    *                     + (1 - semanticRatio) * fts_score / (fts_score + K) -- in [0, 1)
-   *                   )                                                     -- in [0, hybridBoostScale]
-   *   - MAX(embd, 0) clamps "vector points away from query" to 0 rather than subtract.
    *   - x/(x+K) is a Michaelis-Menten saturation curve; smaller K saturates faster.
-   *
-   * The constants (hybridBoostScale=400, bm25SaturationK=5) are chosen so that:
-   *   - concept_name exact/prefix (1000/800) always beat pure hybrid (<=400),
-   *   - syn exact / concept_name contains / syn prefix (700/600/500) also do,
-   *   - but pure hybrid still beats standard_boost (100) on its own,
-   *     which is what surfaces token-disjoint queries via embeddings
-   *     (e.g. "high blood sugar" -> "Hyperglycemia").
    */
   private getOptimizedSearchQuery = (
     searchText: string,
@@ -526,10 +520,14 @@ export class CachedbDAO {
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
     const semanticRatio = this.effectiveSemanticRatio(searchText);
+    // Two flavours: `c.`-qualified for SELECTs that join synonym_scores
+    // (which also has a concept_id), and bare for SELECTs that read from a
+    // CTE without the `c` alias in scope (e.g. hybrid search_scores).
     const columnsToSelect =
       columns.length === 0
-        ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
-        : columns.join(", ");
+        ? "c.concept_id, c.concept_name, c.domain_id, c.vocabulary_id, c.concept_class_id, c.standard_concept, c.concept_code, c.valid_start_date, c.valid_end_date, c.invalid_reason" // Exclude embeddings from results
+        : columns.map((col) => `c.${col}`).join(", ");
+    const columnsBare = columnsToSelect.replace(/\bc\./g, "");
 
     if (searchText === "") {
       return [
@@ -544,12 +542,24 @@ export class CachedbDAO {
       `,
         [],
       ];
+    } else if (isIdentifierQuery(searchText)) {
+      const filterAnd = filterWhereClause
+        ? ` AND ${filterWhereClause.substring(7)}`
+        : "";
+      return [
+        `
+      with fts as (
+        select
+          ${columnsToSelect},
+          1 as score
+        from
+          ${this.vocabSchemaName}.concept c
+        where (c.concept_id::VARCHAR = $1 OR LOWER(c.concept_code) = LOWER($1))${filterAnd}
+        )
+      `,
+        [searchText],
+      ];
     } else {
-      // CTE chain inside `with fts as (...)`:
-      //   synonym_scores      -> per-concept syn_exact_score + syn_bm25
-      //   concept_with_scores -> concept_name exact/prefix/contains + standard boost
-      //   search_scores       -> hybrid: normalized fts+embedding; FTS-only: raw concept BM25
-      //   (final select)      -> sums all signals, keeps any-signal rows
       const synonymCte = this.getSynonymScoresCTE();
       const escapedSearchText = this.escapeLike(searchText);
 
@@ -583,8 +593,6 @@ export class CachedbDAO {
       //   $2 = escapedSearchText (LIKE patterns on concept + synonym)
       //   $3 = textEmbedding     (hybrid path only)
       if (semanticRatio > 0) {
-        // Hybrid: merge strongest concept/synonym BM25 into fts_score before
-        // normalization so synonym-only matches rank as FTS hits too.
         searchScores = `
           sem_fts_scores as (
             select
@@ -603,7 +611,7 @@ export class CachedbDAO {
             ),
           search_scores as (
             select
-              ${columnsToSelect}${columns.length === 0 ? ", " : ""}
+              ${columnsBare}${columns.length === 0 ? ", " : ""}
               syn_exact_score,
               (
                 ${semanticRatio} * GREATEST(embd_score, 0) +
