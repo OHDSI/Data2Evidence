@@ -85,6 +85,7 @@ export async function addPlugin(value: any) {
 						tags: f.tags,
 					};
 
+					
 					// If flow has a command defined, add it to job variables
 					if (f.command) {
 						body.job_variables.command = f.command;

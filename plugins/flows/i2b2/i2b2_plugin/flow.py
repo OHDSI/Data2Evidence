@@ -37,6 +37,9 @@ def i2b2_plugin(options: i2b2PluginType):
 
 
 def create_i2b2_dataset_flow(options: i2b2PluginType):
+    logger = get_run_logger()
+    logger.info(f"Flow parameters received: {options.json()}")
+
     database_code = options.database_code
     cache_id = options.cache_id
     schema_name = options.schema_name
