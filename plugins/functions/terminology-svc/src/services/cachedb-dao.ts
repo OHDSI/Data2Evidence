@@ -59,6 +59,10 @@ export class CachedbDAO {
   private readonly bm25SaturationK = 5;
   private readonly hybridBoostScale = 400;
 
+  private readonly avgDlConcept = 104.1; // measured average document length over all fts index colums in omop concept table (June 2025)
+  private readonly avgDlSynonym = 65.1; // measured average document length over concept_synonym_name in omop concept_synonym table (June 2025)
+  private readonly synonymBm25Scale = this.avgDlSynonym / this.avgDlConcept; // rescale synonym BM25 scores to be comparable with concept BM25 scores, based on average document lengths
+
   constructor(
     vocabSchemaName: string,
     semanticRatio: number,
@@ -80,7 +84,8 @@ export class CachedbDAO {
   private readonly effectiveSemanticRatio = (searchText: string): number =>
     isIdentifierQuery(searchText) ? 0 : this.semanticRatio;
 
-  private readonly escapeLike = (s: string): string => s.replace(/[%_\\]/g, "\\$&");
+  private readonly escapeLike = (s: string): string =>
+    s.replace(/[%_\\]/g, "\\$&");
 
   //   syn_exact_score: 700 if a synonym equals the query,
   //                    500 on prefix, else 0.
@@ -116,7 +121,7 @@ export class CachedbDAO {
     NULLIF(
       GREATEST(
         COALESCE(${conceptBm25Expression}, 0),
-        COALESCE(${synonymBm25Expression}, 0)
+        COALESCE(${synonymBm25Expression}, 0) * ${this.synonymBm25Scale}
       ),
       0
     )
@@ -506,7 +511,7 @@ export class CachedbDAO {
    * Relevance term:
    *   fts_score = GREATEST(concept_bm25, syn_bm25)
    *   FTS-only       : relevance = COALESCE(fts_score, 0)
-   *   hybrid (>0)    : relevance = 
+   *   hybrid (>0)    : relevance =
    *                     hybridBoostScale                                    -- 400
    *                     * (semanticRatio * MAX(embd_cos_sim, 0)
    *                     + (1 - semanticRatio) * fts_score / (fts_score + K) -- in [0, 1)

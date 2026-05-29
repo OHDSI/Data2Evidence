@@ -795,11 +795,6 @@ export class HanaHDBDao {
         [],
       ];
     } else {
-      // Widen recall by also matching against concept_synonym. SCORE() reflects
-      // the CONTAINS in its own subquery, so we run two separate CONTAINS
-      // probes, UNION ALL their (concept_id, score) rows, then MAX-aggregate
-      // per concept_id. The aggregated score joins back to concept for
-      // projection and filter application.
       const qualifiedColumns =
         columns.length === 0
           ? "c.*"
@@ -831,10 +826,8 @@ export class HanaHDBDao {
             order by score desc
           )
         `,
-        // similarCalculationMode=substringsearch makes fuzzy match work on a
-        // subpart of the indexed text, so the previous *...* wildcards are
-        // redundant. Double-quote-wrap searchText to keep multi-word phrases
-        // as one token.
+        // Use similarCalculationMode=substringsearch so that fuzzy search works on search text as a subpart
+        // Wrap searchText with double quotes as it might contains spaces
         [`"${searchText}"`, `"${searchText}"`],
       ];
     }
