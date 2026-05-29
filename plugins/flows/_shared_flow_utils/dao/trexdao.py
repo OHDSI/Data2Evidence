@@ -316,7 +316,7 @@ class TrexDao(DaoBase):
         """
         columns_str = ", ".join(columns)
         sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s{conflict}").format(
-            schema_name=pg_sql.Identifier(schema_name),
+            schema_name=self._schema_ident(schema_name),
             table_name=pg_sql.Identifier(table_name),
             columns_str=pg_sql.SQL(columns_str),
             conflict=pg_sql.SQL(f" {on_conflict}" if on_conflict else ""),

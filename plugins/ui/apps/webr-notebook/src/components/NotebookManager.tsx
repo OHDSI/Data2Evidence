@@ -54,7 +54,17 @@ interface NotebookManagerProps {
   getToken?: () => Promise<string>;
 }
 
-export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
+function generateUniqueName(baseName: string, existingNames: string[]): string {
+  const taken = new Set(existingNames.map((n) => n.toLowerCase()));
+  if (!taken.has(baseName.toLowerCase())) return baseName;
+  let i = 1;
+  while (taken.has(`${baseName} ${i}`.toLowerCase())) {
+    i++;
+  }
+  return `${baseName} ${i}`;
+}
+
+export function NotebookManager({ datasetId, userId, getToken }: NotebookManagerProps) {
   // Fresh kernel instances per component mount. The submodule's useKernel hook
   // skips connect()+status-subscribe for any kernel whose status is not
   // 'disconnected' (see useKernel.ts:184), so module-level singletons leave the
@@ -339,7 +349,11 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
           const content = e.target?.result as string;
           parseNotebookContent(content); // validate
 
-          const name = file.name.replace(/\.(ipynb|sb|sbnb)$/, "");
+          const baseName = file.name.replace(/\.(ipynb|sb|sbnb)$/, "");
+          const name = generateUniqueName(
+            baseName,
+            notebooks.map((n) => n.name),
+          );
           const created = await notebookApi.createNotebook(
             datasetId,
             name,
@@ -359,7 +373,7 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
       reader.readAsText(file);
       event.target.value = "";
     },
-    [datasetId, showFeedback],
+    [datasetId, notebooks, showFeedback],
   );
 
   const getNotebookContent = useCallback(() => {
@@ -385,6 +399,15 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
     [notebooks],
   );
 
+  // Owner-only actions on shared notebooks. If either id is unknown we keep
+  // current behavior (treat as owner) so we don't disable buttons for the
+  // actual owner when identity data is missing.
+  const isOwner =
+    !activeNotebook ||
+    !userId ||
+    !activeNotebook.userId ||
+    activeNotebook.userId === userId;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
@@ -402,15 +425,20 @@ export function NotebookManager({ datasetId, getToken }: NotebookManagerProps) {
         onCreate={handleCreate}
         onSave={handleSave}
         onDelete={
-          activeNotebook ? () => setDeleteTarget(activeNotebook) : undefined
+          activeNotebook && isOwner
+            ? () => setDeleteTarget(activeNotebook)
+            : undefined
         }
         onRename={
-          activeNotebook ? () => setRenameTarget(activeNotebook) : undefined
+          activeNotebook && isOwner
+            ? () => setRenameTarget(activeNotebook)
+            : undefined
         }
         onImport={handleImport}
         onExport={activeNotebook ? handleExport : undefined}
-        onToggleShare={activeNotebook ? handleToggleShare : undefined}
+        onToggleShare={activeNotebook && isOwner ? handleToggleShare : undefined}
         isShared={activeNotebook?.isShared ?? false}
+        canSave={isOwner}
         datasetId={datasetId}
         onSyncSuccess={handleSyncSuccess}
         onFeedback={showFeedback}

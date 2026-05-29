@@ -32,8 +32,8 @@ export class PrefectService {
       revision.flow,
     );
 
-    this.prefectApi = new PrefectAPI(token);
-    const flowrunId = await this.prefectApi.createFlowRun(
+    const prefectApi = new PrefectAPI(token);
+    const flowrunId = await prefectApi.createFlowRun(
       `Run ${revision.canvas.name}`,
       PrefectDeploymentName.UI_DATA_FLOW,
       PrefectFlowName.UI_DATA_FLOW,
@@ -72,9 +72,9 @@ export class PrefectService {
 
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
-    this.prefectApi = new PrefectAPI(token);
+    const prefectApi = new PrefectAPI(token);
 
-    const flowRunId = await this.prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       revision.canvas.name,
       prefectDeploymentName,
       prefectFlowName,
@@ -95,14 +95,14 @@ export class PrefectService {
     console.log(
       `creating auth token for flowrun (PrefectService): ${flowRunId}`,
     );
-    await this.prefectApi.createInputAuthToken(flowRunId);
+    await prefectApi.createInputAuthToken(flowRunId);
     Promise.any([
       new Promise(() => {
         setTimeout(
           async () => {
             const msg = "Prefect input authtoken deletion";
             try {
-              (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              (await prefectApi.deleteInputAuthToken(flowRunId))
                 ? console.log(`${msg} successful`)
                 : console.log(`${msg} failed`);
             } catch (error) {
@@ -122,7 +122,7 @@ export class PrefectService {
     const { json_graph, options } = flowRunParams;
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
-    this.prefectApi = new PrefectAPI(token);
+    const prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
 
     // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
@@ -146,7 +146,7 @@ export class PrefectService {
       options["mode"],
     );
 
-    const flowRunId = await this.prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       "jupyter-kernel-dataset-analysis",
       prefectDeploymentName,
       prefectFlowName,
@@ -163,14 +163,14 @@ export class PrefectService {
     console.log(
       `creating auth token for flowrun (PrefectService): ${flowRunId}`,
     );
-    await this.prefectApi.createInputAuthToken(flowRunId);
+    await prefectApi.createInputAuthToken(flowRunId);
     Promise.any([
       new Promise(() => {
         setTimeout(
           async () => {
             const msg = "Prefect input authtoken deletion";
             try {
-              (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              (await prefectApi.deleteInputAuthToken(flowRunId))
                 ? console.log(`${msg} successful`)
                 : console.log(`${msg} failed`);
             } catch (error) {
@@ -194,7 +194,7 @@ export class PrefectService {
       analysisSpec,
     }: { studyId: string; datasetId: string; analysisSpec?: string },
   ) {
-    this.prefectApi = new PrefectAPI(token);
+    const prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
@@ -230,7 +230,7 @@ export class PrefectService {
       );
     }
 
-    const flowRunId = await this.prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       "strategus-analysis-upload-results",
       prefectDeploymentName,
       prefectFlowName,
@@ -255,14 +255,14 @@ export class PrefectService {
     console.log(
       `creating auth token for flowrun (PrefectService): ${flowRunId}`,
     );
-    await this.prefectApi.createInputAuthToken(flowRunId);
+    await prefectApi.createInputAuthToken(flowRunId);
     Promise.any([
       new Promise(() => {
         setTimeout(
           async () => {
             const msg = "Prefect input authtoken deletion";
             try {
-              (await this.prefectApi.deleteInputAuthToken(flowRunId))
+              (await prefectApi.deleteInputAuthToken(flowRunId))
                 ? console.log(`${msg} successful`)
                 : console.log(`${msg} failed`);
             } catch (error) {
@@ -282,7 +282,7 @@ export class PrefectService {
     token: string,
     { studyId, datasetId }: { studyId: string; datasetId: string },
   ) {
-    this.prefectApi = new PrefectAPI(token);
+    const prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
@@ -291,7 +291,7 @@ export class PrefectService {
     const { databaseCode } = dataset;
     const cacheId = dataset.cacheId ?? databaseCode;
 
-    const flowRunId = await this.prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       "strategus-analysis-drop-results",
       prefectDeploymentName,
       prefectFlowName,
@@ -313,25 +313,25 @@ export class PrefectService {
   }
 
   public async getFlowRunState(id: string, token) {
-    this.prefectApi = new PrefectAPI(token);
-    const flowRunState = await this.prefectApi.getFlowRunState(id);
+    const prefectApi = new PrefectAPI(token);
+    const flowRunState = await prefectApi.getFlowRunState(id);
     return flowRunState;
   }
 
   public async cancelFlowRun(id: string, token) {
-    this.prefectApi = new PrefectAPI(token);
-    return await this.prefectApi.cancelFlowRun(id);
+    const prefectApi = new PrefectAPI(token);
+    return await prefectApi.cancelFlowRun(id);
   }
 
   public async removeAnalysisResultsSchema(
     token: string,
     { studyId }: { studyId: string },
   ) {
-    this.prefectApi = new PrefectAPI(token);
+    const prefectApi = new PrefectAPI(token);
     const prefectDeploymentName = PrefectDeploymentName.ANALYSIS_DATA_FLOW;
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
 
-    const flowRunId = await this.prefectApi.createFlowRun(
+    const flowRunId = await prefectApi.createFlowRun(
       "strategus-analysis-remove-results-schema",
       prefectDeploymentName,
       prefectFlowName,
@@ -344,5 +344,15 @@ export class PrefectService {
       },
     );
     return flowRunId;
+  }
+
+  public async createInputAuthToken(flowrunId: string, token: string) {
+    const prefectApi = new PrefectAPI(token);
+    await prefectApi.createInputAuthToken(flowrunId);
+  }
+  
+  public async deleteInputAuthToken(flowrunId: string, token: string) {
+    const prefectApi = new PrefectAPI(token);
+    await prefectApi.deleteInputAuthToken(flowrunId);
   }
 }
