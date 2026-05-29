@@ -11,6 +11,23 @@ import { getGTEEmbedding } from "../utils/helperUtil.ts";
 import { individualFilterWhereOR } from "./cachedb.ts";
 import { ALLOWED_SORT_COLUMNS } from "../controllers/validators/conceptSchemas.ts";
 
+const IDENTIFIER_PATTERNS: readonly RegExp[] = [
+  /^\d{4,}$/, // concept_id, SNOMED CT, MedDRA, RxNorm, CVX, DRG, CPT-1
+  /^[A-Za-z]?\d{2,}\.\d+[A-Za-z]?$/, // ICD-10/9-CM, OPCS-4 (E11.9, 250.00, K04.1)
+  /^\d{1,5}-\d{1,2}$/, // LOINC (2345-7)
+  /^\d{4,5}-\d{3,4}-\d{1,2}$/, // NDC (0078-0432-15)
+  /^[A-Za-z]\d{4}$/, // HCPCS Level II (G0001)
+  /^\d{4}[A-Za-z]$/, // CPT Category II/III (0001F)
+  /^[A-Za-z]\d{2}[A-Za-z]{2}\d{2}$/, // ATC (A10BA02)
+  /^\d{3}[A-Za-z]\d{5}[A-Za-z]$/, // NUCC taxonomy (207Q00000X)
+  /^\d{4}\/\d$/, // ICD-O morphology (8000/3)
+];
+function isIdentifierQuery(s: string): boolean {
+  const t = s.trim();
+  if (t.length === 0 || /\s/.test(t)) return false;
+  return IDENTIFIER_PATTERNS.some((re) => re.test(t));
+}
+
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
@@ -36,13 +53,9 @@ export class CachedbDAO {
   private readonly resultsSchemaName: string;
   private readonly fts_concept_identifier: string;
   private readonly fts_concept_synonym_identifier: string;
-  // Calibration for the hybrid score (see getOptimizedSearchQuery docblock for
-  // how these feed the ranking invariants).
+
   // bm25SaturationK: BM25 normalization x/(x+k); smaller k saturates faster.
   // hybridBoostScale: caps the [0,1] hybrid score below the discrete boosts
-  // (exact 1000 / prefix 800 / syn-exact 700 / contains 600 / syn-prefix 500)
-  // while still beating standard_boost (100) so token-disjoint queries like
-  // "high blood sugar" -> "Hyperglycemia" can surface via embeddings.
   private readonly bm25SaturationK = 5;
   private readonly hybridBoostScale = 400;
 
@@ -62,6 +75,13 @@ export class CachedbDAO {
     this.fts_concept_synonym_identifier = `fts_${vocabSchemaName}_concept_synonym`;
   }
 
+  // Per-query effective semantic ratio. Identifier-shaped queries (concept_id,
+  // ICD-10, LOINC, NDC, HCPCS, ATC, ...) bypass the embedding leg
+  private readonly effectiveSemanticRatio = (searchText: string): number =>
+    isIdentifierQuery(searchText) ? 0 : this.semanticRatio;
+
+  private readonly escapeLike = (s: string): string => s.replace(/[%_\\]/g, "\\$&");
+
   // Per-concept synonym signals, max-aggregated across all synonym rows.
   // Always emits both columns; callers ignore whichever they don't need.
   // Callers MUST bind $1=searchText and $2=escapedSearchText (LIKE-safe).
@@ -72,7 +92,7 @@ export class CachedbDAO {
   //   syn_bm25:        best BM25 from the synonym FTS index. Folded into the
   //                    concept-level fts_score via GREATEST(concept_bm25, syn_bm25),
   //                    so synonym-only FTS hits rank like concept_name FTS hits.
-  private getSynonymScoresCTE = (): string => `
+  private readonly getSynonymScoresCTE = (): string => `
     synonym_scores as (
       select
         cs.concept_id,
@@ -96,7 +116,7 @@ export class CachedbDAO {
     )
   `;
 
-  private getBestBm25Score = (
+  private readonly getBestBm25Score = (
     conceptBm25Expression: string,
     synonymBm25Expression: string,
   ): string => `
@@ -120,7 +140,7 @@ export class CachedbDAO {
     const client = this.getTrexConnection();
     try {
       const textEmbedding =
-        this.semanticRatio > 0
+        this.effectiveSemanticRatio(searchText) > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
@@ -173,7 +193,7 @@ export class CachedbDAO {
     const client = this.getTrexConnection();
     try {
       const textEmbedding =
-        this.semanticRatio > 0
+        this.effectiveSemanticRatio(searchText) > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [baseQuery, baseParams] = this.getOptimizedSearchQuery(
@@ -197,7 +217,7 @@ export class CachedbDAO {
     const client = this.getTrexConnection();
     try {
       const textEmbedding =
-        this.semanticRatio > 0
+        this.effectiveSemanticRatio(searchText) > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [duckdbFtsBaseQuery, duckdbFtsBaseQueryParams] =
@@ -274,7 +294,7 @@ export class CachedbDAO {
     try {
       // Get the base query with filters applied once
       const textEmbedding =
-        this.semanticRatio > 0
+        this.effectiveSemanticRatio(searchText) > 0
           ? (await getGTEEmbedding(searchText)).join(",")
           : "";
       const [baseQuery, baseQueryParams] = this.getDuckdbFtsBaseQuery(
@@ -380,6 +400,7 @@ export class CachedbDAO {
     columns: string[] = [],
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
+    const semanticRatio = this.effectiveSemanticRatio(searchText);
 
     const columnsToSelect =
       columns.length === 0
@@ -398,7 +419,7 @@ export class CachedbDAO {
       `,
         [],
       ];
-    } else if (this.semanticRatio > 0) {
+    } else if (semanticRatio > 0) {
       const duckdbFtsWhereClause = filterWhereClause
         ? `${filterWhereClause} AND fts_score is not null`
         : "WHERE fts_score is not null ";
@@ -406,7 +427,7 @@ export class CachedbDAO {
       // Facet base query, hybrid path: include a concept if concept_name or
       // any synonym hits FTS. fts_score = strongest BM25 across both indexes.
       // syn_exact_score from the CTE is unused here (facet counts ignore it).
-      const escapedSearchText = searchText.replace(/[%_\\]/g, "\\$&");
+      const escapedSearchText = this.escapeLike(searchText);
       return [
         `
       with ${this.getSynonymScoresCTE()},
@@ -428,8 +449,8 @@ export class CachedbDAO {
         select
           sem_fts_scores.${columnsToSelect},
           (
-            ${this.semanticRatio} * GREATEST(embd_score, 0) +
-            (1 - ${this.semanticRatio}) * (fts_score / (fts_score + ${this.bm25SaturationK}))
+            ${semanticRatio} * GREATEST(embd_score, 0) +
+            (1 - ${semanticRatio}) * (fts_score / (fts_score + ${this.bm25SaturationK}))
           ) as hybrid_score
         from
           sem_fts_scores
@@ -445,7 +466,7 @@ export class CachedbDAO {
         : "WHERE score is not null ";
       // Facet base query, FTS-only: same shape, no embedding leg.
       // syn_exact_score from the CTE is unused here (facet counts ignore it).
-      const escapedSearchText = searchText.replace(/[%_\\]/g, "\\$&");
+      const escapedSearchText = this.escapeLike(searchText);
       return [
         `
       with ${this.getSynonymScoresCTE()},
@@ -504,6 +525,7 @@ export class CachedbDAO {
     columns: string[] = [],
   ): [string, any[]] => {
     const filterWhereClause = this.generateFilterWhereClause(filters);
+    const semanticRatio = this.effectiveSemanticRatio(searchText);
     const columnsToSelect =
       columns.length === 0
         ? "concept_id, concept_name, domain_id, vocabulary_id, concept_class_id, standard_concept, concept_code, valid_start_date, valid_end_date, invalid_reason" // Exclude embeddings from results
@@ -529,8 +551,7 @@ export class CachedbDAO {
       //   search_scores       -> hybrid: normalized fts+embedding; FTS-only: raw concept BM25
       //   (final select)      -> sums all signals, keeps any-signal rows
       const synonymCte = this.getSynonymScoresCTE();
-      // Escape SQL LIKE special chars so user-supplied % and _ are treated literally.
-      const escapedSearchText = searchText.replace(/[%_\\]/g, "\\$&");
+      const escapedSearchText = this.escapeLike(searchText);
 
       const conceptWithScores = `
         with ${synonymCte},
@@ -561,7 +582,7 @@ export class CachedbDAO {
       //   $1 = searchText        (= comparisons, BM25 on concept + synonym)
       //   $2 = escapedSearchText (LIKE patterns on concept + synonym)
       //   $3 = textEmbedding     (hybrid path only)
-      if (this.semanticRatio > 0) {
+      if (semanticRatio > 0) {
         // Hybrid: merge strongest concept/synonym BM25 into fts_score before
         // normalization so synonym-only matches rank as FTS hits too.
         searchScores = `
@@ -585,8 +606,8 @@ export class CachedbDAO {
               ${columnsToSelect}${columns.length === 0 ? ", " : ""}
               syn_exact_score,
               (
-                ${this.semanticRatio} * GREATEST(embd_score, 0) +
-                (1 - ${this.semanticRatio}) *
+                ${semanticRatio} * GREATEST(embd_score, 0) +
+                (1 - ${semanticRatio}) *
                 COALESCE(fts_score / (fts_score + ${this.bm25SaturationK}), 0)
               ) as hybrid_score
             from
@@ -610,7 +631,7 @@ export class CachedbDAO {
       }
 
       const finalScores =
-        this.semanticRatio > 0
+        semanticRatio > 0
           ? `
         select
           *,

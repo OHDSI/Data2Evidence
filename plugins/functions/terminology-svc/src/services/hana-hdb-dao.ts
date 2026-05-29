@@ -30,6 +30,23 @@ function assertSafeIdentifier(name: string, value: string) {
   }
 }
 
+const IDENTIFIER_PATTERNS: readonly RegExp[] = [
+  /^\d{4,}$/, // concept_id, SNOMED CT, MedDRA, RxNorm, CVX, DRG, CPT-1
+  /^[A-Za-z]?\d{2,}\.\d+[A-Za-z]?$/, // ICD-10/9-CM, OPCS-4 (E11.9, 250.00, K04.1, S72.001A)
+  /^\d{1,5}-\d{1,2}$/, // LOINC (2345-7)
+  /^\d{4,5}-\d{3,4}-\d{1,2}$/, // NDC (0078-0432-15)
+  /^[A-Za-z]\d{4}$/, // HCPCS Level II (G0001, J0290)
+  /^\d{4}[A-Za-z]$/, // CPT Category II/III (0001F, 0042T)
+  /^[A-Za-z]\d{2}[A-Za-z]{2}\d{2}$/, // ATC (A10BA02)
+  /^\d{3}[A-Za-z]\d{5}[A-Za-z]$/, // NUCC taxonomy (207Q00000X)
+  /^\d{4}\/\d$/, // ICD-O morphology (8000/3)
+];
+function isIdentifierQuery(s: string): boolean {
+  const t = s.trim();
+  if (t.length === 0 || /\s/.test(t)) return false;
+  return IDENTIFIER_PATTERNS.some((re) => re.test(t));
+}
+
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
@@ -162,7 +179,8 @@ export class HanaHDBDao {
     const isHybridEligible =
       this.semanticRatio > 0 &&
       searchText !== "" &&
-      (!sortBy || sortBy === "score");
+      (!sortBy || sortBy === "score") &&
+      !isIdentifierQuery(searchText);
 
     const client = await this.getHanaHDBConnection();
     try {
@@ -408,9 +426,6 @@ export class HanaHDBDao {
 
       const embedding = (await getGTEEmbedding(searchText)).join(",");
 
-      // Top-K cosine on DuckDB. Unfiltered here because the HANA cache only
-      // stores concept_id + concept_name_embedding — filter columns aren't
-      // available in DuckDB, so we filter-check this set on HANA below.
       const semTopKSql = `
         SELECT
           e.concept_id,
@@ -424,9 +439,6 @@ export class HanaHDBDao {
       `;
       const semTopK = await trexClient.query(semTopKSql);
 
-      // Apply user filters to the semantic candidates via a HANA round-trip,
-      // so the union below contains only filter-passing concepts on both
-      // sides. Skip the round-trip when no filters are set.
       let semKept: Array<{ concept_id: number; embd_score: number }> = [];
       if (semTopK.rows.length > 0) {
         if (!filterWhere) {
