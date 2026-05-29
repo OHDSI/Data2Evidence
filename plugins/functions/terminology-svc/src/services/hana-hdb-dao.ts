@@ -240,20 +240,33 @@ export class HanaHDBDao {
     const trexClient = await this.getTrexConnection();
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
-      const ftsAndFilter = filterWhere
-        ? filterWhere.replace("WHERE", "AND")
-        : "";
 
       const ftsSql = `
-        SELECT concept_id, SCORE() as fts_score
-        FROM ${this.vocabSchemaName}.concept
-        WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-        ${ftsAndFilter}
-        ORDER BY SCORE() DESC
+        WITH all_matches AS (
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept
+          WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+          UNION ALL
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept_synonym
+          WHERE CONTAINS(concept_synonym_name, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+        ),
+        matched AS (
+          SELECT concept_id, MAX(match_score) AS fts_score
+          FROM all_matches
+          GROUP BY concept_id
+        )
+        SELECT m.concept_id AS CONCEPT_ID, m.fts_score AS FTS_SCORE
+        FROM matched m
+        JOIN ${this.vocabSchemaName}.concept c ON c.concept_id = m.concept_id
+        ${filterWhere}
+        ORDER BY m.fts_score DESC
         LIMIT ${HANA_TOPK}
       `;
+      const wildcardSearch = `*${searchText}*`;
       const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        `*${searchText}*`,
+        wildcardSearch,
+        wildcardSearch,
       ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
 
       // totalHits = min(trueCount, HANA_TOPK)
@@ -366,15 +379,31 @@ export class HanaHDBDao {
         : "";
 
       const ftsSql = `
-        SELECT concept_id, SCORE() as fts_score
-        FROM ${this.vocabSchemaName}.concept
-        WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-        ${ftsAndFilter}
-        ORDER BY SCORE() DESC
+        WITH all_matches AS (
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept
+          WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+          UNION ALL
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept_synonym
+          WHERE CONTAINS(concept_synonym_name, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+        ),
+        matched AS (
+          SELECT concept_id, MAX(match_score) AS fts_score
+          FROM all_matches
+          GROUP BY concept_id
+        )
+        SELECT m.concept_id AS CONCEPT_ID, m.fts_score AS FTS_SCORE
+        FROM matched m
+        JOIN ${this.vocabSchemaName}.concept c ON c.concept_id = m.concept_id
+        ${filterWhere}
+        ORDER BY m.fts_score DESC
         LIMIT ${HANA_TOPK}
       `;
+      const wildcardSearch = `*${searchText}*`;
       const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        `*${searchText}*`,
+        wildcardSearch,
+        wildcardSearch,
       ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
 
       const embedding = (await getGTEEmbedding(searchText)).join(",");
@@ -759,9 +788,10 @@ export class HanaHDBDao {
       // probes, UNION ALL their (concept_id, score) rows, then MAX-aggregate
       // per concept_id. The aggregated score joins back to concept for
       // projection and filter application.
-      const qualifiedColumns = columns.length === 0
-        ? "c.*"
-        : columns.map((col) => `c.${col}`).join(", ");
+      const qualifiedColumns =
+        columns.length === 0
+          ? "c.*"
+          : columns.map((col) => `c.${col}`).join(", ");
       return [
         `
         with all_matches as (
