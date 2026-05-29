@@ -194,7 +194,8 @@ class TrexDao(DaoBase):
             else:
                 sql_query = pg_sql.SQL("""
                     SELECT table_name FROM information_schema.tables
-                    WHERE table_schema = {schema} AND table_name = {table};""")\
+                    WHERE table_catalog = current_database()
+                      AND table_schema = {schema} AND table_name = {table};""")\
                 .format(
                     schema = pg_sql.Literal(schema_only),
                     table = pg_sql.Literal(table)
@@ -238,7 +239,8 @@ class TrexDao(DaoBase):
             sql = pg_sql.SQL("""
                 SELECT column_name
                 FROM information_schema.columns
-                WHERE table_schema = {schema} AND table_name = {table}
+                WHERE table_catalog = current_database()
+                  AND table_schema = {schema} AND table_name = {table}
                 ORDER BY ordinal_position;
             """).format(
                 schema=pg_sql.Literal(schema_only),
