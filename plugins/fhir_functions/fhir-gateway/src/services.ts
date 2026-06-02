@@ -95,14 +95,6 @@ export const createFhirDataset = async (
 
   const datasetId = datasetPayload.id;
 
-  const portalDataset = await getPortalDataset(datasetId, token);
-
-  if (portalDataset?.fhirDatasetId) {
-    throw new Error(
-      `Portal dataset with id '${datasetId}' is already linked to a FHIR dataset!`,
-    );
-  }
-
   const fhirDatasetExists = await checkFhirDatasetExists(
     datasetPayload.id,
     fhirServerAPI,
@@ -110,6 +102,15 @@ export const createFhirDataset = async (
   if (fhirDatasetExists) {
     throw new Error(
       `FHIR dataset with id '${datasetPayload.id}' already exists!`,
+    );
+  }
+
+  const portalDataset = await getPortalDataset(datasetId, token);
+
+  // Portal dataset should not exist before FHIR dataset creation
+  if (portalDataset !== null) {
+    throw new Error(
+      `Portal dataset with id '${datasetId}' already exists! FHIR dataset must be created first.`,
     );
   }
 
