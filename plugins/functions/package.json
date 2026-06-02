@@ -575,7 +575,6 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
@@ -724,6 +723,8 @@
           "dataflowmgmt.prefect.flowRun.cancel",
           "dataflowmgmt.prefect.flowRun.add",
           "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.delete",
           "dataflowmgmt.prefect.testRun.add",
           "dataflowmgmt.prefect.taskRun.read",
           "dataflowmgmt.jobHistory.filter.read",
@@ -2391,6 +2392,17 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/input-auth-token",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.delete"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
           ]
         },
         {
