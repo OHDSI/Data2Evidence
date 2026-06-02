@@ -17,7 +17,7 @@ export type ConceptSetSummary = {
 
 export class TerminologyAPI extends BaseAPI {
   constructor() {
-    super("terminology-svc", "terminology-svc");
+    super("terminology-svc", "terminology");
   }
 
   // LLM-actionable error mapping. Inspect HTTP status + body to surface
@@ -33,13 +33,11 @@ export class TerminologyAPI extends BaseAPI {
         nameHint)
     ) {
       throw new Error(
-        `A concept set named '${nameHint}' already exists in this dataset. Use update_concept_set or pick a different name.`
+        `A concept set named '${nameHint}' already exists in this dataset. Use update_concept_set or pick a different name.`,
       );
     }
     if (status === 404) {
-      throw new Error(
-        "Concept set not found. It may have been deleted."
-      );
+      throw new Error("Concept set not found. It may have been deleted.");
     }
     if (
       bodyMessage &&
@@ -51,29 +49,29 @@ export class TerminologyAPI extends BaseAPI {
     }
     if (status && status >= 500) {
       throw new Error(
-        "terminology-svc returned a server error. Retry; if it persists, the service may be down."
+        "terminology-svc returned a server error. Retry; if it persists, the service may be down.",
       );
     }
     const msg: string = error?.message ?? "";
     if (error?.code === "ECONNABORTED" || msg.includes("timeout")) {
       throw new Error(
-        "Request to terminology-svc timed out. The concept set may be very large — try get_concept_set first to confirm size."
+        "Request to terminology-svc timed out. The concept set may be very large — try get_concept_set first to confirm size.",
       );
     }
     throw new Error(
-      "Could not reach terminology-svc. The service may be down."
+      "Could not reach terminology-svc. The service may be down.",
     );
   }
 
   async listConceptSets(
     authorization: string,
-    datasetId: string
+    datasetId: string,
   ): Promise<ConceptSetSummary[]> {
     try {
       const { data } = await this.call<ConceptSetSummary[]>(
         "get",
         `/concept-set?datasetId=${encodeURIComponent(datasetId)}`,
-        { authorization }
+        { authorization },
       );
       return data;
     } catch (error) {
@@ -84,13 +82,13 @@ export class TerminologyAPI extends BaseAPI {
   async getConceptSet(
     authorization: string,
     datasetId: string,
-    conceptSetId: number
+    conceptSetId: number,
   ): Promise<any> {
     try {
       const { data } = await this.call<any>(
         "get",
         `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
-        { authorization }
+        { authorization },
       );
       return data;
     } catch (error) {
@@ -101,14 +99,19 @@ export class TerminologyAPI extends BaseAPI {
   async createConceptSet(
     authorization: string,
     datasetId: string,
-    payload: { name: string; concepts: ConceptItem[]; shared: boolean; userName: string }
+    payload: {
+      name: string;
+      concepts: ConceptItem[];
+      shared: boolean;
+      userName: string;
+    },
   ): Promise<number> {
     try {
       const { data } = await this.call<number>(
         "post",
         `/concept-set?datasetId=${encodeURIComponent(datasetId)}`,
         { authorization },
-        payload
+        payload,
       );
       return data;
     } catch (error) {
@@ -120,14 +123,19 @@ export class TerminologyAPI extends BaseAPI {
     authorization: string,
     datasetId: string,
     conceptSetId: number,
-    payload: Partial<{ name: string; concepts: ConceptItem[]; shared: boolean; userName: string }>
+    payload: Partial<{
+      name: string;
+      concepts: ConceptItem[];
+      shared: boolean;
+      userName: string;
+    }>,
   ): Promise<number> {
     try {
       const { data } = await this.call<number>(
         "put",
         `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
         { authorization },
-        payload
+        payload,
       );
       return Number(data);
     } catch (error) {
@@ -138,13 +146,13 @@ export class TerminologyAPI extends BaseAPI {
   async deleteConceptSet(
     authorization: string,
     datasetId: string,
-    conceptSetId: number
+    conceptSetId: number,
   ): Promise<number> {
     try {
       const { data } = await this.call<number>(
         "delete",
         `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
-        { authorization }
+        { authorization },
       );
       return Number(data);
     } catch (error) {
@@ -156,14 +164,14 @@ export class TerminologyAPI extends BaseAPI {
   async getIncludedConcepts(
     authorization: string,
     datasetId: string,
-    conceptSetIds: number[]
+    conceptSetIds: number[],
   ): Promise<number[]> {
     try {
       const { data } = await this.call<number[]>(
         "post",
         "/concept-set/included-concepts",
         { authorization, timeout: 60000 },
-        { conceptSetIds, datasetId }
+        { conceptSetIds, datasetId },
       );
       return data;
     } catch (error) {
@@ -175,14 +183,14 @@ export class TerminologyAPI extends BaseAPI {
   async previewResolution(
     authorization: string,
     datasetId: string,
-    concepts: ConceptItem[]
+    concepts: ConceptItem[],
   ): Promise<number[]> {
     try {
       const { data } = await this.call<number[]>(
         "post",
         "/concept-set/resolveConceptSetExpression",
         { authorization, timeout: 60000 },
-        { concepts, datasetId }
+        { concepts, datasetId },
       );
       return data;
     } catch (error) {
