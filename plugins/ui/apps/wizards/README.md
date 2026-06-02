@@ -116,6 +116,10 @@ wizards/
 - **Authentication**: Handled by portal (OIDC)
 - **Authorization**: RESEARCHER role required
 
+## CDW Configuration
+
+For customizing wizards to work with different CDW configurations (e.g., HANA Lean), see [CONFIGURATION.md](CONFIGURATION.md).
+
 ## Related Documentation
 
 - [PRD: Wizards Single-SPA App](docs/projects/2026-01-19_1633_cohort-explorer-scenarios/1633-prd.md)
