@@ -41,9 +41,10 @@ export interface DataflowRevisionDto {
 export interface DataflowExportDto {
   id: string;
   name: string;
-  createdBy: string;
-  createdDate: string;
-  flow: ReactFlowDto;
+  nodes: NodeState[];
+  edges: EdgeState[];
+  variables: KeyValue[];
+  importLibs: string[];
 }
 
 export interface SaveDataflowDto {

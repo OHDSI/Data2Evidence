@@ -14,23 +14,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.getByTestId('button').nth(1).click()
 
-  // Install/Update search_embedding_plugin through setup
-  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
-  await page.getByRole('link', { name: 'Setup' }).click()
-  await page
-    .locator('div')
-    .filter({ hasText: /^PluginsManage pluginsConfigure$/ })
-    .getByTestId('button')
-    .click()
-  const search_embedding_plugin_row = page.getByRole('row', { name: 'search-embedding-flow' })
-  await expect(search_embedding_plugin_row).toBeVisible()
-  if (!(await search_embedding_plugin_row.getByText('Latest').isVisible())) {
-    console.info('Installing search embedding plugin...')
-    await page.getByRole('row', { name: 'search-embedding-flow' }).getByTestId('button').click()
-    await expect(page.getByText('successful')).toBeVisible()
-  }
-
   // Embedding concepts in admin portal
+  await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Datasets' }).click()
   await page.locator('tr').filter({ hasText: 'Demo dataset' }).getByText('Select action').click()
   await page.getByRole('option', { name: 'Setup semantic search' }).click()

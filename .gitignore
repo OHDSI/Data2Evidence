@@ -73,4 +73,6 @@ ui/**/*private*
 ui/.nx
 ui/pyqetest
 scripts/dist/
+scripts/docker-compose-embed.ts
 scripts/create_users.mjs
+*.bun-build

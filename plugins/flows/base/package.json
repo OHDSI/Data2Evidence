@@ -22,6 +22,7 @@
         {
           "name": "hana_load_plugin",
           "entrypoint": "flows.hana_load_plugin.flow.hana_load_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -408,8 +409,73 @@
           "type": "create_cdw_config"
         },
         {
+          "name": "create_cachedb_hana_plugin",
+          "entrypoint": "flows.create_cachedb_hana_plugin.flow.create_cachedb_hana_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/CreateHanaCacheOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "HanaCacheFlowAction": {
+                "enum": [
+                  "create_hana_cache"
+                ],
+                "title": "HanaCacheFlowAction",
+                "type": "string"
+              },
+              "CreateHanaCacheOptions": {
+                "properties": {
+                  "flowActionType": {
+                    "$ref": "#/definitions/HanaCacheFlowAction"
+                  },
+                  "databaseCode": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Databasecode"
+                  },
+                  "schemaName": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": null,
+                    "title": "Schemaname"
+                  }
+                },
+                "required": [
+                  "flowActionType"
+                ],
+                "title": "CreateHanaCacheOptions",
+                "type": "object"
+              }
+            }
+          },
+          "type": "create_cachedb_hana"
+        },
+        {
           "name": "data_characterization_plugin",
           "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -484,6 +550,7 @@
         {
           "name": "dqd_plugin",
           "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -842,11 +909,6 @@
                       { "type": "null" }
                     ],
                     "default": null
-                  },
-                  "use_cache_db": {
-                    "title": "Use Cache Db",
-                    "type": "boolean",
-                    "default": false
                   }
                 },
                 "required": [
@@ -927,6 +989,7 @@
         {
           "name": "shiny_live_plugin",
           "entrypoint": "flows.shiny_live_plugin.flow.shiny_live_plugin",
+          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "type": "object",
             "title": "Parameters",
