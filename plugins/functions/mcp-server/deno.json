@@ -31,7 +31,6 @@
     "./src/config/server.config": "./src/config/server.config.ts",
     "./src/tools/strategus.tools": "./src/tools/strategus.tools.ts",
     "./src/tools/concept-set-management.tools": "./src/tools/concept-set-management.tools.ts",
-    "./src/tools/concept-set-resolution.tools": "./src/tools/concept-set-resolution.tools.ts",
     "./src/utils/strategus_helpers": "./src/utils/strategus_helpers.ts",
     "./src/resources/cohort.resources": "./src/resources/cohort.resources.ts",
     "@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk",
