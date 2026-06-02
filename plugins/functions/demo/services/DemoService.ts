@@ -360,7 +360,7 @@ export class DemoService {
     const roles = await userMgmtAPI.getMyRoles();
     const accessibleDatasetIds = new Set(
       roles.datasetRoles
-        .filter((r) => r.role === "RESEARCHER")
+        .filter((r) => r.role === "STUDY_RESEARCHER")
         .map((r) => r.datasetId),
     );
     // For standalone phenotype flow, get the first dataset the user has access to

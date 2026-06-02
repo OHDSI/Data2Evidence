@@ -171,7 +171,7 @@ COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_ha
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=false
+ENV INSTALL_SQLALCHEMY_HANA=true
 
 # DataQualityDashboard writes errorReportSql.txt to CWD (/app) at runtime.
 RUN chown docker:docker /app
