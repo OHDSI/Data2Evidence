@@ -98,7 +98,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "Create Concept Set",
       description:
-        "Create a new private concept set from a list of OMOP concepts. Use preview_concept_set_resolution first to validate the expression with the user. Returns the new concept set ID. Defaults to private (shared=false).",
+        "Create a new private concept set from a list of OMOP concepts. Returns the new concept set ID. Defaults to private (shared=false).",
       inputSchema: CreateConceptSetInput,
     },
     async ({ name, concepts }, { requestInfo }) => {

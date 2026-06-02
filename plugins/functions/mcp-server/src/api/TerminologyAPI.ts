@@ -68,11 +68,14 @@ export class TerminologyAPI extends BaseAPI {
     datasetId: string,
   ): Promise<ConceptSetSummary[]> {
     try {
-      const { data } = await this.call<ConceptSetSummary[]>(
+      const { data, status } = await this.call<ConceptSetSummary[]>(
         "get",
         `/concept-set?datasetId=${encodeURIComponent(datasetId)}`,
         { authorization },
       );
+      if (status !== 200 || !Array.isArray(data)) {
+        throw { response: { status } };
+      }
       return data;
     } catch (error) {
       throw this.mapError(error);
@@ -85,11 +88,14 @@ export class TerminologyAPI extends BaseAPI {
     conceptSetId: number,
   ): Promise<any> {
     try {
-      const { data } = await this.call<any>(
+      const { data, status } = await this.call<any>(
         "get",
         `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
         { authorization },
       );
+      if (status !== 200 || !data) {
+        throw { response: { status: status === 200 ? 404 : status } };
+      }
       return data;
     } catch (error) {
       throw this.mapError(error);
@@ -155,44 +161,6 @@ export class TerminologyAPI extends BaseAPI {
         { authorization },
       );
       return Number(data);
-    } catch (error) {
-      throw this.mapError(error);
-    }
-  }
-
-  // 60s timeout: hierarchical concept sets can be large
-  async getIncludedConcepts(
-    authorization: string,
-    datasetId: string,
-    conceptSetIds: number[],
-  ): Promise<number[]> {
-    try {
-      const { data } = await this.call<number[]>(
-        "post",
-        "/concept-set/included-concepts",
-        { authorization, timeout: 60000 },
-        { conceptSetIds, datasetId },
-      );
-      return data;
-    } catch (error) {
-      throw this.mapError(error);
-    }
-  }
-
-  // 60s timeout: same resolution path as getIncludedConcepts
-  async previewResolution(
-    authorization: string,
-    datasetId: string,
-    concepts: ConceptItem[],
-  ): Promise<number[]> {
-    try {
-      const { data } = await this.call<number[]>(
-        "post",
-        "/concept-set/resolveConceptSetExpression",
-        { authorization, timeout: 60000 },
-        { concepts, datasetId },
-      );
-      return data;
     } catch (error) {
       throw this.mapError(error);
     }

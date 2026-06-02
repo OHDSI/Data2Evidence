@@ -224,14 +224,3 @@ export const DeleteConceptSetInput = {
   conceptSetId: z.number().describe("The concept set ID to delete"),
 };
 
-export const GetIncludedConceptsInput = {
-  conceptSetId: z.number().describe("The saved concept set ID to resolve"),
-};
-
-export const PreviewConceptSetResolutionInput = {
-  concepts: z
-    .array(ConceptItemSchema)
-    .describe(
-      "Candidate concept expression to preview — same format as the concepts array in create_concept_set. Use this to validate the expression BEFORE saving."
-    ),
-};
