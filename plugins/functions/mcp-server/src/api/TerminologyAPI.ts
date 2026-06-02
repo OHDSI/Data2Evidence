@@ -74,7 +74,7 @@ export class TerminologyAPI extends BaseAPI {
         { authorization },
       );
       if (status !== 200 || !Array.isArray(data)) {
-        throw { response: { status } };
+        throw { response: { status: status === 200 ? 502 : status } };
       }
       return data;
     } catch (error) {
