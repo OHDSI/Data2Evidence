@@ -15,6 +15,8 @@ interface FlowRunParams {
 export class PrefectAPI {
   private readonly baseURL: string;
   private readonly token: string;
+  private static readonly FLOW_RUN_ID_PATTERN =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   constructor(token: string) {
     this.token = token;
@@ -338,9 +340,18 @@ export class PrefectAPI {
     };
   }
 
+  private sanitizeFlowRunId(flowrunId: string): string {
+    const normalizedFlowrunId = flowrunId.trim().toLowerCase();
+    if (!PrefectAPI.FLOW_RUN_ID_PATTERN.test(normalizedFlowrunId)) {
+      throw new Error("Invalid flow run id format");
+    }
+    return normalizedFlowrunId;
+  }
+
   async createInputAuthToken(flowrunId: string) {
     const retries = 3;
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
+    const safeFlowrunId = this.sanitizeFlowRunId(flowrunId);
 
     const thirdPartyToken: string | undefined = decode(
       this.token.replace(/bearer /i, ""),
@@ -359,7 +370,7 @@ export class PrefectAPI {
     });
     const errorMessage =
       "Error occurred while passing user token to the flow run";
-    const url = `${this.baseURL}/flow_runs/${flowrunId}/input`;
+    const url = `${this.baseURL}/flow_runs/${encodeURIComponent(safeFlowrunId)}/input`;
 
     for (let i = 0; i < retries; i++) {
       try {
@@ -369,10 +380,12 @@ export class PrefectAPI {
         }
         return await response.json();
       } catch (error) {
-        if (i < retries) {
+        if (i < retries - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 500ms before retrying
         } else {
-          throw new Error(`${errorMessage}: ${error.message}`);
+          const message =
+            error instanceof Error ? error.message : String(error);
+          throw new Error(`${errorMessage}: ${message}`);
         }
       }
     }
@@ -383,8 +396,11 @@ export class PrefectAPI {
     const errorMessage =
       'Error occurred while deleting "authtoken" flowrun input';
     const key = "authtoken"; // keyword "authtoken" must match the object name in Python flow
+    const safeFlowrunId = this.sanitizeFlowRunId(flowrunId);
     const options = this.createOptions("DELETE");
-    const url = `${this.baseURL}/flow_runs/${flowrunId}/input/${key}`;
+    const url = `${this.baseURL}/flow_runs/${encodeURIComponent(
+      safeFlowrunId,
+    )}/input/${key}`;
 
     for (let i = 0; i < retries; i++) {
       try {
@@ -394,10 +410,12 @@ export class PrefectAPI {
         }
         return response.status == 204;
       } catch (error) {
-        if (i < retries) {
+        if (i < retries - 1) {
           await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 500ms before retrying
         } else {
-          throw new Error(`${errorMessage}: ${error.message}`);
+          const message =
+            error instanceof Error ? error.message : String(error);
+          throw new Error(`${errorMessage}: ${message}`);
         }
       }
     }
