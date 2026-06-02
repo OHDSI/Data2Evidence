@@ -17,8 +17,6 @@ const RESOLUTION_CAP = 2000;
  * Register concept set resolution tools.
  * - get_included_concepts          (resolves a SAVED set → concept-id list)
  * - preview_concept_set_resolution (resolves a candidate expression → concept-id list, before save)
- *
- * Both have a 60s timeout (configured in TerminologyAPI) and a 2000-concept cap.
  */
 export function registerConceptSetResolutionTools(server: McpServer) {
   // ==================== GET INCLUDED CONCEPTS ====================

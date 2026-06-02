@@ -23,7 +23,7 @@ registerCohortValidationTools(server);
 // Register Strategus tools
 registerStrategusTools(server);
 
-// Register concept set tools (DATA-651)
+// Register concept set tools
 registerConceptSetManagementTools(server);
 registerConceptSetResolutionTools(server);
 
