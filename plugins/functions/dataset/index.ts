@@ -198,6 +198,8 @@ export class DatasetRouter {
           }
 
           fhirSchemaName = fhirDatasetId.replace(/-/g, "_");
+          vocabSchema = fhirSchemaName;
+          resultsSchemaName = fhirSchemaName;
         } else {
           const newCacheSchemaName = schemaName
             ? schemaName
@@ -289,10 +291,8 @@ export class DatasetRouter {
             dialect: isFhirDataset ? DbDialect.Duckdb : (dialect as DbDialect),
             databaseCode: isFhirDataset ? env.FHIR_DATABASE_CODE : databaseCode,
             schemaName: isFhirDataset ? fhirSchemaName : schemaName,
-            vocabSchemaName: isFhirDataset ? fhirSchemaName : vocabSchema,
-            resultsSchemaName: isFhirDataset
-              ? fhirSchemaName
-              : resultsSchemaName,
+            vocabSchemaName: vocabSchema,
+            resultsSchemaName: resultsSchemaName,
             dataModel,
             plugin,
             tenantId,

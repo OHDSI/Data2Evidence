@@ -1,3 +1,4 @@
+import { get } from "http";
 import { FhirServerAPI } from "./api/FhirServerAPI";
 
 import { PortalAPI } from "./api/PortalAPI";
@@ -31,6 +32,28 @@ const checkPortalDatasetExists = async (
   token: string,
 ): Promise<boolean> => {
   return (await getPortalDataset(portalDatasetId, token)) !== null;
+};
+
+const getPortalDatasetIdByStudyToken = async (
+  studyToken: string,
+  token: string,
+): Promise<string> => {
+  try {
+    const portalAPI = new PortalAPI(token);
+    const datasets = await portalAPI.getDatasets();
+    const dataset = datasets.find((d) => d.tokenStudyCode === studyToken);
+    if (!dataset) {
+      throw new Error(`No portal dataset found for studyToken '${studyToken}'`);
+    }
+    return dataset.id;
+  } catch (error: any) {
+    console.error(
+      `Error fetching portal dataset id for studyToken '%s':`,
+      studyToken,
+      error,
+    );
+    throw error;
+  }
 };
 
 const checkFhirDatasetExists = async (
@@ -120,17 +143,11 @@ export const deleteFhirDataset = async (
 };
 
 export const ingestBundle = async (
-  datasetId: string,
+  studyToken: string,
   bundle: any,
   token: string,
 ): Promise<IFhirApiResponse<Record<string, unknown>>> => {
-  const datasetExists = await checkPortalDatasetExists(datasetId, token);
-
-  if (!datasetExists) {
-    throw new Error(
-      `Portal dataset with id '${datasetId}' does not exist!`,
-    );
-  }
+  const datasetId = await getPortalDatasetIdByStudyToken(studyToken, token);
 
   const fhirServerAPI = new FhirServerAPI(token);
 
@@ -149,7 +166,7 @@ export const ingestBundle = async (
 };
 
 export const forwardFhirRequest = async (
-  datasetId: string,
+  studyToken: string,
   method: string,
   resourcePath: string,
   queryParams: any,
@@ -157,12 +174,7 @@ export const forwardFhirRequest = async (
   incomingHeaders: Headers,
   token: string,
 ): Promise<IFhirApiResponse<Record<string, unknown>>> => {
-  const datasetExists = await checkPortalDatasetExists(datasetId, token);
-  if (!datasetExists) {
-    throw new Error(
-      `Portal dataset with id '${datasetId}' does not exist!`,
-    );
-  }
+  const datasetId = await getPortalDatasetIdByStudyToken(studyToken, token);
 
   const fhirServerAPI = new FhirServerAPI(token);
 
@@ -170,6 +182,10 @@ export const forwardFhirRequest = async (
     datasetId,
     fhirServerAPI,
   );
+
+  if (!fhirDatasetExists) {
+    throw new Error(`FHIR dataset with id '${datasetId}' does not exist!`);
+  }
 
   if (!fhirDatasetExists) {
     throw new Error(`FHIR dataset with id '${datasetId}' does not exist!`);

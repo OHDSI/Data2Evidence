@@ -123,7 +123,7 @@ export class FhirRouter {
     );
 
     this.router.post(
-      "/dataset/:id",
+      "/dataset/:studyToken",
       validateBundle(),
       async (req: Request, res: Response) => {
         // this endpoint should only allow posting of bundles
@@ -134,11 +134,11 @@ export class FhirRouter {
 
         const token = this.requireToken(req, res);
         if (!token) return;
-        const { id } = req.params;
+        const { studyToken } = req.params;
         const bundle = req.body;
 
         try {
-          const response = await ingestBundle(id, bundle, token);
+          const response = await ingestBundle(studyToken, bundle, token);
           return res.status(response.status).json(response.data);
         } catch (error: any) {
           console.error(`Error posting bundle:`, error);
@@ -151,7 +151,7 @@ export class FhirRouter {
     );
 
     this.router.all(
-      "/dataset/:id/*",
+      "/dataset/:studyToken/*",
       validateProxyDto(),
       async (req: Request, res: Response) => {
         const errors = validationResult(req);
@@ -161,14 +161,14 @@ export class FhirRouter {
 
         const token = this.requireToken(req, res);
         if (!token) return;
-        const { "0": resourcePath, id } = req.params;
+        const { "0": resourcePath, studyToken } = req.params;
         const method = req.method;
         const queryParams = req.query ? req.query : {};
         const body = req.body ? req.body : {};
 
         try {
           const response = await forwardFhirRequest(
-            id,
+            studyToken,
             method,
             resourcePath,
             queryParams,

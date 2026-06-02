@@ -95,7 +95,7 @@
           ]
         },
         {
-          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_-]+/(.*)",
+          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_]{1,80}/(.*)",
           "scopes": [
             "gateway.fhir.forward"
           ],
@@ -108,7 +108,7 @@
           ]
         },
         {
-          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_-]+$",
+          "path": "^/fhir-gateway/dataset/[a-zA-Z0-9_]{1,80}$",
           "scopes": [
             "gateway.fhir.forward"
           ],
