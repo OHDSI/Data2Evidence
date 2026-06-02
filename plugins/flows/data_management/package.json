@@ -22,6 +22,7 @@
                 {
                     "name": "data_management_plugin",
                     "entrypoint": "flows.data_management_plugin.flow.data_management_plugin",
+                    "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
                     "parameter_openapi_schema": {
                         "title": "Parameters",
                         "type": "object",
