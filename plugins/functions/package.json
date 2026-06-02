@@ -1469,6 +1469,15 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/(.*)/transform-to-webapi$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset$",
           "scopes": [
             "portal.dataset.update"
