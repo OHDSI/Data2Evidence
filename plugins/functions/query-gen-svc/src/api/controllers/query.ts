@@ -314,19 +314,12 @@ function enrichConfigWithBasicDataInteraction(
         oneToN: false,
         condition: false,
     });
-    // reuse PATIENT_ID as cased per CDM/dialect
-    const tableMapping = config.advancedSettings.tableMapping;
-    const patientPlaceholders = [
-        "@PATIENT",
-        ...config.advancedSettings.tableTypePlaceholderMap.factTable.attributeTables.map(
-            (attributeTable: { placeholder: string }) =>
-                attributeTable.placeholder
-        ),
-    ];
-    patientPlaceholders.forEach((placeholder) => {
-        const patientId = tableMapping[`${placeholder}.PATIENT_ID`];
-        if (patientId) {
-            tableMapping[`${placeholder}.INTERACTION_ID`] = patientId;
-        }
-    });
+
+    const patientId =
+        config.advancedSettings.tableMapping["@PATIENT.PATIENT_ID"];
+    // use PATIENT_ID as cased per CDM/dialect
+    if (patientId) {
+        config.advancedSettings.tableMapping["@PATIENT.INTERACTION_ID"] =
+            patientId;
+    }
 }
