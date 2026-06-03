@@ -34,6 +34,12 @@ export class PrefectController {
           .send({ message: "Missing required field: datasetId" });
       }
 
+      if (!tokenStudyCode) {
+        return res
+          .status(400)
+          .send({ message: "Missing required field: tokenStudyCode" });
+      }
+
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
         datasetId,

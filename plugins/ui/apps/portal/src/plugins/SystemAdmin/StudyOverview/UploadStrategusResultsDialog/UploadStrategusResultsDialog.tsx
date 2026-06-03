@@ -136,8 +136,9 @@ const UploadStrategusResultsDialog: FC<UploadStrategusResultsDialogProps> = ({ s
     setFeedback({});
 
     try {
-      // Upload file to Supabase Storage
-      const uploadResponse = await api.strategusResults.uploadStrategusResultsFile(study.studyId, file);
+      // Upload file to Supabase Storage — use tokenStudyCode as the storage prefix
+      // so the flow's listFilesFromStrategusResults(tokenStudyCode) lookup finds it.
+      const uploadResponse = await api.strategusResults.uploadStrategusResultsFile(study.tokenStudyCode, file);
 
       console.log("Upload response:", uploadResponse);
 
