@@ -445,7 +445,7 @@ export function generateEmptyConfig(callback: CallBackInterface) {
   callback(
     null,
     getEmptyConfig(
-      EnvVarUtils.getAnalyticsConnectionParameters({ tag: "analytics" })
+      EnvVarUtils.getAnalyticsConnectionParameters({ tag: "cdw" })
     )
   );
 }
