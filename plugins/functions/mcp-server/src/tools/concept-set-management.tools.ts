@@ -66,7 +66,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "Get Concept Set",
       description:
-        "Get one concept set by ID. Returns the SAVED definition: name, shared, and the concept expression (rule with descendants/excludes flags). Does NOT return the resolved concept-id list — call get_included_concepts for that.",
+        "Get one concept set by ID. Returns the SAVED definition: name, shared, and the concept expression (rule with descendants/excludes flags). Does NOT return the resolved concept-id list — only the saved expression.",
       inputSchema: GetConceptSetInput,
     },
     async ({ conceptSetId }, { requestInfo }) => {
