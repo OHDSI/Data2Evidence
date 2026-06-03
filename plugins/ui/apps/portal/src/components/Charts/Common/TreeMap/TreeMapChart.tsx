@@ -22,10 +22,9 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
-  // Create a unique key for each item using conceptId (value[3]) to avoid
-  // false matches when multiple nodes share the same conceptName (value[4])
+  // Create a unique key for each item using conceptId (value[3])
   const getItemKey = (item: any) => {
-    return item.value?.[3] ?? item.name;
+    return item.value?.[3];
   };
 
   // Detect if records per person data is meaningful (not just placeholder values)
