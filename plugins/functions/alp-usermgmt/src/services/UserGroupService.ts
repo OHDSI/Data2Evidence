@@ -447,6 +447,21 @@ export class UserGroupService {
       const active = !user.isSuspended
       const localUserId = idpToLocalId.get(user.id) || user.id
 
+      if (userRoles.length === 0) {
+        result.push({
+          id: null,
+          userId: localUserId,
+          b2cGroupId: null,
+          username: user.username,
+          role: null,
+          tenantId: env.APP_TENANT_ID,
+          studyId: null,
+          system: null,
+          active
+        })
+        continue
+      }
+
       for (const role of userRoles) {
         const { name } = role
         const logtoRole = logtoRoleValues.find(r => name === r || name.startsWith(r + '.')) || name
