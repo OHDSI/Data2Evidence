@@ -22,11 +22,13 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
-  // Create a normalized string key for each item using conceptId (value[3]),
-  // falling back to item.name when conceptId is missing/falsy.
+  // Create a composite key from conceptId (value[3]) and conceptPath (value[4]).
+  // Neither field alone is unique: two nodes can share a conceptId with different paths,
+  // or share a name with different conceptIds. The combination is always unique.
   const getItemKey = (item: any): string => {
     const conceptId = item.value?.[3];
-    return conceptId != null ? String(conceptId) : item.name ?? "";
+    const conceptPath = item.value?.[4] ?? item.name ?? "";
+    return `${conceptId ?? ""}-${conceptPath}`;
   };
 
   // Detect if records per person data is meaningful (not just placeholder values)
@@ -185,17 +187,20 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   // Merge with extra configs if provided
   const option = extraChartConfigs ? { ...baseOption, ...extraChartConfigs } : baseOption;
 
-  const handleNodeClick = (conceptId: any, conceptName: string) => {
+  const handleNodeClick = (conceptId: any, conceptName: string, conceptPath: string) => {
+    // Build the same composite key that getItemKey produces so buildStyledData
+    // can match it and apply the border highlight to exactly the right node.
+    const itemKey = `${conceptId ?? ""}-${conceptPath}`;
     const normalizedId = conceptId != null ? String(conceptId) : conceptName;
     setSelectedConcept({ id: normalizedId, name: conceptName });
-    // Use normalizedId as the unique key — must match what getItemKey produces
-    setSelectedItemKey(normalizedId);
+    setSelectedItemKey(itemKey);
   };
 
   const onEvents = {
     click: (e: any) => {
       // e.value[3] = conceptId, e.value[4] = conceptPath (if available), e.name = display name
-      return handleNodeClick(e.value[3], e.value[4] || e.name);
+      const conceptPath = e.value?.[4] ?? e.name ?? "";
+      return handleNodeClick(e.value[3], e.value[4] || e.name, conceptPath);
     },
     datarangeselected: (e: any) => {
       if (e.selected != null) {
