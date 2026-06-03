@@ -23,8 +23,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
   // Create a composite key from conceptId (value[3]) and conceptPath (value[4]).
-  // Neither field alone is unique: two nodes can share a conceptId with different paths,
-  // or share a name with different conceptIds. The combination is always unique.
+  // Two nodes can share a conceptId with different paths or share a name with different conceptIds.
   const getItemKey = (item: any): string => {
     const conceptId = item.value?.[3];
     const conceptPath = item.value?.[4] ?? item.name ?? "";
@@ -191,9 +190,11 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     // Build the same composite key that getItemKey produces so buildStyledData
     // can match it and apply the border highlight to exactly the right node.
     const itemKey = `${conceptId ?? ""}-${conceptPath}`;
-    const normalizedId = conceptId != null ? String(conceptId) : conceptName;
-    setSelectedConcept({ id: normalizedId, name: conceptName });
     setSelectedItemKey(itemKey);
+    // Only trigger the drilldown fetch when conceptId is present.
+    if (conceptId != null) {
+      setSelectedConcept({ id: String(conceptId), name: conceptName });
+    }
   };
 
   const onEvents = {

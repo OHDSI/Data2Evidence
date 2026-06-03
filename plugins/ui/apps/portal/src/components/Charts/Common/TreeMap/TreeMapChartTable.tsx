@@ -76,7 +76,7 @@ const TreeMapChartTable: FC<TreeMapChartTableProps> = ({ title, data, setSelecte
       // Parse existing format for treemap chart
       const mappedData = treeMapTableData.map((obj: any) => ({
         name:
-          obj["CONCEPTPATH"]
+          (obj["CONCEPTPATH"] ?? "")
             ?.split("||")
             .filter((s: string) => s.trim() !== "")
             .pop()
