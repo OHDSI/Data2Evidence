@@ -448,8 +448,9 @@ export class UserGroupService {
       const localUserId = idpToLocalId.get(user.id) || user.id
 
       if (userRoles.length === 0) {
+        const syntheticId = `no-role:${localUserId}`
         result.push({
-          id: null,
+          id: syntheticId,
           userId: localUserId,
           b2cGroupId: null,
           username: user.username,
