@@ -81,7 +81,12 @@ const SharedDrilldown: FC<SharedDrilldownProps> = ({ flowRunId, sourceKey, datas
   }, [getDrilldownData]);
 
   useEffect(() => {
-    setLeafConceptName(selectedConcept?.name.split("||").pop() || "");
+    setLeafConceptName(
+      selectedConcept?.name
+        .split("||")
+        .filter((s: string) => s.trim() !== "")
+        .pop() || ""
+    );
   }, [selectedConcept]);
 
   const renderDrilldownCharts = () => {

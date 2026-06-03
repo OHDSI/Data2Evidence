@@ -22,9 +22,10 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
-  // Create a unique key for each item
+  // Create a unique key for each item using conceptId (value[3]) to avoid
+  // false matches when multiple nodes share the same conceptName (value[4])
   const getItemKey = (item: any) => {
-    return item.value?.[4] || item.name;
+    return item.value?.[3] ?? item.name;
   };
 
   // Detect if records per person data is meaningful (not just placeholder values)
@@ -67,7 +68,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         };
       });
     },
-    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor],
+    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]
   );
 
   // Compute chart data on each render, reading the current visualMap range from the ECharts instance.
@@ -96,6 +97,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         // Parse conceptPath string, replace || with breaklines with growing indentation
         const parsedConceptPath = conceptPath
           .split("||")
+          .filter((s: string) => s.trim() !== "")
           .map((e: string, index: number) => {
             return `<div style="padding-left: ${index * 10}px">${e.trim()}</div>`;
           })
@@ -111,7 +113,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         // Only show records per person if the data has meaningful values
         if (hasRecordsPerPerson) {
           tooltipLines.push(
-            `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${formatNumber(recordsPerPerson)}`,
+            `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${formatNumber(recordsPerPerson)}`
           );
         }
 
@@ -182,17 +184,17 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   // Merge with extra configs if provided
   const option = extraChartConfigs ? { ...baseOption, ...extraChartConfigs } : baseOption;
 
-  const handleNodeClick = (conceptId: string, conceptName: string, itemName: string) => {
+  const handleNodeClick = (conceptId: string, conceptName: string) => {
     setSelectedConcept({ id: conceptId, name: conceptName });
-    // Use conceptName or itemName as the unique key
-    const itemKey = conceptName || itemName;
+    // Use conceptId as the unique key so nodes with the same name are treated as distinct
+    const itemKey = conceptId;
     setSelectedItemKey(itemKey);
   };
 
   const onEvents = {
     click: (e: any) => {
       // e.value[3] = conceptId, e.value[4] = conceptPath (if available), e.name = display name
-      return handleNodeClick(e.value[3], e.value[4] || e.name, e.name);
+      return handleNodeClick(e.value[3], e.value[4] || e.name);
     },
     datarangeselected: (e: any) => {
       if (e.selected != null) {
