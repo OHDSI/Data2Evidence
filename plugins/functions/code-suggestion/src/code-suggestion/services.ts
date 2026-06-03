@@ -70,7 +70,7 @@ export const getChatResponse = async (req: any) => {
       tools: tools,
     });
     console.log(
-      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
+      `[MCP-TIMING] [code-suggestion] MCP tools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
     );
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [

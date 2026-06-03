@@ -241,7 +241,7 @@ export const registerApi = (registry: OpenAPIRegistry) => {
       body: {
         content: {
           "application/json": {
-            schema: conceptSchemas.getStandardConcepts,
+            schema: conceptSchemas.getStandardConceptsBody,
           },
         },
       },
@@ -268,7 +268,7 @@ export const registerApi = (registry: OpenAPIRegistry) => {
       body: {
         content: {
           "application/json": {
-            schema: conceptSchemas.checkConceptCoverage,
+            schema: conceptSchemas.checkConceptCoverageBody,
           },
         },
       },

@@ -27,10 +27,9 @@ export class TerminologyAPI extends BaseAPI {
     const bodyMessage: string | undefined = error?.response?.data?.message;
 
     if (
-      status === 409 ||
-      (bodyMessage &&
-        /already exists|duplicate|unique/i.test(bodyMessage) &&
-        nameHint)
+      nameHint &&
+      (status === 409 ||
+        (bodyMessage && /already exists|duplicate|unique/i.test(bodyMessage)))
     ) {
       throw new Error(
         `A concept set named '${nameHint}' already exists in this dataset. Use update_concept_set or pick a different name.`,
