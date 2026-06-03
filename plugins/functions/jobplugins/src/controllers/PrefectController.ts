@@ -1,5 +1,6 @@
 import { Request, Response, Router } from "express";
 import { PrefectService } from "../services/PrefectService.ts";
+import { validateFlowrunId } from "../middlewares/PrefectValidatorMiddlewares.ts";
 
 export class PrefectController {
   private prefectService: PrefectService;
@@ -177,6 +178,33 @@ export class PrefectController {
     }
   }
 
+  private async createPrefectInputAuthToken(req: Request, res: Response) {
+    try {
+      const { id: flowrunId } = req.params;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+      await this.prefectService.createInputAuthToken(flowrunId, token);
+      return res.status(200).send({ status: "Successfully created input auth token" });
+    } catch (error) {
+      console.log(`createPrefectInputAuthToken: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
+  private async deletePrefectInputAuthToken(req: Request, res: Response) {
+    try {
+      const { id: flowrunId } = req.params;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+      await this.prefectService.deleteInputAuthToken(flowrunId, token);
+      return res.status(200).send({ status: "Successfully deleted input auth token" });
+    } catch (error) {
+      console.log(`deletePrefectInputAuthToken: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
+
   private registerRoutes() {
     this.router.post("/flow-run/:id", this.createFlowrun.bind(this));
     this.router.post("/analysis-run/:id", this.createAnalysisRun.bind(this));
@@ -192,6 +220,16 @@ export class PrefectController {
       "/flow-run/strategus/remove-results-schema/:id",
       this.removeAnalysisResultsSchema.bind(this),
     );
+    this.router.post(
+      "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
+      this.createPrefectInputAuthToken.bind(this),
+    );
+    this.router.delete(
+      "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
+      this.deletePrefectInputAuthToken.bind(this),
+     );
     // Admin-only endpoints for uploading/dropping results from storage
     this.router.post(
       "/strategus-results/upload",
@@ -207,4 +245,5 @@ export class PrefectController {
   private getToken(req: Request) {
     return req.headers["authorization"];
   }
+
 }

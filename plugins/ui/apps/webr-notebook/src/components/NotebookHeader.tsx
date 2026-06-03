@@ -15,6 +15,7 @@ interface NotebookHeaderProps {
   onExport?: () => void
   onToggleShare?: () => void
   isShared: boolean
+  canSave?: boolean
   datasetId: string
   onSyncSuccess: () => Promise<void>
   onFeedback: (type: 'success' | 'error', message: string) => void
@@ -32,6 +33,7 @@ export function NotebookHeader({
   onExport,
   onToggleShare,
   isShared,
+  canSave = true,
   datasetId,
   onSyncSuccess,
   onFeedback,
@@ -86,13 +88,17 @@ export function NotebookHeader({
           <button
             className="notebook-header__btn"
             onClick={onSave}
-            disabled={!activeNotebook}
+            disabled={!activeNotebook || !canSave}
           >
             Save
           </button>
 
-          {onDelete && (
-            <button className="notebook-header__btn" onClick={onDelete}>
+          {activeNotebook && (
+            <button
+              className="notebook-header__btn"
+              onClick={onDelete}
+              disabled={!onDelete}
+            >
               Delete
             </button>
           )}
