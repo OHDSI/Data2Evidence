@@ -61,7 +61,7 @@ import { AddNameToDatasetCode1769500730287 } from "./migrations/1769500730287-ad
 import { AddDatasetCodeQueryTable1769500853192 } from "./migrations/1769500853192-add-dataset-code-query-table.ts";
 import { AddLanguageToDatasetCode1770345329000 } from "./migrations/1770345329000-add-language-to-dataset-code.ts";
 import { AddDatasetCacheId1778417559068 } from "./migrations/1778417559068-add-dataset-cache-id.ts";
-import { UpdateFhirDatasetIdColumn1776306827181 } from "./migrations/1776306827181-update-fhir-dataset-id-column.ts";
+import { UpdateFhirDatasetIdColumn17763068271810 } from "./migrations/17763068271810-update-fhir-dataset-id-column.ts";
 import { env } from "../env.ts";
 
 const migrationDataSourceOptions: DataSourceOptions = {
@@ -148,7 +148,7 @@ const migrationDataSourceOptions: DataSourceOptions = {
     AddDatasetCodeQueryTable1769500853192,
     AddLanguageToDatasetCode1770345329000,
     AddDatasetCacheId1778417559068,
-    UpdateFhirDatasetIdColumn1776306827181,
+    UpdateFhirDatasetIdColumn17763068271810,
   ],
 };
 const migrationDataSource = new DataSource(migrationDataSourceOptions);
