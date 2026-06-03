@@ -22,9 +22,11 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
-  // Create a unique key for each item using conceptId (value[3])
-  const getItemKey = (item: any) => {
-    return item.value?.[3];
+  // Create a normalized string key for each item using conceptId (value[3]),
+  // falling back to item.name when conceptId is missing/falsy.
+  const getItemKey = (item: any): string => {
+    const conceptId = item.value?.[3];
+    return conceptId != null ? String(conceptId) : item.name ?? "";
   };
 
   // Detect if records per person data is meaningful (not just placeholder values)
@@ -183,11 +185,11 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   // Merge with extra configs if provided
   const option = extraChartConfigs ? { ...baseOption, ...extraChartConfigs } : baseOption;
 
-  const handleNodeClick = (conceptId: string, conceptName: string) => {
-    setSelectedConcept({ id: conceptId, name: conceptName });
-    // Use conceptId as the unique key so nodes with the same name are treated as distinct
-    const itemKey = conceptId;
-    setSelectedItemKey(itemKey);
+  const handleNodeClick = (conceptId: any, conceptName: string) => {
+    const normalizedId = conceptId != null ? String(conceptId) : conceptName;
+    setSelectedConcept({ id: normalizedId, name: conceptName });
+    // Use normalizedId as the unique key — must match what getItemKey produces
+    setSelectedItemKey(normalizedId);
   };
 
   const onEvents = {
