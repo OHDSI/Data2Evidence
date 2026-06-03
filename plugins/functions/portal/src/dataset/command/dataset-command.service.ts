@@ -284,7 +284,11 @@ export class DatasetCommandService {
       }
 
       // Skip rows whose identity-key already exists on the source.
-      const moveTable = async (entityCls: any, conflictField: string) => {
+      const moveTable = async (
+        entityCls: any,
+        conflictField: string,
+        skipPredicate?: (row: Record<string, unknown>) => boolean,
+      ) => {
         const fromSnapshot = await entityMgr.find(entityCls, {
           where: { datasetId: snapshot.id },
         });
@@ -295,6 +299,10 @@ export class DatasetCommandService {
           (onSource as any[]).map((r) => r[conflictField]),
         );
         for (const row of fromSnapshot as any[]) {
+          if (skipPredicate?.(row)) {
+            await entityMgr.delete(entityCls, { id: row.id });
+            continue;
+          }
           if (existingKeys.has(row[conflictField])) {
             this.logger.info(
               `Skipping ${entityCls.name} row ${row.id} on snapshot — key ${conflictField}=${row[conflictField]} already on source.`,
@@ -308,7 +316,12 @@ export class DatasetCommandService {
           );
         }
       };
-      await moveTable(DatasetAttribute, "attributeId");
+      // Drop source_dataset_id instead of moving it to the source
+      await moveTable(
+        DatasetAttribute,
+        "attributeId",
+        (row) => row.attributeId === "source_dataset_id",
+      );
       await moveTable(DatasetDashboard, "name");
       await moveTable(DatasetTag, "name");
 
