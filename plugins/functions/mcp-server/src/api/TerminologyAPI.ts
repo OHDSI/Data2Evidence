@@ -165,4 +165,22 @@ export class TerminologyAPI extends BaseAPI {
       throw this.mapError(error);
     }
   }
+
+  async checkConceptCoverage(
+    authorization: string,
+    datasetId: string,
+    conceptIds: number[],
+  ): Promise<{ found: number[]; missing: number[] }> {
+    try {
+      const { data } = await this.call<{ found: number[]; missing: number[] }>(
+        "post",
+        "/concept/checkCoverage",
+        { authorization },
+        { conceptIds, datasetId },
+      );
+      return data;
+    } catch (error) {
+      throw this.mapError(error);
+    }
+  }
 }

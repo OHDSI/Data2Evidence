@@ -4,8 +4,7 @@ import {
   ListConceptSetsInput,
   GetConceptSetInput,
   CreateConceptSetInput,
-  UpdateConceptSetInput,
-  DeleteConceptSetInput,
+  CheckConceptCoverageInput,
 } from "../types/tool-schemas";
 import {
   requireAuthAndDataset,
@@ -19,12 +18,11 @@ const terminologyApi = new TerminologyAPI();
 const LIST_PAGE_SIZE = 50;
 
 /**
- * Register concept set CRUD tools.
- * - list_concept_sets   (paginated: first 50 + totalCount)
- * - get_concept_set     (returns saved definition + concept list)
- * - create_concept_set  (WEDGE — defaults shared=false)
- * - update_concept_set
- * - delete_concept_set
+ * Register concept set tools.
+ * - list_concept_sets                (paginated: first 50 + totalCount)
+ * - get_concept_set                  (returns saved definition + concept list)
+ * - create_concept_set               (defaults shared=false)
+ * - check_concept_coverage_in_dataset (which concept IDs exist in this dataset's vocabulary)
  */
 export function registerConceptSetManagementTools(server: McpServer) {
   // ==================== LIST CONCEPT SETS ====================
@@ -122,73 +120,34 @@ export function registerConceptSetManagementTools(server: McpServer) {
     }
   );
 
-  // ==================== UPDATE CONCEPT SET ====================
+  // ==================== CHECK CONCEPT COVERAGE ====================
   server.registerTool(
-    "update_concept_set",
+    "check_concept_coverage_in_dataset",
     {
-      title: "Update Concept Set",
+      title: "Check Concept Coverage in Dataset",
       description:
-        "Update an existing concept set's name, sharing, or concept expression. All fields are optional — only the provided fields are updated.",
-      inputSchema: UpdateConceptSetInput,
+        "Check which OMOP concept IDs exist in this dataset's vocabulary cache. Returns found and missing IDs. Use this before create_concept_set to inform the user which concepts have data in this dataset.",
+      inputSchema: CheckConceptCoverageInput,
     },
-    async ({ conceptSetId, name, concepts, shared }, { requestInfo }) => {
-      const toolStart = performance.now();
-      const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
-      const userName = await getUserName(authorization);
-
-      const payload: Partial<{
-        name: string;
-        concepts: typeof concepts;
-        shared: boolean;
-        userName: string;
-      }> = { userName };
-      if (name !== undefined) payload.name = name;
-      if (concepts !== undefined) payload.concepts = concepts;
-      if (shared !== undefined) payload.shared = shared;
-
-      const updatedId = await terminologyApi.updateConceptSet(
-        authorization,
-        datasetId,
-        conceptSetId,
-        payload
-      );
-
-      console.log(
-        `[MCP-TIMING] [update_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${updatedId}`
-      );
-
-      return createTextResponse(
-        `Successfully updated concept set ID ${updatedId}.`
-      );
-    }
-  );
-
-  // ==================== DELETE CONCEPT SET ====================
-  server.registerTool(
-    "delete_concept_set",
-    {
-      title: "Delete Concept Set",
-      description:
-        "Delete a concept set by ID. Irreversible. The user should confirm before calling this.",
-      inputSchema: DeleteConceptSetInput,
-    },
-    async ({ conceptSetId }, { requestInfo }) => {
+    async ({ conceptIds }, { requestInfo }) => {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
-      const deletedId = await terminologyApi.deleteConceptSet(
+      const { found, missing } = await terminologyApi.checkConceptCoverage(
         authorization,
         datasetId,
-        conceptSetId
+        conceptIds
       );
 
       console.log(
-        `[MCP-TIMING] [delete_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${deletedId}`
+        `[MCP-TIMING] [check_concept_coverage_in_dataset] END total=${(performance.now() - toolStart).toFixed(1)}ms found=${found.length} missing=${missing.length}`
       );
 
-      return createTextResponse(
-        `Successfully deleted concept set ID ${deletedId}.`
-      );
+      const text = missing.length === 0
+        ? `All ${found.length} concept${found.length === 1 ? "" : "s"} exist in this dataset.`
+        : `${found.length} of ${conceptIds.length} concepts exist in this dataset. ${missing.length} are not in the vocabulary cache: ${missing.join(", ")}.`;
+
+      return createStructuredResponse(text, { found, missing });
     }
   );
 }

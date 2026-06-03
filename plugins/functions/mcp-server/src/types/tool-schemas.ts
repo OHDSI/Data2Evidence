@@ -203,24 +203,9 @@ export const CreateConceptSetInput = {
     .describe("List of OMOP concept items that define the set"),
 };
 
-export const UpdateConceptSetInput = {
-  conceptSetId: z.number().describe("The concept set ID to update"),
-  name: z
-    .string()
-    .min(1)
-    .optional()
-    .describe("New name for the concept set"),
-  concepts: z
-    .array(ConceptItemSchema)
-    .optional()
-    .describe("Replacement concept list"),
-  shared: z
-    .boolean()
-    .optional()
-    .describe("Whether to share this concept set with all users in the dataset"),
-};
-
-export const DeleteConceptSetInput = {
-  conceptSetId: z.number().describe("The concept set ID to delete"),
+export const CheckConceptCoverageInput = {
+  conceptIds: z
+    .array(z.number())
+    .describe("List of OMOP concept IDs to check against this dataset's vocabulary cache"),
 };
 

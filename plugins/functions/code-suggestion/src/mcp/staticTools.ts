@@ -68,7 +68,7 @@ async function callMcpTool(
 }
 
 /**
- * Creates all 20 MCP tools as static DynamicStructuredTool instances.
+ * Creates all 17 MCP tools as static DynamicStructuredTool instances.
  * Schemas and descriptions match mcp-server/src/types/tool-schemas.ts and mcp-server/src/tools/*.tools.ts exactly.
  * This eliminates the 3-request MCP handshake (~3s) that getTools() requires.
  *
@@ -287,63 +287,12 @@ export function createStaticMcpTools(
       }),
     ),
     mcpTool(
-      "update_concept_set",
-      "Update an existing concept set's name, sharing, or concept expression. All fields are optional — only the provided fields are updated.",
+      "check_concept_coverage_in_dataset",
+      "Check which OMOP concept IDs exist in this dataset's vocabulary cache. Returns found and missing IDs. Use this before create_concept_set to inform the user which concepts have data in this dataset.",
       z.object({
-        conceptSetId: z.number().describe("The concept set ID to update"),
-        name: z
-          .string()
-          .min(1)
-          .optional()
-          .describe("New name for the concept set"),
-        concepts: z
-          .array(
-            z.object({
-              id: z.number().describe("OMOP concept ID"),
-              useDescendants: z.boolean().describe("Include all descendant concepts"),
-              useMapped: z.boolean().describe("Include mapped concepts"),
-              isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
-            }),
-          )
-          .optional()
-          .describe("Replacement concept list"),
-        shared: z
-          .boolean()
-          .optional()
-          .describe("Whether to share this concept set with all users in the dataset"),
-      }),
-    ),
-    mcpTool(
-      "delete_concept_set",
-      "Delete a concept set by ID. Irreversible. The user should confirm before calling this.",
-      z.object({
-        conceptSetId: z.number().describe("The concept set ID to delete"),
-      }),
-    ),
-    // ==================== Concept Set Resolution Tools (DATA-651) ====================
-    mcpTool(
-      "get_included_concepts",
-      "Resolve a SAVED concept set to the actual list of OMOP concept IDs it includes, after descendants and excludes are applied. Use this when you need to know which concept IDs are in a saved set. To preview before saving, use preview_concept_set_resolution instead.",
-      z.object({
-        conceptSetId: z.number().describe("The saved concept set ID to resolve"),
-      }),
-    ),
-    mcpTool(
-      "preview_concept_set_resolution",
-      "Preview what concepts a candidate expression WOULD resolve to, BEFORE saving. Use this to validate a concept set design with the user before calling create_concept_set. Input is the same concepts array format as create_concept_set.",
-      z.object({
-        concepts: z
-          .array(
-            z.object({
-              id: z.number().describe("OMOP concept ID"),
-              useDescendants: z.boolean().describe("Include all descendant concepts"),
-              useMapped: z.boolean().describe("Include mapped concepts"),
-              isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
-            }),
-          )
-          .describe(
-            "Candidate concept expression to preview — same format as the concepts array in create_concept_set. Use this to validate the expression BEFORE saving.",
-          ),
+        conceptIds: z
+          .array(z.number())
+          .describe("List of OMOP concept IDs to check against this dataset's vocabulary cache"),
       }),
     ),
   ];
