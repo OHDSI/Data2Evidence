@@ -14,6 +14,7 @@ secrets:
   SERVER__KEY: ""
 
 idp:
+  IDP__AUTO_PROVISION_USERS: "false"
   IDP__RELYING_PARTY: logto
   IDP__REQUIRED_CLAIM: ""
   LOGTO__DISABLE_BASIC_AUTH: "false"
@@ -114,7 +115,6 @@ config:
   ACHILLES_THREAD_COUNT: "1"
   EXCLUDE_ANALYSIS_IDS: ""
   AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ""
-  IDP__AUTO_PROVISION_USERS: "false"
 
 d2e-core:
   config:
