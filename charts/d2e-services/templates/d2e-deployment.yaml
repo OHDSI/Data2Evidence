@@ -326,11 +326,11 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: ACHILLES_THREAD_COUNT
-            - name: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            - name: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
               valueFrom:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+                  key: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
             - name: USER_MGMT__ROLE_SOURCE
               value: "usermgmt"
             - name: CADDY__D2E__PUBLIC_FQDN
