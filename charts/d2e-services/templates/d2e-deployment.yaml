@@ -399,11 +399,6 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__APP_CLIENT_ID
-            - name: LOGTO__CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: LOGTO__APP_CLIENT_SECRET
             - name: LOGTO__D2E_DATA__CLIENT_ID
               valueFrom:
                 secretKeyRef:
