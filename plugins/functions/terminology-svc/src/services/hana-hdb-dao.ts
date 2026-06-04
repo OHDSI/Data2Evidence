@@ -246,20 +246,14 @@ export class HanaHDBDao {
     }
   }
 
-  // Hybrid mode "rerank": HANA FTS picks the candidate set, then DuckDB
-  // re-orders it by a normalized blend of FTS score and embedding distance.
-  private async getConceptsHybridRerank(
+  // HANA FTS candidate set shared by both hybrid modes: fuzzy CONTAINS over
+  // concept + concept_synonym, max-merged per concept_id, filtered, top-K.
+  private async getHanaFtsCandidates(
     hanaClient: any,
-    pageNumber: number,
-    rowsPerPage: number,
     searchText: string,
-    filters: Filters,
-  ) {
-    const trexClient = await this.getTrexConnection();
-    try {
-      const filterWhere = this.generateFilterWhereClause(filters);
-
-      const ftsSql = `
+    filterWhere: string,
+  ): Promise<Array<{ CONCEPT_ID: number; FTS_SCORE: number }>> {
+    const ftsSql = `
         WITH all_matches AS (
           SELECT concept_id, SCORE() AS match_score
           FROM ${this.vocabSchemaName}.concept
@@ -281,11 +275,58 @@ export class HanaHDBDao {
         ORDER BY m.fts_score DESC
         LIMIT ${HANA_TOPK}
       `;
-      const wildcardSearch = `*${searchText}*`;
-      const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        wildcardSearch,
-        wildcardSearch,
-      ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+    const wildcardSearch = `*${searchText}*`;
+    return (await this.asyncExec(hanaClient, ftsSql, [
+      wildcardSearch,
+      wildcardSearch,
+    ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+  }
+
+  // Fetch full concept rows for the ranked ids and return them in rank order.
+  private async fetchAndOrderConcepts(
+    hanaClient: any,
+    rankedIds: number[],
+  ): Promise<IConcept[]> {
+    if (rankedIds.length === 0) return [];
+
+    const fullRowsSql = `
+        SELECT concept_id, concept_name, domain_id, vocabulary_id,
+               concept_class_id, standard_concept, concept_code,
+               valid_start_date, valid_end_date, invalid_reason
+        FROM ${this.vocabSchemaName}.concept
+        WHERE concept_id IN (${rankedIds.join(",")})
+      `;
+    const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
+
+    // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
+    // as a number — normalize both sides to number so the lookup hits.
+    const byId = new Map<number, any>();
+    for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
+    const orderedRows = rankedIds
+      .map((id) => byId.get(Number(id)))
+      .filter((r) => r !== undefined);
+
+    return this.mapHanaConcepts(orderedRows);
+  }
+
+  // Hybrid mode "rerank": HANA FTS picks the candidate set, then DuckDB
+  // re-orders it by a normalized blend of FTS score and embedding distance.
+  private async getConceptsHybridRerank(
+    hanaClient: any,
+    pageNumber: number,
+    rowsPerPage: number,
+    searchText: string,
+    filters: Filters,
+  ) {
+    const trexClient = await this.getTrexConnection();
+    try {
+      const filterWhere = this.generateFilterWhereClause(filters);
+
+      const ftsRows = await this.getHanaFtsCandidates(
+        hanaClient,
+        searchText,
+        filterWhere,
+      );
 
       // totalHits = min(trueCount, HANA_TOPK)
       const totalHits = ftsRows.length;
@@ -345,27 +386,8 @@ export class HanaHDBDao {
       `;
       const ranked = await trexClient.query(duckdbSql);
       const rankedIds: number[] = ranked.rows.map((r: any) => r.concept_id);
-      if (rankedIds.length === 0) return { hits: [], totalHits };
-
-      const fullRowsSql = `
-        SELECT concept_id, concept_name, domain_id, vocabulary_id,
-               concept_class_id, standard_concept, concept_code,
-               valid_start_date, valid_end_date, invalid_reason
-        FROM ${this.vocabSchemaName}.concept
-        WHERE concept_id IN (${rankedIds.join(",")})
-      `;
-      const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
-
-      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
-      // as a number — normalize both sides to number so the lookup hits.
-      const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
-      const orderedRows = rankedIds
-        .map((id) => byId.get(Number(id)))
-        .filter((r) => r !== undefined);
-
       return {
-        hits: this.mapHanaConcepts(orderedRows),
+        hits: await this.fetchAndOrderConcepts(hanaClient, rankedIds),
         totalHits,
       };
     } catch (error) {
@@ -396,33 +418,11 @@ export class HanaHDBDao {
         ? filterWhere.replace("WHERE", "AND")
         : "";
 
-      const ftsSql = `
-        WITH all_matches AS (
-          SELECT concept_id, SCORE() AS match_score
-          FROM ${this.vocabSchemaName}.concept
-          WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-          UNION ALL
-          SELECT concept_id, SCORE() AS match_score
-          FROM ${this.vocabSchemaName}.concept_synonym
-          WHERE CONTAINS(concept_synonym_name, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-        ),
-        matched AS (
-          SELECT concept_id, MAX(match_score) AS fts_score
-          FROM all_matches
-          GROUP BY concept_id
-        )
-        SELECT m.concept_id AS CONCEPT_ID, m.fts_score AS FTS_SCORE
-        FROM matched m
-        JOIN ${this.vocabSchemaName}.concept c ON c.concept_id = m.concept_id
-        ${filterWhere}
-        ORDER BY m.fts_score DESC
-        LIMIT ${HANA_TOPK}
-      `;
-      const wildcardSearch = `*${searchText}*`;
-      const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        wildcardSearch,
-        wildcardSearch,
-      ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+      const ftsRows = await this.getHanaFtsCandidates(
+        hanaClient,
+        searchText,
+        filterWhere,
+      );
 
       const embedding = (await getGTEEmbedding(searchText)).join(",");
 
@@ -533,29 +533,10 @@ export class HanaHDBDao {
       const totalHits = ranked.rows[0]
         ? parseInt(ranked.rows[0].total_hits)
         : 0;
-      if (rankedIds.length === 0) return { hits: [], totalHits };
-
       // No filter needed here — both candidate sides were already
       // filter-checked above, so every rankedId is guaranteed to pass.
-      const fullRowsSql = `
-        SELECT concept_id, concept_name, domain_id, vocabulary_id,
-               concept_class_id, standard_concept, concept_code,
-               valid_start_date, valid_end_date, invalid_reason
-        FROM ${this.vocabSchemaName}.concept
-        WHERE concept_id IN (${rankedIds.join(",")})
-      `;
-      const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
-
-      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
-      // as a number — normalize both sides to number so the lookup hits.
-      const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
-      const orderedRows = rankedIds
-        .map((id) => byId.get(Number(id)))
-        .filter((r) => r !== undefined);
-
       return {
-        hits: this.mapHanaConcepts(orderedRows),
+        hits: await this.fetchAndOrderConcepts(hanaClient, rankedIds),
         totalHits,
       };
     } catch (error) {

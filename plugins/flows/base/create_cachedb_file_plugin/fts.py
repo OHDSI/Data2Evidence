@@ -174,6 +174,7 @@ def add_autoincrement_col_query(
     """
     Create a SQL query to add an auto-increment column to a table.
     """
+    # For NEXTVAL use single quotes here, so duckdb treat it as a sequence name (plain string) rather than column references to resolve.
     return f'ALTER TABLE "{database_name}"."{schema_name}"."{table_name}" ADD COLUMN "{column_name}" INTEGER DEFAULT NEXTVAL(\'{database_name}.{schema_name}.{sequence_name}\');'
 
 
