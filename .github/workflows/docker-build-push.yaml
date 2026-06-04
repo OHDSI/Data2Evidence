@@ -13,6 +13,11 @@ on:
       - develop
       - "release/*"
   workflow_dispatch:
+    inputs: 
+      release_tag:
+        description: Enter version for release
+        required: true
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
@@ -34,6 +39,7 @@ jobs:
       is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
       is_release_push: ${{ steps.tag.outputs.is_release_push }}
       is_publish_push: ${{ steps.tag.outputs.is_publish_push }}
+      plugins_tag: ${{ steps.tag.outputs.plugins_tag }}
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
       changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
@@ -72,8 +78,15 @@ jobs:
             RUN_TAG="${REL_SLUG}-${SHORT_SHA}"
             IS_RELEASE_PUSH=true
             CANONICAL_TAG="${REL_SLUG}"
+            PLUGINS_TAG="${REL_SLUG}"
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RUN_TAG="${{ github.event.inputs.release_tag }}-beta"
+            IS_RELEASE_PUSH=true
+            CANONICAL_TAG="${{ github.event.inputs.release_tag }}"
+            PLUGINS_TAG="${{ github.event.inputs.release_tag }}"
           else
-            RUN_TAG="dispatch-${SHORT_SHA}"
+            RUN_TAG="dispatch-${SHORT_SHA}-beta"
+            PLUGINS_TAG=""
           fi
           IS_PUBLISH_PUSH=false
           if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
@@ -82,6 +95,7 @@ jobs:
           {
             echo "run_tag=${RUN_TAG}"
             echo "canonical_tag=${CANONICAL_TAG}"
+            echo "plugins_tag=${PLUGINS_TAG}"
             echo "is_pr_or_mg=${IS_PR_OR_MG}"
             echo "is_develop_push=${IS_DEVELOP_PUSH}"
             echo "is_release_push=${IS_RELEASE_PUSH}"
@@ -233,7 +247,6 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
         id: builder
-
       - name: Build and Push
         if: ${{ matrix.build_disable != 'true' || github.event_name == 'workflow_dispatch' || needs.setup.outputs.is_develop_push == 'true' || contains(github.ref_name, 'release/') || github.event_name == 'merge_group' }}
         uses: docker/build-push-action@v6
@@ -330,7 +343,12 @@ jobs:
       - name: Update version
         run: |
           cd ${{ matrix.PKGPATH }}
-          jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+            RELEASE_VERSION=${{ needs.setup.outputs.plugins_tag }}
+            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          fi
       - name: Build
         run: |
           cd ${{ matrix.PKGPATH }}
@@ -586,6 +604,7 @@ jobs:
       packages: read
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_TAG: ${{ needs.setup.outputs.plugins_tag }}
       CHART_DIR: charts/d2e-services
       CI_VALUES: charts/d2e-services/ci/test-values.yaml
       HELM_VERSION: v3.16.2
