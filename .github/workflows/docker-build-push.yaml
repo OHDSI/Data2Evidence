@@ -18,6 +18,14 @@ on:
         description: Enter version for release
         required: true
         type: string
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
+          - "Project"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
