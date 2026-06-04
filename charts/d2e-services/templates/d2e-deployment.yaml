@@ -740,6 +740,15 @@ spec:
               value: "https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback"
             - name: SECURITY_AUTH_OAUTH_CALLBACK_UI
               value: "https://$(CADDY__D2E__PUBLIC_FQDN)/atlas/#/welcome"
+            # --- v0.16 trex internals ---
+            - name: TREX_ROUTES
+              value: '{"d2e":"http://localhost:33001"}'
+            - name: TREX_EXTENSIONS_PATH
+              value: /usr/src/node_modules/@trex
+            - name: TREX_POOL_SIZE
+              value: "64"
+            - name: TREXSQL_ENABLED
+              value: "true"
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
