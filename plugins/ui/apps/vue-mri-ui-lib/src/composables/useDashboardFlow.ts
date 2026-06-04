@@ -510,7 +510,7 @@ export function useDashboardFlow(
     for (const op of operations) {
       if (op.type === 'update' && op.filterCardId) {
         const attrKey = getFieldAttrKey(op.field.configPath!)
-        const constraint = getters.getConstraintForAttribute?.({
+        let constraint = getters.getConstraintForAttribute?.({
           filterCardId: op.filterCardId,
           key: attrKey,
         })
@@ -524,6 +524,21 @@ export function useDashboardFlow(
           })
 
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
+        } else {
+          // Constraint missing on existing card — add it first
+          await dispatch('addFilterCardConstraint', {
+            filterCardId: op.filterCardId,
+            key: attrKey,
+          })
+
+          constraint = getters.getConstraintForAttribute?.({
+            filterCardId: op.filterCardId,
+            key: attrKey,
+          })
+
+          if (constraint) {
+            await applyConstraintValue(constraint, op.value, '=', op.displayValue)
+          }
         }
       } else if (op.type === 'add-to-existing' && op.filterCardId) {
         // Add constraint to already-created card
