@@ -35,8 +35,8 @@ resources:
 
 config:
   OMOP_RELATIONSHIPS_FOR_DESCENDANTS: "'Maps to','Subsumes'"
-  PLUGINS_API_VERSION: "~0.15.0"
-  PLUGINS_IMAGE_TAG: "0.15.0-beta"
+  PLUGINS_API_VERSION: "~0.16.0"
+  PLUGINS_IMAGE_TAG: "0.16.0-beta"
   PLUGINS_REGISTRY: ""
   PLUGINS_INFORMATION_URL: ""
   PLUGINS_FLOW_CUSTOM_REPO_IMAGE_CONFIG: '{"current": "ghcr.io/ohdsi/d2e", "new": "ghcr.io/ohdsi/d2e"}'
@@ -96,7 +96,7 @@ config:
           "type": "object",
           "properties": {
             "namespace": { "default": "d2e" },
-            "image": { "default": "ghcr.io/ohdsi/d2e-flow-base:0.15.0-beta" },
+            "image": { "default": "ghcr.io/ohdsi/d2e-flow-base:0.16.0-beta" },
             "service_account_name": { "default": "dataflow-gen-svc-acc" },
             "image_pull_policy": { "default": "IfNotPresent" },
             "command": {
@@ -136,7 +136,7 @@ global:
   storageClassName: standard
   dockerRegistryUrl: "ghcr.io/ohdsi"
   image:
-    tag: "0.15.0-beta"
+    tag: "0.16.0-beta"
   images:
     materializeCohorts: "ghcr.io/ohdsi/d2e-materialize-cohorts"
   config:
