@@ -1,1 +1,1 @@
-FROM ghcr.io/data2evidence/logto-with-logto-schema@sha256:ce6d10e5354497d635846cde3162f072ef5b28a45b2ef5168d65ef88bc1062c9
+FROM ghcr.io/data2evidence/logto-with-logto-schema@sha256:a5768d56ac8a25c8642a64046259639b78c54037e1a9de0de29448cc7be4757b
