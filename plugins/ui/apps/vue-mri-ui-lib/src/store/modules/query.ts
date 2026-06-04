@@ -913,6 +913,25 @@ const actions = {
         break
       }
     }
+
+    // Clear advanced time filters on remaining cards that reference the deleted card
+    const boolFilterContainers = getters.getBoolFilterContainers()
+    Object.keys(boolFilterContainers).forEach(containerId => {
+      const container = boolFilterContainers[containerId]
+      container.props.filterCards.forEach(cardId => {
+        if (cardId === filterCardId) return // skip the card being deleted
+        const card = getters.getFilterCard(cardId)
+        const timeFilters = card.props.layout?.advancedTimeLayout?.props?.timeFilterModel?.timeFilters || []
+        const hasDependency = timeFilters.some(tf => tf.targetInteraction === filterCardId)
+        if (hasDependency) {
+          commit(types.ADVANCEDTIME_SET_TIMEFILTER, {
+            filterCardId: cardId,
+            timeFilters: []
+          })
+        }
+      })
+    })
+
     commit(types.FILTERCARD_DELETE, { filterCardId })
   },
   updateDateConstraintValue(
