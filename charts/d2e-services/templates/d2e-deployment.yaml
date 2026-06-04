@@ -749,6 +749,11 @@ spec:
               value: "64"
             - name: TREXSQL_ENABLED
               value: "true"
+            - name: IDP__AUTO_PROVISION_USERS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__AUTO_PROVISION_USERS
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           command: ["npm", "run", "start"]
