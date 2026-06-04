@@ -46,19 +46,19 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Visit' }).click()
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('button', { name: 'Entry Select a Filter Card ◢' }).click()
-  await page.locator('#pane-right').getByText('Visit A').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByTestId('pa-pane-right').getByText('Visit A').click()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('button', { name: 'Exit Select a Filter Card ◢' }).click()
-  await page.locator('#pane-right').getByRole('list').getByText('Condition Occurrence A').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByTestId('pa-pane-right').getByRole('list').getByText('Condition Occurrence A').click()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
   await expect(page).toHaveScreenshot()
 
   // Change AND to OR, CEE should be removed from filtercards
   await page.getByRole('button', { name: 'AND ' }).click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Go to PA config and uncheck CEE

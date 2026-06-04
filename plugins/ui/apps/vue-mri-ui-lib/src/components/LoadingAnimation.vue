@@ -1,5 +1,5 @@
 <template>
-  <div class="loading-animation-component">
+  <div class="loading-animation-component" data-test-id="pa-loading-indicator">
     <div class="animation-wrapper">
       <div class="UiLocalBusyIndicatorBox firstBox"></div>
       <div class="UiLocalBusyIndicatorBox secondBox"></div>

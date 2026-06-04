@@ -2,7 +2,7 @@
   <div v-if="list.length > 0" class="download-menu-container" style="display: inline">
     <bs-dropdown variant="link" size="sm" no-caret>
       <template v-slot:button-content>
-        <button class="toolbarButton" :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')">
+        <button class="toolbarButton" :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')" data-test-id="pa-download-menu-btn">
           <span class="icon" style="font-family: app-icons"></span>
         </button>
       </template>

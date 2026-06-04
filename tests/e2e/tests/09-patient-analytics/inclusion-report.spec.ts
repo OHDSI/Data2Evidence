@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await test.step('Add Basic Data: Year of birth > 1950', async () => {
@@ -30,14 +30,14 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Year of Birth').click()
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').fill('>1950')
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').press('Enter')
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await test.step('Add Basic Data: Gender = Female', async () => {
     await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await test.step('Add Condition Occurrence inclusion filter (Chronic sinusitis)', async () => {
@@ -61,7 +61,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
       await page.getByRole('button', { name: 'Close' }).click()
-      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
       try {
         await page.mouse.move(0, 0)
         await page.locator('.modal-wrapper').click()
@@ -69,7 +69,7 @@ test(TEST_NAME, async ({ page }) => {
         // modal not present, continue
       }
     }
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await test.step('Add Visit exclusion filter card', async () => {
@@ -77,7 +77,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Visit' }).click()
     await expect(page.getByText('A filter card has been added: Visit A')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   const dialog = page.locator('.inclusion-report-dialog')

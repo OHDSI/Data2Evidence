@@ -40,24 +40,24 @@ test('pa-compare-cohorts', async ({ page }) => {
   // COHORT RESULTS VERIFICATION
   // ========================
   // Verify that the combined filters (age 35-80 + acute allergic reaction) result in 104 patients
-  await expect(page.locator('#pane-right')).toContainText('439')
+  await expect(page.getByTestId('pa-pane-right')).toContainText('439')
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#app')).toContainText('Saved filter updated.')
+  await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByTitle('Enter Fullscreen').click()
-  await expect(page.locator('#pane-left')).toContainText(cohortA)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(cohortA)
 
   // Cohort B creation: with Condition Occurrence A filtercard
   await page.waitForTimeout(10000)
   await createCohortWithOneConditionOccurrenceFilercard(page, cohortB)
   await addMonthOfBirthFilter(page, '[2-4]')
   await page.waitForTimeout(3000)
-  await expect(page.locator('#pane-right')).toContainText('642')
+  await expect(page.getByTestId('pa-pane-right')).toContainText('642')
 
   // Add Condition Occurrence B filter card
   // await page.getByTitle('Add Filter Card').getByRole('button').click();
@@ -68,12 +68,12 @@ test('pa-compare-cohorts', async ({ page }) => {
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#app')).toContainText('Saved filter updated.')
+  await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByTitle('Enter Fullscreen').click()
-  await expect(page.locator('#pane-left')).toContainText(cohortB)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(cohortB)
 
   await page.locator('div:nth-child(1) > .footer > div > svg').first().click()
   await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
@@ -87,7 +87,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.locator('.mainChartToolbar').getByTitle('Export to File').click()
 
   const downloadPromise = page.waitForEvent('download')
-  await page.locator('#pane-left').getByText('Export to PNG File').click()
+  await page.getByTestId('pa-pane-left').getByText('Export to PNG File').click()
   const download = await downloadPromise
 
   // Verify the downloaded file is a PNG
@@ -98,7 +98,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
   await page.getByRole('button', { name: 'Close' }).click()
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort
@@ -128,7 +128,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // ========================
   // Start creating a new cohort using D2E cohort builder
   await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.locator('#pane-left')).toContainText('New cohort')
+  await expect(page.getByTestId('pa-pane-left')).toContainText('New cohort')
 
   // Save the initial cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
@@ -146,7 +146,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
   await page.waitForTimeout(10000)
   await page.locator('footer').getByRole('button', { name: 'Save' }).click()
-  // await expect(page.locator('#pane-left')).toContainText(cohortName)
+  // await expect(page.getByTestId('pa-pane-left')).toContainText(cohortName)
 
   // ========================
   // CONDITION OCCURRENCE FILTER
@@ -157,7 +157,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
   // Verify the condition occurrence filter was added
-  await expect(page.locator('#pane-left')).toContainText('Condition Occurrence A')
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Condition Occurrence A')
   await expect(page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]')).toContainText(
     'Condition concept set'
   )

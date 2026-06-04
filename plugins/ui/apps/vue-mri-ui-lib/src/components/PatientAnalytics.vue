@@ -3,7 +3,7 @@
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
-          <div id="pane-left" class="split">
+          <div id="pane-left" class="split" data-test-id="pa-pane-left">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
                 <button
@@ -55,7 +55,7 @@
         </pane>
 
         <pane :size="PANE_SIZE.FULL - paneSize">
-          <div id="pane-right" class="split">
+          <div id="pane-right" class="split" data-test-id="pa-pane-right">
             <template v-if="rightPaneEverOpened">
               <chartToolbar
                 :showUnHideFilters="hideLeftPane"

@@ -19,7 +19,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   // Wait for chart animations to settle
   await page.waitForTimeout(500)
   await expect(page).toHaveScreenshot()
@@ -28,8 +28,8 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await expect(page.getByText('A filter card has been added: Condition Occurrence A')).toBeVisible()
-  await expect(page.locator('#pane-left')).toContainText('Condition Occurrence A')
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Condition Occurrence A')
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Create concept set
   await page.getByRole('button', { name: '+' }).click()
@@ -80,7 +80,7 @@ test(TEST_NAME, async ({ page }) => {
     .getByRole('button', { name: 'Basic Data Month of Birth ◢' })
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
   await page
@@ -94,7 +94,7 @@ test(TEST_NAME, async ({ page }) => {
     .getByText('Condition Occurrence A')
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Condition concept Name').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Filter condition concept name to chronic sinusitis
@@ -117,7 +117,7 @@ test(TEST_NAME, async ({ page }) => {
     .getByText('Basic Data')
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Gender').nth(2).click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
   await expect(page).toHaveScreenshot()
 
@@ -125,7 +125,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('.axis-group--top').getByRole('button', { name: 'Basic Data Patient Count ◢' }).click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Basic Data').click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
@@ -154,7 +154,7 @@ test(TEST_NAME, async ({ page }) => {
     .last()
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Race concept id').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set X2-axis to year of birth with bin size of 50
@@ -170,13 +170,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
   await page.locator('.modal-wrapper').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Reset X2-axis
   await page.locator('.axis-group--bottom .axis-subgroup').last().locator('button.axisMenuButton').first().click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Reset Selection').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set X3-axis attribute (was rendered as last bottom axis; originally captioned "stacked chart")
@@ -188,7 +188,7 @@ test(TEST_NAME, async ({ page }) => {
     .last()
     .click()
   await page.locator('div.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Month of Birth').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set month of birth to 11 in filter card
@@ -205,27 +205,27 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Switch to list view
-  await page.locator('button.chartButton').nth(1).click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByTestId('pa-chart-btn-list').click()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('cell', { name: 'Person id' }).locator('span').nth(1).click()
   await page.getByText('Sort Ascending').click()
   await expect(page).toHaveScreenshot()
 
   // Export to ZIP file
-  await page.locator('button.toolbarButton').nth(1).click()
+  await page.getByTestId('pa-download-menu-btn').click()
   await page.getByRole('menuitem').getByText('Export to ZIP File').click()
   await page.locator('span.buttonContent').nth(1).click()
   await page.waitForTimeout(5000) // Wait for download to complete
   await expect(page).toHaveScreenshot() // Not sure what to expect
 
   // Switch to chart view
-  await page.locator('button.chartButton').first().click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByTestId('pa-chart-btn-stacked').click()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Reset filter card
   await page.getByRole('button', { name: '↺' }).click()
-  await page.locator('button[title="Reset"]').click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await page.getByTestId('pa-reset-filters-btn').click()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 })

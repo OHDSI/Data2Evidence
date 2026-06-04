@@ -358,6 +358,7 @@ onErrorCaptured((err, instance, info) => {
         v-for="bookmarkDisplay in paginatedBookmarks"
         :key="bookmarkDisplay.displayName"
         class="item-card"
+        :data-test-id="`pa-cohort-card-${bookmarkDisplay.displayName}`"
         style="
           min-width: 300px;
           display: flex;
@@ -560,6 +561,7 @@ onErrorCaptured((err, instance, info) => {
         </div>
         <div
           class="footer"
+          data-test-id="pa-cohort-footer"
           style="
             display: flex;
             align-items: center;
@@ -577,6 +579,7 @@ onErrorCaptured((err, instance, info) => {
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click="onSelectBookmark(bookmarkDisplay)"
             :title="getText('MRI_PA_TOOLTIP_SELECT_BOOKMARK')"
+            data-test-id="pa-cohort-select-btn"
           >
             <PlusInBoxIcon
               :type="
@@ -599,6 +602,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_TOOLTIP_RENAME_BOOKMARK')
                 : 'You can only modify filters you own'
             "
+            data-test-id="pa-cohort-rename-btn"
           >
             <EditIcon />
           </div>
@@ -616,6 +620,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')
                 : getText('MRI_PA_TOOLTIP_MATERIALIZE_DISABLED')
             "
+            data-test-id="pa-cohort-add-btn"
           >
             <GenerateCohortActiveIcon />
           </div>
@@ -641,6 +646,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_TOOLTIP_DELETE_BOOKMARK')
                 : 'You can only modify filters you own'
             "
+            data-test-id="pa-cohort-delete-btn"
           >
             <TrashCanIcon />
           </div>

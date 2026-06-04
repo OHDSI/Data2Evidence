@@ -30,7 +30,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Step 3 - Select condition concept name for filter card
   await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
@@ -77,7 +77,7 @@ test(TEST_NAME, async ({ browser }) => {
     .click()
   await page.locator('#stacked-chart').click()
   await page.getByRole('button', { name: '+' }).click()
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('textbox', { name: 'Concept set name' }).click()
   await page.getByRole('textbox', { name: 'Concept set name' }).fill('test_concept_set')
   await page.getByRole('textbox', { name: 'search terms' }).click()
@@ -142,7 +142,7 @@ test(TEST_NAME, async ({ browser }) => {
     await expect(page.getByRole('menu')).toBeVisible()
   }
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
-  await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
+  await page.waitForSelector('[data-test-id="pa-loading-indicator"]', { state: 'hidden' })
   await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
 
@@ -171,7 +171,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Measurement' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
-  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByTestId('filter-card-menu-trigger').nth(1).click()
   await page.locator('.dropdown-scroll >> text=Measurement concept Name').scrollIntoViewIfNeeded()

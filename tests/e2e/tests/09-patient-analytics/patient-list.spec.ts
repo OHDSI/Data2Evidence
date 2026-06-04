@@ -19,7 +19,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
@@ -27,7 +27,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('>2')
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
     await expect(page.getByText('2,255 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Add Condition Occurrence filter card
   await test.step('Add filter card for Condition Occurrence', async () => {
@@ -58,9 +58,9 @@ test(TEST_NAME, async ({ page }) => {
       // Wait for Create button to change to Update (confirms concept set was created)
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
       await page.getByRole('button', { name: 'Close' }).click()
-      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     }
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await expect(page.getByText('682 / 2,694')).toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByText('Reset Selection').click()
@@ -74,17 +74,17 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     // await page.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Check if the cohort is saved
   await test.step('Check if the cohort is saved', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
     await page.getByRole('button', { name: '' }).click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Remove Race
     await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click()
     // If multiple 'Remove' buttons are found, click the one closest to the 'Race ' cell
@@ -109,7 +109,7 @@ test(TEST_NAME, async ({ page }) => {
       }
       await closestButton.click()
     }
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     // Check if tbody has more than 1 row
     const rowCount = await page.locator('tbody tr').count()
     expect(rowCount).toBeGreaterThan(1)
@@ -124,12 +124,12 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('Remove', { exact: true }).click()
     //Add Observation interaction
     await page.getByRole('button', { name: 'Add Interaction' }).click()
-    await page.locator('#pane-right').getByText('Observation', { exact: true }).click()
+    await page.getByTestId('pa-pane-right').getByText('Observation', { exact: true }).click()
     // Confirm that 'Observation' exists in the table header
     await expect(page.locator('thead')).toContainText('Observation')
     await page.getByRole('cell', { name: 'Basic Data ' }).locator('span').click()
     //Add attribute
-    await page.locator('#pane-right').getByText('Ethnicity concept id').click()
+    await page.getByTestId('pa-pane-right').getByText('Ethnicity concept id').click()
     await page.getByTitle('Basic Data - Ethnicity concept id').locator('span').click()
     //Export to ZIP file
     await page.getByTitle('Export to File').click()
@@ -141,9 +141,9 @@ test(TEST_NAME, async ({ page }) => {
   //Delete cohort
   await test.step('Delete cohort', async () => {
     // await page.getByRole('button', { name: '' }).click();
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
-    await page.locator('div:nth-child(5) > svg').first().click()
+    await page.getByTestId('pa-cohort-delete-btn').first().click()
     // await page.getByRole('row', { name: 'Cohort Test' }).getByRole('button').nth(2).click();
     await page.getByRole('button', { name: 'Delete' }).click()
     await expect(page.getByText('Cohort Test0. Icons/')).not.toBeVisible()

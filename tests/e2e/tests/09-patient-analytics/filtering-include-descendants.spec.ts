@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await test.step("Add Condition Occurrence inclusion filter (Alzheimer's disease)", async () => {
@@ -31,7 +31,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Alzhiemer')
     await expect(page.getByText("Alzheimer's disease")).toBeVisible({ timeout: 10000 })
     await page.getByText("Alzheimer's disease").click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
 
   await expect(page.getByText('136 / 2,694')).toBeVisible()

@@ -46,7 +46,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Add Age filter
   await test.step('Add Age filter', async () => {
@@ -54,7 +54,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('>2')
     await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
     await expect(page.getByText('2,255 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Add Gender filter
   await test.step('Add Gender - Male filter', async () => {
@@ -62,7 +62,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
     await expect(page.getByText('1,096 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Add Inclusion filter card - Condition Occurrence
   await test.step('Add inclusion filter card for Condition Occurrence', async () => {
@@ -91,7 +91,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
       await page.getByRole('button', { name: 'Close' }).click()
-      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+      await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
       await expect(page.getByText('Chronic sinusitis')).toBeVisible()
 
       // Dismiss popover if present
@@ -123,9 +123,9 @@ test(TEST_NAME, async ({ page }) => {
       .last()
       .locator('button.axisMenuButton', { hasText: 'Gender' })
       .click()
-    await page.locator('#pane-right').getByText('Condition Occurrence A').click()
+    await page.getByTestId('pa-pane-right').getByText('Condition Occurrence A').click()
     await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
   })
@@ -136,7 +136,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     //Cancel the save
     await page.locator('footer').getByRole('button', { name: 'Cancel' }).click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Click Save again
     await page.getByRole('button', { name: 'Save' }).click()
     //Previous filter name should be visible
@@ -163,7 +163,7 @@ test(TEST_NAME, async ({ page }) => {
       .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
       .click()
     await page.getByText('Reset Selection').click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
@@ -176,7 +176,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click()
     await expect(page.getByText('357 / 2,694')).toBeVisible()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
   //Save the filter card
   await test.step('Save the filter card', async () => {
@@ -187,12 +187,12 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.savedFilters}0. Icons/`)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
@@ -203,8 +203,8 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('.footer > div:nth-child(2) > svg').first().click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-cohort-rename-btn').first().click()
     await page.getByRole('textbox').fill('')
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
@@ -225,7 +225,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
     await page.getByTitle('Delete Saved Filter').first().click()
     await page.getByRole('button', { name: 'Delete' }).click()
@@ -239,11 +239,11 @@ test(TEST_NAME, async ({ page }) => {
   //Go to patient list
   await test.step('Go to patient list', async () => {
     await page.getByRole('button', { name: '' }).click()
-    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Add an interaction - MEASUREMENT
 
     await page.getByRole('button', { name: 'Add Interaction' }).click()
-    await page.locator('#pane-right').getByText('Measurement', { exact: true }).click()
+    await page.getByTestId('pa-pane-right').getByText('Measurement', { exact: true }).click()
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
     await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
@@ -264,7 +264,7 @@ test(TEST_NAME, async ({ page }) => {
         // If the concept is already created, it will be visible
         await expect(page.getByText('Viral sinusitis')).toBeVisible()
         await page.getByText('Viral sinusitis').click()
-        await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+        await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
       } catch (e) {
         await page.getByRole('button', { name: '+' }).click()
         await page.getByRole('textbox', { name: 'Concept set name' }).click()
@@ -282,7 +282,7 @@ test(TEST_NAME, async ({ page }) => {
         await page.getByRole('button', { name: 'Create' }).click()
         await expect(page.getByRole('button', { name: 'Update' })).toBeVisible() // Ensure concept set is successfully created
         await page.getByRole('button', { name: 'Close' }).click()
-        await expect(page.locator('.loading-animation-component')).not.toBeVisible()
+        await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
         await expect(page.getByText('Viral sinusitis')).toBeVisible()
 
         // Dismiss popover if present
@@ -303,10 +303,10 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Allow bookmark to be visible').locator('div').click()
     await page.locator('footer').getByRole('button', { name: 'Save' }).click()
     //Verify Cohort is saved
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
     //Click on the saved cohort
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByText(NAME.patientListFilters).nth(1).click()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
@@ -320,7 +320,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Filter Summary', async () => {
     await page.getByRole('button', { name: '' }).click()
     await expect(page.getByText('Filter Summary')).toBeVisible()
-    await page.locator('#pane-right div').filter({ hasText: 'Showing patients with:Basic' }).nth(2)
+    await page.getByTestId('pa-pane-right').locator(div).filter({ hasText: 'Showing patients with:Basic' }).nth(2)
     await expect(page.getByText('Showing patients with:')).toBeVisible()
     await expect(
       page
@@ -356,7 +356,7 @@ test(TEST_NAME, async ({ page }) => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Create', exact: true }).click()
     await expect(page.getByText('ATLAS cohort definition created successfully and added to Cohorts.')).toBeVisible()
-    await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+    await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.patientListFilters}Atlas Cohort DefinitionID`)).toBeVisible()
   })
   //Create another user to verify bookmark visibility
@@ -412,7 +412,7 @@ test(TEST_NAME, async ({ page }) => {
     //Rename the bookmark
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click()
+    await page.getByTestId('pa-cohort-rename-btn').first().click()
     await page.getByRole('textbox').fill('')
     await page.getByRole('textbox').fill(NAME.sharedFilter)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -428,7 +428,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Sign in' }).click()
     //Verify that the bookmark is renamed
     await openDatasetCohorts(page)
-    await page.locator('#pane-left label div').click()
+    await page.getByTestId('pa-pane-left').locator('label div').click()
     await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
     //Delete the bookmark as admin
     await page.getByRole('link', { name: 'Account' }).click()

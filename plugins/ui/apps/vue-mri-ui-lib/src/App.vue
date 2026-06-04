@@ -1,9 +1,8 @@
 <template>
-  <div id="app" class="mri-app-vue-container">
+  <div id="app" class="mri-app-vue-container" data-test-id="pa-app-container">
     <NotificationStack />
-    <AtlasView v-if="atlasStore.showAtlas" />
+    <splashScreen v-if="getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
-    <splashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
   </div>
 </template>
 

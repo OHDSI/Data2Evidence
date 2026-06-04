@@ -75,7 +75,7 @@ async function dismissDiscardDialog(page) {
 }
 
 async function navigateBackToCohortList(page) {
-  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await dismissDiscardDialog(page)
   await page.waitForTimeout(500)
 }
@@ -129,18 +129,18 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_1)
-  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
-  await expect(page.locator('#pane-left')).toContainText('Enter a new name')
-  await page.locator('.app-checkbox-container').click()
-  await expect(page.locator('footer').getByRole('button', { name: 'Save' })).toBeVisible()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Save Current Filters')
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Enter a new name')
+  await page.locator('[data-test-id="pa-share-cohort-checkbox"]').click()
+  await expect(page.getByTestId('pa-save-dialog-save-btn')).toBeVisible()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
 
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
 
   // Navigate back to cohorts
   await navigateBackToCohortList(page)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(COHORT_1)
 
   // Create second cohort with FEMALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
@@ -155,19 +155,19 @@ test(TEST_NAME, async ({ page }) => {
   // Save cohort 2
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(COHORT_2)
-  await expect(page.locator('#pane-left')).toContainText('Save Current Filters')
-  await page.locator('.app-checkbox-container').click()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Save Current Filters')
+  await page.locator('[data-test-id="pa-share-cohort-checkbox"] ').click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
 
   await page.keyboard.press('Escape')
   await page.waitForTimeout(500)
 
   // Navigate back to cohorts
   await navigateBackToCohortList(page)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(COHORT_2)
 
   // Select both cohorts and verify Compare
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
+  await page.getByTestId('pa-cohort-select-btn').first().click()
   await page.getByRole('img').nth(4).click()
 
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
@@ -183,20 +183,20 @@ test(TEST_NAME, async ({ page }) => {
   await navigateToCohorts(page)
   await page.locator('.slider').click()
 
-  await expect(page.locator('#pane-left')).toContainText('Shared')
-  await expect(page.locator('#pane-left')).toContainText(COHORT_2)
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1)
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Shared')
+  await expect(page.getByTestId('pa-pane-left')).toContainText(COHORT_2)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(COHORT_1)
 
   // Verify rename and delete are disabled on shared cohorts not owned by researcher_2
-  const cohort1Card = page.locator('div:nth-child(2) > .footer')
-  const renameButton = cohort1Card.locator('div:nth-child(2)')
-  const deleteButton = cohort1Card.locator('div:last-child')
+  const cohort1Card = page.getByTestId('pa-cohort-footer').first()
+  const renameButton = cohort1Card.locator('[data-test-id="pa-cohort-rename-btn"]')
+  const deleteButton = cohort1Card.locator('[data-test-id="pa-cohort-delete-btn"]')
   await expect(renameButton).toHaveClass(/icon-button-disabled/)
   await expect(deleteButton).toHaveClass(/icon-button-disabled/)
 
   // === TEST: Materialize cohort (add patients) ===
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(3) > svg').click()
-  await expect(page.locator('#pane-left')).toContainText('Add Patients to Cohort')
+  await page.getByTestId('pa-cohort-add-btn').first().click()
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Add Patients to Cohort')
   await page
     .locator('div')
     .filter({ hasText: /^Cohort Description:$/ })
@@ -218,22 +218,22 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('status').filter({ hasText: 'Content is loading' })).not.toBeVisible({ timeout: 60000 })
 
   // Rename cohort
-  await page.locator('div:nth-child(2) > .footer > div:nth-child(2) > svg').click({ force: true })
-  await expect(page.locator('#pane-left')).toContainText('Rename Saved Filter')
-  await expect(page.locator('#pane-left')).toContainText('Specify a new name for bookmark')
+  await page.getByTestId('pa-cohort-rename-btn').first().click({ force: true })
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Rename Saved Filter')
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Specify a new name for bookmark')
   await page.getByRole('textbox').fill(COHORT_1_RENAMED)
   await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.locator('#pane-left')).toContainText(COHORT_1_RENAMED)
+  await expect(page.getByTestId('pa-pane-left')).toContainText(COHORT_1_RENAMED)
 
   // Navigate back to cohort list
   await navigateBackToCohortList(page)
 
   // Delete cohort
-  await page.locator('.footer > div:last-child > svg').first().click({ force: true })
-  await expect(page.locator('#pane-left')).toContainText('Delete Saved Filter')
-  await expect(page.locator('#pane-left')).toContainText('Are you sure you want to delete?')
+  await page.getByTestId('pa-cohort-delete-btn').first().click({ force: true })
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Delete Saved Filter')
+  await expect(page.getByTestId('pa-pane-left')).toContainText('Are you sure you want to delete?')
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.locator('#app')).toContainText('Saved filter deleted')
+  await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter deleted')
 
   // Cleanup: delete users as admin
   await logout(page)

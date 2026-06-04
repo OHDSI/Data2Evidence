@@ -52,6 +52,7 @@
           v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
           :disabled="!drilldownEnabled"
           @click="drillDownClicked"
+          data-test-id="pa-drilldown-btn"
         >
           <span class="icon" style="font-family: app-icons"></span>
         </button>
