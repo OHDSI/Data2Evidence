@@ -116,6 +116,8 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
     echo "@data2evidence:registry=$REG" > .npmrc; \
     npm install @data2evidence/d2e-atlas --no-save; \
     mv "node_modules/@data2evidence/d2e-atlas" /usr/src/bundled-plugins/d2e-atlas; \
+    npm install @data2evidence/d2e-fhir-server --no-save; \
+    mv "node_modules/@data2evidence/d2e-fhir-server" /usr/src/bundled-plugins/d2e-fhir-server; \
     rm -rf "$WORK"
 
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins

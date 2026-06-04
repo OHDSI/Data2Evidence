@@ -44,6 +44,23 @@ export async function authn(c: Context, next: Function) {
     return;
   }
 
+  const isFhirServerRoute = c.req.path.startsWith("/fhir-server/");
+  if (isFhirServerRoute) {
+    const token = extractFhirCookieToken(c);
+    if (!token) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    try {
+      await jwtVerify(token, JWKS);
+    } catch (err: any) {
+      logger.error(`authn: fhir-server token validation failed: ${err}`);
+      return new Response("Authentication Token not valid", { status: 401 });
+    }
+    c.set("logtoSubject", getTokenSubject(token));
+    await next();
+    return;
+  }
+
   const token = extractToken(c);
 
   if (!token) {
@@ -59,6 +76,18 @@ export async function authn(c: Context, next: Function) {
 
   c.set("logtoSubject", getTokenSubject(token));
   await next();
+}
+
+function extractFhirCookieToken(c: Context): string | null {
+  const cookieHeader = c.req.header("cookie") ?? c.req.raw.headers.get("cookie") ?? "";
+  for (const cookie of cookieHeader.split(";")) {
+    const trimmed = cookie.trim();
+    if (trimmed.startsWith("fhirtoken=")) {
+      const val = trimmed.slice("fhirtoken=".length).trim();
+      return val.startsWith("Bearer ") ? val.slice(7) : val || null;
+    }
+  }
+  return null;
 }
 
 function extractToken(c: Context): string | null {
@@ -79,9 +108,6 @@ function extractToken(c: Context): string | null {
     for (const cookie of cookies) {
       if (cookie.startsWith("authtoken=")) {
         return cookie.split("=")[1];
-      } else if (cookie.startsWith("fhirtoken=")) {
-        const val = cookie.split("=")[1];
-        return val.split(" ")[1] || null;
       }
     }
   }
