@@ -72,7 +72,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByTitle('Allow bookmark to be visible').locator('div').click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await pagegetByTestId('pa-save-dialog-save-btn').click()
     // await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
@@ -83,12 +83,12 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
-    await page.getByRole('button', { name: '' }).click()
+    await page.getByTestId('pa-chart-btn-list').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Remove Race
-    await page.getByRole('cell', { name: 'Race ' }).locator('span').nth(1).click()
+    await page.getByTestId('pa-patient-list-header-Race').locator('span').nth(1).click()
     // If multiple 'Remove' buttons are found, click the one closest to the 'Race ' cell
-    const raceCell = await page.getByRole('cell', { name: 'Race ' })
+    const raceCell = await page.getByTestId('pa-patient-list-header-Race')
     const removeButtons = await page.getByText('Remove').elementHandles()
     if (removeButtons.length === 1) {
       await removeButtons[0].click()
@@ -116,18 +116,18 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm patientlist-control has rowcount="812"
     const rowCountAttr = await page.locator('.patientlist-control').getAttribute('rowcount')
     expect(rowCountAttr).toBe('682')
-    await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
+    await page.getByTestId('pa-patient-list-header-Age').locator('span').nth(1).click()
     await page.getByText(' Sort Ascending').click()
-    await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
+    await page.getByTestId('pa-patient-list-header-Ethnicity concept id').locator('span').nth(1).click()
     await page.getByText(' Sort Descending').click()
-    await page.getByRole('cell', { name: 'Race concept id ' }).locator('span').nth(1).click()
+    await page.getByTestId('pa-patient-list-header-Race concept id').locator('span').nth(1).click()
     await page.getByText('Remove', { exact: true }).click()
     //Add Observation interaction
     await page.getByRole('button', { name: 'Add Interaction' }).click()
     await page.getByTestId('pa-pane-right').getByText('Observation', { exact: true }).click()
     // Confirm that 'Observation' exists in the table header
     await expect(page.locator('thead')).toContainText('Observation')
-    await page.getByRole('cell', { name: 'Basic Data ' }).locator('span').click()
+    await page.getByTestId('pa-patient-list-header-Basic Data').locator('span').click()
     //Add attribute
     await page.getByTestId('pa-pane-right').getByText('Ethnicity concept id').click()
     await page.getByTitle('Basic Data - Ethnicity concept id').locator('span').click()
@@ -140,7 +140,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Delete cohort
   await test.step('Delete cohort', async () => {
-    // await page.getByRole('button', { name: '' }).click();
+    // await page.getByTestId('pa-chart-btn-list').click();
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText('Cohort Test0. Icons/')).toBeVisible()
     await page.getByTestId('pa-cohort-delete-btn').first().click()

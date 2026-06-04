@@ -2,6 +2,7 @@
   <div
     v-bind:class="['FilterCard', cssClass, this.isNew && !this.isBasic ? 'MriPaFilterCardNew' : '']"
     @click="onFiltercardClick"
+    :data-test-id="testId"
   >
     <!--Filtercard rename messageBox-->
     <messageBox messageType="custom" @close="cancel" :busy="busy" v-if="renameModal.show">
@@ -408,6 +409,9 @@ export default {
     },
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
+    },
+    testId() {
+      return `pa-filter-card-${this.id.replace(/\./g, '-')}`
     },
   },
   methods: {

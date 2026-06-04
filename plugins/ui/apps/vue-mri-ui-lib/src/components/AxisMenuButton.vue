@@ -19,6 +19,7 @@
         v-bind:title="axisDisplay.axisSelectionTooltip"
         :disabled="isDisabled"
         tabindex="0"
+        :data-test-id="`pa-axis-menu-btn-${axisName}`"
       >
         <span class="axisMenuText" :class="[axisDisplay.isEmpty ? 'axisTextPlaceholder' : '']">{{
           axisDisplay.axisSelectionFilterText
@@ -195,6 +196,10 @@ export default {
         return this.$el.parentElement.getBoundingClientRect().bottom
       }
       return 0
+    },
+    axisName() {
+      const names = ['x1', 'x2', 'x3', 'stack', 'y']
+      return names[this.dimensionIndex] || `axis-${this.dimensionIndex}`
     },
   },
   methods: {

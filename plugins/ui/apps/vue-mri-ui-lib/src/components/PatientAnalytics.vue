@@ -11,6 +11,7 @@
                   class="actionButton"
                   @click="togglePanel(PANEL.RIGHT)"
                   :title="getText('MRI_PA_TOOLTIP_ENTER_EXPANDED_FILTERS_VIEW')"
+                  data-test-id="pa-fullscreen-btn"
                 >
                   <icon icon="fullScreen" />
                 </button>

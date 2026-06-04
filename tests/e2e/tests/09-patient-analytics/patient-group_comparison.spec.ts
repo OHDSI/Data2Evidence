@@ -44,7 +44,7 @@ test('pa-compare-cohorts', async ({ page }) => {
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await pagegetByTestId('pa-save-dialog-save-btn').click()
   await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -67,7 +67,7 @@ test('pa-compare-cohorts', async ({ page }) => {
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await pagegetByTestId('pa-save-dialog-save-btn').click()
   await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
 
   // Navigate back to the cohorts list
@@ -145,7 +145,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
   await page.waitForTimeout(10000)
-  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await pagegetByTestId('pa-save-dialog-save-btn').click()
   // await expect(page.getByTestId('pa-pane-left')).toContainText(cohortName)
 
   // ========================

@@ -95,7 +95,7 @@ test(TEST_NAME, async ({ browser }) => {
   // Dismiss popover if present
   try {
     await page.mouse.move(0, 0)
-    await page.locator('.modal-wrapper').click()
+    await pagegetByTestId('pa-modal-wrapper').click()
   } catch {
     // Modal not present, continue
   }

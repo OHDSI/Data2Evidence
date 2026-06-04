@@ -1,7 +1,7 @@
 <template>
   <transition name="modal">
     <div v-bind:class="['modal-mask', { 'modal-mask-dim': dim }]">
-      <div class="modal-wrapper" @click.self="$emit('close')" @keyup="keymonitor" tabindex="0">
+      <div class="modal-wrapper" @click.self="$emit('close')" @keyup="keymonitor" tabindex="0" data-test-id="pa-modal-wrapper">
         <div ref="dialogBody" class="modal-container" v-bind:style="dialogStyle" @mouseleave="onMouseLeave()">
           <loadingAnimation v-if="busy"></loadingAnimation>
           <span v-if="!!arrow" :class="arrowClasses" :style="arrowPosition"></span>

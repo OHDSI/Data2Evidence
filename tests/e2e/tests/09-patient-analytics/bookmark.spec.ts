@@ -68,7 +68,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Add inclusion filter card for Condition Occurrence', async () => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
+    await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByText('All').click()
     await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible()
@@ -119,12 +119,12 @@ test(TEST_NAME, async ({ page }) => {
     //   .getByRole('button')
     //   .click()
     await page
-      .locator('.axis-group--bottom .axis-subgroup')
+      getByTestId('pa-axis-menu-btn-x1')
       .last()
       .locator('button.axisMenuButton', { hasText: 'Gender' })
       .click()
     await page.getByTestId('pa-pane-right').getByText('Condition Occurrence A').click()
-    await page.locator('.dropdownmenuitem-container .content', { hasText: 'Condition concept Name' }).click()
+    await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
@@ -135,7 +135,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Test Cohort 2')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     //Cancel the save
-    await page.locator('footer').getByRole('button', { name: 'Cancel' }).click()
+    await page.getByTestId('pa-save-dialog-cancel-btn').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Click Save again
     await page.getByRole('button', { name: 'Save' }).click()
@@ -148,23 +148,23 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('')
     await expect(page.getByText('Filter name must not exceed 255 characters')).not.toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill('  ')
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
     await page.getByRole('textbox', { name: 'Enter name' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Filters saved.')).toBeVisible()
   })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
     await page
-      .locator('.axis-group--bottom .axis-subgroup')
+      getByTestId('pa-axis-menu-btn-x1')
       .last()
       .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
       .click()
     await page.getByText('Reset Selection').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).click()
+    await page.getByTestId('pa-axis-menu-btn-x2').click()
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
     await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
@@ -183,7 +183,7 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
@@ -197,7 +197,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.savedFilters)
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Cohort name already exists. Please enter another name.')).toBeVisible()
     await page.getByRole('button', { name: 'Cancel' }).click()
   })
@@ -206,7 +206,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await page.getByTestId('pa-cohort-rename-btn').first().click()
     await page.getByRole('textbox').fill('')
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill(NAME.renamedFilters)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -238,7 +238,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Go to patient list
   await test.step('Go to patient list', async () => {
-    await page.getByRole('button', { name: '' }).click()
+    await page.getByTestId('pa-chart-btn-list').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     //Add an interaction - MEASUREMENT
 
@@ -246,10 +246,10 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-pane-right').getByText('Measurement', { exact: true }).click()
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
-    await page.getByRole('cell', { name: 'Ethnicity concept id ' }).locator('span').nth(1).click()
-    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Remove').click()
+    await page.getByTestId('pa-patient-list-header-Ethnicity concept id').locator('span').nth(1).click()
+    await page.getByTestId('pa-dropdown-menu').getByText('Remove').click()
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
-    await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
+    await page.getByTestId('pa-dropdown-menu').getByText('Sort Descending').click()
     //Add basic filters
     await page.getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
@@ -258,7 +258,7 @@ test(TEST_NAME, async ({ page }) => {
     await test.step('Add filter card for Condition Occurrence', async () => {
       await page.getByTitle('Add Filter Card').getByRole('button').click()
       await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-      await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
+      await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByText('All').click()
       await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Viral sinusitis')
       try {
         // If the concept is already created, it will be visible
@@ -300,8 +300,8 @@ test(TEST_NAME, async ({ page }) => {
     //Save filter
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('textbox', { name: 'Enter name' }).fill(NAME.patientListFilters)
-    await page.getByTitle('Allow bookmark to be visible').locator('div').click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByTestId('pa-share-cohort-checkbox').click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
     await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
@@ -318,9 +318,9 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Ethnicity concept id')).not.toBeVisible()
   })
   await test.step('Filter Summary', async () => {
-    await page.getByRole('button', { name: '' }).click()
+    await page.getByTestId('pa-filter-summary-btn').click()
     await expect(page.getByText('Filter Summary')).toBeVisible()
-    await page.getByTestId('pa-pane-right').locator(div).filter({ hasText: 'Showing patients with:Basic' }).nth(2)
+    await page.getByTestId('pa-pane-right').getByTestId('pa-filter-summary-panel')
     await expect(page.getByText('Showing patients with:')).toBeVisible()
     await expect(
       page
@@ -336,11 +336,11 @@ test(TEST_NAME, async ({ page }) => {
   //Download SQL
   await test.step('Download SQL', async () => {
     //Go full screen
-    await page.getByRole('button', { name: '' }).click()
+    await page.getByTestId('pa-fullscreen-btn').click()
     //Verify that the graph is not visible
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).not.toBeVisible()
     //Go back full screen
-    await page.getByRole('button', { name: '' }).click()
+    await page.getByTestId('pa-fullscreen-btn').click()
     //Download SQL
     const download2Promise = page.waitForEvent('download')
     await page.getByRole('button', { name: 'Download SQL' }).click()

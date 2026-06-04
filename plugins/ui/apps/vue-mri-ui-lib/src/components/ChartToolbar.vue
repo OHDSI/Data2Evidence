@@ -63,6 +63,7 @@
           class="actionButton"
           @click="showFilterCardSummary"
           :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
+          data-test-id="pa-filter-summary-btn"
         >
           <icon icon="summaryDoc" />
         </button>
