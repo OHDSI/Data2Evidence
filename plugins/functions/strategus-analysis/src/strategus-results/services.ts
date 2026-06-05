@@ -91,12 +91,16 @@ export const startStrategusResultsViewer = async (
           msg.content.text.includes("Listening on http://0.0.0.0:3838")
         ) {
           executionComplete = true;
+          kernelConnection.dispose();
+          manager.dispose();
           resolve();
         }
       };
 
       setTimeout(() => {
         if (!executionComplete) {
+          kernelConnection.dispose();
+          manager.dispose();
           reject(new Error("Timeout error: Shiny app failed to start"));
         }
       }, 60000);
