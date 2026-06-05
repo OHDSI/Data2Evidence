@@ -43,7 +43,7 @@ export const startStrategusResultsViewer = async (
     const moduleConfig = await createShinyModuleConfig(strategusAnalysisObj);
 
     // When the caller sends an empty viewerCode, fall back to the one stored in the DB.
-    const resolvedViewerCode = viewerCode || strategusAnalysisObj?.viewerCode;
+    const resolvedViewerCode = viewerCode.trim() || strategusAnalysisObj?.viewerCode;
     if (!resolvedViewerCode) {
       throw new Error(
         `Viewer code is not configured for study ${studyId}. Please contact your Admin.`
