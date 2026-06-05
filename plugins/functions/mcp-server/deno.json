@@ -1,6 +1,9 @@
 {
   "workspace": [],
   "nodeModulesDir": "auto",
+  "tasks": {
+    "test": "deno test --allow-read --allow-env --no-check --sloppy-imports src/"
+  },
   "compilerOptions": {
     "lib": [
       "deno.window"
@@ -20,6 +23,10 @@
     "./src/tools/cohort-management.tools": "./src/tools/cohort-management.tools.ts",
     "./src/tools/cohort-instruction.tools": "./src/tools/cohort-instruction.tools.ts",
     "./src/tools/cohort-validation.tools": "./src/tools/cohort-validation.tools.ts",
+    "./src/tools/cohort-builder.tools": "./src/tools/cohort-builder.tools.ts",
+    "./src/api/AnalyticsAPI": "./src/api/AnalyticsAPI.ts",
+    "./src/lib/cohortBuilder": "./src/lib/cohortBuilder.ts",
+    "./src/lib/cohortUrlCodec": "./src/lib/cohortUrlCodec.ts",
     "./src/tools/phenotype-library.tools": "./src/tools/phenotype-library.tools.ts",
     "./src/prompts/cohort.prompts": "./src/prompts/cohort.prompts.ts",
     "./src/types/tool-schemas": "./src/types/tool-schemas.ts",
@@ -34,6 +41,8 @@
     "@modelcontextprotocol/sdk/server/streamableHttp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/streamableHttp.js",
     "@modelcontextprotocol/sdk/server/mcp.js": "npm:@modelcontextprotocol/sdk@^1.20.2/server/mcp.js",
     "zod": "npm:zod@^3.25.76",
-    "papaparse": "npm:papaparse@^5.4.1"
+    "papaparse": "npm:papaparse@^5.4.1",
+    "pako": "npm:pako@1.0.11",
+    "@std/assert": "jsr:@std/assert@^1.0.0"
   }
 }
