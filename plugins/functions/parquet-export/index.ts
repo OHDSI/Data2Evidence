@@ -16,6 +16,8 @@ interface SqlQueryTemplate {
 interface DatasetMetadata {
   id: string;
   databaseCode: string;
+  cacheId?: string | null;
+  dialect: string;
   schemaName: string;
   vocabSchemaName: string;
   resultsSchemaName: string;
@@ -528,15 +530,33 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
+    // Determine correct Trex alias based on dialect
+    // HANA queries must run against the source database, not DuckDB cache
+    const trexAlias =
+      dataset.dialect === "hana"
+        ? dataset.databaseCode
+        : (dataset.cacheId ?? dataset.databaseCode);
+
     // @ts-ignore Trex global
     const dbm = Trex.databaseManager();
-    const conn = dbm.getConnection(
-      dataset.cacheId ?? dataset.databaseCode,
-      dataset.schemaName,
-      dataset.vocabSchemaName,
-      dataset.resultsSchemaName,
-      { duckdb: (e: unknown) => e, hana: (e: unknown) => e },
-    );
+    let conn;
+
+    console.log({ dataset });
+    try {
+      conn = dbm.getConnection(
+        trexAlias,
+        dataset.schemaName,
+        dataset.vocabSchemaName,
+        dataset.resultsSchemaName,
+        { duckdb: (e: unknown) => e, hana: (e: unknown) => e },
+      );
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      throw new Error(
+        `Failed to connect to dataset ${dataset.id} ` +
+          `(alias: ${trexAlias}, dialect: ${dataset.dialect}): ${errorMsg}`,
+      );
+    }
 
     try {
       if (format === "json") {
