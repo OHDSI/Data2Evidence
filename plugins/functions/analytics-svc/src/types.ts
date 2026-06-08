@@ -9,7 +9,6 @@ import { Request } from "express";
 export interface IMRIRequest extends Request {
     dbConnections: {
         analyticsConnection: ConnectionInterface;
-        sourceConnection: ConnectionInterface;
     };
     dbCredentials: {
         analyticsCredentials: any;
@@ -387,7 +386,9 @@ export interface StudyDbMetadata {
     resultsSchemaName: string;
     dialect: string;
     databaseCode: string;
+    type: string;
     cacheId?: string | null;
+    sourceStudyId: string | null;
 }
 
 export interface StudiesDbMetadata {
