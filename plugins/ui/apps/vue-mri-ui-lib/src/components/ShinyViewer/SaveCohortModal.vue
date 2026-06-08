@@ -219,13 +219,20 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.cohortName = this.generateDefaultName()
+        this.cohortName = this.isNewCohort
+          ? this.generateDefaultName()
+          : (this.getActiveBookmark?.bookmarkname || '')
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
         this.savedCohortId = null
         this.bookmarkSavedButMaterializationFailed = false
         this.resetMessageStrip()
+      }
+    },
+    cohortName() {
+      if (this.isNewCohort) {
+        this.validateCohortName()
       }
     },
   },
