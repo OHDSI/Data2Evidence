@@ -17,6 +17,7 @@ import {
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
+import { UserMgmtService } from "../../user-mgmt/user-mgmt.service.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -61,6 +62,7 @@ export class DatasetCommandService {
     private readonly requestContextService: RequestContextService,
     private readonly webApiSourceService: WebApiSourceService,
     private readonly trexApiService: TrexApiService,
+    private readonly userMgmtService: UserMgmtService,
   ) {
     this.userId = this.requestContextService.getAuthToken()?.sub;
   }
@@ -162,6 +164,21 @@ export class DatasetCommandService {
       connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
     });
 
+    // Sync of the per-dataset Logto role + scopes; lazy-recreated on first researcher assignment if it fails.
+    if (datasetDto.tokenDatasetCode) {
+      try {
+        await this.userMgmtService.ensureDatasetRole(
+          datasetDto.id,
+          datasetDto.tokenDatasetCode,
+          datasetDto.type,
+        );
+      } catch (err) {
+        this.logger.error(
+          `Logto dataset-role sync failed for ${datasetDto.id}: ${err}`,
+        );
+      }
+    }
+
     return result;
   }
 
@@ -193,6 +210,9 @@ export class DatasetCommandService {
   }
 
   async offboardDataset(id: string) {
+    const existing = await this.datasetRepo.getDataset(id);
+    const tokenDatasetCode = existing?.tokenDatasetCode;
+
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id);
       if (result.affected === 0) {
@@ -212,17 +232,30 @@ export class DatasetCommandService {
         .catch((err) => this.logger.error(`WebAPI delete failed for ${id}: ${err}`));
     }
 
+    // Delete the per-dataset Logto role + scopes (fire-and-forget).
+    if (tokenDatasetCode) {
+      this.userMgmtService
+        .removeDatasetRole(id, tokenDatasetCode)
+        .catch((err) =>
+          this.logger.error(
+            `Logto dataset-role delete failed for ${id}: ${err}`,
+          ),
+        );
+    }
+
     return result;
   }
 
   async transformToWebApi(
     sourceId: string,
   ): Promise<{ id: string; transformed: boolean; reason?: string }> {
+    let tokenDatasetCode: string | undefined;
     const run = async (entityMgr: EntityManager) => {
       const source = await entityMgr.findOne(Dataset, { where: { id: sourceId } });
       if (!source) {
         throw new HttpException(404, `Dataset ${sourceId} not found`);
       }
+      tokenDatasetCode = source.tokenDatasetCode;
       if (source.sourceDatasetId) {
         throw new HttpException(
           400,
@@ -338,7 +371,24 @@ export class DatasetCommandService {
       return { id: sourceId, transformed: true };
     };
 
-    return this.transactionRunner.run(run, undefined);
+    const result = await this.transactionRunner.run(run, undefined);
+
+    // The dataset is now type=webapi, so (re)sync its per-dataset Logto role.
+    if (result.transformed && tokenDatasetCode) {
+      try {
+        await this.userMgmtService.ensureDatasetRole(
+          sourceId,
+          tokenDatasetCode,
+          "webapi",
+        );
+      } catch (err) {
+        this.logger.error(
+          `Logto dataset-role sync failed for ${sourceId}: ${err}`,
+        );
+      }
+    }
+
+    return result;
   }
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
