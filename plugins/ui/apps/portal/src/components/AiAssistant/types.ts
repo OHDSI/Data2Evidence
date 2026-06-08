@@ -22,13 +22,6 @@ export interface ChatMessage {
   done: boolean;
 }
 
-export interface ChatSession {
-  sessionId: string;
-  datasetId: string;
-  createdAt: string;
-  expiresInSec: number;
-}
-
 export interface StreamCallbacks {
   onToken: (delta: string) => void;
   onToolStart: (id: string, name: string, args: Record<string, unknown>) => void;

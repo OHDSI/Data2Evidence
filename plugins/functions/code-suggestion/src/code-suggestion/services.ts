@@ -1,5 +1,9 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
 import { createMcpClient } from "../mcp/client";
 import { StringOutputParser } from "@langchain/core/output_parsers";
@@ -70,7 +74,7 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     throw new Error(
       `Failed to generate code suggestion with model ${uiCode.model}: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 };
@@ -122,7 +126,7 @@ export const getChatResponse = async (req: any) => {
     throw new Error(
       `Failed to get chat response with model ${uiChat.model}${datasetId}: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 };
@@ -150,7 +154,7 @@ export const getCohortResponse = async (req: any) => {
     const tools = allTools.filter((t: any) => t.name === COHORT_BUILDER_TOOL);
     if (tools.length === 0) {
       throw new Error(
-        `Cohort builder tool '${COHORT_BUILDER_TOOL}' not found on the MCP server`
+        `Cohort builder tool '${COHORT_BUILDER_TOOL}' not found on the MCP server`,
       );
     }
 
@@ -175,8 +179,22 @@ export const getCohortResponse = async (req: any) => {
     console.log(
       `[MCP-TIMING] [cohort-builder] MCP tools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
     );
+    // Map prior conversation turns to LangChain message objects so the agent
+    // has full multi-turn context (oldest first, capped at 20 turns to bound
+    // token/payload size).
+    const MAX_HISTORY = 20;
+    const historyMessages = (uiChat.history ?? [])
+      .slice(-MAX_HISTORY)
+      .filter((m) => m.content?.trim())
+      .map((m) =>
+        m.role === "assistant"
+          ? new AIMessage(m.content)
+          : new HumanMessage(m.content),
+      );
+
     const messages = [
       new SystemMessage(getCohortPrompting(uiChat.userInput)),
+      ...historyMessages,
       new HumanMessage(uiChat.userInput),
     ];
 
@@ -194,7 +212,7 @@ export const getCohortResponse = async (req: any) => {
     throw new Error(
       `Failed to get cohort response with model ${uiChat.model}${datasetId}: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 };

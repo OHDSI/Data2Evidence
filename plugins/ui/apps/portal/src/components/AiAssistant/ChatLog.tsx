@@ -1,10 +1,9 @@
-import React, { FC, useEffect, useRef } from "react";
+import React, { FC, useEffect, useRef, ReactNode } from "react";
 import type { ChatMessage, ToolStatus, ArtifactEvent } from "./types";
 
 const ToolBadge: FC<{ status: ToolStatus }> = ({ status }) => {
   const icon = status.state === "pending" ? "⟳" : status.state === "ok" ? "✓" : "✕";
-  const color =
-    status.state === "pending" ? "#666" : status.state === "ok" ? "#2e7d32" : "#c62828";
+  const color = status.state === "pending" ? "#666" : status.state === "ok" ? "#2e7d32" : "#c62828";
   return (
     <div
       style={{
@@ -18,9 +17,7 @@ const ToolBadge: FC<{ status: ToolStatus }> = ({ status }) => {
     >
       <span style={{ fontFamily: "monospace" }}>{icon}</span>
       <span style={{ fontWeight: 500 }}>{status.name.replace(/_/g, " ")}</span>
-      {status.summary && (
-        <span style={{ color: "#888", fontStyle: "italic" }}>— {status.summary}</span>
-      )}
+      {status.summary && <span style={{ color: "#888", fontStyle: "italic" }}>— {status.summary}</span>}
     </div>
   );
 };
@@ -55,6 +52,42 @@ const ChatLog: FC<ChatLogProps> = ({ messages }) => {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const renderMessageContent = (content: string): ReactNode => {
+    const COHORT_URL_RE = /\/portal\/researcher\/cohort\?[^\s")']+/g;
+    const parts: ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = COHORT_URL_RE.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+      const url = match[0];
+      parts.push(
+        <a
+          key={match.index}
+          href={url}
+          style={{
+            color: "inherit",
+            textDecoration: "underline",
+            fontWeight: 600,
+          }}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View Cohort
+        </a>
+      );
+      lastIndex = match.index + url.length;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : content;
+  };
 
   if (messages.length === 0) {
     return (
@@ -108,10 +141,8 @@ const ChatLog: FC<ChatLogProps> = ({ messages }) => {
               wordBreak: "break-word",
             }}
           >
-            {msg.content}
-            {!msg.done && msg.role === "assistant" && (
-              <span style={{ opacity: 0.4, marginLeft: 1 }}>▌</span>
-            )}
+            {renderMessageContent(msg.content)}
+            {!msg.done && msg.role === "assistant" && <span style={{ opacity: 0.4, marginLeft: 1 }}>▌</span>}
           </div>
 
           {msg.toolStatuses.length > 0 && (
