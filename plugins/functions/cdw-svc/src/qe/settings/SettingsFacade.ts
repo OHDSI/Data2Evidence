@@ -42,14 +42,21 @@ export class SettingsFacade {
         callback(null, result);
         break;
       case "getColumns":
-        let analyticsConnection = await getAnalyticsConnection(this.userObj, request.headers.authorization)
+        let analyticsConnection = await getAnalyticsConnection(
+          this.userObj,
+          request.headers.authorization
+        )
         let dbMeta = new DbMeta(analyticsConnection);
         dbMeta.getColumns(request.dbObject, (err, result) => {
-          if (err) {
-            callback(err, null);
-          } else {
-            callback(null, result);
+          try {
+            analyticsConnection?.close?.();
+          } catch (_err) {
+            // Preserve the metadata response; cleanup errors are non-actionable here.
           }
+          if (err) {
+            return callback(err, null);
+          }
+          return callback(null, result);
         });
         break;
       default:

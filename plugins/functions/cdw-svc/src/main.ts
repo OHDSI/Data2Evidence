@@ -31,6 +31,25 @@ const noCache = (req, res, next) => {
   next();
 };
 
+const sendCDWServiceError = (res, action) => {
+  if (
+    action === "column_suggestion_service" ||
+    action === "table_suggestion_service"
+  ) {
+    return res.status(200).send({ data: [] });
+  }
+
+  return res.status(500).send({});
+};
+
+const closeConnection = (connection) => {
+  try {
+    connection?.close?.();
+  } catch (err) {
+    log.error(err);
+  }
+};
+
 export const main = () => {
   const app = express();
   app.use("/check-liveness", healthCheckMiddleware);
@@ -275,6 +294,7 @@ const initRoutes = (
   app.post(
     "/hc/hph/cdw/services/cdw_services.xsjs",
     async (req: ICDWRequest, res) => {
+      let analyticsConnection;
       try {
         const { configConnection } = req.dbConnections;
         const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
@@ -294,7 +314,7 @@ const initRoutes = (
         }
 
         const datasetId = getDatasetIdFromConfig(req.body.config);
-        const analyticsConnection = await getAnalyticsConnection(
+        analyticsConnection = await getAnalyticsConnection(
           user,
           token,
           datasetId,
@@ -324,16 +344,18 @@ const initRoutes = (
           req.body,
           hasEndUserPrivilege,
           (err, result) => {
+            closeConnection(analyticsConnection);
             if (err) {
               log.error(err);
-              return res.status(500).send({});
+              return sendCDWServiceError(res, req.query.action);
             }
             res.status(200).send(result);
           },
         );
       } catch (err) {
+        closeConnection(analyticsConnection);
         log.error(err);
-        res.status(500).send({});
+        sendCDWServiceError(res, req.query.action);
       }
     }
   );
