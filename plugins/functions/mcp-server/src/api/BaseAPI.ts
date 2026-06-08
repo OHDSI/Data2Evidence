@@ -27,19 +27,16 @@ export abstract class BaseAPI {
   }
 
   // Returns raw { data, status } — callers own error mapping and status checks.
-  // DELETE uses axios (no channel.delete available); GET/POST/PUT use Trex channel.
   protected async call<T>(
-    method: "get" | "post" | "put" | "delete",
+    method: "get" | "post" | "put",
     path: string,
     opts: CallOptions,
-    body?: unknown
+    body?: unknown,
   ): Promise<{ data: T; status: number }> {
     const config = this.buildRequestConfig(opts);
     const url = `${this.baseURL}${path}`;
     let response: any;
-    if (method === "delete") {
-      response = await axios.delete(url, config);
-    } else if (method === "get") {
+    if (method === "get") {
       response = await this.channel.get(url, config);
     } else {
       response = await this.channel[method](url, body ?? {}, config);
