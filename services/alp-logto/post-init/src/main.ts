@@ -310,6 +310,12 @@ async function main() {
         });
       }
     }
+  } else {
+    roleScopes = logtoRoles.map((r, indx) => ({
+      roleId: r.id,
+      scopeId: logtoScopes[indx]["id"],
+      scopeName: logtoScopes[indx]["name"],
+    }));
   }
 
   for (const rs of roleScopes) {
