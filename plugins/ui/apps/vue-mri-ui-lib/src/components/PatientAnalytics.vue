@@ -1,6 +1,6 @@
 <template>
   <div :class="['pa-component-wrapper']">
-    <AtlasView v-if="atlasStore.showAtlas" style="height: 100%; width: 100%; position: absolute; z-index: 50;" />
+    <AtlasView v-if="atlasStore.showAtlas" />
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">

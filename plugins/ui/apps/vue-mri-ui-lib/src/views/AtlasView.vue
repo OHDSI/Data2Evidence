@@ -1,13 +1,14 @@
 <template>
-  <div v-if="!tokenReady">Loading...</div>
-  <iframe
-    v-else
-    ref="iframeRef"
-    :src="`/atlas${atlasStore.atlasPath}`"
-    @load="handleIframeLoad"
-    style="width: 100%; height: 100%; border: none"
-    title="Atlas Lite"
-  />
+  <div class="atlas-view-container">
+    <iframe
+      v-if="tokenReady"
+      ref="iframeRef"
+      :src="`/atlas${atlasStore.atlasPath}`"
+      @load="handleIframeLoad"
+      class="atlas-iframe"
+      title="Atlas Lite"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -21,3 +22,20 @@ const { tokenReady, preloadToken, handleIframeLoad } = useAtlasIframe(iframeRef)
 
 onMounted(preloadToken)
 </script>
+
+<style scoped>
+.atlas-view-container {
+  position: absolute;
+  inset: 0;
+  background: white;
+  z-index: 50;
+  height: 100%;
+  width: 100%;
+}
+
+.atlas-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+</style>
