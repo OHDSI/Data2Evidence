@@ -52,7 +52,7 @@ test('cohort-generation', async ({ page }) => {
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
-  await pagegetByTestId('pa-save-dialog-save-btn').click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   await expect(page.getByTestId('pa-pane-left')).toContainText(cohortName)
 
   // ========================
@@ -108,7 +108,7 @@ test('cohort-generation', async ({ page }) => {
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
-  await pagegetByTestId('pa-save-dialog-save-btn').click()
+  await page.getByTestId('pa-save-dialog-save-btn').click()
   await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
 
   // ========================

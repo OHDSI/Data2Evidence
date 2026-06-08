@@ -119,7 +119,7 @@ test(TEST_NAME, async ({ page }) => {
     //   .getByRole('button')
     //   .click()
     await page
-      getByTestId('pa-axis-menu-btn-x1')
+      .getByTestId('pa-axis-menu-btn-x1')
       .last()
       .locator('button.axisMenuButton', { hasText: 'Gender' })
       .click()
@@ -158,7 +158,7 @@ test(TEST_NAME, async ({ page }) => {
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
     await page
-      getByTestId('pa-axis-menu-btn-x1')
+      .getByTestId('pa-axis-menu-btn-x1')
       .last()
       .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
       .click()

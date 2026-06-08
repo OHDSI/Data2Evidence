@@ -84,12 +84,12 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set X1-axis to condition concept name
   await page
-    getByTestId('pa-axis-menu-btn-x1')
+    .getByTestId('pa-axis-menu-btn-x1')
     .last()
     .locator('button.axisMenuButton', { hasText: 'Gender' })
     .click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('list')
     .getByText('Condition Occurrence A')
     .click()
@@ -112,7 +112,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X1-axis to gender
   await page.getByTestId('pa-axis-menu-btn-x1').click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('list')
     .getByText('Basic Data')
     .click()
@@ -136,7 +136,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X1-axis to condition concept name
   await page.getByTestId('pa-axis-menu-btn-x1').click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('list')
     .getByText('Condition Occurrence A')
     .click()
@@ -148,7 +148,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X2-axis to race concept id
   await page.getByTestId('pa-axis-menu-btn-x2').click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()
@@ -160,13 +160,13 @@ test(TEST_NAME, async ({ page }) => {
   // Set X2-axis to year of birth with bin size of 50
   await page.getByTestId('pa-axis-menu-btn-x2').click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()
     .click()
   await page.getByTestId('pa-dropdown-menu').getByText('Year of Birth').click()
-  await page.getByTestId('pa-axis-menu-btn-x1').last()getByTestId('pa-binning-btn').click()
+  await page.getByTestId('pa-axis-menu-btn-x1').last().getByTestId('pa-binning-btn').click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
   await page.getByTestId('pa-modal-wrapper').click()
@@ -182,7 +182,7 @@ test(TEST_NAME, async ({ page }) => {
   // Set X3-axis attribute (was rendered as last bottom axis; originally captioned "stacked chart")
   await page.getByTestId('pa-axis-menu-btn-x3').click()
   await page
-    getByTestId('pa-dropdown-menu')
+    .getByTestId('pa-dropdown-menu')
     .getByRole('listitem')
     .filter({ hasText: 'Basic Data' })
     .last()

@@ -72,7 +72,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('textbox', { name: 'Enter name' }).fill('Cohort Test')
     await page.getByRole('textbox', { name: 'Enter name' }).click()
     await page.getByTitle('Allow bookmark to be visible').locator('div').click()
-    await pagegetByTestId('pa-save-dialog-save-btn').click()
+    await page.getByTestId('pa-save-dialog-save-btn').click()
     // await page.getByRole('button', { name: 'Cancel' }).click();
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   })
