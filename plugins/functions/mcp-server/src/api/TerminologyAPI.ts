@@ -124,47 +124,6 @@ export class TerminologyAPI extends BaseAPI {
     }
   }
 
-  async updateConceptSet(
-    authorization: string,
-    datasetId: string,
-    conceptSetId: number,
-    payload: Partial<{
-      name: string;
-      concepts: ConceptItem[];
-      shared: boolean;
-      userName: string;
-    }>,
-  ): Promise<number> {
-    try {
-      const { data } = await this.call<number>(
-        "put",
-        `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
-        { authorization },
-        payload,
-      );
-      return Number(data);
-    } catch (error) {
-      throw this.mapError(error, payload.name);
-    }
-  }
-
-  async deleteConceptSet(
-    authorization: string,
-    datasetId: string,
-    conceptSetId: number,
-  ): Promise<number> {
-    try {
-      const { data } = await this.call<number>(
-        "delete",
-        `/concept-set/${conceptSetId}?datasetId=${encodeURIComponent(datasetId)}`,
-        { authorization },
-      );
-      return Number(data);
-    } catch (error) {
-      throw this.mapError(error);
-    }
-  }
-
   async checkConceptCoverage(
     authorization: string,
     datasetId: string,
