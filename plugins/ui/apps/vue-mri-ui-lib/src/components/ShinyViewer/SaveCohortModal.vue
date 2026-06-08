@@ -219,9 +219,7 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.cohortName = this.isNewCohort
-          ? this.generateDefaultName()
-          : (this.getActiveBookmark?.bookmarkname || '')
+        this.cohortName = this.generateDefaultName()
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
