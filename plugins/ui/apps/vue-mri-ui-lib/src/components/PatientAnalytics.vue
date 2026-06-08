@@ -1,5 +1,6 @@
 <template>
   <div :class="['pa-component-wrapper']">
+    <AtlasView v-if="atlasStore.showAtlas" style="height: 100%; width: 100%; position: absolute; z-index: 50;" />
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
@@ -182,6 +183,8 @@ import ResizeObserver from './ResizeObserver.vue'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
+import AtlasView from '../views/AtlasView.vue'
+import { useAtlasStore } from '../stores/atlas'
 
 const PANE_SIZE = {
   FULL: 100,
@@ -217,6 +220,7 @@ export default {
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
       rightPaneEverOpened: false,
+      atlasStore: useAtlasStore(),
     }
   },
   created() {},
@@ -509,6 +513,7 @@ export default {
     Splitpanes,
     Pane,
     QueryFilter,
+    AtlasView,
   },
 }
 </script>

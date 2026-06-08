@@ -14,8 +14,6 @@ import SplashScreen from './components/SplashScreen.vue'
 import NotificationStack from './components/NotificationStack.vue'
 import { useDeepLink } from './composables/useDeepLink'
 import CohortUrlCodec from './utils/CohortUrlCodec'
-import AtlasView from './views/AtlasView.vue'
-import { useAtlasStore } from './stores/atlas'
 import { usePortalContext } from './composables/usePortalContext'
 
 export default {
@@ -24,7 +22,6 @@ export default {
   data() {
     return {
       showDialog: false,
-      atlasStore: useAtlasStore(),
       portalContext: usePortalContext(),
     }
   },
@@ -87,7 +84,6 @@ export default {
     configSelection,
     SplashScreen,
     NotificationStack,
-    AtlasView,
   },
 }
 </script>
