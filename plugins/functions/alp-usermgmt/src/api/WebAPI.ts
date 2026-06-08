@@ -1,11 +1,7 @@
 import { Service } from 'typedi'
 import { get } from './request-util'
 import { createLogger } from '../Logger'
-import { env } from '../env'
-
-interface ServiceRoutes {
-  webapi?: string
-}
+import { services } from '../env'
 
 @Service()
 export class WebAPI {
@@ -13,11 +9,10 @@ export class WebAPI {
   private readonly baseUrl: string
 
   constructor() {
-    const routes: ServiceRoutes = JSON.parse(env.SERVICE_ROUTES || '{}')
-    if (!routes.webapi) {
+    if (!services.webapi) {
       this.logger.warn('SERVICE_ROUTES.webapi is not set; syncUserRoles will be a no-op')
     }
-    this.baseUrl = routes.webapi || ''
+    this.baseUrl = services.webapi || ''
   }
 
   // To upsert sec_user_role from the user's JWT scopes.
