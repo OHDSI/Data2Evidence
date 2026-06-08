@@ -39,7 +39,10 @@ export function extractConfigStamp(data: unknown): ConfigStamp | null {
   if (!meta?.configId || !meta?.configVersion) {
     return null;
   }
-  return { configId: String(meta.configId), configVersion: String(meta.configVersion) };
+  return {
+    configId: String(meta.configId),
+    configVersion: String(meta.configVersion),
+  };
 }
 
 // Attribute config paths (full paths, per mriQuery.ts:255 convention).
@@ -48,7 +51,7 @@ const GENDER_PATH = "patient.attributes.Gender_concept_name";
 // Gender is the literal display string, not a concept id (cdwConfig.ts:109).
 const VALID_GENDERS = ["FEMALE", "MALE"];
 // PA deep-link route + the linkType the loader requires (useDeepLink.ts).
-const COHORT_ROUTE = "/portal/researcher/cohort";
+const COHORT_ROUTE = "/d2e/portal/researcher/cohort";
 const LINK_TYPE = "cohort-definition";
 // CohortUrlCodec.ts:120-128 warns past this length.
 const URL_WARN_THRESHOLD = 2048;
@@ -77,7 +80,9 @@ export function validateCohortSpec(
   }
 
   if (spec.ageMin != null && spec.ageMax != null && spec.ageMin > spec.ageMax) {
-    return { error: `ageMin (${spec.ageMin}) must not be greater than ageMax (${spec.ageMax}).` };
+    return {
+      error: `ageMin (${spec.ageMin}) must not be greater than ageMax (${spec.ageMax}).`,
+    };
   }
 
   let gender: string | undefined;
@@ -94,8 +99,10 @@ export function validateCohortSpec(
 /** Build the Age attribute: range = two Expressions under AND, single = one under OR. */
 function buildAgeAttribute(ageMin?: number, ageMax?: number) {
   const expressions: Expression[] = [];
-  if (ageMin != null) expressions.push({ type: "Expression", operator: ">=", value: ageMin });
-  if (ageMax != null) expressions.push({ type: "Expression", operator: "<=", value: ageMax });
+  if (ageMin != null)
+    expressions.push({ type: "Expression", operator: ">=", value: ageMin });
+  if (ageMax != null)
+    expressions.push({ type: "Expression", operator: "<=", value: ageMax });
   return {
     type: "Attribute",
     configPath: AGE_PATH,
@@ -152,7 +159,9 @@ export function buildCohortBookmark(spec: CohortSpec, config: ConfigStamp) {
       cards: {
         type: "BooleanContainer",
         op: "AND",
-        content: [{ type: "BooleanContainer", op: "OR", content: [filterCard] }],
+        content: [
+          { type: "BooleanContainer", op: "OR", content: [filterCard] },
+        ],
       },
     },
     metadata: { version: 3 },

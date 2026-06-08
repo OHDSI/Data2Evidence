@@ -1,7 +1,6 @@
 import React, { FC, useState } from "react";
 import ChatLog from "./ChatLog";
 import Composer from "./Composer";
-import { useAiAssistantSession } from "./hooks/useAiAssistantSession";
 import { useStreamMessage } from "./hooks/useStreamMessage";
 import { useActiveDataset } from "../../contexts";
 import type { ChatMessage } from "./types";
@@ -15,9 +14,7 @@ const AiAssistantPanel: FC = () => {
   const { activeDataset } = useActiveDataset();
   const datasetId = activeDataset?.id || undefined;
 
-  const { sessionId, loading: sessionLoading, error: sessionError, recreateSession } = useAiAssistantSession(datasetId);
-
-  const { send, isStreaming } = useStreamMessage(sessionId, setMessages, recreateSession);
+  const { send, isStreaming } = useStreamMessage(datasetId || null, messages, setMessages);
 
   const hasDataset = Boolean(datasetId);
 
@@ -49,8 +46,6 @@ const AiAssistantPanel: FC = () => {
 
           {/* Status banners */}
           {!hasDataset && <div className="ai-panel__banner">Select a dataset to begin.</div>}
-          {hasDataset && sessionLoading && <div className="ai-panel__banner">Starting session…</div>}
-          {hasDataset && sessionError && <div className="ai-panel__banner ai-panel__banner--error">{sessionError}</div>}
 
           {/* Message list */}
           <ChatLog messages={messages} />
@@ -58,14 +53,8 @@ const AiAssistantPanel: FC = () => {
           {/* Input composer */}
           <Composer
             onSend={send}
-            disabled={!sessionId || isStreaming}
-            placeholder={
-              !hasDataset
-                ? "Select a dataset first…"
-                : sessionLoading
-                ? "Starting session…"
-                : "Ask about cohorts… (Enter to send)"
-            }
+            disabled={!hasDataset || isStreaming}
+            placeholder={!hasDataset ? "Select a dataset first…" : "Ask about cohorts… (Enter to send)"}
           />
         </div>
       )}
