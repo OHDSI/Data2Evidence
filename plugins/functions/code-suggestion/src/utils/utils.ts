@@ -1,5 +1,7 @@
 import { env } from "../env";
 
+// About streaming responses: Ollama streams smoothly token-by-token, Anthropic streams in phrase chunks, AzureOpenAI buffers into bursts — Azure's content filter
+
 export const getModels = async (llm) => {
   console.info(`AI: ${llm}`);
   if (llm === null || llm === undefined || llm === "null") {
@@ -45,6 +47,7 @@ export const getModels = async (llm) => {
           new ChatOpenAI({
             model: llm.replace("gpt:", ""),
             apiKey: env.OPENAI_API_KEY,
+            streaming: true,
           }),
       ),
     azure: () =>
@@ -56,6 +59,7 @@ export const getModels = async (llm) => {
             azureOpenAIApiVersion: env.AZURE_OPENAI_API_VERSION,
             azureOpenAIApiDeploymentName: env.AZURE_OPENAI_API_DEPLOYMENT_NAME,
             azureOpenAIApiInstanceName: env.AZURE_OPENAI_API_INSTANCE_NAME,
+            streaming: true,
           }),
       ),
     ollama: () =>
@@ -67,6 +71,7 @@ export const getModels = async (llm) => {
             ...(env.OLLAMA_API_KEY && {
               headers: { Authorization: `Bearer ${env.OLLAMA_API_KEY}` },
             }),
+            streaming: true,
           }),
       ),
     anthropic: () =>
@@ -75,6 +80,7 @@ export const getModels = async (llm) => {
           new ChatAnthropic({
             model: llm.replace("anthropic:", ""),
             apiKey: env.ANTHROPIC_API_KEY,
+            streaming: true,
           }),
       ),
     gemini: () =>
@@ -83,6 +89,7 @@ export const getModels = async (llm) => {
           new ChatGoogle({
             model: llm.replace("gemini:", ""),
             apiKey: env.GOOGLE_API_KEY,
+            streaming: true,
           }),
       ),
   };

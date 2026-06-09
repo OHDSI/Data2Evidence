@@ -172,9 +172,7 @@ export const getCohortPrompting = (userInput: string) => {
        and gender are supported for now, so the other criteria were not applied.
     3. If the request has neither an age nor a gender, do not call the tool; ask
        the user to provide at least an age range or a gender.
-    4. After the tool returns, reply with ONE short sentence describing the
-       cohort (e.g. "Here is your cohort: male patients under 40."). Do NOT write
-       the link, a URL, or a markdown link yourself — the system appends the real
+    4. Do NOT write the link, a URL, or a markdown link yourself — the system appends the real
        link automatically after your sentence. Do not add other commentary or code.
 
     userInput: ${userInput}
