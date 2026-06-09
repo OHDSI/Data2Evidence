@@ -235,7 +235,8 @@
                       }
                     ],
                     "default": [
-                      "concept"
+                      "concept",
+                      "concept_synonym"
                     ],
                     "title": "Tablestocreateduckdbftsindex"
                   },
