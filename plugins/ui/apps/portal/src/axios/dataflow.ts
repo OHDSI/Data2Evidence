@@ -1,6 +1,5 @@
 import {
   CreateCacheFlowRun,
-  CreateFhirCacheFlowRun,
   CreateDcFlowRun,
   CreateDqdFlowRun,
   CreateFlowRunByMetadata,
@@ -265,15 +264,6 @@ export class Dataflow {
     return request({
       baseURL: JOBPLUGIN_URL,
       url: "cachedb/create-file",
-      method: "POST",
-      data,
-    });
-  }
-
-  public createFhirCacheFlowRun(data: CreateFhirCacheFlowRun) {
-    return request({
-      baseURL: JOBPLUGIN_URL,
-      url: "cachedb/create-fhir-file",
       method: "POST",
       data,
     });
