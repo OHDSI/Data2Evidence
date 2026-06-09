@@ -193,9 +193,15 @@ export class CohortEndpoint {
                 TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
                 cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
                 TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
-                COUNT(DISTINCT c.SUBJECT_ID) AS "count"
+                COALESCE(c.count, 0) AS "count"
             FROM ${this.schemaName}.COHORT_DEFINITION cd
-            LEFT JOIN ${this.schemaName}.COHORT c 
+            LEFT JOIN (
+                SELECT
+                    COHORT_DEFINITION_ID,
+                    COUNT(DISTINCT SUBJECT_ID) AS count
+                FROM ${this.schemaName}.COHORT
+                GROUP BY COHORT_DEFINITION_ID
+            ) c
                 ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
         `;
 
@@ -206,14 +212,6 @@ export class CohortEndpoint {
                 baseQueryString,
                 queryParams
             );
-            selectQueryString += `
-            GROUP BY 
-                cd.COHORT_DEFINITION_ID,
-                cd.COHORT_DEFINITION_NAME,
-                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
-                cd.COHORT_INITIATION_DATE,
-                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
-                `;
 
             // Add limit and/or offset keyword if is it included
             if (limit) {
