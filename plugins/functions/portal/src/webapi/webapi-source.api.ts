@@ -117,7 +117,7 @@ export class WebApiSourceApi {
     const response = await fetch(url, {
       method: 'POST',
       headers: this.buildHeaders(authToken, 'application/json'),
-      body: JSON.stringify({ schemaName, databaseCode }),
+      body: JSON.stringify({ schemaName, databaseCode, ftsTables: ['concept', 'concept_synonym'] }),
     })
 
     if (!response.ok) {
