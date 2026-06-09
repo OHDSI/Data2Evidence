@@ -124,6 +124,7 @@ export class PrefectService {
     const prefectFlowName = PrefectFlowName.ANALYSIS_DATA_FLOW;
     const prefectApi = new PrefectAPI(token);
     const portalServerApi = new PortalServerAPI(token);
+    options["studyId"] = options["tokenStudyCode"];
 
     // get dataset info to pass databaseCode, which is needed for the analysis flow to know which database to connect to when running the analysis
     const dataset = await portalServerApi.getDataset(options["datasetId"]);
