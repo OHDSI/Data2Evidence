@@ -180,5 +180,6 @@ export function buildDeepLinkUrl(
   // query is base64url (no +,/,=) so it is URL-safe; append raw to avoid
   // re-encoding it into standard base64 escapes.
   const url = `${COHORT_ROUTE}?${params.toString()}&query=${query}`;
+  console.log(`Built cohort deep link URL (len=${url.length}): ${url}`);
   return { url, tooLong: url.length > URL_WARN_THRESHOLD };
 }

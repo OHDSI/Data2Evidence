@@ -6,6 +6,7 @@ import {
   buildDeepLinkUrl,
   validateCohortSpec,
 } from "../lib/cohortBuilder";
+import { buildCohortCatalog, summarizeCatalog } from "../lib/cohortCatalog";
 import {
   requireAuthAndDataset,
   createStructuredResponse,
@@ -22,6 +23,62 @@ const analyticsApi = new AnalyticsAPI();
  * POC scope: Basic Data age + gender only.
  */
 export function registerCohortBuilderTools(server: McpServer) {
+  // Discovery tool: the catalog of filter cards + attributes available on THIS
+  // dataset, derived from the live PA config. The agent calls this first to
+  // ground its filter choices on real cards/attributes (rather than guessing
+  // configPaths, which is how a bookmark ends up referencing an attribute the
+  // dataset doesn't have).
+  server.registerTool(
+    "list_cohort_filters",
+    {
+      title: "List Cohort Filter Options",
+      description:
+        "List the filter cards and attributes available for building a cohort " +
+        "on the CURRENT dataset. Call this BEFORE build_d2e_cohort_deeplink to " +
+        "discover which cards exist (e.g. Basic Data, Condition Occurrence, " +
+        "Measurement) and each attribute's kind: 'num' (numeric / range), " +
+        "'category' (coded value resolved by name), 'conceptSet' (clinical " +
+        "concept set / phenotype) or 'datetime'. Only reference cards and " +
+        "attributes returned here.",
+      inputSchema: {},
+      outputSchema: {
+        cards: z.array(
+          z.object({
+            key: z.string(),
+            configPath: z.string(),
+            name: z.string(),
+            attributes: z.array(
+              z.object({
+                key: z.string(),
+                configPath: z.string(),
+                name: z.string(),
+                type: z.string(),
+                kind: z.string(),
+              }),
+            ),
+          }),
+        ),
+      },
+    },
+    async (_args, { requestInfo }) => {
+      const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
+      const fe = await analyticsApi.getFrontendConfig(authorization, datasetId);
+      if (!fe) {
+        throw new Error(`No Patient Analytics config for dataset ${datasetId}.`);
+      }
+      const catalog = buildCohortCatalog(fe.config);
+      const attrCount = catalog.cards.reduce(
+        (n, c) => n + c.attributes.length,
+        0,
+      );
+      console.log(
+        `[cohort-builder] list_cohort_filters: dataset=${datasetId} ` +
+          `cards=${catalog.cards.length} attributes=${attrCount}`,
+      );
+      return createStructuredResponse(summarizeCatalog(catalog), catalog);
+    },
+  );
+
   server.registerTool(
     "build_d2e_cohort_deeplink",
     {
