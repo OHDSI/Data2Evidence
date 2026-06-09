@@ -82,4 +82,86 @@ export class AnalyticsAPI {
     }
     return stamp;
   }
+
+  /**
+   * Fetch the full PA frontend config for a dataset: the same getMyConfig
+   * `{ config, meta }` the PA UI loads, where `config.patient` carries the
+   * filter cards and attributes. The cohort catalog is built from this exact
+   * object, so what we expose matches what the loader will accept.
+   *
+   * Returns null when the dataset has no PA config, so the caller can emit an
+   * LLM-actionable error instead of an empty catalog.
+   */
+  async getFrontendConfig(
+    authorization: string,
+    datasetId: string,
+  ): Promise<{ config: any; meta: ConfigStamp } | null> {
+    const url =
+      `${this.baseURL}/analytics-svc/pa/services/analytics.xsjs` +
+      `?action=getMyConfig&datasetId=${encodeURIComponent(datasetId)}`;
+    const options = {
+      headers: { Authorization: authorization },
+      timeout: 20000,
+    };
+
+    let response: any;
+    try {
+      response = await this.channel.get(url, options);
+    } catch (error) {
+      console.error(
+        `[cohort-builder] getFrontendConfig request failed for ${url}: ${error}`,
+      );
+      throw error;
+    }
+
+    const data = response?.data;
+    // getMyConfig returns a LIST of configs; a dataset has one active PA
+    // config, so we take the first (tolerating a bare object too).
+    const entry = Array.isArray(data) ? data[0] : data;
+    const meta = extractConfigStamp(data);
+    if (!entry?.config || !meta) {
+      console.error(
+        `[cohort-builder] getFrontendConfig: missing config/meta. ` +
+          `status=${response?.status} isArray=${Array.isArray(data)} ` +
+          `hasConfig=${!!entry?.config} hasMeta=${!!meta}`,
+      );
+      return null;
+    }
+    return { config: entry.config, meta };
+  }
+
+  /**
+   * Resolve the allowed values of a category/text attribute, optionally
+   * filtered by a fuzzy search term. Hits the same `values` endpoint the PA UI
+   * uses, so the returned `value` is exactly what the bookmark expression must
+   * carry (this is what turns "male" into the dataset's coded gender value).
+   * Returns `{label, value}` pairs (`label` = display text).
+   */
+  async getAttributeValues(
+    authorization: string,
+    datasetId: string,
+    attributePath: string,
+    configId: string,
+    configVersion: string,
+    searchQuery = "",
+  ): Promise<{ label: string; value: string }[]> {
+    const params = new URLSearchParams({
+      attributePath,
+      configId,
+      configVersion,
+      datasetId,
+      searchQuery,
+      attributeType: "text",
+    });
+    const url =
+      `${this.baseURL}/analytics-svc/api/services/values?${params.toString()}`;
+    const options = {
+      headers: { Authorization: authorization },
+      timeout: 20000,
+    };
+    const response = await this.channel.get(url, options);
+    // Endpoint wraps the list in `data.data`, items shaped `{ value, text }`.
+    const items: { value: string; text?: string }[] = response?.data?.data ?? [];
+    return items.map((it) => ({ label: it.text || it.value, value: it.value }));
+  }
 }
