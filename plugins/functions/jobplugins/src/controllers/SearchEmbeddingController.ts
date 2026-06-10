@@ -58,7 +58,7 @@ export class SearchEmbeddingController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating search-embedding flow run: ${error}`);
-      res.status(500).send(`${error}`);
+      res.status(500).send({ message: `${error}` });
     }
   }
 }
