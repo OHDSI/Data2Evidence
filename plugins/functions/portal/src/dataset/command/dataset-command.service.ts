@@ -17,7 +17,6 @@ import {
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
-import { shouldSyncToWebApi } from "../../webapi/webapi-sync-policy.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -1047,7 +1046,7 @@ export class DatasetCommandService {
   ): Promise<void> {
 
     // Only webapi-managed datasets get WebAPI records.
-    if (!shouldSyncToWebApi(datasetInfo.type, datasetInfo.fhirDatasetId)) {
+    if (datasetInfo.fhirDatasetId || datasetInfo.type !== "webapi") {
       this.logger.info(
         `Skipping WebAPI sync for non-webapi dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
       );
