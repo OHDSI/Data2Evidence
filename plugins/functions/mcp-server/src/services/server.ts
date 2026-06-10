@@ -24,7 +24,7 @@ registerCohortBuilderTools(server);
 // Register Strategus tools
 registerStrategusTools(server);
 
-// Register concept set tools
+// Register concept set tools (includes search_concepts: clinical term -> OMOP concept ids)
 registerConceptSetManagementTools(server);
 
 // Register prompts

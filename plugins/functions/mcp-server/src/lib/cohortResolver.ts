@@ -23,12 +23,6 @@ export interface ResolverDeps {
     attr: CatalogAttribute,
     raw: string,
   ) => Promise<string>;
-  /** conceptSet attribute: phenotype/word -> concept-set id (as string). */
-  resolveConceptSet: (
-    card: CatalogCard,
-    attr: CatalogAttribute,
-    conceptText: string,
-  ) => Promise<string>;
 }
 
 const NUM_OPS = new Set([">=", "<=", "<", ">", "=", "!="]);
@@ -131,25 +125,26 @@ export async function resolveClausesToConstraints(
       exclude: clause.exclude,
     };
 
-    if (!clause.concept && (!clause.constraints || clause.constraints.length === 0)) {
+    const hasConcept = clause.conceptSetId != null;
+    if (!hasConcept && (!clause.constraints || clause.constraints.length === 0)) {
       throw new Error(
-        `Clause for "${clause.card}" has no concept or constraints — nothing to filter.`,
+        `Clause for "${clause.card}" has no conceptSetId or constraints — nothing to filter.`,
       );
     }
 
-    // 1. concept -> the card's primary concept-set attribute.
-    if (clause.concept) {
+    // 1. conceptSetId -> the card's primary concept-set attribute (passthrough;
+    //    the agent already resolved the id via the concept-set tools).
+    if (hasConcept) {
       const attr = primaryConceptAttr(card);
       if (!attr) {
         throw new Error(
-          `Card "${card.name}" has no concept set to attach "${clause.concept}" to.`,
+          `Card "${card.name}" has no concept set to attach concept set ${clause.conceptSetId} to.`,
         );
       }
-      const id = await deps.resolveConceptSet(card, attr, clause.concept);
       out.push({
         ...base,
         attributeConfigPath: attr.configPath,
-        expressions: [{ operator: "=", value: id }],
+        expressions: [{ operator: "=", value: String(clause.conceptSetId) }],
         combine: "OR",
       });
     }
@@ -174,8 +169,8 @@ export async function resolveClausesToConstraints(
         expressions = [{ operator: cc.op === "!=" ? "!=" : "=", value: resolved }];
         combine = "OR";
       } else if (attr.kind === "conceptSet") {
-        const id = await deps.resolveConceptSet(card, attr, String(cc.value));
-        expressions = [{ operator: "=", value: id }];
+        // value IS the concept-set id (agent-resolved), e.g. a unit set.
+        expressions = [{ operator: "=", value: String(cc.value) }];
         combine = "OR";
       } else {
         // datetime not supported yet.

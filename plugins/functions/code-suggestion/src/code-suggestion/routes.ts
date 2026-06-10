@@ -1,4 +1,8 @@
-import { getCodeSuggestion, getChatResponse, getCohortResponse } from "./services";
+import {
+  getCodeSuggestion,
+  getChatResponse,
+  getCohortResponse,
+} from "./services";
 import express, { Request, Response } from "express";
 import { env } from "../env";
 
@@ -86,14 +90,14 @@ export class CodeSuggestionRouter {
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
-        // req.body.model = AI_MODEL;
-        req.body.model = "ollama:lfm2.5";
+        req.body.model = AI_MODEL;
+        // req.body.model = "ollama:lfm2.5";
         // req.body.model = "anthropic:claude-sonnet-4-5";
 
         const { stream, linkRef } = await getCohortResponse(req);
         let lastChar = "\n";
         let modelText = "";
-        const COHORT_URL_RE = /\/portal\/researcher\/cohort\?[^\s")']+/;
+        const COHORT_URL_RE = /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
         // Cast: langchain's messages-mode stream isn't precisely typed; the
         // /chat route gets `any` for free via its fallback branch's wider union.
         for await (const [token, metadata] of stream as any) {

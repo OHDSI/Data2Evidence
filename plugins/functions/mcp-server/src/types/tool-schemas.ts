@@ -209,3 +209,23 @@ export const CheckConceptCoverageInput = {
     .describe("List of OMOP concept IDs to check against this dataset's vocabulary cache"),
 };
 
+export const SearchConceptsInput = {
+  query: z
+    .string()
+    .describe("Clinical term to search, e.g. 'systolic blood pressure'."),
+  domain: z
+    .string()
+    .optional()
+    .describe("OMOP domain filter: Condition | Measurement | Drug | Procedure | Observation."),
+  standardOnly: z
+    .boolean()
+    .optional()
+    .describe("Restrict to standard concepts (default true)."),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("Max candidates to return (default 20)."),
+};
+

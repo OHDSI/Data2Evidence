@@ -54,7 +54,10 @@ const ChatLog: FC<ChatLogProps> = ({ messages }) => {
   }, [messages]);
 
   const renderMessageContent = (content: string): ReactNode => {
-    const COHORT_URL_RE = /\/portal\/researcher\/cohort\?[^\s")']+/g;
+    // Keep the optional /d2e prefix INSIDE the match so it's part of the link
+    // href, not spilled into the preceding text. Canonical deep link is
+    // /d2e/portal/researcher/cohort?... (wizards/src/utils/deepLinks.ts).
+    const COHORT_URL_RE = /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/g;
     const parts: ReactNode[] = [];
     let lastIndex = 0;
     let match;
