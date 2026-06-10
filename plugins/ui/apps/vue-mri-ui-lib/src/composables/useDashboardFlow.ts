@@ -16,6 +16,8 @@ import { constraintContainsExpression, type Constraint } from '../services/dashb
 import BinaryToString from '../utils/BinaryToString'
 import { useNotificationStore } from '../stores/notifications'
 
+const TABLE1_DASHBOARD_TYPE = 'table1'
+
 export interface WizardFieldValue {
   value: string | number | boolean | object
   text?: string
@@ -33,8 +35,14 @@ export interface WizardConfig {
   year?: { from: number | string | null; to: number | string | null }
   conditions?: ConditionValue[]
   dashboardType?: string
+  conceptSets?: Table1ConceptSetSelection[]
   fromDeepLink?: boolean
   [key: string]: unknown
+}
+
+export interface Table1ConceptSetSelection {
+  id: string
+  name: string
 }
 
 export interface DashboardCode {
@@ -105,6 +113,7 @@ export interface UseDashboardFlowReturn {
   saveCohortModalMode: Ref<'full' | 'bookmark-only' | 'materialize-only'>
   showDashboardSelectionModal: Ref<boolean>
   showRequiredFiltersModal: Ref<boolean>
+  showTable1ConfigModal: Ref<boolean>
   dashboardMetadataLoading: Ref<boolean>
   applyingRequiredFilters: Ref<boolean>
   dashboardSelectionError: Ref<string>
@@ -128,6 +137,8 @@ export interface UseDashboardFlowReturn {
   openDashboardModal: () => Promise<void>
   closeDashboardSelectionModal: () => void
   handleDashboardSelected: (_dashboard: DashboardCode) => Promise<void>
+  handleTable1ConfigCancel: () => void
+  handleTable1ConfigConfirm: (_conceptSets: Table1ConceptSetSelection[]) => Promise<void>
   handleRequiredFiltersCancel: () => void
   handleRequiredFiltersSubmit: (
     _formValues: Record<string, string | number | object>,
@@ -150,6 +161,7 @@ export function useDashboardFlow(
   const saveCohortModalMode = ref<'full' | 'bookmark-only' | 'materialize-only'>('full')
   const showDashboardSelectionModal = ref(false)
   const showRequiredFiltersModal = ref(false)
+  const showTable1ConfigModal = ref(false)
   const dashboardMetadataLoading = ref(false)
   const applyingRequiredFilters = ref(false)
   const dashboardSelectionError = ref('')
@@ -208,6 +220,7 @@ export function useDashboardFlow(
   function resetDashboardFlowState() {
     showDashboardSelectionModal.value = false
     showRequiredFiltersModal.value = false
+    showTable1ConfigModal.value = false
     dashboardMetadataLoading.value = false
     applyingRequiredFilters.value = false
     dashboardSelectionError.value = ''
@@ -778,6 +791,13 @@ export function useDashboardFlow(
 
     showDashboardSelectionModal.value = false
     requiredFiltersError.value = ''
+
+    if (dashboard.name === TABLE1_DASHBOARD_TYPE) {
+      isProcessingDashboardFlow = true
+      showTable1ConfigModal.value = true
+      return
+    }
+
     showRequiredFiltersModal.value = true
   }
 
@@ -998,6 +1018,24 @@ export function useDashboardFlow(
     }
   }
 
+  function handleTable1ConfigCancel() {
+    showTable1ConfigModal.value = false
+    selectedDashboard.value = null
+    selectedWizardDefinition.value = null
+    activeDashboardWizardConfig.value = null
+    isProcessingDashboardFlow = false
+  }
+
+  async function handleTable1ConfigConfirm(conceptSets: Table1ConceptSetSelection[]) {
+    if (!selectedWizardDefinition.value || conceptSets.length === 0) {
+      return
+    }
+
+    showTable1ConfigModal.value = false
+    isProcessingDashboardFlow = true
+    await prepareWizardConfigAndContinue(selectedWizardDefinition.value, { conceptSets })
+  }
+
   function getActiveMaterializedCohort(): IMaterializedCohort | null {
     const activeBookmark = getters.getActiveBookmark
     if (!activeBookmark || !activeBookmark.cohortDefinitionId) return null
@@ -1122,6 +1160,7 @@ export function useDashboardFlow(
     saveCohortModalMode,
     showDashboardSelectionModal,
     showRequiredFiltersModal,
+    showTable1ConfigModal,
     dashboardMetadataLoading,
     applyingRequiredFilters,
     dashboardSelectionError,
@@ -1140,6 +1179,8 @@ export function useDashboardFlow(
     openDashboardModal,
     closeDashboardSelectionModal,
     handleDashboardSelected,
+    handleTable1ConfigCancel,
+    handleTable1ConfigConfirm,
     handleRequiredFiltersCancel,
     handleRequiredFiltersSubmit,
     handleSaveCohortSuccess,
