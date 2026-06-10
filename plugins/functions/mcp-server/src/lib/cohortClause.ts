@@ -18,8 +18,13 @@ export interface CohortClause {
   card: string;
   /** Card-level include/exclude (exclude → NOT container). */
   exclude?: boolean;
-  /** Plain-word phenotype for event cards, e.g. "hypertension". */
-  concept?: string;
+  /**
+   * Concept-set id for an event card, already resolved by the agent (via
+   * search_concepts → check_concept_coverage_in_dataset → create_concept_set,
+   * or the phenotype library). Dropped into the card's primary concept-set
+   * attribute. The agent owns concept-set selection; this is just the id.
+   */
+  conceptSetId?: number;
   /** Value constraints on this card's attributes. */
   constraints?: ClauseConstraint[];
 }

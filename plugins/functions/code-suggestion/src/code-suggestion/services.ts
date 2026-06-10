@@ -10,11 +10,27 @@ import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting, getCohortPrompting } from "./prompts";
 
-// The single tool the cohort builder agent is allowed to call.
+// The tool that returns the final deep link.
 const COHORT_BUILDER_TOOL = "build_d2e_cohort_deeplink";
+// The toolset the cohort agent may call: discover filters, resolve clinical
+// terms to concept-set ids (concept search + phenotype library + concept-set
+// management), then build. Excludes the ATLAS/strategus cohort-definition tools.
+const COHORT_AGENT_TOOLS = new Set<string>([
+  "list_cohort_filters",
+  "search_concepts",
+  "search_phenotype_library",
+  "fetch_templates_for_cohort_generation",
+  "check_concept_coverage_in_dataset",
+  "list_concept_sets",
+  "get_concept_set",
+  "create_concept_set",
+  COHORT_BUILDER_TOOL,
+]);
 // The deep-link path the tool returns; captured deterministically so the LLM
-// never has to relay the (long, easily-placeholdered) URL itself.
-const COHORT_URL_RE = /\/portal\/researcher\/cohort\?[^\s")']+/;
+// never has to relay the (long, easily-placeholdered) URL itself. The optional
+// /d2e prefix must be kept (the tool emits /d2e/portal/...); anchoring at
+// /portal here is what was silently stripping it.
+const COHORT_URL_RE = /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
 
 /** Pull the deep-link URL out of whatever shape the tool result arrives in. */
 function extractCohortUrl(toolResult: unknown): string | undefined {
@@ -149,23 +165,24 @@ export const getCohortResponse = async (req: any) => {
     const chatStart = performance.now();
     const mcpClient = createMcpClient(token, datasetId);
     const allTools = await mcpClient.getTools();
-    // Single-tool agent: fewer tools means more reliable tool calls for a
-    // narrow job (design decision 6).
-    const tools = allTools.filter((t: any) => t.name === COHORT_BUILDER_TOOL);
-    if (tools.length === 0) {
+    // Multi-tool cohort agent: discover filters, resolve concepts to concept-set
+    // ids, then build. Scope to the cohort-building toolset (not the ATLAS /
+    // strategus tools) so the agent stays on-task.
+    const tools = allTools.filter((t: any) => COHORT_AGENT_TOOLS.has(t.name));
+    const buildTool = tools.find((t: any) => t.name === COHORT_BUILDER_TOOL);
+    if (!buildTool) {
       throw new Error(
         `Cohort builder tool '${COHORT_BUILDER_TOOL}' not found on the MCP server`,
       );
     }
 
-    // Intercept the tool at its invoke boundary so we capture the REAL URL the
-    // tool returned, regardless of how the model later phrases (or mangles) it.
+    // Intercept the build tool at its invoke boundary so we capture the REAL URL
+    // it returned, regardless of how the model later phrases (or mangles) it.
     // linkRef is filled while the route consumes the stream (when the agent
     // actually calls the tool); the route reads it after the stream ends.
     const linkRef: { url: string } = { url: "" };
-    const cohortTool: any = tools[0];
-    const originalInvoke = cohortTool.invoke.bind(cohortTool);
-    cohortTool.invoke = async (input: any, config: any) => {
+    const originalInvoke = buildTool.invoke.bind(buildTool);
+    buildTool.invoke = async (input: any, config: any) => {
       const out = await originalInvoke(input, config);
       const url = extractCohortUrl(out);
       if (url) linkRef.url = url;

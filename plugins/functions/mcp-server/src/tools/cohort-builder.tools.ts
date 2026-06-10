@@ -1,15 +1,16 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AnalyticsAPI } from "../api/AnalyticsAPI";
-import {
-  buildCohortBookmark,
-  buildDeepLinkUrl,
-  validateCohortSpec,
-} from "../lib/cohortBuilder";
+import { buildDeepLinkUrl } from "../lib/cohortBuilder";
 import { buildCohortCatalog, summarizeCatalog } from "../lib/cohortCatalog";
+import { resolveClausesToConstraints } from "../lib/cohortResolver";
+import { buildCohortBookmarkTree } from "../lib/cohortBookmarkTree";
+import { buildResolverDeps } from "../lib/cohortResolverDeps";
+import type { CohortClause } from "../lib/cohortClause";
 import {
   requireAuthAndDataset,
   createStructuredResponse,
+  createTextResponse,
 } from "../utils/request-helpers";
 
 const analyticsApi = new AnalyticsAPI();
@@ -41,24 +42,9 @@ export function registerCohortBuilderTools(server: McpServer) {
         "concept set / phenotype) or 'datetime'. Only reference cards and " +
         "attributes returned here.",
       inputSchema: {},
-      outputSchema: {
-        cards: z.array(
-          z.object({
-            key: z.string(),
-            configPath: z.string(),
-            name: z.string(),
-            attributes: z.array(
-              z.object({
-                key: z.string(),
-                configPath: z.string(),
-                name: z.string(),
-                type: z.string(),
-                kind: z.string(),
-              }),
-            ),
-          }),
-        ),
-      },
+      // No outputSchema on purpose: the MCP adapter then hands the model the
+      // clean text summary (card -> attribute[kind]) instead of a 142-item JSON
+      // blob, which the model can actually read and act on.
     },
     async (_args, { requestInfo }) => {
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
@@ -75,7 +61,7 @@ export function registerCohortBuilderTools(server: McpServer) {
         `[cohort-builder] list_cohort_filters: dataset=${datasetId} ` +
           `cards=${catalog.cards.length} attributes=${attrCount}`,
       );
-      return createStructuredResponse(summarizeCatalog(catalog), catalog);
+      return createTextResponse(summarizeCatalog(catalog));
     },
   );
 
@@ -84,52 +70,85 @@ export function registerCohortBuilderTools(server: McpServer) {
     {
       title: "Build D2E Cohort Deep Link",
       description:
-        "Build a Patient Analytics cohort builder deep link from an age range " +
-        "and/or gender. Supports ONLY age (ageMin/ageMax) and gender " +
-        "(FEMALE or MALE) for now. Returns a URL that opens the PA cohort " +
-        "builder with the filter card pre-filled. Provide at least an age " +
-        "bound or a gender.",
+        "Build a Patient Analytics cohort builder deep link from a list of " +
+        "filter clauses. First call list_cohort_filters to learn the cards and " +
+        "attributes, and resolve any clinical concept to a concept-set id " +
+        "(search_concepts / phenotype library → check_concept_coverage_in_dataset " +
+        "→ create_concept_set). Each clause targets ONE card: `card` is a card " +
+        "name; `conceptSetId` attaches a concept set to an event card; " +
+        "`constraints` are {attribute, op, value} on that card's attributes " +
+        "(op: >=,<=,<,>,=,!=,range; value number/string, or [low,high] for range); " +
+        "`exclude:true` negates the card. Returns a URL that opens the PA cohort " +
+        "builder pre-filled.",
       inputSchema: {
-        ageMin: z.number().int().nonnegative().optional()
-          .describe("Inclusive minimum age, e.g. 60 for 'over 60' use 60."),
-        ageMax: z.number().int().nonnegative().optional()
-          .describe("Inclusive maximum age."),
-        gender: z.string().optional()
-          .describe("Patient gender: FEMALE or MALE."),
+        clauses: z
+          .array(
+            z.object({
+              card: z.string().describe("Filter card name from list_cohort_filters."),
+              exclude: z.boolean().optional()
+                .describe("Negate this card (exclude matching patients)."),
+              conceptSetId: z.number().int().optional()
+                .describe("Concept-set id for an event card (agent-resolved)."),
+              constraints: z
+                .array(
+                  z.object({
+                    attribute: z.string(),
+                    op: z.string(),
+                    value: z.union([
+                      z.number(),
+                      z.string(),
+                      z.array(z.union([z.number(), z.string()])),
+                    ]),
+                  }),
+                )
+                .optional(),
+            }),
+          )
+          .describe("One clause per filter card occurrence."),
       },
       outputSchema: {
         url: z.string(),
         warning: z.string().optional(),
       },
     },
-    async ({ ageMin, ageMax, gender }, { requestInfo }) => {
+    async ({ clauses }, { requestInfo }) => {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       console.log(
-        `[cohort-builder] START datasetId=${datasetId} spec=${JSON.stringify({ ageMin, ageMax, gender })}`,
+        `[cohort-builder] START datasetId=${datasetId} clauses=${JSON.stringify(clauses)}`,
       );
 
-      // 1. Validate + normalise. Errors are LLM-actionable text the agent relays.
-      const validated = validateCohortSpec({ ageMin, ageMax, gender });
-      if ("error" in validated) {
-        console.warn(`[cohort-builder] validation failed: ${validated.error}`);
-        throw new Error(validated.error);
-      }
-
-      // 2. Fetch the PA config stamp for this dataset.
-      const config = await analyticsApi.getConfigStamp(authorization, datasetId);
-      if (!config) {
+      // 1. Fetch the frontend config: the catalog (cards/attributes) + the
+      //    config stamp the bookmark must carry, from the same getMyConfig.
+      const fe = await analyticsApi.getFrontendConfig(authorization, datasetId);
+      if (!fe) {
         console.error(`[cohort-builder] no PA config for dataset ${datasetId}`);
         throw new Error(`No Patient Analytics config for dataset ${datasetId}.`);
       }
-      console.log(
-        `[cohort-builder] config stamp configId=${config.configId} configVersion=${config.configVersion}`,
+      const catalog = buildCohortCatalog(fe.config);
+
+      // 2. Resolve clauses -> constraints. num/range are pure; category values
+      //    hit the analytics values endpoint; conceptSetId passes through.
+      //    Throws an LLM-actionable error on any unresolved clause.
+      const deps = buildResolverDeps(analyticsApi, {
+        authorization,
+        datasetId,
+        configId: fe.meta.configId,
+        configVersion: fe.meta.configVersion,
+      });
+      const constraints = await resolveClausesToConstraints(
+        clauses as CohortClause[],
+        catalog,
+        deps,
       );
 
-      // 3. Build the bookmark tree and assemble the deep link.
-      const bookmark = buildCohortBookmark(validated.spec, config);
+      // 3. Serialize the bookmark tree (+ NOT for exclusions) and assemble the link.
+      const bookmark = buildCohortBookmarkTree(constraints, fe.meta);
+      console.log(
+        `[cohort-builder] resolved constraints=${JSON.stringify(constraints)}`,
+      );
+      console.log(`[cohort-builder] bookmark=${JSON.stringify(bookmark)}`);
       const { url, tooLong } = buildDeepLinkUrl(bookmark, datasetId);
-
       const warning = tooLong
         ? "The generated link is unusually long and may not work in all browsers."
         : undefined;
@@ -138,14 +157,9 @@ export function registerCohortBuilderTools(server: McpServer) {
         `[MCP-TIMING] [build_d2e_cohort_deeplink] END total=${(performance.now() - toolStart).toFixed(1)}ms len=${url.length}`,
       );
 
-      // Return ONLY the URL as the tool text. The /cohort endpoint captures it
-      // and appends it to the reply deterministically, so the model never has
-      // to relay the long, easily-mangled link. structuredContent carries it
-      // (plus any warning) for clients that read structured output.
-      return createStructuredResponse(
-        url,
-        warning ? { url, warning } : { url },
-      );
+      // Return ONLY the URL as the tool text; the /cohort endpoint appends it
+      // deterministically so the model never relays the long, mangle-prone link.
+      return createStructuredResponse(url, warning ? { url, warning } : { url });
     },
   );
 }

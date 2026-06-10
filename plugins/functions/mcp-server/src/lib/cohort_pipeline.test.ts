@@ -27,28 +27,22 @@ function eq(actual: unknown, expected: unknown, msg: string) {
 const STAMP = { configId: "test-config", configVersion: "A" };
 
 // Deterministic stubs so the resolver runs offline. Real deps hit the values
-// endpoint / terminology service; here we just map words -> fixed ids/values.
-const CONCEPT_IDS: Record<string, string> = {
-  hypertension: "111",
-  "systolic blood pressure": "222",
-  diabetes: "333",
-};
+// endpoint; here categories just map raw -> upper. Concept sets are NOT resolved
+// here — the agent resolves them to ids up front, so clauses carry conceptSetId.
 const stubDeps: ResolverDeps = {
   resolveValue: (_card, _attr, raw) => Promise.resolve(raw.toUpperCase()),
-  resolveConceptSet: (_card, _attr, conceptText) =>
-    Promise.resolve(CONCEPT_IDS[conceptText.toLowerCase()] ?? "999"),
 };
 
-// "aged > 50 with hypertension, systolic BP < 120, excluding diabetes"
+// "aged > 50 with hypertension(111), systolic BP(222) < 120, excluding diabetes(333)"
 const CLAUSES: CohortClause[] = [
   { card: "Basic Data", constraints: [{ attribute: "Age", op: ">", value: 50 }] },
-  { card: "Condition Occurrence", concept: "hypertension" },
+  { card: "Condition Occurrence", conceptSetId: 111 },
   {
     card: "Measurement",
-    concept: "systolic blood pressure",
+    conceptSetId: 222,
     constraints: [{ attribute: "Value As Number", op: "<", value: 120 }],
   },
-  { card: "Condition Occurrence", concept: "diabetes", exclude: true },
+  { card: "Condition Occurrence", conceptSetId: 333, exclude: true },
 ];
 
 async function buildTree() {
@@ -139,7 +133,7 @@ Deno.test("resolver rejects unknown card with an actionable error", async () => 
   const catalog = buildCohortCatalog(JSON.parse(configText));
   let threw = false;
   try {
-    await resolveClausesToConstraints([{ card: "Nonexistent Card", concept: "x" }], catalog, stubDeps);
+    await resolveClausesToConstraints([{ card: "Nonexistent Card", conceptSetId: 1 }], catalog, stubDeps);
   } catch (e) {
     threw = true;
     assert(String(e).includes("Unknown filter card"), "error names the problem");
