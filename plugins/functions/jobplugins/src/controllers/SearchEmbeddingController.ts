@@ -42,7 +42,7 @@ export class SearchEmbeddingController {
         schemaName,
       });
       if (missingParamError) {
-        return res.status(400).json({ error: missingParamError });
+        return res.status(400).send({ message: missingParamError });
       }
       const cacheId = dataset.cacheId ?? databaseCode;
 
