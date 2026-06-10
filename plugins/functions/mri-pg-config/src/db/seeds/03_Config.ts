@@ -13334,7 +13334,9 @@ const paConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "minPatientsExport": 10,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27204,7 +27206,9 @@ const paConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "minPatientsExport": 10,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -28836,6 +28840,8 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
+      minPatientsExport: 10,
+      maxPatientsExport: 2000000,
     },
     vb: {
       visible: true,
@@ -34684,7 +34690,9 @@ const pajsonfhirConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "minPatientsExport": 10,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -38173,7 +38181,9 @@ const omopHanaLeanPAConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "minPatientsExport": 10,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,

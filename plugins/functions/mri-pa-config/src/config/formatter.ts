@@ -121,6 +121,8 @@ export class Formatter {
             collectionEnabled: mriConfig.chartOptions.list.collectionEnabled,
             beginVisible: mriConfig.chartOptions.list.beginVisible,
             pageSize: mriConfig.chartOptions.list.pageSize,
+            minPatientsExport: mriConfig.chartOptions.list.minPatientsExport,
+            maxPatientsExport: mriConfig.chartOptions.list.maxPatientsExport,
             initialColumns,
           },
           vb: {

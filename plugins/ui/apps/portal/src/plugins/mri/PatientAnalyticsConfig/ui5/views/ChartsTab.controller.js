@@ -35,6 +35,12 @@ sap.ui.define([
                 id: "pageSizeId",
                 path: "analyticsModel>config/chartOptions/list/pageSize"
             }, {
+                id: "minPatientsExportId",
+                path: "analyticsModel>config/chartOptions/list/minPatientsExport"
+            }, {
+                id: "maxPatientsExportId",
+                path: "analyticsModel>config/chartOptions/list/maxPatientsExport"
+            }, {
                 id: "generalCohortSizeId",
                 path: "analyticsModel>config/chartOptions/minCohortSize"
             }
