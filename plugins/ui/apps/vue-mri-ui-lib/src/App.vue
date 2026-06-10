@@ -1,7 +1,7 @@
 <template>
   <div id="app" class="mri-app-vue-container" data-testid="pa-app-container">
     <NotificationStack />
-    <splashScreen v-if="getInitialLoad" />
+    <splashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
   </div>
 </template>
