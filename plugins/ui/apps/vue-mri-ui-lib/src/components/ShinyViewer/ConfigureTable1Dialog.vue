@@ -6,24 +6,24 @@
       <div class="table1-config-dialog">
         <p class="description">{{ getText('MRI_PA_TABLE1_CONFIG_DESC') }}</p>
 
-        <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
+        <div v-if="errorMessage" class="error-state">
+          <p class="error-text">{{ errorMessage }}</p>
+          <appButton :click="handleRetry" :text="getText('MRI_PA_TABLE1_RETRY_BUTTON')" :disabled="loading" />
+        </div>
         <p v-else-if="showEmptyState" class="status-text">
           {{ getText('MRI_PA_TABLE1_NO_CONCEPT_SETS') }}
         </p>
 
-        <ul v-else-if="showConceptSetList" class="concept-set-list">
-          <li v-for="conceptSet in conceptSets" :key="conceptSet.id" class="concept-set-item">
-            <label class="concept-set-option">
-              <input
-                type="checkbox"
-                :value="conceptSet.id"
-                :checked="isSelected(conceptSet.id)"
-                @change="toggleConceptSet(conceptSet)"
-              />
-              <span class="concept-set-name">{{ conceptSet.name }}</span>
-            </label>
-          </li>
-        </ul>
+        <QueryFilterTagInputAdapter
+          v-if="showPicker"
+          :model="conceptSetPickerModel"
+          :external-value="selectedConceptSetItems"
+          :external-domain-values="conceptSetDomainValues"
+          :external-texts="tagInputTexts"
+          @update:value="handleSelectedConceptSetsChange"
+          @search-change="handleSearchChange"
+          @concept-set-action="handleConceptSetAction"
+        />
       </div>
     </template>
 
@@ -32,7 +32,7 @@
       <appButton
         :click="handleConfirm"
         :text="getText('MRI_PA_TABLE1_GENERATE_BUTTON')"
-        :disabled="loading || !!errorMessage || selectedConceptSets.length === 0"
+        :disabled="loading || !!errorMessage || selectedConceptSetItems.length === 0"
       />
       <appButton :click="handleCancel" :text="getText('MRI_PA_BUTTON_CANCEL')" :disabled="loading" />
     </template>
@@ -40,17 +40,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue'
+import { computed, toRef } from 'vue'
 import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
-import { loadConceptSets } from '@/query-filter/services/ConceptSetApiService'
-import type { ConceptSetItemDisplay } from '@/query-filter/types/ConceptSetTypes'
-
-export interface Table1ConceptSetSelection {
-  id: string
-  name: string
-}
+import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
+import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
+import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
 
 const props = defineProps<{
   isOpen: boolean
@@ -65,78 +61,55 @@ const emit = defineEmits<{
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
-const loading = ref(false)
-const errorMessage = ref('')
-const conceptSets = ref<Table1ConceptSetSelection[]>([])
-const selectedConceptSets = ref<Table1ConceptSetSelection[]>([])
-const showEmptyState = computed(() => !loading.value && !errorMessage.value && conceptSets.value.length === 0)
-const showConceptSetList = computed(() => !loading.value && !errorMessage.value && conceptSets.value.length > 0)
+const {
+  loading,
+  errorMessage,
+  selectedConceptSetItems,
+  conceptSetDomainValues,
+  showEmptyState,
+  showPicker,
+  handleSelectedConceptSetsChange,
+  handleSearchChange,
+  handleRetry,
+  handleConceptSetAction,
+  getSelectedConceptSetsForConfirm,
+} = useTable1ConceptSetPicker({
+  datasetId: toRef(props, 'datasetId'),
+  isOpen: toRef(props, 'isOpen'),
+  getLoadErrorMessage: () => getText('MRI_PA_TABLE1_CONCEPT_SETS_ERROR'),
+})
 
-function formatConceptSet(item: ConceptSetItemDisplay): Table1ConceptSetSelection {
-  return {
-    id: String(item.value),
-    name: item.display_value || item.text || String(item.value),
-  }
-}
+const conceptSetPickerModel = computed<TagInputModel>(() => ({
+  id: 'table1-concept-sets',
+  props: {
+    type: 'conceptSet',
+    value: selectedConceptSetItems.value,
+    attributePath: 'table1.conceptSets',
+    domainFilter: '',
+    standardConceptCodeFilter: '',
+  },
+}))
 
-async function loadOptions() {
-  selectedConceptSets.value = []
-  conceptSets.value = []
-  errorMessage.value = ''
-
-  if (!props.datasetId) {
-    errorMessage.value = getText('MRI_PA_TABLE1_CONCEPT_SETS_ERROR')
-    return
-  }
-
-  loading.value = true
-  try {
-    const result = await loadConceptSets(props.datasetId)
-    conceptSets.value = result.values.map(formatConceptSet)
-  } catch (error) {
-    console.error('[Table1] Failed to load concept sets:', error)
-    errorMessage.value = getText('MRI_PA_TABLE1_CONCEPT_SETS_ERROR')
-  } finally {
-    loading.value = false
-  }
-}
-
-function isSelected(id: string) {
-  return selectedConceptSets.value.some(conceptSet => conceptSet.id === id)
-}
-
-function toggleConceptSet(conceptSet: Table1ConceptSetSelection) {
-  if (isSelected(conceptSet.id)) {
-    selectedConceptSets.value = selectedConceptSets.value.filter(selected => selected.id !== conceptSet.id)
-    return
-  }
-
-  selectedConceptSets.value = [...selectedConceptSets.value, conceptSet]
-}
+const tagInputTexts = computed(() => ({
+  placeholder: getText('MRI_PA_TABLE1_CONCEPT_SET_PLACEHOLDER'),
+  enterSearchTerm: getText('MRI_PA_ENTER_SEARCH_TERM'),
+  clearAll: getText('MRI_PA_FILTERCARD_CLEAR_ALL_BTN'),
+  createConceptSet: getText('MRI_PA_TOOLTIP_CREATE_CONCEPT_SET'),
+  loadingSuggestions: getText('MRI_PA_LOADING_SUGGESTIONS'),
+  tooManyValues: getText('MRI_PA_TOO_MANY_VALUES'),
+  noSuggestions: getText('MRI_PA_NO_SUGGESTIONS'),
+}))
 
 function handleCancel() {
   emit('cancel')
 }
 
 function handleConfirm() {
-  if (loading.value || errorMessage.value || selectedConceptSets.value.length === 0) {
+  if (loading.value || errorMessage.value || selectedConceptSetItems.value.length === 0) {
     return
   }
-  emit('confirm', selectedConceptSets.value)
+  emit('confirm', getSelectedConceptSetsForConfirm())
 }
-
-watch(
-  () => props.isOpen,
-  isOpen => {
-    if (isOpen) {
-      loadOptions()
-    } else {
-      selectedConceptSets.value = []
-      errorMessage.value = ''
-    }
-  },
-  { immediate: true }
-)
 </script>
 
 <style scoped>
@@ -148,34 +121,11 @@ watch(
   margin-bottom: 12px;
 }
 
-.concept-set-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 360px;
-  overflow: auto;
-  border: 1px solid var(--color-ui-light-border, #d9d9d9);
-  border-radius: 8px;
-}
-
-.concept-set-item {
-  border-bottom: 1px solid var(--color-ui-light-border, #ededed);
-}
-
-.concept-set-item:last-child {
-  border-bottom: none;
-}
-
-.concept-set-option {
+.error-state {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-.concept-set-name {
-  font-weight: 500;
+  gap: 12px;
+  justify-content: space-between;
 }
 
 .status-text {
