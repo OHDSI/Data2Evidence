@@ -8,6 +8,26 @@ describe('useDashboardFlow', () => {
     getActiveBookmark: ref(null),
   }
 
+  const createDashboardGetters = (overrides = {}) => ({
+    getActiveBookmark: {
+      id: 'bookmark-1',
+      bmkId: 'bookmark-1',
+      bookmarkname: 'Existing cohort',
+      bookmark: '{}',
+      isNew: false,
+    },
+    getWizardConfig: null,
+    getPLRequest: vi.fn().mockReturnValue({ cohortDefinition: { cards: [{ id: 'card-1' }] } }),
+    getConstraintForAttribute: vi.fn(),
+    getSelectedDataset: { id: 'dataset-1' },
+    getBookmarkFromIFR: null,
+    getFilterCards: () => ({}),
+    getCurrentBookmarkHasChanges: false,
+    getActiveCohortMaterializedId: null,
+    getMaterializedCohorts: [],
+    ...overrides,
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -130,5 +150,71 @@ describe('useDashboardFlow', () => {
     expect(flow.showTable1ConfigModal.value).toBe(false)
     expect(flow.showSaveCohortModal.value).toBe(true)
     expect(flow.saveCohortModalMode.value).toBe('full')
+  })
+
+  it('uses materialize-only mode for saved unmaterialized Table1 cohorts', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+    flow.selectedDashboard.value = { name: 'table1' }
+    flow.selectedWizardDefinition.value = {
+      id: 'table1',
+      name: 'Table1',
+      fields: [],
+    }
+    flow.showTable1ConfigModal.value = true
+
+    await flow.handleTable1ConfigConfirm([{ id: '1', name: 'dm2hana' }])
+
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.showSaveCohortModal.value).toBe(true)
+    expect(flow.saveCohortModalMode.value).toBe('materialize-only')
+    expect(flow.confirmedTable1ConceptSets.value).toEqual([{ id: '1', name: 'dm2hana' }])
+    expect(flow.dashboardContext.value.wizardConfig).toEqual({
+      dashboardType: 'table1',
+      conceptSets: [{ id: '1', name: 'dm2hana' }],
+    })
+  })
+
+  it('reopens Configure Table1 with confirmed selections when save materialise is cancelled', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+    flow.selectedDashboard.value = { name: 'table1' }
+    flow.selectedWizardDefinition.value = {
+      id: 'table1',
+      name: 'Table1',
+      fields: [],
+    }
+    flow.showTable1ConfigModal.value = true
+
+    await flow.handleTable1ConfigConfirm([{ id: '1', name: 'dm2hana' }])
+    flow.handleCancelSaveCohort()
+
+    expect(flow.showSaveCohortModal.value).toBe(false)
+    expect(flow.showTable1ConfigModal.value).toBe(true)
+    expect(flow.confirmedTable1ConceptSets.value).toEqual([{ id: '1', name: 'dm2hana' }])
+    expect(flow.dashboardContext.value.wizardConfig).toEqual({
+      dashboardType: 'table1',
+      conceptSets: [{ id: '1', name: 'dm2hana' }],
+    })
+  })
+
+  it('does not reopen Configure Table1 if a save cancel event arrives after dashboard success', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+    flow.selectedDashboard.value = { name: 'table1' }
+    flow.selectedWizardDefinition.value = {
+      id: 'table1',
+      name: 'Table1',
+      fields: [],
+    }
+    flow.showTable1ConfigModal.value = true
+
+    await flow.handleTable1ConfigConfirm([{ id: '1', name: 'dm2hana' }])
+    flow.handleSaveCohortSuccess()
+    flow.handleCancelSaveCohort()
+
+    expect(flow.showDashboardModal.value).toBe(true)
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.confirmedTable1ConceptSets.value).toEqual([{ id: '1', name: 'dm2hana' }])
   })
 })

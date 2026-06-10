@@ -89,11 +89,15 @@
               <div class="col-sm-8">
                 <input
                   class="form-control"
+                  :class="{ 'is-invalid': !isDescriptionValid }"
                   :placeholder="getText('MRI_PA_COLL_ENTER_DESCRIPTION')"
                   v-model="cohortDescription"
                   tabindex="1"
                   @keydown.enter="handleSave"
                 />
+                <div class="invalid-feedback" v-bind:style="[!isDescriptionValid && 'display: block;']">
+                  {{ getText('MRI_PA_COHORT_DESCRIPTION_REQUIRED') || 'Description is required' }}
+                </div>
               </div>
             </div>
           </div>
@@ -107,7 +111,7 @@
         :click="handleSave"
         :text="saveButtonText"
         :tooltip="saveButtonText"
-        :disabled="isSaving || hasExceededLength || cohortNameValidationState !== 'valid'"
+        :disabled="isSaveDisabled"
       />
       <appButton
         :click="handleCancel"
@@ -187,6 +191,12 @@ export default {
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
     },
+    isDescriptionValid() {
+      return !this.showDescriptionField || this.cohortDescription.trim().length > 0
+    },
+    isSaveDisabled() {
+      return this.isSaving || this.hasExceededLength || this.cohortNameValidationState !== 'valid' || !this.isDescriptionValid
+    },
     modalTitle() {
       if (this.mode === 'bookmark-only') {
         return this.getText('MRI_PA_TITLE_SAVE_BOOKMARK') || 'Save Current Filters'
@@ -219,7 +229,9 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.cohortName = this.generateDefaultName()
+        this.cohortName = this.isNewCohort
+          ? this.generateDefaultName()
+          : this.getActiveBookmark?.bookmarkname || ''
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
@@ -280,10 +292,17 @@ export default {
         return false
       }
 
+      if (!this.isNewCohort && trimmedName === this.getActiveBookmark?.bookmarkname) {
+        this.cohortNameValidationState = 'valid'
+        return true
+      }
+
       const username = getPortalAPI().username
       const isDuplicate = this.getBookmarks.some(
         bookmark =>
           bookmark.user_id === username &&
+          bookmark.bmkId !== this.getActiveBookmark?.bmkId &&
+          bookmark.id !== this.getActiveBookmark?.id &&
           bookmark.bookmarkname &&
           bookmark.bookmarkname.toLowerCase() === trimmedName.toLowerCase()
       )
@@ -305,7 +324,7 @@ export default {
     },
 
     async handleSave() {
-      if (!this.validateCohortName() || this.hasExceededLength) {
+      if (!this.validateCohortName() || this.hasExceededLength || !this.isDescriptionValid) {
         return
       }
 
@@ -339,9 +358,6 @@ export default {
           cohortId: this.savedCohortId,
           bookmarkId: this.savedBookmarkId,
         })
-        setTimeout(() => {
-          this.handleCancel()
-        }, 1500)
       } catch (error) {
         console.error('[SaveCohortModal] Error:', error)
         
@@ -440,6 +456,12 @@ export default {
     async materializeCohort() {
       const selectedDataset = this.getSelectedDataset
 
+      if (!selectedDataset || !selectedDataset.id) {
+        throw new Error('No dataset selected')
+      }
+
+      this.ensureSavedBookmarkIdForMaterialization()
+
       if (!this.savedBookmarkId) {
         throw new Error('No saved bookmark provided for materialization')
       }
@@ -449,7 +471,7 @@ export default {
       const params = {
         datasetId: selectedDataset.id,
         mriquery: JSON.stringify(plRequest),
-        name: this.cohortName.trim(),
+        name: this.getCohortNameForPayload(),
         description: this.cohortDescription.trim(),
         syntax: JSON.stringify({
           datasetId: selectedDataset.id,
@@ -482,6 +504,25 @@ export default {
       }
 
       this.savedCohortId = materializedCohort.id
+    },
+    ensureSavedBookmarkIdForMaterialization() {
+      if (this.savedBookmarkId) {
+        return
+      }
+
+      const activeBookmarkId = this.getActiveBookmark?.bmkId || this.getActiveBookmark?.id
+      if (!activeBookmarkId) {
+        return
+      }
+
+      this.savedBookmarkId = activeBookmarkId
+    },
+    getCohortNameForPayload() {
+      if (this.isNewCohort) {
+        return this.cohortName.trim()
+      }
+
+      return this.getActiveBookmark?.bookmarkname || this.cohortName.trim()
     },
     handleCancel() {
       this.bookmarkSavedButMaterializationFailed = false

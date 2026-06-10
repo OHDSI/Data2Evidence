@@ -115,6 +115,7 @@
     <ConfigureTable1Dialog
       :is-open="dashboardFlow.showTable1ConfigModal"
       :dataset-id="getSelectedDataset?.id || ''"
+      :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
       @cancel="dashboardFlow.handleTable1ConfigCancel"
       @confirm="dashboardFlow.handleTable1ConfigConfirm"
     />

@@ -48,10 +48,13 @@ import QueryFilterTagInputAdapter from '@/lib/ui/QueryFilterTagInputAdapter.vue'
 import { useTable1ConceptSetPicker, type Table1ConceptSetSelection } from '@/composables/useTable1ConceptSetPicker'
 import type { TagInputModel } from '@/query-filter/types/ConceptSetTypes'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   isOpen: boolean
   datasetId: string
-}>()
+  initialConceptSets?: Table1ConceptSetSelection[]
+}>(), {
+  initialConceptSets: () => [],
+})
 
 const emit = defineEmits<{
   (e: 'cancel'): void
@@ -76,6 +79,7 @@ const {
 } = useTable1ConceptSetPicker({
   datasetId: toRef(props, 'datasetId'),
   isOpen: toRef(props, 'isOpen'),
+  initialSelectedConceptSets: toRef(props, 'initialConceptSets'),
   getLoadErrorMessage: () => getText('MRI_PA_TABLE1_CONCEPT_SETS_ERROR'),
 })
 

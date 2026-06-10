@@ -21,6 +21,7 @@ interface TerminologyCloseValues {
 interface UseTable1ConceptSetPickerOptions {
   datasetId: Ref<string>
   isOpen: Ref<boolean>
+  initialSelectedConceptSets?: Ref<Table1ConceptSetSelection[]>
   getLoadErrorMessage: () => string
   dispatchTerminologyEvent?: (event: CustomEvent) => void
 }
@@ -48,6 +49,7 @@ export function filterTable1ConceptSets(items: ConceptSetItemDisplay[], query: s
 export function useTable1ConceptSetPicker({
   datasetId,
   isOpen,
+  initialSelectedConceptSets,
   getLoadErrorMessage,
   dispatchTerminologyEvent = event => window.dispatchEvent(event),
 }: UseTable1ConceptSetPickerOptions) {
@@ -82,9 +84,23 @@ export function useTable1ConceptSetPicker({
       .filter(item => optionsById.has(String(item.value)) || String(item.value) === String(selectConceptSetId))
   }
 
+  function applyInitialSelection() {
+    selectedConceptSetItems.value = (initialSelectedConceptSets?.value || [])
+      .map(conceptSet => {
+        const id = String(conceptSet.id ?? '').trim()
+        const name = String(conceptSet.name ?? '').trim() || id
+        return {
+          value: id,
+          text: name,
+          display_value: name,
+        }
+      })
+      .filter(item => item.value !== '')
+  }
+
   async function loadOptions(options: { resetSelection?: boolean; selectConceptSetId?: string } = {}) {
     if (options.resetSelection) {
-      selectedConceptSetItems.value = []
+      applyInitialSelection()
     }
     conceptSets.value = []
     errorMessage.value = ''
@@ -166,6 +182,19 @@ export function useTable1ConceptSetPicker({
     },
     { immediate: true }
   )
+
+  if (initialSelectedConceptSets) {
+    watch(
+      initialSelectedConceptSets,
+      () => {
+        if (isOpen.value) {
+          applyInitialSelection()
+          reconcileSelectedConceptSets()
+        }
+      },
+      { deep: true }
+    )
+  }
 
   watch(datasetId, () => {
     if (isOpen.value) {

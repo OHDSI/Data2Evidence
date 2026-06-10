@@ -149,6 +149,7 @@ export interface UseDashboardFlowReturn {
   selectedWizardDefinition: Ref<WizardDefinition | null>
   missingRequiredFields: Ref<MissingRequiredField[]>
   activeDashboardWizardConfig: Ref<WizardConfig | null>
+  confirmedTable1ConceptSets: ComputedRef<Table1ConceptSetSelection[]>
   // New state for mini wizards form
   allWizardFields: Ref<WizardFieldDefinition[]>
   initialFormValues: Ref<Record<string, string | number | object>>
@@ -196,7 +197,7 @@ export function useDashboardFlow(
   const selectedDashboard = ref<DashboardCode | null>(null)
   const selectedWizardDefinition = ref<WizardDefinition | null>(null)
   const missingRequiredFields = ref<MissingRequiredField[]>([])
-  const activeDashboardWizardConfig = ref<Record<string, any> | null>(null)
+  const activeDashboardWizardConfig = ref<WizardConfig | null>(null)
   // New state for mini wizards form
   const allWizardFields = ref<WizardFieldDefinition[]>([])
   const initialFormValues = ref<Record<string, any>>({})
@@ -230,6 +231,20 @@ export function useDashboardFlow(
       console.error('Failed to generate mriquery:', e)
     }
     return { wizardConfig, conditions: null, mriquery }
+  })
+
+  const confirmedTable1ConceptSets = computed<Table1ConceptSetSelection[]>(() => {
+    const wizardConfig = activeDashboardWizardConfig.value
+    if (wizardConfig?.dashboardType !== TABLE1_DASHBOARD_TYPE || !Array.isArray(wizardConfig.conceptSets)) {
+      return []
+    }
+
+    return wizardConfig.conceptSets
+      .map(conceptSet => ({
+        id: String(conceptSet.id ?? '').trim(),
+        name: String(conceptSet.name ?? '').trim(),
+      }))
+      .filter(conceptSet => conceptSet.id !== '')
   })
 
   function normalizeResponseArray(payload: any): any[] {
@@ -1164,6 +1179,15 @@ export function useDashboardFlow(
 
   function handleCancelSaveCohort() {
     showSaveCohortModal.value = false
+    if (showDashboardModal.value) {
+      isProcessingDashboardFlow = false
+      return
+    }
+    if (selectedDashboard.value?.name === TABLE1_DASHBOARD_TYPE && confirmedTable1ConceptSets.value.length > 0) {
+      showTable1ConfigModal.value = true
+      isProcessingDashboardFlow = true
+      return
+    }
     isProcessingDashboardFlow = false
   }
 
@@ -1201,6 +1225,7 @@ export function useDashboardFlow(
     selectedWizardDefinition,
     missingRequiredFields,
     activeDashboardWizardConfig,
+    confirmedTable1ConceptSets,
     allWizardFields,
     initialFormValues,
     initialDisplayValues,
