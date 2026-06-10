@@ -1,0 +1,39 @@
+.database-variable-form-component {
+  .database-variable-form {
+    width: 95%;
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .u-padding-vertical--small {
+    padding: 0.75em 0;
+  }
+
+  .database-variable-form__name-field {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .database-variable-form__code-field {
+    flex: 1.5;
+    min-width: 150px;
+  }
+
+  .database-variable-form__schema-field {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .trash-btn {
+    position: absolute;
+    right: -52px;
+    top: 10px;
+  }
+
+  .form-error {
+    color: var(--color-feedback-alarm);
+  }
+}

@@ -1,4 +1,5 @@
 import {
+  DatabaseVariable,
   IFlowCsvNodeData,
   IPrefectEdge,
   IPrefectParameters,
@@ -86,7 +87,7 @@ export class PrefectParamsTransformer {
           type: type,
           graph: {
             edges: subflowEdges,
-            nodes: this.convertArrayToObject(children),
+            nodes: this.convertArrayToObject(children, flow.databases ?? []),
           },
           executor_options: executorOptions,
         };
@@ -98,7 +99,7 @@ export class PrefectParamsTransformer {
         });
       } else {
         acc[name] = {
-          ...prefectVars,
+          ...this.resolveDbVariables(type, prefectVars, flow.databases ?? []),
           id: id,
           type: type,
           parentNode: parentNode,
@@ -118,11 +119,34 @@ export class PrefectParamsTransformer {
     return {
       variables: flow.variables,
       import_libs: flow.importLibs,
+      databases: flow.databases ?? [],
       json_graph: {
         nodes: prefectNodes,
         edges: prefectEdges,
       },
       options,
+    };
+  }
+
+  private resolveDbVariables(type: string, prefectVars: any, databases: DatabaseVariable[]): any {
+    if (type !== "db_reader_node" && type !== "db_writer_node") return prefectVars;
+    const resolved = databases.find((db) => db.name === prefectVars.database);
+    if (!resolved) {
+      if (prefectVars.database) {
+        console.warn(
+          `[DataflowParser] Database variable "${prefectVars.database}" not found in configured databases. ` +
+          `Node will fail at runtime. Configure it in the Variables panel.`
+        );
+      }
+      return prefectVars;
+    }
+    if (type === "db_reader_node") {
+      return { ...prefectVars, database: resolved.code };
+    }
+    return {
+      ...prefectVars,
+      database: resolved.code,
+      schemaname: prefectVars.schemaname || resolved.schema,
     };
   }
 
@@ -138,7 +162,7 @@ export class PrefectParamsTransformer {
     }, {});
   }
 
-  private convertArrayToObject(arr: IReactFlowNode[]) {
+  private convertArrayToObject(arr: IReactFlowNode[], databases: DatabaseVariable[] = []) {
     return arr.reduce((acc, obj) => {
       const isCsv = (n: any): n is IFlowCsvNodeData => n.type === "csv_node";
       const { id, type } = obj;
@@ -156,7 +180,7 @@ export class PrefectParamsTransformer {
           encoding: csvData.encoding || "utf-8",
         };
       } else {
-        acc[name] = { ...prefectVars, id: id, type: type };
+        acc[name] = { ...this.resolveDbVariables(type, prefectVars, databases), id: id, type: type };
       }
       return acc;
     }, {});

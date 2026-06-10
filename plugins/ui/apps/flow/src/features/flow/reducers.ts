@@ -7,6 +7,7 @@ import { RootState } from "../../store";
 import {
   AddNodeTypeDialogState,
   AddGroupDialogState,
+  DatabaseVariable,
   EdgeState,
   FlowRootState,
   FlowRunState,
@@ -39,6 +40,7 @@ const initialState: FlowRootState = {
   edges: edgesInitialState,
   variables: [],
   importLibs: [],
+  databases: [],
 };
 
 const flowSlice = createSlice({
@@ -129,6 +131,9 @@ const flowSlice = createSlice({
     replaceImportLibs: (state, action: PayloadAction<string[]>) => {
       state.importLibs = action.payload;
     },
+    replaceDatabases: (state, action: PayloadAction<DatabaseVariable[]>) => {
+      state.databases = action.payload;
+    },
   },
 });
 
@@ -164,6 +169,7 @@ export const {
   // Variables & import libraries
   replaceVariables,
   replaceImportLibs,
+  replaceDatabases,
 } = flowSlice.actions;
 
 export const { selectAll: selectNodes, selectById: selectNodeById } =

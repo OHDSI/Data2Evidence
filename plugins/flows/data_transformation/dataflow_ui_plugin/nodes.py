@@ -19,14 +19,17 @@ import sqlalchemy as sql
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
+from types import SimpleNamespace
 from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
-from .types import (NodeType, 
-                    TableSourceType, 
-                    DataMappingType, 
+from .types import (NodeType,
+                    TableSourceType,
+                    DataMappingType,
                     ConceptMappingType)
+
+
 
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import load_csv_from_storage
@@ -242,21 +245,25 @@ class PythonNode(Node):
         self.source_code = _node["python_code"] + '\noutput = exec(myinput)'
         self.test_source_code = _node["python_code"]+'\noutput = test_exec(myinput)'
         
-    def test(self, _input: dict[str, Result], 
-             shared_variables: dict[str, str], 
-             importlibs: list[str], 
+    def test(self, _input: dict[str, Result],
+             shared_variables: dict[str, str],
+             importlibs: list[str],
              task_run_context):
         return self.task(_input, shared_variables, importlibs, task_run_context)
 
-    def task(self, _input: dict[str, Result], 
-             shared_variables: list[dict[str, str]], 
-             importlibs: list[str], 
-             task_run_context):
+    def task(self, _input: dict[str, Result],
+             shared_variables: list[dict[str, str]],
+             importlibs: list[str],
+             task_run_context,
+             databases: list[dict] = None):
         params = {"myinput": _input, "output": {}}
         try:
             if shared_variables:
                 for item in shared_variables:
-                    params.update({item["key"]: item["value"]})
+                    params[item["key"]] = item["value"]
+            if databases:
+                for db in databases:
+                    params[db["name"]] = SimpleNamespace(code=db["code"], schema=db["schema"])
             if importlibs:
                 exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')
@@ -588,7 +595,7 @@ class DBReader(Node):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(database_code=self.database) 
+        dbutils = DBDao(database_code=self.database)
         dbconn = dbutils.engine
 
         try:

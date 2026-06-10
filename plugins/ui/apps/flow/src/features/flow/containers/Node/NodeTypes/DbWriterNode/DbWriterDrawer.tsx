@@ -10,7 +10,6 @@ import { NodeProps } from "reactflow";
 import FormHelperText from "@mui/material/FormHelperText";
 import { Box, TextInput } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
-import { useGetDatabasesQuery } from "~/features/flow/slices";
 import {
   markStatusAsDraft,
   selectNodeById,
@@ -57,8 +56,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
 }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
-  const { data: databases = [], isLoading: isLoadingDatabases } =
-    useGetDatabasesQuery();
+  const databases = useSelector((state: RootState) => state.flow.databases);
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
@@ -83,6 +81,17 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       });
     }
   }, [node.data]);
+
+  const handleDatabaseVariableChange = useCallback(
+    (variableName: string) => {
+      const selectedDb = databases.find((db) => db.name === variableName);
+      onFormDataChange({
+        database: variableName,
+        schemaname: selectedDb?.schema ?? "",
+      });
+    },
+    [databases, onFormDataChange]
+  );
 
   const handleOk = useCallback(() => {
     if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
@@ -154,16 +163,27 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
           <Select
             value={formData.database}
             onChange={(e: SelectChangeEvent<string>) =>
-              onFormDataChange({ database: e.target.value })
+              handleDatabaseVariableChange(e.target.value)
             }
-            disabled={isLoadingDatabases}
+            disabled={databases.length === 0}
           >
-            {databases.map((db) => (
-              <MenuItem key={db.code} value={db.code}>
-                {db.code} - {db.dialect}
+            {databases.length === 0 ? (
+              <MenuItem value="" disabled>
+                No databases configured — add them in Variables
               </MenuItem>
-            ))}
+            ) : (
+              databases.map((db) => (
+                <MenuItem key={db.name} value={db.name}>
+                  {db.name} ({db.code} / {db.schema})
+                </MenuItem>
+              ))
+            )}
           </Select>
+          {databases.length === 0 && (
+            <FormHelperText>
+              Configure database variables in the Variables panel first.
+            </FormHelperText>
+          )}
         </FormControl>
       </Box>
       <Box mb={4}>

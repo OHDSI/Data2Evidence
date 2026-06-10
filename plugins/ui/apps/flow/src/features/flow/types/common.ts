@@ -3,6 +3,12 @@ export interface KeyValue {
   value: string;
 }
 
+export interface DatabaseVariable {
+  name: string;
+  code: string;
+  schema: string;
+}
+
 export interface KeyValueData<T = string> extends KeyValue {
   data: T;
 }

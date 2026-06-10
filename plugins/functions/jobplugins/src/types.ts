@@ -227,11 +227,18 @@ export interface KeyValue {
   value: string;
 }
 
+export interface DatabaseVariable {
+  name: string;
+  code: string;
+  schema: string;
+}
+
 export interface IReactFlow {
   nodes: IReactFlowNode[];
   edges: IReactFlowEdge[];
   variables: KeyValue[];
   importLibs: string[];
+  databases: DatabaseVariable[];
 }
 
 export interface IReactFlowNode {
@@ -306,6 +313,7 @@ export interface IPrefectEdge {
 export interface IPrefectParameters {
   variables?: KeyValue[];
   import_libs?: string[];
+  databases?: DatabaseVariable[];
   json_graph: {
     edges: IPrefectEdge;
     nodes: object;
