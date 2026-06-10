@@ -25,10 +25,16 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('[id="__filter1-tab"]').click()
   await page.waitForTimeout(1000) // Wait is required for pa config to populate the buttons with selected data model
 
-  let atlasOffCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' })
-  await expect(atlasOffCheckbox).not.toBeChecked()
-  await page.getByRole('button', { name: 'Save' }).click()
-  await expect(page.getByText('Configuration saved.')).toBeVisible()
+  const atlasOffCheckbox = page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' })
+  const atlasOnCheckbox = page.getByRole('checkbox', { name: 'Use PA-Atlas : On' })
+
+  if (await atlasOnCheckbox.isVisible()) {
+    await atlasOnCheckbox.click()
+    await expect(atlasOffCheckbox).toBeVisible()
+    await expect(atlasOffCheckbox).not.toBeChecked()
+    await page.getByRole('button', { name: 'Save' }).click()
+    await expect(page.getByText('Configuration saved.')).toBeVisible()
+  }
 
   // Go to cohorts screen and test CEE
   await page.getByRole('link', { name: 'Account' }).click()
@@ -107,12 +113,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'OMOP_DM' }).click()
   await page.locator('[id="__filter1-tab"]').click()
   await page.waitForTimeout(1000) // Wait is required for pa config to populate the buttons with selected data model
-  atlasOffCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' })
   if (await atlasOffCheckbox.isVisible()) {
     await atlasOffCheckbox.click()
     await page.waitForTimeout(500) // Wait is required for pa config UI to change slider value
   }
-  let atlasOnCheckbox = await page.getByRole('checkbox', { name: 'Use PA-Atlas : On' })
   await expect(atlasOnCheckbox).toBeChecked()
   await expect(atlasOffCheckbox).not.toBeVisible()
   await page.getByRole('button', { name: 'Save' }).click()

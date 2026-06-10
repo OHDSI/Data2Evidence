@@ -57,16 +57,14 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select
-  await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).first().click()
+  await page.getByTestId('pa-axis-menu-btn-x1').click()
   await expect(page.getByTestId('pa-pane-right').getByText('Condition Occurrence B')).toBeVisible()
-  // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
   await expect(page.getByTestId('pa-pane-right').getByText('Condition Occurrence A')).not.toBeVisible()
-  // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
   await expect(page.getByTestId('pa-pane-right').getByText('Device Exposure A')).not.toBeVisible()
 
   // Add condition start date to x1
-  await page.getByText('Condition Occurrence B').nth(1).hover()
-  await page.getByTestId('pa-pane-right').getByText('Condition Start Date').click()
+  await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence B').getByText('Condition Occurrence B').hover()
+  await page.getByTestId('pa-axis-dropdown-item-Condition Start Date').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 

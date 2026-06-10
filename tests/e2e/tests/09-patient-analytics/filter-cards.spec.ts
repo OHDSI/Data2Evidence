@@ -62,11 +62,11 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // // Step 7 - Validate supported syntax help appears
-  const ageBox = page.getByTitle('Basic Data - Age', { exact: true }).locator('div')
-  await ageBox.hover()
-  await expect(page.getByText('').first()).toBeVisible()
-  await page.getByText('').first().click()
-  await expect(page.locator('div').filter({ hasText: /^Supported Syntax$/ })).toBeVisible()
+  const firstBox = page.locator('div.form-group.constraint').first()
+  await firstBox.hover()
+  await page.getByTestId('help-popover-icon').first().click()
+  await expect(page.getByRole('banner').filter({ hasText: 'Supported Syntax' }).locator('div')).toBeVisible()
+  await page.locator('div').filter({ hasText: /^$/ }).nth(1).press('Escape')
 
   // Step 8 - Create concept set
   await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()

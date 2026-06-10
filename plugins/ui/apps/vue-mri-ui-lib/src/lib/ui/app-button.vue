@@ -1,5 +1,5 @@
 <template>
-  <button @click="click" class="appButton" v-bind:class="{ disabled: disabled }" :title="tooltip" :disabled="disabled" :data-test-id="testId">
+  <button @click="click" class="appButton" v-bind:class="{ disabled: disabled }" :title="tooltip" :disabled="disabled" :data-testid="testId">
     <div class="buttonInner">
       <icon v-if="icon !== ''" :icon="icon" />
       <span class="buttonContent" v-bind:style="getTextStyle">

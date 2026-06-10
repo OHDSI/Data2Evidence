@@ -1,7 +1,7 @@
 <template>
   <transition name="modal">
     <div class="message-box">
-      <div class="modal-wrapper modal-mask-dim" v-on:keyup="keymonitor" tabindex="0" data-test-id="pa-modal-wrapper">
+      <div class="modal-wrapper modal-mask-dim" v-on:keyup="keymonitor" tabindex="0" data-testid="pa-modal-wrapper">
         <div v-bind:class="['modal-container', messageTypeClass]" v-bind:style="dialogStyle">
           <loadingAnimation class="dialog-loading-body" v-if="busy"></loadingAnimation>
           <header class="modal-header">

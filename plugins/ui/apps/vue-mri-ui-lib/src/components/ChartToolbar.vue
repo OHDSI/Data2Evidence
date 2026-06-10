@@ -52,7 +52,7 @@
           v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
           :disabled="!drilldownEnabled"
           @click="drillDownClicked"
-          data-test-id="pa-drilldown-btn"
+          data-testid="pa-drilldown-btn"
         >
           <span class="icon" style="font-family: app-icons"></span>
         </button>
@@ -63,7 +63,7 @@
           class="actionButton"
           @click="showFilterCardSummary"
           :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
-          data-test-id="pa-filter-summary-btn"
+          data-testid="pa-filter-summary-btn"
         >
           <icon icon="summaryDoc" />
         </button>

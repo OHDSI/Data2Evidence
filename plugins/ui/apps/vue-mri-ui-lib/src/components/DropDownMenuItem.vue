@@ -4,7 +4,7 @@
     v-on:mouseover="onItemHover"
     v-on:click="onItemClick"
     v-bind:class="getClass()"
-    :data-test-id="`pa-axis-dropdown-item-${text}`"
+    :data-testid="`pa-axis-dropdown-item-${text}`"
   >
     <div class="leftMargin"></div>
     <div class="content">

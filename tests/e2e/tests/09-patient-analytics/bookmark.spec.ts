@@ -68,7 +68,11 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Add inclusion filter card for Condition Occurrence', async () => {
     await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-    await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByText('All').click()
+    await page
+      .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
+      .locator('div')
+      .filter({ hasText: /^All$/ })
+      .click()
     await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible()
@@ -118,13 +122,10 @@ test(TEST_NAME, async ({ page }) => {
     //   .filter({ hasText: /^Select an Attribute$/ })
     //   .getByRole('button')
     //   .click()
-    await page
-      .getByTestId('pa-axis-menu-btn-x1')
-      .last()
-      .locator('button.axisMenuButton', { hasText: 'Gender' })
-      .click()
-    await page.getByTestId('pa-pane-right').getByText('Condition Occurrence A').click()
-    await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').click()
+
+    await page.getByTestId('pa-axis-menu-btn-x1').click()
+    await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence A').getByText('Condition Occurrence A').click()
+    await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').getByText('Condition concept Name').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
@@ -157,16 +158,11 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
-    await page
-      .getByTestId('pa-axis-menu-btn-x1')
-      .last()
-      .getByRole('button', { name: 'A - Condition Occurrence Condition concept Name ◢' })
-      .click()
-    await page.getByText('Reset Selection').click()
+    await page.getByTestId('pa-axis-menu-btn-x1').click()
+    await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await page.getByTestId('pa-axis-menu-btn-x2').click()
-    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).waitFor({ state: 'visible' })
-    await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).click()
+    await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter
@@ -204,9 +200,11 @@ test(TEST_NAME, async ({ page }) => {
   //Rename the saved filter
   await test.step('Rename the saved filter', async () => {
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByTestId('pa-cohort-rename-btn').first().click()
+    await page.getByTestId(`pa-cohort-rename-btn-D-${NAME.savedFilters}`).click()
     await page.getByRole('textbox').fill('')
-    await page.getByTestId('pa-save-dialog-save-btn').click()
+
+    await page.getByRole('textbox').fill('')
+    await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill(NAME.renamedFilters)
     await page.getByRole('button', { name: 'Save' }).click()
@@ -247,9 +245,9 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that 'Measurement' exists in the table header
     await expect(page.locator('thead')).toContainText('Measurement')
     await page.getByTestId('pa-patient-list-header-Ethnicity concept id').locator('span').nth(1).click()
-    await page.getByTestId('pa-dropdown-menu').getByText('Remove').click()
+    await page.getByText('Remove').click()
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
-    await page.getByTestId('pa-dropdown-menu').getByText('Sort Descending').click()
+    await page.getByText('Sort Descending').click()
     //Add basic filters
     await page.getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
@@ -412,10 +410,11 @@ test(TEST_NAME, async ({ page }) => {
     //Rename the bookmark
     await page.getByText('Demo dataset').first().click()
     await page.getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByTestId('pa-cohort-rename-btn').first().click()
+    await page.getByTestId(`pa-cohort-rename-btn-D-${NAME.patientListFilters}`).click()
     await page.getByRole('textbox').fill('')
     await page.getByRole('textbox').fill(NAME.sharedFilter)
     await page.getByRole('button', { name: 'Save' }).click()
+
     //Logout as admin
     await page.getByRole('link', { name: 'Account' }).click()
     await page.getByRole('button', { name: 'Logout' }).click()
@@ -444,20 +443,14 @@ test(TEST_NAME, async ({ page }) => {
     //Delete the Shared saved filter
     await test.step('Delete Shared saved filter', async () => {
       await expect(page.getByText(NAME.sharedFilter)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'D2E Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
+      await page.getByTestId(`pa-cohort-delete-btn-D-${NAME.sharedFilter}`).click()
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.sharedFilter)).not.toBeVisible()
     })
     //Delete the Atlas Cohort Definition
     await test.step('Delete Atlas Cohort Definition', async () => {
       await expect(page.getByText(NAME.patientListFilters)).toBeVisible()
-      await page
-        .locator('.item-card', { hasText: 'Atlas Cohort Definition' })
-        .locator('.footer .icon-button[title="Delete Saved Filter"]')
-        .click()
+      await page.getByTestId(`pa-cohort-delete-btn-A-${NAME.patientListFilters}`).click()
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })

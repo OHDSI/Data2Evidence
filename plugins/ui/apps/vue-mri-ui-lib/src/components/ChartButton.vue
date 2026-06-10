@@ -1,5 +1,5 @@
 <template>
-  <button @click="clicked" v-bind:class="{ active: active }" v-bind:title="title" class="chartButton" tabindex="0" :data-test-id="`pa-chart-btn-${name}`">
+  <button @click="clicked" v-bind:class="{ active: active }" v-bind:title="title" class="chartButton" tabindex="0" :data-testid="`pa-chart-btn-${name}`">
     <span class="icon" v-bind:style="'font-family:' + iconGroup">{{ icon }}</span>
   </button>
 </template>

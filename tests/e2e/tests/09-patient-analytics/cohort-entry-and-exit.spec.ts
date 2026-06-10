@@ -6,7 +6,7 @@ test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
 test(TEST_NAME, async ({ page }) => {
-  await page.goto('/d2e/portal')
+  await page.goto('d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -48,10 +48,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('button', { name: 'Entry Select a Filter Card ◢' }).click()
-  await page.getByTestId('pa-pane-right').getByText('Visit A').click()
+  await page.getByTestId('pa-axis-dropdown-item-Visit A').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.getByRole('button', { name: 'Exit Select a Filter Card ◢' }).click()
-  await page.getByTestId('pa-pane-right').getByRole('list').getByText('Condition Occurrence A').click()
+  await page.getByText('Condition Occurrence A').nth(2).click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await page.waitForTimeout(2000) // Wait 2 seconds for "A filter card has been added..." popup in previous action to disappear
   await expect(page).toHaveScreenshot()

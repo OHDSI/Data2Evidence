@@ -2,7 +2,7 @@
   <div
     v-bind:class="['FilterCard', cssClass, this.isNew && !this.isBasic ? 'MriPaFilterCardNew' : '']"
     @click="onFiltercardClick"
-    :data-test-id="testId"
+    :data-testid="testId"
   >
     <!--Filtercard rename messageBox-->
     <messageBox messageType="custom" @close="cancel" :busy="busy" v-if="renameModal.show">

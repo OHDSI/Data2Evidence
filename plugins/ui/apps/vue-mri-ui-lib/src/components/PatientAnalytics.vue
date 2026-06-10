@@ -4,7 +4,7 @@
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
-          <div id="pane-left" class="split" data-test-id="pa-pane-left">
+          <div id="pane-left" class="split" data-testid="pa-pane-left">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
                 <button
@@ -12,7 +12,7 @@
                   class="actionButton"
                   @click="togglePanel(PANEL.RIGHT)"
                   :title="getText('MRI_PA_TOOLTIP_ENTER_EXPANDED_FILTERS_VIEW')"
-                  data-test-id="pa-fullscreen-btn"
+                  data-testid="pa-fullscreen-btn"
                 >
                   <icon icon="fullScreen" />
                 </button>
@@ -57,7 +57,7 @@
         </pane>
 
         <pane :size="PANE_SIZE.FULL - paneSize">
-          <div id="pane-right" class="split" data-test-id="pa-pane-right">
+          <div id="pane-right" class="split" data-testid="pa-pane-right">
             <template v-if="rightPaneEverOpened">
               <chartToolbar
                 :showUnHideFilters="hideLeftPane"

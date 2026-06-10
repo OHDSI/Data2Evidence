@@ -1,5 +1,5 @@
 <template :key="bookmark.name">
-  <div class="filtercard-summary" data-test-id="pa-filter-summary-panel">
+  <div class="filtercard-summary" data-testid="pa-filter-summary-panel">
     <div class="header d-flex">
       <label class="summary-title mr-auto">{{ getText('MRI_PA_TITLE_FILTER_SUMMARY') }}</label>
       <label class="separator"></label>

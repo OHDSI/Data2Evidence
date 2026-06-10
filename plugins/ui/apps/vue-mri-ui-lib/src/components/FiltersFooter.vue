@@ -8,7 +8,7 @@
           :title="getText('MRI_PA_TOOLTIP_RESET_FILTERS')"
           @click="openResetDialog"
           style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 8px"
-          data-test-id="pa-reset-filters-btn"
+          data-testid="pa-reset-filters-btn"
         />
       </div>
       <div class="d-flex justify-content-center align-items-center">
@@ -26,7 +26,7 @@
                   : getText('MRI_PA_TOOLTIP_CREATE_FILTERS')
               "
               :disabled="this.hasExceededMaxFilterCount"
-              data-test-id="pa-add-filter-btn"
+              data-testid="pa-add-filter-btn"
             />
             <d4l-button
               v-else
@@ -67,7 +67,7 @@
           :title="getText('MRI_PA_BUTTON_SAVE')"
           @click="openSaveBookmark"
           style="margin-left: 8px; margin-right: 8px"
-          data-test-id="pa-save-cohort-btn"
+          data-testid="pa-save-cohort-btn"
         />
       </div>
     </div>

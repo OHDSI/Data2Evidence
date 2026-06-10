@@ -19,7 +19,7 @@
         v-bind:title="axisDisplay.axisSelectionTooltip"
         :disabled="isDisabled"
         tabindex="0"
-        :data-test-id="`pa-axis-menu-btn-${axisName}`"
+        :data-testid="`pa-axis-menu-btn-${axisName}`"
       >
         <span class="axisMenuText" :class="[axisDisplay.isEmpty ? 'axisTextPlaceholder' : '']">{{
           axisDisplay.axisSelectionFilterText
