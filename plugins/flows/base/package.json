@@ -235,7 +235,8 @@
                       }
                     ],
                     "default": [
-                      "concept"
+                      "concept",
+                      "concept_synonym"
                     ],
                     "title": "Tablestocreateduckdbftsindex"
                   },
@@ -866,63 +867,6 @@
             }
           },
           "type": "phenotype"
-        },
-        {
-          "name": "create_cachedb_fhir_plugin",
-          "entrypoint": "flows.create_cachedb_fhir_plugin.flow.create_cachedb_fhir_plugin",
-          "parameter_openapi_schema": {
-            "title": "Parameters",
-            "type": "object",
-            "properties": {
-              "options": {
-                "$ref": "#/definitions/CreateDuckdbDatabaseFileType",
-                "position": 0,
-                "title": "options"
-              }
-            },
-            "required": [
-              "options"
-            ],
-            "definitions": {
-              "CreateDuckdbDatabaseFileType": {
-                "properties": {
-                  "databaseCode": {
-                    "title": "Databasecode",
-                    "type": "string"
-                  },
-                  "schemaName": {
-                    "title": "Schemaname",
-                    "type": "string"
-                  },
-                  "cacheSchemaName": {
-                    "title": "Cacheschemaname",
-                    "type": "string"
-                  },
-                  "studyCode": {
-                    "title": "Studycode",
-                    "type": "string"
-                  },
-                  "fhirProjectId": {
-                    "title": "Fhirprojectid",
-                    "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
-                    ],
-                    "default": null
-                  }
-                },
-                "required": [
-                  "databaseCode",
-                  "schemaName",
-                  "cacheSchemaName",
-                  "studyCode"
-                ],
-                "title": "CreateDuckdbDatabaseFileType",
-                "type": "object"
-              }
-            }
-          },
-          "type": "create_cachedb_fhir"
         },
         {
           "name": "admin_share_plugin",

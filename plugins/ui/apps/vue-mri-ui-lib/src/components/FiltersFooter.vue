@@ -264,7 +264,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart']),
+    ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart', 'queryReset']),
     ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
@@ -349,6 +349,7 @@ export default {
       }
     },
     reset() {
+      this.queryReset()
       this.resetChart()
       this.closeResetDialog()
     },
