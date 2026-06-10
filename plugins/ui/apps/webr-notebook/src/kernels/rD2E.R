@@ -16,10 +16,23 @@
 # JSON helpers (pure R, no external packages)
 # =============================================================================
 
-.rD2E_to_json <- function(x) {
+.rD2E_to_json <- function(x, .depth = 0L) {
+  # Guard against cycles (env / refClass embedded in the spec) before R's own
+  # "evaluation nested too deeply" error obscures where the cycle started.
+  if (.depth > 500L) {
+    calls <- sys.calls()
+    n <- length(calls)
+    tail <- vapply(seq.int(max(1L, n - 6L), n),
+                   function(i) substr(paste(deparse(calls[[i]]), collapse = " "), 1, 200),
+                   character(1))
+    stop(".rD2E_to_json recursion limit exceeded at depth ", .depth,
+         " (class=", paste(class(x), collapse = ","), "). Tail calls:\n",
+         paste("  -", tail, collapse = "\n"))
+  }
   if (is.null(x)) return("null")
-  if (length(x) == 0 && is.list(x)) {
-    if (!is.null(names(x))) return("{}")
+  if (length(x) == 0) {
+    # empty: list with names -> {}, anything else (incl. logical(0)/character(0)/c()) -> []
+    if (is.list(x) && !is.null(names(x))) return("{}")
     return("[]")
   }
   if (is.logical(x) && length(x) == 1) {
@@ -42,13 +55,13 @@
   }
   # vectors of length > 1
   if (is.atomic(x) && length(x) > 1) {
-    items <- vapply(x, .rD2E_to_json, character(1), USE.NAMES = FALSE)
+    items <- vapply(x, function(v) .rD2E_to_json(v, .depth + 1L), character(1), USE.NAMES = FALSE)
     return(paste0("[", paste(items, collapse = ","), "]"))
   }
   # data.frame -> array of objects
   if (is.data.frame(x)) {
     rows <- lapply(seq_len(nrow(x)), function(i) {
-      .rD2E_to_json(as.list(x[i, , drop = FALSE]))
+      .rD2E_to_json(as.list(x[i, , drop = FALSE]), .depth + 1L)
     })
     return(paste0("[", paste(rows, collapse = ","), "]"))
   }
@@ -56,18 +69,18 @@
   if (is.list(x)) {
     nms <- names(x)
     if (is.null(nms) || all(nms == "")) {
-      items <- vapply(x, .rD2E_to_json, character(1), USE.NAMES = FALSE)
+      items <- vapply(x, function(v) .rD2E_to_json(v, .depth + 1L), character(1), USE.NAMES = FALSE)
       return(paste0("[", paste(items, collapse = ","), "]"))
     } else {
       items <- vapply(seq_along(x), function(i) {
         key <- gsub('"', '\\"', nms[i], fixed = TRUE)
-        paste0('"', key, '":', .rD2E_to_json(x[[i]]))
+        paste0('"', key, '":', .rD2E_to_json(x[[i]], .depth + 1L))
       }, character(1), USE.NAMES = FALSE)
       return(paste0("{", paste(items, collapse = ","), "}"))
     }
   }
   # fallback
-  .rD2E_to_json(as.character(x))
+  .rD2E_to_json(as.character(x), .depth + 1L)
 }
 
 .rD2E_from_json <- function(text) {

@@ -148,7 +148,7 @@ export class DatasetCommandService {
       vocabSchemaName: datasetDto.vocabSchemaName,
       resultsSchemaName: datasetDto.resultsSchemaName,
       type: datasetDto.type,
-      fhirProjectId: datasetDto.fhir_project_id
+      fhirDatasetId: datasetDto.fhirDatasetId ?? null,
     }, datasetDto.detail);
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
@@ -284,7 +284,11 @@ export class DatasetCommandService {
       }
 
       // Skip rows whose identity-key already exists on the source.
-      const moveTable = async (entityCls: any, conflictField: string) => {
+      const moveTable = async (
+        entityCls: any,
+        conflictField: string,
+        skipPredicate?: (row: Record<string, unknown>) => boolean,
+      ) => {
         const fromSnapshot = await entityMgr.find(entityCls, {
           where: { datasetId: snapshot.id },
         });
@@ -295,6 +299,10 @@ export class DatasetCommandService {
           (onSource as any[]).map((r) => r[conflictField]),
         );
         for (const row of fromSnapshot as any[]) {
+          if (skipPredicate?.(row)) {
+            await entityMgr.delete(entityCls, { id: row.id });
+            continue;
+          }
           if (existingKeys.has(row[conflictField])) {
             this.logger.info(
               `Skipping ${entityCls.name} row ${row.id} on snapshot — key ${conflictField}=${row[conflictField]} already on source.`,
@@ -308,7 +316,12 @@ export class DatasetCommandService {
           );
         }
       };
-      await moveTable(DatasetAttribute, "attributeId");
+      // Drop source_dataset_id instead of moving it to the source
+      await moveTable(
+        DatasetAttribute,
+        "attributeId",
+        (row) => row.attributeId === "source_dataset_id",
+      );
       await moveTable(DatasetDashboard, "name");
       await moveTable(DatasetTag, "name");
 
@@ -542,7 +555,7 @@ export class DatasetCommandService {
       tokenDatasetCode,
       paConfigId,
       visibilityStatus,
-      fhir_project_id,
+      fhirDatasetId,
       vocabSchemaName,
       resultsSchemaName,
     } = datasetUpdateDto;
@@ -558,7 +571,7 @@ export class DatasetCommandService {
       tokenDatasetCode,
       visibilityStatus,
       paConfigId,
-      fhir_project_id,
+      fhirDatasetId,
     };
 
     if (vocabSchemaName !== undefined) {
@@ -1006,7 +1019,7 @@ export class DatasetCommandService {
       vocabSchemaName?: string;
       resultsSchemaName?: string;
       type?: string;
-      fhirProjectId: string | null;
+      fhirDatasetId: string | null;
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
@@ -1014,7 +1027,7 @@ export class DatasetCommandService {
     // Skip sync for FHIR and Strategus_study dataset
     const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
     if (
-      datasetInfo.fhirProjectId ||
+      datasetInfo.fhirDatasetId ||
       normalizedType === "fhir" ||
       normalizedType === "strategus_analysis"
     ) {

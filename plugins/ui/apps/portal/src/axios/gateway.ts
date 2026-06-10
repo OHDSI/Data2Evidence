@@ -5,7 +5,6 @@ import {
   CohortDefinitionList,
   UpdateSchemaInput,
   SchemasVersionInfoResponse,
-  NewFhirProjectInput,
 } from "../types";
 import { request } from "./request";
 

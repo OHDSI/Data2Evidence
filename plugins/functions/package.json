@@ -454,7 +454,8 @@
           "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -575,7 +576,6 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
@@ -586,7 +586,7 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
@@ -724,6 +724,8 @@
           "dataflowmgmt.prefect.flowRun.cancel",
           "dataflowmgmt.prefect.flowRun.add",
           "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.delete",
           "dataflowmgmt.prefect.testRun.add",
           "dataflowmgmt.prefect.taskRun.read",
           "dataflowmgmt.jobHistory.filter.read",
@@ -1462,6 +1464,15 @@
           "path": "^/system-portal/dataset/snapshot$",
           "scopes": [
             "portal.dataset.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/(.*)/transform-to-webapi$",
+          "scopes": [
+            "portal.dataset.update"
           ],
           "httpMethods": [
             "POST"
@@ -2391,6 +2402,17 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/input-auth-token",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.delete"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
           ]
         },
         {

@@ -36,10 +36,6 @@ x-envs:
     PG__IDLE_TIMEOUT_IN_MS: ${PG__IDLE_TIMEOUT_IN_MS:-30000}
     PG__DIALECT: postgresql
     PG__SSL: ${PG__SSL:-false}
-    PG__FHIR_DB_NAME: alp
-  fhir: &x-fhir
-    FHIR__CLIENT_ID: ${FHIR__CLIENT_ID:-db6b2304-f236-45ec-b10c-a852681e7129}
-    FHIR__CLIENT_SECRET: ${FHIR__CLIENT_SECRET}
   redis: &x-redis
     REDIS_HOST: ${REDIS_HOST:-${PROJECT_NAME:-d2e}-minerva-redis-1}
     REDIS_PORT: ${REDIS_PORT:-6379}
@@ -109,7 +105,6 @@ services:
       <<:
         - *x-converter
         - *x-tls
-        - *x-fhir
         - *x-pg
         - *x-trex-sql
       # Plugin paths for trex - must match volume mount at /usr/src/data
@@ -236,9 +231,6 @@ services:
         "prefect": "http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api",
         "idIssuerUrl": "http://${PROJECT_NAME:-d2e}-logto-1:3001/oidc",
         "minio": "",
-        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/fhir/R4",
-        "fhirTokenUrl": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-server/oauth2/token",
-        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway",
         "filesManager": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/files-manager/api",
         "whiteRabbit": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/white-rabbit/api",
         "alpdb": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/gateway/api/db",
@@ -251,7 +243,9 @@ services:
         "dataflowStorage": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/system-portal/supabase-storage",
         "mlflow": "http://${PROJECT_NAME:-d2e}-mlflow:5000",
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
-        "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333"
+        "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
+        "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094/fhir-gateway"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -353,7 +347,6 @@ services:
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       D2E_DUCKDB_MEMORY_LIMIT: ${D2E_DUCKDB_MEMORY_LIMIT:-15GB}
       D2E_DUCKDB_THREADS: ${D2E_DUCKDB_THREADS:-}
-      INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       IS_SELF_MANAGED_ROLES: ${IS_SELF_MANAGED_ROLES:-false}
       AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}}
       IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
@@ -417,8 +410,7 @@ services:
             "+white_rabbit": {},
             "+trex": {},
             "+storage": {},
-            "+strategus": {},
-            "+fhir": {}
+            "+strategus": {}
            }
           }
          }
@@ -426,11 +418,7 @@ services:
       POSTGRES_ALTER_EXTENSION_CONFIG: |-
         {
          "databases": {
-          "${PG__FHIR_DB_NAME:-alp}": {
-             "schema": "pg_catalog",
-             "extension": "pg_trgm"
           }
-         }
         }
       POSTGRES_MANAGE_USERS: |-
         {
@@ -758,7 +746,6 @@ services:
       PREFECT_API_ENABLE_HTTP2: False
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
-      INSTALL_SQLALCHEMY: ${INSTALL_SQLALCHEMY:-}
       DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
       PREFECT_TASKS_CACHE_ENABLED: false

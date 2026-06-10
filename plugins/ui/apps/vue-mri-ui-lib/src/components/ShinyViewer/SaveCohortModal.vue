@@ -230,6 +230,11 @@ export default {
         this.resetMessageStrip()
       }
     },
+    cohortName() {
+      if (this.isNewCohort) {
+        this.validateCohortName()
+      }
+    },
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'onAddCohortOkButtonPress']),

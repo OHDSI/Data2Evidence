@@ -496,7 +496,10 @@ export default {
           params: request,
           bookmarkId: bookmarkDisplay.bookmark.id,
         })
-        this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
+        const activeBookmark = this.getActiveBookmark
+        if (activeBookmark && activeBookmark.bmkId === bookmarkDisplay.bookmark.id) {
+          this[types.SET_ACTIVE_BOOKMARK]({ ...activeBookmark, bookmarkname: request.newName })
+        }
         await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.showRenameDialog = false
         this.cohortNameValidationState = 'valid'
