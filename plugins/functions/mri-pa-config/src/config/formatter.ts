@@ -473,6 +473,14 @@ export class Formatter {
             paConfig.chartOptions.shared = defaultValues.chartOptions.shared;
         }
 
+        if (!paConfig.chartOptions.list.hasOwnProperty("minPatientsExport")) {
+            paConfig.chartOptions.list.minPatientsExport = defaultValues.chartOptions.list.minPatientsExport;
+        }
+
+        if (!paConfig.chartOptions.list.hasOwnProperty("maxPatientsExport")) {
+            paConfig.chartOptions.list.maxPatientsExport = defaultValues.chartOptions.list.maxPatientsExport;
+        }
+
         return paConfig;
     }
 
@@ -625,6 +633,9 @@ export class Formatter {
             },
             list: {
                 enabled: paConfig.chartOptions.list.visible,
+                pageSize: paConfig.chartOptions.list.pageSize,
+                minPatientsExport: paConfig.chartOptions.list.minPatientsExport,
+                maxPatientsExport: paConfig.chartOptions.list.maxPatientsExport,
             },
             vb: {
                 enabled: paConfig.chartOptions.vb.visible,

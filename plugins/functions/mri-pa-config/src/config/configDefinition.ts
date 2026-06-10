@@ -505,6 +505,18 @@ function _getValidDefinition(cdwConfig) {
             type: "number",
             rangeMin: 1,
         },
+        minPatientsExport: {
+            name: "minPatientsExport",
+            mandatory: false,
+            type: "number",
+            rangeMin: 0,
+        },
+        maxPatientsExport: {
+            name: "maxPatientsExport",
+            mandatory: false,
+            type: "number",
+            rangeMin: 0,
+        },
     };
 
     const customChart = {
@@ -682,6 +694,8 @@ function _getValidDefinition(cdwConfig) {
                     chartAttributes.collectionEnabled,
                     chartAttributes.beginVisible,
                     chartAttributes.pageSize,
+                    chartAttributes.minPatientsExport,
+                    chartAttributes.maxPatientsExport,
 
                     // deprecated
                     chartAttributes.pdfDownloadEnabled,
