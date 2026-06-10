@@ -17,6 +17,7 @@ import {
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
 import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
+import { shouldSyncToWebApi } from "../../webapi/webapi-sync-policy.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -193,6 +194,8 @@ export class DatasetCommandService {
   }
 
   async offboardDataset(id: string) {
+    const dataset = await this.datasetRepo.getDataset(id);
+
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id);
       if (result.affected === 0) {
@@ -205,9 +208,8 @@ export class DatasetCommandService {
     };
     const result = await this.transactionRunner.run(deleteDatasetFn, id);
 
-    // Delete from WebAPI (fire-and-forget, don't block dataset deletion)
     const authToken = this.requestContextService.getOriginalToken();
-    if (authToken) {
+    if (authToken && dataset?.type === "webapi") {
       this.webApiSourceService.deleteSourceForDataset(id, authToken)
         .catch((err) => this.logger.error(`WebAPI delete failed for ${id}: ${err}`));
     }
@@ -264,11 +266,12 @@ export class DatasetCommandService {
       if (snapshotDetail) {
         const sourceDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: sourceId } });
         if (sourceDetail) {
+          // Keep the source dataset's own name; the snapshot (cache) name must
+          // not become the converted webapi dataset's name. Merge the rest.
           await entityMgr.update(
             DatasetDetail,
             { id: sourceDetail.id },
             {
-              name: snapshotDetail.name,
               description: snapshotDetail.description,
               summary: snapshotDetail.summary,
               showRequestAccess: snapshotDetail.showRequestAccess,
@@ -338,7 +341,26 @@ export class DatasetCommandService {
       return { id: sourceId, transformed: true };
     };
 
-    return this.transactionRunner.run(run, undefined);
+    const result = await this.transactionRunner.run(run, undefined);
+
+    if (result.transformed) {
+      const source = await this.datasetRepo.getDataset(sourceId);
+      const detail = await this.detailRepo.getDetail(sourceId);
+      if (source && detail) {
+        await this.syncDatasetToWebApi({
+          id: source.id,
+          databaseCode: source.databaseCode,
+          dialect: source.dialect,
+          schemaName: source.schemaName,
+          vocabSchemaName: source.vocabSchemaName,
+          resultsSchemaName: source.resultsSchemaName,
+          type: "webapi",
+          fhirDatasetId: source.fhirDatasetId ?? null,
+        }, detail);
+      }
+    }
+
+    return result;
   }
 
   async createDatasetSnapshot(snapshotDto: IDatasetSnapshotDto) {
@@ -1024,15 +1046,10 @@ export class DatasetCommandService {
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
 
-    // Skip sync for FHIR and Strategus_study dataset
-    const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
-    if (
-      datasetInfo.fhirDatasetId ||
-      normalizedType === "fhir" ||
-      normalizedType === "strategus_analysis"
-    ) {
+    // Only webapi-managed datasets get WebAPI records.
+    if (!shouldSyncToWebApi(datasetInfo.type, datasetInfo.fhirDatasetId)) {
       this.logger.info(
-        `Skipping WebAPI sync for non-OMOP dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+        `Skipping WebAPI sync for non-webapi dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
       );
       return;
     }

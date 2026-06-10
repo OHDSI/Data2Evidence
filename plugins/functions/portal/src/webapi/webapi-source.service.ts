@@ -4,6 +4,7 @@ import { Dataset } from '../dataset/entity/index.ts'
 import { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import { WebApiSourceApi } from './webapi-source.api.ts'
 import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
+import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
 
 @Injectable()
 export class WebApiSourceService {
@@ -99,7 +100,15 @@ export class WebApiSourceService {
     try {
       const existing = await this.webApiSourceApi.getSourceByKey(datasetId, authToken)
       if (existing) {
+        // Deletes the source and cascades to its source_daimon rows.
         await this.webApiSourceApi.deleteSource(existing.sourceId, authToken)
+      }
+
+      // The "Source user (<id>)" role is auto-created on source creation but is not removed by DELETE /source
+      const roles = await this.webApiSourceApi.getRoles(authToken)
+      const role = findRoleByName(roles, sourceUserRoleName(datasetId))
+      if (role) {
+        await this.webApiSourceApi.deleteRole(role.id, authToken)
       }
     } catch (error) {
       this.logger.error(`Failed to delete WebAPI source for ${datasetId}: ${error}`)
