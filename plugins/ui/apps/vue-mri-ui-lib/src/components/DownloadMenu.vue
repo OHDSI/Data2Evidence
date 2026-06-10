@@ -2,7 +2,12 @@
   <div v-if="list.length > 0" class="download-menu-container" style="display: inline">
     <bs-dropdown variant="link" size="sm" no-caret>
       <template v-slot:button-content>
-        <button class="toolbarButton" :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')">
+        <button
+          class="toolbarButton"
+          :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
+          :disabled="isPatientListDownloadDisabled"
+          v-bind:class="{ toolbarButtonDisabled: isPatientListDownloadDisabled }"
+        >
           <span class="icon" style="font-family: app-icons"></span>
         </button>
       </template>
@@ -33,7 +38,17 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getText', 'getAllChartConfigs', 'getActiveChart']),
+    ...mapGetters(['getText', 'getAllChartConfigs', 'getActiveChart', 'getCurrentPatientCount']),
+    isPatientListDownloadDisabled() {
+      if (this.getActiveChart !== 'list') return false
+      const listConfig = this.getAllChartConfigs['list']
+      if (!listConfig) return false
+      const { minPatientsExport, maxPatientsExport } = listConfig
+      const count = this.getCurrentPatientCount
+      if (minPatientsExport !== undefined && count < minPatientsExport) return true
+      if (maxPatientsExport !== undefined && count > maxPatientsExport) return true
+      return false
+    },
     list() {
       const menuData = []
       const getConfig = (chartConfig, prop) => {

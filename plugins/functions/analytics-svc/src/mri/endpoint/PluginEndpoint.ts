@@ -231,11 +231,8 @@ export class PluginEndpoint {
                                         this.logSqlTrace({
                                             outcome: "error",
                                             stage: "query_execute",
-                                            sql:
-                                                query?.queryString ??
-                                                null,
-                                            error:
-                                                err?.message ?? String(err),
+                                            sql: query?.queryString ?? null,
+                                            error: err?.message ?? String(err),
                                         });
                                         console.error(
                                             "Extension service - Interaction query failed",
@@ -456,7 +453,7 @@ export class PluginEndpoint {
                         data: Readable.from(""),
                     };
 
-                    let { query, noDataReason } =
+                    let { query, pCountQuery, noDataReason } =
                         await this.buildTempTableQuery({
                             cohortDefinition,
                             datasetId: datasetId,
@@ -631,6 +628,46 @@ export class PluginEndpoint {
                                 return errHandler(err);
                             }
                             try {
+                                // Enforce patient list export limits before streaming the dataset
+                                const listExportConfig =
+                                    this.config?.chartOptions?.list;
+                                if (listExportConfig && pCountQuery) {
+                                    const {
+                                        minPatientsExport,
+                                        maxPatientsExport,
+                                    } = listExportConfig;
+                                    const patientCount =
+                                        await pCountQuery.executeQuery<
+                                            {
+                                                "gr_cnt": number;
+                                                "patient.attributes.pcount": number;
+                                            }[]
+                                        >(
+                                            this.connection,
+                                            undefined,
+                                            this.schemaName
+                                        );
+                                    const totalPatientCount =
+                                        patientCount.data.length === 1
+                                            ? patientCount.data[0][
+                                                  "patient.attributes.pcount"
+                                              ]
+                                            : 0;
+                                    if (
+                                        (minPatientsExport !== undefined &&
+                                            totalPatientCount <
+                                                minPatientsExport) ||
+                                        (maxPatientsExport !== undefined &&
+                                            totalPatientCount >
+                                                maxPatientsExport)
+                                    ) {
+                                        return errHandler(
+                                            new Error(
+                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range [${minPatientsExport}, ${maxPatientsExport}]`
+                                            )
+                                        );
+                                    }
+                                }
                                 // Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
                                     this.connection,
