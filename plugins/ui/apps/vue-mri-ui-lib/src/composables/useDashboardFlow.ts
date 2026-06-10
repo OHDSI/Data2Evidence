@@ -45,6 +45,31 @@ export interface Table1ConceptSetSelection {
   name: string
 }
 
+export function buildTable1WizardConfig(
+  wizardDefinition: Pick<WizardDefinition, 'id'>,
+  conceptSets: Table1ConceptSetSelection[]
+): WizardConfig | null {
+  const normalizedConceptSets = conceptSets
+    .map(conceptSet => {
+      const id = String(conceptSet.id ?? '').trim()
+      const name = String(conceptSet.name ?? '').trim()
+      return {
+        id,
+        name: name || id,
+      }
+    })
+    .filter(conceptSet => conceptSet.id !== '')
+
+  if (normalizedConceptSets.length === 0) {
+    return null
+  }
+
+  return {
+    dashboardType: wizardDefinition.id,
+    conceptSets: normalizedConceptSets,
+  }
+}
+
 export interface DashboardCode {
   name: string
   [key: string]: string | number | boolean | null | object
@@ -1027,13 +1052,18 @@ export function useDashboardFlow(
   }
 
   async function handleTable1ConfigConfirm(conceptSets: Table1ConceptSetSelection[]) {
-    if (!selectedWizardDefinition.value || conceptSets.length === 0) {
+    if (!selectedWizardDefinition.value) {
+      return
+    }
+
+    const table1WizardConfig = buildTable1WizardConfig(selectedWizardDefinition.value, conceptSets)
+    if (!table1WizardConfig) {
       return
     }
 
     showTable1ConfigModal.value = false
     isProcessingDashboardFlow = true
-    await prepareWizardConfigAndContinue(selectedWizardDefinition.value, { conceptSets })
+    await prepareWizardConfigAndContinue(selectedWizardDefinition.value, table1WizardConfig)
   }
 
   function getActiveMaterializedCohort(): IMaterializedCohort | null {

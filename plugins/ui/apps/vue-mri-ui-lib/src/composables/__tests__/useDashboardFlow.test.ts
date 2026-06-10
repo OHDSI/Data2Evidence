@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ref } from 'vue'
-import { useDashboardFlow } from '../useDashboardFlow'
+import { buildTable1WizardConfig, useDashboardFlow } from '../useDashboardFlow'
 
 describe('useDashboardFlow', () => {
   const mockDispatch = vi.fn()
@@ -32,5 +32,103 @@ describe('useDashboardFlow', () => {
     expect(flow.dashboardMetadataLoading.value).toBe(false)
     expect(flow.dashboardCodes.value).toEqual([])
     expect(flow.dashboardSelectionError.value).toBe('')
+  })
+
+  it('buildTable1WizardConfig normalizes selected concept sets into wizardConfig', () => {
+    const wizardConfig = buildTable1WizardConfig(
+      { id: 'table1' },
+      [
+        { id: ' 1 ', name: ' dm2hana ' },
+        { id: '2', name: '' },
+      ]
+    )
+
+    expect(wizardConfig).toEqual({
+      dashboardType: 'table1',
+      conceptSets: [
+        { id: '1', name: 'dm2hana' },
+        { id: '2', name: '2' },
+      ],
+    })
+  })
+
+  it('buildTable1WizardConfig rejects empty or invalid selected concept sets', () => {
+    expect(buildTable1WizardConfig({ id: 'table1' }, [])).toBeNull()
+    expect(buildTable1WizardConfig({ id: 'table1' }, [{ id: ' ', name: 'Missing ID' }])).toBeNull()
+  })
+
+  it('routes selected table1 dashboard to the Table1 config modal', async () => {
+    const flow = useDashboardFlow(mockDispatch, {
+      getActiveBookmark: { id: 'bookmark-1', bmkId: 'bookmark-1', bookmarkname: 'Cohort', bookmark: '{}' },
+      getWizardConfig: null,
+      getPLRequest: vi.fn(),
+      getConstraintForAttribute: vi.fn(),
+      getSelectedDataset: { id: 'dataset-1' },
+      getBookmarkFromIFR: null,
+      getFilterCards: () => ({}),
+      getCurrentBookmarkHasChanges: false,
+      getActiveCohortMaterializedId: null,
+      getMaterializedCohorts: [],
+    })
+    flow.wizardDefinitions.value = [
+      {
+        id: 'table1',
+        name: 'Table1',
+        fields: [],
+      },
+    ]
+
+    await flow.handleDashboardSelected({ name: 'table1' })
+
+    expect(flow.showDashboardSelectionModal.value).toBe(false)
+    expect(flow.showTable1ConfigModal.value).toBe(true)
+    expect(flow.showRequiredFiltersModal.value).toBe(false)
+    expect(flow.selectedWizardDefinition.value?.id).toBe('table1')
+  })
+
+  it('confirms table1 config through existing wizardConfig and save flow', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const getPLRequest = vi.fn().mockReturnValue({ cohortDefinition: { cards: [{ id: 'card-1' }] } })
+    const flow = useDashboardFlow(dispatch, {
+      getActiveBookmark: {
+        id: 'bookmark-1',
+        bmkId: 'bookmark-1',
+        bookmarkname: 'New cohort',
+        bookmark: '{}',
+        isNew: true,
+      },
+      getWizardConfig: null,
+      getPLRequest,
+      getConstraintForAttribute: vi.fn(),
+      getSelectedDataset: { id: 'dataset-1' },
+      getBookmarkFromIFR: null,
+      getFilterCards: () => ({}),
+      getCurrentBookmarkHasChanges: false,
+      getActiveCohortMaterializedId: null,
+      getMaterializedCohorts: [],
+    })
+    flow.selectedWizardDefinition.value = {
+      id: 'table1',
+      name: 'Table1',
+      fields: [],
+    }
+    flow.showTable1ConfigModal.value = true
+
+    await flow.handleTable1ConfigConfirm([{ id: '1', name: 'dm2hana' }])
+
+    expect(dispatch).toHaveBeenCalledWith('setWizardConfig', {
+      dashboardType: 'table1',
+      conceptSets: [{ id: '1', name: 'dm2hana' }],
+    })
+    expect(flow.dashboardContext.value.wizardConfig).toEqual({
+      dashboardType: 'table1',
+      conceptSets: [{ id: '1', name: 'dm2hana' }],
+    })
+    expect(flow.dashboardContext.value.mriquery).toBe(
+      JSON.stringify({ cohortDefinition: { cards: [{ id: 'card-1' }] } })
+    )
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.showSaveCohortModal.value).toBe(true)
+    expect(flow.saveCohortModalMode.value).toBe('full')
   })
 })

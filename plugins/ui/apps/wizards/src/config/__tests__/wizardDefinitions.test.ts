@@ -12,10 +12,10 @@ vi.mock("../cdwConfig", () => ({
 
 describe("wizardDefinitions", () => {
   describe("getWizardDefinitions", () => {
-    it("should return an array with exactly 4 wizards", async () => {
+    it("should return an array with exactly 5 wizards", async () => {
       const wizards = await getWizardDefinitions();
       expect(Array.isArray(wizards)).toBe(true);
-      expect(wizards.length).toBe(4);
+      expect(wizards.length).toBe(5);
     });
 
     it("should return wizards with required fields", async () => {
@@ -152,6 +152,18 @@ describe("wizardDefinitions", () => {
       expect(wizard?.id).toBe("cross-sectional-demographics");
       expect(wizard?.name).toBe("Cross sectional Demographics");
       expect(wizard?.description).toBe("Assessment of hypertension and cholesterol levels in post-operative patients.");
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+    });
+
+    it("should have table1 wizard with config-only structure", async () => {
+      const wizard = await getWizardById("table1");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("table1");
+      expect(wizard?.name).toBe("Table1");
+      expect(wizard?.description).toBe("Generate a Table1 summary using selected covariate concept sets.");
+      expect(wizard?.fields).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
     });

@@ -283,6 +283,12 @@ const mockWizardConfigs: WizardConfig[] = [
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
   },
+  {
+    id: "table1",
+    name: "Table1",
+    description: "Generate a Table1 summary using selected covariate concept sets.",
+    fields: [],
+  },
 ];
 
 /**
