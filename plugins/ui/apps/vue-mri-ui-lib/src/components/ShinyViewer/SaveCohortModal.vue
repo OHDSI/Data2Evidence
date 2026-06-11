@@ -89,15 +89,11 @@
               <div class="col-sm-8">
                 <input
                   class="form-control"
-                  :class="{ 'is-invalid': !isDescriptionValid }"
                   :placeholder="getText('MRI_PA_COLL_ENTER_DESCRIPTION')"
                   v-model="cohortDescription"
                   tabindex="1"
                   @keydown.enter="handleSave"
                 />
-                <div class="invalid-feedback" v-bind:style="[!isDescriptionValid && 'display: block;']">
-                  {{ getText('MRI_PA_COHORT_DESCRIPTION_REQUIRED') || 'Description is required' }}
-                </div>
               </div>
             </div>
           </div>
@@ -191,11 +187,8 @@ export default {
     hasExceededLength() {
       return this.cohortName.length > this.maxLength
     },
-    isDescriptionValid() {
-      return !this.showDescriptionField || this.cohortDescription.trim().length > 0
-    },
     isSaveDisabled() {
-      return this.isSaving || this.hasExceededLength || this.cohortNameValidationState !== 'valid' || !this.isDescriptionValid
+      return this.isSaving || this.hasExceededLength || this.cohortNameValidationState !== 'valid'
     },
     modalTitle() {
       if (this.mode === 'bookmark-only') {
@@ -324,7 +317,7 @@ export default {
     },
 
     async handleSave() {
-      if (!this.validateCohortName() || this.hasExceededLength || !this.isDescriptionValid) {
+      if (!this.validateCohortName() || this.hasExceededLength) {
         return
       }
 
