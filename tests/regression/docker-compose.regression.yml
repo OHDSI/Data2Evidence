@@ -26,7 +26,8 @@ services:
       - ./tests/regression/k6:/scripts
       - ./tests/regression/results:/results
     environment:
-      K6_BASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001
+      K6_BASE_URL: https://${PROJECT_NAME:-d2e}-caddy.${TLS__INTERNAL__DOMAIN:-alp.local}:${CADDY_PORT:-${PORT:-443}}
+      K6_INSECURE_SKIP_TLS_VERIFY: "true"
       K6_OUT: json=/results/k6-raw.json
     networks:
       - alp
