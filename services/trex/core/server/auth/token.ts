@@ -21,7 +21,12 @@ export const getClientCredentialsToken = async () => {
     return
   }
 
-  const client = new OpenIDAPI({ issuerUrl: `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/d2e/oauth/` })
+  // Server-side (in-cluster) token acquisition: use the internal Logto issuer so the
+  // request stays inside the cluster (gateway/caddy -> Logto) instead of dialing the
+  // public FQDN, which hairpins out to the external gateway and fails the TLS handshake
+  // from inside Kubernetes. Falls back to the public OIDC path if LOGTO_ISSUER is unset.
+  const issuerUrl = env.LOGTO_ISSUER ?? `https://${env.GATEWAY_WO_PROTOCOL_FQDN}/d2e/oauth`
+  const client = new OpenIDAPI({ issuerUrl })
   return await client.getClientCredentialsToken({ clientId, clientSecret, scope })
 }
 

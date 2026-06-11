@@ -79,8 +79,6 @@ services:
     container_name: ${PROJECT_NAME:-d2e}-trex
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
     platform: linux/amd64
-    extra_hosts:
-      - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
       alp-minerva-pg-mgmt-init:
         condition: service_completed_successfully
