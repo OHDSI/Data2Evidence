@@ -10,15 +10,27 @@ export function createZip(
     // selectedAttributes,
     // noValue,
     responses,
+    cohortName,
   }: {
     // resultSet: any[]
     // selectedAttributes: any[]
     // noValue: string
     responses: any
+    cohortName?: string
   },
   cb: any
 ) {
-  const fileStream = streamSaver.createWriteStream(`PatientAnalytics_Patient-List_${new Date().toISOString()}.zip`)
+  const now = new Date()
+  const day = String(now.getDate()).padStart(2, '0')
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const year = now.getFullYear()
+  const dateStr = `${day}-${month}-${year}`
+  const safeCohortName = (cohortName || 'cohort')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+  const fileName = `${safeCohortName}_patientlist_${dateStr}.zip`
+  const fileStream = streamSaver.createWriteStream(fileName)
 
   const writer = fileStream.getWriter()
 

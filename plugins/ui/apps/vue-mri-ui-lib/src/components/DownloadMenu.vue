@@ -1,6 +1,6 @@
 <template>
   <div v-if="list.length > 0" class="download-menu-container" style="display: inline">
-    <bs-dropdown variant="link" size="sm" no-caret>
+    <bs-dropdown variant="link" size="sm" no-caret :disabled="isPatientListDownloadDisabled">
       <template v-slot:button-content>
         <button
           class="toolbarButton"
@@ -16,7 +16,6 @@
       </template>
     </bs-dropdown>
     <downloadCSVDialog v-if="csvShow" @closeEv="csvShow = false"></downloadCSVDialog>
-    <downloadZIPDialog v-if="zipShow" @closeEv="zipShow = false"></downloadZIPDialog>
     <imageExport v-if="imageShow" @closeEv="imageShow = false"></imageExport>
   </div>
 </template>
@@ -24,7 +23,6 @@
 import { mapActions, mapGetters } from 'vuex'
 import ImageExport from './ImageExport.vue'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
-import DownloadZIPDialog from './DownloadZipDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 
@@ -34,7 +32,6 @@ export default {
     return {
       csvShow: false,
       imageShow: false,
-      zipShow: false,
     }
   },
   computed: {
@@ -87,6 +84,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions(['setFireDownloadZIP']),
     handleMenuClick(arg) {
       if (arg) {
         switch (arg) {
@@ -97,7 +95,7 @@ export default {
             this.imageShow = true
             break
           case 'zip':
-            this.zipShow = true
+            this.setFireDownloadZIP({ columnsToInclude: 'SELECTED' })
             break
         }
       }
@@ -106,7 +104,6 @@ export default {
   components: {
     ImageExport,
     DownloadCSVDialog,
-    DownloadZIPDialog,
     bsDropdown,
     bsDropdownItem,
   },
