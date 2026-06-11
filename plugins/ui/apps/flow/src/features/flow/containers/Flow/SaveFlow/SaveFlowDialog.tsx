@@ -78,6 +78,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   const variables = useSelector((state: RootState) => state.flow.variables);
   const importLibs = useSelector((state: RootState) => state.flow.importLibs);
   const databases = useSelector((state: RootState) => state.flow.databases);
+  const schemas = useSelector((state: RootState) => state.flow.schemas);
   const revisionId = useSelector((state: RootState) => state.flow.revisionId);
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
@@ -151,9 +152,10 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
               variables: [],
               importLibs: [],
               databases: [],
+              schemas: [],
               comment: formData.comment.trim(),
             }
-          : { nodes, edges, variables, importLibs, databases, comment: formData.comment.trim() },
+          : { nodes, edges, variables, importLibs, databases, schemas, comment: formData.comment.trim() },
       };
       const response = await saveDataflow(dataflow);
 
@@ -182,6 +184,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     variables,
     importLibs,
     databases,
+    schemas,
     createFromTemplate,
     saveDataflow,
     onClose,

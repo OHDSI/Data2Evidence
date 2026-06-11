@@ -155,7 +155,7 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
             ) : (
               databases.map((db) => (
                 <MenuItem key={db.name} value={db.name}>
-                  {db.name} ({db.code} / {db.schema})
+                  {db.name} ({db.code})
                 </MenuItem>
               ))
             )}

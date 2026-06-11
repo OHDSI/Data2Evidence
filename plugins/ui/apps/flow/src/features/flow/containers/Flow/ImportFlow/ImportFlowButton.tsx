@@ -10,6 +10,7 @@ import {
   replaceVariables,
   replaceImportLibs,
   replaceDatabases,
+  replaceSchemas,
 } from "~/features/flow/reducers";
 import {
   sanitizeFlowEdges,
@@ -44,6 +45,7 @@ export const ImportFlowButton: FC<ImportFlowButtonProps> = () => {
           dispatch(replaceVariables(json.variables ?? []));
           dispatch(replaceImportLibs(json.importLibs ?? []));
           dispatch(replaceDatabases(json.databases ?? []));
+          dispatch(replaceSchemas(json.schemas ?? []));
           dispatch(markStatusAsDraft());
         } catch (err) {
           console.error("Error parsing JSON:", err);

@@ -1,5 +1,5 @@
-.database-variable-form-component {
-  .database-variable-form {
+.schema-variable-form-component {
+  .schema-variable-form {
     width: 95%;
     position: relative;
     display: flex;
@@ -12,12 +12,12 @@
     padding: 0.75em 0;
   }
 
-  .database-variable-form__name-field {
+  .schema-variable-form__name-field {
     flex: 1;
     min-width: 120px;
   }
 
-  .database-variable-form__code-field {
+  .schema-variable-form__schema-field {
     flex: 2;
     min-width: 150px;
   }

@@ -6,6 +6,10 @@ export interface KeyValue {
 export interface DatabaseVariable {
   name: string;
   code: string;
+}
+
+export interface SchemaVariable {
+  name: string;
   schema: string;
 }
 

@@ -26,11 +26,13 @@ import {
   replaceVariables,
   replaceImportLibs,
   replaceDatabases,
+  replaceSchemas,
 } from "../../../reducers";
-import { DatabaseVariable, KeyValue } from "../../../types";
+import { DatabaseVariable, SchemaVariable, KeyValue } from "../../../types";
 import { useGetDatabasesQuery } from "../../../slices";
 import { VariableForm } from "./VariableForm/VariableForm";
 import { DatabaseVariableForm } from "./DatabaseVariableForm/DatabaseVariableForm";
+import { SchemaVariableForm } from "./SchemaVariableForm/SchemaVariableForm";
 import "./FlowVariablesDrawer.scss";
 
 export interface FlowVariablesDrawerProps extends DrawerProps {
@@ -63,9 +65,11 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
   const variables = useSelector((state: RootState) => state.flow.variables);
   const importLibs = useSelector((state: RootState) => state.flow.importLibs);
   const databasesFromStore = useSelector((state: RootState) => state.flow.databases);
+  const schemasFromStore = useSelector((state: RootState) => state.flow.schemas);
   const [localVariables, setLocalVariables] = useState<KeyValue[]>(variables);
   const [localImportLibs, setLocalImportLibs] = useState<string[]>([]);
   const [localDatabases, setLocalDatabases] = useState<DatabaseVariable[]>(databasesFromStore);
+  const [localSchemas, setLocalSchemas] = useState<SchemaVariable[]>(schemasFromStore);
 
   const { data: availableDatabases = [], isLoading: isLoadingDatabases } = useGetDatabasesQuery();
 
@@ -80,6 +84,10 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
   useEffect(() => {
     setLocalDatabases(databasesFromStore || []);
   }, [databasesFromStore]);
+
+  useEffect(() => {
+    setLocalSchemas(schemasFromStore || []);
+  }, [schemasFromStore]);
 
   const handleClose = useCallback(() => {
     typeof onClose === "function" && onClose();
@@ -114,9 +122,23 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
   );
 
   const handleAddDatabase = useCallback(() => {
-    const newDatabase: DatabaseVariable = { name: "", code: "", schema: "" };
+    const newDatabase: DatabaseVariable = { name: "", code: "" };
     setLocalDatabases([...localDatabases, newDatabase]);
   }, [localDatabases]);
+
+  const handleAddSchema = useCallback(() => {
+    const newSchema: SchemaVariable = { name: "", schema: "" };
+    setLocalSchemas([...localSchemas, newSchema]);
+  }, [localSchemas]);
+
+  const handleSchemaChange = useCallback(
+    (schema: SchemaVariable, index: number) => {
+      const current = [...localSchemas];
+      current[index] = schema;
+      setLocalSchemas(current);
+    },
+    [localSchemas]
+  );
 
   const handleDatabaseChange = useCallback(
     (db: DatabaseVariable, index: number) => {
@@ -131,9 +153,10 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
     dispatch(replaceVariables(localVariables));
     dispatch(replaceImportLibs(localImportLibs));
     dispatch(replaceDatabases(localDatabases));
+    dispatch(replaceSchemas(localSchemas));
     dispatch(markStatusAsDraft());
     handleClose();
-  }, [localVariables, localImportLibs, localDatabases, handleClose]);
+  }, [localVariables, localImportLibs, localDatabases, localSchemas, handleClose]);
 
   const isKeyDuplicate = useCallback(
     (key: string, currentIndex: number) => {
@@ -154,6 +177,16 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
       );
     },
     [localDatabases]
+  );
+
+  const isSchemaNameDuplicate = useCallback(
+    (name: string, currentIndex: number) => {
+      if (!name.trim()) return false;
+      return localSchemas.some(
+        (s, index) => index !== currentIndex && s.name.trim() === name.trim()
+      );
+    },
+    [localSchemas]
   );
 
   return (
@@ -225,6 +258,57 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
 
         <Divider sx={{ my: 3 }} />
 
+        <div className="flow-variables-drawer__variables">
+          <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold" }}>
+            Variables
+          </Typography>
+          {localVariables.length === 0 ? (
+            <Box
+              display="flex"
+              justifyContent="flex-start"
+              alignItems="center"
+              py={4}
+              sx={{
+                color: "text.secondary",
+                fontStyle: "italic",
+              }}
+            >
+              <Typography variant="body2">
+                No variables defined. Click "Add Variable" to get started.
+              </Typography>
+            </Box>
+          ) : (
+            localVariables.map((variable, index) => {
+              const isDuplicateKey = isKeyDuplicate(variable.key, index);
+              return (
+                <VariableForm
+                  key={index}
+                  variable={variable}
+                  index={index}
+                  onVariableChange={handleVariableChange}
+                  onRemoveVariable={() =>
+                    handleRemoveVariable(
+                      index,
+                      localVariables,
+                      setLocalVariables
+                    )
+                  }
+                  isDuplicateKey={isDuplicateKey}
+                />
+              );
+            })
+          )}
+          <Box display="flex" justifyContent="flex-start">
+            <IconButton
+              startIcon={<AddSquareIcon />}
+              title="Add Variable"
+              onClick={handleAddVariable}
+            />
+          </Box>
+        </div>
+
+        <Divider sx={{ my: 3 }} />
+
         <div className="flow-variables-drawer__databases">
           <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold" }}>
             Databases
@@ -276,55 +360,52 @@ export const FlowVariablesDrawer: FC<FlowVariablesDrawerProps> = ({
 
         <Divider sx={{ my: 3 }} />
 
-        <div className="flow-variables-drawer__variables">
+        <div className="flow-variables-drawer__schemas">
           <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: "bold" }}>
-            Variables
+            Schemas
+            {localSchemas.length > 0 && (
+              <span className="flow-variables-drawer__count">
+                ({localSchemas.length})
+              </span>
+            )}
           </Typography>
-          {localVariables.length === 0 ? (
+          {localSchemas.length === 0 ? (
             <Box
               display="flex"
               justifyContent="flex-start"
               alignItems="center"
-              py={4}
-              sx={{
-                color: "text.secondary",
-                fontStyle: "italic",
-              }}
+              py={2}
+              sx={{ color: "text.secondary", fontStyle: "italic" }}
             >
               <Typography variant="body2">
-                No variables defined. Click "Add Variable" to get started.
+                No schemas configured. Click "Add Schema" to define a schema variable.
               </Typography>
             </Box>
           ) : (
-            localVariables.map((variable, index) => {
-              const isDuplicateKey = isKeyDuplicate(variable.key, index);
+            localSchemas.map((s, index) => {
+              const isDuplicate = isSchemaNameDuplicate(s.name, index);
               return (
-                <VariableForm
+                <SchemaVariableForm
                   key={index}
-                  variable={variable}
+                  schema={s}
                   index={index}
-                  onVariableChange={handleVariableChange}
-                  onRemoveVariable={() =>
-                    handleRemoveVariable(
-                      index,
-                      localVariables,
-                      setLocalVariables
-                    )
+                  onSchemaChange={handleSchemaChange}
+                  onRemoveSchema={() =>
+                    handleRemoveVariable(index, localSchemas, setLocalSchemas)
                   }
-                  isDuplicateKey={isDuplicateKey}
+                  isDuplicateName={isDuplicate}
                 />
               );
             })
           )}
+          <Box display="flex" justifyContent="flex-start">
+            <IconButton
+              startIcon={<AddSquareIcon />}
+              title="Add Schema"
+              onClick={handleAddSchema}
+            />
+          </Box>
         </div>
-
-        <Box display="flex" justifyContent="flex-start">
-          <IconButton
-            startIcon={<AddSquareIcon />}
-            title="Add Variable"
-            onClick={handleAddVariable}
-          />
-        </Box>
       </div>
 
       <div className="flow-variables-drawer__footer">

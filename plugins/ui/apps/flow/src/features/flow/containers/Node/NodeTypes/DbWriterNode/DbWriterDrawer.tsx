@@ -57,6 +57,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
   const databases = useSelector((state: RootState) => state.flow.databases);
+  const schemas = useSelector((state: RootState) => state.flow.schemas);
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
@@ -84,13 +85,9 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
 
   const handleDatabaseVariableChange = useCallback(
     (variableName: string) => {
-      const selectedDb = databases.find((db) => db.name === variableName);
-      onFormDataChange({
-        database: variableName,
-        schemaname: selectedDb?.schema ?? "",
-      });
+      onFormDataChange({ database: variableName });
     },
-    [databases, onFormDataChange]
+    [onFormDataChange]
   );
 
   const handleOk = useCallback(() => {
@@ -174,7 +171,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
             ) : (
               databases.map((db) => (
                 <MenuItem key={db.name} value={db.name}>
-                  {db.name} ({db.code} / {db.schema})
+                  {db.name} ({db.code})
                 </MenuItem>
               ))
             )}
@@ -187,13 +184,33 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         </FormControl>
       </Box>
       <Box mb={4}>
-        <TextInput
-          label="Schema name"
-          value={formData.schemaname}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ schemaname: e.target.value })
-          }
-        />
+        <FormControl variant="standard" fullWidth>
+          <InputLabel>Schema</InputLabel>
+          <Select
+            value={formData.schemaname}
+            onChange={(e: SelectChangeEvent<string>) =>
+              onFormDataChange({ schemaname: e.target.value })
+            }
+            disabled={schemas.length === 0}
+          >
+            {schemas.length === 0 ? (
+              <MenuItem value="" disabled>
+                No schemas configured — add them in Variables
+              </MenuItem>
+            ) : (
+              schemas.map((s) => (
+                <MenuItem key={s.name} value={s.name}>
+                  {s.name} ({s.schema})
+                </MenuItem>
+              ))
+            )}
+          </Select>
+          {schemas.length === 0 && (
+            <FormHelperText>
+              Configure schema variables in the Variables panel first.
+            </FormHelperText>
+          )}
+        </FormControl>
       </Box>
       <Box mb={4}>
         <FormControlLabel

@@ -19,7 +19,6 @@ import sqlalchemy as sql
 from genson import SchemaBuilder
 from genson.schema.node import SchemaGenerationError
 
-from types import SimpleNamespace
 from prefect import task, flow
 
 from .hooks import *
@@ -255,7 +254,8 @@ class PythonNode(Node):
              shared_variables: list[dict[str, str]],
              importlibs: list[str],
              task_run_context,
-             databases: list[dict] = None):
+             databases: list[dict] = None,
+             schemas: list[dict] = None):
         params = {"myinput": _input, "output": {}}
         try:
             if shared_variables:
@@ -263,7 +263,10 @@ class PythonNode(Node):
                     params[item["key"]] = item["value"]
             if databases:
                 for db in databases:
-                    params[db["name"]] = SimpleNamespace(code=db["code"], schema=db["schema"])
+                    params[db["name"]] = db["code"]
+            if schemas:
+                for s in schemas:
+                    params[s["name"]] = s["schema"]
             if importlibs:
                 exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')

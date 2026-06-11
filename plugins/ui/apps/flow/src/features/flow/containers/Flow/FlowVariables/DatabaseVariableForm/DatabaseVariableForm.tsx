@@ -60,13 +60,6 @@ export const DatabaseVariableForm: FC<DatabaseVariableFormProps> = ({
     [database, index, onDatabaseChange]
   );
 
-  const handleSchemaChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onDatabaseChange({ ...database, schema: event.target.value }, index);
-    },
-    [database, index, onDatabaseChange]
-  );
-
   return (
     <div className="database-variable-form-component">
       <div className="u-padding-vertical--small">
@@ -80,10 +73,9 @@ export const DatabaseVariableForm: FC<DatabaseVariableFormProps> = ({
             error={isDuplicateName}
             variant="standard"
             className="database-variable-form__name-field"
-            helperText={database.name ? `${database.name}.code · ${database.name}.schema` : undefined}
           />
           <FormControl variant="standard" className="database-variable-form__code-field">
-            <InputLabel>.code</InputLabel>
+            <InputLabel>Database code</InputLabel>
             <Select
               value={database.code}
               onChange={handleCodeChange}
@@ -96,15 +88,6 @@ export const DatabaseVariableForm: FC<DatabaseVariableFormProps> = ({
               ))}
             </Select>
           </FormControl>
-          <TextField
-            label=".schema"
-            value={database.schema}
-            onChange={handleSchemaChange}
-            size="small"
-            placeholder="e.g. cdmdefault"
-            variant="standard"
-            className="database-variable-form__schema-field"
-          />
           <MuiIconButton className="trash-btn" onClick={onRemoveDatabase} tabIndex={-1}>
             <TrashIcon />
           </MuiIconButton>

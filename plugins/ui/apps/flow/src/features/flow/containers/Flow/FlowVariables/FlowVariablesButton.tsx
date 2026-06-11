@@ -11,7 +11,8 @@ export const FlowVariablesButton: FC<FlowVariablesButtonProps> = ({}) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const variables = useSelector((state: RootState) => state.flow.variables);
   const databases = useSelector((state: RootState) => state.flow.databases);
-  const totalCount = (variables?.length ?? 0) + (databases?.length ?? 0);
+  const schemas = useSelector((state: RootState) => state.flow.schemas);
+  const totalCount = (variables?.length ?? 0) + (databases?.length ?? 0) + (schemas?.length ?? 0);
 
   const handleClick = useCallback(() => {
     setDrawerVisible(true);

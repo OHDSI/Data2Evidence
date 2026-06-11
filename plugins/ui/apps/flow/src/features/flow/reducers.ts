@@ -8,6 +8,7 @@ import {
   AddNodeTypeDialogState,
   AddGroupDialogState,
   DatabaseVariable,
+  SchemaVariable,
   EdgeState,
   FlowRootState,
   FlowRunState,
@@ -41,6 +42,7 @@ const initialState: FlowRootState = {
   variables: [],
   importLibs: [],
   databases: [],
+  schemas: [],
 };
 
 const flowSlice = createSlice({
@@ -134,6 +136,9 @@ const flowSlice = createSlice({
     replaceDatabases: (state, action: PayloadAction<DatabaseVariable[]>) => {
       state.databases = action.payload;
     },
+    replaceSchemas: (state, action: PayloadAction<SchemaVariable[]>) => {
+      state.schemas = action.payload;
+    },
   },
 });
 
@@ -170,6 +175,7 @@ export const {
   replaceVariables,
   replaceImportLibs,
   replaceDatabases,
+  replaceSchemas,
 } = flowSlice.actions;
 
 export const { selectAll: selectNodes, selectById: selectNodeById } =
