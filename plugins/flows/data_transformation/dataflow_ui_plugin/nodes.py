@@ -171,16 +171,33 @@ class Py2TableNode(Node):
         df = self.__create_dataframe(data)
         return df
     
+    def _check_input(self, _input: dict[str, Result], task_run_context) -> Result | None:
+        source_node = self.ui_map.get("source", "").split(".")[0]
+        upstream = _input.get(source_node)
+        if upstream is None or upstream.result is None:
+            return Result(True, f"No input data: no result received from '{source_node}'", self, task_run_context)
+        if upstream.error:
+            return Result(True, f"No input data: upstream node '{source_node}' failed, fix that node first", self, task_run_context)
+        if isinstance(upstream.result, (str, bytes, int, float, bool)):
+            return Result(True, f"No input data: result from '{source_node}' is not a table or object", self, task_run_context)
+        return None
+
     def test(self, _input: dict[str, Result], task_run_context):
         try:
+            no_input = self._check_input(_input, task_run_context)
+            if no_input:
+                return no_input
             table_df = self._exec(_input)
             return Result(False,  table_df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-    
+
 
     def task(self, _input: dict[str, Result], task_run_context):
         try:
+            no_input = self._check_input(_input, task_run_context)
+            if no_input:
+                return no_input
             table_df = self._exec(_input)
             return Result(False,  table_df, self, task_run_context)
         except Exception as e:
@@ -508,9 +525,16 @@ class TransformFhirDataNode(Node):
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
-            df_to_write = _input[self.dataframe].result
-            if df_to_write is None:
-                raise Exception("Input dataframe is None")
+            upstream = _input.get(self.dataframe)
+            if upstream is None or upstream.result is None or len(upstream.result) == 0:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' is empty", self, task_run_context)
+            if upstream.error:
+                return Result(True, f"No input data: upstream node '{self.dataframe}' failed, fix that node first", self, task_run_context)
+            df_to_write = upstream.result
+            if not isinstance(df_to_write, pd.DataFrame):
+                return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
+            if "content" not in df_to_write.columns or df_to_write["content"].dropna().empty:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' has no FHIR resources in the 'content' column", self, task_run_context)
             df = self.transform_fhir_data(df_to_write)
             if df is None:
                 raise Exception("Transformation resulted in empty dataframe")
@@ -565,12 +589,18 @@ class DbWriter(Node):
                 conn.execute(sql.text(f'TRUNCATE TABLE "{self.schema_name}"."{self.table_name}"'))
 
     def task(self, _input: dict[str, Result], task_run_context):
-        dbutils = DBDao(database_code=self.database)
-
-        dbconn = dbutils.engine
-
         try:
-            df_to_write = _input[self.dataframe].result
+            upstream = _input.get(self.dataframe)
+            if upstream is None or upstream.result is None or len(upstream.result) == 0:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' is empty", self, task_run_context)
+            if upstream.error:
+                return Result(True, f"No input data: upstream node '{self.dataframe}' failed, fix that node first", self, task_run_context)
+            if not isinstance(upstream.result, pd.DataFrame):
+                return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
+            df_to_write = upstream.result
+
+            dbutils = DBDao(database_code=self.database)
+            dbconn = dbutils.engine
 
             if self.truncate:
                 self._truncate_table(dbconn, dbutils.dialect)
@@ -975,9 +1005,9 @@ class FhirMappingNode(Node):
         try:
             mapping_schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
             # connect to source db to get omop_id and source_value pairs from the omop table, then connect to mapping db to upsert the lineage mapping
-            omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
+            omop_dao = DBDao(database_code=self.database_code)
             # mapping schema is in cache
-            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
+            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=self.database_code)
             self._ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
 
             source_value_col = self.source_value_col
