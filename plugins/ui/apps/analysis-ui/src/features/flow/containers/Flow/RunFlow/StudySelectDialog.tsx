@@ -13,7 +13,7 @@ import "./StudySelectDialog.scss";
 interface StudySelectDialogProps {
   open: boolean;
   onClose: () => void;
-  onRun: (datasetId: string) => void;
+  onRun: (datasetId: string, tokenDatasetCode: string) => void;
   isRunning: boolean;
 }
 
@@ -34,10 +34,14 @@ export const StudySelectDialog: FC<StudySelectDialogProps> = ({
   }, [open]);
 
   const handleRun = useCallback(() => {
-    if (selectedDatasetId) {
-      onRun(selectedDatasetId);
+    if (!selectedDatasetId) return;
+    const selected = studyDatasets.find((d) => d.id === selectedDatasetId);
+    if (!selected?.tokenDatasetCode) {
+      console.error("Selected dataset is missing tokenDatasetCode");
+      return;
     }
-  }, [selectedDatasetId, onRun]);
+    onRun(selectedDatasetId, selected.tokenDatasetCode);
+  }, [selectedDatasetId, studyDatasets, onRun]);
 
   return (
     <Dialog
