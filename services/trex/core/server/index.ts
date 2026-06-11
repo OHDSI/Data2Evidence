@@ -19,6 +19,8 @@ export async function initTrex() {
             const url = new URL(req.url);
             if (url.pathname.startsWith('/d2e/')) {
                 url.pathname = url.pathname.replace(/^\/d2e\//, '/');
+            } else {
+                url.pathname = `/`;
             }
             return url.pathname;
         }
