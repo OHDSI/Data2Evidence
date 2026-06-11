@@ -12,7 +12,9 @@ import { Stream } from "node:stream";
 import Cursor from "npm:pg-cursor@^2.14.6";
 import { translateHanaToPostgres, translateHanaToDuckdb } from "./helpers/hanaTranslation";
 import { EnvVarUtils } from "./EnvVarUtils";
+import { trace, SpanStatusCode } from "@opentelemetry/api";
 const logger = CreateLogger("Postgres Connection");
+const tracer = trace.getTracer("alp.pg");
 
 function _isTransientPgError(err: any): boolean {
   if (!err) return false;
@@ -122,6 +124,23 @@ export class PostgresConnection implements ConnectionInterface {
       callback(new DBError(logger.error(err), err.message), null);
       return;
     }
+    const span = tracer.startSpan("pg.query", {
+      attributes: {
+        "db.system": this.dialect === "duckdb" ? "duckdb" : "postgresql",
+        "db.name": this.schemaName,
+        "db.statement": translatedSql,
+      },
+    });
+    const finalize = (err: any, result: any) => {
+      if (err) {
+        span.recordException(err);
+        span.setStatus({ code: SpanStatusCode.ERROR, message: String(err.message ?? err) });
+      } else {
+        span.setStatus({ code: SpanStatusCode.OK });
+      }
+      span.end();
+      callback(err, result);
+    };
     const attempt = (attemptNo: number) => {
       this.conn.connect((connectErr, client, release) => {
         if (connectErr) {
@@ -130,7 +149,7 @@ export class PostgresConnection implements ConnectionInterface {
             return setTimeout(() => attempt(attemptNo + 1), 50);
           }
           logger.error(connectErr);
-          return callback(connectErr, null);
+          return finalize(connectErr, null);
         }
         client.query(translatedSql, params, (err, result) => {
           if (err) {
@@ -142,14 +161,14 @@ export class PostgresConnection implements ConnectionInterface {
           } else {
             release();
           }
-          callback(err, result);
+          finalize(err, result);
         });
       });
     };
     try {
       attempt(0);
     } catch (err) {
-      callback(new DBError(logger.error(err), err.message), null);
+      finalize(new DBError(logger.error(err), (err as any).message), null);
     }
   }
 

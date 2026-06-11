@@ -20,6 +20,7 @@
         "bcryptjs": "npm:bcryptjs@^2.4.3",
         "hdb": "npm:hdb@2.27.1",
         "pako": "npm:pako@1.0.11",
+        "@opentelemetry/api": "npm:@opentelemetry/api@^1",
         "pg": "npm:pg@^8.15.6",
         "pg-query-stream": "npm:pg-query-stream@^4.2.4",
         "pg-cursor": "npm:pg-cursor@^2.14.6",
