@@ -35,6 +35,7 @@
         :subMenu="axismenuData"
         :opened="axisMenuVisible"
         :openParam="axisMenuOpenParam"
+        :testId="`pa-dropdown-menu-${axisName}`"
         @clickEv="handleClick"
         @closeEv="closeAxisMenu"
       ></dropDownMenu>
