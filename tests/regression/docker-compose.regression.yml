@@ -1,0 +1,37 @@
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: ${PROJECT_NAME:-d2e}-jaeger
+    hostname: ${PROJECT_NAME:-d2e}-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - alp
+
+  trex:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://${PROJECT_NAME:-d2e}-jaeger:4318
+      OTEL_SERVICE_NAME: analytics-svc
+    depends_on:
+      - jaeger
+
+  k6:
+    image: grafana/k6:0.51.0
+    container_name: ${PROJECT_NAME:-d2e}-k6
+    volumes:
+      - ./tests/regression/k6:/scripts
+      - ./tests/regression/results:/results
+    environment:
+      K6_BASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001
+      K6_OUT: json=/results/k6-raw.json
+    networks:
+      - alp
+    profiles:
+      - regression
+
+networks:
+  alp:
