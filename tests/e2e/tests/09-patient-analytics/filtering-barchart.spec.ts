@@ -76,7 +76,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // reset x2-axis
   await page.getByTestId('pa-axis-menu-btn-x2').click()
-  await page.getByTestId('pa-axis-dropdown-item-Reset Selection').locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Reset Selection').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
