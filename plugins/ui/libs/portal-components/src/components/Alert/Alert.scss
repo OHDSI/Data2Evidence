@@ -1,0 +1,178 @@
+// Per-severity colours: `bg` surface tint + `accent` icon tint. D4L tokens where
+// they exist; amber and the bg tints are literals (not in the D4L palette).
+$alp-alert-severities: (
+  error: (
+    bg: #fdeded,
+    accent: var(--color-feedback-alarm, #d53939),
+  ),
+  warning: (
+    bg: #fff4e5,
+    accent: #f89c0e,
+  ),
+  success: (
+    bg: #e1fff6,
+    accent: var(--color-feedback-success, #00855f),
+  ),
+  info: (
+    bg: #e5e6f2,
+    accent: var(--color-primary, #000080),
+  ),
+);
+
+.alp-alert {
+  display: flex;
+  align-items: center; // single-row default; --multiline top-aligns instead
+  gap: 12px;
+  padding: 12px 16px;
+  // Fallback chain keeps a sans-serif where GT-America isn't loaded (e.g. Storybook).
+  font-family: var(--font-family-secondary, "GT-America", Helvetica, Arial, sans-serif);
+  font-size: 16px;
+  line-height: 1.4;
+  box-sizing: border-box;
+
+  &__icon {
+    flex: 0 0 22px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+
+    svg {
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  &__title,
+  &__message {
+    color: #000000;
+    line-height: 1.5;
+    letter-spacing: 0;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  &__message {
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  &__action {
+    flex: 0 0 auto;
+    margin-left: auto;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--color-primary, #000080);
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__close {
+    flex: 0 0 auto;
+    display: inline-flex;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    line-height: 0;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @each $name, $tokens in $alp-alert-severities {
+    &--#{$name} {
+      background-color: map-get($tokens, bg);
+
+      .alp-alert__icon {
+        color: map-get($tokens, accent);
+      }
+    }
+  }
+
+  // Title + message: top-align the row so the icon/action sit on the title's line.
+  &--multiline {
+    align-items: flex-start;
+
+    // Match the icon box to the title's line height so it aligns with the text.
+    .alp-alert__icon {
+      height: 24px;
+    }
+  }
+
+  &--banner {
+    width: 100%;
+    border-radius: 0; // full-bleed by default
+
+    &.alp-alert--inline {
+      border-radius: 8px; // rounded/contained
+    }
+  }
+
+  // Floating top-right; position overridable via CSS vars for the host's header.
+  &--toast {
+    position: fixed;
+    top: var(--alp-alert-toast-top, 84px); // ~72px header + 12px gap
+    right: var(--alp-alert-toast-right, 16px);
+    z-index: 5;
+    width: auto;
+    min-width: 380px;
+    max-width: 420px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-m, 0 3px 12px 0 rgba(0, 0, 0, 0.08));
+    animation: alp-alert-toast-in 220ms ease-out;
+
+    &.alp-alert--leaving {
+      animation: alp-alert-toast-out 200ms ease-in forwards;
+    }
+  }
+}
+
+@keyframes alp-alert-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes alp-alert-toast-out {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+// Respect users who prefer reduced motion: no slide/fade, just show/hide.
+@media (prefers-reduced-motion: reduce) {
+  .alp-alert--toast,
+  .alp-alert--toast.alp-alert--leaving {
+    animation: none;
+  }
+}
