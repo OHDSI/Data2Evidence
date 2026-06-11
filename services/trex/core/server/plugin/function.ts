@@ -437,7 +437,6 @@ export async function addPlugin(
           .filter((v: any, i: any, self: any) => self.lastIndexOf(v) == i);
       else {
         global.ROLE_SCOPES[_name] = cfg;
-        const roleName = _name;
       }
     });
   }
