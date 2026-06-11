@@ -3,7 +3,7 @@ export interface Feedback {
   title?: string;
   message?: string | string[];
   description?: string;
-  // Optional inline action (e.g. "Try again") rendered by the Dialog's Alert.
+  // Optional inline action (e.g. "Try again") rendered by consumers of Feedback (e.g. in a dialog footer/header UI).
   actionLabel?: string;
   onAction?: () => void;
   autoClose?: number;

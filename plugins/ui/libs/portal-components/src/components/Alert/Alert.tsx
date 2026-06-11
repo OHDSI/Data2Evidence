@@ -121,7 +121,7 @@ export const Alert: FC<AlertProps> = ({
           </div>
         )}
       </div>
-      {actionLabel && (
+      {actionLabel && typeof onAction === "function" && (
         <button type="button" className="alp-alert__action" onClick={onAction} data-testid="alert-action">
           {actionLabel}
         </button>
