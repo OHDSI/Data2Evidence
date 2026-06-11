@@ -61,7 +61,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('MALE')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
-  await expect(page.getByRole('cell', { name: '1100.8961' })).toBeVisible()
+  await expect(page.getByRole('cell', { name: '1377.7799' })).toBeVisible()
 
   // Disable hybrid search and save
   await page.getByRole('link', { name: 'Account' }).click()

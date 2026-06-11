@@ -4,7 +4,7 @@ import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
-import { CloseDialogType, CreateCacheFlowRun, CreateFhirCacheFlowRun, Feedback, Study } from "../../../../types";
+import { CloseDialogType, CreateCacheFlowRun, Feedback, Study } from "../../../../types";
 import FlowRunNotificationDialog from "../FlowRunNotificationDialog/FlowRunNotificationDialog";
 import "./CreateCacheDialog.scss";
 
@@ -39,7 +39,6 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
       const sourceDatasetId = dataset?.sourceStudyId;
       const targetDatasetId = sourceDatasetId ?? dataset?.id;
       const datasetType = dataset?.type?.toLowerCase();
-      const isFhirCacheDataset = datasetType === "non_omop" && sourceDatasetId;
 
       if (!targetDatasetId) {
         setFeedback({
@@ -52,50 +51,18 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
 
       let result: { flowRunId: string };
 
-      if (isFhirCacheDataset) {
-        try {
-          const sourceDataset = await api.systemPortal.getDataset(sourceDatasetId);
+      const data: CreateCacheFlowRun = { datasetId: targetDatasetId };
 
-          if (!sourceDataset?.databaseCode || !sourceDataset?.schemaName || !dataset?.schemaName) {
-            setFeedback({
-              type: "error",
-              message: getText(i18nKeys.CREATE_CACHE_DIALOG__MISSING_FHIR_INFO),
-            });
-            setUpdating(false);
-            return;
-          }
-
-          const fhirData: CreateFhirCacheFlowRun = {
-            databaseCode: sourceDataset.databaseCode,
-            schemaName: sourceDataset.schemaName,
-            cacheSchemaName: dataset.schemaName,
-            studyCode: sourceDataset.tokenStudyCode,
-          };
-
-          result = await api.dataflow.createFhirCacheFlowRun(fhirData);
-        } catch (err: any) {
-          setFeedback({
-            type: "error",
-            message: err.data?.message || err.data || getText(i18nKeys.CREATE_CACHE_DIALOG__FETCH_SOURCE_ERROR),
-          });
-          setUpdating(false);
-          return;
-        }
-      } else {
-        // Handle CDM datasets
-        const data: CreateCacheFlowRun = { datasetId: targetDatasetId };
-
-        // If this is a datamart (has a source), include the cache dataset ID
-        if (sourceDatasetId) {
-          data.cacheDatasetId = dataset?.id;
-        }
-
-        if (studyFlowParameters?.snapshotCopyConfig) {
-          data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
-        }
-
-        result = await api.dataflow.createCacheFlowRun(data);
+      // If this is a datamart (has a source), include the cache dataset ID
+      if (sourceDatasetId) {
+        data.cacheDatasetId = dataset?.id;
       }
+
+      if (studyFlowParameters?.snapshotCopyConfig) {
+        data.snapshotCopyConfig = studyFlowParameters.snapshotCopyConfig;
+      }
+
+      result = await api.dataflow.createCacheFlowRun(data);
 
       setTriggeredFlowRunId(result.flowRunId);
     } catch (err: any) {
@@ -115,7 +82,9 @@ const CreateCacheDialog: FC<CreateCacheDialogProps> = ({ dataset, open, onClose 
         title={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_TITLE)}
         open={open}
         onClose={() => handleClose("success")}
-        description={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_DESCRIPTION, [String(dataset?.studyDetail?.name)])}
+        description={getText(i18nKeys.CREATE_CACHE_DIALOG__FLOW_TRIGGERED_DESCRIPTION, [
+          String(dataset?.studyDetail?.name),
+        ])}
         flowRunId={triggeredFlowRunId}
       />
     );

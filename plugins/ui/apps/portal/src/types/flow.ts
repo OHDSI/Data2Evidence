@@ -93,14 +93,6 @@ export interface CreateCacheFlowRun {
   snapshotCopyConfig?: SnapshotCopyConfig;
 }
 
-export interface CreateFhirCacheFlowRun {
-  databaseCode: string;
-  schemaName: string;
-  cacheSchemaName: string;
-  studyCode: string;
-  fhirProjectId?: string;
-}
-
 export interface CreateSemanticSearchFlowRun {
   datasetId: string | undefined;
 }

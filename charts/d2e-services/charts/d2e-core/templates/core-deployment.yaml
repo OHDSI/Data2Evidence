@@ -163,8 +163,7 @@ spec:
                         "+usermgmt": {},
                         "+logto": {},
                         "+storage": {},
-                        "+strategus": {},
-                        "+fhir": {}
+                        "+strategus": {}
                       }
                     }
                   }

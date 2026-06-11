@@ -72,7 +72,7 @@
   "ADD_STUDY_DIALOG__CACHE_DATASET_TYPE": "Cache-Datensatztyp",
   "ADD_STUDY_DIALOG__CANCEL": "Abbrechen",
   "ADD_STUDY_DIALOG__CDM_SCHEMA_OPTION": "CDM-Schema-Option",
-  "ADD_STUDY_DIALOG__CREATE_FHIR": "FHIR-Server-Projekt erstellen",
+  "ADD_STUDY_DIALOG__CREATE_FHIR": "FHIR-Datensatz erstellen",
   "ADD_STUDY_DIALOG__CREATE_NEW_SCHEMA": "Erstellen Sie ein neues Schema",
   "ADD_STUDY_DIALOG__CUSTOM_DATA_MODEL_OPTION": "Benutzerdefinierte Datenmodell-Option",
   "ADD_STUDY_DIALOG__DATABASES": "Datenbanken",

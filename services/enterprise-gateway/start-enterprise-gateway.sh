@@ -26,6 +26,7 @@ export EG_LOG_LEVEL=${EG_LOG_LEVEL:-DEBUG}
 export EG_CULL_IDLE_TIMEOUT=${EG_CULL_IDLE_TIMEOUT:-43200}  # default to 12 hours
 export EG_CULL_INTERVAL=${EG_CULL_INTERVAL:-60}
 export EG_CULL_CONNECTED=${EG_CULL_CONNECTED:-False}
+export EG_CULL_BUSY=${EG_CULL_BUSY:-False}
 EG_ALLOWED_KERNELS=${EG_ALLOWED_KERNELS:-${EG_KERNEL_WHITELIST:-"null"}}
 export EG_ALLOWED_KERNELS=`echo ${EG_ALLOWED_KERNELS} | sed 's/[][]//g'` # sed is used to strip off surrounding brackets as they should no longer be included.
 export EG_DEFAULT_KERNEL_NAME=${EG_DEFAULT_KERNEL_NAME:-python_docker}
@@ -48,5 +49,6 @@ exec jupyter enterprisegateway \
         --RemoteMappingKernelManager.cull_idle_timeout=${EG_CULL_IDLE_TIMEOUT} \
         --RemoteMappingKernelManager.cull_interval=${EG_CULL_INTERVAL} \
         --RemoteMappingKernelManager.cull_connected=${EG_CULL_CONNECTED} \
+        --RemoteMappingKernelManager.cull_busy=${EG_CULL_BUSY} \
         --RemoteMappingKernelManager.default_kernel_name=${EG_DEFAULT_KERNEL_NAME} \
         --EnterpriseGatewayApp.kernel_manager_class=CustomKernelManager.CustomKernelManager.CustomKernelManager

@@ -454,7 +454,8 @@
           "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -585,7 +586,7 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},

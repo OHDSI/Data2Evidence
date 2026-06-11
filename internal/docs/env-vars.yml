@@ -72,13 +72,6 @@ ENV_TYPE:
   comment: local or remote ; also refers to .env.${ENV_TYPE}
   publish: true
   type: string
-FHIR__CLIENT_ID:
-  comment: FHIR Client Id
-  publish: true
-FHIR__CLIENT_SECRET:
-  comment: FHIR Client Secret
-  publish: true
-  type: string
 GH_TOKEN:
   comment: GitHub Token Passed To Trex
   publish: true

@@ -30,6 +30,23 @@ function assertSafeIdentifier(name: string, value: string) {
   }
 }
 
+const IDENTIFIER_PATTERNS: readonly RegExp[] = [
+  /^\d{4,}$/, // concept_id, SNOMED CT, MedDRA, RxNorm, CVX, DRG, CPT-1
+  /^[A-Za-z]?\d{2,}\.\d+[A-Za-z]?$/, // ICD-10/9-CM, OPCS-4 (E11.9, 250.00, K04.1, S72.001A)
+  /^\d{1,5}-\d{1,2}$/, // LOINC (2345-7)
+  /^\d{4,5}-\d{3,4}-\d{1,2}$/, // NDC (0078-0432-15)
+  /^[A-Za-z]\d{4}$/, // HCPCS Level II (G0001, J0290)
+  /^\d{4}[A-Za-z]$/, // CPT Category II/III (0001F, 0042T)
+  /^[A-Za-z]\d{2}[A-Za-z]{2}\d{2}$/, // ATC (A10BA02)
+  /^\d{3}[A-Za-z]\d{5}[A-Za-z]$/, // NUCC taxonomy (207Q00000X)
+  /^\d{4}\/\d$/, // ICD-O morphology (8000/3)
+];
+function isIdentifierQuery(s: string): boolean {
+  const t = s.trim();
+  if (t.length === 0 || /\s/.test(t)) return false;
+  return IDENTIFIER_PATTERNS.some((re) => re.test(t));
+}
+
 function buildOrderByClause(
   sortBy: string | undefined,
   sortOrder: string | undefined,
@@ -162,7 +179,8 @@ export class HanaHDBDao {
     const isHybridEligible =
       this.semanticRatio > 0 &&
       searchText !== "" &&
-      (!sortBy || sortBy === "score");
+      (!sortBy || sortBy === "score") &&
+      !isIdentifierQuery(searchText);
 
     const client = await this.getHanaHDBConnection();
     try {
@@ -228,6 +246,69 @@ export class HanaHDBDao {
     }
   }
 
+  // HANA FTS candidate set shared by both hybrid modes: fuzzy CONTAINS over
+  // concept + concept_synonym, max-merged per concept_id, filtered, top-K.
+  private async getHanaFtsCandidates(
+    hanaClient: any,
+    searchText: string,
+    filterWhere: string,
+  ): Promise<Array<{ CONCEPT_ID: number; FTS_SCORE: number }>> {
+    const ftsSql = `
+        WITH all_matches AS (
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept
+          WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+          UNION ALL
+          SELECT concept_id, SCORE() AS match_score
+          FROM ${this.vocabSchemaName}.concept_synonym
+          WHERE CONTAINS(concept_synonym_name, ?, FUZZY(${env.HANA_FTS_FUZZY}))
+        ),
+        matched AS (
+          SELECT concept_id, MAX(match_score) AS fts_score
+          FROM all_matches
+          GROUP BY concept_id
+        )
+        SELECT m.concept_id AS CONCEPT_ID, m.fts_score AS FTS_SCORE
+        FROM matched m
+        JOIN ${this.vocabSchemaName}.concept c ON c.concept_id = m.concept_id
+        ${filterWhere}
+        ORDER BY m.fts_score DESC
+        LIMIT ${HANA_TOPK}
+      `;
+    const wildcardSearch = `*${searchText}*`;
+    return (await this.asyncExec(hanaClient, ftsSql, [
+      wildcardSearch,
+      wildcardSearch,
+    ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+  }
+
+  // Fetch full concept rows for the ranked ids and return them in rank order.
+  private async fetchAndOrderConcepts(
+    hanaClient: any,
+    rankedIds: number[],
+  ): Promise<IConcept[]> {
+    if (rankedIds.length === 0) return [];
+
+    const fullRowsSql = `
+        SELECT concept_id, concept_name, domain_id, vocabulary_id,
+               concept_class_id, standard_concept, concept_code,
+               valid_start_date, valid_end_date, invalid_reason
+        FROM ${this.vocabSchemaName}.concept
+        WHERE concept_id IN (${rankedIds.join(",")})
+      `;
+    const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
+
+    // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
+    // as a number — normalize both sides to number so the lookup hits.
+    const byId = new Map<number, any>();
+    for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
+    const orderedRows = rankedIds
+      .map((id) => byId.get(Number(id)))
+      .filter((r) => r !== undefined);
+
+    return this.mapHanaConcepts(orderedRows);
+  }
+
   // Hybrid mode "rerank": HANA FTS picks the candidate set, then DuckDB
   // re-orders it by a normalized blend of FTS score and embedding distance.
   private async getConceptsHybridRerank(
@@ -240,21 +321,12 @@ export class HanaHDBDao {
     const trexClient = await this.getTrexConnection();
     try {
       const filterWhere = this.generateFilterWhereClause(filters);
-      const ftsAndFilter = filterWhere
-        ? filterWhere.replace("WHERE", "AND")
-        : "";
 
-      const ftsSql = `
-        SELECT concept_id, SCORE() as fts_score
-        FROM ${this.vocabSchemaName}.concept
-        WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-        ${ftsAndFilter}
-        ORDER BY SCORE() DESC
-        LIMIT ${HANA_TOPK}
-      `;
-      const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        `*${searchText}*`,
-      ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+      const ftsRows = await this.getHanaFtsCandidates(
+        hanaClient,
+        searchText,
+        filterWhere,
+      );
 
       // totalHits = min(trueCount, HANA_TOPK)
       const totalHits = ftsRows.length;
@@ -314,27 +386,8 @@ export class HanaHDBDao {
       `;
       const ranked = await trexClient.query(duckdbSql);
       const rankedIds: number[] = ranked.rows.map((r: any) => r.concept_id);
-      if (rankedIds.length === 0) return { hits: [], totalHits };
-
-      const fullRowsSql = `
-        SELECT concept_id, concept_name, domain_id, vocabulary_id,
-               concept_class_id, standard_concept, concept_code,
-               valid_start_date, valid_end_date, invalid_reason
-        FROM ${this.vocabSchemaName}.concept
-        WHERE concept_id IN (${rankedIds.join(",")})
-      `;
-      const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
-
-      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
-      // as a number — normalize both sides to number so the lookup hits.
-      const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
-      const orderedRows = rankedIds
-        .map((id) => byId.get(Number(id)))
-        .filter((r) => r !== undefined);
-
       return {
-        hits: this.mapHanaConcepts(orderedRows),
+        hits: await this.fetchAndOrderConcepts(hanaClient, rankedIds),
         totalHits,
       };
     } catch (error) {
@@ -365,23 +418,14 @@ export class HanaHDBDao {
         ? filterWhere.replace("WHERE", "AND")
         : "";
 
-      const ftsSql = `
-        SELECT concept_id, SCORE() as fts_score
-        FROM ${this.vocabSchemaName}.concept
-        WHERE CONTAINS(*, ?, FUZZY(${env.HANA_FTS_FUZZY}))
-        ${ftsAndFilter}
-        ORDER BY SCORE() DESC
-        LIMIT ${HANA_TOPK}
-      `;
-      const ftsRows = (await this.asyncExec(hanaClient, ftsSql, [
-        `*${searchText}*`,
-      ])) as Array<{ CONCEPT_ID: number; FTS_SCORE: number }>;
+      const ftsRows = await this.getHanaFtsCandidates(
+        hanaClient,
+        searchText,
+        filterWhere,
+      );
 
       const embedding = (await getGTEEmbedding(searchText)).join(",");
 
-      // Top-K cosine on DuckDB. Unfiltered here because the HANA cache only
-      // stores concept_id + concept_name_embedding — filter columns aren't
-      // available in DuckDB, so we filter-check this set on HANA below.
       const semTopKSql = `
         SELECT
           e.concept_id,
@@ -395,9 +439,6 @@ export class HanaHDBDao {
       `;
       const semTopK = await trexClient.query(semTopKSql);
 
-      // Apply user filters to the semantic candidates via a HANA round-trip,
-      // so the union below contains only filter-passing concepts on both
-      // sides. Skip the round-trip when no filters are set.
       let semKept: Array<{ concept_id: number; embd_score: number }> = [];
       if (semTopK.rows.length > 0) {
         if (!filterWhere) {
@@ -492,29 +533,10 @@ export class HanaHDBDao {
       const totalHits = ranked.rows[0]
         ? parseInt(ranked.rows[0].total_hits)
         : 0;
-      if (rankedIds.length === 0) return { hits: [], totalHits };
-
       // No filter needed here — both candidate sides were already
       // filter-checked above, so every rankedId is guaranteed to pass.
-      const fullRowsSql = `
-        SELECT concept_id, concept_name, domain_id, vocabulary_id,
-               concept_class_id, standard_concept, concept_code,
-               valid_start_date, valid_end_date, invalid_reason
-        FROM ${this.vocabSchemaName}.concept
-        WHERE concept_id IN (${rankedIds.join(",")})
-      `;
-      const fullRows = (await this.asyncExec(hanaClient, fullRowsSql)) as any[];
-
-      // hdb returns CONCEPT_ID as a string while DuckDB returns concept_id
-      // as a number — normalize both sides to number so the lookup hits.
-      const byId = new Map<number, any>();
-      for (const row of fullRows) byId.set(Number(row.CONCEPT_ID), row);
-      const orderedRows = rankedIds
-        .map((id) => byId.get(Number(id)))
-        .filter((r) => r !== undefined);
-
       return {
-        hits: this.mapHanaConcepts(orderedRows),
+        hits: await this.fetchAndOrderConcepts(hanaClient, rankedIds),
         totalHits,
       };
     } catch (error) {
@@ -754,22 +776,40 @@ export class HanaHDBDao {
         [],
       ];
     } else {
+      const qualifiedColumns =
+        columns.length === 0
+          ? "c.*"
+          : columns.map((col) => `c.${col}`).join(", ");
       return [
         `
-        with fts as (
+        with all_matches as (
+          select concept_id, SCORE() as match_score
+          from ${this.vocabSchemaName}.concept
+          WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}, 'similarCalculationMode=substringsearch'))
+          union all
+          select concept_id, SCORE() as match_score
+          from ${this.vocabSchemaName}.concept_synonym
+          WHERE CONTAINS (concept_synonym_name, (?), FUZZY(${env.HANA_FTS_FUZZY}, 'similarCalculationMode=substringsearch'))
+        ),
+        matched_concepts as (
+          select concept_id, MAX(match_score) as score
+          from all_matches
+          group by concept_id
+        ),
+        fts as (
           select
-            ${columnsToSelect},
-            SCORE() as score
+            ${qualifiedColumns},
+            m.score
           from
-            ${this.vocabSchemaName}.concept
-            WHERE CONTAINS (*, (?), FUZZY(${env.HANA_FTS_FUZZY}, 'similarCalculationMode=substringsearch'))
-            ${filterWhereClause.replace("WHERE", "AND")}
+            ${this.vocabSchemaName}.concept c
+            join matched_concepts m on m.concept_id = c.concept_id
+            ${filterWhereClause}
             order by score desc
           )
         `,
         // Use similarCalculationMode=substringsearch so that fuzzy search works on search text as a subpart
         // Wrap searchText with double quotes as it might contains spaces
-        [`"${searchText}"`],
+        [`"${searchText}"`, `"${searchText}"`],
       ];
     }
   };

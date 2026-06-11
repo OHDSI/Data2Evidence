@@ -14,6 +14,7 @@ import {
   DbDialect,
   SourceDatasetType,
 } from "./const.ts";
+import { env } from "./env.ts";
 import { generateDatasetSchema } from "./GenerateDatasetSchema.ts";
 import { ShinyLiveService } from "./services/shinylive.service.ts";
 
@@ -111,6 +112,7 @@ export class DatasetRouter {
         const jobpluginsAPI = new JobPluginsAPI(token);
 
         const id = uuidv4();
+
         const {
           type,
           tokenStudyCode,
@@ -129,28 +131,10 @@ export class DatasetRouter {
           dashboards,
           attributes,
           tags,
-          fhirProjectId,
           cacheDatasetName,
           cacheDatasetType,
           webApiManaged,
         } = req.body;
-
-        const isOmopDataModel = typeof dataModel === "string" && dataModel.toLowerCase().startsWith("omop");
-        if (webApiManaged === true && !isOmopDataModel) {
-          return res
-            .status(400)
-            .send("WebAPI-managed datasets require an OMOP data model");
-        }
-        const isWebApiManaged =
-          typeof webApiManaged === "boolean" ? webApiManaged : isOmopDataModel;
-
-        const newCacheSchemaName = schemaName
-          ? schemaName
-          : `CDM${id}`.replace(/-/g, "");
-        const parsedNewCacheSchemaName = this.schemaCase(
-          newCacheSchemaName,
-          dialect as DbDialect,
-        );
 
         // Token study code validation
         const tokenFormat = /^[a-zA-Z0-9_]{1,80}$/;
@@ -166,11 +150,68 @@ export class DatasetRouter {
           return res.status(400).send("Token dataset code is already used");
         }
 
-        try {
-          let flowRunId: string | undefined;
-          this.logger.info(`Create dataset ${id}`);
-          const vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
-          const resultsSchemaName = resultsSchemaValue
+        let vocabSchema: string | undefined;
+        let resultsSchemaName: string | undefined;
+        let fhirSchemaName: string | undefined;
+        let fhirDatasetId: string | undefined;
+        let flowRunId: string | undefined;
+
+        const isOmopDataModel =
+          typeof dataModel === "string" &&
+          dataModel.toLowerCase().startsWith("omop");
+
+        const isWebApiManaged =
+          typeof webApiManaged === "boolean" ? webApiManaged : isOmopDataModel;
+
+        const isFhirDataset = type === SourceDatasetType.FHIR;
+
+        if (isWebApiManaged && !isOmopDataModel) {
+          return res
+            .status(400)
+            .send("WebAPI-managed datasets require an OMOP data model");
+        }
+
+        // Incoming dataset type is either SourceDatasetType.FHIR or SourceDatasetType.SOURCE
+        if (isFhirDataset) {
+          // Resolve fhirDatasetId here
+          // Fail portal dataset creation if fhir dataset creation fails
+          try {
+            this.logger.info(
+              `Attempting to create FHIR dataset for portal dataset '${tokenStudyCode}'..`,
+            );
+
+            const fhirGatewayAPI = new FhirGatewayAPI(token);
+
+            fhirDatasetId = await fhirGatewayAPI.createFhirDataset(
+              id,
+              tokenStudyCode,
+            );
+
+            this.logger.info(
+              `FHIR dataset created with id '${fhirDatasetId}' for portal dataset '${tokenStudyCode}'`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed to create FHIR dataset for portal dataset '${tokenStudyCode}'! ${error}`,
+            );
+            return res.status(500).send("Failed to create FHIR dataset");
+          }
+
+          fhirSchemaName = fhirDatasetId.replace(/-/g, "_");
+          vocabSchema = fhirSchemaName;
+          resultsSchemaName = fhirSchemaName;
+        } else {
+          const newCacheSchemaName = schemaName
+            ? schemaName
+            : `CDM${id}`.replace(/-/g, "");
+
+          const parsedNewCacheSchemaName = this.schemaCase(
+            newCacheSchemaName,
+            dialect as DbDialect,
+          );
+
+          vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
+          resultsSchemaName = resultsSchemaValue
             ? resultsSchemaValue
             : `${schemaName}_results`;
 
@@ -201,7 +242,11 @@ export class DatasetRouter {
                   flowRunName: `datamodel-create-${schemaName}`,
                   options: options,
                 };
-                flowRunId = await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
+
+                flowRunId =
+                  await jobpluginsAPI.createDatamodelFlowRun(
+                    datamodelFlowRunDto,
+                  );
               } catch (error) {
                 this.logger.error(
                   `Error while creating new CDM schema! ${error}`,
@@ -234,18 +279,20 @@ export class DatasetRouter {
               });
             }
           }
+        }
 
-          this.logger.info("Creating new dataset in Portal");
+        try {
+          this.logger.info(`Creating new dataset in Portal with id ${id}`);
           const newDatasetInput = {
             id,
             type: isWebApiManaged ? "webapi" : type,
             tokenDatasetCode: tokenStudyCode,
             schemaOption,
-            dialect,
-            databaseCode: databaseCode,
-            schemaName,
+            dialect: isFhirDataset ? DbDialect.Duckdb : (dialect as DbDialect),
+            databaseCode: isFhirDataset ? env.FHIR_DATABASE_CODE : databaseCode,
+            schemaName: isFhirDataset ? fhirSchemaName : schemaName,
             vocabSchemaName: vocabSchema,
-            resultsSchemaName,
+            resultsSchemaName: resultsSchemaName,
             dataModel,
             plugin,
             tenantId,
@@ -255,7 +302,7 @@ export class DatasetRouter {
             dashboards,
             attributes,
             tags,
-            fhir_project_id: fhirProjectId,
+            fhirDatasetId: isFhirDataset ? fhirDatasetId : undefined,
           };
 
           let newDataset;
@@ -267,6 +314,24 @@ export class DatasetRouter {
             this.logger.error(
               `Error creating dataset: ${createError.message}, status: ${status}, data: ${JSON.stringify(responseData)}`,
             );
+
+            if (isFhirDataset && fhirDatasetId) {
+              this.logger.info(
+                `Cleaning up FHIR dataset with id '${fhirDatasetId}' due to portal dataset creation failure`,
+              );
+              try {
+                const fhirGatewayAPI = new FhirGatewayAPI(token);
+                await fhirGatewayAPI.deleteFhirDataset(fhirDatasetId);
+                this.logger.info(
+                  `Successfully cleaned up FHIR dataset with id '${fhirDatasetId}'`,
+                );
+              } catch (deleteError) {
+                this.logger.error(
+                  `Failed to clean up FHIR dataset with id '${fhirDatasetId}'! It must be manually deleted. ${deleteError}`,
+                );
+              }
+            }
+
             // Return 400 for client errors, 500 for server errors
             const httpStatus = status >= 400 && status < 500 ? status : 500;
             return res
@@ -275,60 +340,8 @@ export class DatasetRouter {
           }
 
           let newCacheDataset: any = {};
-          if (!isWebApiManaged) {
+          if (!isWebApiManaged && !isFhirDataset) {
             this.logger.info("Creating cache dataset in Portal");
-
-            if (
-              type === SourceDatasetType.FHIR &&
-              cacheDatasetType === CacheDatasetType.NON_OMOP
-            ) {
-              let resolvedFhirProjectId = fhirProjectId;
-              if (!resolvedFhirProjectId) {
-                try {
-                  this.logger.info(
-                    `Creating FHIR project for dataset '${tokenStudyCode}'..`,
-                  );
-                  const fhirGatewayAPI = new FhirGatewayAPI(token);
-                  resolvedFhirProjectId = await fhirGatewayAPI.createProject(
-                    id,
-                    detail?.name || tokenStudyCode,
-                  );
-                  this.logger.info(
-                    `FHIR project created with id '${resolvedFhirProjectId}' for dataset '${tokenStudyCode}'`,
-                  );
-                } catch (error) {
-                  await portalAPI.deleteDataset(id);
-                  this.logger.error(
-                    `Error while creating FHIR project for dataset '${tokenStudyCode}'! ${error}`,
-                  );
-                  return res
-                    .status(500)
-                    .send("Dataset cannot be created because of FHIR project creation failure");
-                }
-              }
-
-              try {
-                this.logger.info(
-                  `Creating cache of source FHIR schema '${schemaName}'. FHIR cache schema name is ${parsedNewCacheSchemaName}`,
-                );
-                const fhirCacheFlowRunDto = {
-                  databaseCode: databaseCode,
-                  schemaName: schemaName,
-                  cacheSchemaName: parsedNewCacheSchemaName,
-                  studyCode: tokenStudyCode,
-                  fhirProjectId: resolvedFhirProjectId,
-                };
-                const fhirCacheResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
-                flowRunId = fhirCacheResult?.flowRunId;
-              } catch (error) {
-                this.logger.error(
-                  `Error while creating FHIR cache schema! ${error}`,
-                );
-                return res
-                  .status(500)
-                  .send("Error while creating FHIR cache schema");
-              }
-            }
 
             if (cacheDatasetName && cacheDatasetType) {
               const snapshotRequest = {
@@ -353,13 +366,14 @@ export class DatasetRouter {
                   const dataModelInfo = dataModels.find(
                     (model) => model.datamodel === dataModel,
                   );
-                  const datamartCacheResult = await jobpluginsAPI.createDatamartCacheFlowRun(
-                    id,
-                    newCacheDataset.id,
-                    {},
-                    dataModelInfo?.flowId,
-                    `datamart-cache-${schemaName}`,
-                  );
+                  const datamartCacheResult =
+                    await jobpluginsAPI.createDatamartCacheFlowRun(
+                      id,
+                      newCacheDataset.id,
+                      {},
+                      dataModelInfo?.flowId,
+                      `datamart-cache-${schemaName}`,
+                    );
                   flowRunId = datamartCacheResult?.flowRunId;
                 } catch (error) {
                   this.logger.error(
@@ -373,9 +387,11 @@ export class DatasetRouter {
             }
           }
 
-          return res
-            .status(200)
-            .json({ id: newDataset.id, cacheId: newCacheDataset.id, flowRunId });
+          return res.status(200).json({
+            id: newDataset.id,
+            cacheId: newCacheDataset.id,
+            flowRunId,
+          });
         } catch (error) {
           this.logger.error(
             `Error while creating dataset: ${JSON.stringify(error)}`,
@@ -408,7 +424,7 @@ export class DatasetRouter {
         schemaName,
         vocabSchemaName,
         resultsSchemaName,
-        tokenStudyCode
+        tokenStudyCode,
       } = await portalAPI.getDataset(sourceStudyId);
 
       const sourceHasSchema = schemaName.trim() !== "";
@@ -445,51 +461,30 @@ export class DatasetRouter {
 
         // Copy schema if it exist
         if (sourceHasSchema) {
-          if (
-            type === CacheDatasetType.NON_OMOP &&
-            sourceType === SourceDatasetType.FHIR
-          ) {
-            this.logger.info(
-              `Copying source FHIR schema '${schemaName}' to cache. FHIR cache schema name is ${parsedNewSchemaName}`,
-            );
-            try {
-              const fhirCacheFlowRunDto = {
-                databaseCode: databaseCode,
-                schemaName: schemaName,
-                cacheSchemaName: parsedNewSchemaName,
-                studyCode: tokenStudyCode,
-              };
-              const fhirResult = await jobpluginsAPI.createFhirCacheFlowRun(fhirCacheFlowRunDto);
-              flowRunId = fhirResult?.flowRunId;
-            } catch (error) {
-              this.logger.error(`Error copying source FHIR schema! ${error}`);
-              throw new Error(`Error copying source FHIR schema! ${error}`);
-            }
-          } else {
-            this.logger.info(
-              `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
-                snapshotCopyConfig,
-              )})`,
+          this.logger.info(
+            `Copy CDM schema from ${schemaName} to ${newSchemaName} with config: (${JSON.stringify(
+              snapshotCopyConfig,
+            )})`,
+          );
+
+          try {
+            const dataModels = await jobpluginsAPI.getDatamodels();
+            const dataModelInfo = dataModels.find(
+              (model) => model.datamodel === dataModel,
             );
 
-            try {
-              const dataModels = await jobpluginsAPI.getDatamodels();
-              const dataModelInfo = dataModels.find(
-                (model) => model.datamodel === dataModel,
-              );
-
-              const datamartResult = await jobpluginsAPI.createDatamartCacheFlowRun(
+            const datamartResult =
+              await jobpluginsAPI.createDatamartCacheFlowRun(
                 sourceStudyId,
                 newDataset.id,
                 snapshotCopyConfig,
                 dataModelInfo.flowId,
                 `datamart-snapshot-${schemaName}`,
               );
-              flowRunId = datamartResult?.flowRunId;
-            } catch (error) {
-              this.logger.error(`Error copying CDM schema! ${error}`);
-              throw new Error(`Error copying CDM schema! ${error}`);
-            }
+            flowRunId = datamartResult?.flowRunId;
+          } catch (error) {
+            this.logger.error(`Error copying CDM schema! ${error}`);
+            throw new Error(`Error copying CDM schema! ${error}`);
           }
         }
 
@@ -518,7 +513,9 @@ export class DatasetRouter {
           tokenStudyCode: dataset.tokenStudyCode,
         });
       } catch (error) {
-        this.logger.error(`Error when getting dataset info: ${JSON.stringify(error)}`);
+        this.logger.error(
+          `Error when getting dataset info: ${JSON.stringify(error)}`,
+        );
         res.status(500).send("Error when getting dataset info");
       }
     });
