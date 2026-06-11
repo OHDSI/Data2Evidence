@@ -13,14 +13,14 @@ class StrategusResultsStorageAPI(BaseAPI):
         self.url = f"{self.get_service_route('jobplugins')}jobplugins/strategus-results"
         self.bucket = "strategus-results"
 
-    def upload_file(self, study_id: str, file_path: Union[str, Path]) -> dict:
+    def upload_file(self, token_study_code: str, file_path: Union[str, Path]) -> dict:
         """
         Upload a Strategus results zip file.
-        
+
         Args:
-            study_id: Study identifier
+            token_study_code: Token study code (study identifier)
             file_path: Path to the zip file to upload
-            
+
         Returns:
             dict: Upload response with bucket, path, fileName, etc.
         """
@@ -31,7 +31,7 @@ class StrategusResultsStorageAPI(BaseAPI):
         if not filename.endswith('.zip'):
             raise ValueError("Only .zip files are allowed for Strategus results")
 
-        request_url = f"{self.url}/upload?studyId={study_id}"
+        request_url = f"{self.url}/upload?studyId={token_study_code}"
 
         headers = self.get_options()
         headers.pop("Content-Type", None)
@@ -51,17 +51,17 @@ class StrategusResultsStorageAPI(BaseAPI):
         response.raise_for_status()
         return response.json()
 
-    def list_files(self, study_id: str) -> list[dict]:
+    def list_files(self, token_study_code: str) -> list[dict]:
         """
         List all files uploaded for a specific study.
-        
+
         Args:
-            study_id: Study identifier
-            
+            token_study_code: Token study code (study identifier)
+
         Returns:
             list: List of file metadata
         """
-        request_url = f"{self.url}/list?studyId={study_id}"
+        request_url = f"{self.url}/list?studyId={token_study_code}"
 
         response = requests.get(
             request_url,
@@ -72,20 +72,20 @@ class StrategusResultsStorageAPI(BaseAPI):
         response.raise_for_status()
         return response.json()
 
-    def download_file_to_path(self, study_id: str, filename: str, filepath: str = "/app/downloads", flow_run_id: str = None) -> str:
+    def download_file_to_path(self, token_study_code: str, filename: str, filepath: str = "/app/downloads", flow_run_id: str = None) -> str:
         """
         Download a file from Strategus results storage.
-        
+
         Args:
-            study_id: Study identifier
+            token_study_code: Token study code (study identifier)
             filename: Name of the file to download
             filepath: Directory to save the file
             flow_run_id: Optional flow run ID for auth token
-            
+
         Returns:
             str: Path to the downloaded file
         """
-        response_data = self.get_file(study_id, filename, flow_run_id)
+        response_data = self.get_file(token_study_code, filename, flow_run_id)
         encoded_data = response_data.get("data", "")
         if not encoded_data:
             raise ValueError("No data found in response")
@@ -106,19 +106,19 @@ class StrategusResultsStorageAPI(BaseAPI):
 
         return file_path
 
-    def get_file(self, study_id: str, filename: str, flow_run_id: str = None) -> dict:
+    def get_file(self, token_study_code: str, filename: str, flow_run_id: str = None) -> dict:
         """
         Get file data from Strategus results storage.
-        
+
         Args:
-            study_id: Study identifier
+            token_study_code: Token study code (study identifier)
             filename: Name of the file to retrieve
             flow_run_id: Optional flow run ID for auth token
-            
+
         Returns:
             dict: File data (base64 encoded)
         """
-        request_url = f"{self.url}/download?studyId={study_id}&fileName={filename}"
+        request_url = f"{self.url}/download?studyId={token_study_code}&fileName={filename}"
         
         headers = self.get_options()
         
@@ -132,18 +132,18 @@ class StrategusResultsStorageAPI(BaseAPI):
         response.raise_for_status()
         return response.json()
 
-    def delete_file(self, study_id: str, filename: str) -> dict:
+    def delete_file(self, token_study_code: str, filename: str) -> dict:
         """
         Delete a file from Strategus results storage.
-        
+
         Args:
-            study_id: Study identifier
+            token_study_code: Token study code (study identifier)
             filename: Name of the file to delete
-            
+
         Returns:
             dict: Deletion response
         """
-        request_url = f"{self.url}/delete?studyId={study_id}&fileName={filename}"
+        request_url = f"{self.url}/delete?studyId={token_study_code}&fileName={filename}"
 
         response = requests.delete(
             request_url,

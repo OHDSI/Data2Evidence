@@ -326,7 +326,6 @@
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
-          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",
@@ -576,7 +575,7 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
