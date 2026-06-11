@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures'
 import type { Page } from '@playwright/test'
-import { MINUTE_1, MINUTE_5, MINUTE_10, MINUTE_2 } from '../const'
+import { MINUTE_1, MINUTE_5, MINUTE_2 } from '../const'
 
 const TEST_NAME = 'patient-analytics-wizard-dashboard'
 const SHOULD_SKIP = false
@@ -29,8 +29,7 @@ async function setMonacoContent(page: Page, content: string) {
 test(TEST_NAME, async ({ page }) => {
   // Provisioning a dataset + a cold first Shiny build + Shinylive render is slow.
   test.setTimeout(20 * 60 * 1000)
-  //   await page.goto('/d2e/portal')
-  await page.goto('https://localhost:41100/d2e/portal')
+  await page.goto('/d2e/portal')
   await page.locator('input[name="identifier"]').click()
   await page.locator('input[name="identifier"]').fill('admin')
   await page.locator('input[name="password"]').click()
@@ -114,7 +113,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Create Dashboard', async () => {
     await page.getByRole('link', { name: 'Datasets' }).click()
     await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-    const wizardRow = page.locator('tr',{hasText: 'wizardE2E'}).first()
+    const wizardRow = page.locator('tr', { hasText: 'wizardE2E' }).first()
     await wizardRow.scrollIntoViewIfNeeded()
     await wizardRow.getByText('Select action').click()
     await page.getByRole('option', { name: 'Manage dashboard' }).click()
