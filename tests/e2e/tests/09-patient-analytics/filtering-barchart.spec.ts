@@ -76,13 +76,13 @@ test(TEST_NAME, async ({ page }) => {
 
   // reset x2-axis
   await page.getByTestId('pa-axis-menu-btn-x2').click()
-  await page.getByTestId('pa-axis-dropdown-item-Reset Selection').click()
+  await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Set X1-axis to condition concept name
   await page.getByTestId('pa-axis-menu-btn-x1').click()
-  await page.getByRole('listitem').filter({ hasText: 'Condition Occurrence A' }).locator('div').first().click()
-  await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence A').getByText('Condition Occurrence A').click()
+  await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').getByText('Condition concept Name').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
@@ -92,9 +92,9 @@ test(TEST_NAME, async ({ page }) => {
     .locator('div')
     .filter({ hasText: /^All$/ })
     .click()
-  await page.getByTitle('Condition Occurrence A - Condition concept Name').getByPlaceholder('Enter search term').click()
+  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByPlaceholder('Enter search term').click()
   await page
-    .getByTitle('Condition Occurrence A - Condition concept Name')
+    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
     .getByPlaceholder('Enter search term')
     .fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
@@ -105,45 +105,45 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set X1-axis to gender
   await page.getByTestId('pa-axis-menu-btn-x1').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByTestId('pa-axis-dropdown-item-Gender').locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Gender').getByText('Gender').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   // TODO: requires debugging of screenshot hence using maxDiffPixelRatio
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to month of birth
   await page.getByTestId('pa-axis-menu-btn-y').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByRole('listitem').filter({ hasText: 'Month of Birth' }).locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Month of Birth').getByText('Month of Birth').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set Y-axis to patient count
   await page.getByTestId('pa-axis-menu-btn-y').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByTestId('pa-axis-dropdown-item-Patient Count').locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Patient Count').getByText('Patient Count').click()
 
   // Set X1-axis to condition concept name
   await page.getByTestId('pa-axis-menu-btn-x1').click()
-  await page.getByRole('listitem').filter({ hasText: 'Condition Occurrence A' }).locator('div').first().click()
-  await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence A').getByText('Condition Occurrence A').click()
+  await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').getByText('Condition concept Name').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Remove condition concept name value in filter card
-  await page.getByTitle('Condition Occurrence A - Condition concept Name').locator('i').click()
+  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').locator('i').click()
 
   // Set X2-axis to race concept id
   await page.getByTestId('pa-axis-menu-btn-x2').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByRole('listitem').filter({ hasText: 'Race concept id' }).locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Race concept id').getByText('Race concept id').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set X2-axis to year of birth with bin size of 50
   await page.getByTestId('pa-axis-menu-btn-x2').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByRole('listitem').filter({ hasText: 'Year of Birth' }).locator('div').first().click()
-  await page.getByRole('button', { name: '' }).click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Year of Birth').getByText('Year of Birth').click()
+  await page.getByTestId('pa-binning-btn').click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
@@ -153,14 +153,14 @@ test(TEST_NAME, async ({ page }) => {
 
   // Reset X2-axis
   await page.getByTestId('pa-axis-menu-btn-x2').click()
-  await page.getByRole('listitem').filter({ hasText: 'Reset Selection' }).locator('div').first().click()
+  await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Set X3-axis attribute (was rendered as last bottom axis; originally captioned "stacked chart")
   await page.getByTestId('pa-axis-menu-btn-stack').click()
-  await page.getByRole('listitem').filter({ hasText: 'Basic Data' }).locator('div').first().click()
-  await page.getByRole('listitem').filter({ hasText: 'Month of Birth' }).locator('div').first().click()
+  await page.getByTestId('pa-axis-dropdown-item-Basic Data').getByText('Basic Data').click()
+  await page.getByTestId('pa-axis-dropdown-item-Month of Birth').getByText('Month of Birth').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
@@ -168,22 +168,20 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Confirm' }).click()
 
   // Set month of birth to 11 in filter card
-  await page.getByTestId('pa-filter-card-patient').getByTitle('Basic Data - Month of Birth').locator('div').click()
+  await page.getByTestId('pa-filter-card-patient').getByTestId('pa-filter-card-menu-trigger').click()
   await page
     .getByTestId('pa-filter-card-patient')
-    .getByTitle('Basic Data - Month of Birth')
-    .getByRole('textbox')
+    .getByPlaceholder('Enter search term')
     .fill('11')
   await page
     .getByTestId('pa-filter-card-patient')
-    .getByTitle('Basic Data - Month of Birth')
-    .getByRole('textbox')
+    .getByPlaceholder('Enter search term')
     .press('Enter')
   await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Remove condition occurrence filter card
-  await page.locator('span[title="Select Filter Attributes"]').nth(1).click()
+  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByTestId('pa-filter-card-menu-trigger').click()
   await page.getByRole('menuitem').getByText('Remove Filter Card').click()
   await expect(page.getByText('247 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
