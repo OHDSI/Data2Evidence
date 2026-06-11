@@ -10,7 +10,6 @@
 | `DICOM__HEALTH_CHECK_PASSWORD`                  | string         | deprecated                                                                          |
 | `DOCKER_TAG_NAME`                               | string         | default tag                                                                         |
 | `ENV_TYPE`                                      | string         | local or remote ; also refers to .env.${ENV_TYPE}                                   |
-| `FHIR__CLIENT_SECRET`                           | string         | FHIR Client Secret                                                                  |
 | `GH_TOKEN`                                      | string         | GitHub Token Passed To Trex                                                         |
 | `LOGTO_API_M2M_CLIENT_ID`                       | password       | Logto Api M2m Client Id                                                             |
 | `LOGTO_API_M2M_CLIENT_SECRET`                   | password       | Logto Api M2m Client Secret                                                         |
