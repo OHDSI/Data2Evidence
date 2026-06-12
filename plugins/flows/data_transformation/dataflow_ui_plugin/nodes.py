@@ -600,6 +600,8 @@ class DbWriter(Node):
             df_to_write = upstream.result
 
             dbutils = DBDao(database_code=self.database)
+            if dbutils.dialect == SupportedDatabaseDialects.TREX.value:
+                return Result(True, f"Writing to a trex database ('{self.database}') is not supported by the DB writer node", self, task_run_context)
             dbconn = dbutils.engine
 
             if self.truncate:
@@ -628,12 +630,12 @@ class DBReader(Node):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(database_code=self.database)
-        dbconn = dbutils.engine
-
         try:
-            df = pd.read_sql_query(
-                self.sqlquery, dbconn)
+            dbutils = DBDao(database_code=self.database)
+            if dbutils.dialect == SupportedDatabaseDialects.TREX.value:
+                df = dbutils.query_dataframe(self.sqlquery)
+            else:
+                df = pd.read_sql_query(self.sqlquery, dbutils.engine)
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
