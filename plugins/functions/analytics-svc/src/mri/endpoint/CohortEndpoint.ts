@@ -187,15 +187,36 @@ export class CohortEndpoint {
         excludePatientIds?: boolean
     ) {
         const baseQueryString = `
-            SELECT 
+            WITH filtered_cd AS (
+                SELECT
+                    COHORT_DEFINITION_ID,
+                    COHORT_DEFINITION_NAME,
+                    TO_NVARCHAR(COHORT_DEFINITION_DESCRIPTION) AS COHORT_DEFINITION_DESCRIPTION,
+                    COHORT_INITIATION_DATE,
+                    TO_NVARCHAR(COHORT_DEFINITION_SYNTAX) AS COHORT_DEFINITION_SYNTAX
+                FROM ${this.schemaName}.COHORT_DEFINITION cd
+        `;
+
+        const countsAndSelectQueryString = `
+            ),
+            counts AS (
+                SELECT
+                    c.COHORT_DEFINITION_ID,
+                    COUNT(DISTINCT c.SUBJECT_ID) AS count
+                FROM ${this.schemaName}.COHORT c
+                INNER JOIN filtered_cd cd
+                    ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
+                GROUP BY c.COHORT_DEFINITION_ID
+            )
+            SELECT
                 cd.COHORT_DEFINITION_ID AS "COHORT_DEFINITION_ID",
                 cd.COHORT_DEFINITION_NAME AS "COHORT_DEFINITION_NAME",
-                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION) AS "COHORT_DEFINITION_DESCRIPTION",
+                cd.COHORT_DEFINITION_DESCRIPTION AS "COHORT_DEFINITION_DESCRIPTION",
                 cd.COHORT_INITIATION_DATE AS "COHORT_INITIATION_DATE",
-                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX) AS "COHORT_DEFINITION_SYNTAX",
-                COUNT(DISTINCT c.SUBJECT_ID) AS "count"
-            FROM ${this.schemaName}.COHORT_DEFINITION cd
-            LEFT JOIN ${this.schemaName}.COHORT c 
+                cd.COHORT_DEFINITION_SYNTAX AS "COHORT_DEFINITION_SYNTAX",
+                COALESCE(c.count, 0) AS "count"
+            FROM filtered_cd cd
+            LEFT JOIN counts c
                 ON cd.COHORT_DEFINITION_ID = c.COHORT_DEFINITION_ID
         `;
 
@@ -206,14 +227,7 @@ export class CohortEndpoint {
                 baseQueryString,
                 queryParams
             );
-            selectQueryString += `
-            GROUP BY 
-                cd.COHORT_DEFINITION_ID,
-                cd.COHORT_DEFINITION_NAME,
-                TO_NVARCHAR(cd.COHORT_DEFINITION_DESCRIPTION),
-                cd.COHORT_INITIATION_DATE,
-                TO_NVARCHAR(cd.COHORT_DEFINITION_SYNTAX)
-                `;
+            selectQueryString += countsAndSelectQueryString;
 
             // Add limit and/or offset keyword if is it included
             if (limit) {

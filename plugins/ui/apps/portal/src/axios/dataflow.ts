@@ -287,10 +287,10 @@ export class Dataflow {
     });
   }
 
-  public createCleanUpStudySchemaRun(studyId: string) {
+  public createCleanUpStudySchemaRun(tokenStudyCode: string) {
     return request({
       baseURL: JOBPLUGIN_URL,
-      url: `prefect/flow-run/strategus/remove-results-schema/${studyId}`,
+      url: `prefect/flow-run/strategus/remove-results-schema/${tokenStudyCode}`,
       method: "DELETE",
     });
   }
