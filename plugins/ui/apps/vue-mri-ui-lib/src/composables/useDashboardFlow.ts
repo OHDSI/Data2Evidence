@@ -2,6 +2,7 @@ import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import {
   getFieldAttrKey,
   getFieldFilterCardPathForField,
+  getWizardFlow,
   parseNumericInput,
   validateRequiredFields,
   isConditionField,
@@ -15,8 +16,6 @@ import {
 import { constraintContainsExpression, type Constraint } from '../services/dashboardFlowService'
 import BinaryToString from '../utils/BinaryToString'
 import { useNotificationStore } from '../stores/notifications'
-
-const TABLE1_DASHBOARD_TYPE = 'table1'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -235,7 +234,7 @@ export function useDashboardFlow(
 
   const confirmedTable1ConceptSets = computed<Table1ConceptSetSelection[]>(() => {
     const wizardConfig = activeDashboardWizardConfig.value
-    if (wizardConfig?.dashboardType !== TABLE1_DASHBOARD_TYPE || !Array.isArray(wizardConfig.conceptSets)) {
+    if (getWizardFlow(selectedWizardDefinition.value || {}) !== 'table1-config' || !Array.isArray(wizardConfig?.conceptSets)) {
       return []
     }
 
@@ -832,7 +831,7 @@ export function useDashboardFlow(
     showDashboardSelectionModal.value = false
     requiredFiltersError.value = ''
 
-    if (dashboard.name === TABLE1_DASHBOARD_TYPE) {
+    if (getWizardFlow(wizardDef) === 'table1-config') {
       isProcessingDashboardFlow = true
       showTable1ConfigModal.value = true
       return
@@ -1183,7 +1182,7 @@ export function useDashboardFlow(
       isProcessingDashboardFlow = false
       return
     }
-    if (selectedDashboard.value?.name === TABLE1_DASHBOARD_TYPE && confirmedTable1ConceptSets.value.length > 0) {
+    if (getWizardFlow(selectedWizardDefinition.value || {}) === 'table1-config' && confirmedTable1ConceptSets.value.length > 0) {
       showTable1ConfigModal.value = true
       isProcessingDashboardFlow = true
       return

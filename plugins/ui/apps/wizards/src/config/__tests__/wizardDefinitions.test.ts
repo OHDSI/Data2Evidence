@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getWizardDefinitions, getWizardById } from "../wizardDefinitions";
+import { getWizardDefinitions, getWizardById, isWizardVisibleOnSurface } from "../wizardDefinitions";
 
 // Mock cdwConfig - tests run in dev mode so they use hardcoded definitions
 vi.mock("../cdwConfig", () => ({
@@ -161,8 +161,10 @@ describe("wizardDefinitions", () => {
 
       expect(wizard).toBeDefined();
       expect(wizard?.id).toBe("table1");
-      expect(wizard?.name).toBe("Table1");
-      expect(wizard?.description).toBe("Generate a Table1 summary using selected covariate concept sets.");
+      expect(wizard?.name).toBe("Table 1");
+      expect(wizard?.description).toBe("Generate a Table 1 summary using selected covariate concept sets.");
+      expect(wizard?.surfaces).toEqual(["cohortBuilder"]);
+      expect(wizard?.flow).toBe("table1-config");
       expect(wizard?.fields).toEqual([]);
       expect(wizard?.steps).toHaveLength(1);
       expect(wizard?.steps[0].type).toBe("form");
@@ -206,6 +208,20 @@ describe("wizardDefinitions", () => {
         expect(heightField?.label).toBe("Height");
         expect(heightField?.configPath).toBe("patient.interactions.measurement.attributes.numval");
       }
+    });
+  });
+
+  describe("surface visibility", () => {
+    it("shows deployed configs without surfaces on all wizard-aware surfaces", () => {
+      expect(isWizardVisibleOnSurface({}, "wizardApp")).toBe(true);
+      expect(isWizardVisibleOnSurface({}, "cohortBuilder")).toBe(true);
+    });
+
+    it("hides cohort-builder-only configs from the standalone wizard app", () => {
+      const table1Config = { surfaces: ["cohortBuilder" as const] };
+
+      expect(isWizardVisibleOnSurface(table1Config, "wizardApp")).toBe(false);
+      expect(isWizardVisibleOnSurface(table1Config, "cohortBuilder")).toBe(true);
     });
   });
 });

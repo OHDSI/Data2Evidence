@@ -44,7 +44,7 @@ import { computed, ref, watch, type PropType } from 'vue'
 import { useStore } from 'vuex'
 import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
-import type { WizardDefinition } from '@/utils/dashboardFlowUtils'
+import { isWizardVisibleOnSurface, type WizardDefinition } from '@/utils/dashboardFlowUtils'
 
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
@@ -75,6 +75,7 @@ const selectedDashboardId = ref('')
 const availableDashboards = computed(() => {
   // Config-first: only show dashboards that exist in BOTH config AND API
   return props.wizardDefinitions
+    .filter(wizard => isWizardVisibleOnSurface(wizard, 'cohortBuilder'))
     .filter(wizard => props.dashboards.some(api => api.name === wizard.id))
     .map(wizard => ({
       id: wizard.id,

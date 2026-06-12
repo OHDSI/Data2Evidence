@@ -77,7 +77,7 @@ describe('useDashboardFlow', () => {
     expect(buildTable1WizardConfig({ id: 'table1' }, [{ id: ' ', name: 'Missing ID' }])).toBeNull()
   })
 
-  it('routes selected table1 dashboard to the Table1 config modal', async () => {
+  it('uses the required-filters flow for a table1 dashboard without flow metadata', async () => {
     const flow = useDashboardFlow(mockDispatch, {
       getActiveBookmark: { id: 'bookmark-1', bmkId: 'bookmark-1', bookmarkname: 'Cohort', bookmark: '{}' },
       getWizardConfig: null,
@@ -101,9 +101,43 @@ describe('useDashboardFlow', () => {
     await flow.handleDashboardSelected({ name: 'table1' })
 
     expect(flow.showDashboardSelectionModal.value).toBe(false)
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.showRequiredFiltersModal.value).toBe(true)
+    expect(flow.selectedWizardDefinition.value?.id).toBe('table1')
+  })
+
+  it('routes table1-config flow metadata to the Table1 config modal', async () => {
+    const flow = useDashboardFlow(mockDispatch, createDashboardGetters())
+    flow.wizardDefinitions.value = [
+      {
+        id: 'configured-table1',
+        name: 'Configured Table 1',
+        fields: [],
+        flow: 'table1-config',
+      },
+    ]
+
+    await flow.handleDashboardSelected({ name: 'configured-table1' })
+
     expect(flow.showTable1ConfigModal.value).toBe(true)
     expect(flow.showRequiredFiltersModal.value).toBe(false)
-    expect(flow.selectedWizardDefinition.value?.id).toBe('table1')
+    expect(flow.selectedWizardDefinition.value?.id).toBe('configured-table1')
+  })
+
+  it('uses the required-filters flow when flow metadata is missing', async () => {
+    const flow = useDashboardFlow(mockDispatch, createDashboardGetters())
+    flow.wizardDefinitions.value = [
+      {
+        id: 'legacy-dashboard',
+        name: 'Legacy dashboard',
+        fields: [],
+      },
+    ]
+
+    await flow.handleDashboardSelected({ name: 'legacy-dashboard' })
+
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.showRequiredFiltersModal.value).toBe(true)
   })
 
   it('confirms table1 config through existing wizardConfig and save flow', async () => {
@@ -131,6 +165,7 @@ describe('useDashboardFlow', () => {
       id: 'table1',
       name: 'Table1',
       fields: [],
+      flow: 'table1-config',
     }
     flow.showTable1ConfigModal.value = true
 
@@ -160,6 +195,7 @@ describe('useDashboardFlow', () => {
       id: 'table1',
       name: 'Table1',
       fields: [],
+      flow: 'table1-config',
     }
     flow.showTable1ConfigModal.value = true
 
@@ -183,6 +219,7 @@ describe('useDashboardFlow', () => {
       id: 'table1',
       name: 'Table1',
       fields: [],
+      flow: 'table1-config',
     }
     flow.showTable1ConfigModal.value = true
 
@@ -206,6 +243,7 @@ describe('useDashboardFlow', () => {
       id: 'table1',
       name: 'Table1',
       fields: [],
+      flow: 'table1-config',
     }
     flow.showTable1ConfigModal.value = true
 
