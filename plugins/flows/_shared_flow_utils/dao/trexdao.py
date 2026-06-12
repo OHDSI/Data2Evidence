@@ -7,6 +7,9 @@ import psycopg2
 from psycopg2 import sql as pg_sql
 from psycopg2.extras import execute_values
 
+import sqlalchemy as sql
+from sqlalchemy import event
+
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 
@@ -51,6 +54,39 @@ class TrexDao(DaoBase):
             readRole="",
             authMode=AuthMode.PASSWORD,
         )
+
+    @property
+    def engine(self):
+        configs = self.tenant_configs
+        connection_string, connect_args = self.create_sqlalchemy_connection_url(
+            dialect=configs.dialect,
+            auth_mode=configs.authMode,
+            user=configs.adminUser,
+            password=configs.adminPassword,
+            host=configs.host,
+            port=configs.port,
+            database_name=self.cache_id,
+            db_credentials=configs,
+        )
+        engine = sql.create_engine(connection_string, connect_args=connect_args)
+
+        if self.cache_id != self.database_code:
+            escaped_catalog = self.cache_id.replace('"', '""')
+
+            @event.listens_for(engine, "connect")
+            def _route_catalog(dbapi_conn, _record):
+                prev_autocommit = dbapi_conn.autocommit
+                try:
+                    dbapi_conn.autocommit = True
+                    with dbapi_conn.cursor() as cur:
+                        cur.execute(f'USE "{escaped_catalog}"')
+                except Exception as e:
+                    # Caller may still query qualified catalogs; don't break the connection.
+                    print(f"[TrexDao] USE {self.cache_id} skipped: {e}")
+                finally:
+                    dbapi_conn.autocommit = prev_autocommit
+
+        return engine
 
     @contextmanager
     def _get_connection(self):

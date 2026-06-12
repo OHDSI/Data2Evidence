@@ -322,7 +322,6 @@
           "NODE_ENV": "${NODE_ENV:-development}",
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
-          "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
           "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
