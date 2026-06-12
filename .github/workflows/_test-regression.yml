@@ -248,7 +248,7 @@ jobs:
         working-directory: ./tests/regression
         env:
           BEARER_TOKEN: ${{ env.BEARER_TOKEN }}
-        run: npm test
+        run: npm baseline
 
       - name: Mark regression attempt success
         if: success()

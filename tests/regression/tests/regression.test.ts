@@ -1,12 +1,12 @@
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
 import { parseHar } from "../runner/harParser.js";
 import { parseCurl } from "../runner/curlParser.js";
 import { runScenario } from "../runner/httpClient.js";
 import { compareToBaseline } from "../runner/compare.js";
-import type { Baseline } from "../runner/compare.js";
+import type { Baseline, CompareResult } from "../runner/compare.js";
 import type { Scenario } from "../runner/harParser.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -36,6 +36,75 @@ function loadScenarios(): Scenario[] {
   return scenarios;
 }
 
+const STATUS_ICON: Record<string, string> = {
+  pass: "✓",
+  warn: "⚠ WARN",
+  fail: "✗ FAIL",
+  "no-baseline": "-",
+};
+
+function printTable(results: CompareResult[]): void {
+  const COL_SCENARIO = 32;
+  const COL_P95      = 26;
+  const COL_DELTA    = 8;
+  const COL_STATUS   = 9;
+
+  const pad  = (s: string, n: number) => s.padEnd(n);
+  const lpad = (s: string, n: number) => s.padStart(n);
+  const divider = `${"─".repeat(COL_SCENARIO + 2)}┼${"─".repeat(COL_P95 + 2)}┼${"─".repeat(COL_DELTA + 2)}┼${"─".repeat(COL_STATUS + 2)}`;
+  const row = (a: string, b: string, c: string, d: string) =>
+    ` ${pad(a, COL_SCENARIO)} │ ${pad(b, COL_P95)} │ ${lpad(c, COL_DELTA)} │ ${pad(d, COL_STATUS)}`;
+
+  const lines: string[] = [
+    "",
+    "Performance Regression Results",
+    divider,
+    row("Scenario", "p95 (baseline)", "Δ%", "Status"),
+    divider,
+  ];
+
+  for (const r of results) {
+    const p95Str =
+      r.baselineP95Ms !== null
+        ? `${r.currentP95Ms.toFixed(1)}ms (${r.baselineP95Ms.toFixed(1)}ms)`
+        : `${r.currentP95Ms.toFixed(1)}ms (no baseline)`;
+    const deltaStr =
+      r.deltaFraction !== null
+        ? `${r.deltaFraction >= 0 ? "+" : ""}${(r.deltaFraction * 100).toFixed(1)}%`
+        : "-";
+    lines.push(row(r.scenarioName, p95Str, deltaStr, STATUS_ICON[r.status]));
+  }
+
+  lines.push(divider);
+
+  const failing = results.filter((r) => r.status === "fail");
+  if (failing.length > 0) {
+    lines.push("");
+    lines.push("Scenarios exceeding fail threshold:");
+    for (const r of failing) {
+      lines.push(
+        `  ✗ ${r.scenarioName}: p95 ${r.currentP95Ms.toFixed(1)}ms` +
+        ` (baseline ${r.baselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+      );
+    }
+  }
+
+  const warning = results.filter((r) => r.status === "warn");
+  if (warning.length > 0) {
+    lines.push("");
+    lines.push("Scenarios exceeding warn threshold:");
+    for (const r of warning) {
+      lines.push(
+        `  ⚠ ${r.scenarioName}: p95 ${r.currentP95Ms.toFixed(1)}ms` +
+        ` (baseline ${r.baselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+      );
+    }
+  }
+
+  lines.push("");
+  console.log(lines.join("\n"));
+}
+
 const baseline = loadBaseline();
 const scenarios = loadScenarios();
 
@@ -46,22 +115,21 @@ if (scenarios.length === 0) {
     });
   });
 } else {
+  const results: CompareResult[] = [];
+
   describe("performance regression", () => {
+    afterAll(() => printTable(results));
+
     for (const scenario of scenarios) {
       it(scenario.name, async () => {
-        const result = await runScenario(scenario);
-        const comparison = compareToBaseline(result, baseline);
-
-        console.log(`  ${comparison.message}`);
-
-        if (comparison.status === "no-baseline") {
-          console.warn(`  [${scenario.name}] No baseline recorded yet. Run 'npm run baseline' first.`);
-          return; // skip assertion, don't fail
-        }
+        const timing = await runScenario(scenario);
+        const comparison = compareToBaseline(timing, baseline);
+        results.push(comparison);
 
         expect(
           comparison.status,
-          comparison.message
+          `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
+          (comparison.baselineP95Ms ? ` (baseline ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
         ).not.toBe("fail");
       });
     }
