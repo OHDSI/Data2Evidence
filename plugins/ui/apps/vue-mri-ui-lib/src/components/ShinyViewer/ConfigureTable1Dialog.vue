@@ -355,16 +355,22 @@ function handleConfirm() {
 }
 
 :deep(.covariate-picker .unicode-icon button) {
+  align-items: center;
   background: var(--color-mri-brand, #000080);
   border-color: var(--color-mri-brand, #000080);
   border-radius: 999px;
   color: var(--color-mri-lightest-text, #fff);
+  display: inline-flex;
   height: 48px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
   width: 48px;
 }
 
 :deep(.covariate-picker .unicode-icon span) {
   color: var(--color-mri-lightest-text, #fff);
+  display: block;
   font-size: 30px;
   line-height: 1;
 }
