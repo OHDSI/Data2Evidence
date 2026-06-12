@@ -631,11 +631,11 @@ export class PluginEndpoint {
                                 // Enforce patient list export limits before streaming the dataset
                                 const listExportConfig =
                                     this.config?.chartOptions?.list;
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
                                 if (listExportConfig && pCountQuery) {
-                                    const {
-                                        minPatientsExport,
-                                        maxPatientsExport,
-                                    } = listExportConfig;
+                                    const { maxPatientsExport } =
+                                        listExportConfig;
                                     const patientCount =
                                         await pCountQuery.executeQuery<
                                             {
@@ -654,16 +654,16 @@ export class PluginEndpoint {
                                               ]
                                             : 0;
                                     if (
-                                        (minPatientsExport !== undefined &&
+                                        (minCohortSize !== undefined &&
                                             totalPatientCount <
-                                                minPatientsExport) ||
+                                                minCohortSize) ||
                                         (maxPatientsExport !== undefined &&
                                             totalPatientCount >
                                                 maxPatientsExport)
                                     ) {
                                         return errHandler(
                                             new Error(
-                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range [${minPatientsExport}, ${maxPatientsExport}]`
+                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range [${minCohortSize}, ${maxPatientsExport}]`
                                             )
                                         );
                                     }

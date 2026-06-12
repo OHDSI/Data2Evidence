@@ -40,9 +40,10 @@ export default {
       if (this.getActiveChart !== 'list') return false
       const listConfig = this.getAllChartConfigs['list']
       if (!listConfig) return false
-      const { minPatientsExport, maxPatientsExport } = listConfig
+      const { maxPatientsExport } = listConfig
+      const minCohortSize = this.getAllChartConfigs.minCohortSize
       const count = this.getCurrentPatientCount
-      if (minPatientsExport !== undefined && count < minPatientsExport) return true
+      if (minCohortSize !== undefined && count < minCohortSize) return true
       if (maxPatientsExport !== undefined && count > maxPatientsExport) return true
       return false
     },

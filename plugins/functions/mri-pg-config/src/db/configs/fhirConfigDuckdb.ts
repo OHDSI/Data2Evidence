@@ -1257,7 +1257,6 @@ export const paFHIRConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
-      minPatientsExport: 10,
       maxPatientsExport: 2000000,
     },
     vb: {

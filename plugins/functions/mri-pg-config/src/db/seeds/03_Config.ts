@@ -13335,7 +13335,6 @@ const paConfig = {
             "collectionEnabled": true,
             "beginVisible": true,
             "pageSize": 20,
-            "minPatientsExport": 10,
             "maxPatientsExport": 2000000
         },
         "vb": {
@@ -27207,7 +27206,6 @@ const paConfigDuckdb = {
             "collectionEnabled": true,
             "beginVisible": true,
             "pageSize": 20,
-            "minPatientsExport": 10,
             "maxPatientsExport": 2000000
         },
         "vb": {
@@ -28840,7 +28838,6 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
-      minPatientsExport: 10,
       maxPatientsExport: 2000000,
     },
     vb: {
@@ -34691,7 +34688,6 @@ const pajsonfhirConfigDuckdb = {
             "collectionEnabled": true,
             "beginVisible": true,
             "pageSize": 20,
-            "minPatientsExport": 10,
             "maxPatientsExport": 2000000
         },
         "vb": {
@@ -38182,7 +38178,6 @@ const omopHanaLeanPAConfig = {
             "collectionEnabled": true,
             "beginVisible": true,
             "pageSize": 20,
-            "minPatientsExport": 10,
             "maxPatientsExport": 2000000
         },
         "vb": {

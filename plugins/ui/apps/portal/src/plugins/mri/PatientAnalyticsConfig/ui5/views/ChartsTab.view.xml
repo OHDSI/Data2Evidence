@@ -169,17 +169,6 @@
 					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_COLLECTION}" 
 						selected="{analyticsModel>config/chartOptions/list/collectionEnabled}" visible="false" />
 					<FlexBox alignItems="Center">
-						<Label text="{i18n>MRI_PA_CFG_TITLE_MIN_PATIENTS_EXPORT}"
-							width="18rem"
-							class="sapMRIPAConfigExportSettingLabel">
-							<layoutData><FlexItemData alignSelf="Center"/></layoutData>
-						</Label>
-						<Input id="minPatientsExportId"
-							type="Number">
-							<layoutData><FlexItemData alignSelf="Center"/></layoutData>
-						</Input>
-					</FlexBox>
-					<FlexBox alignItems="Center">
 						<Label text="{i18n>MRI_PA_CFG_TITLE_MAX_PATIENTS_EXPORT}"
 							width="18rem"
 							class="sapMRIPAConfigExportSettingLabel">
