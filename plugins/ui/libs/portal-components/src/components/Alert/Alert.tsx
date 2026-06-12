@@ -10,14 +10,19 @@ export type AlertVariant = "banner" | "toast";
 const TOAST_EXIT_MS = 200;
 
 export interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+  /** Visual tone and icon: `error`, `warning`, `success`, or `info`. Defaults to `info`. */
   severity?: AlertSeverity;
+  /** Layout mode: `banner` renders inline in the page, `toast` floats and can auto-dismiss. Defaults to `banner`. */
   variant?: AlertVariant;
   /** Banner only: `true` renders rounded/contained corners, `false` renders full-bleed square edges. */
   inline?: boolean;
+  /** Bold heading line shown above the message. Omit for a single-line alert. */
   title?: React.ReactNode;
+  /** Body text of the alert. Omit for a title-only alert. */
   message?: React.ReactNode;
   /** Optional trailing action link. */
   actionLabel?: string;
+  /** Handler for the action link; the link only renders when both this and `actionLabel` are set. */
   onAction?: () => void;
   /** Show a close button. On a toast this also disables auto-dismiss. */
   dismissible?: boolean;
@@ -27,6 +32,7 @@ export interface AlertProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "
   onClose?: () => void;
   /** Toast only: controlled visibility. Banner ignores this. */
   visible?: boolean;
+  /** Extra CSS class names appended to the root element. */
   className?: string;
 }
 
@@ -98,8 +104,6 @@ export const Alert: FC<AlertProps> = ({
     `alp-alert--${variant}`,
     { "alp-alert--leaving": isToast && leaving },
     { "alp-alert--inline": variant === "banner" && inline },
-    // Top-align only when both title and message show (truly multi-line). If either
-    // is hidden the alert is a single row, so it centres the icon, text and action.
     { "alp-alert--multiline": !!title && !!message },
     { [`${className}`]: !!className }
   );
