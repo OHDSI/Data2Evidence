@@ -1,3 +1,5 @@
+import { substituteConfig } from "./substituteConfig.js";
+
 export interface Scenario {
   name: string;
   method: string;
@@ -22,7 +24,7 @@ interface Har {
 // Extracts all requests from a HAR file as scenarios.
 // Each entry becomes a separate scenario named <harName>_<index>.
 export function parseHar(harName: string, raw: string): Scenario[] {
-  const har: Har = JSON.parse(raw);
+  const har: Har = JSON.parse(substituteConfig(raw));
   return har.log.entries.map((entry, i) => {
     const headers: Record<string, string> = {};
     for (const h of entry.request.headers) {

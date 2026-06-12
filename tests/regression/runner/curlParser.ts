@@ -1,9 +1,10 @@
 import type { Scenario } from "./harParser.js";
+import { substituteConfig } from "./substituteConfig.js";
 
 // Parses a single curl command string into a Scenario.
 // Supports: -X / --request, -H / --header, -d / --data / --data-raw, and the URL.
 export function parseCurl(name: string, curl: string): Scenario {
-  const args = tokenize(curl);
+  const args = tokenize(substituteConfig(curl));
 
   let method = "GET";
   let url = "";

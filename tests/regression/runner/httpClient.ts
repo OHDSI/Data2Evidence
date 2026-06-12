@@ -13,7 +13,6 @@ export interface TimingResult {
 
 export async function runScenario(scenario: Scenario): Promise<TimingResult> {
   const samples: number[] = [];
-
   const headers: Record<string, string> = { ...scenario.headers };
   if (config.bearerToken) {
     headers["Authorization"] = `Bearer ${config.bearerToken}`;
