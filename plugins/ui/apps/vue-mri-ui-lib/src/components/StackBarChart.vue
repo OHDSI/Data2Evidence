@@ -13,6 +13,7 @@ import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
 import { applyById, getEffectiveBarChartMode } from './StackBarModes/modes'
@@ -121,7 +122,7 @@ export default {
     },
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(() => {
           // do something
         })
@@ -276,6 +277,8 @@ export default {
       'getMriFrontendConfig',
       'getChartSize',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getText',
       'getFireRequest',
       'isFireRequestHeld',
@@ -289,7 +292,9 @@ export default {
       'getBarChartType',
       'getShowDistributionOverlay',
     ]),
-
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
     legendTraces() {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => ({
