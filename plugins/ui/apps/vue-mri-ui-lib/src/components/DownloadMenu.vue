@@ -21,8 +21,14 @@
         </template>
       </bs-dropdown>
     </DisabledHoverPopover>
-    <downloadCSVDialog v-if="csvShow" @closeEv="csvShow = false"></downloadCSVDialog>
-    <imageExport v-if="imageShow" @closeEv="imageShow = false"></imageExport>
+    <downloadCSVDialog v-if="csvShow" @closeEv="onCsvClosed"></downloadCSVDialog>
+    <imageExport v-if="imageShow" @closeEv="onImageExported"></imageExport>
+    <VSnackbar v-model="snackbar" location="top right" color="var(--color-mri-success-bg)" :timeout="3000">
+      <span style="color: rgba(0, 0, 0, 0.87); display: inline-flex; align-items: center">
+        <appIcon icon="successCheck" style="margin-right: 8px; color: #00855f" />
+        {{ snackbarText }}
+      </span>
+    </VSnackbar>
   </div>
 </template>
 <script lang="ts">
@@ -32,6 +38,8 @@ import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 import DisabledHoverPopover from './DisabledHoverPopover.vue'
+import VSnackbar from './vuetify/VSnackbar.vue'
+import appIcon from '../lib/ui/app-icon.vue'
 
 export default {
   name: 'downloadMenu',
@@ -39,10 +47,19 @@ export default {
     return {
       csvShow: false,
       imageShow: false,
+      snackbar: false,
+      snackbarText: '',
+      pendingDownload: null,
     }
   },
   computed: {
-    ...mapGetters(['getText', 'getAllChartConfigs', 'getActiveChart', 'getCurrentPatientCount']),
+    ...mapGetters([
+      'getText',
+      'getAllChartConfigs',
+      'getActiveChart',
+      'getCurrentPatientCount',
+      'getZIPDownloadCompleted',
+    ]),
     isDownloadDisabled() {
       const minCohortSize = this.getAllChartConfigs.minCohortSize
       // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
@@ -107,10 +124,18 @@ export default {
       return menuData
     },
   },
+  watch: {
+    getZIPDownloadCompleted(val) {
+      if (val && this.pendingDownload === 'zip') {
+        this.showExportToast('MRI_PA_EXPORT_FILE_ZIP')
+      }
+    },
+  },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
     handleMenuClick(arg) {
       if (arg) {
+        this.pendingDownload = arg
         switch (arg) {
           case 'csv':
             this.csvShow = true
@@ -124,6 +149,23 @@ export default {
         }
       }
     },
+    onCsvClosed(payload) {
+      this.csvShow = false
+      if (payload && payload.success && this.pendingDownload === 'csv') {
+        this.showExportToast('MRI_PA_EXPORT_FILE_CSV')
+      }
+    },
+    onImageExported() {
+      this.imageShow = false
+      if (this.pendingDownload === 'image') {
+        this.showExportToast('MRI_PA_EXPORT_FILE_PNG')
+      }
+    },
+    showExportToast(fileTypeKey) {
+      this.snackbarText = this.getText('MRI_PA_EXPORT_SUCCESS', this.getText(fileTypeKey))
+      this.snackbar = true
+      this.pendingDownload = null
+    },
   },
   components: {
     ImageExport,
@@ -131,6 +173,8 @@ export default {
     bsDropdown,
     bsDropdownItem,
     DisabledHoverPopover,
+    VSnackbar,
+    appIcon,
   },
 }
 </script>
