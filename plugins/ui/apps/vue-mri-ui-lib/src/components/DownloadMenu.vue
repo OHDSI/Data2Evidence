@@ -1,20 +1,26 @@
 <template>
   <div v-if="list.length > 0" class="download-menu-container" style="display: inline">
-    <bs-dropdown variant="link" size="sm" no-caret :disabled="isPatientListDownloadDisabled">
-      <template v-slot:button-content>
-        <button
-          class="toolbarButton"
-          :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
-          :disabled="isPatientListDownloadDisabled"
-          v-bind:class="{ toolbarButtonDisabled: isPatientListDownloadDisabled }"
-        >
-          <span class="icon" style="font-family: app-icons"></span>
-        </button>
-      </template>
-      <template v-for="item in list" :key="item.key">
-        <bs-dropdown-item @click="handleMenuClick(item.key)">{{ item.value }}</bs-dropdown-item>
-      </template>
-    </bs-dropdown>
+    <DisabledHoverPopover
+      :disabled="isDownloadDisabled"
+      :header="getText('MRI_PA_EXPORT_UNAVAILABLE')"
+      :message="popoverMessage"
+    >
+      <bs-dropdown variant="link" size="sm" no-caret :disabled="isDownloadDisabled">
+        <template v-slot:button-content>
+          <button
+            class="toolbarButton"
+            :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
+            :disabled="isDownloadDisabled"
+            v-bind:class="{ toolbarButtonDisabled: isDownloadDisabled }"
+          >
+            <span class="icon" style="font-family: app-icons"></span>
+          </button>
+        </template>
+        <template v-for="item in list" :key="item.key">
+          <bs-dropdown-item @click="handleMenuClick(item.key)">{{ item.value }}</bs-dropdown-item>
+        </template>
+      </bs-dropdown>
+    </DisabledHoverPopover>
     <downloadCSVDialog v-if="csvShow" @closeEv="csvShow = false"></downloadCSVDialog>
     <imageExport v-if="imageShow" @closeEv="imageShow = false"></imageExport>
   </div>
@@ -25,6 +31,7 @@ import ImageExport from './ImageExport.vue'
 import DownloadCSVDialog from './DownloadCSVDialog.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
+import DisabledHoverPopover from './DisabledHoverPopover.vue'
 
 export default {
   name: 'downloadMenu',
@@ -36,16 +43,32 @@ export default {
   },
   computed: {
     ...mapGetters(['getText', 'getAllChartConfigs', 'getActiveChart', 'getCurrentPatientCount']),
-    isPatientListDownloadDisabled() {
-      if (this.getActiveChart !== 'list') return false
-      const listConfig = this.getAllChartConfigs['list']
-      if (!listConfig) return false
-      const { maxPatientsExport } = listConfig
+    isDownloadDisabled() {
       const minCohortSize = this.getAllChartConfigs.minCohortSize
-      const count = this.getCurrentPatientCount
-      if (minCohortSize !== undefined && count < minCohortSize) return true
-      if (maxPatientsExport !== undefined && count > maxPatientsExport) return true
+      // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
+      const count = Number(this.getCurrentPatientCount)
+      // The minimum cohort size check applies to every chart, not just the patient list.
+      if (minCohortSize !== undefined && (Number.isNaN(count) || count < minCohortSize)) return true
+      // The maxPatientsExport limit only applies to the patient list view.
+      if (this.exceedsExportLimit) return true
       return false
+    },
+    minCohortSize() {
+      return this.getAllChartConfigs?.minCohortSize
+    },
+    maxPatientsExport() {
+      const listConfig = this.getAllChartConfigs['list']
+      return listConfig && listConfig.maxPatientsExport
+    },
+    exceedsExportLimit() {
+      const count = Number(this.getCurrentPatientCount)
+      return this.getActiveChart === 'list' && this.maxPatientsExport !== undefined && count > this.maxPatientsExport
+    },
+    popoverMessage() {
+      if (this.exceedsExportLimit) {
+        return this.getText('MRI_PA_EXPORT_LIMIT_MESSAGE', String(this.maxPatientsExport))
+      }
+      return this.getText('MRI_PA_MIN_COHORT_SIZE_MESSAGE', String(this.minCohortSize))
     },
     list() {
       const menuData = []
@@ -107,6 +130,7 @@ export default {
     DownloadCSVDialog,
     bsDropdown,
     bsDropdownItem,
+    DisabledHoverPopover,
   },
 }
 </script>
