@@ -200,8 +200,7 @@ export default {
       return this.getAllChartConfigs?.minCohortSize
     },
     isBelowMinCohortSize() {
-      const minCohortSize = this.minCohortSize
-      if (minCohortSize == null) return false
+      const minCohortSize = this.minCohortSize ?? 0
       // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
       const patientCount = Number(this.getCurrentPatientCount)
       return Number.isNaN(patientCount) || patientCount < Number(minCohortSize)

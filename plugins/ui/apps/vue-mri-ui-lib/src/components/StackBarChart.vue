@@ -162,12 +162,7 @@ export default {
               currentPatientCount: '--',
             })
 
-            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.notificationStore.setAlertMessage({
-                messageType: 'info',
-                message: this.chartData.noDataReason,
-              })
-            } else {
+            if (this.chartData.noDataReason !== this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
               this.notificationStore.setAlertMessage({
                 message: this.chartData.noDataReason,
               })
