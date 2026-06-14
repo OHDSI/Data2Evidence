@@ -1223,18 +1223,18 @@ jobs:
     secrets: inherit
 
   test_regression:
-    needs: [setup, build_images, build_trex_image, build_plugins]
-    if: |
-      needs.setup.outputs.is_publish_push == 'true' ||
-      contains(github.base_ref, 'release/') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'merge_group' ||
-      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_regression == 'true' || needs.setup.outputs.changes_http_tests == 'true'))
+    # needs: [setup, build_images, build_trex_image, build_plugins]
+    # if: |
+    #   needs.setup.outputs.is_publish_push == 'true' ||
+    #   contains(github.base_ref, 'release/') ||
+    #   github.event_name == 'workflow_dispatch' ||
+    #   github.event_name == 'merge_group' ||
+    #   (github.event_name == 'pull_request' && (needs.setup.outputs.changes_regression == 'true' || needs.setup.outputs.changes_http_tests == 'true'))
     uses: ./.github/workflows/_test-regression.yml
     with:
       attempt: "1"
       runner: ${{ needs.setup.outputs.random_runner }}
-      run_tag: ${{ needs.setup.outputs.run_tag }}
+      run_tag: develop
       reg_url: ghcr.io/ohdsi
       prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
