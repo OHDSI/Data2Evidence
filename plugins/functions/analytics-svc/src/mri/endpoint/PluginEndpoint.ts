@@ -387,11 +387,26 @@ export class PluginEndpoint {
                                         this.schemaName
                                     );
 
-                                if (patientCount.data.length === 1) {
-                                    endpointResult.totalPatientCount =
-                                        patientCount.data[0][
-                                            "patient.attributes.pcount"
-                                        ];
+                                const totalPatientCount =
+                                    patientCount.data.length === 1
+                                        ? patientCount.data[0][
+                                              "patient.attributes.pcount"
+                                          ]
+                                        : 0;
+                                endpointResult.totalPatientCount =
+                                    totalPatientCount;
+                                // Enforce minCohortSize before returning patient data
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
+                                if (
+                                    minCohortSize !== undefined &&
+                                    totalPatientCount < minCohortSize
+                                ) {
+                                    return errHandler(
+                                        new Error(
+                                            `Patient list blocked: patient count ${totalPatientCount} is below the minimum cohort size of ${minCohortSize}`
+                                        )
+                                    );
                                 }
                                 //Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
