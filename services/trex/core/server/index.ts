@@ -27,6 +27,21 @@ export async function initTrex() {
     app.use(hlogger())
     await DatabaseManager.get();
 
+    // Start the embedded native WebAPI inside the trex engine. webapi.trex (auto-loaded
+    // by the trexsql image) registers webapi_start(), which boots WebAPI on :8080;
+    // the /WebAPI/* proxy below forwards to it. Config comes from the DATASOURCE_* /
+    // SPRING_FLYWAY_* / SECURITY_* env vars. Gated by WEBAPI_NATIVE_ENABLED so dev
+    // runs without the extension just log and continue.
+    if ((Deno.env.get("WEBAPI_NATIVE_ENABLED") ?? "true") !== "false") {
+      try {
+        const webapiConn = new Trex.TrexDB("memory");
+        const startRows = await webapiConn.execute("SELECT webapi_start() AS msg", []);
+        logger.log(`Started native WebAPI — ${startRows[0]?.msg}`);
+      } catch (e) {
+        logger.error(`Failed to start native WebAPI: ${(e as Error).message}`);
+      }
+    }
+
     // Load ICU extension for DuckDB functions like current_date
     const icuConn = new Trex.TrexDB("memory");
     await icuConn.execute("LOAD icu", []);
