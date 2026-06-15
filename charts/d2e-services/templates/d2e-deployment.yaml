@@ -636,6 +636,11 @@ spec:
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
+            # Helm does not yet wire the native WebAPI's datasource/security config,
+            # so keep it off here (parity with the previous trex behaviour). Wiring
+            # in-engine WebAPI for helm is a follow-up.
+            - name: WEBAPI_NATIVE_ENABLED
+              value: "false"
             # The trex engine boots the trexas HTTP gateway (:33001) and the d2e
             # core eszips from this swarm config; without it nothing listens on 33001.
             - name: SWARM_NODE
