@@ -858,6 +858,7 @@ export const i18n = {
     MRI_PA_NOT_ENOUGH_DATA_TITLE: 'Not enough data to display',
     MRI_PA_NOT_ENOUGH_DATA_MESSAGE:
       'To display this chart, {0} or more patients are needed. Change your filter criteria and try again.',
+    MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN: 'To display this chart, change your filter criteria and try again.',
     MRI_PA_INCLUSION_REPORT_BUTTON: 'Attrition Plot',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: 'Attrition Plot',
     MRI_PA_INCLUSION_REPORT_CLOSE: 'Close',
@@ -1871,6 +1872,7 @@ export const i18n = {
     MRI_PA_NOT_ENOUGH_DATA_TITLE: 'Nicht genügend Daten zur Anzeige',
     MRI_PA_NOT_ENOUGH_DATA_MESSAGE:
       'Zur Anzeige dieses Diagramms werden {0} oder mehr Patienten benötigt. Ändern Sie Ihre Filterkriterien und versuchen Sie es erneut.',
+    MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN: 'Ändern Sie Ihre Filterkriterien und versuchen Sie es erneut.',
     MRI_PA_INCLUSION_REPORT_BUTTON: 'Attritionsplot',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: 'Attritionsplot',
     MRI_PA_INCLUSION_REPORT_CLOSE: 'Schließen',
@@ -2801,6 +2803,7 @@ export const i18n = {
     MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE: '病患数量必须至少为 {0} 才能显示',
     MRI_PA_NOT_ENOUGH_DATA_TITLE: '没有足够的数据可显示',
     MRI_PA_NOT_ENOUGH_DATA_MESSAGE: '要显示此图表，需要 {0} 名或更多病患。请更改筛选条件后重试。',
+    MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN: '请更改筛选条件后重试。',
     MRI_PA_INCLUSION_REPORT_BUTTON: '衰减图',
     MRI_PA_INCLUSION_REPORT_DIALOG_TITLE: '衰减图',
     MRI_PA_INCLUSION_REPORT_CLOSE: '关闭',

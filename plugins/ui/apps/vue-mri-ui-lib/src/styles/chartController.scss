@@ -123,20 +123,27 @@
     gap: 16px;
     padding: 24px;
     background-color: var(--color-ui-lightest-bg);
+    color:var(--color-neutral);
 
     &__icon {
       width: 96px;
       height: 96px;
+
+      path {
+        fill: var(--color-neutral);
+      }
+      line,
+      polyline {
+        stroke: var(--color-neutral);
+      }
     }
     &__title {
       font-size: 18px;
       font-weight: 600;
-      color: var(--color-mri-header-text-dark);
     }
     &__message {
       max-width: 420px;
       font-size: 14px;
-      color: var(--color-ui-light-text);
     }
   }
 }

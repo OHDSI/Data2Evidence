@@ -22,9 +22,9 @@
  * - Provides proper v-model support via modelValue prop
  *
  * Usage:
- * <v-snackbar v-model="snackbar" location="top right" color="#C8E6C9" :timeout="3000">
+ * <VSnackbar v-model="snackbar" location="top right" color="#C8E6C9" :timeout="3000">
  *   Message goes here
- * </v-snackbar>
+ * </VSnackbar>
  *
  * All Vuetify VSnackbar props are supported.
  */

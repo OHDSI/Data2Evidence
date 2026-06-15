@@ -676,9 +676,19 @@ export class PluginEndpoint {
                                             totalPatientCount >
                                                 maxPatientsExport)
                                     ) {
+                                        const rangeDescription = [
+                                            minCohortSize !== undefined
+                                                ? `min ${minCohortSize}`
+                                                : null,
+                                            maxPatientsExport !== undefined
+                                                ? `max ${maxPatientsExport}`
+                                                : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(", ");
                                         return errHandler(
                                             new Error(
-                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range [${minCohortSize}, ${maxPatientsExport}]`
+                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range (${rangeDescription})`
                                             )
                                         );
                                     }

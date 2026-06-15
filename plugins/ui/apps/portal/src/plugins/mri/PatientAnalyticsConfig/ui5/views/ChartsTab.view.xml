@@ -165,7 +165,7 @@
 					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD}" 
 						selected="{analyticsModel>config/chartOptions/list/downloadEnabled}" />
 					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_DOWNLOAD_ZIP}" 
-						selected="{anal yticsModel>config/chartOptions/list/zipDownloadEnabled}" />
+						selected="{analyticsModel>config/chartOptions/list/zipDownloadEnabled}" />
 					<CheckBox text="{i18n>MRI_PA_CFG_CHART_SHOULD_ENABLE_COLLECTION}" 
 						selected="{analyticsModel>config/chartOptions/list/collectionEnabled}" visible="false" />
 					<FlexBox alignItems="Center">

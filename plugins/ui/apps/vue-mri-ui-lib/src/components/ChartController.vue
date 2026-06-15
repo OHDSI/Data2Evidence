@@ -5,7 +5,11 @@
       <CohortDefinitionIcon class="min-cohort-placeholder__icon" />
       <div class="min-cohort-placeholder__title">{{ getText('MRI_PA_NOT_ENOUGH_DATA_TITLE') }}</div>
       <div class="min-cohort-placeholder__message">
-        {{ getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE', String(minCohortSize)) }}
+        {{
+          minCohortSize != null
+            ? getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE', String(minCohortSize))
+            : getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN')
+        }}
       </div>
     </div>
     <div class="chartControllerContent">
