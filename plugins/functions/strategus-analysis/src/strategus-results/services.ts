@@ -35,14 +35,22 @@ export const startStrategusResultsViewer = async (
       studyId,
       manager
     );
-    // dynamically generate the shiny module config.
+    // dynamically generate the shiny module config and resolve viewerCode.
     const strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     const strategusAnalysisObj = await strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
     const moduleConfig = await createShinyModuleConfig(strategusAnalysisObj);
 
-    const r_code = viewerCode
+    // When the caller sends an empty viewerCode, fall back to the one stored in the DB.
+    const resolvedViewerCode = viewerCode.trim() || strategusAnalysisObj?.viewerCode;
+    if (!resolvedViewerCode) {
+      throw new Error(
+        `Viewer code is not configured for study ${studyId}. Please contact your Admin.`
+      );
+    }
+
+    const r_code = resolvedViewerCode
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
@@ -83,12 +91,16 @@ export const startStrategusResultsViewer = async (
           msg.content.text.includes("Listening on http://0.0.0.0:3838")
         ) {
           executionComplete = true;
+          kernelConnection.dispose();
+          manager.dispose();
           resolve();
         }
       };
 
       setTimeout(() => {
         if (!executionComplete) {
+          kernelConnection.dispose();
+          manager.dispose();
           reject(new Error("Timeout error: Shiny app failed to start"));
         }
       }, 60000);
