@@ -638,7 +638,8 @@ spec:
               value: "true"
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
-          command: ["npm", "run", "start"]
+          # Use the image CMD (write TLS cert, then `exec trex`); the trexsql
+          # base has no `npm start`.
           lifecycle:
             postStart:
               exec:
@@ -672,11 +673,9 @@ spec:
               subPath: API_TLS_CA
             {{- end }}
           livenessProbe:
-            exec:
-              command:
-                - npm
-                - run
-                - health
+            httpGet:
+              path: /_internal/health
+              port: 33001
             failureThreshold: 5
             initialDelaySeconds: 200
             periodSeconds: 5
