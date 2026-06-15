@@ -27,11 +27,9 @@ export async function initTrex() {
     app.use(hlogger())
     await DatabaseManager.get();
 
-    // Start the embedded native WebAPI inside the trex engine. webapi.trex (auto-loaded
-    // by the trexsql image) registers webapi_start(), which boots WebAPI on :8080;
-    // the /WebAPI/* proxy below forwards to it. Config comes from the DATASOURCE_* /
-    // SPRING_FLYWAY_* / SECURITY_* env vars. Gated by WEBAPI_NATIVE_ENABLED so dev
-    // runs without the extension just log and continue.
+    // Boot the in-engine WebAPI. webapi.trex (from the trexsql base) registers
+    // webapi_start(), which starts WebAPI on :8080. Gated by WEBAPI_NATIVE_ENABLED
+    // so builds without the extension still start.
     if ((Deno.env.get("WEBAPI_NATIVE_ENABLED") ?? "true") !== "false") {
       try {
         const webapiConn = new Trex.TrexDB("memory");

@@ -154,9 +154,8 @@ services:
       SECURITY_DB_DATASOURCE_USERNAME: postgres
       SECURITY_DB_DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       SECURITY_DB_DATASOURCE_AUTHENTICATIONQUERY: "SELECT password, email AS firstname, NULL AS middlename, email AS lastname FROM webapi_security.security WHERE email = ?"
-      # Native WebAPI reads the auth datasource under security.auth.db.datasource.*
-      # (not the legacy security.db.datasource.* above); required for the Spring
-      # Security context to build.
+      # Native WebAPI reads its auth datasource under security.auth.db.datasource.*
+      # (not the legacy security.db.datasource.* above).
       SECURITY_AUTH_DB_ENABLED: "true"
       SECURITY_AUTH_DB_DATASOURCE_DRIVERCLASSNAME: org.postgresql.Driver
       SECURITY_AUTH_DB_DATASOURCE_URL: "jdbc:postgresql://alp-minerva-postgres:5432/alp?currentSchema=webapi_security"
