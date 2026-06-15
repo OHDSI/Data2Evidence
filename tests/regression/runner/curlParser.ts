@@ -47,6 +47,13 @@ function tokenize(cmd: string): string[] {
       inDouble = !inDouble;
     } else if (ch === "\\" && inDouble) {
       current += cmd[++i] ?? "";
+    } else if (ch === "\\" && !inSingle) {
+      // Shell line-continuation: backslash followed by newline is whitespace
+      if (cmd[i + 1] === "\n") {
+        i++;
+      } else {
+        current += ch;
+      }
     } else if ((ch === " " || ch === "\t" || ch === "\n") && !inSingle && !inDouble) {
       if (current) { tokens.push(current); current = ""; }
     } else {

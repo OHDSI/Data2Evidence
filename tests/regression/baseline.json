@@ -1,1 +1,8 @@
-{}
+{
+  "patient_count": {
+    "p95Ms": 7926.005874872208
+  },
+  "population_barchart": {
+    "p95Ms": 7522.929542064667
+  }
+}
