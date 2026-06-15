@@ -6,7 +6,7 @@ on:
   push:
     branches:
       - develop
-      - master  # TODO: remove before merging to develop
+      - SantanM/add-e2e-tests-to-study-flow  # TODO: remove before merging to develop
   workflow_dispatch:
 
 permissions:
