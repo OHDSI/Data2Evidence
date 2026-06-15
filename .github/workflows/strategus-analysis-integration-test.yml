@@ -1,52 +1,37 @@
-name: _test-http-duckdb (reusable)
+name: Strategus Analysis Integration Test
 
 on:
-  workflow_call:
-    inputs:
-      attempt:
-        required: true
-        type: string
-      runner:
-        required: true
-        type: string
-      run_tag:
-        required: true
-        type: string
-      changes_ui:
-        required: true
-        type: string
-      reg_url:
-        required: true
-        type: string
-      prepull_flow_images:
-        required: true
-        type: string
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC on main branch
+  push:
+    branches:
+      - develop
+      - master  # TODO: remove before merging to develop
+  workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 env:
-  REG_URL: ${{ inputs.reg_url }}
-  PREPULL_FLOW_IMAGES: ${{ inputs.prepull_flow_images }}
+  VERSION: develop
+  DOCKER_TAG_NAME: develop
+  REG_URL: ghcr.io/ohdsi
+  PGUSER: postgres
+  PGPASSWORD: mypass
+  PGHOST: localhost
+  PGPORT: 15432
+  PGDATABASE: postgres
+  TESTSCHEMA: demo_cdm
+  isTestEnv: "true"
+  isHttpTestRun: "true"
+  HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
-  test:
-    runs-on: ${{ inputs.runner }}
-    timeout-minutes: 80
-    env:
-      VERSION: develop
-      DOCKER_TAG_NAME: ${{ inputs.run_tag }}
-      PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
-      PGUSER: postgres
-      PGPASSWORD: mypass
-      PGHOST: localhost
-      PGPORT: 15432
-      PGDATABASE: postgres
-      TESTSCHEMA: demo_cdm
-      isTestEnv: "true"
-      isHttpTestRun: "true"
-      HTTPTEST_DB_DIALECT: "duckdb"
+  strategus-analysis-integration-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -83,30 +68,14 @@ jobs:
         if: success() || failure()
         run: npm install
 
-      - name: Download UI package tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-tgz
-          path: ./plugins/ui
-
-      - name: Extract UI package
-        run: |
-          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-          rm -rf ./plugins/ui-built
-          mkdir -p ./plugins/ui-built
-          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
-
       - name: Initialise d2e
         if: success() || failure()
         run: |
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
           grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
 
-      - name: Pre-pull flow images
-        run: |
-          for img in $PREPULL_FLOW_IMAGES; do
-            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
-          done
+      - name: Pre-pull flow-hades image
+        run: docker pull "${REG_URL}/d2e/flow-hades:${DOCKER_TAG_NAME}"
 
       - name: Pull docker compose images
         if: success() || failure()
@@ -124,7 +93,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -137,7 +106,7 @@ jobs:
           echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
-          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Logs
@@ -169,7 +138,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setuphttptestenv
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setuphttptestenv
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -209,10 +178,6 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml -p 41100 start
-
-      - name: Wait for services to be ready to avoid mounting race condition
-        if: inputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: sleep 10
 
       - name: Check status of docker containers
         run: docker ps -a
@@ -365,7 +330,7 @@ jobs:
           echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
           echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
 
-      - name: Run HTTP tests
+      - name: Run strategus analysis integration test
         working-directory: ./tests/backend_integration_tests/pg
         run: |
           echo "HDIPORT: ${HDIPORT}"
@@ -377,21 +342,8 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
           echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
-          yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=^(?!strategus_analysis_test).*_test\.js$'
-
-      - name: Mark HTTP duckdb attempt success
-        if: success()
-        run: |
-          mkdir -p ./_attempt
-          touch ./_attempt/success
-
-      - name: Upload HTTP duckdb attempt outcome
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: http-duckdb-attempt-${{ inputs.attempt }}
-          path: ./_attempt/
-          overwrite: true
+          echo "DATASET_ID: ${DATASET_ID}"
+          yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=strategus_analysis_test\.js$' '--mocha-timeout=400000'
 
       - name: Logs
         if: success() || failure()
