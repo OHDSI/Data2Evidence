@@ -261,6 +261,14 @@ jobs:
           BEARER_TOKEN: ${{ env.BEARER_TOKEN }}
         run: npm run baseline
 
+      - name: Upload regression baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: regression-baseline-${{ inputs.attempt }}
+          path: ./tests/regression/baseline.json
+          overwrite: true
+
       - name: Mark regression attempt success
         if: success()
         run: |
