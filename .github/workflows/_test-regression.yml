@@ -77,12 +77,12 @@ jobs:
       #     name: ui-tgz
       #     path: ./plugins/ui
 
-      - name: Extract UI package
-        run: |
-          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-          rm -rf ./plugins/ui-built
-          mkdir -p ./plugins/ui-built
-          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+      # - name: Extract UI package
+      #   run: |
+      #     TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+      #     rm -rf ./plugins/ui-built
+      #     mkdir -p ./plugins/ui-built
+      #     tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
 
       - name: Initialise d2e
         if: success() || failure()
