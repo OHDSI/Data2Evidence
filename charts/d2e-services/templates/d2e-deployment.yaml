@@ -709,13 +709,23 @@ spec:
               name: materialize-cohorts-client-pki
               subPath: API_TLS_CA
             {{- end }}
+          # The trexsql engine boots the trexas gateway (loads extensions, inits
+          # the core, registers plugins) before :33001 serves — slow on a loaded
+          # node. A startupProbe holds liveness off until it's up (up to ~10m),
+          # mirroring compose's start_period; liveness then guards steady state.
+          startupProbe:
+            httpGet:
+              path: /_internal/health
+              port: 33001
+            failureThreshold: 60
+            periodSeconds: 10
+            timeoutSeconds: 10
           livenessProbe:
             httpGet:
               path: /_internal/health
               port: 33001
-            failureThreshold: 5
-            initialDelaySeconds: 200
-            periodSeconds: 5
+            failureThreshold: 6
+            periodSeconds: 10
             timeoutSeconds: 10
         {{- if .Values.features.materializeCohorts }}
         - name: materialize-cohorts
