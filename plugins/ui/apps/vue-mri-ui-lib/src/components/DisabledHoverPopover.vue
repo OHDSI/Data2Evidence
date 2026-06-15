@@ -13,7 +13,9 @@
       <template v-slot:body>
         <div class="patientCountContent-container">
           <div class="patientCountHeader">
-            <label>{{ header }}</label>
+            <label
+              ><strong>{{ header }}</strong></label
+            >
           </div>
           <div class="patientCountContent-data">{{ message }}</div>
         </div>
@@ -78,5 +80,8 @@ export default {
 .disabled-hover-popover {
   display: inline-flex;
   align-items: center;
+}
+.patientCountContent-data {
+  color: var(--color-neutral);
 }
 </style>
