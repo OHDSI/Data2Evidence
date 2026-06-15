@@ -215,6 +215,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.locator('.download-menu-container').getByTitle('Export to File').click()
   await page.getByRole('menuitem').getByText('Export to ZIP File').click()
   await expect(page.getByText('ZIP file exported successfully')).toBeVisible()
+  await expect(page.getByText('ZIP file exported successfully')).toBeHidden()
 
   // Switch to chart view
   await page.locator('button.chartButton').first().click()
