@@ -20,14 +20,33 @@ export const OidcLoginSilent: FC = () => {
   const loggedIn = useCallback(
     async (idpUserId: string | undefined) => {
       if (idpUserId) {
-        try {
-          const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
-          setUserGroup(idpUserId, userGroups);
-        } catch (err: any) {
-          console.error("Error when getting user info", err);
-          navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
-          clearUser();
+        // On first federated login, auto-provisioning runs inside the
+        // user-group/list middleware. Concurrent portal requests can race
+        // and fail with 500 until provisioning commits. Retry with backoff.
+        let lastErr: any;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          try {
+            if (attempt > 0) {
+              await new Promise((r) => setTimeout(r, attempt * 1500));
+            }
+            const sync = attempt === 0;
+            const userGroups = await api.userMgmt.getUserGroupList(idpUserId, sync);
+            const hasRole = userGroups?.alp_role_study_researcher?.length > 0
+              || userGroups?.alp_role_tenant_viewer?.length > 0
+              || userGroups?.alp_role_system_admin
+              || userGroups?.alp_role_user_admin;
+            if (hasRole || attempt === 3) {
+              setUserGroup(idpUserId, userGroups);
+              return;
+            }
+          } catch (err: any) {
+            lastErr = err;
+            if (err?.status === 403) break;
+          }
         }
+        console.error("Error when getting user info after retries", lastErr);
+        navigate(lastErr?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
+        clearUser();
       }
     },
     [navigate, setUserGroup, clearUser]

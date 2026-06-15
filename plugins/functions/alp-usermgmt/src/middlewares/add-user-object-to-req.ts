@@ -29,6 +29,13 @@ export const addUserObjToReq = async (req: IAppRequest, res: Response, next: Nex
     const sub = token[subProp]
     const idpUserId = oid! || sub!
 
+    // M2M tokens have sub === client_id; skip user lookup but still
+    // set a minimal req.user so downstream middleware doesn't crash.
+    if (sub === token.client_id) {
+      req.user = { userId: '', idpUserId: sub } as ITokenUser
+      return next()
+    }
+
     const userService = Container.get(UserService)
     const dbUser = await userService.getUserByIdpUserId(idpUserId)
 

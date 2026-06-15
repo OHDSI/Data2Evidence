@@ -3,6 +3,8 @@ services:
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
+    extra_hosts:
+      - "physionet-host:host-gateway"
     networks:
       alp:
         aliases:
@@ -21,32 +23,50 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core # For debugging trex with local code
-      - ./services/trex/deno.json:/usr/src/deno.json
+      # - ./services/trex/core:/usr/src/core
+      # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
-      PLUGINS_SEED: ${PLUGINS_SEED:-["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "storage", "d2e-notebook-plugin"]}
-      PLUGINS_SEED_UPDATE: ${PLUGINS_SEED_UPDATE:-true}
-      PLUGINS_DEV_PATH: "/usr/src/plugins"
+      # Bind-mounted source plugins win over bundled ones with the same package name.
+      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
-      TREX_INIT: |-
+      USERMGMT__AUTO_PROVISION_ENABLED: "true"
+      USERMGMT__AUTO_PROVISION_CONNECTORS: "physionet"
+      USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: "e0348e4d-2e17-43f2-a3c6-efd752d17c23"
+      USERMGMT__ENTITLEMENTS_SYNC_ENABLED: "true"
+      USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL: "http://physionet-host:8000"
+      USERMGMT__ENTITLEMENTS_DATASET_MAPPING: '{"demo":"demoeicu/1.0"}'
+      SWARM_CONFIG: |-
         {
-          "tlsCert": "/usr/src/cert/cert.pem",
-          "tlsKey": "/usr/src/cert/key.pem",
-          "tlsPort": 33000,
-          "trexasPort": 33001,
-          "pgwirePort": 5433,
-          "mainPath": "/usr/src/core/server",
-          "eventWorkerPath": "/usr/src/core/event",
-          "enableInspector": true,
-          "inspectorHost": "0.0.0.0",
-          "inspectorPort": 9229,
-          "allowMainInspector": true,
-          "maxParallelism": 1
+          "cluster_id": "d2e",
+          "nodes": {
+            "d2e": {
+              "gossip_addr": "0.0.0.0:4200",
+              "extensions": [
+                {
+                  "name": "trexas",
+                  "config": {
+                    "host": "0.0.0.0",
+                    "port": 33001,
+                    "main_service_path": "/usr/src/core/server",
+                    "event_worker_path": "/usr/src/core/event",
+                    "tls_port": 33000,
+                    "tls_cert_path": "/usr/src/cert/cert.pem",
+                    "tls_key_path": "/usr/src/cert/key.pem",
+                    "inspector": "inspect:0.0.0.0:9229"
+                  }
+                },
+                {
+                  "name": "pgwire",
+                  "config": { "host": "0.0.0.0", "port": 5433 }
+                }
+              ]
+            }
+          }
         }
       WATCH: |-
         {
@@ -76,6 +96,28 @@ services:
           "mcp-server": false
         }
 
+  trex-warmup:
+    image: curlimages/curl:latest
+    depends_on:
+      trex:
+        condition: service_healthy
+    networks:
+      - alp
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        echo "Warming up Deno functions..."
+        for path in \
+          /system-portal/config/public/overview-description \
+          /system-portal/config/public/header-image \
+          /system-portal/dataset/public/list \
+          /system-portal/feature/list \
+          /portal/plugin.json; do
+          curl -sk "https://${PROJECT_NAME:-alp}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000$$path" -o /dev/null &
+        done
+        wait
+        echo "Warmup complete"
+
   alp-caddy:
     ports:
       - 41000:41000
@@ -98,6 +140,8 @@ services:
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile
+    extra_hosts:
+      - "physionet-host:host-gateway"
     volumes:
       # Overlay the bundled connector-oidc with a d2e-patched version that
       # writes the upstream access/refresh tokens to globalThis.tokenMap so the
@@ -200,6 +244,7 @@ services:
       - services/materialize-cohorts/PKI/ca.crt:/app/PKI/ca.crt
     environment:
       PORT: 3333
+      INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-false}
       API_MTLS_ENABLED: ${MATERIALIZE_COHORTS_API_MTLS_ENABLED:-true}
       API_TLS_KEY_PATH: ${MATERIALIZE_COHORTS_API_TLS_KEY_PATH:-/app/PKI/server.key}
       API_TLS_CERT_PATH: ${MATERIALIZE_COHORTS_API_TLS_CERT_PATH:-/app/PKI/server.crt}

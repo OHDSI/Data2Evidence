@@ -3,6 +3,7 @@ import { Container } from 'typedi'
 import { UserGroupService, UserService } from '../services'
 import { createLogger } from '../Logger'
 import { IAppRequest } from '../types'
+import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
 import { ROLES } from '../const'
 
@@ -30,7 +31,15 @@ export const permittedUserCheck =
     try {
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
-      const ctxUserGroups = await userGroupService.getUserGroupsMetadataByIdpUserId(ctxUserId)
+
+      // Service tokens (e.g. WebAPI internal calls) have empty ctxUserId.
+      // Permission checks require a resolved user to enforce; without one
+      // the caller is an already-authenticated service, so pass through.
+      if (!ctxUserId) {
+        return next()
+      }
+
+      const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)
       const url = `${req.baseUrl}${req.url}`
 
       if (ctxUserGroups.alp_role_user_admin) {
@@ -45,7 +54,15 @@ export const permittedUserCheck =
       if (userId) {
         if (opts.isIdpUserId) {
           const userService = Container.get(UserService)
-          const user = await userService.getUserByIdpUserId(userId)
+          let user = await userService.getUserByIdpUserId(userId)
+          // During first login, a concurrent request may be provisioning
+          // this user. Retry briefly before failing.
+          if (!user) {
+            for (let i = 0; i < 3 && !user; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              user = await userService.getUserByIdpUserId(userId)
+            }
+          }
           if (!user) {
             logger.error(`IDP user ID ${userId} not found`)
             throw `IDP user ID ${userId} not found`
@@ -61,7 +78,7 @@ export const permittedUserCheck =
         logger.info(`Permitted user check for ${req.user.userId} on ${userId}`)
 
         // UserID and UserGroups are referred to requested user
-        const userGroups = await userGroupService.getUserGroupsMetadataByIdpUserId(userId)
+        const userGroups = await getUserGroupsCached(req, userGroupService, userId)
 
         if (ctxUserGroups.alp_role_tenant_admin.length > 0) {
           if (opts.userMustWithinTenant) {

@@ -11,26 +11,20 @@ interface Dataset {
   token_dataset_code: string | null
 }
 
-interface PhysioNetProject {
+interface DatasetMapping {
   slug: string
-  // other fields ignored
-}
-
-interface AccessibleProjectsResponse {
-  count: number
-  next: string | null
-  previous: string | null
-  results: PhysioNetProject[]
+  version: string
 }
 
 /**
  * Reconcile a user's STUDY_RESEARCHER memberships against PhysioNet's
- * accessible-projects view. Called per request from grant-roles-by-scopes;
+ * dataset-access endpoint.  Called per request from grant-roles-by-scopes;
  * fail-soft (warn + return null) so a PhysioNet outage doesn't lock users
  * out.
  *
- * Match: dataset.token_dataset_code === project.slug. Operators seed
- * d2e datasets with token_dataset_code = the PhysioNet project slug.
+ * The env var USERMGMT__ENTITLEMENTS_DATASET_MAPPING holds a JSON object
+ * mapping D2E token_dataset_code to PhysioNet slug/version, e.g.:
+ *   {"mimic-iv": "mimiciv/2.2", "eicu": "eicu-crd/2.0"}
  */
 @Service()
 export class EntitlementsSyncService {
@@ -68,13 +62,9 @@ export class EntitlementsSyncService {
       return null
     }
 
-    let entitledSlugs: Set<string>
-    try {
-      entitledSlugs = await this.fetchAccessibleSlugs(physionetToken)
-    } catch (err) {
-      this.logger.warn(
-        `[Entitlements] fetch failed for ${idpUserId}: ${err}; keeping existing roles`,
-      )
+    const mapping = await this.parseDatasetMapping()
+    if (Object.keys(mapping).length === 0) {
+      this.logger.warn(`[Entitlements] USERMGMT__ENTITLEMENTS_DATASET_MAPPING is empty; nothing to sync`)
       return null
     }
 
@@ -89,7 +79,19 @@ export class EntitlementsSyncService {
 
     for (const dataset of datasets) {
       if (!dataset.token_dataset_code) continue
-      const isGrant = entitledSlugs.has(dataset.token_dataset_code)
+      const mapped = mapping[dataset.token_dataset_code]
+      if (!mapped) continue
+
+      let isGrant = false
+      try {
+        isGrant = await this.checkDatasetAccess(physionetToken, mapped.slug, mapped.version)
+      } catch (err) {
+        this.logger.warn(
+          `[Entitlements] check failed for ${dataset.token_dataset_code} (${mapped.slug}/${mapped.version}): ${err}; skipping`,
+        )
+        continue
+      }
+
       const group = await this.ensureResearcherGroup(dataset.id, tenantId)
       if (!group?.id) continue
       if (isGrant) {
@@ -123,41 +125,68 @@ export class EntitlementsSyncService {
     return { granted, revoked }
   }
 
-  /**
-   * Page through /api/v1/entitlements/accessible-projects/ until exhausted,
-   * collecting result slugs into a Set. AbortController-bounded so a hung
-   * PhysioNet doesn't stall the login.
-   */
-  private async fetchAccessibleSlugs(physionetToken: string): Promise<Set<string>> {
-    const baseUrl = env.USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL.replace(/\/+$/, '')
-    const slugs = new Set<string>()
-    let nextUrl: string | null =
-      `${baseUrl}/api/v1/entitlements/accessible-projects/?limit=100`
-    const timeoutMs = env.USERMGMT_ENTITLEMENTS_TIMEOUT_MS
-
-    while (nextUrl) {
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), timeoutMs)
-      let response: Response
-      try {
-        response = await fetch(nextUrl, {
-          headers: { Authorization: `Bearer ${physionetToken}` },
-          signal: controller.signal,
-        })
-      } finally {
-        clearTimeout(timer)
+  private async parseDatasetMapping(): Promise<Record<string, DatasetMapping>> {
+    const db: any = Container.get(CONTAINER_KEY.DB_CONNECTION)
+    try {
+      const result = await db.raw(
+        `SELECT token_dataset_code, physionet_slug, physionet_version FROM portal.dataset WHERE physionet_slug IS NOT NULL AND physionet_slug != ''`,
+      )
+      const rows: Array<{ token_dataset_code: string; physionet_slug: string; physionet_version: string }> = result?.rows || []
+      const mapping: Record<string, DatasetMapping> = {}
+      for (const row of rows) {
+        if (row.token_dataset_code) {
+          mapping[row.token_dataset_code] = { slug: row.physionet_slug, version: row.physionet_version }
+        }
       }
-      if (!response.ok) {
-        const body = await response.text().then(t => t.slice(0, 200)).catch(() => '')
-        throw new Error(`HTTP ${response.status} from PhysioNet: ${body}`)
-      }
-      const data = (await response.json()) as AccessibleProjectsResponse
-      for (const project of data.results || []) {
-        if (project.slug) slugs.add(project.slug)
-      }
-      nextUrl = data.next
+      if (Object.keys(mapping).length > 0) return mapping
+    } catch {
+      // columns don't exist yet, fall through to env var
     }
-    return slugs
+
+    // Fallback to env var
+    const raw = env.USERMGMT_ENTITLEMENTS_DATASET_MAPPING
+    if (!raw) return {}
+    try {
+      const parsed = JSON.parse(raw) as Record<string, string>
+      const result: Record<string, DatasetMapping> = {}
+      for (const [tokenCode, slugVersion] of Object.entries(parsed)) {
+        const sep = slugVersion.lastIndexOf('/')
+        if (sep === -1) continue
+        result[tokenCode] = {
+          slug: slugVersion.substring(0, sep),
+          version: slugVersion.substring(sep + 1),
+        }
+      }
+      return result
+    } catch {
+      return {}
+    }
+  }
+
+  private async checkDatasetAccess(
+    physionetToken: string,
+    slug: string,
+    version: string,
+  ): Promise<boolean> {
+    const baseUrl = env.USERMGMT_ENTITLEMENTS_PHYSIONET_BASE_URL.replace(/\/+$/, '')
+    const url = `${baseUrl}/oauth/dataset-access/?slug=${encodeURIComponent(slug)}&version=${encodeURIComponent(version)}`
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), env.USERMGMT_ENTITLEMENTS_TIMEOUT_MS)
+    try {
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${physionetToken}` },
+        signal: controller.signal,
+      })
+      if (!response.ok) {
+        if (response.status === 404) return false
+        const body = await response.text().then(t => t.slice(0, 200)).catch(() => '')
+        throw new Error(`HTTP ${response.status}: ${body}`)
+      }
+      const data = await response.json() as { has_access: boolean }
+      return data.has_access === true
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   private async loadDatasets(): Promise<Dataset[]> {

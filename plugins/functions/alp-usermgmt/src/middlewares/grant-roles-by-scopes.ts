@@ -39,6 +39,12 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     }
 
     sub = token[subProp]
+
+    // M2M tokens have sub === client_id; skip user provisioning for those.
+    if (sub === token.client_id) {
+      return next()
+    }
+
     if (isSync) {
       logger.info(`Assigning roles for user with subject "${sub}"`)
     }
@@ -63,12 +69,6 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        // Try auto-provisioning from a configured federated OIDC connector
-        // (e.g. PhysioNet). When enabled and the user came in through an
-        // allowlisted connector, this creates the usermgmt.user row +
-        // default group so the Portal can complete login. Returns null
-        // when ineligible — in which case we fall through to the existing
-        // Azure or 500 branches.
         const autoProvisionService = Container.get(AutoProvisionService)
         const provisioned = await autoProvisionService.provision(sub, { email, username }, bearerToken)
         if (provisioned) {
@@ -76,7 +76,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
           const tokenUser: ITokenUser = { userId: provisioned.id, idpUserId: sub }
           req.user = tokenUser
           Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
-        } else if (env.IDP_RELYING_PARTY === 'azure') {
+        } else if (env.IDP_AUTO_PROVISION_USERS) {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
@@ -90,12 +90,49 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
             req.user = tokenUser
             Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
           } else {
-            logger.error(`User "${sub}" or "${username}" does not exist for non-sync request`)
-            return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            // Non-sync request while user doesn't exist — a concurrent sync
+            // request may be provisioning. Retry the lookup with backoff.
+            let retryUser = null
+            for (let i = 0; i < 3; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
+              if (retryUser) break
+            }
+            if (retryUser) {
+              userId = retryUser.id
+              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
+              req.user = tokenUser
+              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+            } else {
+              logger.error(`User "${sub}" or "${username}" does not exist after retries`)
+              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            }
           }
         } else {
-          logger.error(`User "${sub}" or "${username}" does not exist`)
-          return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+          // Auto-provision not enabled via IDP_AUTO_PROVISION_USERS — retry
+          // in case a concurrent request is provisioning the user via the
+          // PhysioNet OIDC connector.
+          if (env.USERMGMT_AUTO_PROVISION_ENABLED) {
+            logger.info(`[RaceRetry] user "${sub}" not found, USERMGMT_AUTO_PROVISION_ENABLED=true, retrying...`)
+            let retryUser = null
+            for (let i = 0; i < 3; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
+              if (retryUser) break
+            }
+            if (retryUser) {
+              userId = retryUser.id
+              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
+              req.user = tokenUser
+              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+            } else {
+              logger.error(`User "${sub}" or "${username}" does not exist`)
+              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            }
+          } else {
+            logger.error(`User "${sub}" or "${username}" does not exist`)
+            return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+          }
         }
       } else if (!user.idpUserId) {
         logger.info(`First time login for existing user, update idp_user_id: "${sub}"`)
@@ -114,17 +151,12 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
-    // Reconcile STUDY_RESEARCHER memberships against the upstream IdP's
-    // entitlements view on every authenticated request. Decoupled from
-    // the Azure isSync gate so it fires for PhysioNet-federated users
-    // on plain GETs too. Failures are logged and swallowed inside the
-    // service.
     const entitlementsSync = Container.get(EntitlementsSyncService)
     await entitlementsSync.sync(userId!, sub, token).catch(err => {
       logger.warn(`[Entitlements] sync threw for ${sub}: ${err}; keeping existing roles`)
     })
 
-    if (isSync && env.IDP_RELYING_PARTY === 'azure') {
+    if (isSync && env.IDP_AUTO_PROVISION_USERS) {
       const tenantId = env.APP_TENANT_ID
       if (!tenantId) {
         logger.error(`Tenant not found`)
@@ -147,11 +179,14 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         if (autoGrantCodes.length > 0) {
           grantDatasetCodes = [...new Set([...grantDatasetCodes, ...autoGrantCodes])]
         }
+        logger.info(`Granting roles for user ${userId} for dataset codes: ${grantDatasetCodes.join(', ')}`)
 
         await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
 
-        const isAnyResearcher = datasets.some(dataset => grantDatasetCodes.includes(dataset.token_dataset_code))
-        await grantOrRevokeSystemRole(userId, ROLES.STUDY_WRITE_DQD_RESEARCHER, isAnyResearcher)
+        if (env.IDP_RELYING_PARTY === 'azure') {
+          const isAnyResearcher = datasets.some(dataset => grantDatasetCodes.includes(dataset.token_dataset_code))
+          await grantOrRevokeSystemRole(userId, ROLES.STUDY_WRITE_DQD_RESEARCHER, isAnyResearcher)
+        }
       }
     }
 
@@ -218,8 +253,10 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
     const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)
     if (isGrant) {
       isResearcher = true
+      logger.info(`Granting role ${role} for dataset ${dataset.token_dataset_code} to user ${userId}`)
       await addUserToGroup(userId, group!.id)
     } else {
+      logger.info(`Revoking role ${role} for dataset ${dataset.token_dataset_code} from user ${userId}`)
       await removeUserFromGroup(userId, group!.id)
     }
   }

@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import jwt from 'jsonwebtoken'
 import { Container, Service } from 'typedi'
 import { createLogger } from '../Logger'
 import { LogtoAPI } from '../api'
@@ -7,6 +8,7 @@ import { CONTAINER_KEY, ROLES } from '../const'
 import { ITokenUser } from '../types'
 import { UserField } from '../repositories'
 import { B2cGroupService } from './B2cGroupService'
+import { EntitlementsSyncService } from './EntitlementsSyncService'
 import { UserGroupService } from './UserGroupService'
 import { UserService } from './UserService'
 
@@ -100,9 +102,12 @@ export class AutoProvisionService {
     }
 
     // Race guard: another concurrent request may have just created the user.
+    // Still run entitlements sync — the first request might not have finished
+    // it yet, and the sync is idempotent.
     const existing = await this.userService.getUserByIdpUserId(idpUserId)
     if (existing) {
       this.logger.info(`[AutoProvision] idp user "${idpUserId}" already provisioned, reusing`)
+      await this.runEntitlementsSync(existing.id!, idpUserId, bearerToken)
       return { id: existing.id!, username: existing.username! }
     }
 
@@ -131,6 +136,19 @@ export class AutoProvisionService {
     Container.set(CONTAINER_KEY.CURRENT_USER, { userId: newUser.id!, idpUserId } as ITokenUser)
     try {
       await this.userService.createUser(newUser)
+    } catch (err: any) {
+      const msg = String(err?.message || err)
+      if (msg.includes('duplicate key') || msg.includes('unique constraint') || msg.includes('already exists')) {
+        this.logger.info(`[AutoProvision] race: user "${idpUserId}" was created by concurrent request`)
+        if (previousCurrent) Container.set(CONTAINER_KEY.CURRENT_USER, previousCurrent)
+        const raceWinner = await this.userService.getUserByIdpUserId(idpUserId)
+        if (raceWinner) {
+          await this.runEntitlementsSync(raceWinner.id!, idpUserId, bearerToken)
+          return { id: raceWinner.id!, username: raceWinner.username! }
+        }
+        return null
+      }
+      throw err
     } finally {
       if (previousCurrent) {
         Container.set(CONTAINER_KEY.CURRENT_USER, previousCurrent)
@@ -143,6 +161,9 @@ export class AutoProvisionService {
     )
 
     await this.assignDefaultGroup(newUser.id!)
+
+    await this.runEntitlementsSync(newUser.id!, idpUserId, bearerToken)
+
     await this.callRoleHook(newUser.id!, idpUserId, matched, claims.email, bearerToken)
 
     return { id: newUser.id!, username }
@@ -153,6 +174,18 @@ export class AutoProvisionService {
    * group must already exist (seeded by alp-usermgmt-init). If it doesn't,
    * log and continue — the user record is still useful even without a role.
    */
+  private async runEntitlementsSync(userId: string, idpUserId: string, bearerToken: string): Promise<void> {
+    try {
+      const entitlementsSync = Container.get(EntitlementsSyncService)
+      const token = jwt.decode(bearerToken) as jwt.JwtPayload
+      if (token) {
+        await entitlementsSync.sync(userId, idpUserId, token)
+      }
+    } catch (err) {
+      this.logger.warn(`[AutoProvision] entitlements sync failed for ${idpUserId}: ${err}; continuing`)
+    }
+  }
+
   private async assignDefaultGroup(userId: string): Promise<void> {
     const tenantId = env.USERMGMT_AUTO_PROVISION_DEFAULT_TENANT_ID
     if (!tenantId) {

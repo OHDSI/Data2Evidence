@@ -4,6 +4,7 @@ import { UserGroupService } from '../services'
 import { AlpTenantUserRoleMapType, IAppRequest } from '../types'
 import { createLogger } from '../Logger'
 import { ROLES } from '../const'
+import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
 
 interface TenantCheckOptions {
@@ -25,7 +26,12 @@ export const permittedTenantCheck =
     try {
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
-      const ctxUserGroups = await userGroupService.getUserGroupsMetadataByIdpUserId(ctxUserId)
+
+      if (!ctxUserId) {
+        return next()
+      }
+
+      const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)
 
       if (ctxUserGroups.alp_role_user_admin) {
         // Bypass for ALP_USER_ADMIN
