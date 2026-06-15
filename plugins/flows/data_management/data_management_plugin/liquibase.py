@@ -1,4 +1,3 @@
-import os
 from re import sub
 from enum import Enum
 from typing import List
@@ -65,9 +64,6 @@ class Liquibase:
         # path to liquibase executable
         liquibase_path = Variable.get("liquibase_path") if Variable.get(
             "liquibase_path") else "/app/liquibase/liquibase"
-        liquibase_dir = os.path.dirname(liquibase_path)
-        liquibase_properties = os.path.join(
-            liquibase_dir, 'liquibase.properties')
 
         hana_driver_class_path = Variable.get("hana_driver_class_path") if Variable.get(
             "hana_driver_class_path") else "/app/liquibase/lib/ngdbc-latest.jar"
@@ -83,7 +79,7 @@ class Liquibase:
                 classpath = f"{postgres_driver_class_path}:{self.plugin_classpath}"
                 driver = "org.postgresql.Driver"
                 connection_base_url = f'jdbc:postgresql://{host}:{port}/{database_name}?'
-                connection_properties = f'user={admin_user}&password={admin_password}&currentSchema="{self.schema_name.lower()}"'
+                connection_properties = f'currentSchema="{self.schema_name.lower()}"'
 
         params = [
             liquibase_path,
@@ -94,19 +90,12 @@ class Liquibase:
             f"--logLevel={Variable.get('lb_log_level') if Variable.get('lb_log_level') else 'INFO'}",
             f"--defaultSchemaName={self.schema_name}",
             f"--liquibaseSchemaName={self.schema_name}",
-            f"--defaults-file={liquibase_properties}"
+            f"--url={connection_base_url}{connection_properties}",
+            f"--password={admin_password}",
         ]
 
         if self.tenant_configs.authMode != AuthMode.JWT:
             params.append(f"--username={admin_user}")
-
-        # Temporarily create liquibase.properties for sensitive values
-        # Won't be logged in traceback
-        with open(liquibase_properties, 'w') as file:
-            file.write(f'''
-                url: {connection_base_url}{connection_properties}
-                password: {admin_password}
-                ''')
 
         match self.action:
             case LiquibaseAction.STATUS:
@@ -140,8 +129,8 @@ class Liquibase:
             liquibase_error_message = self._mask_secrets(self._find_error_message(
                 liquibase_msg_list), "***")
             raise RuntimeError(
-                # from cpe
-                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}")
+                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}"
+            ) from None
         else:
             print(f"Successfully ran liquibase command '{params[1]}'")
 
@@ -162,7 +151,8 @@ class Liquibase:
             liquibase_error_message = self._mask_secrets(self._find_error_message(
                 liquibase_msg_list), "***")
             raise RuntimeError(
-                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}")
+                f"Liquibase failed to run with return code '{cpe.returncode}': {liquibase_error_message}"
+            ) from None
         else:
             print(f"Successfully ran liquibase command '{params[1]}'")
             liquibase_msg_list = liquibase_msg_masked.split("\n")
@@ -181,6 +171,8 @@ class Liquibase:
         for output in liquibase_stdout:
             if LB_ERROR_MESSAGE_REGEX.search(output):
                 return output
+        # Output did not match the expected error format
+        return "No error message found in liquibase output, check the logs above for details"
 
     def _mask_secrets(self, text, replacement):
         text = sub(PASSWORD_REGEX, replacement, text)  # mask password
