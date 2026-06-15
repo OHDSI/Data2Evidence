@@ -74,6 +74,42 @@ spec:
               cp -rfv /data/plugins/.npmrc /usr/src/data/plugins/.npmrc && \
               cp -rfv /data/plugins/bunfig.toml /usr/src/data/plugins/bunfig.toml && exit 0",
             ]
+        # The in-engine trex core runs Knex DB migrations on startup, connecting as
+        # the config-admin user. Wait until pg-mgmt-init has created that user and DB
+        # so the core doesn't crash on an unbootstrapped database (mirrors logto-check).
+        - name: pg-check
+          image: postgres:15-alpine
+          resources:
+            {{- toYaml .Values.global.resources.logtoCheck | nindent 12 }}
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
+          command:
+            [
+              "sh",
+              "-c",
+              "until psql -c 'CREATE SCHEMA IF NOT EXISTS _pgcheck; DROP SCHEMA _pgcheck;' >/dev/null 2>&1; do echo 'waiting for postgres + config-admin user with create privilege'; sleep 5; done; echo 'postgres ready'",
+            ]
         - name: logto-check
           image: busybox:latest
           resources:
