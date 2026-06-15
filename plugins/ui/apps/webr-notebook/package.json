@@ -9,7 +9,8 @@
     "dev": "concurrently --kill-others \"bun build:watch\" \"bun preview\"",
     "preview": "vite preview --mode=development",
     "build:dev": "vite build --mode=development",
-    "build:watch": "vite build --mode=development --watch"
+    "build:watch": "vite build --mode=development --watch",
+    "prepare-offline-assets": "node scripts/prepare-offline-assets.mjs"
   },
   "dependencies": {
     "@nlux/react": "^2.17.1",
