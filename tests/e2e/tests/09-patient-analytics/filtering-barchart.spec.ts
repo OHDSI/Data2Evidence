@@ -214,7 +214,6 @@ test(TEST_NAME, async ({ page }) => {
   // Export to ZIP file
   await page.locator('.download-menu-container').getByTitle('Export to File').click()
   await page.getByRole('menuitem').getByText('Export to ZIP File').click()
-  await page.waitForTimeout(5000) // Wait for download to complete
   await expect(page.getByText('ZIP file exported successfully')).toBeVisible()
 
   // Switch to chart view
