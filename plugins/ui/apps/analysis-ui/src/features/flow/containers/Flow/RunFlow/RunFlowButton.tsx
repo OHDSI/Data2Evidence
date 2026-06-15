@@ -90,13 +90,12 @@ export const RunFlowButton: FC = () => {
   }, [flowRunId]);
 
   const runFlow = useCallback(
-    async (datasetId: string) => {
-      const studyId = portalProps?.datasetId;
-      if (!studyId) {
-        console.error("No studyId available from plugin metadata");
+    async (datasetId: string, tokenStudyCode: string) => {
+      if (!tokenStudyCode) {
+        console.error("No tokenStudyCode available from selected dataset");
         return;
       }
-      await runDataflow({ id: dataflowId, datasetId, studyId, uploadResults });
+      await runDataflow({ id: dataflowId, datasetId, tokenStudyCode, uploadResults });
     },
     [dataflowId, uploadResults]
   );
@@ -116,9 +115,9 @@ export const RunFlowButton: FC = () => {
   }, [dataflowId, isTestMode, nodes, edges, uploadResults, status]);
 
   const handleDialogRun = useCallback(
-    async (datasetId: string) => {
+    async (datasetId: string, tokenDatasetCode: string) => {
       setDialogOpen(false);
-      await runFlow(datasetId);
+      await runFlow(datasetId, tokenDatasetCode);
     },
     [runFlow]
   );

@@ -37,6 +37,7 @@ export const OidcLoginSilent: FC = () => {
               || userGroups?.alp_role_user_admin;
             if (hasRole || attempt === 3) {
               setUserGroup(idpUserId, userGroups);
+              api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
               return;
             }
           } catch (err: any) {

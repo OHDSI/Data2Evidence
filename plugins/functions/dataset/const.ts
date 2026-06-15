@@ -22,8 +22,9 @@ export const CDMSchemaTypes = {
 }
 
 export enum DbDialect {
-  Postgres = 'postgres',
-  Hana = 'hana'
+  Postgres = "postgres",
+  Hana = "hana",
+  Duckdb = "duckdb",
 }
 
 export enum SourceDatasetType {

@@ -2,6 +2,7 @@ import { InfoOutlined } from "@mui/icons-material";
 import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
 import { PageProps, ResearcherStudyMetadata } from "@portal/plugin";
 import { FC, useEffect, useMemo, useState } from "react";
+import { api } from "../../../axios/api";
 import { DashboardIframe } from "../../../components/Dashboard";
 import { useTranslation } from "../../../contexts";
 import "./ShinyLive.scss";
@@ -27,6 +28,7 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   const [viewerUnauthorized, setViewerUnauthorized] = useState<boolean>(false);
   const [selectedDashboard, setSelectedDashboard] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isStartingViewer, setIsStartingViewer] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -79,13 +81,51 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
                 `/strategus-results/${info.tokenStudyCode}/status`,
                 fetchOpts
               );
-              if (statusResp.ok) {
-                const status = await statusResp.json();
-                setViewerRunning(status.running === true);
-                setViewerUnauthorized(false);
-              } else if (statusResp.status === 401) {
+              if (statusResp.status === 401) {
                 setViewerRunning(false);
                 setViewerUnauthorized(true);
+              } else if (statusResp.ok || statusResp.status === 503) {
+                const status = statusResp.ok ? await statusResp.json() : { running: false };
+                if (status.running === true) {
+                  setViewerRunning(true);
+                  setViewerUnauthorized(false);
+                } else {
+                  // Viewer not running — start it automatically
+                  setIsStartingViewer(true);
+                  try {
+                    await api.strategusResults.startStrategusResultViewer(info.tokenStudyCode, "", "");
+                    // Poll status until the viewer is confirmed running
+                    let running = false;
+                    for (let attempt = 0; attempt < 20; attempt++) {
+                      await new Promise((resolve) => setTimeout(resolve, 3000));
+                      try {
+                        const pollResp = await fetch(
+                          `/strategus-results/${info.tokenStudyCode}/status`,
+                          fetchOpts
+                        );
+                        if (pollResp.ok || pollResp.status === 503) {
+                          const pollStatus = pollResp.ok ? await pollResp.json() : { running: false };
+                          if (pollStatus.running === true) {
+                            running = true;
+                            break;
+                          }
+                        }
+                      } catch {
+                        // continue polling
+                      }
+                    }
+                    setViewerRunning(running);
+                    if (!running) {
+                      setError("Result viewer failed to start. Please contact your Admin.");
+                    }
+                  } catch (startErr: any) {
+                    console.error("[ShinyLive] Error starting viewer:", startErr);
+                    const message = startErr?.data?.message || startErr?.message || "Failed to start the result viewer.";
+                    setError(`${message} Please contact your Admin.`);
+                  } finally {
+                    setIsStartingViewer(false);
+                  }
+                }
               } else {
                 setViewerRunning(false);
                 setViewerUnauthorized(false);
@@ -189,9 +229,12 @@ export const ShinyLive: FC<ShinyLiveProps> = ({ metadata }: ShinyLiveProps) => {
   }
 
   if (isLoading) {
+    const loadingMessage = isStartingViewer
+      ? "Starting result viewer..."
+      : getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING);
     return (
       <div className="shinylive-plugin">
-        <div className="shinylive-plugin__loading">{getText(i18nKeys.UI_PLUGIN_SHINY_LIVE__LOADING)}</div>
+        <div className="shinylive-plugin__loading">{loadingMessage}</div>
       </div>
     );
   }
