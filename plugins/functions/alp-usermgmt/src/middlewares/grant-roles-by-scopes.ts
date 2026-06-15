@@ -201,7 +201,9 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
   }
 
   // Automatically grant viewer role when is researcher
-  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  if (isResearcher) {
+    await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  }
 }
 
 const addUserToGroup = async (userId: string, groupId: string) => {

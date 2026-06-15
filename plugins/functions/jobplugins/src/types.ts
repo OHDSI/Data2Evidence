@@ -171,15 +171,6 @@ export interface ICreateDatamartFlowRunDto {
   options: object;
 }
 
-export interface ICreateFhirCacheFlowRunDto {
-  databaseCode: string;
-  cacheId?: string;
-  schemaName: string;
-  cacheSchemaName: string;
-  studyCode: string;
-  fhirProjectId?: string;
-}
-
 export interface IGetVersionInfoFlowRunDto {
   flowRunName: string;
   options: IGetVersionInfoFlowRunOptions;

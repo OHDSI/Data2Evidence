@@ -282,11 +282,41 @@ async function main() {
     roleId: string;
     scopeId: string;
     scopeName: string;
-  }> = logtoRoles.map((r, indx) => ({
-    roleId: r.id,
-    scopeId: logtoScopes[indx]["id"],
-    scopeName: logtoScopes[indx]["name"],
-  }));
+  }> = [];
+
+  if (process.env.LOGTO__ROLES_SCOPES) {
+    const mapping: Array<{ roleName: string; scopeNames: string[] }> =
+      JSON.parse(process.env.LOGTO__ROLES_SCOPES);
+    for (const m of mapping) {
+      const role = logtoRoles.find((r: any) => r.name === m.roleName);
+      if (!role) {
+        console.warn(
+          `LOGTO__ROLES_SCOPES: role "${m.roleName}" not found, skipping`,
+        );
+        continue;
+      }
+      for (const scopeName of m.scopeNames) {
+        const scope = logtoScopes.find((s: any) => s.name === scopeName);
+        if (!scope) {
+          console.warn(
+            `LOGTO__ROLES_SCOPES: scope "${scopeName}" not found for role "${m.roleName}", skipping`,
+          );
+          continue;
+        }
+        roleScopes.push({
+          roleId: (role as any).id,
+          scopeId: (scope as any).id,
+          scopeName: (scope as any).name,
+        });
+      }
+    }
+  } else {
+    roleScopes = logtoRoles.map((r, indx) => ({
+      roleId: r.id,
+      scopeId: logtoScopes[indx]["id"],
+      scopeName: logtoScopes[indx]["name"],
+    }));
+  }
 
   for (const rs of roleScopes) {
     const fetchExistingRoleScopes: Array<Object> = await fetchExisting(
@@ -387,6 +417,17 @@ button[name="submit"]{ background: #000080 !important; }`,
     );
 
     const payload = JSON.parse(process.env.LOGTO__CUSTOM_JWT);
+
+    // Inject scope-rewrite rules (e.g. `source-user-<id>` → `Source user (<id>)`) into the customizer
+    if (process.env.LOGTO__JWT_SCOPE_REWRITES) {
+      const parsed = JSON.parse(process.env.LOGTO__JWT_SCOPE_REWRITES);
+      if (!Array.isArray(parsed)) {
+        throw new Error("LOGTO__JWT_SCOPE_REWRITES must be a JSON array");
+      }
+      payload.environmentVariables = payload.environmentVariables || {};
+      payload.environmentVariables.scopeRewrites = JSON.stringify(parsed);
+    }
+
     console.log("payload", payload);
     await upsert("configs/jwt-customizer/access-token", headers, payload);
 
