@@ -636,6 +636,38 @@ spec:
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
+            # The trex engine boots the trexas HTTP gateway (:33001) and the d2e
+            # core eszips from this swarm config; without it nothing listens on 33001.
+            - name: SWARM_NODE
+              value: d2e
+            - name: SWARM_CONFIG
+              value: |-
+                {
+                  "cluster_id": "d2e",
+                  "nodes": {
+                    "d2e": {
+                      "gossip_addr": "0.0.0.0:4200",
+                      "extensions": [
+                        {
+                          "name": "trexas",
+                          "config": {
+                            "host": "0.0.0.0",
+                            "port": 33001,
+                            "main_service_path": "/usr/src/core/server/index.eszip",
+                            "event_worker_path": "/usr/src/core/event/index.eszip",
+                            "tls_port": 33000,
+                            "tls_cert_path": "/usr/src/cert/cert.pem",
+                            "tls_key_path": "/usr/src/cert/key.pem"
+                          }
+                        },
+                        {
+                          "name": "pgwire",
+                          "config": { "host": "0.0.0.0", "port": 5433 }
+                        }
+                      ]
+                    }
+                  }
+                }
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           # Use the image CMD (write TLS cert, then `exec trex`); the trexsql
