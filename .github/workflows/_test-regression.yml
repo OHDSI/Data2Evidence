@@ -71,11 +71,11 @@ jobs:
         if: success() || failure()
         run: npm install
 
-      - name: Download UI package tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-tgz
-          path: ./plugins/ui
+      # - name: Download UI package tarball
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: ui-tgz
+      #     path: ./plugins/ui
 
       - name: Extract UI package
         run: |
