@@ -2,7 +2,7 @@ export const i18nDefault = {
   default: {
     ACCESS_PANEL__ACCESS: "Access",
     ACCESS_PANEL__ADD_EXISTING: "Add existing users",
-    ACCESS_PANEL__EMAIL: "Email",
+    ACCESS_PANEL__NAME: "Name",
     ACCESS_PANEL__ERROR: "An error has occurred.",
     ACCESS_PANEL__ERROR_2: "User {0} cannot be added as they have not completed registration",
     ACCESS_PANEL__ERROR_DESCRIPTION:
