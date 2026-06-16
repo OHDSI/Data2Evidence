@@ -26,9 +26,7 @@ test(TEST_NAME, async ({ page }) => {
   await demoDataset.click()
   await page.getByRole('option', { name: 'Run data quality' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()
-  await expect(
-    page.getByTestId('snackbar').locator('div').filter({ hasText: 'Successfully generated dqd' }).first()
-  ).toBeVisible()
+  await expect(page.getByTestId('alert-title')).toContainText('Successfully generated dqd')
 
   // Grant researcher dataset permissions
   await demoDataset.click()
