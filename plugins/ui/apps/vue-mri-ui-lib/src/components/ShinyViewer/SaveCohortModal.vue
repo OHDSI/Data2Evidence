@@ -3,128 +3,139 @@
     :model-value="isOpen"
     class="save-cohort-dialog"
     max-width="540"
+    :persistent="isSaving"
     width="calc(100vw - 48px)"
     @update:modelValue="handleDialogModelUpdate"
   >
     <v-card class="save-cohort-card">
-      <v-overlay :model-value="isSaving" contained persistent class="save-cohort-loading">
-        <VProgressCircular indeterminate color="primary" :size="40" :width="4" />
-      </v-overlay>
-
-      <v-card-title class="save-cohort-dialog__header">
-        <span>{{ modalTitle }}</span>
-        <v-btn
-          icon
-          variant="text"
-          density="comfortable"
+      <div v-if="isSaving" class="save-cohort-saving">
+        <h2 class="save-cohort-saving__title">Generating Dashboard</h2>
+        <VProgressCircular
+          indeterminate
+          class="save-cohort-saving__spinner"
           color="primary"
-          class="save-cohort-dialog__close"
-          :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
-          @click="handleCancel"
-        >
-          <span class="save-cohort-dialog__close-icon" aria-hidden="true">&#215;</span>
-        </v-btn>
-      </v-card-title>
-
-      <v-card-text class="save-cohort-body">
-        <appMessageStrip
-          v-if="messageStrip.show"
-          :messageType="messageStrip.messageType"
-          :text="messageStrip.message"
-          @closeEv="resetMessageStrip"
+          :size="96"
+          :width="8"
         />
+        <p class="save-cohort-saving__status">{{ savingStatusText }}</p>
+      </div>
 
-        <div class="save-bookmark" v-if="isNewCohort">
-          <div class="save-cohort-field">
-            <v-text-field
-              id="save-cohort-name"
-              v-model="cohortName"
-              class="save-cohort-text-field"
-              :error="cohortNameValidationState !== 'valid' || hasExceededLength"
-              :error-messages="cohortNameErrorMessages"
-              :hide-details="cohortNameErrorMessages.length === 0"
-              :label="cohortNameLabel"
-              :maxlength="maxLength + 1"
-              variant="outlined"
-              density="comfortable"
-              base-color="#acaba8"
-              v-focus
-              required
-              tabindex="0"
-            >
-              <template #label>
-                <span class="save-cohort-field-label-content">
-                  {{ cohortNameLabel }}
-                  <span class="save-cohort-field__required">*</span>
-                </span>
-              </template>
-            </v-text-field>
+      <template v-else>
+        <v-card-title class="save-cohort-dialog__header">
+          <span>{{ modalTitle }}</span>
+          <v-btn
+            icon
+            variant="text"
+            density="comfortable"
+            color="primary"
+            class="save-cohort-dialog__close"
+            :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
+            @click="handleCancel"
+          >
+            <span class="save-cohort-dialog__close-icon" aria-hidden="true">&#215;</span>
+          </v-btn>
+        </v-card-title>
+
+        <v-card-text class="save-cohort-body">
+          <appMessageStrip
+            v-if="messageStrip.show"
+            :messageType="messageStrip.messageType"
+            :text="messageStrip.message"
+            @closeEv="resetMessageStrip"
+          />
+
+          <div class="save-bookmark" v-if="isNewCohort">
+            <div class="save-cohort-field">
+              <v-text-field
+                id="save-cohort-name"
+                v-model="cohortName"
+                class="save-cohort-text-field"
+                :error="cohortNameValidationState !== 'valid' || hasExceededLength"
+                :error-messages="cohortNameErrorMessages"
+                :hide-details="cohortNameErrorMessages.length === 0"
+                :label="cohortNameLabel"
+                :maxlength="maxLength + 1"
+                variant="outlined"
+                density="comfortable"
+                base-color="#acaba8"
+                v-focus
+                required
+                tabindex="0"
+              >
+                <template #label>
+                  <span class="save-cohort-field-label-content">
+                    {{ cohortNameLabel }}
+                    <span class="save-cohort-field__required">*</span>
+                  </span>
+                </template>
+              </v-text-field>
+            </div>
           </div>
-        </div>
 
-        <!-- Show existing cohort name for updates -->
-        <div v-else class="save-bookmark">
-          <p class="cohort-label">
-            <strong>{{ getText('MRI_PA_COLL_COHORT_NAME') }}</strong>
-            {{ getActiveBookmark?.bookmarkname }}
-          </p>
-        </div>
-
-        <!-- Info message for bookmark-only mode -->
-        <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
-          <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
-            <p>
-              <strong>{{
-                getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') ||
-                'This filter combination has already been materialized. Saving bookmark only.'
-              }}</strong>
+          <!-- Show existing cohort name for updates -->
+          <div v-else class="save-bookmark">
+            <p class="cohort-label">
+              <strong>{{ getText('MRI_PA_COLL_COHORT_NAME') }}</strong>
+              {{ getActiveBookmark?.bookmarkname }}
             </p>
-            <p>
-              <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br />
-              <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong>
-              {{ new Date(activeCohort.createdOn).toLocaleString() }}
-            </p>
-          </v-alert>
-        </div>
-
-        <div v-if="showDescriptionField" class="save-bookmark">
-          <div class="save-cohort-field">
-            <v-text-field
-              id="save-cohort-description"
-              v-model="cohortDescription"
-              class="save-cohort-text-field"
-              :label="cohortDescriptionLabel"
-              variant="outlined"
-              density="comfortable"
-              base-color="#acaba8"
-              hide-details
-              @keydown.enter="handleSave"
-              tabindex="1"
-            />
           </div>
-        </div>
-      </v-card-text>
 
-      <v-card-actions class="save-cohort-actions">
-        <v-btn
-          variant="outlined"
-          class="save-cohort-button save-cohort-button--secondary"
-          :title="getText('MRI_PA_COLL_BUT_CANCEL')"
-          :disabled="isSaving"
-          @click="handleCancel"
-        >
-          {{ getText('MRI_PA_COLL_BUT_CANCEL') }}
-        </v-btn>
-        <v-btn
-          variant="flat"
-          class="save-cohort-button save-cohort-button--primary"
-          :title="saveButtonText"
-          :disabled="isSaveDisabled"
-          @click="handleSave"
-        >
-          {{ saveButtonText }}
-        </v-btn>
-      </v-card-actions>
+          <!-- Info message for bookmark-only mode -->
+          <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
+            <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
+              <p>
+                <strong>{{
+                  getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') ||
+                  'This filter combination has already been materialized. Saving bookmark only.'
+                }}</strong>
+              </p>
+              <p>
+                <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br />
+                <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong>
+                {{ new Date(activeCohort.createdOn).toLocaleString() }}
+              </p>
+            </v-alert>
+          </div>
+
+          <div v-if="showDescriptionField" class="save-bookmark">
+            <div class="save-cohort-field">
+              <v-text-field
+                id="save-cohort-description"
+                v-model="cohortDescription"
+                class="save-cohort-text-field"
+                :label="cohortDescriptionLabel"
+                variant="outlined"
+                density="comfortable"
+                base-color="#acaba8"
+                hide-details
+                @keydown.enter="handleSave"
+                tabindex="1"
+              />
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions class="save-cohort-actions">
+          <v-btn
+            variant="outlined"
+            class="save-cohort-button save-cohort-button--secondary"
+            :title="getText('MRI_PA_COLL_BUT_CANCEL')"
+            :disabled="isSaving"
+            @click="handleCancel"
+          >
+            {{ getText('MRI_PA_COLL_BUT_CANCEL') }}
+          </v-btn>
+          <v-btn
+            variant="flat"
+            class="save-cohort-button save-cohort-button--primary"
+            :title="saveButtonText"
+            :disabled="isSaveDisabled"
+            @click="handleSave"
+          >
+            {{ saveButtonText }}
+          </v-btn>
+        </v-card-actions>
+      </template>
     </v-card>
   </VDialog>
 </template>
@@ -166,6 +177,7 @@ export default {
       cohortNameValidationState: 'valid' as 'valid' | 'empty' | 'invalid' | 'duplicate',
       maxLength: 255,
       isSaving: false,
+      savingStep: 'idle',
       savedBookmarkId: null,
       savedCohortId: null,
       bookmarkSavedButMaterializationFailed: false,
@@ -245,6 +257,17 @@ export default {
       }
       return this.getText('MRI_PA_BUTTON_CONFIRM') || 'Confirm'
     },
+    savingStatusText() {
+      const labels = {
+        'saving-filter': 'Applying filter...',
+        'refreshing-filter': 'Saving filter...',
+        'materializing-cohort': 'Getting patient list...',
+        'refreshing-cohort': 'Preparing dashboard...',
+        complete: 'Preparing dashboard...',
+      }
+
+      return labels[this.savingStep] || 'Preparing dashboard...'
+    },
     activeCohort() {
       if (!this.getActiveBookmark?.cohortDefinitionId) return null
       return this.getMaterializedCohorts.find(c => c.id === this.getActiveBookmark.cohortDefinitionId)
@@ -258,6 +281,7 @@ export default {
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
         this.savedCohortId = null
+        this.savingStep = 'idle'
         this.bookmarkSavedButMaterializationFailed = false
         this.resetMessageStrip()
       }
@@ -396,6 +420,7 @@ export default {
         }
       } finally {
         this.isSaving = false
+        this.savingStep = 'idle'
       }
     },
 
@@ -447,6 +472,7 @@ export default {
       }
 
       if (this.isNewCohort) {
+        this.savingStep = 'saving-filter'
         const params = {
           cmd: 'insert',
           bookmarkname: bookmarkName,
@@ -460,6 +486,7 @@ export default {
 
         await this.fireBookmarkQuery({ params, method: 'post' })
       } else {
+        this.savingStep = 'saving-filter'
         const params = {
           cmd: 'update',
           bookmark: JSON.stringify(bookmarkData),
@@ -473,6 +500,7 @@ export default {
         })
       }
 
+      this.savingStep = 'refreshing-filter'
       const savedBookmark = await this.refreshAndFindBookmark()
       this.savedBookmarkId = savedBookmark.bmkId
       return savedBookmark.bmkId
@@ -506,8 +534,10 @@ export default {
 
       const url = '/analytics-svc/api/services/cohort'
 
+      this.savingStep = 'materializing-cohort'
       await this.onAddCohortOkButtonPress({ params, url })
 
+      this.savingStep = 'refreshing-cohort'
       const materializedBookmark = await this.refreshAndFindBookmark()
 
       if (!materializedBookmark.cohortDefinitionId) {
@@ -529,6 +559,7 @@ export default {
       }
 
       this.savedCohortId = materializedCohort.id
+      this.savingStep = 'complete'
     },
     ensureSavedBookmarkIdForMaterialization() {
       if (this.savedBookmarkId) {
@@ -554,6 +585,9 @@ export default {
       this.$emit('cancel')
     },
     handleDialogModelUpdate(value: boolean) {
+      if (this.isSaving) {
+        return
+      }
       if (!value) {
         this.handleCancel()
       }
@@ -652,6 +686,7 @@ export default {
 
 .save-cohort-button {
   border-radius: 8px;
+  cursor: pointer;
   flex: 1 1 0;
   font-family: var(--save-cohort-font);
   font-size: 16px;
@@ -662,6 +697,10 @@ export default {
   margin: 0;
   min-width: 0;
   text-transform: none;
+}
+
+.save-cohort-button.v-btn--disabled {
+  cursor: default;
 }
 
 .save-cohort-button--secondary {
@@ -681,9 +720,33 @@ export default {
   opacity: 1;
 }
 
-.save-cohort-loading {
+.save-cohort-saving {
   align-items: center;
+  color: var(--save-cohort-brand);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--save-cohort-font);
   justify-content: center;
+  min-height: 272px;
+  padding: 32px 24px 36px;
+  text-align: center;
+}
+
+.save-cohort-saving__title {
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  margin: 0 0 22px;
+}
+
+.save-cohort-saving__spinner {
+  margin-bottom: 22px;
+}
+
+.save-cohort-saving__status {
+  font-size: 14px;
+  line-height: 20px;
+  margin: 0;
 }
 
 .save-cohort-info {
