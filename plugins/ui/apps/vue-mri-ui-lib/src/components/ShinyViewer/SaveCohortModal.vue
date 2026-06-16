@@ -1,23 +1,32 @@
 <template>
-  <MessageBox
-    v-if="isOpen"
-    class="save-cohort-messagebox"
-    dim="true"
-    dialogWidth="520px"
-    :busy="isSaving"
-    messageType="custom"
-    @close="handleCancel"
+  <VDialog
+    :model-value="isOpen"
+    class="save-cohort-dialog"
+    max-width="540"
+    width="calc(100vw - 48px)"
+    @update:modelValue="handleDialogModelUpdate"
   >
-    <template v-slot:header>
-      <div class="save-cohort-dialog__header">
+    <v-card class="save-cohort-card">
+      <v-overlay :model-value="isSaving" contained persistent class="save-cohort-loading">
+        <VProgressCircular indeterminate color="primary" :size="40" :width="4" />
+      </v-overlay>
+
+      <v-card-title class="save-cohort-dialog__header">
         <span>{{ modalTitle }}</span>
-        <button type="button" class="save-cohort-dialog__close" :aria-label="getText('MRI_PA_CLOSE_BUTTON')" @click="handleCancel">
-          &#215;
-        </button>
-      </div>
-    </template>
-    <template v-slot:body>
-      <div class="input-container">
+        <v-btn
+          icon
+          variant="text"
+          density="comfortable"
+          color="primary"
+          class="save-cohort-dialog__close"
+          :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
+          @click="handleCancel"
+        >
+          <span class="save-cohort-dialog__close-icon" aria-hidden="true">&#215;</span>
+        </v-btn>
+      </v-card-title>
+
+      <v-card-text class="save-cohort-body">
         <appMessageStrip
           v-if="messageStrip.show"
           :messageType="messageStrip.messageType"
@@ -27,41 +36,29 @@
 
         <div class="save-bookmark" v-if="isNewCohort">
           <div class="save-cohort-field">
-            <label class="save-cohort-field__label">
-              {{ getText('MRI_PA_COLL_COHORT_NAME') }}
-              <span class="save-cohort-field__required">*</span>
-            </label>
-            <input
-              class="form-control"
-              :class="{ 'is-invalid': cohortNameValidationState !== 'valid' }"
-              :placeholder="getText('MRI_PA_COLL_ENTER_NAME')"
+            <v-text-field
+              id="save-cohort-name"
               v-model="cohortName"
-              tabindex="0"
+              class="save-cohort-text-field"
+              :error="cohortNameValidationState !== 'valid' || hasExceededLength"
+              :error-messages="cohortNameErrorMessages"
+              :hide-details="cohortNameErrorMessages.length === 0"
+              :label="cohortNameLabel"
+              :maxlength="maxLength + 1"
+              variant="outlined"
+              density="comfortable"
+              base-color="#acaba8"
               v-focus
               required
-              :maxlength="maxLength + 1"
-            />
-            <div
-              class="invalid-feedback"
-              v-bind:style="[cohortNameValidationState === 'invalid' && 'display: block;']"
+              tabindex="0"
             >
-              {{ getText('MRI_PA_INVALID_NAME_ERROR') }}
-            </div>
-            <div class="invalid-feedback" v-bind:style="[hasExceededLength && 'display: block;']">
-              {{ getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters' }}
-            </div>
-            <div
-              class="invalid-feedback"
-              v-bind:style="[cohortNameValidationState === 'empty' && 'display: block;']"
-            >
-              {{ getText('MRI_PA_BMK_EMPTY_NAME_ERROR') }}
-            </div>
-            <div
-              class="invalid-feedback"
-              v-bind:style="[cohortNameValidationState === 'duplicate' && 'display: block;']"
-            >
-              {{ getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists' }}
-            </div>
+              <template #label>
+                <span class="save-cohort-field-label-content">
+                  {{ cohortNameLabel }}
+                  <span class="save-cohort-field__required">*</span>
+                </span>
+              </template>
+            </v-text-field>
           </div>
         </div>
 
@@ -75,57 +72,67 @@
 
         <!-- Info message for bookmark-only mode -->
         <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
-          <div class="alert alert-info" role="alert">
-            <p class="mb-2">
-              <strong>{{ getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') || 'This filter combination has already been materialized. Saving bookmark only.' }}</strong>
+          <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
+            <p>
+              <strong>{{
+                getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') ||
+                'This filter combination has already been materialized. Saving bookmark only.'
+              }}</strong>
             </p>
-            <p class="mb-0">
-              <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br>
-              <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong> {{ new Date(activeCohort.createdOn).toLocaleString() }}
+            <p>
+              <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br />
+              <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong>
+              {{ new Date(activeCohort.createdOn).toLocaleString() }}
             </p>
-          </div>
+          </v-alert>
         </div>
 
         <div v-if="showDescriptionField" class="save-bookmark">
           <div class="save-cohort-field">
-            <label class="save-cohort-field__label">
-              {{ getText('MRI_PA_COLL_COHORT_MATERIALIZATION_DESCRIPTION') }}
-            </label>
-            <input
-              class="form-control"
-              :placeholder="getText('MRI_PA_COLL_COHORT_MATERIALIZATION_DESCRIPTION')"
+            <v-text-field
+              id="save-cohort-description"
               v-model="cohortDescription"
-              tabindex="1"
+              class="save-cohort-text-field"
+              :label="cohortDescriptionLabel"
+              variant="outlined"
+              density="comfortable"
+              base-color="#acaba8"
+              hide-details
               @keydown.enter="handleSave"
+              tabindex="1"
             />
           </div>
         </div>
-      </div>
-    </template>
+      </v-card-text>
 
-    <template v-slot:footer>
-      <appButton
-        class="save-cohort-button save-cohort-button--secondary"
-        :click="handleCancel"
-        :text="getText('MRI_PA_COLL_BUT_CANCEL')"
-        :tooltip="getText('MRI_PA_COLL_BUT_CANCEL')"
-        :disabled="isSaving"
-      />
-      <appButton
-        class="save-cohort-button save-cohort-button--primary"
-        :click="handleSave"
-        :text="saveButtonText"
-        :tooltip="saveButtonText"
-        :disabled="isSaveDisabled"
-      />
-    </template>
-  </MessageBox>
+      <v-card-actions class="save-cohort-actions">
+        <v-btn
+          variant="outlined"
+          class="save-cohort-button save-cohort-button--secondary"
+          :title="getText('MRI_PA_COLL_BUT_CANCEL')"
+          :disabled="isSaving"
+          @click="handleCancel"
+        >
+          {{ getText('MRI_PA_COLL_BUT_CANCEL') }}
+        </v-btn>
+        <v-btn
+          variant="flat"
+          class="save-cohort-button save-cohort-button--primary"
+          :title="saveButtonText"
+          :disabled="isSaveDisabled"
+          @click="handleSave"
+        >
+          {{ saveButtonText }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </VDialog>
 </template>
 
 <script lang="ts">
 import { mapGetters, mapActions, mapMutations } from 'vuex'
-import MessageBox from '../MessageBox.vue'
-import appButton from '@/lib/ui/app-button.vue'
+import VDialog from '../vuetify/VDialog.vue'
+import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
 import { getPortalAPI } from '../../utils/PortalUtils'
@@ -133,8 +140,8 @@ import { getPortalAPI } from '../../utils/PortalUtils'
 export default {
   name: 'SaveCohortModal',
   components: {
-    MessageBox,
-    appButton,
+    VDialog,
+    VProgressCircular,
     appMessageStrip,
   },
   props: {
@@ -193,6 +200,27 @@ export default {
     isSaveDisabled() {
       return this.isSaving || this.hasExceededLength || this.cohortNameValidationState !== 'valid'
     },
+    cohortNameErrorMessages() {
+      if (this.hasExceededLength) {
+        return [this.getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters']
+      }
+      if (this.cohortNameValidationState === 'invalid') {
+        return [this.getText('MRI_PA_INVALID_NAME_ERROR')]
+      }
+      if (this.cohortNameValidationState === 'empty') {
+        return [this.getText('MRI_PA_BMK_EMPTY_NAME_ERROR')]
+      }
+      if (this.cohortNameValidationState === 'duplicate') {
+        return [this.getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists']
+      }
+      return []
+    },
+    cohortNameLabel() {
+      return this.formatFieldLabel(this.getText('MRI_PA_COLL_COHORT_NAME'))
+    },
+    cohortDescriptionLabel() {
+      return this.formatFieldLabel(this.getText('MRI_PA_COLL_COHORT_MATERIALIZATION_DESCRIPTION'))
+    },
     modalTitle() {
       if (this.mode === 'bookmark-only') {
         return this.getText('MRI_PA_TITLE_SAVE_BOOKMARK') || 'Save Current Filters'
@@ -225,9 +253,7 @@ export default {
   watch: {
     isOpen(newVal) {
       if (newVal) {
-        this.cohortName = this.isNewCohort
-          ? this.generateDefaultName()
-          : this.getActiveBookmark?.bookmarkname || ''
+        this.cohortName = this.isNewCohort ? this.generateDefaultName() : this.getActiveBookmark?.bookmarkname || ''
         this.cohortDescription = ''
         this.cohortNameValidationState = 'valid'
         this.savedBookmarkId = null
@@ -338,13 +364,14 @@ export default {
         if (this.mode !== 'bookmark-only') {
           await this.materializeCohort()
         }
-        
+
         this.bookmarkSavedButMaterializationFailed = false
-        
-        const successMessage = this.mode === 'bookmark-only'
-          ? this.getText('MRI_PA_BOOKMARK_SAVED') || 'Bookmark saved successfully'
-          : this.getText('MRI_PA_COHORT_SAVED')
-        
+
+        const successMessage =
+          this.mode === 'bookmark-only'
+            ? this.getText('MRI_PA_BOOKMARK_SAVED') || 'Bookmark saved successfully'
+            : this.getText('MRI_PA_COHORT_SAVED')
+
         this.messageStrip = {
           show: true,
           message: successMessage,
@@ -356,11 +383,13 @@ export default {
         })
       } catch (error) {
         console.error('[SaveCohortModal] Error:', error)
-        
+
         if (this.savedBookmarkId && !this.savedCohortId) {
           this.bookmarkSavedButMaterializationFailed = true
           const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
-          this.showError(`${this.getText('MRI_PA_COHORT_SAVED')} but materialization failed: ${errorMessage}. Click Retry to retry materialization.`)
+          this.showError(
+            `${this.getText('MRI_PA_COHORT_SAVED')} but materialization failed: ${errorMessage}. Click Retry to retry materialization.`
+          )
         } else {
           const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
           this.showError(errorMessage)
@@ -524,6 +553,14 @@ export default {
       this.bookmarkSavedButMaterializationFailed = false
       this.$emit('cancel')
     },
+    handleDialogModelUpdate(value: boolean) {
+      if (!value) {
+        this.handleCancel()
+      }
+    },
+    formatFieldLabel(label: string): string {
+      return String(label || '').replace(/\s*[:：]\s*$/, '')
+    },
     resetMessageStrip() {
       this.messageStrip = {
         show: false,
@@ -543,113 +580,60 @@ export default {
 </script>
 
 <style scoped>
-.input-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 24px;
+.save-cohort-card {
+  --save-cohort-brand: var(--color-mri-brand, #000080);
+  --save-cohort-error: var(--color-feedback-error, #a3293d);
+  --save-cohort-field-border: #acaba8;
+  --save-cohort-font: 'GT-America', sans-serif;
+  --save-cohort-muted-bg: #dedcda;
+
+  background: #fff;
+  border-radius: 16px;
+  box-shadow:
+    0 6px 30px 5px rgba(0, 0, 0, 0.12),
+    0 16px 24px 2px rgba(0, 0, 0, 0.14),
+    0 8px 10px -5px rgba(0, 0, 0, 0.2);
+  min-height: 288px;
+  overflow: hidden;
+  position: relative;
 }
 
 .save-cohort-dialog__header {
   align-items: center;
-  color: var(--color-mri-brand, #000080);
+  color: var(--save-cohort-brand);
   display: flex;
-  font-size: 24px;
-  font-weight: 700;
+  font-family: var(--save-cohort-font);
+  font-size: 18px;
+  font-weight: 500;
   justify-content: space-between;
+  letter-spacing: 0;
   line-height: 1.2;
+  min-height: 60px;
+  padding: 24px 24px 12px;
+  white-space: normal;
   width: 100%;
 }
 
 .save-cohort-dialog__close {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--color-mri-brand, #000080);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 30px;
+  color: var(--save-cohort-brand);
+  flex: 0 0 auto;
+  margin: -4px -4px 0 16px;
+  min-width: 32px;
+}
+
+.save-cohort-dialog__close-icon {
+  font-size: 24px;
   font-weight: 400;
-  height: 32px;
-  justify-content: center;
   line-height: 1;
-  padding: 0;
-  width: 32px;
 }
 
-.save-cohort-field {
-  position: relative;
-}
-
-.save-cohort-field__label {
-  background: var(--color-ui-lightest-bg, #fff);
-  color: var(--color-ui-dark-text, #595757);
-  font-size: 12px;
-  left: 12px;
-  line-height: 1;
-  padding: 0 4px;
-  position: absolute;
-  top: -5px;
-  z-index: 1;
-}
-
-.save-cohort-field__required {
-  color: var(--color-feedback-error, #a3293d);
-}
-
-.form-control {
-  border: 1px solid var(--color-ui-medium-border, #b8b8b8);
-  border-radius: 6px;
-  box-sizing: border-box;
-  color: var(--color-ui-darkest-text, #000);
-  font-size: 16px;
-  height: 48px;
-  padding: 0 14px;
-  width: 100%;
-}
-
-.form-control::placeholder {
-  color: var(--color-ui-medium-text, #8a8a8a);
-}
-
-.spinner {
-  display: inline-block;
-  animation: spin 1s linear infinite;
-  font-size: 1.5rem;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.check {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-.number {
-  font-size: 1.25rem;
-}
-
-.invalid-feedback {
-  display: none;
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: var(--color-feedback-error, #a3293d);
-}
-
-.form-control.is-invalid {
-  border-color: var(--color-feedback-error, #a3293d);
-}
-
-.form-control.is-invalid:focus {
-  border-color: var(--color-feedback-error, #a3293d);
-  box-shadow: 0 0 0 0.2rem rgba(163, 41, 61, 0.25);
+.save-cohort-body {
+  border-bottom: 1px solid var(--save-cohort-muted-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 156px;
+  padding: 24px;
 }
 
 .cohort-label {
@@ -658,95 +642,134 @@ export default {
   margin: 0;
 }
 
-.save-cohort-button {
-  flex: 1 1 0;
-}
-
-:global(.save-cohort-messagebox.message-box .modal-container) {
-  border-radius: 12px;
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.24);
-  max-width: calc(100vw - 32px);
-}
-
-:global(.save-cohort-messagebox.message-box .modal-header) {
-  background: var(--color-ui-lightest-bg, #fff);
-  box-shadow: none;
-  padding: 24px 24px 0;
-}
-
-:global(.save-cohort-messagebox.message-box div.message-box-custom header.modal-header) {
-  box-shadow: none;
-}
-
-:global(.save-cohort-messagebox.message-box .modal-header-container) {
-  height: auto;
-  justify-content: stretch;
-  line-height: normal;
-  padding: 0;
-}
-
-:global(.save-cohort-messagebox.message-box .modal-header-container > span) {
-  width: 100%;
-}
-
-:global(.save-cohort-messagebox.message-box .modal-body) {
-  max-height: calc(100vh - 180px);
-}
-
-:global(.save-cohort-messagebox.message-box .modal-footer) {
-  background: var(--color-ui-lightest-bg, #fff);
-  border-top: 1px solid var(--color-ui-light-border, #e5e5e5);
+.save-cohort-actions {
+  align-items: flex-start;
+  display: flex;
   gap: 16px;
+  height: 72px;
   padding: 16px 24px;
 }
 
-:global(.save-cohort-messagebox.message-box .modal-footer button.save-cohort-button) {
-  margin: 0;
-  padding: 0;
-}
-
-:global(.save-cohort-messagebox.message-box button.save-cohort-button .buttonInner) {
-  align-items: center;
-  border-radius: 6px;
-  display: flex;
-  height: 40px;
-  justify-content: center;
-  padding: 0 16px;
-  width: 100%;
-}
-
-:global(.save-cohort-messagebox.message-box button.save-cohort-button .buttonContent) {
+.save-cohort-button {
+  border-radius: 8px;
+  flex: 1 1 0;
+  font-family: var(--save-cohort-font);
   font-size: 16px;
-  font-weight: 700;
-  height: auto;
-  line-height: 1;
+  font-weight: 500;
+  height: 40px;
+  letter-spacing: 0;
+  line-height: 16px;
+  margin: 0;
+  min-width: 0;
+  text-transform: none;
 }
 
-:global(.save-cohort-messagebox.message-box button.save-cohort-button--primary .buttonInner) {
-  background: var(--color-mri-brand, #000080);
-  border-color: var(--color-mri-brand, #000080);
-  color: var(--color-mri-lightest-text, #fff);
-  text-shadow: none;
+.save-cohort-button--secondary {
+  background: #fff;
+  border-color: #cccfe5;
+  color: var(--save-cohort-brand);
 }
 
-:global(.save-cohort-messagebox.message-box button.save-cohort-button--secondary .buttonInner) {
-  background: var(--color-ui-lightest-bg, #fff);
-  border-color: var(--color-mri-button-border, #c9d0ea);
-  color: var(--color-mri-brand, #000080);
-  text-shadow: none;
+.save-cohort-button--primary {
+  background: var(--save-cohort-brand);
+  color: #fff;
 }
 
-:global(.save-cohort-messagebox.message-box button.save-cohort-button.disabled .buttonInner) {
-  background: #dedbd9;
-  border-color: #dedbd9;
-  color: #9a9a9a;
+.save-cohort-button--primary.v-btn--disabled {
+  background: var(--save-cohort-muted-bg);
+  color: var(--save-cohort-field-border);
   opacity: 1;
 }
 
-:global(.save-cohort-messagebox.message-box div.message-box-custom footer button.save-cohort-button.disabled .buttonInner) {
-  background: #dedbd9;
-  border-color: #dedbd9;
-  color: #9a9a9a;
+.save-cohort-loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.save-cohort-info {
+  font-family: var(--save-cohort-font);
+  font-size: 14px;
+}
+
+.save-cohort-info p {
+  margin: 0;
+}
+
+.save-cohort-info p + p {
+  margin-top: 8px;
+}
+
+:deep(.save-cohort-text-field .v-field) {
+  background: #fff;
+  color: #000;
+  font-family: var(--save-cohort-font);
+  min-height: 48px;
+}
+
+:deep(.save-cohort-text-field .v-field--focused .v-field__outline) {
+  --v-field-border-width: 1px;
+  color: var(--save-cohort-field-border);
+}
+
+:deep(.save-cohort-text-field .v-field--focused .v-field__outline__start),
+:deep(.save-cohort-text-field .v-field--focused .v-field__outline__end),
+:deep(.save-cohort-text-field .v-field--focused .v-field__outline__notch::before),
+:deep(.save-cohort-text-field .v-field--focused .v-field__outline__notch::after) {
+  border-color: var(--save-cohort-field-border);
+}
+
+:deep(.save-cohort-text-field .v-field__input) {
+  font-family: var(--save-cohort-font);
+  font-size: 16px;
+  line-height: 20px;
+  min-height: 48px;
+  padding-bottom: 14px;
+  padding-top: 14px;
+}
+
+:deep(.save-cohort-text-field .v-label.v-field-label) {
+  color: var(--save-cohort-field-border);
+  font-family: var(--save-cohort-font);
+  font-size: 16px;
   opacity: 1;
+}
+
+:deep(.save-cohort-text-field .v-field-label--floating) {
+  background: #fff;
+  padding: 0 6px;
+  z-index: 2;
+}
+
+:deep(.save-cohort-text-field .v-label.v-field-label.v-field-label--floating) {
+  color: #595757;
+}
+
+.save-cohort-field-label-content {
+  align-items: baseline;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.save-cohort-field__required {
+  color: var(--save-cohort-error);
+}
+
+:deep(.save-cohort-text-field .v-messages__message) {
+  color: var(--save-cohort-error);
+  font-family: var(--save-cohort-font);
+}
+
+@media (max-width: 620px) {
+  .save-cohort-dialog__header {
+    padding: 20px 20px 12px;
+  }
+
+  .save-cohort-body {
+    padding: 20px;
+  }
+
+  .save-cohort-actions {
+    padding: 16px 20px;
+  }
 }
 </style>
