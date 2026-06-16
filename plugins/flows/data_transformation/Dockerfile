@@ -68,17 +68,17 @@ RUN rm -rf /var/lib/apt/lists/* && \
     apt-get clean && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    wget \
-    xvfb \
-    nodejs \
-    npm \
-    libpq5 \
-    openjdk-17-jdk \
-    # installing R dependencies
-    libglpk40 \
-    libwebpmux3 \
+        git \
+        curl \
+        wget \
+        xvfb \
+        nodejs \
+        npm \
+        libpq5 \
+        openjdk-17-jdk \
+        # installing R dependencies
+        libglpk40 \
+        libwebpmux3 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Microsoft package and .NET SDK
