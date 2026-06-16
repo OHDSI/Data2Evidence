@@ -74,42 +74,6 @@ spec:
               cp -rfv /data/plugins/.npmrc /usr/src/data/plugins/.npmrc && \
               cp -rfv /data/plugins/bunfig.toml /usr/src/data/plugins/bunfig.toml && exit 0",
             ]
-        # The in-engine trex core runs Knex DB migrations on startup, connecting as
-        # the config-admin user. Wait until pg-mgmt-init has created that user and DB
-        # so the core doesn't crash on an unbootstrapped database (mirrors logto-check).
-        - name: pg-check
-          image: postgres:15-alpine
-          resources:
-            {{- toYaml .Values.global.resources.logtoCheck | nindent 12 }}
-          env:
-            - name: PGHOST
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_HOST
-            - name: PGPORT
-              value: "5432"
-            - name: PGDATABASE
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_CONFIG_DB
-            - name: PGUSER
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_CONFIG_ADMIN_USER
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: POSTGRES_CONFIG_ADMIN_PASSWORD
-          command:
-            [
-              "sh",
-              "-c",
-              "until psql -c 'CREATE SCHEMA IF NOT EXISTS _pgcheck; DROP SCHEMA _pgcheck;' >/dev/null 2>&1; do echo 'waiting for postgres + config-admin user with create privilege'; sleep 5; done; echo 'postgres ready'",
-            ]
         - name: logto-check
           image: busybox:latest
           resources:
@@ -672,47 +636,9 @@ spec:
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
-            # Helm does not yet wire the native WebAPI's datasource/security config,
-            # so keep it off here (parity with the previous trex behaviour). Wiring
-            # in-engine WebAPI for helm is a follow-up.
-            - name: WEBAPI_NATIVE_ENABLED
-              value: "false"
-            # The trex engine boots the trexas HTTP gateway (:33001) and the d2e
-            # core eszips from this swarm config; without it nothing listens on 33001.
-            - name: SWARM_NODE
-              value: d2e
-            - name: SWARM_CONFIG
-              value: |-
-                {
-                  "cluster_id": "d2e",
-                  "nodes": {
-                    "d2e": {
-                      "gossip_addr": "0.0.0.0:4200",
-                      "extensions": [
-                        {
-                          "name": "trexas",
-                          "config": {
-                            "host": "0.0.0.0",
-                            "port": 33001,
-                            "main_service_path": "/usr/src/core/server/index.eszip",
-                            "event_worker_path": "/usr/src/core/event/index.eszip",
-                            "tls_port": 33000,
-                            "tls_cert_path": "/usr/src/cert/cert.pem",
-                            "tls_key_path": "/usr/src/cert/key.pem"
-                          }
-                        },
-                        {
-                          "name": "pgwire",
-                          "config": { "host": "0.0.0.0", "port": 5433 }
-                        }
-                      ]
-                    }
-                  }
-                }
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
-          # Use the image CMD (write TLS cert, then `exec trex`); the trexsql
-          # base has no `npm start`.
+          command: ["npm", "run", "start"]
           lifecycle:
             postStart:
               exec:
@@ -745,23 +671,15 @@ spec:
               name: materialize-cohorts-client-pki
               subPath: API_TLS_CA
             {{- end }}
-          # The trexsql engine boots the trexas gateway (loads extensions, inits
-          # the core, registers plugins) before :33001 serves — slow on a loaded
-          # node. A startupProbe holds liveness off until it's up (up to ~10m),
-          # mirroring compose's start_period; liveness then guards steady state.
-          startupProbe:
-            httpGet:
-              path: /_internal/health
-              port: 33001
-            failureThreshold: 60
-            periodSeconds: 10
-            timeoutSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /_internal/health
-              port: 33001
-            failureThreshold: 6
-            periodSeconds: 10
+            exec:
+              command:
+                - npm
+                - run
+                - health
+            failureThreshold: 5
+            initialDelaySeconds: 200
+            periodSeconds: 5
             timeoutSeconds: 10
         {{- if .Values.features.materializeCohorts }}
         - name: materialize-cohorts
