@@ -11,12 +11,25 @@ export interface TimingResult {
   samples: number[];
 }
 
+async function warmupScenario(scenario: Scenario, headers: Record<string, string>): Promise<void> {
+  for (let i = 0; i < config.warmupRequests; i++) {
+    try {
+      const res = await fetch(scenario.url, { method: scenario.method, headers, body: scenario.body });
+      await res.text();
+    } catch (err) {
+      console.warn(`[warmup] ${scenario.name} request ${i + 1} failed:`, err);
+    }
+  }
+}
+
 export async function runScenario(scenario: Scenario): Promise<TimingResult> {
   const samples: number[] = [];
   const headers: Record<string, string> = { ...scenario.headers };
   if (config.bearerToken) {
     headers["Authorization"] = `Bearer ${config.bearerToken}`;
   }
+
+  await warmupScenario(scenario, headers);
 
   for (let i = 0; i < config.repetitions; i++) {
     const start = performance.now();

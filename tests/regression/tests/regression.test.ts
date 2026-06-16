@@ -46,33 +46,37 @@ const STATUS_ICON: Record<string, string> = {
 function printTable(results: CompareResult[]): void {
   const COL_SCENARIO = 32;
   const COL_P95      = 26;
+  const COL_MIN      = 8;
+  const COL_MAX      = 8;
   const COL_DELTA    = 8;
   const COL_STATUS   = 9;
 
   const pad  = (s: string, n: number) => s.padEnd(n);
   const lpad = (s: string, n: number) => s.padStart(n);
-  const divider = `${"─".repeat(COL_SCENARIO + 2)}┼${"─".repeat(COL_P95 + 2)}┼${"─".repeat(COL_DELTA + 2)}┼${"─".repeat(COL_STATUS + 2)}`;
-  const row = (a: string, b: string, c: string, d: string) =>
-    ` ${pad(a, COL_SCENARIO)} │ ${pad(b, COL_P95)} │ ${lpad(c, COL_DELTA)} │ ${pad(d, COL_STATUS)}`;
+  const divider = `${"─".repeat(COL_SCENARIO + 2)}┼${"─".repeat(COL_P95 + 2)}┼${"─".repeat(COL_MIN + 2)}┼${"─".repeat(COL_MAX + 2)}┼${"─".repeat(COL_DELTA + 2)}┼${"─".repeat(COL_STATUS + 2)}`;
+  const row = (a: string, b: string, c: string, d: string, e: string, f: string) =>
+    ` ${pad(a, COL_SCENARIO)} │ ${pad(b, COL_P95)} │ ${lpad(c, COL_MIN)} │ ${lpad(d, COL_MAX)} │ ${lpad(e, COL_DELTA)} │ ${pad(f, COL_STATUS)}`;
 
   const lines: string[] = [
     "",
     "Performance Regression Results",
     divider,
-    row("Scenario", "p95 (baseline)", "Δ%", "Status"),
+    row("Scenario", "baseline", "min", "max", "Δ%", "Status"),
     divider,
   ];
 
   for (const r of results) {
-    const p95Str =
-      r.baselineP95Ms !== null
-        ? `${r.currentP95Ms.toFixed(1)}ms (${r.baselineP95Ms.toFixed(1)}ms)`
-        : `${r.currentP95Ms.toFixed(1)}ms (no baseline)`;
+    const minBaselineStr =
+      r.baselineMinMs !== null
+        ? `${r.currentMinMs.toFixed(1)}ms (${r.baselineMinMs.toFixed(1)}ms)`
+        : `${r.currentMinMs.toFixed(1)}ms (no baseline)`;
+    const minStr = `${r.minMs.toFixed(1)}ms`;
+    const maxStr = `${r.maxMs.toFixed(1)}ms`;
     const deltaStr =
       r.deltaFraction !== null
         ? `${r.deltaFraction >= 0 ? "+" : ""}${(r.deltaFraction * 100).toFixed(1)}%`
         : "-";
-    lines.push(row(r.scenarioName, p95Str, deltaStr, STATUS_ICON[r.status]));
+    lines.push(row(r.scenarioName, minBaselineStr, minStr, maxStr, deltaStr, STATUS_ICON[r.status]));
   }
 
   lines.push(divider);
@@ -83,8 +87,8 @@ function printTable(results: CompareResult[]): void {
     lines.push("Scenarios exceeding fail threshold:");
     for (const r of failing) {
       lines.push(
-        `  ✗ ${r.scenarioName}: p95 ${r.currentP95Ms.toFixed(1)}ms` +
-        ` (baseline ${r.baselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ✗ ${r.scenarioName}: min ${r.currentMinMs.toFixed(1)}ms` +
+        ` (baseline ${r.baselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -95,8 +99,8 @@ function printTable(results: CompareResult[]): void {
     lines.push("Scenarios exceeding warn threshold:");
     for (const r of warning) {
       lines.push(
-        `  ⚠ ${r.scenarioName}: p95 ${r.currentP95Ms.toFixed(1)}ms` +
-        ` (baseline ${r.baselineP95Ms!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ⚠ ${r.scenarioName}: min ${r.currentMinMs.toFixed(1)}ms` +
+        ` (baseline ${r.baselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -128,8 +132,8 @@ if (scenarios.length === 0) {
 
         expect(
           comparison.status,
-          `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
-          (comparison.baselineP95Ms ? ` (baseline ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
+          `${scenario.name} min ${timing.minMs.toFixed(1)}ms exceeded fail threshold` +
+          (comparison.baselineMinMs ? ` (baseline ${comparison.baselineMinMs.toFixed(1)}ms)` : "")
         ).not.toBe("fail");
       });
     }

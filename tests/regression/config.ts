@@ -15,4 +15,9 @@ export const config = {
 
   // Substituted into any query param or JSON body field named "datasetId".
   DATASET_ID: process.env.DATASET_ID ?? "",
+
+  // PA_CONFIG_ID: process.env.PA_CONFIG_ID ?? "4321DCBAB",
+  PA_CONFIG_ID: process.env.PA_CONFIG_ID ?? "4fce3cb7-32bf-4b46-8cba-32e4f77a14dd",
+
+  warmupRequests: Number(process.env.PERF_WARMUP_REQUESTS ?? 1),
 } as const;

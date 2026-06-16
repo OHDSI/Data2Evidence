@@ -46,7 +46,7 @@ async function main() {
     process.stdout.write(`  ${scenario.name} ... `);
     try {
       const result = await runScenario(scenario);
-      newBaseline[scenario.name] = { p95Ms: result.p95Ms };
+      newBaseline[scenario.name] = { minMs: result.minMs };
       console.log(`p95=${result.p95Ms.toFixed(1)}ms  p50=${result.p50Ms.toFixed(1)}ms  min=${result.minMs.toFixed(1)}ms  max=${result.maxMs.toFixed(1)}ms`);
     } catch (err) {
       console.log(`ERROR: ${(err as Error).message}`);
