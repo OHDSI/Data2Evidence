@@ -628,6 +628,8 @@
         "ALP_USER_ADMIN": [
           "usermgmt.dataAdmin.read",
           "usermgmt.dataAdmin.write",
+          "usermgmt.datasetRole.write",
+          "usermgmt.datasetRole.sync",
           "usermgmt.user.read",
           "usermgmt.user.write",
           "usermgmt.user.add",
@@ -660,6 +662,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "usermgmt.dataAdmin.read",
+          "usermgmt.datasetRole.write",
+          "usermgmt.datasetRole.sync",
           "usermgmt.group.read",
           "usermgmt.me",
           "usermgmt.studyAccessRequest.read",
@@ -1221,6 +1225,15 @@
           ]
         },
         {
+          "path": "^/usermgmt/api/me/sync-webapi-roles",
+          "scopes": [
+            "usermgmt.me"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/usermgmt/api/me",
           "scopes": [
             "usermgmt.me"
@@ -1316,6 +1329,18 @@
           "path": "^/usermgmt/api/user-group/status/(.+)",
           "scopes": [
             "usermgmt.userGroup.status"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/dataset-role/sync-all",
+          "scopes": [
+            "usermgmt.datasetRole.sync"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/dataset-role/?$",
+          "scopes": [
+            "usermgmt.datasetRole.write"
           ]
         },
         {

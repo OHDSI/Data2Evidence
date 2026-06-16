@@ -15,6 +15,19 @@ from rpy2.robjects.packages import importr
 
 from _shared_flow_utils.logger.logger import Logger
 
+TOKEN_STUDY_CODE_PATTERN = re.compile(r'^[a-zA-Z0-9_]+$')
+
+def validate_token_study_code(token_study_code: str) -> str:
+    """Validate a tokenStudyCode used as a SQL identifier (e.g. results schema name)."""
+    if not token_study_code:
+        raise ValueError('TokenStudyCode is missing')
+    if not TOKEN_STUDY_CODE_PATTERN.fullmatch(token_study_code):
+        raise ValueError(
+            f'TokenStudyCode - {token_study_code} is not valid. '
+            'It should only contain alphanumeric characters and underscores.'
+        )
+    return token_study_code
+
 def get_node_list(graph):
     nodes = {}
     sorted_nodes = []
