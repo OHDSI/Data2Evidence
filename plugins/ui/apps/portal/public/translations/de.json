@@ -839,7 +839,7 @@
   "QUERIES_SECTION__SQL": "SQL",
   "RELEASE_SELECTOR__RELEASE_SELECTION": "Auswahl freigeben",
   "REQUEST_PANEL__APPROVE": "Genehmigen",
-  "REQUEST_PANEL__EMAIL": "Email",
+  "REQUEST_PANEL__NAME": "Name",
   "REQUEST_PANEL__NO_DATA": "Keine Daten verfügbar",
   "REQUEST_PANEL__REJECT": "Ablehnen",
   "REQUEST_PANEL__REQUESTED": "Angefordert am",

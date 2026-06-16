@@ -883,7 +883,7 @@ export const i18nDefault = {
     QUERIES_SECTION__SQL: "SQL",
     RELEASE_SELECTOR__RELEASE_SELECTION: "Release selection",
     REQUEST_PANEL__APPROVE: "Approve",
-    REQUEST_PANEL__EMAIL: "Email",
+    REQUEST_PANEL__NAME: "Name",
     REQUEST_PANEL__NO_DATA: "No data available",
     REQUEST_PANEL__REJECT: "Reject",
     REQUEST_PANEL__REQUESTED: "Requested on",
