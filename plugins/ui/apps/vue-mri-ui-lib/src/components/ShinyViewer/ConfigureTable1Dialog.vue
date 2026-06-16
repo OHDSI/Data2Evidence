@@ -3,23 +3,24 @@
     v-if="isOpen"
     class="table1-config-messagebox"
     messageType="custom"
-    dialogWidth="520px"
+    dialogWidth="540px"
     :busy="loading"
-    @close="handleCancel"
+    @close="handleClose"
   >
     <template #header>
       <div class="table1-dialog-header">
-        <span>{{ getText('MRI_PA_TABLE1_CONFIG_TITLE') }}</span>
-        <button type="button" class="table1-dialog-close" :aria-label="getText('MRI_PA_CLOSE_BUTTON')" @click="handleCancel">
-          &#215;
-        </button>
+        <div class="table1-dialog-title-row">
+          <span>{{ getText('MRI_PA_TABLE1_CONFIG_TITLE') }}</span>
+          <button type="button" class="table1-dialog-close" :aria-label="getText('MRI_PA_CLOSE_BUTTON')" @click="handleClose">
+            <span class="table1-dialog-close-icon" aria-hidden="true">&#215;</span>
+          </button>
+        </div>
+        <p class="description">{{ getText('MRI_PA_TABLE1_CONFIG_DESC') }}</p>
       </div>
     </template>
 
     <template #body>
       <div class="table1-config-dialog">
-        <p class="description">{{ getText('MRI_PA_TABLE1_CONFIG_DESC') }}</p>
-
         <div class="covariate-card">
           <div class="covariate-card__header">{{ getText('MRI_PA_TABLE1_COVARIATE_HEADER') }}</div>
           <div class="covariate-card__body">
@@ -84,6 +85,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   (e: 'cancel'): void
+  (e: 'close'): void
   (e: 'confirm', conceptSets: Table1ConceptSetSelection[]): void
 }>()
 
@@ -134,6 +136,10 @@ function handleCancel() {
   emit('cancel')
 }
 
+function handleClose() {
+  emit('close')
+}
+
 function handleConfirm() {
   if (loading.value || errorMessage.value || selectedConceptSetItems.value.length === 0) {
     return
@@ -144,25 +150,34 @@ function handleConfirm() {
 
 <style scoped>
 .table1-config-dialog {
-  min-height: 264px;
-  padding: 24px;
+  padding: 0 24px 20px;
 }
 
 .description {
   color: #595757;
   font-size: 16px;
-  line-height: 1.45;
-  margin: 0 0 20px;
+  font-weight: 400;
+  line-height: 1.5;
+  margin: 8px 0 0;
 }
 
 .table1-dialog-header {
-  align-items: center;
+  align-items: stretch;
   color: var(--color-mri-brand, #000080);
   display: flex;
-  font-size: 24px;
-  font-weight: 700;
-  justify-content: space-between;
+  flex-direction: column;
+  font-size: 18px;
+  font-weight: 500;
+  gap: 0;
   line-height: 1.2;
+  width: 100%;
+}
+
+.table1-dialog-title-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  min-height: 24px;
   width: 100%;
 }
 
@@ -173,31 +188,37 @@ function handleConfirm() {
   color: var(--color-mri-brand, #000080);
   cursor: pointer;
   display: inline-flex;
-  font-size: 30px;
   font-weight: 400;
-  height: 32px;
+  height: 24px;
   justify-content: center;
   line-height: 1;
+  margin: 0;
   padding: 0;
-  width: 32px;
+  width: 24px;
+}
+
+.table1-dialog-close-icon {
+  font-size: 28px;
+  line-height: 1;
 }
 
 .covariate-card {
-  border: 1px solid var(--color-ui-light-border, #d9d9d9);
+  border: 1px solid var(--color-ui-light-border, #dedcda);
   border-radius: 4px;
   overflow: visible;
 }
 
 .covariate-card__header {
-  background: #edf4fb;
+  background: #ebf2fa;
   color: var(--color-mri-brand, #000080);
   font-size: 16px;
-  font-weight: 700;
-  padding: 14px 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 10px 14px;
 }
 
 .covariate-card__body {
-  padding: 24px 16px;
+  padding: 12px 16px;
 }
 
 .covariate-picker__label {
@@ -227,15 +248,20 @@ function handleConfirm() {
 }
 
 :global(.table1-config-messagebox.message-box .modal-container) {
-  border-radius: 12px;
-  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.24);
+  border-radius: 16px;
+  box-shadow:
+    0 6px 30px 5px rgba(0, 0, 0, 0.12),
+    0 16px 24px 2px rgba(0, 0, 0, 0.14),
+    0 8px 10px -5px rgba(0, 0, 0, 0.2);
   max-width: calc(100vw - 32px);
+  overflow: hidden;
 }
 
 :global(.table1-config-messagebox.message-box .modal-header) {
   background: var(--color-ui-lightest-bg, #fff);
+  border-bottom: 0;
   box-shadow: none;
-  padding: 24px 24px 0;
+  padding: 24px 24px 12px;
 }
 
 :global(.table1-config-messagebox.message-box div.message-box-custom header.modal-header) {
@@ -255,11 +281,12 @@ function handleConfirm() {
 
 :global(.table1-config-messagebox.message-box .modal-body) {
   max-height: calc(100vh - 180px);
+  padding: 0;
 }
 
 :global(.table1-config-messagebox.message-box .modal-footer) {
   background: var(--color-ui-lightest-bg, #fff);
-  border-top: 1px solid var(--color-ui-light-border, #e5e5e5);
+  border-top: 1px solid var(--color-ui-light-border, #dedcda);
   gap: 16px;
   padding: 16px 24px;
 }
@@ -271,7 +298,7 @@ function handleConfirm() {
 
 :global(.table1-config-messagebox.message-box button.table1-action-button .buttonInner) {
   align-items: center;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   height: 40px;
   justify-content: center;
@@ -281,7 +308,7 @@ function handleConfirm() {
 
 :global(.table1-config-messagebox.message-box button.table1-action-button .buttonContent) {
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 500;
   height: auto;
   line-height: 1;
 }

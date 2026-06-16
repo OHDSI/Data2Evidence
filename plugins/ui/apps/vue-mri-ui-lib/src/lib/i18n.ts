@@ -927,7 +927,7 @@ export const i18n = {
     MRI_PA_NO_DASHBOARDS_AVAILABLE: 'No dashboards available for this dataset.',
     MRI_PA_NO_CONFIGURED_DASHBOARDS: 'No configured dashboards available for this dataset.',
     MRI_PA_LOADING_DASHBOARD: 'Loading dashboard...',
-    MRI_PA_TABLE1_CONFIG_TITLE: 'Configure Table 1',
+    MRI_PA_TABLE1_CONFIG_TITLE: 'Configure table 1',
     MRI_PA_TABLE1_CONFIG_DESC:
       'Table 1 provides a statistical summary of patients in this cohort. Age, gender, and race are always included. Add more covariates to include as variables.',
     MRI_PA_TABLE1_NO_CONCEPT_SETS: 'No concept sets are available for this dataset.',

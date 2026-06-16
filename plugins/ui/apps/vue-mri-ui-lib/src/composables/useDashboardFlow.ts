@@ -172,6 +172,7 @@ export interface UseDashboardFlowReturn {
   ) => Promise<void>
   handleSaveCohortSuccess: () => void
   handleCancelSaveCohort: () => void
+  closeDashboardFlow: () => void
   closeDashboardModal: () => void
   isProcessingDashboardFlow: () => boolean
 }
@@ -1190,6 +1191,15 @@ export function useDashboardFlow(
     isProcessingDashboardFlow = false
   }
 
+  function closeDashboardFlow() {
+    showDashboardSelectionModal.value = false
+    showRequiredFiltersModal.value = false
+    showTable1ConfigModal.value = false
+    showSaveCohortModal.value = false
+    showDashboardModal.value = false
+    isProcessingDashboardFlow = false
+  }
+
   function closeDashboardModal() {
     showDashboardModal.value = false
   }
@@ -1239,6 +1249,7 @@ export function useDashboardFlow(
     handleRequiredFiltersSubmit,
     handleSaveCohortSuccess,
     handleCancelSaveCohort,
+    closeDashboardFlow,
     closeDashboardModal,
     isProcessingDashboardFlow: isProcessingDashboardFlowFn,
   }

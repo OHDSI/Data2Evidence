@@ -30,7 +30,7 @@
             color="primary"
             class="save-cohort-dialog__close"
             :aria-label="getText('MRI_PA_CLOSE_BUTTON')"
-            @click="handleCancel"
+            @click="handleClose"
           >
             <span class="save-cohort-dialog__close-icon" aria-hidden="true">&#215;</span>
           </v-btn>
@@ -584,12 +584,16 @@ export default {
       this.bookmarkSavedButMaterializationFailed = false
       this.$emit('cancel')
     },
+    handleClose() {
+      this.bookmarkSavedButMaterializationFailed = false
+      this.$emit('close')
+    },
     handleDialogModelUpdate(value: boolean) {
       if (this.isSaving) {
         return
       }
       if (!value) {
-        this.handleCancel()
+        this.handleClose()
       }
     },
     formatFieldLabel(label: string): string {

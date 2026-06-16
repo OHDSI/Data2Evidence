@@ -117,6 +117,7 @@
       :dataset-id="getSelectedDataset?.id || ''"
       :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
       @cancel="dashboardFlow.handleTable1ConfigCancel"
+      @close="dashboardFlow.closeDashboardFlow"
       @confirm="dashboardFlow.handleTable1ConfigConfirm"
     />
   </Teleport>
@@ -141,6 +142,7 @@
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
+      @close="dashboardFlow.closeDashboardFlow"
     />
   </Teleport>
 

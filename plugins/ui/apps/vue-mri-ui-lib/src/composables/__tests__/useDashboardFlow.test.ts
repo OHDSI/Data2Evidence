@@ -235,6 +235,28 @@ describe('useDashboardFlow', () => {
     })
   })
 
+  it('closes the dashboard flow stack without reopening Configure Table1', async () => {
+    const dispatch = vi.fn().mockResolvedValue(undefined)
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+    flow.selectedDashboard.value = { name: 'table1' }
+    flow.selectedWizardDefinition.value = {
+      id: 'table1',
+      name: 'Table1',
+      fields: [],
+      flow: 'table1-config',
+    }
+    flow.showTable1ConfigModal.value = true
+
+    await flow.handleTable1ConfigConfirm([{ id: '1', name: 'dm2hana' }])
+    flow.closeDashboardFlow()
+
+    expect(flow.showSaveCohortModal.value).toBe(false)
+    expect(flow.showTable1ConfigModal.value).toBe(false)
+    expect(flow.showDashboardModal.value).toBe(false)
+    expect(flow.isProcessingDashboardFlow()).toBe(false)
+    expect(flow.confirmedTable1ConceptSets.value).toEqual([{ id: '1', name: 'dm2hana' }])
+  })
+
   it('does not reopen Configure Table1 if a save cancel event arrives after dashboard success', async () => {
     const dispatch = vi.fn().mockResolvedValue(undefined)
     const flow = useDashboardFlow(dispatch, createDashboardGetters())
