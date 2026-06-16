@@ -4,7 +4,7 @@
 # (started by core/server with SELECT webapi_start()), not as a separate Java
 # process. Overlays d2e's core, plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-3d681f8df5a5ac23026b8c11ae934fcccb4a0bd6@sha256:9c8b04e383e12a961ec1d34165ed7cd05193d9a85254cf7758aa0afeabbd319d AS base
+FROM ghcr.io/ohdsi/trexsql:sha-bdedf8d9cc826b7815af1830d4a1c05ad7baf5db@sha256:b3f0e1142ba661e2b98d614b1e753d5920458e04c871399c5451038aa5443863 AS base
 
 USER root
 WORKDIR /usr/src
