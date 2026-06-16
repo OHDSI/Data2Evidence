@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
 import readline from "node:readline";
-import { Agent } from "undici";
+import { Agent, fetch } from "undici";
 
 
 // Helper functions
