@@ -23,7 +23,13 @@
     </DisabledHoverPopover>
     <downloadCSVDialog v-if="csvShow" @closeEv="onCsvClosed"></downloadCSVDialog>
     <imageExport v-if="imageShow" @closeEv="onImageExported"></imageExport>
-    <VSnackbar v-model="snackbar" location="top right" color="var(--color-mri-success-bg)" :timeout="3000">
+    <VSnackbar
+      v-model="snackbar"
+      location="top right"
+      color="var(--color-mri-success-bg)"
+      :timeout="3000"
+      rounded="16px"
+    >
       <span style="color: rgba(0, 0, 0, 0.87); display: inline-flex; align-items: center">
         <appIcon icon="successCheck" style="margin-right: 8px; color: #00855f" />
         {{ snackbarText }}
