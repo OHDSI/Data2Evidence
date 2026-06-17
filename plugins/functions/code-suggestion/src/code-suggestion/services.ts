@@ -180,9 +180,59 @@ export const getCohortResponse = async (req: any) => {
     // it returned, regardless of how the model later phrases (or mangles) it.
     // linkRef is filled while the route consumes the stream (when the agent
     // actually calls the tool); the route reads it after the stream ends.
-    const linkRef: { url: string } = { url: "" };
+    const linkRef: { url: string; attempted: boolean } = {
+      url: "",
+      attempted: false,
+    };
+    // get_concept_set is used by the guard below to verify persisted ids.
+    const getConceptSetTool = tools.find(
+      (t: any) => t.name === "get_concept_set",
+    );
     const originalInvoke = buildTool.invoke.bind(buildTool);
     buildTool.invoke = async (input: any, config: any) => {
+      linkRef.attempted = true;
+
+      // Safety guard: before building, verify every conceptSetId in the clauses
+      // is a real persisted concept set (portal.user_artifact row).  This catches
+      // the class of bug where the LLM passes a phenotype/library id (e.g. 503)
+      // or a raw OMOP concept id instead of a create_concept_set-returned id.
+      if (getConceptSetTool) {
+        const clauses: Array<{ conceptSetId?: number }> = Array.isArray(
+          input?.clauses,
+        )
+          ? input.clauses
+          : [];
+        const uniqueIds = [
+          ...new Set(
+            clauses
+              .map((c) => c.conceptSetId)
+              .filter((id): id is number => id != null),
+          ),
+        ];
+
+        const invalid: number[] = [];
+        await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              await getConceptSetTool.invoke({ conceptSetId: id }, config);
+            } catch {
+              invalid.push(id);
+            }
+          }),
+        );
+
+        if (invalid.length > 0) {
+          throw new Error(
+            `conceptSetId(s) [${invalid.join(", ")}] are not persisted concept sets ` +
+              `and cannot be used in a cohort deep link. ` +
+              `Do NOT use phenotype/library ids or raw OMOP concept ids as conceptSetId. ` +
+              `For each invalid id, call create_concept_set with the OMOP concept ids ` +
+              `for that condition/drug/measurement, then use the id returned by ` +
+              `create_concept_set in your clause.`,
+          );
+        }
+      }
+
       const out = await originalInvoke(input, config);
       const url = extractCohortUrl(out);
       if (url) linkRef.url = url;
