@@ -11,8 +11,9 @@ export const i18nDefault = {
     ACCESS_PANEL__NO_USERS: "No available users to add",
     ACCESS_PANEL__REVOKE: "Revoke",
     ACCESS_PANEL__ROLE: "Role",
-    ACCESS_PANEL__SUCCESS: "You've added access for {0}",
-    ACCESS_PANEL__SUCCESS_REVOKE: "You've revoked access for user {0}",
+    ACCESS_PANEL__SUCCESS: "User {0} has been granted permission. They must sign in again to access the dataset.",
+    ACCESS_PANEL__SUCCESS_REVOKE:
+      "User {0} has had their permission revoked. They must sign in again for the change to take effect.",
     ACCOUNT_BUTTON__ACCOUNT: "Account",
     ACCOUNT_BUTTON__LOGIN: "Login",
     ACCOUNT_TAB__LINK: "Account",

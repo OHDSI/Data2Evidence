@@ -46,7 +46,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible()
     await page.getByRole('menuitem', { name: /admin/ }).click()
     await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible()
-    await expect(page.getByTestId('alert-title')).toContainText("You've added access for admin")
+    await expect(page.getByTestId('alert-title')).toContainText('User admin has been granted permission')
   }
   await page.getByTestId('dialog-close').click()
 
