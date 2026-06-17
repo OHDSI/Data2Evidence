@@ -12,7 +12,8 @@
         @focus="item.isTruncated && showTooltip($event, item.fullName)"
         @blur="hideTooltip"
       >
-        <span class="stackbar-legend-entry-box" :style="{ 'background-color': item.color }"></span>
+        <span v-if="item.kind === 'bar'" class="stackbar-legend-entry-box" :style="barSwatchStyle(item.color)"></span>
+        <span v-else class="stackbar-legend-entry-line" :style="{ 'background-color': item.color }"></span>
         <span class="stackbar-legend-entry-text">{{ item.displayName }}</span>
       </li>
     </ul>
@@ -35,12 +36,36 @@ interface Trace {
 interface Props {
   traces: Trace[]
   colorway: string[]
+  barOpacity?: number
+  showDistributionCurve?: boolean
+  // When true, bar swatches render as an area-fill square (translucent fill + solid border)
+  // to match the kernel-density-plot rendering instead of a solid filled square.
+  areaFill?: boolean
+  // Hex alpha suffix used for the translucent fill when areaFill is true.
+  fillAlpha?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   traces: () => [],
   colorway: () => [],
+  barOpacity: 1,
+  showDistributionCurve: false,
+  areaFill: false,
+  fillAlpha: '30',
 })
+
+const barSwatchStyle = (color: string) => {
+  if (props.areaFill) {
+    return {
+      'background-color': color + props.fillAlpha,
+      border: `1px solid ${color}`,
+    }
+  }
+  return {
+    'background-color': color,
+    opacity: props.barOpacity,
+  }
+}
 
 const tooltipVisible = ref(false)
 const tooltipText = ref('')
@@ -74,17 +99,28 @@ const hideTooltip = () => {
 const legendItems = computed(() => {
   const totalTraces = props.traces.length
   // Reverse to match stacking order (top of stack shown first in legend)
-  return [...props.traces].reverse().map((trace, index) => {
+  const reversed = [...props.traces].reverse()
+
+  const makeItem = (kind: 'bar' | 'curve', trace: Trace, index: number) => {
     const originalIndex = totalTraces - 1 - index
     const fullName = trace.meta?.fullName || trace.name
     const displayName = trace.name
     return {
+      kind,
       displayName,
       fullName,
       isTruncated: fullName !== displayName,
       color: props.colorway.length > 0 ? props.colorway[originalIndex % props.colorway.length] : '#cccccc',
     }
-  })
+  }
+
+  const barItems = reversed.map((trace, index) => makeItem('bar', trace, index))
+
+  if (!props.showDistributionCurve) return barItems
+
+  // Distribution curve legend items share the same labels and colors as the bars
+  const curveItems = reversed.map((trace, index) => makeItem('curve', trace, index))
+  return [...barItems, ...curveItems]
 })
 </script>
 
@@ -123,6 +159,14 @@ const legendItems = computed(() => {
   min-width: 12px;
   margin-right: 8px;
   border-radius: 2px;
+  box-sizing: border-box;
+}
+.stackbar-legend-entry-line {
+  width: 12px;
+  height: 2px;
+  min-width: 12px;
+  margin-right: 8px;
+  border-radius: 1px;
 }
 .stackbar-legend-entry-text {
   font-size: 12px;
