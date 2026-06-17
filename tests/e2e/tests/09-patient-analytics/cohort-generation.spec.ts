@@ -70,7 +70,7 @@ test('cohort-generation', async ({ page }) => {
   // CONDITION OCCURRENCE FILTER
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
   // Verify the condition occurrence filter was added

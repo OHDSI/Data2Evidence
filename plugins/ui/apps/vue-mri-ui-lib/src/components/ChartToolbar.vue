@@ -143,10 +143,15 @@
       max-width="90%"
       persistent
     >
-      <div class="inclusion-report-dialog">
+      <div class="inclusion-report-dialog" data-testid="pa-inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
-          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">Attrition Plot</div>
+          <button
+            class="inclusion-report-dialog__close-btn"
+            @click="closeInclusionReportModal"
+            :title="'Close'"
+            data-testid="pa-inclusion-report-dialog-close-btn"
+          >
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
         </div>

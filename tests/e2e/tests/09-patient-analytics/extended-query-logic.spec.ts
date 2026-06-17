@@ -19,11 +19,11 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Add filtercards
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Drug Exposure' }).click()
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
@@ -63,8 +63,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('pa-pane-right').getByText('Device Exposure A')).not.toBeVisible()
 
   // Add condition start date to x1
-  await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence B').getByText('Condition Occurrence B').hover()
-  await page.getByTestId('pa-axis-dropdown-item-Condition Start Date').click()
+  await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition Occurrence B').hover()
+  await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition Start Date').click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
@@ -85,10 +85,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('Save Current Filters')).not.toBeVisible()
 
   // Remove condition occurrence B and drug exposure A filter cards
-  await page.getByText('Drug Exposure A').locator('..').locator('..').locator('.bs-dropdown').click()
-  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
-  await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
-  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
+  await page.getByTestId('pa-filter-card-patient-interactions-drugexposure-1').getByTestId('filter-card-menu-trigger').click()
+  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
+  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-2').getByTestId('filter-card-menu-trigger').click()
+  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
 

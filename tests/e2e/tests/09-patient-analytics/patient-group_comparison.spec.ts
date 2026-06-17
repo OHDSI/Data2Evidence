@@ -60,7 +60,7 @@ test('pa-compare-cohorts', async ({ page }) => {
   await expect(page.getByTestId('pa-pane-right')).toContainText('642')
 
   // Add Condition Occurrence B filter card
-  // await page.getByTitle('Add Filter Card').getByRole('button').click();
+  // await page.getByTestId('pa-add-filter-btn').click();
   // await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click();
   // add a new concept set for "Acute allergic reaction"
   // await createConceptSet(page, 'Acute allergic reaction', 'Acute allergic reaction', '4084167 241929008 Acute')
@@ -75,8 +75,8 @@ test('pa-compare-cohorts', async ({ page }) => {
   await page.getByTitle('Enter Fullscreen').click()
   await expect(page.getByTestId('pa-pane-left')).toContainText(cohortB)
 
-  await page.locator('div:nth-child(1) > .footer > div > svg').first().click()
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
+  await page.getByTestId(`pa-cohort-card-${cohortA}`).getByTestId('pa-cohort-select-btn').click()
+  await page.getByTestId(`pa-cohort-card-${cohortB}`).getByTestId('pa-cohort-select-btn').click()
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
 
   await page.getByRole('button', { name: 'Compare' }).click()
@@ -153,7 +153,7 @@ async function createCohortWithOneConditionOccurrenceFilercard(page, cohortName)
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
   await page.waitForTimeout(10000)
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
   // Verify the condition occurrence filter was added

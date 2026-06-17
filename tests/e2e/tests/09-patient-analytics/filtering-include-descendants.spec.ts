@@ -22,7 +22,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step("Add Condition Occurrence inclusion filter (Alzheimer's disease)", async () => {
-    await page.getByTitle('Add Filter Card').getByRole('button').click()
+    await page.getByTestId('pa-add-filter-btn').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page.getByRole('tab', { name: ' Condition Occurrence A ' }).locator('button').last().click()
     await page.getByText('Condition Source Concept Code').click()

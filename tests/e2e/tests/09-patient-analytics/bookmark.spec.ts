@@ -66,7 +66,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Inclusion filter card - Condition Occurrence
   await test.step('Add inclusion filter card for Condition Occurrence', async () => {
-    await page.getByTitle('Add Filter Card').getByRole('button').click()
+    await page.getByTestId('pa-add-filter-btn').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
     await page
       .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
@@ -101,7 +101,7 @@ test(TEST_NAME, async ({ page }) => {
       // Dismiss popover if present
       try {
         await page.mouse.move(0, 0)
-        await page.locator('.modal-wrapper').click()
+        await page.getByTestId('pa-modal-wrapper').click()
       } catch {
         // Modal not present, continue
       }
@@ -110,7 +110,7 @@ test(TEST_NAME, async ({ page }) => {
   //Add Exclusion filter card - Death
   await test.step('Add exclusion filter card for Death', async () => {
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
-    await page.getByTitle('Add Filter Card').getByRole('button').click()
+    await page.getByTestId('pa-add-filter-btn').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
     await expect(page.getByText('A filter card has been added: Death A')).toBeVisible()
     await expect(page.getByText('325 / 2,694')).toBeVisible()
@@ -124,8 +124,8 @@ test(TEST_NAME, async ({ page }) => {
     //   .click()
 
     await page.getByTestId('pa-axis-menu-btn-x1').click()
-    await page.getByTestId('pa-axis-dropdown-item-Condition Occurrence A').getByText('Condition Occurrence A').click()
-    await page.getByTestId('pa-axis-dropdown-item-Condition concept Name').getByText('Condition concept Name').click()
+    await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition Occurrence A').click()
+    await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition concept Name').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await expect(page.locator('.ewdrag')).toBeVisible()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Chronic sinusitis' }).first()).toBeVisible()
@@ -159,10 +159,10 @@ test(TEST_NAME, async ({ page }) => {
   //Reset x1 selection to avoid displaying errors
   await test.step('Reset the x1 attributes', async () => {
     await page.getByTestId('pa-axis-menu-btn-x1').click()
-    await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
+    await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Reset Selection').click()
     await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
     await page.getByTestId('pa-axis-menu-btn-x2').click()
-    await page.getByTestId('pa-pane-right').getByRole('list').getByText('Reset Selection').click()
+    await page.getByTestId('pa-dropdown-menu-x2').getByTestId('pa-axis-dropdown-item-Reset Selection').click()
     await expect(page.locator('g.xaxislayer-above text', { hasText: 'Current Patient Group' })).toBeVisible()
   })
   //Remove MALE and add FEMALE Gender filter
@@ -184,7 +184,7 @@ test(TEST_NAME, async ({ page }) => {
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.savedFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByTestId(`pa-cohort-card-${NAME.savedFilters}`)).toBeVisible()
   })
   // Test for duplicate name validation
   await test.step('Test for duplicate name validation', async () => {
@@ -208,12 +208,8 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByText('Please enter a name')).toBeVisible()
     await page.getByRole('textbox').fill(NAME.renamedFilters)
     await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
-    await page
-      .locator('div')
-      .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
-      .first()
-      .click()
+    await expect(page.getByTestId(`pa-cohort-card-${NAME.renamedFilters}`)).toBeVisible()
+    await page.getByTestId(`pa-cohort-card-${NAME.renamedFilters}`).click()
     await page.getByRole('button', { name: 'Discard' }).click()
     //Verify filters are loaded
     await expect(page.getByText('>2')).toBeVisible()
@@ -224,10 +220,10 @@ test(TEST_NAME, async ({ page }) => {
   //Delete the saved filter
   await test.step('Delete the saved filter', async () => {
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByTestId(`pa-cohort-card-${NAME.renamedFilters}`)).toBeVisible()
     await page.getByTitle('Delete Saved Filter').first().click()
     await page.getByRole('button', { name: 'Delete' }).click()
-    await expect(page.getByText(`${NAME.renamedFilters}0. Icons/`)).not.toBeVisible()
+    await expect(page.getByTestId(`pa-cohort-card-${NAME.renamedFilters}`)).not.toBeVisible()
   })
   //Go back to Cohorts
   await test.step('Go back to Cohorts', async () => {
@@ -254,7 +250,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByText('FEMALE - FEMALE').click()
     //Add filter card
     await test.step('Add filter card for Condition Occurrence', async () => {
-      await page.getByTitle('Add Filter Card').getByRole('button').click()
+      await page.getByTestId('pa-add-filter-btn').click()
       await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
       await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByText('All').click()
       await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Viral sinusitis')
@@ -286,14 +282,14 @@ test(TEST_NAME, async ({ page }) => {
         // Dismiss popover if present
         try {
           await page.mouse.move(0, 0)
-          await page.locator('.modal-wrapper').click()
+          await page.getByTestId('pa-modal-wrapper').click()
         } catch {
           // Modal not present, continue
         }
       }
     })
     await page.getByRole('link', { name: 'Exclusion (0)' }).click()
-    await page.getByTitle('Add Filter Card').getByRole('button').click()
+    await page.getByTestId('pa-add-filter-btn').click()
     await page.getByRole('menuitem', { name: 'Death' }).click()
     //Save filter
     await page.getByRole('button', { name: 'Save' }).click()
@@ -302,10 +298,10 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTestId('pa-save-dialog-save-btn').click()
     //Verify Cohort is saved
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await expect(page.getByText(`${NAME.patientListFilters}0. Icons/`)).toBeVisible()
+    await expect(page.getByTestId(`pa-cohort-card-${NAME.patientListFilters}`)).toBeVisible()
     //Click on the saved cohort
     await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
-    await page.getByText(NAME.patientListFilters).nth(1).click()
+    await page.getByTestId(`pa-cohort-card-${NAME.patientListFilters}`).click()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
     await expect(page.getByText('Viral sinusitis')).toBeVisible()
     await page.getByRole('link', { name: 'Exclusion (1)' }).click()
@@ -318,7 +314,7 @@ test(TEST_NAME, async ({ page }) => {
   await test.step('Filter Summary', async () => {
     await page.getByTestId('pa-filter-summary-btn').click()
     await expect(page.getByText('Filter Summary')).toBeVisible()
-    await page.getByTestId('pa-pane-right').getByTestId('pa-filter-summary-panel')
+    await expect(page.getByTestId('pa-pane-right').getByTestId('pa-filter-summary-panel')).toBeVisible()
     await expect(page.getByText('Showing patients with:')).toBeVisible()
     await expect(
       page

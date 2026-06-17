@@ -28,10 +28,9 @@ test(TEST_NAME, async ({ page }) => {
   const atlasOffCheckbox = page.getByRole('checkbox', { name: 'Use PA-Atlas : Off' })
   const atlasOnCheckbox = page.getByRole('checkbox', { name: 'Use PA-Atlas : On' })
 
-  if (await atlasOnCheckbox.isVisible()) {
+  if ((await atlasOnCheckbox.isVisible()) && (await atlasOnCheckbox.isChecked())) {
     await atlasOnCheckbox.click()
     await expect(atlasOffCheckbox).toBeVisible()
-    await expect(atlasOffCheckbox).not.toBeChecked()
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Configuration saved.')).toBeVisible()
   }

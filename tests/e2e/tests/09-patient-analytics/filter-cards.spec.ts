@@ -27,7 +27,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByRole('button', { name: 'D2E' }).click()
 
   // Step 2 - Add conditional occurrence filter card
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
@@ -141,13 +141,13 @@ test(TEST_NAME, async ({ browser }) => {
     await page.getByTestId('filter-card-menu-trigger').nth(1).click()
     await expect(page.getByRole('menu')).toBeVisible()
   }
-  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
-  await page.waitForSelector('[data-test-id="pa-loading-indicator"]', { state: 'hidden' })
+  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
+  await page.getByTestId('pa-loading-indicator').waitFor({ state: 'hidden' })
   await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
 
   // Step 10 - Reset filters
-  await page.getByRole('button', { name: '↺' }).click()
+  await page.getByTestId('pa-reset-filters-btn').click()
   await page.getByRole('button', { name: 'Reset' }).click()
   await expect(page.getByText('Condition Occurrence A')).not.toBeVisible()
 
@@ -168,7 +168,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByText('- FEMALE').click()
 
   // Step 13 - Add filter card for Measurement concept name
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Measurement' }).click()
   await page.getByText('filter card has been added', { exact: false }).waitFor({ state: 'hidden' })
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
@@ -192,7 +192,7 @@ test(TEST_NAME, async ({ browser }) => {
   await page.locator('#stacked-chart').click()
 
   // Step 16 - Add filter card dfor Observation concept name
-  await page.getByTitle('Add Filter Card').getByRole('button').click()
+  await page.getByTestId('pa-add-filter-btn').click()
   await page.getByRole('menuitem', { name: 'Observation', exact: true }).click()
   await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.getByTestId('filter-card-menu-trigger').nth(2).click()
@@ -207,6 +207,6 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByText('Shellfish allergy - Shellfish').click()
 
   // Reset filters
-  await page.getByRole('button', { name: '↺' }).click()
+  await page.getByTestId('pa-reset-filters-btn').click()
   await page.getByRole('button', { name: 'Reset' }).click()
 })
