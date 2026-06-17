@@ -1,62 +1,62 @@
 {
   "home_page_to_cohort_def_list_0": {
-    "minMs": 212.169499874115
+    "minMs": 29.9
   },
   "home_page_to_cohort_def_list_1": {
-    "minMs": 67.78316593170166
+    "minMs": 7.3
   },
   "home_page_to_cohort_def_list_2": {
-    "minMs": 59.05250000953674
+    "minMs": 5.8
   },
   "home_page_to_cohort_def_list_3": {
-    "minMs": 42.65054202079773
+    "minMs": 8.8
   },
   "home_page_to_cohort_def_list_4": {
-    "minMs": 64.3993330001831
+    "minMs": 5.9
   },
   "home_page_to_cohort_def_list_5": {
-    "minMs": 67.88441681861877
+    "minMs": 6.1
   },
   "home_page_to_cohort_def_list_6": {
-    "minMs": 39.97499990463257
+    "minMs": 7.4
   },
   "home_page_to_cohort_def_list_7": {
-    "minMs": 43.66687488555908
+    "minMs": 5.5
   },
   "home_page_to_cohort_def_list_8": {
-    "minMs": 45.02033305168152
+    "minMs": 5.3
   },
   "home_page_to_cohort_def_list_9": {
-    "minMs": 8.361249923706055
+    "minMs": 2.0
   },
   "home_page_to_cohort_def_list_10": {
-    "minMs": 8.493624925613403
+    "minMs": 1.7
   },
   "home_page_to_cohort_def_list_11": {
-    "minMs": 7.150000095367432
+    "minMs": 1.8
   },
   "home_page_to_cohort_def_list_12": {
-    "minMs": 8.55066704750061
+    "minMs": 1.7
   },
   "home_page_to_cohort_def_list_13": {
-    "minMs": 6.568542003631592
+    "minMs": 1.7
   },
   "home_page_to_cohort_def_list_14": {
-    "minMs": 324.85366702079773
+    "minMs": 45.6
   },
   "home_page_to_cohort_def_list_15": {
-    "minMs": 192.57741713523865
+    "minMs": 19.5
   },
   "home_page_to_cohort_def_list_16": {
-    "minMs": 601.7422909736633
+    "minMs": 35.0
   },
   "home_page_to_cohort_def_list_17": {
-    "minMs": 21.698166847229004
+    "minMs": 4.0
   },
   "patient_count": {
-    "minMs": 7344.446125030518
+    "minMs": 924.4
   },
   "population_barchart": {
-    "minMs": 6981.565790891647
+    "minMs": 922.1
   }
 }

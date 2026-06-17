@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, it, expect, afterAll } from "vitest";
@@ -6,7 +6,7 @@ import { parseHar } from "../runner/harParser.js";
 import { parseCurl } from "../runner/curlParser.js";
 import { runScenario } from "../runner/httpClient.js";
 import { compareToBaseline } from "../runner/compare.js";
-import type { Baseline, CompareResult } from "../runner/compare.js";
+import type { Baseline, CompareResult, CompareStatus } from "../runner/compare.js";
 import type { Scenario } from "../runner/harParser.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,7 +43,62 @@ const STATUS_ICON: Record<string, string> = {
   "no-baseline": "-",
 };
 
-function printTable(results: CompareResult[]): void {
+const STATUS_RANK: Record<string, number> = { fail: 3, warn: 2, pass: 1, "no-baseline": 0 };
+
+interface GroupedResult {
+  name: string;
+  status: CompareStatus;
+  totalCurrentMinMs: number;
+  totalBaselineMinMs: number | null;
+  deltaFraction: number | null;
+  totalMinMs: number;
+  totalMaxMs: number;
+  requestCount: number;
+}
+
+function groupResults(results: CompareResult[]): GroupedResult[] {
+  const HAR_RE = /_\d+$/;
+  const groups = new Map<string, CompareResult[]>();
+
+  for (const r of results) {
+    const key = HAR_RE.test(r.scenarioName) ? r.scenarioName.replace(HAR_RE, "") : r.scenarioName;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r);
+  }
+
+  return Array.from(groups.entries()).map(([key, members]) => {
+    const isHar = members.length > 1 || HAR_RE.test(members[0].scenarioName);
+    const name = isHar ? `${key} (${members.length} req)` : key;
+    const status = members.reduce<CompareStatus>(
+      (worst, m) => STATUS_RANK[m.status] > STATUS_RANK[worst] ? m.status : worst,
+      "no-baseline"
+    );
+    const totalCurrentMinMs = members.reduce((s, m) => s + m.currentMinMs, 0);
+    const anyNoBaseline = members.some(m => m.baselineMinMs === null);
+    const totalBaselineMinMs = anyNoBaseline ? null : members.reduce((s, m) => s + m.baselineMinMs!, 0);
+    const deltaFraction = totalBaselineMinMs !== null
+      ? (totalCurrentMinMs - totalBaselineMinMs) / totalBaselineMinMs
+      : null;
+    return {
+      name,
+      status,
+      totalCurrentMinMs,
+      totalBaselineMinMs,
+      deltaFraction,
+      totalMinMs: members.reduce((s, m) => s + m.minMs, 0),
+      totalMaxMs: members.reduce((s, m) => s + m.maxMs, 0),
+      requestCount: members.length,
+    };
+  });
+}
+
+function writeDetailedReport(results: CompareResult[]): void {
+  const dir = join(ROOT, "test-results");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "detailed-report.json"), JSON.stringify(results, null, 2) + "\n");
+}
+
+function printTable(results: GroupedResult[]): void {
   const COL_SCENARIO = 32;
   const COL_P95      = 26;
   const COL_MIN      = 8;
@@ -61,22 +116,22 @@ function printTable(results: CompareResult[]): void {
     "",
     "Performance Regression Results",
     divider,
-    row("Scenario", "baseline", "min", "max", "Δ%", "Status"),
+    row("Scenario", "min of all runs (baseline)", "min", "max", "Δ%", "Status"),
     divider,
   ];
 
   for (const r of results) {
     const minBaselineStr =
-      r.baselineMinMs !== null
-        ? `${r.currentMinMs.toFixed(1)}ms (${r.baselineMinMs.toFixed(1)}ms)`
-        : `${r.currentMinMs.toFixed(1)}ms (no baseline)`;
-    const minStr = `${r.minMs.toFixed(1)}ms`;
-    const maxStr = `${r.maxMs.toFixed(1)}ms`;
+      r.totalBaselineMinMs !== null
+        ? `${r.totalCurrentMinMs.toFixed(1)}ms (${r.totalBaselineMinMs.toFixed(1)}ms)`
+        : `${r.totalCurrentMinMs.toFixed(1)}ms (no baseline)`;
+    const minStr = `${r.totalMinMs.toFixed(1)}ms`;
+    const maxStr = `${r.totalMaxMs.toFixed(1)}ms`;
     const deltaStr =
       r.deltaFraction !== null
         ? `${r.deltaFraction >= 0 ? "+" : ""}${(r.deltaFraction * 100).toFixed(1)}%`
         : "-";
-    lines.push(row(r.scenarioName, minBaselineStr, minStr, maxStr, deltaStr, STATUS_ICON[r.status]));
+    lines.push(row(r.name, minBaselineStr, minStr, maxStr, deltaStr, STATUS_ICON[r.status]));
   }
 
   lines.push(divider);
@@ -87,8 +142,8 @@ function printTable(results: CompareResult[]): void {
     lines.push("Scenarios exceeding fail threshold:");
     for (const r of failing) {
       lines.push(
-        `  ✗ ${r.scenarioName}: min ${r.currentMinMs.toFixed(1)}ms` +
-        ` (baseline ${r.baselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ✗ ${r.name}: min ${r.totalCurrentMinMs.toFixed(1)}ms` +
+        ` (baseline ${r.totalBaselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -99,8 +154,8 @@ function printTable(results: CompareResult[]): void {
     lines.push("Scenarios exceeding warn threshold:");
     for (const r of warning) {
       lines.push(
-        `  ⚠ ${r.scenarioName}: min ${r.currentMinMs.toFixed(1)}ms` +
-        ` (baseline ${r.baselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
+        `  ⚠ ${r.name}: min ${r.totalCurrentMinMs.toFixed(1)}ms` +
+        ` (baseline ${r.totalBaselineMinMs!.toFixed(1)}ms, +${(r.deltaFraction! * 100).toFixed(1)}%)`
       );
     }
   }
@@ -122,7 +177,12 @@ if (scenarios.length === 0) {
   const results: CompareResult[] = [];
 
   describe("performance regression", () => {
-    afterAll(() => printTable(results));
+    afterAll(() => {
+      if (results.some(r => r.status === "fail")) {
+        writeDetailedReport(results);
+      }
+      printTable(groupResults(results));
+    });
 
     for (const scenario of scenarios) {
       it(scenario.name, async () => {
