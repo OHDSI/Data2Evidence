@@ -87,19 +87,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Filter condition concept name to chronic sinusitis
-  await page
-    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
-    .locator('div')
-    .filter({ hasText: /^All$/ })
-    .click()
-  await page
-    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
-    .getByPlaceholder('Enter search term')
-    .click()
-  await page
-    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
-    .getByPlaceholder('Enter search term')
-    .fill('Chronic sinusitis')
+  const conditionOccConceptName = page.getByTitle('Condition Occurrence A - Condition concept Name')
+  await conditionOccConceptName.locator('div').filter({ hasText: /^All$/ }).click()
+  await conditionOccConceptName.getByPlaceholder('Enter search term').click()
+  await conditionOccConceptName.getByPlaceholder('Enter search term').fill('Chronic sinusitis')
   await page.getByText('Chronic sinusitis - Chronic sinusitis').click()
   await expect(page.getByText('812 / 2,694')).toBeVisible()
   // Wait for dropdown to populate properly
@@ -171,9 +162,10 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'Confirm' }).click()
 
   // Set month of birth to 11 in filter card
+  const basicDataMonthOfBirth = page.getByTitle('Basic Data - Month of Birth')
   await page.getByTestId('pa-filter-card-patient').getByTestId('filter-card-menu-trigger').click()
-  await page.getByTestId('pa-filter-card-patient').getByPlaceholder('Enter search term').fill('11')
-  await page.getByTestId('pa-filter-card-patient').getByPlaceholder('Enter search term').press('Enter')
+  await basicDataMonthOfBirth.getByPlaceholder('Enter search term').fill('11')
+  await basicDataMonthOfBirth.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
 
