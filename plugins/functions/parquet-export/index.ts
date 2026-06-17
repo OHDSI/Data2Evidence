@@ -81,6 +81,11 @@ function isValidWildcardFlag(val: string): boolean {
   return Number(val) === 1 || Number(val) === 0;
 }
 
+function isValidConceptIdArray(arr: unknown): arr is number[] {
+  if (!Array.isArray(arr)) return false;
+  return arr.every((item) => typeof item === "number" && Number.isInteger(item) && item > 0);
+}
+
 function sanitizeParamValue(value: string): string {
   return value.replace(/'/g, "''");
 }
@@ -107,6 +112,7 @@ const RESERVED_PLACEHOLDERS = new Set([
   "WILDCARD_FLAG3",
   "WILDCARD_FLAG4",
   "WILDCARD_FLAG5",
+  "CONCEPT_IDS",
 ]);
 
 function substituteTemplateParams(
@@ -214,6 +220,10 @@ function substituteTemplateParams(
     .replace(
       /\{\{WILDCARD_FLAG5\}\}/g,
       additionalParams["WILDCARD_FLAG5"] || "",
+    )
+    .replace(
+      /\{\{CONCEPT_IDS\}\}/g,
+      additionalParams["CONCEPT_IDS"] || "",
     );
 
   const remainingPlaceholders = extractPlaceholders(result);
@@ -468,6 +478,14 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
+    const conceptIds = req.body.conceptIds as unknown | undefined;
+    if (conceptIds !== undefined && !isValidConceptIdArray(conceptIds)) {
+      return res.status(400).json({
+        error: "Invalid parameter",
+        message: "conceptIds must be an array of positive integers",
+      });
+    }
+
     const reservedBodyParams = new Set([
       "datasetId",
       "cohortId",
@@ -477,6 +495,7 @@ router.post("/", async (req: Request, res: Response) => {
       "type",
       "yearRange",
       "conditions",
+      "conceptIds",
     ]);
 
     const additionalParams: Record<string, string> = {};
@@ -502,6 +521,11 @@ router.post("/", async (req: Request, res: Response) => {
           });
         }
       });
+    }
+
+    // Handle conceptIds array
+    if (conceptIds && Array.isArray(conceptIds) && conceptIds.length > 0) {
+      additionalParams["CONCEPT_IDS"] = conceptIds.join(",");
     }
 
     let substitutedSql: string;
