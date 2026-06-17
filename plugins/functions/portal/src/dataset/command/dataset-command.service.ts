@@ -16,8 +16,9 @@ import {
   IDatasetReleaseDto,
   IDatasetSnapshotDto,
 } from "../../types.d.ts";
-import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
 import { UserMgmtService } from "../../user-mgmt/user-mgmt.service.ts";
+import { WebApiSourceService } from "../../webapi/webapi-source.service.ts";
+import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
 import {
   Dataset,
   DatasetAttribute,
@@ -25,8 +26,6 @@ import {
   DatasetDetail,
   DatasetTag,
 } from "../entity/index.ts";
-import { sanitizeIdForCacheId } from "../entity/dataset.entity.ts";
-import { TrexApiService } from "../trex-api.service.ts";
 import {
   DatasetAttributeRepository,
   DatasetCodeQueryRepository,
@@ -37,6 +36,7 @@ import {
   DatasetRepository,
   DatasetTagRepository,
 } from "../repository/index.ts";
+import { TrexApiService } from "../trex-api.service.ts";
 
 const SWAP_TO = {
   STUDY: ["dataset", "study"],
@@ -68,10 +68,15 @@ export class DatasetCommandService {
   }
 
   async createDataset(datasetDto: IDatasetDto) {
-    
     // if the dialect is hana, vocabSchemaName and resultsSchemaName are required to be in uppercase due to HANA's case sensitivity
-    datasetDto.vocabSchemaName = toUpperCaseIfHana(datasetDto.vocabSchemaName, datasetDto.dialect);
-    datasetDto.resultsSchemaName = toUpperCaseIfHana(datasetDto.resultsSchemaName, datasetDto.dialect);
+    datasetDto.vocabSchemaName = toUpperCaseIfHana(
+      datasetDto.vocabSchemaName,
+      datasetDto.dialect,
+    );
+    datasetDto.resultsSchemaName = toUpperCaseIfHana(
+      datasetDto.resultsSchemaName,
+      datasetDto.dialect,
+    );
 
     const createDatasetFn = async (
       entityMgr: EntityManager,
@@ -136,29 +141,38 @@ export class DatasetCommandService {
     };
     // Insert the dataset row first so its id is visible to callers as soon as we return,
     // even if the upstream WebAPI sync takes longer than the caller's HTTP timeout.
-    const result = await this.transactionRunner.run(createDatasetFn, datasetDto);
+    const result = await this.transactionRunner.run(
+      createDatasetFn,
+      datasetDto,
+    );
 
     // Then register the source and kick off the TrexSQL cache build. The cache build
     // is fire-and-forget inside syncDatasetToWebApi — downstream consumers (DQD, DC)
     // must poll cache readiness via GET /system-portal/dataset/:id/cache-status
     // before issuing queries that read the cache catalog.
-    await this.syncDatasetToWebApi({
-      id: datasetDto.id,
-      databaseCode: datasetDto.databaseCode,
-      dialect: datasetDto.dialect,
-      schemaName: datasetDto.schemaName,
-      vocabSchemaName: datasetDto.vocabSchemaName,
-      resultsSchemaName: datasetDto.resultsSchemaName,
-      type: datasetDto.type,
-      fhirDatasetId: datasetDto.fhirDatasetId ?? null,
-    }, datasetDto.detail);
+    await this.syncDatasetToWebApi(
+      {
+        id: datasetDto.id,
+        databaseCode: datasetDto.databaseCode,
+        dialect: datasetDto.dialect,
+        schemaName: datasetDto.schemaName,
+        vocabSchemaName: datasetDto.vocabSchemaName,
+        resultsSchemaName: datasetDto.resultsSchemaName,
+        type: datasetDto.type,
+        fhirDatasetId: datasetDto.fhirDatasetId ?? null,
+      },
+      datasetDto.detail,
+    );
 
     // Best-effort: notify trex to (re)attach the new dataset's cache file and source DB
     // so a freshly-set cache_id becomes available without a trex restart. The cache_id
     // mirrors the entity's @BeforeInsert default (sanitized dataset id) when the DTO
     // doesn't supply one.
-    const cacheId = datasetDto.cacheId
-      ?? (datasetDto.id ? sanitizeIdForCacheId(datasetDto.id) : datasetDto.databaseCode);
+    const cacheId =
+      datasetDto.cacheId ??
+      (datasetDto.id
+        ? sanitizeIdForCacheId(datasetDto.id)
+        : datasetDto.databaseCode);
     await this.trexApiService.attach({
       cacheIds: cacheId ? [cacheId] : [],
       connectionIds: datasetDto.databaseCode ? [datasetDto.databaseCode] : [],
@@ -213,6 +227,8 @@ export class DatasetCommandService {
     const existing = await this.datasetRepo.getDataset(id);
     const tokenDatasetCode = existing?.tokenDatasetCode;
 
+    const dataset = await this.datasetRepo.getDataset(id);
+
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id);
       if (result.affected === 0) {
@@ -225,11 +241,13 @@ export class DatasetCommandService {
     };
     const result = await this.transactionRunner.run(deleteDatasetFn, id);
 
-    // Delete from WebAPI (fire-and-forget, don't block dataset deletion)
     const authToken = this.requestContextService.getOriginalToken();
-    if (authToken) {
-      this.webApiSourceService.deleteSourceForDataset(id, authToken)
-        .catch((err) => this.logger.error(`WebAPI delete failed for ${id}: ${err}`));
+    if (authToken && dataset?.type === "webapi") {
+      this.webApiSourceService
+        .deleteSourceForDataset(id, authToken)
+        .catch((err) =>
+          this.logger.error(`WebAPI delete failed for ${id}: ${err}`),
+        );
     }
 
     // Delete the per-dataset Logto role + scopes (fire-and-forget).
@@ -251,7 +269,9 @@ export class DatasetCommandService {
   ): Promise<{ id: string; transformed: boolean; reason?: string }> {
     let tokenDatasetCode: string | undefined;
     const run = async (entityMgr: EntityManager) => {
-      const source = await entityMgr.findOne(Dataset, { where: { id: sourceId } });
+      const source = await entityMgr.findOne(Dataset, {
+        where: { id: sourceId },
+      });
       if (!source) {
         throw new HttpException(404, `Dataset ${sourceId} not found`);
       }
@@ -293,15 +313,20 @@ export class DatasetCommandService {
         type: "webapi",
       });
 
-      const snapshotDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: snapshot.id } });
+      const snapshotDetail = await entityMgr.findOne(DatasetDetail, {
+        where: { datasetId: snapshot.id },
+      });
       if (snapshotDetail) {
-        const sourceDetail = await entityMgr.findOne(DatasetDetail, { where: { datasetId: sourceId } });
+        const sourceDetail = await entityMgr.findOne(DatasetDetail, {
+          where: { datasetId: sourceId },
+        });
         if (sourceDetail) {
+          // Keep the source dataset's own name; the snapshot (cache) name must
+          // not become the converted webapi dataset's name. Merge the rest.
           await entityMgr.update(
             DatasetDetail,
             { id: sourceDetail.id },
             {
-              name: snapshotDetail.name,
               description: snapshotDetail.description,
               summary: snapshotDetail.summary,
               showRequestAccess: snapshotDetail.showRequestAccess,
@@ -373,17 +398,37 @@ export class DatasetCommandService {
 
     const result = await this.transactionRunner.run(run, undefined);
 
-    // The dataset is now type=webapi, so (re)sync its per-dataset Logto role.
-    if (result.transformed && tokenDatasetCode) {
-      try {
-        await this.userMgmtService.ensureDatasetRole(
-          sourceId,
-          tokenDatasetCode,
-          "webapi",
-        );
-      } catch (err) {
-        this.logger.error(
-          `Logto dataset-role sync failed for ${sourceId}: ${err}`,
+    if (result.transformed) {
+      if (tokenDatasetCode) {
+        try {
+          await this.userMgmtService.ensureDatasetRole(
+            sourceId,
+            tokenDatasetCode,
+            "webapi",
+          );
+        } catch (err) {
+          this.logger.error(
+            `Logto dataset-role sync failed for ${sourceId}: ${err}`,
+          );
+        }
+      }
+
+      const source = await this.datasetRepo.getDataset(sourceId);
+      const detail = await this.detailRepo.getDetail(sourceId);
+
+      if (source && detail) {
+        await this.syncDatasetToWebApi(
+          {
+            id: source.id,
+            databaseCode: source.databaseCode,
+            dialect: source.dialect,
+            schemaName: source.schemaName,
+            vocabSchemaName: source.vocabSchemaName,
+            resultsSchemaName: source.resultsSchemaName,
+            type: "webapi",
+            fhirDatasetId: source.fhirDatasetId ?? null,
+          },
+          detail,
         );
       }
     }
@@ -560,7 +605,10 @@ export class DatasetCommandService {
       return newDatasetResult;
     };
 
-    const result = await this.transactionRunner.run(createSnapshotFn, snapshotDto);
+    const result = await this.transactionRunner.run(
+      createSnapshotFn,
+      snapshotDto,
+    );
     return result;
   }
 
@@ -625,11 +673,17 @@ export class DatasetCommandService {
     };
 
     if (vocabSchemaName !== undefined) {
-      dataset.vocabSchemaName = toUpperCaseIfHana(vocabSchemaName, dataset.dialect);
+      dataset.vocabSchemaName = toUpperCaseIfHana(
+        vocabSchemaName,
+        dataset.dialect,
+      );
     }
 
     if (resultsSchemaName !== undefined) {
-      dataset.resultsSchemaName = toUpperCaseIfHana(resultsSchemaName, dataset.dialect);
+      dataset.resultsSchemaName = toUpperCaseIfHana(
+        resultsSchemaName,
+        dataset.dialect,
+      );
     }
 
     await this.datasetRepo.updateDataset(
@@ -1073,23 +1127,20 @@ export class DatasetCommandService {
     },
     detail: DatasetDetail | { name: string },
   ): Promise<void> {
-
-    // Skip sync for FHIR and Strategus_study dataset
-    const normalizedType = datasetInfo.type?.replace(/^hana__/, "");
-    if (
-      datasetInfo.fhirDatasetId ||
-      normalizedType === "fhir" ||
-      normalizedType === "strategus_analysis"
-    ) {
+    // Only webapi-managed datasets get WebAPI records.
+    if (datasetInfo.fhirDatasetId || datasetInfo.type !== "webapi") {
       this.logger.info(
-        `Skipping WebAPI sync for non-OMOP dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
+        `Skipping WebAPI sync for non-webapi dataset ${datasetInfo.id} (type=${datasetInfo.type})`,
       );
       return;
     }
 
     const dbCredentials = getDbCredentialsByCode(datasetInfo.databaseCode);
     if (!dbCredentials) {
-      throw new HttpException(400, `No database credentials found for ${datasetInfo.databaseCode}`);
+      throw new HttpException(
+        400,
+        `No database credentials found for ${datasetInfo.databaseCode}`,
+      );
     }
 
     const authToken = this.requestContextService.getOriginalToken();
@@ -1105,12 +1156,18 @@ export class DatasetCommandService {
       resultsSchemaName: datasetInfo.resultsSchemaName,
     } as Dataset;
 
-    const detailEntity = "datasetId" in detail
-      ? detail as DatasetDetail
-      : { name: detail.name } as DatasetDetail;
+    const detailEntity =
+      "datasetId" in detail
+        ? (detail as DatasetDetail)
+        : ({ name: detail.name } as DatasetDetail);
 
     try {
-      await this.webApiSourceService.syncSourceForDataset(dataset, detailEntity, dbCredentials, authToken);
+      await this.webApiSourceService.syncSourceForDataset(
+        dataset,
+        detailEntity,
+        dbCredentials,
+        authToken,
+      );
     } catch (err) {
       this.logger.error(`WebAPI sync failed for ${datasetInfo.id}: ${err}`);
       throw new HttpException(502, `Failed to create WebAPI source: ${err}`);
