@@ -38,7 +38,6 @@ const props = defineProps<{
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
-const CURRENT_ORIGIN = window.location.origin
 const iframeRef = ref<HTMLIFrameElement | null>(null)
 const bearerToken = ref<string>('')
 const isIframeReady = ref(false)
@@ -144,7 +143,6 @@ function sendTokenToIframe(source?: MessageEventSource) {
   try {
     const message = buildShinyDashboardAuthMessage({
       token: bearerToken.value,
-      parentOrigin: CURRENT_ORIGIN,
       datasetId: props.datasetId,
       cohortId: props.cohortId,
       wizardConfig: props.wizardConfig,

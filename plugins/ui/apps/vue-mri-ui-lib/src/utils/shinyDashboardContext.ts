@@ -9,7 +9,6 @@ export interface ShinyDashboardAuthMessage {
   type: 'AUTH_TOKEN'
   token: string
   timestamp: number
-  parentOrigin: string
   context: ShinyDashboardContext
 }
 
@@ -36,7 +35,6 @@ export function serializeWizardConfig(wizardConfig?: Record<string, unknown> | n
 
 export function buildShinyDashboardAuthMessage({
   token,
-  parentOrigin,
   datasetId,
   cohortId,
   wizardConfig,
@@ -44,7 +42,6 @@ export function buildShinyDashboardAuthMessage({
   timestamp = Date.now(),
 }: {
   token: string
-  parentOrigin: string
   datasetId: string
   cohortId: string
   wizardConfig?: Record<string, unknown> | null
@@ -55,7 +52,6 @@ export function buildShinyDashboardAuthMessage({
     type: 'AUTH_TOKEN',
     token,
     timestamp,
-    parentOrigin,
     context: {
       datasetId,
       cohortId,

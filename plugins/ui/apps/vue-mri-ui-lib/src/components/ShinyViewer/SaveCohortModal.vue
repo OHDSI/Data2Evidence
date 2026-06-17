@@ -9,7 +9,7 @@
   >
     <v-card class="save-cohort-card">
       <div v-if="isSaving" class="save-cohort-saving">
-        <h2 class="save-cohort-saving__title">Generating Dashboard</h2>
+        <h2 class="save-cohort-saving__title">{{ getText('MRI_PA_GENERATING_DASHBOARD') }}</h2>
         <VProgressCircular
           indeterminate
           class="save-cohort-saving__spinner"
@@ -84,14 +84,11 @@
           <div v-if="showInfoMessage && activeCohort" class="save-bookmark">
             <v-alert type="info" variant="tonal" density="compact" class="save-cohort-info">
               <p>
-                <strong>{{
-                  getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') ||
-                  'This filter combination has already been materialized. Saving bookmark only.'
-                }}</strong>
+                <strong>{{ getText('MRI_PA_COHORT_ALREADY_MATERIALIZED') }}</strong>
               </p>
               <p>
-                <strong>{{ getText('MRI_PA_COLL_COHORT_ID') || 'Cohort ID:' }}</strong> {{ activeCohort.id }}<br />
-                <strong>{{ getText('MRI_PA_COLL_CREATED_ON') || 'Created:' }}</strong>
+                <strong>{{ getText('MRI_PA_COLL_COHORT_ID') }}</strong> {{ activeCohort.id }}<br />
+                <strong>{{ getText('MRI_PA_COLL_CREATED_ON') }}</strong>
                 {{ new Date(activeCohort.createdOn).toLocaleString() }}
               </p>
             </v-alert>
@@ -214,7 +211,7 @@ export default {
     },
     cohortNameErrorMessages() {
       if (this.hasExceededLength) {
-        return [this.getText('MRI_PA_COHORT_NAME_TOO_LONG') || 'Filter name must not exceed 255 characters']
+        return [this.getText('MRI_PA_COLL_TITLE_MAX_LENGTH', String(this.maxLength))]
       }
       if (this.cohortNameValidationState === 'invalid') {
         return [this.getText('MRI_PA_INVALID_NAME_ERROR')]
@@ -223,7 +220,7 @@ export default {
         return [this.getText('MRI_PA_BMK_EMPTY_NAME_ERROR')]
       }
       if (this.cohortNameValidationState === 'duplicate') {
-        return [this.getText('MRI_PA_COHORT_NAME_DUPLICATE') || 'A cohort with this name already exists']
+        return [this.getText('MRI_PA_INVALID_NAME_ERROR')]
       }
       return []
     },
@@ -235,12 +232,12 @@ export default {
     },
     modalTitle() {
       if (this.mode === 'bookmark-only') {
-        return this.getText('MRI_PA_TITLE_SAVE_BOOKMARK') || 'Save Current Filters'
+        return this.getText('MRI_PA_TITLE_SAVE_BOOKMARK')
       }
       if (this.mode === 'materialize-only') {
-        return this.getText('MRI_PA_TITLE_MATERIALIZE_COHORT') || 'Materialize Cohort'
+        return this.getText('MRI_PA_TITLE_MATERIALIZE_COHORT')
       }
-      return this.getText('MRI_PA_TITLE_SAVE_AND_MATERIALIZE') || 'Save and materialize cohort'
+      return this.getText('MRI_PA_TITLE_SAVE_AND_MATERIALIZE')
     },
     showDescriptionField() {
       return this.mode !== 'bookmark-only'
@@ -253,20 +250,20 @@ export default {
         return this.getText('MRI_PA_COLL_BUT_RETRY')
       }
       if (this.mode === 'materialize-only') {
-        return this.getText('MRI_PA_BUTTON_CONFIRM') || 'Confirm'
+        return this.getText('MRI_PA_BUTTON_CONFIRM')
       }
-      return this.getText('MRI_PA_BUTTON_CONFIRM') || 'Confirm'
+      return this.getText('MRI_PA_BUTTON_CONFIRM')
     },
     savingStatusText() {
-      const labels = {
-        'saving-filter': 'Applying filter...',
-        'refreshing-filter': 'Saving filter...',
-        'materializing-cohort': 'Getting patient list...',
-        'refreshing-cohort': 'Preparing dashboard...',
-        complete: 'Preparing dashboard...',
+      const labelKeys: Record<string, string> = {
+        'saving-filter': 'MRI_PA_SAVE_COHORT_APPLYING_FILTER',
+        'refreshing-filter': 'MRI_PA_SAVE_COHORT_SAVING_FILTER',
+        'materializing-cohort': 'MRI_PA_SAVE_COHORT_GETTING_PATIENT_LIST',
+        'refreshing-cohort': 'MRI_PA_SAVE_COHORT_PREPARING_DASHBOARD',
+        complete: 'MRI_PA_SAVE_COHORT_PREPARING_DASHBOARD',
       }
 
-      return labels[this.savingStep] || 'Preparing dashboard...'
+      return this.getText(labelKeys[this.savingStep] ?? 'MRI_PA_SAVE_COHORT_PREPARING_DASHBOARD')
     },
     activeCohort() {
       if (!this.getActiveBookmark?.cohortDefinitionId) return null
@@ -393,7 +390,7 @@ export default {
 
         const successMessage =
           this.mode === 'bookmark-only'
-            ? this.getText('MRI_PA_BOOKMARK_SAVED') || 'Bookmark saved successfully'
+            ? this.getText('MRI_PA_BOOKMARK_SAVED')
             : this.getText('MRI_PA_COHORT_SAVED')
 
         this.messageStrip = {
@@ -410,12 +407,15 @@ export default {
 
         if (this.savedBookmarkId && !this.savedCohortId) {
           this.bookmarkSavedButMaterializationFailed = true
-          const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
+          const errorMessage = error?.message ?? this.getText('MRI_PA_ERROR_GENERIC')
           this.showError(
-            `${this.getText('MRI_PA_COHORT_SAVED')} but materialization failed: ${errorMessage}. Click Retry to retry materialization.`
+            this.getText('MRI_PA_COHORT_MATERIALIZATION_FAILED_AFTER_SAVE', [
+              this.getText('MRI_PA_COHORT_SAVED'),
+              errorMessage,
+            ])
           )
         } else {
-          const errorMessage = error?.message || this.getText('MRI_PA_ERROR_GENERIC')
+          const errorMessage = error?.message ?? this.getText('MRI_PA_ERROR_GENERIC')
           this.showError(errorMessage)
         }
       } finally {
@@ -434,7 +434,7 @@ export default {
       const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
 
       if (!bookmark) {
-        throw new Error('Bookmark not found after refresh')
+        throw new Error(this.getText('MRI_PA_BOOKMARK_NOT_FOUND_AFTER_REFRESH'))
       }
 
       this[types.SET_ACTIVE_BOOKMARK](bookmark)
@@ -449,14 +449,14 @@ export default {
       const selectedDataset = this.getSelectedDataset
 
       if (!selectedDataset || !selectedDataset.id) {
-        throw new Error('No dataset selected')
+        throw new Error(this.getText('MRI_PA_NO_DATASET_SELECTED'))
       }
 
       let bookmarkName
       if (this.isNewCohort) {
         bookmarkName = this.cohortName.trim()
         if (!bookmarkName) {
-          throw new Error('Cohort name is required for new cohorts')
+          throw new Error(this.getText('MRI_PA_COHORT_NAME_REQUIRED'))
         }
       } else {
         bookmarkName = this.cohortName.trim() || activeBookmark.bookmarkname
@@ -467,7 +467,7 @@ export default {
           b => b.user_id === username && b.bookmarkname === this.cohortName.trim()
         )
         if (duplicate) {
-          throw new Error('A cohort with this name already exists')
+          throw new Error(this.getText('MRI_PA_INVALID_NAME_ERROR'))
         }
       }
 
@@ -510,13 +510,13 @@ export default {
       const selectedDataset = this.getSelectedDataset
 
       if (!selectedDataset || !selectedDataset.id) {
-        throw new Error('No dataset selected')
+        throw new Error(this.getText('MRI_PA_NO_DATASET_SELECTED'))
       }
 
       this.ensureSavedBookmarkIdForMaterialization()
 
       if (!this.savedBookmarkId) {
-        throw new Error('No saved bookmark provided for materialization')
+        throw new Error(this.getText('MRI_PA_NO_SAVED_BOOKMARK_FOR_MATERIALIZATION'))
       }
 
       const plRequest = this.getPLRequest({ bmkId: this.savedBookmarkId })
@@ -541,7 +541,7 @@ export default {
       const materializedBookmark = await this.refreshAndFindBookmark()
 
       if (!materializedBookmark.cohortDefinitionId) {
-        throw new Error('Bookmark does not have cohortDefinitionId after materialization')
+        throw new Error(this.getText('MRI_PA_BOOKMARK_MISSING_COHORT_DEFINITION'))
       }
 
       const materializedCohorts = this.getMaterializedCohorts
@@ -555,7 +555,7 @@ export default {
         console.error('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
         console.error('[SaveCohort] Bookmark cohortDefinitionId:', materializedBookmark.cohortDefinitionId)
         console.error('[SaveCohort] Available materialized cohorts:', materializedCohorts)
-        throw new Error('Materialized cohort not found in materializedCohorts array')
+        throw new Error(this.getText('MRI_PA_MATERIALIZED_COHORT_NOT_FOUND'))
       }
 
       this.savedCohortId = materializedCohort.id

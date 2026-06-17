@@ -16,7 +16,6 @@ describe('shinyDashboardContext', () => {
   it('includes Table1 concept-set IDs in the iframe auth context', () => {
     const message = buildShinyDashboardAuthMessage({
       token: 'bearer-token',
-      parentOrigin: 'https://localhost:41100',
       datasetId: 'dataset-1',
       cohortId: 'materialized-cohort-7',
       mriquery: '{"cohortDefinition":{"cards":[]}}',
@@ -34,7 +33,6 @@ describe('shinyDashboardContext', () => {
       type: 'AUTH_TOKEN',
       token: 'bearer-token',
       timestamp: 123,
-      parentOrigin: 'https://localhost:41100',
       context: {
         datasetId: 'dataset-1',
         cohortId: 'materialized-cohort-7',
@@ -58,7 +56,6 @@ describe('shinyDashboardContext', () => {
 
     const message = buildShinyDashboardAuthMessage({
       token: 'bearer-token',
-      parentOrigin: 'https://localhost:41100',
       datasetId: 'dataset-1',
       cohortId: 'materialized-cohort-7',
       wizardConfig,
@@ -79,7 +76,6 @@ describe('shinyDashboardContext', () => {
 
     const message = buildShinyDashboardAuthMessage({
       token: 'bearer-token',
-      parentOrigin: 'https://localhost:41100',
       datasetId: 'dataset-1',
       cohortId: 'materialized-cohort-7',
       wizardConfig,
