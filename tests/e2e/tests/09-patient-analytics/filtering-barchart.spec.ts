@@ -92,7 +92,10 @@ test(TEST_NAME, async ({ page }) => {
     .locator('div')
     .filter({ hasText: /^All$/ })
     .click()
-  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByPlaceholder('Enter search term').click()
+  await page
+    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
+    .getByPlaceholder('Enter search term')
+    .click()
   await page
     .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
     .getByPlaceholder('Enter search term')
@@ -169,19 +172,16 @@ test(TEST_NAME, async ({ page }) => {
 
   // Set month of birth to 11 in filter card
   await page.getByTestId('pa-filter-card-patient').getByTestId('filter-card-menu-trigger').click()
-  await page
-    .getByTestId('pa-filter-card-patient')
-    .getByPlaceholder('Enter search term')
-    .fill('11')
-  await page
-    .getByTestId('pa-filter-card-patient')
-    .getByPlaceholder('Enter search term')
-    .press('Enter')
+  await page.getByTestId('pa-filter-card-patient').getByPlaceholder('Enter search term').fill('11')
+  await page.getByTestId('pa-filter-card-patient').getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('115 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Remove condition occurrence filter card
-  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByTestId('filter-card-menu-trigger').click()
+  await page
+    .getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1')
+    .getByTestId('filter-card-menu-trigger')
+    .click()
   await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
   await expect(page.getByText('247 / 2,694')).toBeVisible()
   await expect(page).toHaveScreenshot()
@@ -195,10 +195,10 @@ test(TEST_NAME, async ({ page }) => {
 
   // Export to ZIP file
   await page.getByTestId('pa-download-menu-btn').click()
-  await page.getByRole('menuitem', { name: 'Export to ZIP File' }).filter({ visible: true }).click()
-  await page.locator('span.buttonContent').nth(1).click()
-  await page.waitForTimeout(5000) // Wait for download to complete
-  await expect(page).toHaveScreenshot() // Not sure what to expect
+  await page.locator('.download-menu-container').getByTitle('Export to File').click()
+  await page.getByRole('menuitem').getByText('Export to ZIP File').click()
+  await expect(page.getByText('ZIP file exported successfully')).toBeVisible()
+  await expect(page.getByText('ZIP file exported successfully')).toBeHidden()
 
   // Switch to chart view
   await page.getByTestId('pa-chart-btn-stacked').click()

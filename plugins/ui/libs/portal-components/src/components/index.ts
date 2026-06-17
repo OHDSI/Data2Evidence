@@ -1,3 +1,4 @@
+export * from "./Alert/Alert";
 export * from "./Autocomplete/Autocomplete";
 export * from "./Box/Box";
 export * from "./Button/Button";

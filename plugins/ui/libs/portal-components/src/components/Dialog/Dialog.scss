@@ -1,24 +1,145 @@
 .alp-dialog {
   padding: 19px 24px;
+  // App sans-serif (GT-America) instead of MUI's Roboto; fallback chain covers Storybook.
+  font-family: var(--font-family-secondary, "GT-America", Helvetica, Arial, sans-serif);
 
   &__title {
     display: flex;
     align-items: center;
     margin: 15px 25px;
 
+    // Drop MUI IconButton's default 8px padding.
+    .alp-dialog__close {
+      padding: 0;
+    }
+
     &-text {
       flex: 1;
       font-size: 18px;
-      font-weight: bold;
+      font-weight: 500;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
       color: var(--color-primary);
     }
   }
 
-  &__snackbar {
-    margin-bottom: 16px;
+  &__description {
+    // Negative top margin absorbs the title's 15px bottom margin so the caption hugs it.
+    margin: -10px 25px 14px;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #646464; // neutral caption grey (not --color-secondary, the brand red)
+  }
 
-    d4l-snack-bar {
-      position: inherit;
+  // Flex column so header + footer stay fixed while the body scrolls.
+  &__paper {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: calc(100vh - 64px);
+
+    // Size tiers. `max-width: calc(100vw - 80px)` keeps a 40px edge gap on narrow windows.
+    &--small {
+      width: 540px;
+      max-width: calc(100vw - 80px);
     }
+    &--medium {
+      width: 800px;
+      max-width: calc(100vw - 80px);
+    }
+    &--large {
+      width: 1200px;
+      max-width: calc(100vw - 80px);
+    }
+    &--xlarge {
+      width: calc(100vw - 80px);
+      max-width: calc(100vw - 80px);
+      height: calc(100vh - 64px);
+    }
+  }
+
+  &__title,
+  &__description,
+  &__snackbar,
+  &__footer {
+    flex: 0 0 auto;
+  }
+
+  // Scrolling region; min-height: 0 lets the scroll engage in a flex column.
+  &__body {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    min-height: 0;
+
+    // Opt-in content inset. Default 0 so consumers that pad their own content aren't double-padded.
+    &--padded {
+      padding: 24px;
+
+      // Collapse first/last child outer margins so the 24px padding alone defines the inset.
+      > :first-child {
+        margin-top: 0;
+      }
+
+      > :last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  &__footer {
+    &-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+    }
+
+    // Left text-link action pushes the button cluster to the right.
+    &-action {
+      display: inline-flex;
+      align-items: center;
+      height: 40px;
+      margin-right: auto;
+      padding: 0;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 500;
+      color: var(--color-primary);
+    }
+
+    &-buttons {
+      display: flex;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    &--block {
+      .alp-dialog__footer-buttons {
+        flex: 1 1 auto;
+
+        > * {
+          flex: 1 1 auto;
+        }
+
+        // Stretch the inner button so consumers don't need `block` per Button.
+        .alp-button {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  // Action-in-progress overlay; Paper is position: relative while loading.
+  &__loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--color-primary);
   }
 }
