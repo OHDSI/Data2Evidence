@@ -3,6 +3,7 @@ import JSZip from 'jszip'
 import { scanForCharsToEscapeAndSurroundQuotes } from './shared'
 import { Zip, AsyncZipDeflate } from 'fflate'
 import streamSaver from 'streamsaver'
+import { generateDownloadFileName } from '../../utils/generateDownloadFileName'
 
 export function createZip(
   {
@@ -10,15 +11,18 @@ export function createZip(
     // selectedAttributes,
     // noValue,
     responses,
+    cohortName,
   }: {
     // resultSet: any[]
     // selectedAttributes: any[]
     // noValue: string
     responses: any
+    cohortName?: string
   },
   cb: any
 ) {
-  const fileStream = streamSaver.createWriteStream(`PatientAnalytics_Patient-List_${new Date().toISOString()}.zip`)
+  const fileName = generateDownloadFileName(cohortName, 'patientlist', 'zip')
+  const fileStream = streamSaver.createWriteStream(fileName)
 
   const writer = fileStream.getWriter()
 
