@@ -1,0 +1,31 @@
+/* Storybook-only GT-America faces (the library's Storybook doesn't load the app's
+   styles/_fonts.scss). Without these the alert text falls back to Helvetica/Arial,
+   whose 400/700 weights collapse the 300–600 distinctions. Dev-only. */
+@font-face {
+  font-family: "GT-America";
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("./fonts/GT-America-Standard-Thin.woff2") format("woff2");
+}
+@font-face {
+  font-family: "GT-America";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./fonts/GT-America-Standard-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "GT-America";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("./fonts/GT-America-Standard-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "GT-America";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("./fonts/GT-America-Standard-Bold.woff2") format("woff2");
+}
