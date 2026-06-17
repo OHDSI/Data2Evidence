@@ -1,11 +1,10 @@
-import { useCallback, useContext, useEffect, useRef } from "react";
+import { useCallback, useContext, useRef } from "react";
 import { AppContext, AppDispatchContext } from "../..";
 import { ACTION_TYPES } from "../reducer";
 import { i18nDefault, i18nKeys } from "../states";
 import { AxiosError } from "axios";
 import { api } from "../../../axios/api";
 import { getFallbackLocale, replaceParams } from "../helpers";
-import env from "../../../env";
 
 export type LanguageMappings = {
   [key in keyof typeof i18nKeys]: string;
@@ -44,8 +43,7 @@ export const useTranslation = (): {
       try {
         const newTranslation = await api.translation.getTranslation(newLocale);
         const newTranslations = { ...i18nDefault.default, ...newTranslation.data };
-        const updatedTranslations = JSON.parse(JSON.stringify(current)) as typeof translations;
-        updatedTranslations[newLocale] = newTranslations;
+        const updatedTranslations = { ...translationsRef.current, [newLocale]: newTranslations };
         translationsRef.current = updatedTranslations; // available immediately after await
         console.log(`Using translations for "${newLocale}"`);
         dispatch({
@@ -55,8 +53,11 @@ export const useTranslation = (): {
       } catch (e: any) {
         if (e instanceof AxiosError && e.response?.status === 404) {
           const fallbackLocale = getFallbackLocale(newLocale);
-          console.log(`Locale "${newLocale}" not found, trying fallback locale "${fallbackLocale}"`);
-          return await changeLocale(fallbackLocale, options);
+          if (fallbackLocale !== newLocale) {
+            console.log(`Locale "${newLocale}" not found, trying fallback locale "${fallbackLocale}"`);
+            return await changeLocale(fallbackLocale, options);
+          }
+          console.log(`Locale "${newLocale}" not found and has no further fallback`);
         }
         if (options?.rethrow) throw e;
         dispatch({ type: ACTION_TYPES.CHANGE_LOCALE, payload: { locale: "default", translations: current } });

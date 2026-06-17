@@ -64,7 +64,6 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
 
   return (
     <Dialog
-      className="change-language-dialog"
       title={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__DIALOG_TITLE)}
       closable
       bodyPadded
@@ -90,7 +89,7 @@ export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onCl
         ),
       }}
     >
-      <div className="change-language-dialog__content">
+      <div>
         <FormControl fullWidth>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
             <Select
