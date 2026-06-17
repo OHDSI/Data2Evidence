@@ -47,10 +47,10 @@ const Composer: FC<ComposerProps> = ({
         display: "flex",
         gap: 8,
         padding: "10px 12px",
-        borderTop: "1px solid #e0e0e0",
+        borderTop: "1px solid var(--color-ui-light-border, #dddddd)",
         alignItems: "flex-end",
         flexShrink: 0,
-        background: "#fff",
+        background: "var(--color-ui-lightest-bg, #ffffff)",
       }}
     >
       <textarea
@@ -65,7 +65,7 @@ const Composer: FC<ComposerProps> = ({
         style={{
           flex: 1,
           resize: "none",
-          border: "1px solid #ccc",
+          border: "1px solid var(--color-ui-medium-border, #cccccc)",
           borderRadius: 8,
           padding: "8px 10px",
           fontSize: 13,
@@ -73,12 +73,12 @@ const Composer: FC<ComposerProps> = ({
           outline: "none",
           overflowY: "hidden",
           transition: "border-color 0.15s",
-          background: disabled ? "#f9f9f9" : "#fff",
-          color: "#111",
+          background: disabled ? "var(--color-ui-extra-light-bg, #f9f9f9)" : "var(--color-ui-lightest-bg, #ffffff)",
+          color: "var(--color-ui-darkest-text, #000080)",
           lineHeight: 1.4,
         }}
-        onFocus={(e) => (e.currentTarget.style.borderColor = "#1976d2")}
-        onBlur={(e) => (e.currentTarget.style.borderColor = "#ccc")}
+        onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-primary, #000080)")}
+        onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-ui-medium-border, #cccccc)")}
       />
       <button
         onClick={handleSend}
@@ -87,8 +87,8 @@ const Composer: FC<ComposerProps> = ({
           padding: "8px 16px",
           borderRadius: 8,
           border: "none",
-          background: canSend ? "#1976d2" : "#e0e0e0",
-          color: canSend ? "#fff" : "#999",
+          background: canSend ? "var(--color-primary, #000080)" : "var(--color-ui-medium-bg, #dddddd)",
+          color: canSend ? "var(--color-ui-lightest-bg, #ffffff)" : "var(--color-mri-disabled-text, #c0c0c0)",
           cursor: canSend ? "pointer" : "not-allowed",
           fontSize: 13,
           fontWeight: 600,
