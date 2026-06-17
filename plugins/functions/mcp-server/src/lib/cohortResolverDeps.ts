@@ -1,13 +1,14 @@
 import type { ResolverDeps } from "./cohortResolver";
 import { AnalyticsAPI } from "../api/AnalyticsAPI";
+import { TerminologyAPI } from "../api/TerminologyAPI";
 
 /**
- * Build the live ResolverDeps from the service clients. The only remaining I/O
- * is category/text value resolution via the analytics-svc `values` endpoint
- * (fuzzy pick of the dataset's coded value). Concept sets are NOT resolved here:
- * the agent resolves them to ids up front (search_concepts → concept-set tools)
- * and the resolver passes those ids through, so this stays minimal and the
- * resolver stays pure/testable.
+ * Build the live ResolverDeps from the service clients. The remaining I/O is
+ * category/text value resolution via the analytics-svc `values` endpoint (fuzzy
+ * pick of the dataset's coded value) and concept-set existence validation via
+ * terminology-svc (so a raw OMOP concept id / phenotype id can't masquerade as a
+ * concept-set id). The agent still resolves concept sets to ids up front; the
+ * resolver only verifies those ids are real, keeping it pure/testable.
  */
 export interface DepsContext {
   authorization: string;
@@ -18,8 +19,21 @@ export interface DepsContext {
 
 export function buildResolverDeps(
   analyticsApi: AnalyticsAPI,
+  terminologyApi: TerminologyAPI,
   ctx: DepsContext,
 ): ResolverDeps {
+  // Fetch the dataset's concept-set ids once and reuse across all clauses in a
+  // single resolve pass (a cohort can reference the same set in several cards).
+  let conceptSetIds: Promise<Set<number>> | null = null;
+  const loadConceptSetIds = (): Promise<Set<number>> => {
+    if (!conceptSetIds) {
+      conceptSetIds = terminologyApi
+        .listConceptSets(ctx.authorization, ctx.datasetId)
+        .then((sets) => new Set(sets.map((s) => Number(s.id))));
+    }
+    return conceptSetIds;
+  };
+
   return {
     resolveValue: async (_card, attr, raw) => {
       const values = await analyticsApi.getAttributeValues(
@@ -38,6 +52,10 @@ export function buildResolverDeps(
         (v) => v.label.toLowerCase() === n || v.value.toLowerCase() === n,
       );
       return (exact ?? values[0]).value;
+    },
+    conceptSetExists: async (id) => {
+      const ids = await loadConceptSetIds();
+      return ids.has(Number(id));
     },
   };
 }

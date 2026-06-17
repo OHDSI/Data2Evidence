@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AnalyticsAPI } from "../api/AnalyticsAPI";
+import { TerminologyAPI } from "../api/TerminologyAPI";
 import { buildDeepLinkUrl } from "../lib/cohortBuilder";
 import { buildCohortCatalog, summarizeCatalog } from "../lib/cohortCatalog";
 import { resolveClausesToConstraints } from "../lib/cohortResolver";
@@ -14,6 +15,7 @@ import {
 } from "../utils/request-helpers";
 
 const analyticsApi = new AnalyticsAPI();
+const terminologyApi = new TerminologyAPI();
 
 /**
  * Register the D2E Patient Analytics cohort deep-link builder tool.
@@ -50,7 +52,9 @@ export function registerCohortBuilderTools(server: McpServer) {
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       const fe = await analyticsApi.getFrontendConfig(authorization, datasetId);
       if (!fe) {
-        throw new Error(`No Patient Analytics config for dataset ${datasetId}.`);
+        throw new Error(
+          `No Patient Analytics config for dataset ${datasetId}.`,
+        );
       }
       const catalog = buildCohortCatalog(fe.config);
       const attrCount = catalog.cards.reduce(
@@ -84,10 +88,17 @@ export function registerCohortBuilderTools(server: McpServer) {
         clauses: z
           .array(
             z.object({
-              card: z.string().describe("Filter card name from list_cohort_filters."),
-              exclude: z.boolean().optional()
+              card: z
+                .string()
+                .describe("Filter card name from list_cohort_filters."),
+              exclude: z
+                .boolean()
+                .optional()
                 .describe("Negate this card (exclude matching patients)."),
-              conceptSetId: z.number().int().optional()
+              conceptSetId: z
+                .number()
+                .int()
+                .optional()
                 .describe("Concept-set id for an event card (agent-resolved)."),
               constraints: z
                 .array(
@@ -123,14 +134,16 @@ export function registerCohortBuilderTools(server: McpServer) {
       const fe = await analyticsApi.getFrontendConfig(authorization, datasetId);
       if (!fe) {
         console.error(`[cohort-builder] no PA config for dataset ${datasetId}`);
-        throw new Error(`No Patient Analytics config for dataset ${datasetId}.`);
+        throw new Error(
+          `No Patient Analytics config for dataset ${datasetId}.`,
+        );
       }
       const catalog = buildCohortCatalog(fe.config);
 
       // 2. Resolve clauses -> constraints. num/range are pure; category values
       //    hit the analytics values endpoint; conceptSetId passes through.
       //    Throws an LLM-actionable error on any unresolved clause.
-      const deps = buildResolverDeps(analyticsApi, {
+      const deps = buildResolverDeps(analyticsApi, terminologyApi, {
         authorization,
         datasetId,
         configId: fe.meta.configId,
@@ -159,7 +172,10 @@ export function registerCohortBuilderTools(server: McpServer) {
 
       // Return ONLY the URL as the tool text; the /cohort endpoint appends it
       // deterministically so the model never relays the long, mangle-prone link.
-      return createStructuredResponse(url, warning ? { url, warning } : { url });
+      return createStructuredResponse(
+        url,
+        warning ? { url, warning } : { url },
+      );
     },
   );
 }

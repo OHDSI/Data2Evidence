@@ -1,5 +1,9 @@
 import type { CohortClause, ClauseConstraint } from "./cohortClause";
-import type { CohortCatalog, CatalogCard, CatalogAttribute } from "./cohortCatalog";
+import type {
+  CohortCatalog,
+  CatalogCard,
+  CatalogAttribute,
+} from "./cohortCatalog";
 import type { CohortConstraint, CohortExpression } from "./cohortBookmarkTree";
 
 /**
@@ -23,6 +27,13 @@ export interface ResolverDeps {
     attr: CatalogAttribute,
     raw: string,
   ) => Promise<string>;
+  /**
+   * True iff `id` is a persisted concept-set id in this dataset
+   * (portal.user_artifact concept_sets). Used to reject raw OMOP concept ids /
+   * phenotype-library ids that the agent may pass instead of a real concept-set
+   * id — a positive integer alone cannot be distinguished from a concept id.
+   */
+  conceptSetExists: (id: number) => Promise<boolean>;
 }
 
 const NUM_OPS = new Set([">=", "<=", "<", ">", "=", "!="]);
@@ -32,20 +43,30 @@ function norm(s: string): string {
 }
 
 /** Find a card by display name (exact ci, then substring). */
-function findCard(catalog: CohortCatalog, name: string): CatalogCard | undefined {
+function findCard(
+  catalog: CohortCatalog,
+  name: string,
+): CatalogCard | undefined {
   const n = norm(name);
   return (
     catalog.cards.find((c) => norm(c.name) === n) ??
-    catalog.cards.find((c) => norm(c.name).includes(n) || n.includes(norm(c.name)))
+    catalog.cards.find(
+      (c) => norm(c.name).includes(n) || n.includes(norm(c.name)),
+    )
   );
 }
 
 /** Find an attribute within a card by display name (exact ci, then substring). */
-function findAttr(card: CatalogCard, name: string): CatalogAttribute | undefined {
+function findAttr(
+  card: CatalogCard,
+  name: string,
+): CatalogAttribute | undefined {
   const n = norm(name);
   return (
     card.attributes.find((a) => norm(a.name) === n) ??
-    card.attributes.find((a) => norm(a.name).includes(n) || n.includes(norm(a.name)))
+    card.attributes.find(
+      (a) => norm(a.name).includes(n) || n.includes(norm(a.name)),
+    )
   );
 }
 
@@ -56,10 +77,46 @@ function primaryConceptAttr(card: CatalogCard): CatalogAttribute | undefined {
   );
 }
 
+/**
+ * A concept-set id must be a positive integer that maps to a persisted concept
+ * set in this dataset (portal.user_artifact). Two failure modes are caught here:
+ *  - the "unset" sentinel 0 (or any non-positive / non-integer value); and
+ *  - a positive integer that is NOT a real concept set — typically a raw OMOP
+ *    concept id (e.g. 9201 "Inpatient Visit") or a phenotype/library/cohort id
+ *    the agent passed instead of calling create_concept_set. A positivity check
+ *    alone cannot distinguish these, so we verify existence via deps.
+ * Letting either through serializes an unresolvable concept-set reference that
+ * fails downstream (terminology-svc -> portal 400). Reject with actionable text.
+ */
+async function assertValidConceptSetId(
+  id: unknown,
+  cardName: string,
+  deps: ResolverDeps,
+): Promise<void> {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error(
+      `Card "${cardName}" references concept set "${id}", which is not a valid ` +
+        `persisted concept set id. Create the concept set first with ` +
+        `create_concept_set and use the id it returns.`,
+    );
+  }
+  const exists = await deps.conceptSetExists(n);
+  if (!exists) {
+    throw new Error(
+      `Card "${cardName}" references concept set id ${n}, which is not a ` +
+        `persisted concept set in this dataset. Do NOT use a raw OMOP concept id ` +
+        `or a phenotype/library/cohort id as a concept-set id. Resolve the term ` +
+        `with search_concepts, then create_concept_set, and use the id it returns.`,
+    );
+  }
+}
+
 /** Build numeric expressions from a structured op/value. */
-function numExpressions(
-  c: ClauseConstraint,
-): { expressions: CohortExpression[]; combine: "AND" | "OR" } {
+function numExpressions(c: ClauseConstraint): {
+  expressions: CohortExpression[];
+  combine: "AND" | "OR";
+} {
   if (c.op === "range") {
     if (!Array.isArray(c.value) || c.value.length !== 2) {
       throw new Error(
@@ -126,7 +183,10 @@ export async function resolveClausesToConstraints(
     };
 
     const hasConcept = clause.conceptSetId != null;
-    if (!hasConcept && (!clause.constraints || clause.constraints.length === 0)) {
+    if (
+      !hasConcept &&
+      (!clause.constraints || clause.constraints.length === 0)
+    ) {
       throw new Error(
         `Clause for "${clause.card}" has no conceptSetId or constraints — nothing to filter.`,
       );
@@ -135,6 +195,7 @@ export async function resolveClausesToConstraints(
     // 1. conceptSetId -> the card's primary concept-set attribute (passthrough;
     //    the agent already resolved the id via the concept-set tools).
     if (hasConcept) {
+      await assertValidConceptSetId(clause.conceptSetId, card.name, deps);
       const attr = primaryConceptAttr(card);
       if (!attr) {
         throw new Error(
@@ -166,10 +227,13 @@ export async function resolveClausesToConstraints(
         ({ expressions, combine } = numExpressions(cc));
       } else if (attr.kind === "category") {
         const resolved = await deps.resolveValue(card, attr, String(cc.value));
-        expressions = [{ operator: cc.op === "!=" ? "!=" : "=", value: resolved }];
+        expressions = [
+          { operator: cc.op === "!=" ? "!=" : "=", value: resolved },
+        ];
         combine = "OR";
       } else if (attr.kind === "conceptSet") {
         // value IS the concept-set id (agent-resolved), e.g. a unit set.
+        await assertValidConceptSetId(cc.value, card.name, deps);
         expressions = [{ operator: "=", value: String(cc.value) }];
         combine = "OR";
       } else {
