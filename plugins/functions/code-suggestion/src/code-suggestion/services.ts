@@ -1,10 +1,16 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import { AIMessage, HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
 import { createStaticMcpTools } from "../mcp/staticTools";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
-import { getRolePrompting } from "./prompts";
+import { getRolePrompting, getNotebookAgentPrompt } from "./prompts";
+import {
+  createNotebookEditTools,
+  serializeNotebookForPrompt,
+  type EditOp,
+  type NotebookCellCtx,
+} from "./notebookAgent";
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -104,4 +110,49 @@ export const getChatResponse = async (req: any) => {
       }`
     );
   }
+};
+
+export const getNotebookAgentResponse = async (req: any) => {
+  const token = req.headers.authorization;
+  const datasetId = req.query.datasetId;
+  const cells: NotebookCellCtx[] = Array.isArray(req.body.cells)
+    ? req.body.cells
+    : [];
+  const userInput: string = req.body.userInput ?? "";
+  const history: { role: string; content: string }[] = Array.isArray(
+    req.body.history,
+  )
+    ? req.body.history
+    : [];
+
+  const model = await getModels(req.body.model);
+  if (!model || model === "local") {
+    throw new Error(
+      "Notebook agent requires a cloud model with tool support. Set AI_MODEL to a gpt:/anthropic:/azure:/gemini: model.",
+    );
+  }
+
+  const edits: EditOp[] = [];
+  const editTools = createNotebookEditTools(cells, edits);
+  const mcpTools = createStaticMcpTools(token, datasetId);
+  const agent = createAgent({ model, tools: [...editTools, ...mcpTools] as any });
+
+  const notebookText = serializeNotebookForPrompt(cells);
+  const messages: any[] = [
+    new SystemMessage(getNotebookAgentPrompt(userInput, notebookText)),
+  ];
+  for (const h of history) {
+    messages.push(
+      h.role === "assistant"
+        ? new AIMessage(h.content)
+        : new HumanMessage(h.content),
+    );
+  }
+  messages.push(new HumanMessage(userInput));
+
+  const stream: any = await agent.stream(
+    { messages },
+    { streamMode: "messages" },
+  );
+  return { stream, edits };
 };
