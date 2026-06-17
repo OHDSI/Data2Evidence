@@ -47,7 +47,10 @@ export function registerConceptSetManagementTools(server: McpServer) {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
-      const all = await terminologyApi.listConceptSets(authorization, datasetId);
+      const all = await terminologyApi.listConceptSets(
+        authorization,
+        datasetId,
+      );
       const totalCount = all.length;
       const page = all.slice(0, LIST_PAGE_SIZE).map((cs) => ({
         id: cs.id,
@@ -57,7 +60,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
       }));
 
       console.log(
-        `[MCP-TIMING] [list_concept_sets] END total=${(performance.now() - toolStart).toFixed(1)}ms items=${page.length} totalCount=${totalCount}`
+        `[MCP-TIMING] [list_concept_sets] END total=${(performance.now() - toolStart).toFixed(1)}ms items=${page.length} totalCount=${totalCount}`,
       );
 
       const text =
@@ -66,7 +69,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
           : `Found ${totalCount} concept set${totalCount === 1 ? "" : "s"} in this dataset.`;
 
       return createStructuredResponse(text, { conceptSets: page, totalCount });
-    }
+    },
   );
 
   // ==================== GET CONCEPT SET ====================
@@ -85,18 +88,18 @@ export function registerConceptSetManagementTools(server: McpServer) {
       const conceptSet = await terminologyApi.getConceptSet(
         authorization,
         datasetId,
-        conceptSetId
+        conceptSetId,
       );
 
       console.log(
-        `[MCP-TIMING] [get_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms`
+        `[MCP-TIMING] [get_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
       );
 
       return createStructuredResponse(
         `Retrieved concept set ID ${conceptSet.id}, name '${conceptSet.name}', ${conceptSet.concepts?.length ?? 0} concepts in expression.`,
-        { conceptSet }
+        { conceptSet },
       );
-    }
+    },
   );
 
   // ==================== CREATE CONCEPT SET ====================
@@ -118,20 +121,39 @@ export function registerConceptSetManagementTools(server: McpServer) {
       // schema still enforces them, so each item is fully populated here.
       const conceptItems = concepts as ConceptItem[];
 
+      // Concept-set names are unique per dataset (a DB unique index on the name).
+      // Reuse an existing set with the same name instead of attempting a duplicate
+      // insert, which would fail with a server error. Keeps the tool idempotent
+      // if the model skips the list_concept_sets reuse step.
+      const wanted = name.trim();
+      const existing = await terminologyApi.listConceptSets(
+        authorization,
+        datasetId,
+      );
+      const match = existing.find((cs) => cs.name.trim() === wanted);
+      if (match) {
+        console.log(
+          `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms reused id=${match.id}`,
+        );
+        return createTextResponse(
+          `A concept set named '${name}' already exists (ID ${match.id}); reusing it. Use concept-set id ${match.id} in your clause.`,
+        );
+      }
+
       const newId = await terminologyApi.createConceptSet(
         authorization,
         datasetId,
-        { name, concepts: conceptItems, shared: false, userName }
+        { name, concepts: conceptItems, shared: false, userName },
       );
 
       console.log(
-        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${newId} concepts=${concepts.length}`
+        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${newId} concepts=${concepts.length}`,
       );
 
       return createTextResponse(
-        `Successfully created concept set '${name}' with ID ${newId}. ${concepts.length} concept item${concepts.length === 1 ? "" : "s"} in the expression.`
+        `Successfully created concept set '${name}' with ID ${newId}. ${concepts.length} concept item${concepts.length === 1 ? "" : "s"} in the expression.`,
       );
-    }
+    },
   );
 
   // ==================== CHECK CONCEPT COVERAGE ====================
@@ -150,19 +172,20 @@ export function registerConceptSetManagementTools(server: McpServer) {
       const { found, missing } = await terminologyApi.checkConceptCoverage(
         authorization,
         datasetId,
-        conceptIds
+        conceptIds,
       );
 
       console.log(
-        `[MCP-TIMING] [check_concept_coverage_in_dataset] END total=${(performance.now() - toolStart).toFixed(1)}ms found=${found.length} missing=${missing.length}`
+        `[MCP-TIMING] [check_concept_coverage_in_dataset] END total=${(performance.now() - toolStart).toFixed(1)}ms found=${found.length} missing=${missing.length}`,
       );
 
-      const text = missing.length === 0
-        ? `All ${found.length} concept${found.length === 1 ? "" : "s"} exist in this dataset.`
-        : `${found.length} of ${conceptIds.length} concepts exist in this dataset. ${missing.length} are not in the vocabulary cache: ${missing.join(", ")}.`;
+      const text =
+        missing.length === 0
+          ? `All ${found.length} concept${found.length === 1 ? "" : "s"} exist in this dataset.`
+          : `${found.length} of ${conceptIds.length} concepts exist in this dataset. ${missing.length} are not in the vocabulary cache: ${missing.join(", ")}.`;
 
       return createStructuredResponse(text, { found, missing });
-    }
+    },
   );
 
   // ==================== SEARCH CONCEPTS ====================
@@ -199,7 +222,10 @@ export function registerConceptSetManagementTools(server: McpServer) {
         ),
       },
     },
-    async ({ query, domain, standardOnly = true, limit = 20 }, { requestInfo }) => {
+    async (
+      { query, domain, standardOnly = true, limit = 20 },
+      { requestInfo },
+    ) => {
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
       const concepts = await vocabularyApi.searchConcepts(
         authorization,
@@ -214,10 +240,13 @@ export function registerConceptSetManagementTools(server: McpServer) {
           `(ranked by record count). Pick the right concept id(s).\n` +
           concepts
             .slice(0, 10)
-            .map((c) => `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}]`)
+            .map(
+              (c) =>
+                `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}]`,
+            )
             .join("\n")
         : `No concepts found for "${query}"${domain ? ` in ${domain}` : ""}. Try a different term or domain.`;
       return createStructuredResponse(summary, { concepts });
-    }
+    },
   );
 }

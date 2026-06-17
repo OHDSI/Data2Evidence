@@ -97,7 +97,8 @@ export class CodeSuggestionRouter {
         const { stream, linkRef } = await getCohortResponse(req);
         let lastChar = "\n";
         let modelText = "";
-        const COHORT_URL_RE = /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
+        const COHORT_URL_RE =
+          /(?:\/d2e)?\/portal\/researcher\/cohort\?[^\s")']+/;
         // Cast: langchain's messages-mode stream isn't precisely typed; the
         // /chat route gets `any` for free via its fallback branch's wider union.
         for await (const [token, metadata] of stream as any) {
@@ -127,7 +128,10 @@ export class CodeSuggestionRouter {
         // Dedupe: skip the append if the model already emitted the exact link.
         if (linkRef.url && !modelText.includes(linkRef.url)) {
           res.write(`\n\n${linkRef.url}`);
-        } else if (!linkRef.url) {
+        } else if (linkRef.attempted && !linkRef.url) {
+          // The build tool ran but returned no link → genuine failure. When the
+          // agent only planned/refined (tool never called), append nothing so the
+          // plan-and-confirm turns read cleanly.
           res.write(
             "\n\n(Could not generate the cohort link — please try again.)",
           );
@@ -135,10 +139,17 @@ export class CodeSuggestionRouter {
         res.status(200);
         res.end();
       } catch (error) {
-        res.status(500).json({
-          error: true,
-          message: `Cannot fetch cohort response: ${error.message}`,
-        });
+        console.error("Error in /cohort route:", error);
+        if (res.headersSent) {
+          // Streaming has already started — cannot send a new JSON response.
+          // Just close the connection cleanly; throwing here would crash the worker.
+          res.end();
+        } else {
+          res.status(500).json({
+            error: true,
+            message: `Cannot fetch cohort response: ${error.message}`,
+          });
+        }
       }
     });
   }
