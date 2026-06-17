@@ -98,8 +98,23 @@ export default async (req: IMRIRequest, res, next) => {
 
         log.info(`studyDatabaseName ${studyDatabaseName}`);
 
+        // analyticsCredentials may be keyed by cacheId, databaseCode or databaseName
+        // depending on how the credential was registered. Try each in order so that
+        // datasets registered under the new cache_id scheme still resolve.
+        const credentialLookupKey =
+            (studyMetadata.cacheId && analyticsCredentials[studyMetadata.cacheId])
+                ? studyMetadata.cacheId
+                : (studyMetadata.databaseCode && analyticsCredentials[studyMetadata.databaseCode])
+                    ? studyMetadata.databaseCode
+                    : studyDatabaseName;
+        const resolvedCredential = analyticsCredentials[credentialLookupKey];
+        if (!resolvedCredential) {
+            throw new Error(
+                `No analytics credential found for dataset (cacheId=${studyMetadata.cacheId ?? "n/a"}, databaseCode=${studyMetadata.databaseCode ?? "n/a"}, databaseName=${studyDatabaseName})`
+            );
+        }
         const studyAnalyticsCredential: StudyAnalyticsCredential = {
-            ...analyticsCredentials[studyDatabaseName],
+            ...resolvedCredential,
         };
 
         studyAnalyticsCredential.schema = studySchemaName

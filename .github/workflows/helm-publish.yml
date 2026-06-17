@@ -1,0 +1,51 @@
+name: Publish Helm Chart
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Chart version to publish (overrides Chart.yaml). Leave blank to use the version from Chart.yaml."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  CHART_DIR: charts/d2e-services
+  OCI_REGISTRY: oci://ghcr.io/ohdsi/charts
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Override chart version
+        if: ${{ inputs.version != '' }}
+        run: |
+          sed -i -E "s/^version:.*/version: ${{ inputs.version }}/" "$CHART_DIR/Chart.yaml"
+          echo "Chart.yaml version now:"
+          grep '^version:' "$CHART_DIR/Chart.yaml"
+
+      - name: Package chart
+        run: helm package "$CHART_DIR" -d dist
+
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Push chart
+        run: |
+          pkg=$(ls dist/*.tgz | head -1)
+          helm push "$pkg" "$OCI_REGISTRY"
+
+      - name: Summary
+        run: |
+          pkg=$(basename dist/*.tgz)
+          echo "Published $pkg to $OCI_REGISTRY" >> $GITHUB_STEP_SUMMARY

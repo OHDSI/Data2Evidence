@@ -27,6 +27,8 @@ import {
   DatasetSnapshotDto,
 } from "./dto/index.ts";
 import { DatasetQueryService } from "./query/dataset-query.service.ts";
+import { RequestContextService } from "../common/request-context.service.ts";
+import { WebApiSourceService } from "../webapi/webapi-source.service.ts";
 
 @Middleware(RequestContextMiddleware)
 @Controller("system-portal/dataset")
@@ -35,16 +37,21 @@ export class DatasetController {
     private readonly datasetQueryService: DatasetQueryService,
     private readonly datasetCommandService: DatasetCommandService,
     private readonly datasetFilterService: DatasetFilterService,
+    private readonly webApiSourceService: WebApiSourceService,
+    private readonly requestContextService: RequestContextService,
   ) {}
 
   @Get()
   async getDataset(@Query() queryParams: any): Promise<IDataset> {
-    const id = queryParams.datasetId;
-    if (!id) {
-      console.error(`No datasetId provided ${JSON.stringify(queryParams)}`);
-      throw new HttpException(400, "datasetId is required");
+    const { datasetId, tokenDatasetCode } = queryParams;
+    if (datasetId) {
+      return await this.datasetQueryService.getDataset({ id: datasetId });
     }
-    return await this.datasetQueryService.getDataset(id);
+    if (tokenDatasetCode) {
+      return await this.datasetQueryService.getDataset({ tokenDatasetCode });
+    }
+    console.error(`No datasetId or tokenDatasetCode provided ${JSON.stringify(queryParams)}`);
+    throw new HttpException(400, "datasetId or tokenDatasetCode is required");
   }
 
   @Get("exist")
@@ -233,5 +240,19 @@ export class DatasetController {
       body.datasetId,
       body.databaseCode,
     );
+  }
+
+  @Post(":id/transform-to-webapi")
+  async transformToWebApi(@Param("id") id: string) {
+    return await this.datasetCommandService.transformToWebApi(id);
+  }
+
+  // Lightweight cache-readiness poll. Callers that need a hot cache before
+  // dispatching downstream work (DQD, DC, demo setup) should hit this until
+  // `ready === true` rather than blocking inside the dataset POST.
+  @Get(":id/cache-status")
+  async getCacheStatus(@Param("id") id: string) {
+    const authToken = this.requestContextService.getOriginalToken();
+    return await this.webApiSourceService.getCacheStatus(id, authToken);
   }
 }

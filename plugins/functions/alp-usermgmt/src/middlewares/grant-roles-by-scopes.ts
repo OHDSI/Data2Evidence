@@ -57,7 +57,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.IDP_RELYING_PARTY === 'azure') {
+        if (env.IDP_AUTO_PROVISION_USERS) {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
@@ -95,7 +95,7 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       return next()
     }
 
-    if (isSync && env.IDP_RELYING_PARTY === 'azure') {
+    if (isSync && env.IDP_AUTO_PROVISION_USERS) {
       const tenantId = env.APP_TENANT_ID
       if (!tenantId) {
         logger.error(`Tenant not found`)
@@ -118,11 +118,14 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
         if (autoGrantCodes.length > 0) {
           grantDatasetCodes = [...new Set([...grantDatasetCodes, ...autoGrantCodes])]
         }
+        logger.info(`Granting roles for user ${userId} for dataset codes: ${grantDatasetCodes.join(', ')}`)
 
         await grantOrRevokeResearcherRole(userId, tenantId, ROLES.STUDY_RESEARCHER, datasets, grantDatasetCodes)
 
-        const isAnyResearcher = datasets.some(dataset => grantDatasetCodes.includes(dataset.token_dataset_code))
-        await grantOrRevokeSystemRole(userId, ROLES.STUDY_WRITE_DQD_RESEARCHER, isAnyResearcher)
+        if (env.IDP_RELYING_PARTY === 'azure') {
+          const isAnyResearcher = datasets.some(dataset => grantDatasetCodes.includes(dataset.token_dataset_code))
+          await grantOrRevokeSystemRole(userId, ROLES.STUDY_WRITE_DQD_RESEARCHER, isAnyResearcher)
+        }
       }
     }
 
@@ -189,14 +192,18 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
     const isGrant = grantDatasetCodes.includes(dataset.token_dataset_code)
     if (isGrant) {
       isResearcher = true
+      logger.info(`Granting role ${role} for dataset ${dataset.token_dataset_code} to user ${userId}`)
       await addUserToGroup(userId, group!.id)
     } else {
+      logger.info(`Revoking role ${role} for dataset ${dataset.token_dataset_code} from user ${userId}`)
       await removeUserFromGroup(userId, group!.id)
     }
   }
 
   // Automatically grant viewer role when is researcher
-  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  if (isResearcher) {
+    await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  }
 }
 
 const addUserToGroup = async (userId: string, groupId: string) => {

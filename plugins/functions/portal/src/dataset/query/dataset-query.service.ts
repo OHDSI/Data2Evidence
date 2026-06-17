@@ -51,11 +51,37 @@ export class DatasetQueryService {
     });
   }
 
-  async getDataset(id: string): Promise<IDataset> {
+  async getDataset({
+    id,
+    tokenDatasetCode,
+  }: {
+    id?: string;
+    tokenDatasetCode?: string;
+  }): Promise<IDataset> {
     const baseColumns = this.getDatasetBaseColumns();
-    // Support lookup by both UUID id and tokenDatasetCode
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-    const whereClause = isUuid ? "dataset.id = :id" : "dataset.tokenDatasetCode = :id";
+    const lookupValue = id ?? tokenDatasetCode;
+
+    if (!lookupValue) {
+      throw new HttpException(
+        400,
+        "Dataset id or tokenDatasetCode is required",
+      );
+    }
+    // Lookup supports UUID id, sanitized cache_id (analytics-svc passes this on
+    // the CDM-version path), or tokenDatasetCode.
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        lookupValue,
+      );
+    const isCacheId =
+      /^_?[0-9a-f]{8}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{4}_[0-9a-f]{12}$/i.test(
+        lookupValue,
+      );
+    const whereClause = isUuid
+      ? "dataset.id = :lookupValue"
+      : isCacheId
+        ? "dataset.cacheId = :lookupValue"
+        : "dataset.tokenDatasetCode = :lookupValue";
 
     const dataset = await this.datasetRepo
       .createQueryBuilder("dataset")
@@ -64,21 +90,23 @@ export class DatasetQueryService {
       .leftJoin("dataset.tags", "tag")
       .leftJoin("dataset.attributes", "attribute")
       .leftJoin("attribute.attributeConfig", "attributeConfig")
-      .where(whereClause, { id })
+      .where(whereClause, { lookupValue })
       .select(baseColumns)
       .getOne();
 
     if (!dataset) {
-      throw new HttpException(404, `Dataset with id ${id} not found`);
+      throw new HttpException(
+        404,
+        `Dataset with identifier ${lookupValue} not found`,
+      );
     } else if (!dataset.datasetDetail) {
       throw new HttpException(
         404,
-        `Dataset detail with dataset id ${id} not found`,
+        `Dataset detail with dataset identifier ${lookupValue} not found`,
       );
     }
 
     const tenant = this.tenantService.getTenant();
-
     const swapped = this.swapVariables(
       await this.buildDatasetResponseDto(dataset, tenant),
       SWAP_TO.STUDY,
@@ -199,6 +227,7 @@ export class DatasetQueryService {
       "dataset.id",
       "dataset.dialect",
       "dataset.databaseCode",
+      "dataset.cacheId",
       "dataset.schemaName",
       "dataset.vocabSchemaName",
       "dataset.resultsSchemaName",
@@ -236,7 +265,7 @@ export class DatasetQueryService {
       return baseColumns.concat([
         "dataset.type",
         "dataset.visibilityStatus",
-        "dataset.fhir_project_id",
+        "dataset.fhirDatasetId",
       ]);
     }
     return baseColumns;

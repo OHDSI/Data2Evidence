@@ -4,6 +4,7 @@ export interface StrategusStudy {
   email?: string;
   name: string;
   id: string;
+  tokenDatasetCode?: string;
   type: StrategusStudyType;
   viewerCode: string;
 }
@@ -19,6 +20,7 @@ export interface NetworkStrategusStudy {
   createdAt: string;
   updatedAt: string;
   datasetId: string;
+  tokenStudyCode: string | null;
 }
 
 export enum StrategusStudyType {

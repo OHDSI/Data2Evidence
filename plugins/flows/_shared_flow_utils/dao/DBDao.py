@@ -1,4 +1,5 @@
 from __future__ import annotations
+from prefect.variables import Variable
 
 from _shared_flow_utils.dao.ibisdao import IbisDao
 from _shared_flow_utils.dao.trexdao import TrexDao
@@ -35,6 +36,10 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     Raises:
         ValueError: If the dialect is not supported.
     """
+    # Database code FHIR always use TrexDao regardless of dialect
+    if (kwargs.get("database_code") or "").lower() == "fhir":
+        return TrexDao(use_cache_db=False, database_code=Variable.get("fhir_database_code"))
+
     # Only DaoBase and TrexDao __init__ accept cache_id; pop it so the
     # SqlAlchemyDao probe constructor doesn't reject it, then re-attach
     # to the probe so vars(test_instance) carries it forward.
@@ -42,16 +47,12 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
 
     # Create a test instance to infer dialect if not provided
     test_instance = SqlAlchemyDao(**kwargs)
+    
     if cache_id is not None:
         test_instance.cache_id = cache_id
     # Always infer dialect from test_instance if not provided
 
-    # Todo: Update implementation if Hana uses trex
-    # If flow passes TREX but test_instance infers HANA, use HANA
-    if dialect == SupportedDatabaseDialects.TREX and test_instance.dialect == SupportedDatabaseDialects.HANA:
-        selected_dialect = SupportedDatabaseDialects.HANA
-    else:
-        selected_dialect = dialect if dialect is not None else test_instance.dialect
+    selected_dialect = dialect if dialect is not None else test_instance.dialect
     # Get the DAO class from registry
     dao_class = _DAO_REGISTRY.get(selected_dialect)
     if not dao_class:

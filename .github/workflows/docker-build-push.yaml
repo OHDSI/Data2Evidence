@@ -21,7 +21,7 @@ concurrency:
 env:
   REG_URL: ghcr.io/ohdsi
   DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management"
+  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
 
 jobs:
   setup:
@@ -130,6 +130,7 @@ jobs:
               - "services/mri-db/**"
               - "services/alp-logto/**"
               - "services/alp-pg-management/**"
+              - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
               - "scripts/**"
@@ -143,6 +144,7 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
             e2e:
               - "tests/e2e/**"
+              - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
@@ -197,15 +199,15 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
-          - AZ_REG_REPOSITORY: d2e-trex
-            DOCKER_BUILD_FILE_PATH: ./services/trex/Dockerfile.v2
-            DOCKER_BUILD_CONTEXT_PATH: ./services/trex
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen-worker
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
+          - AZ_REG_REPOSITORY: d2e-materialize-cohorts
+            DOCKER_BUILD_FILE_PATH: ./services/materialize-cohorts/Dockerfile
+            DOCKER_BUILD_CONTEXT_PATH: .
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -244,6 +246,7 @@ jobs:
           pull: ${{ matrix.pull_base == 'true' || false }}
           tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
           provenance: false
+          sbom: false
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
@@ -274,6 +277,7 @@ jobs:
           - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
             NPM: bun
+            NODE_VERSION: "20.x"
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
@@ -302,7 +306,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://npm.pkg.github.com"
           scope: "@data2evidence"
       - name: Setup bun
@@ -354,7 +358,7 @@ jobs:
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
         with:
-          node-version: "18.x"
+          node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
           scope: "@data2evidence"
       - name: Publish or Pack
@@ -364,32 +368,47 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_PROJECT_TOKEN }}
         run: |
           cd ${{ matrix.DESTPATH || matrix.PKGPATH }}
-          if [[ $SHOULD_PUBLISH == true ]]; then
-            npm publish
-          else
-            ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
-            FAILED=0
-            MAX_SIZE_MIB=500
-            MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
-            shopt -s nullglob
-            TGZ_FILES=(*.tgz)
-            if [ ${#TGZ_FILES[@]} -eq 0 ]; then
-              echo "ERROR: no .tgz files found after pack"
-              exit 1
-            fi
-            for PACK_FILE in "${TGZ_FILES[@]}"; do
-              SIZE=$(wc -c < "$PACK_FILE")
-              SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
-              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
-                echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
-                echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
-                FAILED=1
-              else
-                echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
-              fi
-            done
-            exit $FAILED
+          ${{ matrix.NPM == 'bun' && 'bun pm pack' || format('{0} pack', matrix.NPM || 'npm') }}
+          FAILED=0
+          MAX_SIZE_MIB=500
+          MAX_SIZE=$((MAX_SIZE_MIB * 1024 * 1024))
+          shopt -s nullglob
+          TGZ_FILES=(*.tgz)
+          if [ ${#TGZ_FILES[@]} -eq 0 ]; then
+            echo "ERROR: no .tgz files found after pack"
+            exit 1
           fi
+          for PACK_FILE in "${TGZ_FILES[@]}"; do
+            SIZE=$(wc -c < "$PACK_FILE")
+            SIZE_MIB=$(awk "BEGIN {printf \"%.2f\", $SIZE / 1048576}")
+            if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+              echo "FAIL  $PACK_FILE — ${SIZE_MIB}MiB (exceeds ${MAX_SIZE_MIB}MiB Azure limit)"
+              echo "::error::$PACK_FILE is ${SIZE_MIB}MiB, exceeds ${MAX_SIZE_MIB}MiB Azure limit"
+              FAILED=1
+            else
+              echo "OK  $PACK_FILE — ${SIZE_MIB}MiB"
+            fi
+          done
+          [ $FAILED -eq 0 ] || exit $FAILED
+          if [[ $SHOULD_PUBLISH == true ]]; then
+            for PACK_FILE in "${TGZ_FILES[@]}"; do
+              npm publish "$PACK_FILE"
+            done
+          fi
+
+      - name: Slugify PKGPATH for artifact name
+        id: slug
+        run: |
+          slug=$(echo "${{ matrix.PKGPATH }}" | sed 's|^\./||; s|/$||; s|/|-|g')
+          echo "slug=$slug" >> "$GITHUB_OUTPUT"
+
+      - name: Upload plugin tarball artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: plugin-tgz-${{ steps.slug.outputs.slug }}
+          path: ${{ matrix.DESTPATH || matrix.PKGPATH }}/*.tgz
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload UI resources
         if: matrix.PKGPATH == './plugins/ui'
@@ -399,6 +418,89 @@ jobs:
           path: ./plugins/ui/resources
           if-no-files-found: error
           retention-days: 7
+
+      - name: Upload UI package tarball
+        if: matrix.PKGPATH == './plugins/ui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui/*.tgz
+          if-no-files-found: error
+          retention-days: 7
+
+  build_trex_image:
+    needs: [setup, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_src == 'true' || needs.setup.outputs.changes_plugins == 'true' || needs.setup.outputs.changes_e2e == 'true'))
+    runs-on: ${{ needs.setup.outputs.random_runner }}
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download plugin artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: plugin-tgz-*
+          path: ./services/trex/plugin-artifacts
+          merge-multiple: true
+
+      - name: Inspect bundled tarballs
+        run: |
+          ls -lh ./services/trex/plugin-artifacts/
+          echo "---"
+          for f in ./services/trex/plugin-artifacts/*.tgz; do
+            echo "$(basename "$f"): $(tar -xzOf "$f" package/package.json | jq -r '.name + " " + .version')"
+          done
+
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build and Push trex image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./services/trex
+          file: ./services/trex/Dockerfile.v2
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}
+          provenance: false
+          sbom: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+          secrets: |
+            "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af
 
   build_e2e_image:
     needs: [setup]
@@ -437,9 +539,196 @@ jobs:
           push: true
           tags: ${{ env.REG_URL }}/d2e-e2e:${{ env.RUN_TAG }}
           provenance: false
+          sbom: false
+
+  helm_lint:
+    needs: [setup]
+    runs-on: ubuntu-latest
+    env:
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Helm lint
+        run: helm lint "$CHART_DIR" -f "$CI_VALUES"
+
+      - name: Render templates
+        run: |
+          mkdir -p /tmp/rendered
+          helm template d2e "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --namespace d2e \
+            > /tmp/rendered/all.yaml
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL -o /tmp/kubeconform.tgz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          tar -xzf /tmp/kubeconform.tgz -C /tmp
+          sudo mv /tmp/kubeconform /usr/local/bin/
+
+      - name: Validate rendered manifests
+        run: |
+          kubeconform -summary -strict \
+            -skip CustomResourceDefinition \
+            -ignore-missing-schemas \
+            /tmp/rendered/all.yaml
+
+  test_helm_kind:
+    # TEMPORARILY DISABLED: the Helm chart does not yet support the in-engine
+    # (trexsql-base) trex image; running it on helm needs the trex/WebAPI runtime
+    # env + DB-bootstrap gating wired into the chart. Re-enabled in a follow-up PR.
+    # When skipped, test_helm_kind_gate skips and docker-success treats it as OK.
+    if: false
+    needs: [setup, build_images, build_trex_image]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    env:
+      RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      CHART_DIR: charts/d2e-services
+      CI_VALUES: charts/d2e-services/ci/test-values.yaml
+      HELM_VERSION: v3.16.2
+      RELEASE: d2e
+      NAMESPACE: d2e
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Recreate /opt/hostedtoolcache
+        # free-disk-space deletes /opt/hostedtoolcache; helm/kind-action needs it.
+        run: sudo mkdir -p /opt/hostedtoolcache
+
+      - uses: actions/checkout@v4
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: helm-test
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Show cluster info
+        run: |
+          kubectl version
+          kubectl get nodes -o wide
+
+      - name: Create ghcr image-pull secret
+        run: |
+          kubectl create namespace "$NAMESPACE"
+          kubectl create secret docker-registry ghcr-pull \
+            --docker-server=ghcr.io \
+            --docker-username="${{ github.actor }}" \
+            --docker-password="${{ secrets.GITHUB_TOKEN }}" \
+            -n "$NAMESPACE"
+          kubectl patch serviceaccount default -n "$NAMESPACE" \
+            -p '{"imagePullSecrets":[{"name":"ghcr-pull"}]}'
+
+      - name: Deploy Postgres for CI
+        run: |
+          kubectl apply -n "$NAMESPACE" -f "$CHART_DIR/ci/postgres.yaml"
+          kubectl rollout status deployment/postgres -n "$NAMESPACE" --timeout=3m
+
+      - name: Generate throwaway TLS material
+        run: |
+          set -euo pipefail
+          D=/tmp/ci-tls
+          mkdir -p "$D"
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$D/ca.key" -out "$D/ca.crt" \
+            -days 30 -subj "/CN=d2e-ci-ca" 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes \
+            -keyout "$D/srv.key" -out "$D/srv.csr" \
+            -subj "/CN=d2e.cluster.local" 2>/dev/null
+          openssl x509 -req -in "$D/srv.csr" \
+            -CA "$D/ca.crt" -CAkey "$D/ca.key" -CAcreateserial \
+            -out "$D/srv.crt" -days 30 2>/dev/null
+
+      - name: Helm install (using just-built images)
+        run: |
+          D=/tmp/ci-tls
+          helm install "$RELEASE" "$CHART_DIR" \
+            -f "$CI_VALUES" \
+            --set "global.image.tag=${RUN_TAG}" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_CRT=$D/ca.crt" \
+            --set-file "d2e-core.secrets.ROOT__PKI__CA_KEY=$D/ca.key" \
+            --set-file "d2e-core.secrets.SERVER__CRT=$D/srv.crt" \
+            --set-file "d2e-core.secrets.SERVER__KEY=$D/srv.key" \
+            --set-file "global.secrets.TLS__INTERNAL__CA_CRT=$D/ca.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__CRT=$D/srv.crt" \
+            --set-file "global.secrets.TLS__INTERNAL__KEY=$D/srv.key" \
+            --namespace "$NAMESPACE" \
+            --wait --timeout 20m
+
+      - name: Wait for pods Ready
+        run: |
+          kubectl wait \
+            --for=condition=Ready pod \
+            --all \
+            -n "$NAMESPACE" \
+            --timeout=5m
+
+      - name: Show final state
+        if: always()
+        run: |
+          echo "=== pods ==="
+          kubectl get pods -n "$NAMESPACE" -o wide || true
+          echo "=== services ==="
+          kubectl get svc -n "$NAMESPACE" || true
+
+      - name: Failure diagnostics
+        if: failure()
+        run: |
+          echo "=== events ==="
+          kubectl get events -A --sort-by=.lastTimestamp | tail -100 || true
+          for pod in $(kubectl get pods -n "$NAMESPACE" -o name); do
+            echo "------------------------------"
+            echo "DESCRIBE $pod"
+            echo "------------------------------"
+            kubectl describe -n "$NAMESPACE" "$pod" || true
+            echo "------------------------------"
+            echo "LOGS $pod"
+            echo "------------------------------"
+            kubectl logs -n "$NAMESPACE" "$pod" --all-containers --tail=200 || true
+          done
+
+      - name: Mark helm kind attempt success
+        if: success()
+        run: |
+          mkdir -p ./_attempt
+          touch ./_attempt/success
+
+      - name: Upload helm kind attempt outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-kind-attempt
+          path: ./_attempt/
+          overwrite: true
+
+      - name: Cleanup
+        if: always()
+        run: helm uninstall "$RELEASE" -n "$NAMESPACE" || true
 
   test_demosetup_dev:
-    needs: [setup, build_images, build_plugins, build_e2e_image]
+    needs: [setup, build_images, build_trex_image, build_plugins, build_e2e_image]
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -449,7 +738,6 @@ jobs:
       VERSION: develop
       DOCKER_TAG_NAME: ${{ needs.setup.outputs.run_tag }}
       PLUGINS_IMAGE_TAG: ${{ needs.setup.outputs.run_tag }}
-      PLUGINS_SEED: '["d2e-flows", "d2e-ui", "d2e-atlas", "data-transformation-flow", "hades-flow", "d2e-fhir-server", "i2b2-flow", "data-management-flow"]'
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -486,8 +774,28 @@ jobs:
         if: success() || failure()
         run: npm install
 
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm install
+
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
+
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
+
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
 
       - name: Initialise d2e
         if: success() || failure()
@@ -517,7 +825,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -584,17 +892,6 @@ jobs:
             DC_EXIT_CODE=$?
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
-      - name: Download UI resources
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-resources
-          path: ./plugins/ui/resources
-
-      - name: UI docker-compose-local
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          sed -i 's|# - ./plugins/ui/resources:/usr/src/local-resources|- ./plugins/ui/resources:/usr/src/local-resources|' docker-compose-local.yml
       - name: Flow base docker-compose-local
         if: needs.setup.outputs.changes_flow_package_json == 'true' || contains(github.base_ref, 'release/')
         run: |
@@ -603,37 +900,9 @@ jobs:
       - name: Restart d2e services
         if: success() || failure()
         run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
 
-      - name: Wait for d2e-ui plugin to be installed
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          echo "Waiting for d2e-ui plugin to be installed..."
-          max_attempts=60
-          attempt=0
-          start_time=$(date +%s)
-          while [ $attempt -lt $max_attempts ]; do
-            if docker exec d2e-trex ls /usr/src/data/plugins/@data2evidence/d2e-ui/resources/portal >/dev/null 2>&1; then
-              end_time=$(date +%s)
-              elapsed=$((end_time - start_time))
-              echo "d2e-ui plugin is ready (took ${elapsed}s)"
-              break
-            fi
-            attempt=$((attempt + 1))
-            echo "  Attempt $attempt/$max_attempts: waiting..."
-            sleep 2
-          done
-          if [ $attempt -eq $max_attempts ]; then
-            echo "Timeout waiting for d2e-ui plugin to be installed"
-            exit 1
-          fi
-
-      - name: UI Mounting build
-        if: needs.setup.outputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: |
-          docker exec d2e-trex sh -c "rm -rf /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
-          docker exec d2e-trex sh -c "cp -r /usr/src/local-resources /usr/src/data/plugins/\@data2evidence/d2e-ui/resources"
 
       - name: Wait for webapi-init to complete
         run: |
@@ -723,7 +992,7 @@ jobs:
         run: docker system prune -af
 
   test_demosetup_hana:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     runs-on: ${{ needs.setup.outputs.random_runner }}
     strategy:
       fail-fast: false
@@ -758,6 +1027,13 @@ jobs:
 
       - name: npm install
         if: success() || failure()
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        if: success() || failure()
+        working-directory: ./plugins/atlas
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Initialise d2e
@@ -874,7 +1150,7 @@ jobs:
         run: docker system prune -af
 
   test_http_duckdb:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
       needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
@@ -892,7 +1168,7 @@ jobs:
     secrets: inherit
 
   test_http_duckdb_retry:
-    needs: [setup, build_images, build_plugins, test_http_duckdb]
+    needs: [setup, build_images, build_trex_image, build_plugins, test_http_duckdb]
     if: |
       always() && needs.test_http_duckdb.result == 'failure' && (
         needs.setup.outputs.is_publish_push == 'true' ||
@@ -912,7 +1188,7 @@ jobs:
     secrets: inherit
 
   test_http_hana:
-    needs: [setup, build_images, build_plugins]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
       needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
@@ -929,7 +1205,7 @@ jobs:
     secrets: inherit
 
   test_http_hana_retry:
-    needs: [setup, build_images, build_plugins, test_http_hana]
+    needs: [setup, build_images, build_trex_image, build_plugins, test_http_hana]
     if: |
       always() && needs.test_http_hana.result == 'failure' && (
         needs.setup.outputs.is_publish_push == 'true' ||
@@ -1019,11 +1295,30 @@ jobs:
           echo "All HTTP hana attempts failed."
           exit 1
 
+  test_helm_kind_gate:
+    needs: [test_helm_kind]
+    if: always() && needs.test_helm_kind.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: helm-kind-attempt
+          path: ./_attempts
+      - name: Pass if helm kind attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "Helm kind attempt succeeded."
+            exit 0
+          fi
+          echo "Helm kind attempt failed."
+          exit 1
+
   promote:
-    needs: [setup, build_images]
+    needs: [setup, build_images, build_trex_image]
     if: |
       always() &&
       needs.build_images.result == 'success' &&
+      needs.build_trex_image.result == 'success' &&
       needs.setup.outputs.is_publish_push == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -1051,6 +1346,7 @@ jobs:
           - d2e-trex
           - d2e-dataflow-gen-worker
           - d2e-supabase-storage
+          - d2e-materialize-cohorts
     steps:
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -1083,22 +1379,25 @@ jobs:
           delete-only-untagged-versions: "true"
 
   docker-success:
-    needs: [build_images, build_plugins, build_e2e_image, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - name: Check upstream job results
         env:
           R_BUILD_IMAGES: ${{ needs.build_images.result }}
+          R_BUILD_TREX: ${{ needs.build_trex_image.result }}
           R_BUILD_PLUGINS: ${{ needs.build_plugins.result }}
           R_BUILD_E2E: ${{ needs.build_e2e_image.result }}
+          R_HELM_LINT: ${{ needs.helm_lint.result }}
+          R_HELM_KIND: ${{ needs.test_helm_kind_gate.result }}
           R_DEMO_DEV: ${{ needs.test_demosetup_dev_gate.result }}
           R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;

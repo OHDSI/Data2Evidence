@@ -32,6 +32,7 @@ import UpdateSchemaDialog from "./UpdateSchemaDialog/UpdateSchemaDialog";
 import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
 import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
 import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
+import TransformToWebApiDialog from "./TransformToWebApiDialog/TransformToWebApiDialog";
 
 import "./StudyOverview.scss";
 
@@ -71,6 +72,7 @@ const StudyOverview: FC = () => {
   const [showSourceInformationDialog, openSourceInformationDialog, closeSourceInformationDialog] =
     useDialogHelper(false);
   const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
+  const [showTransformDialog, openTransformDialog, closeTransformDialog] = useDialogHelper(false);
   const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
@@ -197,6 +199,24 @@ const StudyOverview: FC = () => {
       openManageViewerDialog();
     },
     [openManageViewerDialog]
+  );
+
+  const handleTransformToWebApi = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openTransformDialog();
+    },
+    [openTransformDialog]
+  );
+
+  const handleCloseTransformDialog = useCallback(
+    (type: CloseDialogType) => {
+      closeTransformDialog();
+      if (type === "success") {
+        setRefetch((refetch) => refetch + 1);
+      }
+    },
+    [closeTransformDialog]
   );
 
   const handleRunStrategusStudy = useCallback(
@@ -363,9 +383,7 @@ const StudyOverview: FC = () => {
           // This is a parent or standalone FHIR dataset
           fhir.push(dataset);
         }
-      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop") {
-        // Source, OMOP, and all HANA datasets (hana__omop, hana__non_omop, etc.)
-        // Check if this is a child dataset (has source_dataset_id attribute)
+      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop" || type === "webapi") {
         const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
 
         if (sourceIdAttribute && sourceIdAttribute.value) {
@@ -516,7 +534,12 @@ const StudyOverview: FC = () => {
 
       if (hasSourceDatasetId) {
         cacheDatasets.push(item);
-      } else if (item.type === "source" || item.type === "hana__omop" || item.type === "hana__non_omop") {
+      } else if (
+        item.type === "source" ||
+        item.type === "hana__omop" ||
+        item.type === "hana__non_omop" ||
+        item.type === "webapi"
+      ) {
         if (!datasetsByFlow[flowName]) {
           datasetsByFlow[flowName] = [];
         }
@@ -645,8 +668,8 @@ const StudyOverview: FC = () => {
         <TableCell>
           {dataset.dataModel
             ? `${dataset.dataModel} [${dataset.plugin}]`
-            : dataset.fhir_project_id && (
-                <Tooltip placement="top" title={dataset.fhir_project_id}>
+            : dataset.fhirStudyId && (
+                <Tooltip placement="top" title={dataset.fhirStudyId}>
                   <span>{getText(i18nKeys.STUDY_OVERVIEW__FHIR_SERVER)}</span>
                 </Tooltip>
               )}
@@ -669,6 +692,7 @@ const StudyOverview: FC = () => {
             handleCreateCache={handleCreateCache}
             handleSetupSemanticSearch={handleSetupSemanticSearch}
             handleManageDashboard={handleManageDashboard}
+            handleTransformToWebApi={handleTransformToWebApi}
           />
         </TableCell>
       </TableRow>
@@ -941,6 +965,13 @@ const StudyOverview: FC = () => {
               study={activeDataset}
               open={showDeleteStudyDialog}
               onClose={handleCloseDeleteStudyDialog}
+            />
+          )}
+          {showTransformDialog && (
+            <TransformToWebApiDialog
+              open={showTransformDialog}
+              study={activeDataset}
+              onClose={handleCloseTransformDialog}
             />
           )}
           {showPermissionsDialog && (

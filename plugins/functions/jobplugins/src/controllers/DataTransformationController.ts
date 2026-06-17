@@ -334,7 +334,11 @@ export class DataTransformationController {
       return res.status(201).send(result);
     } catch (error) {
       console.error("Error in createCanvasFromTemplate: ", error);
-      return res.status(500).send({ message: error.message });
+      const status =
+        typeof (error as { statusCode?: number })?.statusCode === "number"
+          ? (error as { statusCode: number }).statusCode
+          : 500;
+      return res.status(status).send({ message: error.message });
     }
   }
 

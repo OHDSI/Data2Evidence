@@ -19,6 +19,7 @@ export type ExecFn = (sql: string) => Promise<unknown> | unknown;
 
 export interface AttachOpts {
   cacheDir?: string;
+  createDbFileIfMissing?: boolean;
   exec: ExecFn;
 }
 
@@ -39,11 +40,13 @@ export async function ensureCacheAttached(
     throw new Error(`invalid identifier: ${cacheId}`);
   }
   const dir = opts.cacheDir ?? DEFAULT_CACHE_DIR;
+  const createDbFileIfMissing = opts.createDbFileIfMissing ?? false;
   const filePath = `${dir}/${cacheId}.db`;
-  if (!fileExists(filePath)) {
+  if (!fileExists(filePath) && !createDbFileIfMissing) {
     return;
   }
-  await opts.exec(`ATTACH IF NOT EXISTS '${filePath}' AS ${cacheId}`);
+  const attachSql = `ATTACH IF NOT EXISTS '${filePath}' AS ${cacheId}`;
+  await opts.exec(attachSql);
 }
 
 export interface SourceCredential {

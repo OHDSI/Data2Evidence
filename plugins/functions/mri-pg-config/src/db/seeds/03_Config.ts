@@ -9602,10 +9602,10 @@ export const cdwConfig = {
             "@REF.VOCABULARY_ID": "\"VOCABULARY_ID\"",
             "@REF.CODE": "\"CONCEPT_ID\"",
             "@REF.TEXT": "\"CONCEPT_NAME\"",
-            "@TEXT": "$$VOCAB_SCHEMA$$.\"CONCEPT\"",
-            "@TEXT.INTERACTION_ID": "\"CONCEPT_ID\"",
-            "@TEXT.INTERACTION_TEXT_ID": "\"CONCEPT_ID\"",
-            "@TEXT.VALUE": "\"CONCEPT_NAME\""
+            "@TEXT": "$$VOCAB_SCHEMA$$.\"CONCEPT_ANCESTOR\"",
+            "@TEXT.INTERACTION_ID": "\"ANCESTOR_CONCEPT_ID\"",
+            "@TEXT.INTERACTION_TEXT_ID": "\"DESCENDANT_CONCEPT_ID\"",
+            "@TEXT.VALUE": "\"ANCESTOR_CONCEPT_ID\""
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"PERSON\""
@@ -13302,7 +13302,10 @@ const paConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -13365,7 +13368,7 @@ const paConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -13463,6 +13466,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONDERA.\"CONDITION_ERA_START_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraStartDate",
                         "conceptIdentifierType": ""
@@ -13510,6 +13516,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONDERA.\"CONDITION_ERA_END_DATE\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraEndDate",
                         "conceptIdentifierType": ""
@@ -13557,6 +13566,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONDERA.\"CONDITION_OCCURRENCE_COUNT\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -13604,6 +13616,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONDERA.person_id",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -13651,6 +13666,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONDERA.\"CONDITION_ERA_ID\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -13700,6 +13718,9 @@ export const cdwConfigDuckdb = {
                         "_referenceExpression": "@REF.CONCEPT_ID",
                         "order": 8,
                         "domainFilter": "Condition",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -13798,8 +13819,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@COND.\"VISIT_OCCURRENCE_ID\"",
-                        "order": 1,
+                        "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -13845,8 +13869,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "time",
                         "expression": "@COND.\"CONDITION_END_DATE\"",
-                        "order": 2,
+                        "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
@@ -13892,8 +13919,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "time",
                         "expression": "@COND.\"CONDITION_START_DATE\"",
-                        "order": 3,
+                        "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -13939,8 +13969,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "text",
                         "expression": "@COND.person_id",
-                        "order": 4,
+                        "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -13986,8 +14019,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "num",
                         "expression": "@COND.\"CONDITION_OCCURRENCE_ID\"",
-                        "order": 9,
+                        "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14033,8 +14069,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@COND.\"CONDITION_TYPE_CONCEPT_ID\"",
-                        "order": 12,
+                        "order": 5,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ConditionType",
                         "conceptIdentifierType": "",
@@ -14082,8 +14121,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@COND.\"CONDITION_SOURCE_CONCEPT_ID\"",
-                        "order": 14,
+                        "order": 6,
                         "domainFilter": "Condition",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14129,8 +14171,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@COND.\"CONDITION_STATUS_CONCEPT_ID\"",
-                        "order": 16,
+                        "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ConditionStatus",
                         "conceptIdentifierType": "",
@@ -14178,8 +14223,11 @@ export const cdwConfigDuckdb = {
                         ],
                         "type": "conceptSet",
                         "expression": "@COND.\"CONDITION_CONCEPT_ID\"",
-                        "order": 18,
+                        "order": 8,
                         "domainFilter": "Condition",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -14231,8 +14279,64 @@ export const cdwConfigDuckdb = {
                         "defaultFilter": "@REF.concept_id = @COND.condition_concept_id",
                         "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
                         "referenceExpression": "@REF.CONCEPT_NAME",
-                        "order": 22,
+                        "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
+                        "standardConceptCodeFilter": "",
+                        "cohortDefinitionKey": "CodesetId",
+                        "conceptIdentifierType": "name"
+                    },
+                    "condition_source_concept_code": {
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Condition Source Concept Code"
+                            }
+                        ],
+                        "disabledLangName": [
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
+                        ],
+                        "type": "text",
+                        "expression": "@REF.CONCEPT_CODE",
+                        "defaultFilter": "@REF.CONCEPT_ID = @REF.CONCEPT_ID",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
+                        "order": 10,
+                        "domainFilter": "",
+                        "includeDescendants": true,
+                        "includeDescendantsExpression": "@COND.condition_source_concept_id",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -14329,6 +14433,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.\"DEATH_TYPE_CONCEPT_ID\"",
                         "order": 2,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DeathType",
                         "conceptIdentifierType": "",
@@ -14378,6 +14485,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.person_id",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14425,6 +14535,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.\"DEATH_DATETIME\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14472,6 +14585,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.\"DEATH_DATE\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -14521,6 +14637,9 @@ export const cdwConfigDuckdb = {
                         "defaultFilter": "@REF.concept_id = @DEATH.DEATH_TYPE_CONCEPT_ID",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DeathType",
                         "conceptIdentifierType": "name"
@@ -14568,6 +14687,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.\"DEATH_DATE\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -14615,6 +14737,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEATH.\"DEATH_DATE\"",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
@@ -14713,6 +14838,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.\"DEVICE_EXPOSURE_END_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
@@ -14760,6 +14888,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.\"DEVICE_EXPOSURE_START_DATE\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -14807,6 +14938,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.person_id",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14854,6 +14988,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.\"DEVICE_EXPOSURE_ID\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -14901,6 +15038,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.\"DEVICE_TYPE_CONCEPT_ID\"",
                         "order": 9,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DeviceType",
                         "conceptIdentifierType": "",
@@ -14950,6 +15090,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DEVEXP.\"DEVICE_CONCEPT_ID\"",
                         "order": 11,
                         "domainFilter": "Device",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -15003,6 +15146,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -15099,6 +15245,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.person_id",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15146,6 +15295,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"DOSE_ERA_END_DATE\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraEndDate",
                         "conceptIdentifierType": ""
@@ -15193,6 +15345,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"DOSE_ERA_START_DATE\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraStartDate",
                         "conceptIdentifierType": ""
@@ -15240,6 +15395,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"DOSE_VALUE\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DoseValue",
                         "conceptIdentifierType": ""
@@ -15287,6 +15445,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"DOSE_ERA_ID\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15334,6 +15495,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"DRUG_CONCEPT_ID\"",
                         "order": 8,
                         "domainFilter": "Drug",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -15383,6 +15547,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DOSEERA.\"UNIT_CONCEPT_ID\"",
                         "order": 10,
                         "domainFilter": "Unit",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Unit",
                         "conceptIdentifierType": "",
@@ -15481,6 +15648,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"DRUG_ERA_END_DATE\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraEndDate",
                         "conceptIdentifierType": ""
@@ -15528,6 +15698,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"DRUG_ERA_START_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "EraStartDate",
                         "conceptIdentifierType": ""
@@ -15575,6 +15748,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.person_id",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15622,6 +15798,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"DRUG_ERA_ID\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15669,6 +15848,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"GAP_DAYS\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15716,6 +15898,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"DRUG_EXPOSURE_COUNT\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15763,6 +15948,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGERA.\"DRUG_CONCEPT_ID\"",
                         "order": 8,
                         "domainFilter": "Drug",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -15863,6 +16051,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_EXPOSURE_END_DATETIME\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -15910,6 +16101,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"REFILLS\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Refills",
                         "conceptIdentifierType": ""
@@ -15957,6 +16151,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_EXPOSURE_START_DATETIME\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16004,6 +16201,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"STOP_REASON\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16051,6 +16251,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_EXPOSURE_END_DATE\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
@@ -16098,6 +16301,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_EXPOSURE_START_DATE\"",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -16145,6 +16351,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"LOT_NUMBER\"",
                         "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16192,6 +16401,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_EXPOSURE_ID\"",
                         "order": 11,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16239,6 +16451,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"SIG\"",
                         "order": 12,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16286,6 +16501,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.person_id",
                         "order": 13,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16333,6 +16551,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"VERBATIM_END_DATE\"",
                         "order": 14,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16380,6 +16601,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DAYS_SUPPLY\"",
                         "order": 15,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DaysSupply",
                         "conceptIdentifierType": ""
@@ -16427,6 +16651,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_CONCEPT_ID\"",
                         "order": 20,
                         "domainFilter": "Drug",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -16476,6 +16703,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"ROUTE_CONCEPT_ID\"",
                         "order": 22,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "RouteConcept",
                         "conceptIdentifierType": "",
@@ -16525,6 +16755,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@DRUGEXP.\"DRUG_TYPE_CONCEPT_ID\"",
                         "order": 24,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DrugType",
                         "conceptIdentifierType": "",
@@ -16578,6 +16811,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -16676,6 +16912,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"VALUE_AS_NUMBER\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ValueAsNumber",
                         "conceptIdentifierType": ""
@@ -16723,6 +16962,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.person_id",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16770,6 +17012,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"MEASUREMENT_ID\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -16817,6 +17062,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"MEASUREMENT_TYPE_CONCEPT_ID\"",
                         "order": 4,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "MeasurementType",
                         "conceptIdentifierType": "",
@@ -16866,6 +17114,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"VALUE_AS_CONCEPT_ID\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ValueAsConcept",
                         "conceptIdentifierType": ""
@@ -16913,6 +17164,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"UNIT_CONCEPT_ID\"",
                         "order": 6,
                         "domainFilter": "Unit",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Unit",
                         "conceptIdentifierType": ""
@@ -16960,6 +17214,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@MEAS.\"MEASUREMENT_CONCEPT_ID\"",
                         "order": 7,
                         "domainFilter": "Measurement",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -17013,42 +17270,109 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 8,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
                     },
                     "enddate": {
-                        "name": [{ "lang": "", "value": "Measurement End Date" }],
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Measurement End Date"
+                            }
+                        ],
                         "disabledLangName": [
-                        { "lang": "en", "value": "", "visible": true },
-                        { "lang": "de", "value": "", "visible": true },
-                        { "lang": "fr", "value": "", "visible": true },
-                        { "lang": "es", "value": "", "visible": true },
-                        { "lang": "pt", "value": "", "visible": true },
-                        { "lang": "zh", "value": "", "visible": true }
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
                         ],
                         "type": "time",
                         "expression": "@MEAS.\"MEASUREMENT_DATE\"",
                         "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "MeasurementEndDate",
                         "conceptIdentifierType": ""
                     },
                     "startdate": {
-                        "name": [{ "lang": "", "value": "Measurement Start Date" }],
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Measurement Start Date"
+                            }
+                        ],
                         "disabledLangName": [
-                        { "lang": "en", "value": "", "visible": true },
-                        { "lang": "de", "value": "", "visible": true },
-                        { "lang": "fr", "value": "", "visible": true },
-                        { "lang": "es", "value": "", "visible": true },
-                        { "lang": "pt", "value": "", "visible": true },
-                        { "lang": "zh", "value": "", "visible": true }
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
                         ],
                         "type": "time",
                         "expression": "@MEAS.\"MEASUREMENT_DATE\"",
                         "order": 10,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "MeasurementStartDate",
                         "conceptIdentifierType": ""
@@ -17147,6 +17471,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_DATETIME\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -17194,6 +17521,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.person_id",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -17241,6 +17571,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_DATE\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -17288,6 +17621,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_ID\"",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -17335,6 +17671,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"VALUE_AS_STRING\"",
                         "order": 11,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -17382,6 +17721,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"VALUE_AS_NUMBER\"",
                         "order": 12,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ValueAsNumber",
                         "conceptIdentifierType": ""
@@ -17429,6 +17771,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_CONCEPT_ID\"",
                         "order": 15,
                         "domainFilter": "Observation",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -17478,6 +17823,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_TYPE_CONCEPT_ID\"",
                         "order": 21,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ObservationType",
                         "conceptIdentifierType": "",
@@ -17527,6 +17875,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"VALUE_AS_CONCEPT_ID\"",
                         "order": 23,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ValueAsConcept",
                         "conceptIdentifierType": ""
@@ -17574,6 +17925,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"QUALIFIER_CONCEPT_ID\"",
                         "order": 25,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Qualifier",
                         "conceptIdentifierType": "",
@@ -17623,6 +17977,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"UNIT_CONCEPT_ID\"",
                         "order": 27,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Unit",
                         "conceptIdentifierType": "id",
@@ -17676,6 +18033,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -17723,6 +18083,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_DATE\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -17770,6 +18133,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBS.\"OBSERVATION_DATE\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceEndDate",
                         "conceptIdentifierType": ""
@@ -17866,6 +18232,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBSPER.\"OBSERVATION_PERIOD_END_DATE\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "PeriodEndDate",
                         "conceptIdentifierType": ""
@@ -17913,6 +18282,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBSPER.\"OBSERVATION_PERIOD_START_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "PeriodStartDate",
                         "conceptIdentifierType": ""
@@ -17960,6 +18332,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBSPER.person_id",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18007,6 +18382,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBSPER.\"OBSERVATION_PERIOD_ID\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18054,6 +18432,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@OBSPER.\"PERIOD_TYPE_CONCEPT_ID\"",
                         "order": 7,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "PeriodType",
                         "conceptIdentifierType": "",
@@ -18152,6 +18533,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PPPER.\"PAYER_PLAN_PERIOD_END_DATE\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "PeriodEndDate",
                         "conceptIdentifierType": ""
@@ -18199,6 +18583,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PPPER.\"PAYER_PLAN_PERIOD_START_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "PeriodStartDate",
                         "conceptIdentifierType": ""
@@ -18246,6 +18633,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PPPER.person_id",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18293,6 +18683,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PPPER.\"PAYER_PLAN_PERIOD_ID\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18406,6 +18799,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.\"PROCEDURE_DATETIME\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -18453,6 +18849,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.\"PROCEDURE_CONCEPT_ID\"",
                         "order": 2,
                         "domainFilter": "Procedure",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": ""
@@ -18500,6 +18899,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.\"QUANTITY\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Quantity",
                         "conceptIdentifierType": ""
@@ -18547,6 +18949,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.person_id",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18594,6 +18999,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.\"PROCEDURE_TYPE_CONCEPT_ID\"",
                         "order": 5,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ProcedureType",
                         "conceptIdentifierType": "",
@@ -18643,6 +19051,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@PROC.\"MODIFIER_CONCEPT_ID\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Modifier",
                         "conceptIdentifierType": ""
@@ -18694,6 +19105,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -18744,6 +19158,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "CAST (@REF.CONCEPT_ID AS VARCHAR)",
                         "order": 8,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "id",
@@ -18796,44 +19213,109 @@ export const cdwConfigDuckdb = {
                         "_referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "id"
                     },
                     "enddate": {
-                        "name": [{ "lang": "", "value": "Procedure Occurrence End Date" }],
+                        "name": [
+                            {
+                                "lang": "",
+                                "value": "Procedure Occurrence End Date"
+                            }
+                        ],
                         "disabledLangName": [
-                        { "lang": "en", "value": "", "visible": true },
-                        { "lang": "de", "value": "", "visible": true },
-                        { "lang": "fr", "value": "", "visible": true },
-                        { "lang": "es", "value": "", "visible": true },
-                        { "lang": "pt", "value": "", "visible": true },
-                        { "lang": "zh", "value": "", "visible": true }
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
                         ],
                         "type": "time",
                         "expression": "@PROC.\"PROCEDURE_END_DATE\"",
                         "order": 10,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ProcedureOccurrenceEndDate",
                         "conceptIdentifierType": ""
                     },
                     "startdate": {
                         "name": [
-                        { "lang": "", "value": "Procedure Occurrence Start Date" }
+                            {
+                                "lang": "",
+                                "value": "Procedure Occurrence Start Date"
+                            }
                         ],
                         "disabledLangName": [
-                        { "lang": "en", "value": "", "visible": true },
-                        { "lang": "de", "value": "", "visible": true },
-                        { "lang": "fr", "value": "", "visible": true },
-                        { "lang": "es", "value": "", "visible": true },
-                        { "lang": "pt", "value": "", "visible": true },
-                        { "lang": "zh", "value": "", "visible": true }
+                            {
+                                "lang": "en",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "de",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "fr",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "es",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "pt",
+                                "value": "",
+                                "visible": true
+                            },
+                            {
+                                "lang": "zh",
+                                "value": "",
+                                "visible": true
+                            }
                         ],
                         "type": "time",
                         "expression": "@PROC.\"PROCEDURE_DATE\"",
                         "order": 11,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "ProcedureOccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -18930,6 +19412,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.person_id",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -18977,6 +19462,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"SPECIMEN_ID\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -19024,6 +19512,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"QUANTITY\"",
                         "order": 8,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Quantity",
                         "conceptIdentifierType": ""
@@ -19071,6 +19562,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"SPECIMEN_DATETIME\"",
                         "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -19118,6 +19612,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"SPECIMEN_DATE\"",
                         "order": 10,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "OccurrenceStartDate",
                         "conceptIdentifierType": ""
@@ -19165,6 +19662,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"SPECIMEN_CONCEPT_ID\"",
                         "order": 17,
                         "domainFilter": "Specimen",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -19214,6 +19714,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"SPECIMEN_TYPE_CONCEPT_ID\"",
                         "order": 19,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "SpecimenType",
                         "conceptIdentifierType": "",
@@ -19263,6 +19766,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"ANATOMIC_SITE_CONCEPT_ID\"",
                         "order": 21,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "AnatomicSite",
                         "conceptIdentifierType": "",
@@ -19312,6 +19818,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"DISEASE_STATUS_CONCEPT_ID\"",
                         "order": 23,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "DiseaseStatus",
                         "conceptIdentifierType": "",
@@ -19361,6 +19870,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@SPEC.\"UNIT_CONCEPT_ID\"",
                         "order": 25,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Unit",
                         "conceptIdentifierType": "",
@@ -19414,6 +19926,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -19510,6 +20025,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.\"VISIT_END_DATE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "VisitDetailEndDate",
                         "conceptIdentifierType": ""
@@ -19557,6 +20075,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.\"VISIT_START_DATE\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "VisitDetailStartDate",
                         "conceptIdentifierType": ""
@@ -19604,6 +20125,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.person_id",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -19651,6 +20175,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.\"VISIT_OCCURRENCE_ID\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -19698,6 +20225,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.\"VISIT_TYPE_CONCEPT_ID\"",
                         "order": 9,
                         "domainFilter": "Type Concept",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "VisitType",
                         "conceptIdentifierType": "",
@@ -19747,6 +20277,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@VISIT.\"VISIT_CONCEPT_ID\"",
                         "order": 11,
                         "domainFilter": "Visit",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "",
@@ -19800,6 +20333,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@REF.CONCEPT_NAME",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
@@ -19898,6 +20434,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"CREATED_AT\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -19944,6 +20483,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"PERSON_ID\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -19990,6 +20532,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"PARENT_CONSENT_DETAIL_ID\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20036,6 +20581,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"STATUS\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20082,6 +20630,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"VALUE\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20128,6 +20679,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"TYPE\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20174,6 +20728,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"ATTRIBUTE\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20220,6 +20777,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"ATTRIBUTE_GROUP_ID\"",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20266,6 +20826,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@CONSENT.\"CONSENT_DETAIL_ID\"",
                         "order": 8,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20358,6 +20921,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"LINK_ID\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20401,6 +20967,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"VALUECODING_CODE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20444,6 +21013,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"ID\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20487,6 +21059,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"LANGUAGE\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20530,6 +21105,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"STATUS\"",
                         "order": 4,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20573,6 +21151,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"AUTHORED\"",
                         "order": 5,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20616,6 +21197,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"TEXT\"",
                         "order": 6,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20659,6 +21243,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"VALUE_TYPE\"",
                         "order": 7,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20702,6 +21289,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"VALUE\"",
                         "order": 8,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20745,6 +21335,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"QUESTIONNAIRE_REFERENCE\"",
                         "order": 9,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20788,6 +21381,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"QUESTIONNAIRE_VERSION\"",
                         "order": 10,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20835,6 +21431,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"EXTENSION_EFFECTIVE_DATE_URL\"",
                         "order": 11,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20882,6 +21481,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@RESPONSE.\"EXTENSION_VALUEDATE\"",
                         "order": 12,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -20980,6 +21582,9 @@ export const cdwConfigDuckdb = {
                         "referenceExpression": "@RESULT_COHORT_DEF.COHORT_DEFINITION_ID",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": "",
@@ -21029,6 +21634,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@COHORT.\"subject_id\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21076,6 +21684,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@COHORT.\"cohort_end_date\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21123,6 +21734,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@COHORT.\"cohort_start_date\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21217,6 +21831,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ANSWER.\"LINK_ID\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21260,6 +21877,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ANSWER.\"VALUECODING_CODE\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21303,6 +21923,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ANSWER.\"VALUE_TYPE\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21346,6 +21969,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ANSWER.\"VALUE\"",
                         "order": 3,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21440,6 +22066,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ITEM.\"LINK_ID\"",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21483,6 +22112,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ITEM.\"ITEM_ID\"",
                         "order": 1,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21526,6 +22158,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@ITEM.\"TEXT\"",
                         "order": 2,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": ""
@@ -21622,6 +22257,9 @@ export const cdwConfigDuckdb = {
                         "expression": "@EPISODE.EPISODE_ID",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
+                        "optionalFiltering": false,
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "Episode",
                         "conceptIdentifierType": "name"
@@ -21670,6 +22308,9 @@ export const cdwConfigDuckdb = {
                     "person_id"
                 ],
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21711,6 +22352,9 @@ export const cdwConfigDuckdb = {
                 "measureExpression": "COUNT(DISTINCT(@PATIENT.\"person_id\"))",
                 "order": 1,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21752,6 +22396,9 @@ export const cdwConfigDuckdb = {
                 "expression": "@PATIENT.\"MONTH_OF_BIRTH\"",
                 "order": 2,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21793,6 +22440,9 @@ export const cdwConfigDuckdb = {
                 "expression": "@PATIENT.\"YEAR_OF_BIRTH\"",
                 "order": 3,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21837,6 +22487,9 @@ export const cdwConfigDuckdb = {
                     "birth_datetime"
                 ],
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21886,6 +22539,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_ID",
                 "order": 8,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Ethnicity",
                 "conceptIdentifierType": "id",
@@ -21935,6 +22591,9 @@ export const cdwConfigDuckdb = {
                 "expression": "@PATIENT.\"location_id\"",
                 "order": 9,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": ""
@@ -21984,6 +22643,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_CODE",
                 "order": 11,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": "",
@@ -22035,6 +22697,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_CODE",
                 "order": 12,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": "",
@@ -22086,6 +22751,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_CODE",
                 "order": 13,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "",
                 "conceptIdentifierType": "",
@@ -22137,6 +22805,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_ID",
                 "order": 16,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Gender",
                 "conceptIdentifierType": "id",
@@ -22190,6 +22861,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_NAME",
                 "order": 17,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Gender",
                 "conceptIdentifierType": "name",
@@ -22241,6 +22915,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_ID",
                 "order": 20,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Race",
                 "conceptIdentifierType": "id",
@@ -22289,10 +22966,12 @@ export const cdwConfigDuckdb = {
                 "expression": "(YEAR(COALESCE(@DEADPERSON.DEATH_DATE, CURRENT_DATE)) - @PATIENT.YEAR_OF_BIRTH)",
                 "order": 24,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": true,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Age",
-                "conceptIdentifierType": "",
-                "optionalFiltering": true
+                "conceptIdentifierType": ""
             },
             "raceName": {
                 "name": [
@@ -22341,6 +23020,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_NAME",
                 "order": 18,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Race",
                 "conceptIdentifierType": "name",
@@ -22394,6 +23076,9 @@ export const cdwConfigDuckdb = {
                 "referenceExpression": "@REF.CONCEPT_NAME",
                 "order": 19,
                 "domainFilter": "",
+                "includeDescendants": false,
+                "includeDescendantsExpression": "",
+                "optionalFiltering": false,
                 "standardConceptCodeFilter": "",
                 "cohortDefinitionKey": "Ethnicity",
                 "conceptIdentifierType": "name",
@@ -22760,10 +23445,10 @@ export const cdwConfigDuckdb = {
             "@REF.VOCABULARY_ID": "\"vocabulary_id\"",
             "@REF.CODE": "\"concept_id\"",
             "@REF.TEXT": "\"concept_name\"",
-            "@TEXT": "$$VOCAB_SCHEMA$$.\"concept\"",
-            "@TEXT.INTERACTION_ID": "\"concept_id\"",
-            "@TEXT.INTERACTION_TEXT_ID": "\"concept_id\"",
-            "@TEXT.VALUE": "\"concept_name\""
+            "@TEXT": "$$VOCAB_SCHEMA$$.\"concept_ancestor\"",
+            "@TEXT.INTERACTION_ID": "\"ancestor_concept_id\"",
+            "@TEXT.INTERACTION_TEXT_ID": "\"descendant_concept_id\"",
+            "@TEXT.VALUE": "\"ancestor_concept_id\""
         },
         "guardedTableMapping": {
             "@PATIENT": "$$SCHEMA$$.\"person\""
@@ -22795,7 +23480,7 @@ export const cdwConfigDuckdb = {
         "shared": {},
         "schemaVersion": "3"
     }
-};
+}
 
 const paConfigDuckdb = {
     "filtercards": [
@@ -25605,6 +26290,26 @@ const paConfigDuckdb = {
                         "linkColumn": false
                     },
                     "modelName": "Condition concept Name"
+                },
+                {
+                    "source": "patient.interactions.conditionoccurrence.attributes.condition_source_concept_code",
+                    "ordered": false,
+                    "cached": true,
+                    "useRefText": true,
+                    "useRefValue": true,
+                    "category": true,
+                    "measure": false,
+                    "filtercard": {
+                        "initial": false,
+                        "visible": true,
+                        "order": 11
+                    },
+                    "patientlist": {
+                        "initial": false,
+                        "visible": true,
+                        "linkColumn": false
+                    },
+                    "modelName": "Condition Source concept code"
                 }
             ],
             "initialPatientlistColumn": false,
@@ -26467,7 +27172,10 @@ const paConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -26530,7 +27238,7 @@ const paConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": true,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -28096,6 +28804,9 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -28157,7 +28868,7 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
-    intersectViewInclusionReport: false
+    intersectViewInclusionReport: false,
   },
 };
 
@@ -33941,7 +34652,10 @@ const pajsonfhirConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -34004,7 +34718,7 @@ const pajsonfhirConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -36539,10 +37253,10 @@ const omopHanaLeanCdwConfig = {
 			"@REF.VOCABULARY_ID": "\"VOCABULARY_ID\"",
 			"@REF.CODE": "\"CONCEPT_ID\"",
 			"@REF.TEXT": "\"CONCEPT_NAME\"",
-			"@TEXT": "$$VOCAB_SCHEMA$$.\"CONCEPT_ANCESTOR\"",
-			"@TEXT.INTERACTION_ID": "\"ANCESTOR_CONCEPT_ID\"",
-			"@TEXT.INTERACTION_TEXT_ID": "\"ANCESTOR_CONCEPT_ID\"",
-			"@TEXT.VALUE": "\"ANCESTOR_CONCEPT_ID\""
+            "@TEXT": "$$VOCAB_SCHEMA$$.\"CONCEPT_ANCESTOR\"",
+            "@TEXT.INTERACTION_ID": "\"ANCESTOR_CONCEPT_ID\"",
+            "@TEXT.INTERACTION_TEXT_ID": "\"DESCENDANT_CONCEPT_ID\"",
+            "@TEXT.VALUE": "\"ANCESTOR_CONCEPT_ID\""
 		},
 		"guardedTableMapping": {
 			"@PATIENT": "$$SCHEMA$$.\"PERSON\""
@@ -37427,7 +38141,10 @@ const omopHanaLeanPAConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -37490,6 +38207,6 @@ const omopHanaLeanPAConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };

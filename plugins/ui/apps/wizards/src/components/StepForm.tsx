@@ -18,6 +18,18 @@ export function StepForm() {
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
   const displayValuesRef = useRef<Record<string, string>>({});
+  const defaultFormValues = { ...formData };
+
+  selectedWizard?.fields.forEach((field) => {
+    if (!field.id.startsWith("condition")) {
+      return;
+    }
+
+    const excludeDescendantsKey = `${field.id}_excludeDescendants`;
+    if (defaultFormValues[excludeDescendantsKey] === undefined) {
+      defaultFormValues[excludeDescendantsKey] = field.excludeDescendantsByDefault === true;
+    }
+  });
 
   const handleDisplayValueChange = useCallback((fieldId: string, displayValue: string | null) => {
     if (displayValue) {
@@ -40,7 +52,7 @@ export function StepForm() {
     formState: { errors, isValid },
   } = useForm({
     mode: "onChange",
-    defaultValues: formData,
+    defaultValues: defaultFormValues,
   });
 
   // Watch all form values to check if required fields are filled
@@ -150,8 +162,12 @@ export function StepForm() {
             />
             {isConditionField && fieldValue && (
               <div className={styles.wildcardToggle}>
-                <input type="checkbox" id={`${field.id}_wildcard`} {...register(`${field.id}_wildcard`)} />
-                <label htmlFor={`${field.id}_wildcard`}>Include descendants</label>
+                <input
+                  type="checkbox"
+                  id={`${field.id}_excludeDescendants`}
+                  {...register(`${field.id}_excludeDescendants`)}
+                />
+                <label htmlFor={`${field.id}_excludeDescendants`}>Exclude descendants</label>
               </div>
             )}
           </div>

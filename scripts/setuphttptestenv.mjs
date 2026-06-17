@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
-import https from "node:https";
-import fetch from "node-fetch";
+import { Agent, fetch } from "undici";
 
 // Helper functions
 function getCookie(setCookieHeaders, name) {
@@ -35,27 +34,48 @@ try {
   console.log(`FATAL ${envfile} not found`);
   process.exit(1);
 }
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app_client_id = process.env.LOGTO__D2E_APP__CLIENT_ID || process.env.LOGTO__ALP_APP__CLIENT_ID;
 const public_key = process.env.DB_CREDENTIALS__INTERNAL__PUBLIC_KEY;
 let public_fqdn = process.env.CADDY__D2E__PUBLIC_FQDN || process.env.CADDY__ALP__PUBLIC_FQDN || "localhost";
 let port = process.env.PORT ? `:${process.env.PORT}` : ":443";
 let CADDY__D2E__PUBLIC_FQDN = `${public_fqdn}${port}`;
-const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+const insecureAgent = new Agent({ connect: { rejectUnauthorized: false } });
 
 var url= `https://${CADDY__D2E__PUBLIC_FQDN}/oidc/auth?redirect_uri=https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback&client_id=${app_client_id}&response_type=code&state=lbFDB1hcko&scope=openid%20offline_access%20profile%20email&nonce=Osptnuwqc47w&code_challenge=n6eqz8p8jj1L9Qu7pY2_GrWO7XyaQbWrcs54x9OAnPg&code_challenge_method=S256`
-var response = await fetch(url, {
-  method: "GET",
-  agent: insecureAgent,   
-  redirect: 'manual', 
-});
-var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
-var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
-var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
-var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
-var interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
-var logto_cookie = getCookie(setCookieHeaders, '_logto');
-var logtoObj = JSON.parse(logto_cookie);
+
+// Poll /oidc/auth until Logto is up and returns the _logto cookie.
+// Services may still be initializing when this script runs.
+const OIDC_MAX_ATTEMPTS = 60;
+const OIDC_RETRY_DELAY_MS = 2000;
+var response, setCookieHeaders, interaction_cookie, interaction_sig_cookie,
+    interaction_resume_cookie, interaction_resume_sig_cookie, logto_cookie, logtoObj;
+for (let attempt = 1; attempt <= OIDC_MAX_ATTEMPTS; attempt++) {
+  try {
+    response = await fetch(url, { method: "GET", dispatcher: insecureAgent, redirect: 'manual' });
+    setCookieHeaders = response.headers.getSetCookie();
+    logto_cookie = getCookie(setCookieHeaders, '_logto');
+    if (logto_cookie) {
+      try {
+        logtoObj = JSON.parse(logto_cookie);
+        if (logtoObj && logtoObj.appId) break;
+      } catch { /* fall through to retry */ }
+    }
+    console.log(`Waiting for Logto /oidc/auth (attempt ${attempt}/${OIDC_MAX_ATTEMPTS}, status=${response.status})...`);
+  } catch (err) {
+    console.log(`Logto /oidc/auth fetch failed (attempt ${attempt}/${OIDC_MAX_ATTEMPTS}): ${err.message}`);
+  }
+  if (attempt === OIDC_MAX_ATTEMPTS) {
+    console.error("FATAL: Logto did not return a valid _logto cookie within the retry window.");
+    process.exit(1);
+  }
+  await new Promise(r => setTimeout(r, OIDC_RETRY_DELAY_MS));
+}
+interaction_cookie = getCookie(setCookieHeaders, '_interaction');
+interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
+interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
+interaction_resume_sig_cookie = getCookie(setCookieHeaders, '_interaction_resume.sig');
 var appId = logtoObj.appId;
 
 
@@ -80,7 +100,7 @@ var response = await fetch(url, {
   },
   body: JSON.stringify(body),
   redirect: 'manual',
-  agent: insecureAgent   
+  dispatcher: insecureAgent   
 });
 
 
@@ -96,7 +116,7 @@ var response = await fetch(url, {
                `_logto=$ `
   },
   body: JSON.stringify(body),
-  agent: insecureAgent   
+  dispatcher: insecureAgent   
 });
 var text = await response.text();
 
@@ -109,10 +129,10 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
-    agent: insecureAgent  
+    dispatcher: insecureAgent  
 });
 
-var setCookieHeaders = response.headers.raw()['set-cookie'] || [];
+var setCookieHeaders = response.headers.getSetCookie();
 var interaction_cookie = getCookie(setCookieHeaders, '_interaction');
 var interaction_sig_cookie = getCookie(setCookieHeaders, '_interaction.sig');
 var interaction_resume_cookie = getCookie(setCookieHeaders, '_interaction_resume');
@@ -131,7 +151,7 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 
 //Get authorization code
@@ -143,7 +163,7 @@ var response = await fetch(url, {
         "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/sign-in`,
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
-    agent: insecureAgent,   
+    dispatcher: insecureAgent,   
     redirect: 'manual',
 });
 
@@ -159,7 +179,7 @@ var response = await fetch(url, {
         "Cookie": `_interaction=${interaction_cookie}; _interaction.sig=${interaction_sig_cookie}; _interaction_resume=${interaction_resume_cookie}; _interaction_resume.sig=${interaction_resume_sig_cookie}; _session=${session_cookie}; _session.sig=${session_sig_cookie}; _logto={\"appId\":\"${app_client_id}\"}`
     },
     redirect: 'manual',
-    agent: insecureAgent   
+    dispatcher: insecureAgent   
 });
 
 // Get Bearer token
@@ -180,7 +200,7 @@ var response = await fetch(url, {
         "referer": `https://${CADDY__D2E__PUBLIC_FQDN}/d2e/portal/login-callback?code=2sxkx6uCahwOfKo1cwzLaAq5MfdBJrMcqCLNHvOTXFv&state=odSrnZhVyE&iss=https%3A%2F%2Flocalhost%3A%2F41100%2Foidc`
     },
     body: params,
-    agent: insecureAgent   
+    dispatcher: insecureAgent   
 });
 const tokenResponse = await response.json();
 const BEARER_TOKEN = tokenResponse.access_token;
@@ -204,7 +224,7 @@ var response = await fetch(url, {
         "Authorization": `Bearer ${BEARER_TOKEN}`
     },
     body: JSON.stringify(payloadObj),
-    agent: insecureAgent
+    dispatcher: insecureAgent
 });
 const setupResponse = await response.json();
 const resp_message = setupResponse.message;
@@ -222,7 +242,7 @@ try {
                 "content-type": "application/x-www-form-urlencoded",
                 "Authorization": `Bearer ${BEARER_TOKEN}`
             },
-            agent: insecureAgent
+            dispatcher: insecureAgent
         });
         const resp = await response.json();
         for (const step of resp.steps) {
@@ -256,7 +276,7 @@ if (progress_status == "completed") {
             "content-type": "application/x-www-form-urlencoded",  
             "Authorization": `Bearer ${BEARER_TOKEN}`
         },
-        agent: insecureAgent
+        dispatcher: insecureAgent
     });
     var resp = await response.json();
     for (var i = 0; i < resp.length; i++) {
@@ -284,7 +304,7 @@ if (progress_status == "completed") {
             "Authorization": `Bearer ${BEARER_TOKEN}`
         },
         body: JSON.stringify(bodyObj), 
-        agent: insecureAgent
+        dispatcher: insecureAgent
     });
     console.log('Completed adding admin user access permissions to demo dataset.');
 }  

@@ -11,6 +11,7 @@ To use code-suggestion, the API_KEY for specific AI models should be provided in
 #### If use model directly from model providers, set below API_KEY
 - `OPENAI_API_KEY=xxx`
 - `ANTHROPIC_API_KEY=xxx`
+- `GOOGLE_API_KEY=xxx`
 
 #### If use Azure OpenAI, set below variables
 Values can be extracted from "Endpoint" of the deployment.
@@ -19,11 +20,18 @@ Values can be extracted from "Endpoint" of the deployment.
 - `AZURE_OPENAI_API_INSTANCE_NAME=<resource_name_of_your_deployment>`
 - `AZURE_OPENAI_API_DEPLOYMENT_NAME=<YOUR_DEPLOYMENT_NAME>`
 
+#### If use Ollama, set the server URL
+- `OLLAMA_BASE_URL=http://host.docker.internal:11434`
+- `OLLAMA_API_KEY=xxx` (optional — required for Ollama Cloud / Turbo or self-hosted Ollama behind an auth proxy. Sent as `Authorization: Bearer <key>`.)
+
 #### Set AI_MODEL environment variable
-The name of specific model is provided as well:
-- For calling model directly from AI model provider, use the model name, e.g. `'gpt-4o'`
-- For calling model from Azure OpenAI, set the `AI_MODEL='azure:gpt-4o'`
-- For calling model from local, set the `AI_MODEL='local'`
+The provider is selected by the prefix on `AI_MODEL`:
+- OpenAI: model name as-is, e.g. `AI_MODEL='gpt:GPT-4o'`
+- Azure OpenAI: `AI_MODEL='azure:gpt-4o'`
+- Anthropic: `AI_MODEL='anthropic:claude-sonnet-4-5'`
+- Google Gemini: `AI_MODEL='gemini:gemini-2.0-flash'`
+- Ollama: `AI_MODEL='ollama:llama3.1'`
+- Local Trex GGUF model: anything that doesn't match a prefix above (e.g. `AI_MODEL='local'`)
 
 #### Example .env file with MCP
 ```env

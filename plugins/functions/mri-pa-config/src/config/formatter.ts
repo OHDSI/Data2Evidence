@@ -84,6 +84,12 @@ export class Formatter {
             beginVisible: mriConfig.chartOptions.stacked.beginVisible,
             fillMissingValuesEnabled:
               mriConfig.chartOptions.stacked.fillMissingValuesEnabled,
+            overlappingHistogramEnabled:
+              mriConfig.chartOptions.stacked.overlappingHistogramEnabled,
+            overlappingBarChartEnabled:
+              mriConfig.chartOptions.stacked.overlappingBarChartEnabled,
+            kernelDensityPlotEnabled:
+              mriConfig.chartOptions.stacked.kernelDensityPlotEnabled,
           },
           boxplot: {
             visible: mriConfig.chartOptions.boxplot.visible,

@@ -241,6 +241,14 @@ export default {
         this.$emit('renameModalShown', value)
       },
     },
+    totalFilterCardCount: {
+      handler(newCount) {
+        if (this.displayAdvanceTime && newCount <= 1) {
+          this.displayAdvanceTime = false
+          this.clearFilterCardTimeFilter({ filterCardId: this.id })
+        }
+      }
+    },
   },
   computed: {
     ...mapGetters([
@@ -251,6 +259,7 @@ export default {
       'getHasAssignedConfig',
       'getNewCardStates',
       'getSplitterWidth',
+      'getFilterCardCount',
     ]),
     isNew() {
       return this.getNewCardStates[this.id]
@@ -344,7 +353,13 @@ export default {
 
       // item for Advanced Time Filter
       // Advance Time filter is not supported if filter is in exclusion tab
-      if (!this.isExcluded) {
+      // And requires at least 2 filter cards (source and target)
+      const totalFilterCards = this.getFilterCardCount({
+        excludeBasicCard: true,
+        excludedOnly: false,
+        matchType: 'matchall'
+      })
+      if (!this.isExcluded && !this.isBasic && totalFilterCards > 1) {
         menu.push({
           text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
           key: 'advancedTime',
@@ -399,14 +414,21 @@ export default {
       return this.filterCardModel.props.isEntry
         ? this.getText('MRI_PA_CHART_ENTRY')
         : this.filterCardModel.props.isExit
-        ? this.getText('MRI_PA_CHART_EXIT')
-        : ''
+          ? this.getText('MRI_PA_CHART_EXIT')
+          : ''
     },
     constraints() {
       return this.filterCardModel.props.constraints
     },
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
+    },
+    totalFilterCardCount() {
+      return this.getFilterCardCount({
+        excludeBasicCard: true,
+        excludedOnly: false,
+        matchType: 'matchall'
+      })
     },
   },
   methods: {
@@ -467,6 +489,10 @@ export default {
         })
       } else if (key === 'clear') {
         this.clearAllConstraintsOfFilterCard({ filterCardId: this.id })
+        if (this.displayAdvanceTime) {
+          this.displayAdvanceTime = false
+          this.clearFilterCardTimeFilter({ filterCardId: this.id })
+        }
       } else if (key === 'rename') {
         this.openRenameDialog()
       } else if (this.getFilterCardConstraints(this.id).findIndex(fcconst => fcconst.props.attrKey === key) > -1) {
@@ -586,6 +612,6 @@ export default {
 
 <style scoped>
 .filter-card-badge {
-  color: var(--color-primary, #000080)!important;
+  color: var(--color-primary, #000080) !important;
 }
 </style>

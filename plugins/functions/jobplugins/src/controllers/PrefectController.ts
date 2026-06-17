@@ -1,5 +1,6 @@
 import { Request, Response, Router } from "express";
 import { PrefectService } from "../services/PrefectService.ts";
+import { validateFlowrunId } from "../middlewares/PrefectValidatorMiddlewares.ts";
 
 export class PrefectController {
   private prefectService: PrefectService;
@@ -25,7 +26,7 @@ export class PrefectController {
   private async createAnalysisRun(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { datasetId, studyId, uploadResults } = req.body;
+      const { datasetId, tokenStudyCode, uploadResults } = req.body;
       const token = this.getToken(req);
 
       if (!datasetId) {
@@ -34,10 +35,16 @@ export class PrefectController {
           .send({ message: "Missing required field: datasetId" });
       }
 
+      if (!tokenStudyCode) {
+        return res
+          .status(400)
+          .send({ message: "Missing required field: tokenStudyCode" });
+      }
+
       const flowrunId = await this.prefectService.createAnalysisFlowRun(
         id,
         datasetId,
-        studyId,
+        tokenStudyCode,
         uploadResults,
         token,
       );
@@ -83,10 +90,10 @@ export class PrefectController {
           .status(400)
           .send({ message: "Missing required fields: json_graph or options" });
       }
-      if (options["studyId"] === undefined) {
+      if (options["tokenStudyCode"] === undefined) {
         return res
           .status(400)
-          .send({ message: "Missing required field: studyId in options" });
+          .send({ message: "Missing required field: tokenStudyCode in options" });
       }
       // uncomment this line when notebookName is available in jupyter kernel
       // if(options['notebookName'] === undefined) {
@@ -111,12 +118,12 @@ export class PrefectController {
 
   private async removeAnalysisResultsSchema(req: Request, res: Response) {
     try {
-      const { id: studyId } = req.params;
+      const { id: tokenStudyCode } = req.params;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
       const flowrunId = await this.prefectService.removeAnalysisResultsSchema(
         token,
-        { studyId },
+        { tokenStudyCode },
       );
       return res
         .status(200)
@@ -129,19 +136,19 @@ export class PrefectController {
 
   private async uploadResultsFromStorage(req: Request, res: Response) {
     try {
-      const { studyId, datasetId, analysisSpec } = req.body;
+      const { tokenStudyCode, datasetId, analysisSpec } = req.body;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
 
-      if (!studyId || !datasetId) {
+      if (!tokenStudyCode || !datasetId) {
         return res
           .status(400)
-          .send({ message: "Missing required fields: studyId or datasetId" });
+          .send({ message: "Missing required fields: tokenStudyCode or datasetId" });
       }
 
       const flowrunId = await this.prefectService.uploadResultsFromStorage(
         token,
-        { studyId, datasetId, analysisSpec },
+        { tokenStudyCode, datasetId, analysisSpec },
       );
       return res
         .status(200)
@@ -154,13 +161,13 @@ export class PrefectController {
 
   private async dropResultsFromStorage(req: Request, res: Response) {
     try {
-      const { id: studyId, datasetid: datasetId } = req.params;
+      const { id: tokenStudyCode, datasetid: datasetId } = req.params;
       const token =
         req.headers["Authorization"] || req.headers["authorization"];
 
       const flowrunId = await this.prefectService.dropResultsFromStorage(
         token,
-        { studyId, datasetId },
+        { tokenStudyCode, datasetId },
       );
       return res
         .status(200)
@@ -170,6 +177,33 @@ export class PrefectController {
       return res.status(500).send({ message: "Internal error occurred" });
     }
   }
+
+  private async createPrefectInputAuthToken(req: Request, res: Response) {
+    try {
+      const { id: flowrunId } = req.params;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+      await this.prefectService.createInputAuthToken(flowrunId, token);
+      return res.status(200).send({ status: "Successfully created input auth token" });
+    } catch (error) {
+      console.log(`createPrefectInputAuthToken: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
+  private async deletePrefectInputAuthToken(req: Request, res: Response) {
+    try {
+      const { id: flowrunId } = req.params;
+      const token =
+        req.headers["Authorization"] || req.headers["authorization"];
+      await this.prefectService.deleteInputAuthToken(flowrunId, token);
+      return res.status(200).send({ status: "Successfully deleted input auth token" });
+    } catch (error) {
+      console.log(`deletePrefectInputAuthToken: ${error}`);
+      return res.status(500).send({ message: "Internal error occurred" });
+    }
+  }
+
 
   private registerRoutes() {
     this.router.post("/flow-run/:id", this.createFlowrun.bind(this));
@@ -186,6 +220,16 @@ export class PrefectController {
       "/flow-run/strategus/remove-results-schema/:id",
       this.removeAnalysisResultsSchema.bind(this),
     );
+    this.router.post(
+      "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
+      this.createPrefectInputAuthToken.bind(this),
+    );
+    this.router.delete(
+      "/flow-run/:id/input-auth-token",
+      validateFlowrunId,
+      this.deletePrefectInputAuthToken.bind(this),
+     );
     // Admin-only endpoints for uploading/dropping results from storage
     this.router.post(
       "/strategus-results/upload",
@@ -201,4 +245,5 @@ export class PrefectController {
   private getToken(req: Request) {
     return req.headers["authorization"];
   }
+
 }

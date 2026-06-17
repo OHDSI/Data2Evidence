@@ -5,7 +5,7 @@ async function create(
   path: string,
   headers: object,
   data: object,
-  hasResponseBody = true
+  hasResponseBody = true,
 ) {
   try {
     console.log(`Request creation ${path}`);
@@ -33,7 +33,7 @@ async function update(
   path: string,
   headers: object,
   data: object,
-  hasResponseBody = true
+  hasResponseBody = true,
 ) {
   try {
     console.log(`Request update ${path}`);
@@ -61,7 +61,7 @@ async function upsert(
   path: string,
   headers: object,
   data: object,
-  hasResponseBody = true
+  hasResponseBody = true,
 ) {
   try {
     console.log(`Request create/update ${path}`);
@@ -108,7 +108,7 @@ async function fetchExisting(path: string, headers: object, showLog = true) {
 async function queryPostgres(
   client: pg.Client,
   query: string,
-  values: Array<string | number>
+  values: Array<string | number>,
 ) {
   return await client.query(query, values);
 }
@@ -124,7 +124,7 @@ async function main() {
   };
 
   let user: { username: string; initialPassword: string } = JSON.parse(
-    process.env.LOGTO__USER
+    process.env.LOGTO__USER,
   );
 
   let scopes: Array<{ name: string }> =
@@ -141,17 +141,17 @@ async function main() {
 
   // Create Apps
   console.log(
-    "*********************************** APPLICATIONS **********************************************"
+    "*********************************** APPLICATIONS **********************************************",
   );
 
   const fetchExistingApps: Array<Object> = await fetchExisting(
     "applications",
-    headers
+    headers,
   );
   const APP_ENVS: string[] = [];
   for (const app of apps) {
     const appExists = fetchExistingApps.find(
-      (existingApp: any) => existingApp.name === app.name
+      (existingApp: any) => existingApp.name === app.name,
     );
 
     if (appExists) {
@@ -161,14 +161,14 @@ async function main() {
 
   // Create Resource
   console.log(
-    "*********************************** RESOURCE **********************************************"
+    "*********************************** RESOURCE **********************************************",
   );
   const fetchExistingResources: Array<{ name: string }> = await fetchExisting(
     "resources",
-    headers
+    headers,
   );
   const resourceExists = fetchExistingResources.find(
-    (existingRes: any) => existingRes.name === resource.name
+    (existingRes: any) => existingRes.name === resource.name,
   );
   let { id: resourceId, isDefault } =
     resourceExists || (await create("resources", headers, resource));
@@ -186,22 +186,22 @@ async function main() {
   }
 
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   // Create Users
   console.log(
-    "*********************************** USERS **********************************************"
+    "*********************************** USERS **********************************************",
   );
   const fetchExistingUsers: Array<{ username: string }> = await fetchExisting(
     "users",
-    headers
+    headers,
   );
   // The Logto management API doesn't return `tenant_id` in the user listing,
   // so guarding on it here would always falsy-fail and we would attempt to
   // recreate the user on every restart, fail, and silently skip USER-ROLES.
   const userExists = fetchExistingUsers.find(
-    (existingUser: any) => existingUser.username === user.username
+    (existingUser: any) => existingUser.username === user.username,
   );
   let logtoAdminUser = userExists || (await create("users", headers, user));
 
@@ -215,21 +215,21 @@ async function main() {
     });
 
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   // Create Scopes
   console.log(
-    "*********************************** SCOPES **********************************************"
+    "*********************************** SCOPES **********************************************",
   );
   const fetchExistingResourceScopes: Array<Object> = await fetchExisting(
     `resources/${resourceId}/scopes?page_size=100`,
-    headers
+    headers,
   );
   let logtoScopes: Array<LogtoScope> = [];
   for (const s of scopes) {
     const resourceScopeExists = fetchExistingResourceScopes.find(
-      (existingResourceScope: any) => existingResourceScope.name === s.name
+      (existingResourceScope: any) => existingResourceScope.name === s.name,
     );
     let logtoScope =
       resourceScopeExists ||
@@ -239,28 +239,28 @@ async function main() {
       await update(
         `resources/${resourceId}/scopes/${logtoScope.id}`,
         headers,
-        s
+        s,
       );
     }
 
     logtoScopes.push(logtoScope);
   }
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   // Create Roles
   console.log(
-    "*********************************** ROLES **********************************************"
+    "*********************************** ROLES **********************************************",
   );
   const fetchExistingRoles: Array<Object> = await fetchExisting(
     "roles?page_size=100",
-    headers
+    headers,
   );
   let logtoRoles: Array<LogtoScope> = [];
   for (const r of roles) {
     const roleExists = fetchExistingRoles.find(
-      (existingRole: any) => existingRole.name === r.name
+      (existingRole: any) => existingRole.name === r.name,
     );
     let logtoRole = roleExists || (await create("roles", headers, r));
 
@@ -271,30 +271,60 @@ async function main() {
     logtoRoles.push(logtoRole);
   }
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   // Create Roles-scopes
   console.log(
-    "*********************************** ROLES-SCOPES **********************************************"
+    "*********************************** ROLES-SCOPES **********************************************",
   );
   let roleScopes: Array<{
     roleId: string;
     scopeId: string;
     scopeName: string;
-  }> = logtoRoles.map((r, indx) => ({
-    roleId: r.id,
-    scopeId: logtoScopes[indx]["id"],
-    scopeName: logtoScopes[indx]["name"],
-  }));
+  }> = [];
+
+  if (process.env.LOGTO__ROLES_SCOPES) {
+    const mapping: Array<{ roleName: string; scopeNames: string[] }> =
+      JSON.parse(process.env.LOGTO__ROLES_SCOPES);
+    for (const m of mapping) {
+      const role = logtoRoles.find((r: any) => r.name === m.roleName);
+      if (!role) {
+        console.warn(
+          `LOGTO__ROLES_SCOPES: role "${m.roleName}" not found, skipping`,
+        );
+        continue;
+      }
+      for (const scopeName of m.scopeNames) {
+        const scope = logtoScopes.find((s: any) => s.name === scopeName);
+        if (!scope) {
+          console.warn(
+            `LOGTO__ROLES_SCOPES: scope "${scopeName}" not found for role "${m.roleName}", skipping`,
+          );
+          continue;
+        }
+        roleScopes.push({
+          roleId: (role as any).id,
+          scopeId: (scope as any).id,
+          scopeName: (scope as any).name,
+        });
+      }
+    }
+  } else {
+    roleScopes = logtoRoles.map((r, indx) => ({
+      roleId: r.id,
+      scopeId: logtoScopes[indx]["id"],
+      scopeName: logtoScopes[indx]["name"],
+    }));
+  }
 
   for (const rs of roleScopes) {
     const fetchExistingRoleScopes: Array<Object> = await fetchExisting(
       `roles/${rs.roleId}/scopes`,
-      headers
+      headers,
     );
     const scopeExists = fetchExistingRoleScopes.find(
-      (existingScope: any) => existingScope.name === rs.scopeName
+      (existingScope: any) => existingScope.name === rs.scopeName,
     );
 
     scopeExists ||
@@ -303,14 +333,14 @@ async function main() {
       }));
   }
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   let userRoles: Array<{ userId: string; roleIds: Array<string> }> = [];
   if (logtoAdminUser && logtoAdminUser["id"]) {
     // Create User-roles
     console.log(
-      "*********************************** USER-ROLES **********************************************"
+      "*********************************** USER-ROLES **********************************************",
     );
     userRoles = [
       {
@@ -321,14 +351,14 @@ async function main() {
     for (const ur of userRoles) {
       const fetchExistingUserRoles: Array<Object> = await fetchExisting(
         `users/${ur.userId}/roles`,
-        headers
+        headers,
       );
 
       const missingRoleIDs = [];
 
       for (const roleId of ur.roleIds) {
         const userRoleExist = fetchExistingUserRoles.find(
-          (existingRole: any) => existingRole.id === roleId
+          (existingRole: any) => existingRole.id === roleId,
         );
         if (!userRoleExist) missingRoleIDs.push(roleId);
       }
@@ -340,17 +370,17 @@ async function main() {
           {
             roleIds: missingRoleIDs,
           },
-          false
+          false,
         ));
     }
     console.log(
-      "*********************************************************************************\n"
+      "*********************************************************************************\n",
     );
   }
 
   // Create Sign-in Experiences
   console.log(
-    "*********************************** SIGN-IN EXPERIENCES **********************************************"
+    "*********************************** SIGN-IN EXPERIENCES **********************************************",
   );
   let signinExperience = {
     tenantId: "default",
@@ -364,7 +394,9 @@ async function main() {
       isDarkModeEnabled: false,
       darkPrimaryColor: "#0000B3",
     },
-    customCss: process.env.LOGTO__CUSTOM_CSS || `a[aria-label="Powered By Logto"] { display: none; }
+    customCss:
+      process.env.LOGTO__CUSTOM_CSS ||
+      `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
     signInMode: "SignIn", //Disable user registration At Login screen
@@ -375,48 +407,78 @@ button[name="submit"]{ background: #000080 !important; }`,
 
   await update("sign-in-exp", headers, signinExperience);
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
 
   if (process.env.LOGTO__CUSTOM_JWT) {
     // Create custom JWT
     console.log(
-      "*********************************** CONFIGS **********************************************"
+      "*********************************** CONFIGS **********************************************",
     );
 
     const payload = JSON.parse(process.env.LOGTO__CUSTOM_JWT);
+
+    // Inject scope-rewrite rules (e.g. `source-user-<id>` → `Source user (<id>)`) into the customizer
+    if (process.env.LOGTO__JWT_SCOPE_REWRITES) {
+      const parsed = JSON.parse(process.env.LOGTO__JWT_SCOPE_REWRITES);
+      if (!Array.isArray(parsed)) {
+        throw new Error("LOGTO__JWT_SCOPE_REWRITES must be a JSON array");
+      }
+      payload.environmentVariables = payload.environmentVariables || {};
+      payload.environmentVariables.scopeRewrites = JSON.stringify(parsed);
+    }
+
     console.log("payload", payload);
     await upsert("configs/jwt-customizer/access-token", headers, payload);
 
     console.log(
-      "*********************************************************************************\n"
+      "*********************************************************************************\n",
     );
   }
 
-  if (process.env.LOGTO__CONNECTOR_CONFIG){
+  if (process.env.LOGTO__CONNECTOR_CONFIG) {
     console.log(
-      "*********************************** SOCIAL CONNECTOR **********************************************"
+      "*********************************** SOCIAL CONNECTOR **********************************************",
     );
-    const connectorEnvConfig = JSON.parse(process.env.LOGTO__CONNECTOR_CONFIG);
+    const parsedConnectorConfig = JSON.parse(
+      process.env.LOGTO__CONNECTOR_CONFIG,
+    );
+    const connectorEnvConfigs: any[] = Array.isArray(parsedConnectorConfig)
+      ? parsedConnectorConfig
+      : [parsedConnectorConfig];
+    const socialSignInConnectorTargets: string[] = [];
 
-    //Verify if existing connector exist
-    const connectorDBConfig: any = await fetchExisting(`connectors/${connectorEnvConfig.id}`, headers)
-    // console.log(`connectorDBConfig ${Object.keys(connectorDBConfig).length}`)
-    if(connectorDBConfig && Object.keys(connectorDBConfig).length > 0) {
-      //update
-      const connectorCallbackId = connectorEnvConfig.id
-      delete connectorEnvConfig.id
-      delete connectorEnvConfig.connectorId
-      await logto.patch(`connectors/${connectorCallbackId}`, headers, connectorEnvConfig)
-      console.log("Social connector updated..")
-    } else {
-      // create
-      await logto.post("connectors", headers, connectorEnvConfig)
-      console.log("Social connector created..")
+    for (const connectorEnvConfig of connectorEnvConfigs) {
+      const connectorTargetId = connectorEnvConfig.connectorId;
+      socialSignInConnectorTargets.push(connectorTargetId);
+
+      //Verify if existing connector exist
+      const connectorDBConfig: any = await fetchExisting(
+        `connectors/${connectorEnvConfig.id}`,
+        headers,
+      );
+      // console.log(`connectorDBConfig ${Object.keys(connectorDBConfig).length}`)
+      if (connectorDBConfig && Object.keys(connectorDBConfig).length > 0) {
+        //update
+        const connectorCallbackId = connectorEnvConfig.id;
+        delete connectorEnvConfig.id;
+        delete connectorEnvConfig.connectorId;
+        await logto.patch(
+          `connectors/${connectorCallbackId}`,
+          headers,
+          connectorEnvConfig,
+        );
+        console.log(`Social connector ${connectorTargetId} updated..`);
+      } else {
+        // create
+        await logto.post("connectors", headers, connectorEnvConfig);
+        console.log(`Social connector ${connectorTargetId} created..`);
+      }
     }
+
     // Update Sign-in Experiences
     console.log(
-      "*********************************** SIGN-IN EXPERIENCES **********************************************"
+      "*********************************** SIGN-IN EXPERIENCES **********************************************",
     );
     const signinExperienceSocialConnector: {
       branding: Object;
@@ -430,33 +492,41 @@ button[name="submit"]{ background: #000080 !important; }`,
       socialSignInConnectorTargets: string[];
     } = {
       ...signinExperience,
-      signUp : { verify: false, password: true, identifiers: ["username"] },
-      signIn: { methods: [{
-                      "password": true, "identifier": "username",
-                      "verificationCode": false, "isPasswordPrimary": true
-                    }]
-               },
-      socialSignInConnectorTargets: ["azuread-alp"]
+      signUp: { verify: false, password: true, identifiers: ["username"] },
+      signIn: {
+        methods: [
+          {
+            password: true,
+            identifier: "username",
+            verificationCode: false,
+            isPasswordPrimary: true,
+          },
+        ],
+      },
+      socialSignInConnectorTargets,
     };
 
     if (process.env.LOGTO__DISABLE_BASIC_AUTH === "true") {
-      signinExperienceSocialConnector["signIn"] = { methods: [] }
-      signinExperienceSocialConnector["signUp"] = { verify: false, password: false, identifiers: [] }
-    } 
+      signinExperienceSocialConnector["signIn"] = { methods: [] };
+      signinExperienceSocialConnector["signUp"] = {
+        verify: false,
+        password: false,
+        identifiers: [],
+      };
+    }
 
     await update("sign-in-exp", headers, signinExperienceSocialConnector);
     // console.log(`signinExperienceSocialConnector ${JSON.stringify(signinExperienceSocialConnector)}`)
     console.log(
-      "*********************************************************************************\n"
+      "*********************************************************************************\n",
     );
     console.log(
-      "*********************************************************************************\n"
+      "*********************************************************************************\n",
     );
-
   }
 
   console.log(
-    "*********************************** SUMMARY **********************************\n"
+    "*********************************** SUMMARY **********************************\n",
   );
 
   const createdApps: Array<Object> = (
@@ -466,7 +536,7 @@ button[name="submit"]{ background: #000080 !important; }`,
   console.log(
     `Applications created: ${
       createdApps.length
-    } \n Applications creation successful: ${createdApps.length == apps.length}`
+    } \n Applications creation successful: ${createdApps.length == apps.length}`,
   );
 
   const createdResources: Array<Object> = (
@@ -476,7 +546,7 @@ button[name="submit"]{ background: #000080 !important; }`,
   console.log(
     `Resources created: ${
       createdResources.length
-    } \n Resources creation successful: ${createdResources.length == 1}`
+    } \n Resources creation successful: ${createdResources.length == 1}`,
   );
 
   const createdUsers: Array<Object> = (
@@ -486,7 +556,7 @@ button[name="submit"]{ background: #000080 !important; }`,
   console.log(
     `Users created: ${createdUsers.length} \n Users creation successful: ${
       createdUsers.length == 1
-    }`
+    }`,
   );
 
   const createdScopes: Array<Object> = (
@@ -496,7 +566,7 @@ button[name="submit"]{ background: #000080 !important; }`,
   console.log(
     `Scopes created: ${createdScopes.length} \n Scopes creation successful: ${
       createdScopes.length == scopes.length
-    }`
+    }`,
   );
 
   const createdRoles: Array<Object> = (
@@ -506,14 +576,14 @@ button[name="submit"]{ background: #000080 !important; }`,
   console.log(
     `Roles created: ${createdRoles.length} \n Roles creation successful: ${
       createdRoles.length == roles.length
-    }`
+    }`,
   );
 
   const createdRoleScopes: Array<Object> = (
     await Promise.all(
       roleScopes.map((rs) =>
-        fetchExisting(`roles/${rs.roleId}/scopes`, headers, false)
-      )
+        fetchExisting(`roles/${rs.roleId}/scopes`, headers, false),
+      ),
     )
   ).filter((rs: any) => roleScopes.map((x) => x.scopeName === rs.name));
 
@@ -522,14 +592,14 @@ button[name="submit"]{ background: #000080 !important; }`,
       createdRoleScopes.length
     } \n Role-Scopes creation successful: ${
       createdRoleScopes.length == roleScopes.length
-    }`
+    }`,
   );
 
   const createdUserRoles: Array<Object> = (
     await Promise.all(
       userRoles.map((ur) =>
-        fetchExisting(`users/${ur.userId}/roles`, headers, false)
-      )
+        fetchExisting(`users/${ur.userId}/roles`, headers, false),
+      ),
     )
   )
     .filter((rs: any) => userRoles.map((x) => x.roleIds === rs.id))
@@ -540,7 +610,7 @@ button[name="submit"]{ background: #000080 !important; }`,
       createdUserRoles.length
     } \n User-Roles creation successful: ${
       createdUserRoles.length == userRoles.map((x) => x.roleIds).flat().length
-    }`
+    }`,
   );
 }
 
@@ -561,7 +631,7 @@ async function getDBClient() {
       }
       return ssl;
     })(),
-    options: `--search_path=${process.env.PG__SCHEMA}`
+    options: `--search_path=${process.env.PG__SCHEMA}`,
   });
   await client.connect();
   return client;
@@ -582,7 +652,7 @@ async function seeding_alp_admin() {
 
   const client = await getDBClient();
 
-  const pg_schema = process.env.PG__SCHEMA
+  const pg_schema = process.env.PG__SCHEMA;
   let LOGTO__ADMIN_ROLE__ID = "jrmtgmb34iznwqdu5dhl1";
   let LOGTO__ADMIN_APP__ID = alpAdminApp.id;
   let LOGTO__ADMIN_APP_ROLE__ID = "34vzakbak1tp830d0s30o";
@@ -590,10 +660,10 @@ async function seeding_alp_admin() {
   let LOGTO__TENANT_ID = "default";
 
   console.log(
-    "*********************************************************************************"
+    "*********************************************************************************",
   );
   console.log(
-    `Inserting ${alpAdminApp.name} application to applications table`
+    `Inserting ${alpAdminApp.name} application to applications table`,
   );
   await queryPostgres(
     client,
@@ -608,11 +678,11 @@ async function seeding_alp_admin() {
       `${alpAdminApp.description}`,
       "MachineToMachine",
       '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
-    ]
+    ],
   );
 
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
   console.log(`Inserting ${alpAdminRole.name} role to roles table`);
   await queryPostgres(
@@ -626,14 +696,14 @@ async function seeding_alp_admin() {
       `${alpAdminRole.name}`,
       `${alpAdminRole.description}`,
       "MachineToMachine",
-    ]
+    ],
   );
 
   console.log(
-    "*********************************************************************************"
+    "*********************************************************************************",
   );
   console.log(
-    `Adding role ${alpAdminRole.name} to application ${alpAdminApp.name}`
+    `Adding role ${alpAdminRole.name} to application ${alpAdminApp.name}`,
   );
   await queryPostgres(
     client,
@@ -645,11 +715,11 @@ async function seeding_alp_admin() {
       LOGTO__ADMIN_APP_ROLE__ID,
       LOGTO__ADMIN_APP__ID,
       LOGTO__ADMIN_ROLE__ID,
-    ]
+    ],
   );
 
   console.log(
-    "*********************************************************************************\n"
+    "*********************************************************************************\n",
   );
   console.log(`Adding scope "management-api-all" to role ${alpAdminRole.name}`);
   await queryPostgres(
@@ -662,7 +732,7 @@ async function seeding_alp_admin() {
       LOGTO__ADMIN_ROLE_SCOPE__ID,
       LOGTO__ADMIN_ROLE__ID,
       "management-api-all",
-    ]
+    ],
   );
 
   client.end();
@@ -670,10 +740,10 @@ async function seeding_alp_admin() {
 
 async function seeding_apps() {
   console.log(
-    "****************************SEEDING LOGTO APPS*****************************************************\n"
+    "****************************SEEDING LOGTO APPS*****************************************************\n",
   );
   const client = await getDBClient();
-  const pg_schema = process.env.PG__SCHEMA
+  const pg_schema = process.env.PG__SCHEMA;
   let envApps: Array<{
     name: string;
     id: string;
@@ -699,7 +769,7 @@ async function seeding_apps() {
         envapp.type,
         envapp.oidcClientMetadata ??
           '{  "redirectUris": [],  "postLogoutRedirectUris": [] }',
-      ]
+      ],
     );
   }
   client.end();

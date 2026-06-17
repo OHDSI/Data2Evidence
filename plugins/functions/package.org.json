@@ -1,0 +1,3042 @@
+{
+  "name": "@data2evidence/d2e-functions",
+  "version": "0.0.99",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tbuild ."
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@trex/cli": "latest"
+  },
+  "trex": {
+    "functions": {
+      "init": [
+        {
+          "function": "/strategus-analysis-init",
+          "imports": "/strategus-analysis-init/deno.json",
+          "env": "strategus-analysis"
+        },
+        {
+          "function": "/jobplugins-init",
+          "imports": "/jobplugins-init/deno.json",
+          "env": "jobplugins-init"
+        },
+        {
+          "function": "/mri-pg-config",
+          "imports": "/mri-pg-config/deno.json",
+          "env": "mri-pg-config"
+        },
+        {
+          "function": "/alp-dataflow-gen-init",
+          "imports": "/alp-dataflow-gen-init/deno.json",
+          "env": "alp-dataflow-gen-init",
+          "waitforEnvVar": "PREFECT_HEALTH_CHECK"
+        },
+        {
+          "function": "/files-manager-init",
+          "imports": "/files-manager-init/deno.json",
+          "env": "files-manager"
+        },
+        {
+          "function": "/perseus-init",
+          "imports": "/perseus-init/deno.json",
+          "env": "perseus"
+        },
+        {
+          "function": "/jobplugins/src/init",
+          "imports": "/jobplugins/deno.json",
+          "env": "jobplugins"
+        },
+        {
+          "function": "/alp-usermgmt-init",
+          "imports": "/alp-usermgmt-init/deno.json",
+          "env": "alp-usermgmt"
+        },
+        {
+          "function": "/portal-init",
+          "imports": "/portal-init/deno.json",
+          "env": "portal"
+        },
+        {
+          "function": "/white-rabbit-init",
+          "imports": "/white-rabbit-init/deno.json",
+          "env": "white-rabbit"
+        },
+        {
+          "function": "/supabase-storage-init",
+          "imports": "/supabase-storage-init/deno.json",
+          "env": "supabase-storage"
+        }
+      ],
+      "api": [
+        {
+          "source": "/gateway/dashboard",
+          "service": "kpi-dashboard"
+        },
+        {
+          "source": "/jobplugins",
+          "function": "/jobplugins",
+          "imports": "/jobplugins/deno.json",
+          "env": "jobplugins"
+        },
+        {
+          "source": "/prefect",
+          "function": "/prefect",
+          "imports": "/prefect/deno.json",
+          "env": "jobplugins"
+        },
+        {
+          "source": "/gateway/api/db",
+          "function": "/alpdb",
+          "imports": "/alpdb/deno.json",
+          "env": "alpdb"
+        },
+        {
+          "source": "/gateway/api/dataset",
+          "function": "/dataset",
+          "imports": "/dataset/deno.json",
+          "env": "dataset"
+        },
+        {
+          "source": "/analytics-svc/api/services/query",
+          "function": "/query-gen-svc",
+          "imports": "/query-gen-svc/deno.json",
+          "env": "query-gen-svc"
+        },
+        {
+          "source": "/system-portal",
+          "function": "/portal",
+          "imports": "/portal/deno.json",
+          "env": "portal"
+        },
+        {
+          "source": "/usermgmt",
+          "function": "/alp-usermgmt",
+          "imports": "/alp-usermgmt/deno.json",
+          "env": "alp-usermgmt"
+        },
+        {
+          "source": "/code-suggestion",
+          "function": "/code-suggestion",
+          "imports": "/code-suggestion/deno.json",
+          "env": "code-suggestion"
+        },
+        {
+          "source": "/mcp",
+          "function": "/mcp-server",
+          "imports": "/mcp-server/deno.json",
+          "env": "mcp-server"
+        },
+        {
+          "source": "/data-mapping",
+          "function": "/data-mapping",
+          "imports": "/data-mapping/deno.json",
+          "env": "data-mapping"
+        },
+        {
+          "source": "/analytics-svc/api/services/bookmark",
+          "function": "/bookmark-svc",
+          "imports": "/bookmark-svc/deno.json",
+          "env": "bookmark-svc"
+        },
+        {
+          "source": "/analytics-svc/api/services/public",
+          "function": "/analytics-svc",
+          "imports": "/analytics-svc/deno.json",
+          "env": "analytics-svc"
+        },
+        {
+          "source": "/analytics-svc/api/services",
+          "function": "/analytics-svc",
+          "imports": "/analytics-svc/deno.json",
+          "env": "analytics-svc"
+        },
+        {
+          "source": "/analytics-svc/pa/services",
+          "function": "/analytics-svc",
+          "imports": "/analytics-svc/deno.json",
+          "env": "analytics-svc"
+        },
+        {
+          "source": "/analytics-svc/pa/config",
+          "function": "/mri-pa-config",
+          "imports": "/mri-pa-config/deno.json",
+          "env": "mri-pa-config"
+        },
+        {
+          "source": "/terminology",
+          "function": "/terminology-svc",
+          "imports": "/terminology-svc/deno.json",
+          "env": "terminology-svc"
+        },
+        {
+          "source": "/pa-config-svc",
+          "function": "/mri-pa-config",
+          "imports": "/mri-pa-config/deno.json",
+          "env": "mri-pa-config"
+        },
+        {
+          "source": "/hc/hph/cdw/services",
+          "function": "/cdw-svc",
+          "imports": "/cdw-svc/deno.json",
+          "env": "cdw-svc"
+        },
+        {
+          "source": "/hc/hph/cdw/config/services",
+          "function": "/cdw-svc",
+          "imports": "/cdw-svc/deno.json",
+          "env": "cdw-svc"
+        },
+        {
+          "source": "/hc/hph/config/services",
+          "function": "/cdw-svc",
+          "imports": "/cdw-svc/deno.json",
+          "env": "cdw-svc"
+        },
+        {
+          "source": "/index*",
+          "service": "logto"
+        },
+        {
+          "source": "/api",
+          "service": "logto"
+        },
+        {
+          "source": "/oidc",
+          "service": "logto"
+        },
+        {
+          "source": "/sign-in*",
+          "service": "logto"
+        },
+        {
+          "source": "/consent",
+          "service": "logto"
+        },
+        {
+          "source": "/callback",
+          "service": "logto"
+        },
+        {
+          "source": "/jupyter",
+          "service": "jupyter-gateway",
+          "rmsrc": true
+        },
+        {
+          "source": "/jupyter-viewer",
+          "service": "jupyter-gateway-viewer",
+          "rmsrc": true
+        },
+        {
+          "source": "/prefect/docs",
+          "service": "prefect"
+        },
+        {
+          "source": "/openapi.json",
+          "service": "prefect"
+        },
+        {
+          "source": "/concept-mapping",
+          "function": "/concept-mapping",
+          "env": "concept-mapping",
+          "imports": "/concept-mapping/deno.json"
+        },
+        {
+          "source": "/files-manager/api",
+          "function": "/files-manager",
+          "env": "files-manager",
+          "imports": "/files-manager/deno.json"
+        },
+        {
+          "source": "/backend",
+          "function": "/perseus",
+          "env": "perseus",
+          "imports": "/perseus/deno.json"
+        },
+        {
+          "source": "/white-rabbit",
+          "function": "/white-rabbit",
+          "env": "white-rabbit",
+          "imports": "/white-rabbit/deno.json"
+        },
+        {
+          "source": "/demo",
+          "function": "/demo",
+          "env": "demo",
+          "imports": "/demo/deno.json"
+        },
+        {
+          "source": "/d2e-webapi",
+          "function": "/d2e-webapi",
+          "env": "d2e-webapi",
+          "imports": "/d2e-webapi/deno.json"
+        },
+        {
+          "source": "/strategus-results",
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
+        },
+        {
+          "source": "/strategus",
+          "function": "/strategus-analysis",
+          "env": "strategus-analysis",
+          "imports": "/strategus-analysis/deno.json"
+        },
+        {
+          "source": "/mlflow",
+          "service": "mlflow",
+          "rmsrc": true
+        },
+        {
+          "source": "/dockerlogs",
+          "service": "docker-logs",
+          "rmsrc": false
+        },
+        {
+          "source": "/parquet-export",
+          "function": "/parquet-export",
+          "imports": "/parquet-export/deno.json",
+          "env": "parquet-export"
+        }
+      ],
+      "env": {
+        "_shared": {
+          "DB_SVC__IDP_SUBJECT_PROP": "sub",
+          "DB_SVC__LOG_LEVEL": "info",
+          "DB_SVC__PATH": "/alpdb",
+          "DISABLE_SSL": "TRUE",
+          "HANA__READ_ROLE": "TENANT_READ_ROLE",
+          "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
+          "PG__READ_ROLE": "postgres_tenant_read_role",
+          "IDP__ALP_SVC__CLIENT_ID": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}",
+          "IDP__ALP_SVC__CLIENT_SECRET": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}",
+          "IDP__SCOPE": "https://alp-default",
+          "IDP_SUBJECT_PROP": "sub",
+          "MINIO__ACCESS_KEY": "${MINIO__ACCESS_KEY:-root}",
+          "MINIO__ENDPOINT": "${MINIO__ENDPOINT:-${PROJECT_NAME:-d2e}-minerva-s3}",
+          "MINIO__PORT": "${MINIO__PORT:-9000}",
+          "MINIO__REGION": "${MINIO__REGION:-ap-southeast-1}",
+          "MINIO__SECRET_KEY": "${MINIO__SECRET_KEY}",
+          "MINIO__SSL": "${MINIO__SSL:-false}",
+          "NODE_ENV": "${NODE_ENV:-development}",
+          "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
+          "PG__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__DEBUG": "${PG_DEBUG:-1}",
+          "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG__SSL": "${PG__SSL:-false}",
+          "PG__MAX_POOL": 10,
+          "PG__MIN_POOL": 0,
+          "PG__PORT": "${PG_PORT:-5432}",
+          "PG__IDLE_TIMEOUT_IN_MS": 1000,
+          "PG__DIALECT": "postgresql",
+          "LOCAL_DEBUG": "false",
+          "isHttpTestRun": "${isHttpTestRun}",
+          "HTTPTEST_DB_DIALECT": "${HTTPTEST_DB_DIALECT}",
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "parquet-export": {
+          "SQL_QUERY_TEMPLATES": "${SQL_QUERY_TEMPLATES:-}"
+        },
+        "analytics-svc": {
+          "ALP_GATEWAY_OAUTH__URL": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/oauth/token",
+          "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+          "ANALYTICS_SVC__PORT": 41102,
+          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "LOCAL_DEBUG": "false",
+          "USE_EXTENSION_FOR_COHORT_CREATION": "false",
+          "isTestEnv": "${isTestEnv}",
+          "local": "${local}",
+          "TESTSCHEMA": "${TESTSCHEMA}",
+          "ANALYTICS_PATIENT_LIST_BATCH_SIZE": "${ANALYTICS_PATIENT_LIST_BATCH_SIZE:-1000}",
+          "ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT": "${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{\"hana\": 10000}}",
+          "ANALYTICS_HANA_STREAMING_ENABLED": "${ANALYTICS_HANA_STREAMING_ENABLED:-false}"
+        },
+        "mri-pg-config": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "query-gen-svc": {
+          "SQL_RETURN_ON": "${SQL_RETURN_ON:-false}",
+          "isTestEnv": "${isTestEnv}",
+          "TESTSCHEMA": "${TESTSCHEMA}",
+          "NOT_EQ_CHECK_FILTERCARDS": "${NOT_EQ_CHECK_FILTERCARDS:-true}",
+          "USE_LIKE_SEARCH": "${USE_LIKE_SEARCH:-false}",
+          "OMOP_RELATIONSHIPS_FOR_DESCENDANTS": "${OMOP_RELATIONSHIPS_FOR_DESCENDANTS}",
+          "HANA_HINT": "${HANA_HINT:-USE_HEX_PLAN}"
+        },
+        "alp-usermgmt": {
+          "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+          "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
+          "IDP__ALP_ADMIN__CLIENT_ID": "${LOGTO_API_M2M_CLIENT_ID}",
+          "IDP__ALP_ADMIN__CLIENT_SECRET": "${LOGTO_API_M2M_CLIENT_SECRET}",
+          "IDP__ALP_ADMIN__RESOURCE": "https://default.logto.app/api",
+          "IDP__BASE_URL": "${IDP__BASE_URL:-http://${PROJECT_NAME:-d2e}-logto-1:3001}",
+          "IDP__FETCH_USER_INFO_TYPE": "logto",
+          "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
+          "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
+          "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
+          "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
+          "USER_MGMT__ROLE_SOURCE": "${USER_MGMT__ROLE_SOURCE}",
+          "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
+          "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG__USER_MGMT__ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG__USER_MGMT__DB_NAME": "${PG_DB_NAME:-alp}",
+          "PG__USER_MGMT__PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG__USER_MGMT__SCHEMA": "usermgmt",
+          "PG__USER_MGMT__USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "USER_MGMT__IDP_SUBJECT_PROP": "sub",
+          "USER_MGMT__LOG_LEVEL": "info",
+          "USER_MGMT__PATH": "/usermgmt/",
+          "USER_MGMT__PORT": 41104
+        },
+        "white-rabbit": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "white_rabbit"
+        },
+        "supabase-storage": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "storage"
+        },
+        "bookmark-svc": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+        },
+        "mri-pa-config": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "cdw-svc": {
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "cdw_config",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PORT": 41114,
+          "PG__MAX_POOL": "10",
+          "isTestEnv": "${isTestEnv}"
+        },
+        "jobplugins-init": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "jobplugins",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}"
+        },
+        "jobplugins": {
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
+          "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
+        },
+        "dataset": {
+          "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+        },
+        "alpdb": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}"
+        },
+        "concept-mapping": {},
+        "portal": {
+          "PG_MANAGE_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_MANAGE_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "portal",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "APP__TENANT_ID": "${APP__TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}",
+          "APP__TENANT_NAME": "${APP__TENANT_NAME:-Tenant}",
+          "ALP__SYSTEM_NAME": "${ALP__SYSTEM_NAME:-Research System}",
+          "SUPABASE_STORAGE_JWT_SECRET": "${SUPABASE_STORAGE_JWT_SECRET}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+          "NOTEBOOK_TEMPLATE_REPO_URL": "${NOTEBOOK_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
+          "NOTEBOOK_TEMPLATE_REPO_BRANCH": "${NOTEBOOK_TEMPLATE_REPO_BRANCH:-main}",
+          "GIT_STUDIES_REPO_URL": "${GIT_STUDIES_REPO_URL:-https://github.com/data2evidence/studies.git}",
+          "GIT_STUDIES_REPO_BRANCH": "${GIT_STUDIES_REPO_BRANCH:-main}",
+          "GIT_DASHBOARDS_REPO_URL": "${GIT_DASHBOARDS_REPO_URL:-https://github.com/data2evidence/study_dashboard_templates.git}",
+          "GIT_DASHBOARDS_REPO_BRANCH": "${GIT_DASHBOARDS_REPO_BRANCH:-main}"
+        },
+        "files-manager": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_SCHEMA": "files_manager"
+        },
+        "terminology-svc": {
+          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}"
+        },
+        "perseus": {
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_SCHEMA": "perseus"
+        },
+        "code-suggestion": {
+          "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AI_MODEL": "${AI_MODEL:-null}"
+        },
+        "data-mapping": {
+          "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AI_MODEL": "${AI_MODEL:-null}"
+        },
+        "demo": {
+          "DEMO__DB_CODE": "demo_database",
+          "DEMO__DB_CDM_SCHEMA": "demo_cdm",
+          "DEMO__DB_RESULT_SCHEMA": "demo_cdm_results",
+          "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
+          "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
+          "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"HIDDEN\", \"detail\": { \"name\": \"Demo source dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
+        },
+        "d2e-webapi": {},
+        "alp-dataflow-gen-init": {
+          "CACHE_TASK_TIMEOUT": "${CACHE_TASK_TIMEOUT:-10800}",
+          "PREFECT_API_URL": "${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}",
+          "CUSTOM_WORK_POOL_CONFIGURATION": "${CUSTOM_WORK_POOL_CONFIGURATION:-{}}",
+          "DATAFLOW_MGMT__FLOWS__RESULTS_SB_NAME": "flow-results",
+          "DATAFLOW_MGMT__FLOWS__RESULTS__S3_DIR_PATH": "s3://flows/results",
+          "DUCKDB__DATA_FOLDER": "/app/duckdb_data/cache",
+          "FHIR_SCHEMA_JSON_PATH": "/home/docker/fhir",
+          "PYTHON_VERIFY_SSL": "false",
+          "LB__LOG_LEVEL": "${LB__LOG_LEVEL:-FINE}",
+          "ALP__SYSTEM_ID": "${ALP__SYSTEM_ID:-alp-research}",
+          "EXCLUDE_ANALYSIS_IDS": "${EXCLUDE_ANALYSIS_IDS}",
+          "DC_HANA_READ_ROLE": "${DC_HANA_READ_ROLE}",
+          "ACHILLES_THREAD_COUNT": "${ACHILLES_THREAD_COUNT:-1}",
+          "D2E_DUCKDB_MEMORY_LIMIT": "${D2E_DUCKDB_MEMORY_LIMIT:-}",
+          "D2E_DUCKDB_THREADS": "${D2E_DUCKDB_THREADS:-4}",
+          "OHDSI__R_COHORT_GENERATOR_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortGeneratorModule/v0.3.0/SettingsFunctions.R",
+          "OHDSI__R_COHORT_DIAGNOSTICS_MODULE_SETTINGS_URL": "https://raw.githubusercontent.com/OHDSI/CohortDiagnosticsModule/v0.2.0/SettingsFunctions.R",
+          "LIQUIBASE_PATH": "",
+          "HANA__DRIVER_CLASS_PATH": "${HANA__DRIVER_CLASS_PATH:-/app/inst/drivers/ngdbc-latest.jar}",
+          "POSTGRES__DRIVER_CLASS_PATH": "${POSTGRES__DRIVER_CLASS_PATH:-/app/inst/drivers/postgresql-42.3.1.jar}",
+          "IDP__ALP_DATA_CLIENT_ID": "${LOGTO__D2E_DATA__CLIENT_ID}",
+          "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
+          "DATABASE_CREDENTIALS": "{}",
+          "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
+          "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
+          "WORKPOOL_NAME": "docker-pool",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "DATA_TRANSFORMATION_BUCKET": "data-transformation",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
+          "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
+          "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
+          "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
+          "GOOGLE_APPLICATION_CREDENTIALS": "/tmp/google-credentials.json",
+          "PREFECT__LOCAL_DEBUG": "${PREFECT__LOCAL_DEBUG:-false}",
+          "PREFECT__LOGS_DEBUG_ENABLED": "${PREFECT__LOGS_DEBUG_ENABLED:-false}",
+          "AZURE_OPENAI_API_KEY": "${AZURE_OPENAI_API_KEY:-null}",
+          "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
+          "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
+          "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
+        },
+        "jupyter-gateway": {},
+        "jupyter-gateway-viewer": {},
+        "mlflow": {},
+        "strategus-analysis": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "PG_SCHEMA": "strategus",
+          "PG_PORTAL_SCHEMA": "portal",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
+          "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
+        }
+      },
+      "roles": {
+        "MRI_SUPER_USER": [
+          "PA.svc",
+          "PAConfig.svc/read",
+          "CDWConfig.svc/read",
+          "PAConfig.ui",
+          "PAConfig.svc",
+          "PSConfig.svc",
+          "CDWConfig.ui",
+          "CDWConfig.svc",
+          "ConfigAssignment.ui",
+          "ConfigAssignment.svc"
+        ],
+        "ALP_USER_ADMIN": [
+          "usermgmt.dataAdmin.read",
+          "usermgmt.dataAdmin.write",
+          "usermgmt.user.read",
+          "usermgmt.user.write",
+          "usermgmt.user.add",
+          "usermgmt.user.delete",
+          "usermgmt.user.password.write",
+          "usermgmt.group.delete",
+          "usermgmt.userGroup.read",
+          "usermgmt.userGroup.overview",
+          "usermgmt.userGroup.tenant.read",
+          "usermgmt.userGroup.tenant.add",
+          "usermgmt.userGroup.study.add",
+          "usermgmt.userGroup.tenant.delete",
+          "usermgmt.userGroup.study.delete",
+          "usermgmt.member.tenant.add",
+          "usermgmt.member.tenant.delete",
+          "usermgmt.member.tenant.update",
+          "nifimgmt.userAdmin"
+        ],
+        "ALP_SYSTEM_ADMIN": [
+          "PAConfig.ui",
+          "PAConfig.svc",
+          "PAConfig.svc/read",
+          "PSConfig.svc",
+          "CDWConfig.ui",
+          "CDWConfig.svc",
+          "CDWConfig.svc/read",
+          "ConfigAssignment.ui",
+          "ConfigAssignment.svc",
+          "jobplugins",
+          "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
+          "usermgmt.dataAdmin.read",
+          "usermgmt.group.read",
+          "usermgmt.me",
+          "usermgmt.studyAccessRequest.read",
+          "usermgmt.studyAccessRequest.update",
+          "usermgmt.user.read",
+          "usermgmt.userGroup.read",
+          "usermgmt.userGroup.overview",
+          "usermgmt.userGroup.tenant.read",
+          "usermgmt.user.read",
+          "usermgmt.user.add",
+          "usermgmt.setup",
+          "portal.dataset.systemAdmin.read",
+          "portal.dataset.read",
+          "portal.dataset.exist",
+          "portal.dataset.add",
+          "portal.dataset.update",
+          "portal.dataset.delete",
+          "portal.dataset.resource.read",
+          "portal.dataset.resource.add",
+          "portal.dataset.resource.delete",
+          "portal.dataset.resource.download",
+          "portal.dataset.release.add",
+          "portal.dataset.release.list.read",
+          "portal.dataset.release.read",
+          "portal.paConfig.list.read",
+          "portal.tenant.read",
+          "portal.feature.read",
+          "portal.feature.write",
+          "portal.system.feature.read",
+          "portal.dataset.metadataConfig.tag.read",
+          "portal.dataset.metadataConfig.tag.write",
+          "portal.dataset.metadataConfig.tag.delete",
+          "portal.dataset.metadataConfig.attribute.read",
+          "portal.dataset.metadataConfig.attribute.write",
+          "portal.dataset.metadataConfig.attribute.delete",
+          "portal.config.read",
+          "portal.configSecret.read",
+          "portal.config.write",
+          "portal.userArtifact.read",
+          "portal.userArtifact.write",
+          "portal.userArtifact.delete",
+          "portal.userArtifact.group.write",
+          "portal.userArtifact.group.delete",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete",
+          "portal.notebook.systemAdmin.write",
+          "portal.gitStudies.read",
+          "portal.gitDashboard.read",
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "dataflowmgmt.dataflow.read",
+          "dataflowmgmt.dataflow.add",
+          "dataflowmgmt.dataflow.delete",
+          "dataflowmgmt.dataflow.revision.delete",
+          "dataflowmgmt.dbsvc.flowRun.run",
+          "dataflowmgmt.prefect.flow.read",
+          "dataflowmgmt.prefect.flow.deployment.read",
+          "dataflowmgmt.prefect.flow.add",
+          "dataflowmgmt.prefect.flow.fileDeployment.add",
+          "dataflowmgmt.prefect.flow.delete",
+          "dataflowmgmt.prefect.flowRun.read",
+          "dataflowmgmt.prefect.flowRun.cancel",
+          "dataflowmgmt.prefect.flowRun.add",
+          "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.prefect.testRun.add",
+          "dataflowmgmt.prefect.taskRun.read",
+          "dataflowmgmt.jobHistory.filter.read",
+          "dataflowmgmt.dqd.job.dataset.flowRun.latest.read",
+          "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read",
+          "dataflowmgmt.dbSvc.flowRun.add",
+          "dbSvc.schema.create",
+          "dbSvc.snapshot.create",
+          "dbSvc.schema.importData",
+          "dbSvc.schema.update",
+          "dbSvc.schema.versionInfo.read",
+          "dbSvc.datamodels.read",
+          "dbSvc.schema.cdmVersion.read",
+          "dbSvc.schema.exists.read",
+          "dbSvc.vocabSchemas.read",
+          "dbSvc.schema.vocabSchema.read",
+          "dbSvc.schema.snapshot.metadata.read",
+          "dbSvc.schema.delete",
+          "gateway.dashboardGate.register",
+          "gateway.dataset.dashboards.read",
+          "gateway.dataset.cohorts.read",
+          "gateway.dataset.create",
+          "gateway.dataset.snapshot.create",
+          "gateway.db.dataModels.read",
+          "gateway.db.vocabSchemas.read",
+          "gateway.db.dataset.versionInfo.read",
+          "gateway.db.schema.update",
+          "gateway.db.database.test",
+          "gateway.terminology.concept.getStandardConcepts.read",
+          "gateway.terminology.concept.searchByName.read",
+          "gateway.terminology.concept.searchById.read",
+          "gateway.terminology.concept.searchByCode.read",
+          "dataflowmgmt.analysisflow.read",
+          "dataflowmgmt.analysisflow.add",
+          "dataflowmgmt.analysisflow.delete",
+          "dataflowmgmt.analysisflow.revision.delete",
+          "prefect.read",
+          "prefect.delete",
+          "prefect.post",
+          "prefect.update",
+          "conceptmapping.read",
+          "conceptmapping.post",
+          "datamapping.post",
+          "filesmanager.read",
+          "filesmanager.post",
+          "filesmanager.delete",
+          "perseus.read",
+          "whiteRabbit.read",
+          "whiteRabbit.post",
+          "demo.setup",
+          "gateway.external.dashboards.read",
+          "strategus.results.write",
+          "strategus.results.delete",
+          "strategus.results.admin.upload",
+          "strategus.results.admin.delete",
+          "mlflow",
+          "d2e.container.logs.read"
+        ],
+        "ALP_DASHBOARD_VIEWER": [
+          "gateway.dashboardGate.content",
+          "gateway.external.dashboards.read"
+        ],
+        "TENANT_VIEWER": [
+          "usermgmt.group.read",
+          "usermgmt.me",
+          "usermgmt.studyAccessRequest.add",
+          "usermgmt.studyAccessRequest.me",
+          "usermgmt.userGroup.tenant.read",
+          "usermgmt.userGroup.status",
+          "dataflowmgmt.dqd.job.dataset.release.flowRun.read",
+          "dataflowmgmt.dqd.job.dataset.flowRun.latest.read",
+          "dataflowmgmt.dqd.dataCharacterization.schemaMapping.read",
+          "dataflowmgmt.dqd.dataCharacterization.flowRun.results.drilldown.read",
+          "dataflowmgmt.dqd.dataQuality.flowRun.results.overview.read",
+          "dataflowmgmt.dqd.dataQuality.dataset.cohort.flowRun.latest.read",
+          "dataflowmgmt.dqd.dataQuality.dataset.history.read",
+          "dataflowmgmt.dqd.dataQuality.dataset.continuity.read",
+          "portal.tenant.read",
+          "portal.feature.read",
+          "portal.dataset.read",
+          "portal.filterScope.read",
+          "portal.dataset.release.list.read",
+          "portal.config.read",
+          "codesuggestion.tenantview.read",
+          "mcpchat.tenantview.read",
+          "d2e.webapi.public"
+        ],
+        "RESEARCHER": [
+          "PA.svc",
+          "PAConfig.svc/read",
+          "CDWConfig.svc/read",
+          "portal.dataset.paConfig.read",
+          "portal.dataset.resource.read",
+          "portal.dataset.read",
+          "parquet.export",
+          "portal.dataset.resource.download",
+          "portal.notebook.read",
+          "portal.notebook.add",
+          "portal.notebook.update",
+          "portal.notebook.delete",
+          "portal.config.read",
+          "gateway.terminology.conceptSet.read",
+          "gateway.terminology.conceptSet.create",
+          "gateway.terminology.conceptSet.update",
+          "gateway.terminology.conceptSet.delete",
+          "gateway.terminology.concept.count.read",
+          "gateway.terminology.concept.ids.read",
+          "gateway.terminology.concept.filterOptions.read",
+          "gateway.terminology.concept.recommended.read",
+          "gateway.terminology.concept.hierarchy.read",
+          "gateway.terminology.concept.getStandardConcepts.read",
+          "gateway.terminology.concept.searchByName.read",
+          "gateway.terminology.concept.searchById.read",
+          "gateway.terminology.concept.searchByCode.read",
+          "gateway.terminology.fhir.read",
+          "codesuggestion.read",
+          "mcpchat.read",
+          "portal.userArtifact.bookmarks.read",
+          "portal.userArtifact.bookmarks.write",
+          "portal.userArtifact.bookmarks.delete",
+          "portal.userArtifact.conceptSets.read",
+          "portal.userArtifact.conceptSets.write",
+          "portal.userArtifact.conceptSets.delete",
+          "portal.userArtifact.atlasCohortDefinitions.read",
+          "portal.userArtifact.atlasCohortDefinitions.write",
+          "portal.userArtifact.atlasCohortDefinitions.delete",
+          "jobplugins.dqd.read",
+          "jobplugins.dqd.execute",
+          "d2e.webapi",
+          "usermgmt.me.jupyter",
+          "gateway.dataset.shinylive.read"
+        ],
+        "ALP_SHARED": [
+          "usermgmt.group.read",
+          "usermgmt.group.add",
+          "usermgmt.group.delete"
+        ],
+        "USER_MGMT_GROUP_DELETE": [
+          "usermgmt.group.delete"
+        ],
+        "IDP_ALP_SVC_CLIENT_ID": [
+          "gateway.db.datbase.credentials.list",
+          "portal.dataset.systemAdmin.read"
+        ],
+        "IDP_ALP_DATA_CLIENT_ID": [
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "filesmanager.read",
+          "filesmanager.post",
+          "filesmanager.delete",
+          "whiteRabbit.post",
+          "portal.userArtifact.write",
+          "portal.dataset.systemAdmin.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write",
+          "portal.supabaseStorage.delete"
+        ],
+        "STUDY_WRITE_DQD_RESEARCHER": [
+          "rD2E.jupyter.kernel.flowRun.add",
+          "strategus.analysis.read",
+          "strategus.analysis.write",
+          "jobplugins.flowRun.strategus.removeResults.add",
+          "jupyter",
+          "jobplugins.dqd.researcher.execute",
+          "jobplugins.cohortDqd.researcher.execute",
+          "jobplugins.analysisUi.researcher.execute",
+          "portal.dataset.read"
+        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [
+          "strategus.analysis.read",
+          "strategus.results.read",
+          "strategus.results.write",
+          "strategus.results.delete",
+          "gateway.dataset.dashboards.read"
+        ],
+        "ETL_MAPPING_CONTRIBUTOR": [
+          "dataflowmgmt.dataflow.flowRun.results.read",
+          "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.dataflow.read",
+          "portal.supabaseStorage.read",
+          "portal.supabaseStorage.write"
+        ]
+      },
+      "scopes": [
+        {
+          "path": "^/gateway/dashboard/(.*)",
+          "scopes": [
+            "gateway.external.dashboards.read"
+          ]
+        },
+        {
+          "path": "^/files-manager/api",
+          "scopes": [
+            "filesmanager.read",
+            "filesmanager.post",
+            "filesmanager.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/backend/api/(.*)",
+          "scopes": [
+            "perseus.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/white-rabbit/api/(.*)",
+          "scopes": [
+            "whiteRabbit.read",
+            "whiteRabbit.post"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/concept-mapping",
+          "scopes": [
+            "conceptmapping.read",
+            "conceptmapping.post"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/strategus/remove-results-schema/[a-zA-Z0-9]+",
+          "scopes": [
+            "jobplugins.flowRun.strategus.removeResults.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/upload",
+          "scopes": [
+            "strategus.results.admin.upload",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/strategus-results/drop/[a-zA-Z0-9]+/[a-zA-Z0-9]+",
+          "scopes": [
+            "strategus.results.admin.delete",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/test(.*)",
+          "scopes": [
+            "PA.svc"
+          ],
+          "datasetId": "dsid"
+        },
+        {
+          "path": "^/jobplugins/dqd/(data-characterization|data-quality)/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/(data-characterization|data-quality)/cohort/[a-zA-Z0-9]+/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.execute"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.dqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/cohort-dqd/flow-run(.*)",
+          "scopes": [
+            "jobplugins.cohortDqd.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/researcher/analysis-ui/flow-run(.*)",
+          "scopes": [
+            "jobplugins.analysisUi.researcher.execute"
+          ],
+          "httpMethods": [
+            "GET",
+            "POST"
+          ]
+        },
+        {
+          "path": "^/prefect(.*)",
+          "scopes": [
+            "prefect.read",
+            "prefect.delete",
+            "prefect.post",
+            "prefect.update"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/plugins/(.*)",
+          "scopes": [
+            "PA.svc"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/api/services/alpdb/cdmversion",
+          "scopes": [
+            "dbSvc.schema.cdmVersion.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/api/services/alpdb/schema/exists",
+          "scopes": [
+            "dbSvc.schema.exists.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/api/services/(fhir|data|datastream|userStudies|population)/(?!schema)(.*)",
+          "scopes": [
+            "PA.svc"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/api/services/((?!fhir)|data|datastream|userStudies|values)(.*)",
+          "scopes": [
+            "PA.svc"
+          ]
+        },
+        {
+          "path": "^/analytics-svc/pa/services(.*)",
+          "scopes": [
+            "PA.svc"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/enduser(.*)",
+          "scopes": [
+            "PAConfig.svc/read"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/services/(.*)",
+          "scopes": [
+            "PAConfig.svc"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/db/(.*)",
+          "scopes": [
+            "PAConfig.svc"
+          ]
+        },
+        {
+          "path": "^/pa-config-svc/wizards/config$",
+          "scopes": [
+            "PAConfig.svc/read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
+          "scopes": [
+            "CDWConfig.svc/read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/hc/hph/cdw/config/services/config.xsjs(.*)",
+          "scopes": [
+            "CDWConfig.svc"
+          ]
+        },
+        {
+          "path": "^/hc/hph/cdw/(.*)$",
+          "scopes": [
+            "CDWConfig.svc"
+          ]
+        },
+        {
+          "path": "^/hc/hph/config/services/(global|config).xsjs(.*)",
+          "scopes": [
+            "CDWConfig.svc"
+          ]
+        },
+        {
+          "path": "^/ps-config-svc/(.*)",
+          "scopes": [
+            "PSConfig.svc"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/alp-data-admin",
+          "scopes": [
+            "usermgmt.dataAdmin.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/alp-data-admin/(register|withdraw)",
+          "scopes": [
+            "usermgmt.dataAdmin.write"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/alp-user",
+          "scopes": [
+            "usermgmt.user.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/alp-user/(register|withdraw)",
+          "scopes": [
+            "usermgmt.user.write"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/group(.*)",
+          "scopes": [
+            "usermgmt.group.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/group/study/(.+)/role/(.+)",
+          "scopes": [
+            "usermgmt.group.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/group/tenant/(.+)/role/(.+)",
+          "scopes": [
+            "usermgmt.group.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/group/create",
+          "scopes": [
+            "usermgmt.group.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/group/(delete|cleanup)",
+          "scopes": [
+            "usermgmt.group.delete"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/me",
+          "scopes": [
+            "usermgmt.me"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/me/is_token_valid_internal",
+          "scopes": [
+            "usermgmt.me.jupyter"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/study/access-request/list/(.+)",
+          "scopes": [
+            "usermgmt.studyAccessRequest.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/study/access-request",
+          "scopes": [
+            "usermgmt.studyAccessRequest.add"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/study/access-request/me",
+          "scopes": [
+            "usermgmt.studyAccessRequest.me"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/study/access-request/(approve|reject)",
+          "scopes": [
+            "usermgmt.studyAccessRequest.update"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/list",
+          "scopes": [
+            "usermgmt.userGroup.tenant.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group$",
+          "scopes": [
+            "usermgmt.userGroup.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group\\?",
+          "scopes": [
+            "usermgmt.userGroup.read"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/overview",
+          "scopes": [
+            "usermgmt.userGroup.overview"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/register-tenant-roles",
+          "scopes": [
+            "usermgmt.userGroup.tenant.add"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/register-study-roles",
+          "scopes": [
+            "usermgmt.userGroup.study.add"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/withdraw-tenant-roles",
+          "scopes": [
+            "usermgmt.userGroup.tenant.delete"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/withdraw-study-roles",
+          "scopes": [
+            "usermgmt.userGroup.study.delete"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user-group/status/(.+)",
+          "scopes": [
+            "usermgmt.userGroup.status"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/member/tenant/add",
+          "scopes": [
+            "usermgmt.member.tenant.add"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/member/tenant/delete",
+          "scopes": [
+            "usermgmt.member.tenant.delete"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/member/tenant/activate",
+          "scopes": [
+            "usermgmt.member.tenant.update"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user(.*)",
+          "scopes": [
+            "usermgmt.user.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user",
+          "scopes": [
+            "usermgmt.user.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user/(.*)",
+          "scopes": [
+            "usermgmt.user.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/user/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/password",
+          "scopes": [
+            "usermgmt.user.password.write"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/setup/(.*)",
+          "scopes": [
+            "usermgmt.setup"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-codes$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard-code-query$",
+          "scopes": [
+            "portal.dataset.read",
+            "portal.dataset.update",
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "PUT",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/list/systemadmin$",
+          "scopes": [
+            "portal.dataset.systemAdmin.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/list$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/exist$",
+          "scopes": [
+            "portal.dataset.exist"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset$",
+          "scopes": [
+            "portal.dataset.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/snapshot$",
+          "scopes": [
+            "portal.dataset.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/attribute$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset$",
+          "scopes": [
+            "portal.dataset.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource/list$",
+          "scopes": [
+            "portal.dataset.resource.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource/(.*)/download$",
+          "scopes": [
+            "portal.dataset.resource.download"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource$",
+          "scopes": [
+            "portal.dataset.resource.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/resource/(.*)",
+          "scopes": [
+            "portal.dataset.resource.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/release$",
+          "scopes": [
+            "portal.dataset.release.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/release/list",
+          "scopes": [
+            "portal.dataset.release.list.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/release/([0-9]+)$",
+          "scopes": [
+            "portal.dataset.release.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/filter-scopes$",
+          "scopes": [
+            "portal.filterScope.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/pa-config/metadata/list$",
+          "scopes": [
+            "portal.paConfig.list.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/pa-config/(backend|me)$",
+          "scopes": [
+            "portal.dataset.paConfig.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/templates/(.*)$",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/overwrite-all-from-remote$",
+          "scopes": [
+            "portal.notebook.systemAdmin.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook",
+          "scopes": [
+            "portal.notebook.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "scopes": [
+            "portal.notebook.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/remote-diff-check$",
+          "scopes": [
+            "portal.notebook.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/notebook/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/overwrite-from-remote$",
+          "scopes": [
+            "portal.notebook.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/tag/list",
+          "scopes": [
+            "portal.dataset.metadataConfig.tag.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/tag",
+          "scopes": [
+            "portal.dataset.metadataConfig.tag.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/tag",
+          "scopes": [
+            "portal.dataset.metadataConfig.tag.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/attribute/list",
+          "scopes": [
+            "portal.dataset.metadataConfig.attribute.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/attribute",
+          "scopes": [
+            "portal.dataset.metadataConfig.attribute.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/metadata-config/attribute",
+          "scopes": [
+            "portal.dataset.metadataConfig.attribute.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/system/feature/list(.*)",
+          "scopes": [
+            "portal.system.feature.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/tenant/list(.*)",
+          "scopes": [
+            "portal.tenant.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/feature/list(.*)",
+          "scopes": [
+            "portal.feature.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/feature",
+          "scopes": [
+            "portal.feature.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboard/(.*)",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/dashboards/list$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/config(.*)",
+          "scopes": [
+            "portal.config.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/config/secret(.*)",
+          "scopes": [
+            "portal.configSecret.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/config$",
+          "scopes": [
+            "portal.config.write"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/list$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.bookmarks.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/bookmarks/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/([^/]+)/concept_sets/shared/list$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.conceptSets.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/concept_sets/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.write"
+          ],
+          "httpMethods": [
+            "PATCH"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/sequence/nextval$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/atlas_cohort_definitions/([^/]+)$",
+          "scopes": [
+            "portal.userArtifact.atlasCohortDefinitions.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/group$",
+          "scopes": [
+            "portal.userArtifact.group.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/user-artifact/group/[a-zA-Z0-9_]+$",
+          "scopes": [
+            "portal.userArtifact.group.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/prefect/results",
+          "scopes": [
+            "dataflowmgmt.dataflow.flowRun.results.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/list/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/upload/file",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/upload/folder",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/get/file",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/delete/file",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/list",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/download",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/upload",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/supabase-storage/strategus-results/delete",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/studies",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-studies/study/strategus",
+          "scopes": [
+            "portal.gitStudies.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/system-portal/git-dashboards",
+          "scopes": [
+            "portal.gitDashboard.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
+          "scopes": [
+            "gateway.dashboardGate.content"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/dashboard-gate/register",
+          "scopes": [
+            "gateway.dashboardGate.register"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alp-nifi-api/nifi/(.*)",
+          "scopes": [
+            "nifimgmt.userAdmin"
+          ]
+        },
+        {
+          "path": "^/alp-nifi-api/nifi-registry/(.*)",
+          "scopes": [
+            "nifimgmt.userAdmin"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set$",
+          "scopes": [
+            "gateway.terminology.conceptSet.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/included-concepts$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/resolveConceptSetExpression$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/[0-9]+$",
+          "scopes": [
+            "gateway.terminology.conceptSet.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/[0-9]+$",
+          "scopes": [
+            "gateway.terminology.conceptSet.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/terminology/concept-set/[0-9]+$",
+          "scopes": [
+            "gateway.terminology.conceptSet.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/count(.*)",
+          "scopes": [
+            "gateway.terminology.concept.count.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/ids(.*)",
+          "scopes": [
+            "gateway.terminology.concept.ids.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/filter-options(.*)",
+          "scopes": [
+            "gateway.terminology.concept.filterOptions.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/hierarchy(.*)",
+          "scopes": [
+            "gateway.terminology.concept.hierarchy.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/recommended/list$",
+          "scopes": [
+            "gateway.terminology.concept.recommended.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/getStandardConcepts$",
+          "scopes": [
+            "gateway.terminology.concept.getStandardConcepts.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/searchByName$",
+          "scopes": [
+            "gateway.terminology.concept.searchByName.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/searchById$",
+          "scopes": [
+            "gateway.terminology.concept.searchById.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/concept/searchByCode$",
+          "scopes": [
+            "gateway.terminology.concept.searchByCode.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/terminology/fhir/4_0_0/(.*)",
+          "scopes": [
+            "gateway.terminology.fhir.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/(.*)",
+          "scopes": [
+            "dataflowmgmt.dataflow.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow(.*)",
+          "scopes": [
+            "dataflowmgmt.dataflow.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file/list$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.write"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/node/file$",
+          "scopes": [
+            "portal.supabaseStorage.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "scopes": [
+            "dataflowmgmt.dataflow.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dataflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "scopes": [
+            "dataflowmgmt.dataflow.revision.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/analysisflow/(.*)",
+          "scopes": [
+            "dataflowmgmt.analysisflow.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/analysisflow(.*)",
+          "scopes": [
+            "dataflowmgmt.analysisflow.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+          "scopes": [
+            "dataflowmgmt.analysisflow.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/analysisflow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "scopes": [
+            "dataflowmgmt.analysisflow.revision.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/list$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/metadata/list$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/datamodels/list$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/deployment$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.deployment.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/jupyter-kernel/flow-run/strategus",
+          "scopes": [
+            "rD2E.jupyter.kernel.flowRun.add",
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/file-deployment$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.fileDeployment.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/git-deployment$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.fileDeployment.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/default-deployment$",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.fileDeployment.add"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow/(.*)",
+          "scopes": [
+            "dataflowmgmt.prefect.flow.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/(.*)",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality(/category|/domain)?/history$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.history.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-quality/domain/continuity$",
+          "scopes": [
+            "dataflowmgmt.dqd.dataQuality.dataset.continuity.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancellation",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.cancel"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/deployment",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/(.*)",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/analysis-run/(.*)",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/task-run/(.*)",
+          "scopes": [
+            "dataflowmgmt.prefect.taskRun.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/test-run",
+          "scopes": [
+            "dataflowmgmt.prefect.testRun.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/state",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.state"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/dqd/data-characterization/schema-mapping/list",
+          "scopes": [
+            "dataflowmgmt.dqd.dataCharacterization.schemaMapping.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins/job-history/flow-runs",
+          "scopes": [
+            "dataflowmgmt.jobHistory.filter.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/jobplugins(.*)",
+          "scopes": [
+            "jobplugins"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/schemasnapshot/[a-zA-Z0-9_]+(.*)",
+          "scopes": [
+            "dbSvc.snapshot.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/importdata(.*)",
+          "scopes": [
+            "dbSvc.schema.importData"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+[?](&*schema=[a-zA-Z0-9_]+)+$",
+          "scopes": [
+            "dbSvc.schema.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/maintenance/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.maintenance.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/count/[0-9]+(.*)",
+          "scopes": [
+            "dbSvc.schema.delete.rollbackCount"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/data-model/[a-zA-Z0-9-]+/tag/[0-9a-zA-Z]+(.*)",
+          "scopes": [
+            "dbSvc.schema.delete.rollbackTag"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/version-info",
+          "scopes": [
+            "dbSvc.schema.versionInfo.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/datamodels",
+          "scopes": [
+            "dbSvc.datamodels.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/cdmversion/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.cdmVersion.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/vocabSchemas",
+          "scopes": [
+            "dbSvc.vocabSchemas.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/vocabSchema/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.vocabSchema.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/metadata/schemasnapshot/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.snapshot.metadata.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/staging-area/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.stagingArea.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/staging-area/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.stagingArea.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/dataCharacterization/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/dataCharacterization/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.schema.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+",
+          "scopes": [
+            "dbSvc.questionnaire.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/alpdb/[a-zA-Z]+/database/[a-zA-Z0-9_]+/schema/[a-zA-Z0-9_]+/questionnaire/[a-zA-Z0-9]+",
+          "scopes": [
+            "dbSvc.questionnaire.responses.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/cdm-schema/snapshot/metadata$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/cohorts$",
+          "scopes": [
+            "gateway.dataset.cohorts.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset$",
+          "scopes": [
+            "gateway.dataset.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/snapshot$",
+          "scopes": [
+            "gateway.dataset.snapshot.create"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/shiny-live",
+          "scopes": [
+            "gateway.dataset.shinylive.read"
+          ],
+          "httpMethods": [
+            "GET",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/dashboard/list$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/dataset/info$",
+          "scopes": [
+            "gateway.dataset.dashboards.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/database-creds/list",
+          "scopes": [
+            "gateway.db.datbase.credentials.list"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/[a-zA-Z0-9_]+/data-models$",
+          "scopes": [
+            "gateway.db.dataModels.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/[a-zA-Z0-9_]+/vocab-schemas$",
+          "scopes": [
+            "gateway.db.vocabSchemas.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/dataset/version-info$",
+          "scopes": [
+            "gateway.db.dataset.versionInfo.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/schema$",
+          "scopes": [
+            "gateway.db.schema.update"
+          ],
+          "httpMethods": [
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/gateway/api/db/test",
+          "scopes": [
+            "gateway.db.database.test"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/prefect",
+          "scopes": [
+            "prefect.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/prefect",
+          "scopes": [
+            "prefect.post"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/prefect",
+          "scopes": [
+            "prefect.update"
+          ],
+          "httpMethods": [
+            "PUT",
+            "PATCH"
+          ]
+        },
+        {
+          "path": "^/prefect",
+          "scopes": [
+            "prefect.delete"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/code-suggestion",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/code-suggestion/chat",
+          "scopes": [
+            "codesuggestion.read",
+            "codesuggestion.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/mcp/chat",
+          "scopes": [
+            "mcpchat.read",
+            "mcpchat.tenantview.read"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/data-mapping",
+          "scopes": [
+            "datamapping.post"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/demo",
+          "scopes": [
+            "demo.setup"
+          ],
+          "httpMethods": [
+            "POST",
+            "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi/(health|source|i18n|notifications)(.*)",
+          "scopes": [
+            "d2e.webapi.public"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi(.*)",
+          "scopes": [
+            "d2e.webapi"
+          ]
+        },
+        {
+          "path": "^/jupyter",
+          "scopes": [
+            "jupyter"
+          ]
+        },
+        {
+          "path": "^/mlflow(.*)",
+          "scopes": [
+            "mlflow"
+          ]
+        },
+        {
+          "path": "^/dockerlogs(.*)",
+          "scopes": [
+            "d2e.container.logs.read"
+          ]
+        },
+        {
+          "path": "^/strategus-results",
+          "scopes": [
+            "strategus.results.read",
+            "strategus.results.write",
+            "strategus.results.delete"
+          ],
+          "httpMethods": [
+            "GET",
+            "HEAD",
+            "POST",
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/strategus/template",
+          "scopes": [
+            "strategus.results.read"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]*$",
+          "scopes": [
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "POST",
+            "PUT"
+          ]
+        },
+        {
+          "path": "^/strategus/analysis/[a-zA-Z0-9_]+$",
+          "scopes": [
+            "strategus.analysis.write"
+          ],
+          "httpMethods": [
+            "DELETE"
+          ]
+        },
+        {
+          "path": "^/parquet-export",
+          "scopes": [
+            "parquet.export"
+          ],
+          "httpMethods": [
+            "POST"
+          ],
+          "datasetId": "datasetId"
+        }
+      ]
+    }
+  }
+}

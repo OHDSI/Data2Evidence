@@ -30,6 +30,7 @@ export interface ITokenUser {
 
 export interface IAppRequest extends Request {
   user: ITokenUser
+  userGroupsCache?: Map<string, Promise<UserGroupMetadata>>
 }
 
 export interface RoleMap {
@@ -146,4 +147,5 @@ export interface IDataset {
 export interface IPortalDataset {
   id: string
   tokenStudyCode: string
+  type?: string
 }

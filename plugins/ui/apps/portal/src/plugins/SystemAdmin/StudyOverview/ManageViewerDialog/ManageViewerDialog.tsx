@@ -43,7 +43,9 @@ const enum ViewerType {
 
 const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose }) => {
   const { getText } = useTranslation();
-  const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(ViewerType.SHINY_SERVER);
+  const [templateLanguage, setTemplateLanguage] = useState<ViewerType>(
+    config.type === "strategus" ? ViewerType.SHINY_SERVER : ViewerType.R
+  );
   const [selectedTemplate, setSelectedTemplate] = useState<string>("default");
   const [codeType, setCodeType] = useState<"dashboard" | "cohort">(config.type === "cohort" ? "cohort" : "dashboard");
   const [nameError, setNameError] = useState<string | null>(null);
@@ -82,12 +84,14 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
   });
 
   const viewerTypes = useMemo(
-    () => [
-      { label: "R Shiny Server", value: ViewerType.SHINY_SERVER },
-      { label: "R", value: ViewerType.R },
-      { label: "Python", value: ViewerType.Python },
-    ],
-    []
+    () =>
+      config.type === "strategus"
+        ? [{ label: "R Shiny Server", value: ViewerType.SHINY_SERVER }]
+        : [
+            { label: "R", value: ViewerType.R },
+            { label: "Python", value: ViewerType.Python },
+          ],
+    [config.type]
   );
 
   const editorLanguage = useMemo(() => {

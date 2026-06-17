@@ -9,6 +9,7 @@ import { MeRouter } from './MeRouter'
 import { StudyAccessRequestRouter } from './StudyAccessRequestRouter'
 import { MemberRouter } from './MemberRouter'
 import { SetupRouter } from './SetupRouter'
+import { DatasetRoleRouter } from './DatasetRoleRouter'
 
 @Service()
 class Routes {
@@ -23,7 +24,8 @@ class Routes {
     private readonly alpDataAdminRouter: AlpDataAdminRouter,
     private readonly meRouter: MeRouter,
     private readonly studyAccessRequestRouter: StudyAccessRequestRouter,
-    private readonly setupRouter: SetupRouter
+    private readonly setupRouter: SetupRouter,
+    private readonly datasetRoleRouter: DatasetRoleRouter
   ) {
     this.router.use('/user-group', this.userGroupRouter.router)
     this.router.use('/member', this.memberRouter.router)
@@ -34,6 +36,7 @@ class Routes {
     this.router.use('/me', this.meRouter.router)
     this.router.use('/study/access-request', this.studyAccessRequestRouter.router)
     this.router.use('/setup', this.setupRouter.router)
+    this.router.use('/dataset-role', this.datasetRoleRouter.router)
   }
 }
 

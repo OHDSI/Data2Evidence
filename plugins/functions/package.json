@@ -74,10 +74,6 @@
       ],
       "api": [
         {
-          "source": "/gateway/dashboard",
-          "service": "kpi-dashboard"
-        },
-        {
           "source": "/jobplugins",
           "function": "/jobplugins",
           "imports": "/jobplugins/deno.json",
@@ -327,6 +323,7 @@
           "PROJECT_NAME": "${PROJECT_NAME:-d2e}",
           "PG__DB_NAME": "${PG_DB_NAME:-alp}",
           "PG__FHIR_DB_NAME": "${PG__FHIR_DB_NAME:-alp}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "PG__DEBUG": "${PG_DEBUG:-1}",
           "PG__HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
           "PG__SSL": "${PG__SSL:-false}",
@@ -384,7 +381,8 @@
           "IDP__INITIAL_USER__NAME": "${IDP__INITIAL_USER__NAME:-admin}",
           "IDP__INITIAL_USER__UUID": "a6660e40-261e-4782-873e-f76b4328aecf",
           "IDP__RELYING_PARTY": "${IDP__RELYING_PARTY:-logto}",
-          "AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}",
+          "IDP__AUTO_PROVISION_USERS": "${IDP__AUTO_PROVISION_USERS:-false}",
+          "AUTO_GRANT_RESEARCHER_BY_DATASET_CODES": "${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES}}",
           "USER_MGMT__ROLE_SOURCE": "${USER_MGMT__ROLE_SOURCE}",
           "NIFI_MGMT__BASE_URL": "http://${PROJECT_NAME:-d2e}-minerva-nifi-mgmt-svc-1:4444/alp-nifi-api/",
           "PG__USER_MGMT__ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -448,6 +446,7 @@
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}",
           "DATAFLOW_TEMPLATE_REPO_URL": "${DATAFLOW_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "DATAFLOW_TEMPLATE_BRANCH": "${DATAFLOW_TEMPLATE_BRANCH:-main}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_URL:-https://github.com/data2evidence/templates.git}",
           "FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH": "${FHIR_STRUCTURE_MAP_TEMPLATE_REPO_BRANCH:-csafreen/fhir_structure_maps}"
         },
@@ -455,7 +454,8 @@
           "GATEWAY_WO_PROTOCOL_FQDN": "${CADDY__ALP__PUBLIC_FQDN:-localhost}${PORT:+:${PORT:-443}}",
           "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
-          "PG_PASSWORD": "${PG_WRITE_PASSWORD}"
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}"
         },
         "alpdb": {
           "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
@@ -493,7 +493,14 @@
           "PG_SCHEMA": "files_manager"
         },
         "terminology-svc": {
-          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}"
+          "HANA_FTS_FUZZY": "${HANA_FTS_FUZZY:-0.8}",
+          "HANA_HYBRID_MODE": "${HANA_HYBRID_MODE:-rerank}",
+          "HANA_HYBRID_TOPK": "${HANA_HYBRID_TOPK:-1000}",
+          "TREX__SQL__HOST": "${TREX__SQL__HOST:-${PROJECT_NAME:-d2e}-trex}",
+          "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
+          "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
+          "TREX__SQL__PASSWORD": "${TREX__SQL__PASSWORD}",
+          "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}"
         },
         "perseus": {
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
@@ -508,6 +515,10 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_INSTANCE_NAME": "${AZURE_OPENAI_API_INSTANCE_NAME:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
+          "ANTHROPIC_API_KEY": "${ANTHROPIC_API_KEY:-null}",
+          "OLLAMA_BASE_URL": "${OLLAMA_BASE_URL:-null}",
+          "OLLAMA_API_KEY": "${OLLAMA_API_KEY:-null}",
+          "GOOGLE_API_KEY": "${GOOGLE_API_KEY:-null}",
           "AI_MODEL": "${AI_MODEL:-null}"
         },
         "data-mapping": {
@@ -525,7 +536,7 @@
           "DEMO__DB_DEFAULT": "{ \"name\": \"postgres\", \"dialect\": \"postgres\", \"host\": \"demodb\", \"port\": 5432, \"extra\": { \"Internal\": { \"statementTimeout\": 60000, \"queryTimeout\": 60000, \"idleTimeoutMillis\": 300000, \"idleInTransactionSessionTimeout\": 300000, \"max\": 50 } }, \"authenticationMode\": \"Password\", \"credentials\": []}",
           "DEMO__DB_USER": "${DEMO__DB_USER:-postgres}",
           "DEMO__DB_PASSWORD": "${DEMO__DB_PASSWORD:-mypass}",
-          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"HIDDEN\", \"detail\": { \"name\": \"Demo source dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
+          "DEMO__DATASET": "{ \"tokenStudyCode\": \"demo\", \"type\": \"source\", \"tenantId\": \"e0348e4d-2e17-43f2-a3c6-efd752d17c23\", \"schemaOption\": \"existing_cdm\", \"dialect\": \"postgres\", \"dataModel\": \"omop5-4\", \"plugin\": \"omop_cdm_plugin\", \"paConfigId\": \"4fce3cb7-32bf-4b46-8cba-32e4f77a14dd\", \"visibilityStatus\": \"DEFAULT\", \"detail\": { \"name\": \"Demo dataset\", \"summary\": \"Demo dataset\", \"description\": \"Demo dataset\", \"showRequestAccess\": false }, \"dashboards\": [], \"attributes\": [], \"tags\": [], \"cacheDatasetName\": \"Demo dataset\", \"cacheDatasetType\": \"omop\" }"
         },
         "d2e-webapi": {},
         "alp-dataflow-gen-init": {
@@ -565,7 +576,6 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
-          "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
           "REFRESH_TOKEN__CLIENT_SECRET": "${REFRESH_TOKEN__CLIENT_SECRET}",
@@ -576,7 +586,7 @@
           "AZURE_OPENAI_API_VERSION": "${AZURE_OPENAI_API_VERSION:-null}",
           "AZURE_OPENAI_API_DEPLOYMENT_NAME": "${AZURE_OPENAI_API_DEPLOYMENT_NAME:-null}",
           "AZURE_OPENAI_API_ENDPOINT": "${AZURE_OPENAI_API_ENDPOINT:-null}",
-          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-d2e_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR_DATABASE_CODE:-FHIR}",
           "IS_SELF_MANAGED_ROLES": "${IS_SELF_MANAGED_ROLES:-false}"
         },
         "jupyter-gateway": {},
@@ -597,6 +607,7 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_URL": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_URL:-https://github.com/data2evidence/result_viewer_templates.git}",
           "GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH": "${GIT_RESULT_VIEWER_TEMPLATE_REPO_BRANCH:-main}"
         }
@@ -617,6 +628,8 @@
         "ALP_USER_ADMIN": [
           "usermgmt.dataAdmin.read",
           "usermgmt.dataAdmin.write",
+          "usermgmt.datasetRole.write",
+          "usermgmt.datasetRole.sync",
           "usermgmt.user.read",
           "usermgmt.user.write",
           "usermgmt.user.add",
@@ -649,6 +662,8 @@
           "jobplugins.dqd.read",
           "jobplugins.dqd.execute",
           "usermgmt.dataAdmin.read",
+          "usermgmt.datasetRole.write",
+          "usermgmt.datasetRole.sync",
           "usermgmt.group.read",
           "usermgmt.me",
           "usermgmt.studyAccessRequest.read",
@@ -713,6 +728,8 @@
           "dataflowmgmt.prefect.flowRun.cancel",
           "dataflowmgmt.prefect.flowRun.add",
           "dataflowmgmt.prefect.flowRun.state",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+          "dataflowmgmt.prefect.flowRun.inputAuthToken.delete",
           "dataflowmgmt.prefect.testRun.add",
           "dataflowmgmt.prefect.taskRun.read",
           "dataflowmgmt.jobHistory.filter.read",
@@ -732,10 +749,10 @@
           "dbSvc.schema.vocabSchema.read",
           "dbSvc.schema.snapshot.metadata.read",
           "dbSvc.schema.delete",
-          "gateway.dashboardGate.register",
           "gateway.dataset.dashboards.read",
           "gateway.dataset.cohorts.read",
           "gateway.dataset.create",
+          "gateway.dataset.cdmMetadata.read",
           "gateway.dataset.snapshot.create",
           "gateway.db.dataModels.read",
           "gateway.db.vocabSchemas.read",
@@ -764,7 +781,6 @@
           "whiteRabbit.read",
           "whiteRabbit.post",
           "demo.setup",
-          "gateway.external.dashboards.read",
           "strategus.results.write",
           "strategus.results.delete",
           "strategus.results.admin.upload",
@@ -772,10 +788,7 @@
           "mlflow",
           "d2e.container.logs.read"
         ],
-        "ALP_DASHBOARD_VIEWER": [
-          "gateway.dashboardGate.content",
-          "gateway.external.dashboards.read"
-        ],
+        "ALP_DASHBOARD_VIEWER": [],
         "TENANT_VIEWER": [
           "usermgmt.group.read",
           "usermgmt.me",
@@ -799,7 +812,8 @@
           "portal.config.read",
           "codesuggestion.tenantview.read",
           "mcpchat.tenantview.read",
-          "d2e.webapi.public"
+          "d2e.webapi.public",
+          "strategus.results.read"
         ],
         "RESEARCHER": [
           "PA.svc",
@@ -844,7 +858,8 @@
           "jobplugins.dqd.execute",
           "d2e.webapi",
           "usermgmt.me.jupyter",
-          "gateway.dataset.shinylive.read"
+          "gateway.dataset.shinylive.read",
+          "gateway.dataset.dashboards.read"
         ],
         "ALP_SHARED": [
           "usermgmt.group.read",
@@ -881,13 +896,7 @@
           "jobplugins.analysisUi.researcher.execute",
           "portal.dataset.read"
         ],
-        "STUDY_RESULTS_READ_RESEARCHER": [
-          "strategus.analysis.read",
-          "strategus.results.read",
-          "strategus.results.write",
-          "strategus.results.delete",
-          "gateway.dataset.dashboards.read"
-        ],
+        "STUDY_RESULTS_READ_RESEARCHER": [],
         "ETL_MAPPING_CONTRIBUTOR": [
           "dataflowmgmt.dataflow.flowRun.results.read",
           "dataflowmgmt.prefect.flowRun.state",
@@ -897,12 +906,6 @@
         ]
       },
       "scopes": [
-        {
-          "path": "^/gateway/dashboard/(.*)",
-          "scopes": [
-            "gateway.external.dashboards.read"
-          ]
-        },
         {
           "path": "^/files-manager/api",
           "scopes": [
@@ -1222,6 +1225,15 @@
           ]
         },
         {
+          "path": "^/usermgmt/api/me/sync-webapi-roles",
+          "scopes": [
+            "usermgmt.me"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
           "path": "^/usermgmt/api/me",
           "scopes": [
             "usermgmt.me"
@@ -1317,6 +1329,18 @@
           "path": "^/usermgmt/api/user-group/status/(.+)",
           "scopes": [
             "usermgmt.userGroup.status"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/dataset-role/sync-all",
+          "scopes": [
+            "usermgmt.datasetRole.sync"
+          ]
+        },
+        {
+          "path": "^/usermgmt/api/dataset-role/?$",
+          "scopes": [
+            "usermgmt.datasetRole.write"
           ]
         },
         {
@@ -1465,6 +1489,15 @@
           "path": "^/system-portal/dataset/snapshot$",
           "scopes": [
             "portal.dataset.add"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/(.*)/transform-to-webapi$",
+          "scopes": [
+            "portal.dataset.update"
           ],
           "httpMethods": [
             "POST"
@@ -2078,24 +2111,6 @@
           ]
         },
         {
-          "path": "^/dashboard-gate/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/content(.*)",
-          "scopes": [
-            "gateway.dashboardGate.content"
-          ],
-          "httpMethods": [
-            "GET"
-          ]
-        },
-        {
-          "path": "^/dashboard-gate/register",
-          "scopes": [
-            "gateway.dashboardGate.register"
-          ],
-          "httpMethods": [
-            "POST"
-          ]
-        },
-        {
           "path": "^/alp-nifi-api/nifi/(.*)",
           "scopes": [
             "nifimgmt.userAdmin"
@@ -2412,6 +2427,17 @@
           ],
           "httpMethods": [
             "POST"
+          ]
+        },
+        {
+          "path": "^/jobplugins/prefect/flow-run/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/input-auth-token",
+          "scopes": [
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.add",
+            "dataflowmgmt.prefect.flowRun.inputAuthToken.delete"
+          ],
+          "httpMethods": [
+            "POST",
+            "DELETE"
           ]
         },
         {
@@ -2748,7 +2774,7 @@
         {
           "path": "^/gateway/api/dataset/cdm-schema/snapshot/metadata$",
           "scopes": [
-            "gateway.dataset.dashboards.read"
+            "gateway.dataset.cdmMetadata.read"
           ],
           "httpMethods": [
             "GET"
@@ -2982,9 +3008,7 @@
         {
           "path": "^/strategus-results",
           "scopes": [
-            "strategus.results.read",
-            "strategus.results.write",
-            "strategus.results.delete"
+            "strategus.results.read"
           ],
           "httpMethods": [
             "GET",
@@ -2996,7 +3020,10 @@
         {
           "path": "^/strategus/template",
           "scopes": [
-            "strategus.results.read"
+            "strategus.analysis.read"
+          ],
+          "httpMethods": [
+            "GET"
           ]
         },
         {

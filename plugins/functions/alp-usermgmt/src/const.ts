@@ -71,3 +71,20 @@ export const IDP_SCOPE_ROLE = {
   DASHBOARD_VIEWER: 'role.dashboardviewer',
   DATASET_RESEARCHER_PREFIX: 'role.researcher.'
 }
+
+// Kebab-case because Logto rejects spaces in scope names; LOGTO__CUSTOM_JWT (docker-compose.yml)
+// expands them back to canonical sec_role names ("cohort reader", etc.) for WebAPI matching.
+export const WEBAPI_RESEARCHER_SCOPES = ['cohort-reader', 'cohort-creator', 'concept-set-creator']
+
+// JWT customizer expands to `Source user (<id>)` to match WebAPI's per-source sec_role.
+export const sourceUserScopeName = (datasetId: string) => `source-user-${datasetId}`
+
+// Base researcher scopes apply to every dataset type. The WebAPI-specific scopes
+// (per-source "Source user" + cohort/concept-set scopes) only apply to type === 'webapi'.
+export const datasetResearcherScopes = (roleName: string, datasetId: string, type?: string): string[] => {
+  const scopes = [roleName, `role.researcher.${datasetId}`]
+  if (type === 'webapi') {
+    scopes.push(sourceUserScopeName(datasetId), ...WEBAPI_RESEARCHER_SCOPES)
+  }
+  return scopes
+}

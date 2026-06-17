@@ -23,6 +23,7 @@ export const OidcLoginSilent: FC = () => {
         try {
           const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
           setUserGroup(idpUserId, userGroups);
+          api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
         } catch (err: any) {
           console.error("Error when getting user info", err);
           navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);

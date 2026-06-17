@@ -97,19 +97,19 @@ const EMPTY_FORM_DATA: FormData = {
 
 const styles: SxProps = {
   ".MuiInputLabel-root": {
-    color: "#000080",
+    color: "var(--color-primary)",
     "&.MuiInputLabel-shrink, &.Mui-focused": {
       color: "var(--color-neutral)",
     },
   },
   ".MuiInput-input:focus": {
     backgroundColor: "transparent",
-    color: "#000080",
+    color: "var(--color-primary)",
   },
   ".MuiInput-root": {
-    color: "var(--color-neutral)",
+    color: "var(--color-primary)",
     "&::after, &:hover:not(.Mui-disabled)::before": {
-      borderBottom: "2px solid #000080",
+      borderBottom: "2px solid var(--color-primary)",
     },
   },
 };
@@ -207,10 +207,11 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
       formError = { ...formError, name: { required: true } };
     }
 
+    if (!vocabSchemaName) {
+      formError = { ...formError, vocabSchemaName: { required: true } };
+    }
+
     if (!DATASET_SOURCE_TYPES.has(dataset.type)) {
-      if (!vocabSchemaName) {
-        formError = { ...formError, vocabSchemaName: { required: true } };
-      }
       if (!resultsSchemaName) {
         formError = { ...formError, resultsSchemaName: { required: true } };
       }
@@ -452,19 +453,14 @@ const UpdateStudyDialog: FC<UpdateStudyDialogProps> = ({ dataset, open, onClose 
               <TextField
                 fullWidth
                 variant="standard"
-                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__TOKEN_CODE)}
-                value={formData.tokenStudyCode}
-                onChange={(event) => handleFormDataChange({ tokenStudyCode: event.target.value })}
-                error={formError.tokenStudyCode.required || formError.tokenStudyCode.valid}
-                disabled
+                label={getText(i18nKeys.UPDATE_STUDY_DIALOG__VOCAB_SCHEMA_NAME)}
+                value={formData.vocabSchemaName}
+                onChange={(event) => handleFormDataChange({ vocabSchemaName: event.target.value })}
+                error={formError.vocabSchemaName.required}
               />
-              {formError.tokenStudyCode.required && (
+              {formError.vocabSchemaName.required && (
                 <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__REQUIRED)}</FormHelperText>
               )}
-              {formError.tokenStudyCode.valid && (
-                <FormHelperText error={true}>{getText(i18nKeys.UPDATE_STUDY_DIALOG__VALID_TOKEN_CODE)}</FormHelperText>
-              )}
-              <FormHelperText>{getText(i18nKeys.UPDATE_STUDY_DIALOG__CODE_REQUIREMENT)}</FormHelperText>
             </div>
           </>
         )}

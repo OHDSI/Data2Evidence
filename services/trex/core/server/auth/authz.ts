@@ -11,6 +11,35 @@ const PUBLIC_API_PATHS = [
   "^/system-portal/config/public(.*)",
 ];
 
+type CachedUserGroups = { value: any; expiresAt: number };
+const USER_GROUPS_CACHE_MAX = 10_000;
+const USER_GROUPS_CACHE_TTL_MS = 60_000;
+const userGroupsCache = new Map<string, CachedUserGroups>();
+
+function userGroupsCacheKey(jti: string, idpUserId: string): string {
+  return `${jti}:${idpUserId}`;
+}
+
+function getCachedUserGroups(key: string): any | undefined {
+  const entry = userGroupsCache.get(key);
+  if (!entry) return undefined;
+  if (entry.expiresAt <= Date.now()) {
+    userGroupsCache.delete(key);
+    return undefined;
+  }
+  return entry.value;
+}
+
+function setCachedUserGroups(key: string, expiresAt: number, value: any): void {
+  userGroupsCache.delete(key);
+  while (userGroupsCache.size >= USER_GROUPS_CACHE_MAX) {
+    const oldest = userGroupsCache.keys().next().value;
+    if (!oldest) break;
+    userGroupsCache.delete(oldest);
+  }
+  userGroupsCache.set(key, { value, expiresAt });
+}
+
 export const ROLES = {
   ALP_USER_ADMIN: "ALP_USER_ADMIN",
   ALP_SYSTEM_ADMIN: "ALP_SYSTEM_ADMIN",
@@ -275,27 +304,6 @@ export async function authz(c: Context, next: any) {
     const originalUrl = c.req.path;
 
     let bearerToken = c.req.raw.headers.get("authorization");
-    // Check for cookie if no token in authorization header
-    // And for req with /fhir-server path, token is part of cookie
-    if (
-      !bearerToken ||
-      bearerToken === "" ||
-      (bearerToken && originalUrl.startsWith("/fhir-server/"))
-    ) {
-      if (c.req.header("cookie")) {
-        const cookies = c.req.header("cookie")?.split("; ");
-        for (const cookie of cookies) {
-          if (cookie.startsWith("authtoken=")) {
-            bearerToken = cookie.split("=")[1];
-            bearerToken = `Bearer ${bearerToken}`;
-            break;
-          } else if (cookie.startsWith("fhirtoken=")) {
-            bearerToken = cookie.split("=")[1];
-            break;
-          }
-        }
-      }
-    }
 
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
@@ -338,10 +346,23 @@ export async function authz(c: Context, next: any) {
       mriUserObj = new MriUser(token, global.ROLE_SCOPES).adUserObject;
     } else {
       try {
-        const userGroups = await userMgmtApi.getUserGroups(
-          bearerToken.replace(/token /i, "bearer "),
-          idpUserId
-        );
+        const jti = typeof token["jti"] === "string" ? token["jti"] : undefined;
+        const exp = typeof token["exp"] === "number" ? token["exp"] : undefined;
+        const cacheKey = jti ? userGroupsCacheKey(jti, idpUserId) : undefined;
+        let userGroups = cacheKey ? getCachedUserGroups(cacheKey) : undefined;
+        if (!userGroups) {
+          userGroups = await userMgmtApi.getUserGroups(
+            bearerToken.replace(/token /i, "bearer "),
+            idpUserId
+          );
+          if (cacheKey && exp) {
+            const now = Date.now();
+            const expiresAt = Math.min(exp * 1000, now + USER_GROUPS_CACHE_TTL_MS);
+            if (expiresAt > now) {
+              setCachedUserGroups(cacheKey, expiresAt, userGroups);
+            }
+          }
+        }
         token["userMgmtGroups"] = userGroups;
         mriUserObj = new MriUser(token, global.ROLE_SCOPES).b2cUserObject;
       } catch (error) {

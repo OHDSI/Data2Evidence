@@ -57,9 +57,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(revokeButton).toBeVisible()
   await revokeButton.click()
   await page.waitForTimeout(3000)
-  await expect(
-    page.getByTestId('snackbar').locator('div').filter({ hasText: "You've revoked access for" }).first()
-  ).toBeVisible()
+  await expect(page.getByTestId('alert-title')).toContainText("You've revoked access for")
   await page.getByTestId('dialog-close').click()
 
   // Cleanup: Delete the user created for testing
