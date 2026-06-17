@@ -73,7 +73,7 @@ export class DataModelFlowController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting datamodels: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting datamodels");
     }
   }
 
@@ -92,7 +92,7 @@ export class DataModelFlowController {
       console.error(
         `Error creating data model get version info flow run: ${error}`
       );
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error occurs");
     }
   }
 
@@ -110,7 +110,7 @@ export class DataModelFlowController {
       console.error(
         `Error creating data model get version info flow run: ${error}`
       );
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error occurs");
     }
   }
 
@@ -126,7 +126,7 @@ export class DataModelFlowController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating datamart flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error occurs");
     }
   }
 }
