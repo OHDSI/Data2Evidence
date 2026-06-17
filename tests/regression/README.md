@@ -22,4 +22,4 @@ source .env && npm run baseline
 source .env && npm test
 ```
 
-Results print a table showing p95 delta per scenario. Tests fail if any scenario exceeds 20% above baseline (`PERF_FAIL_THRESHOLD`).
+Results print a table showing min response time, delta per scenario, min and max response times. Tests fail if any scenario exceeds 20% above baseline (`PERF_FAIL_THRESHOLD`).
