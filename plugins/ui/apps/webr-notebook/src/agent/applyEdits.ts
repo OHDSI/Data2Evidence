@@ -1,4 +1,4 @@
-import type { NotebookHandle } from 'react-notebook'
+import type { NotebookHandle } from 'react-notebook/src/index'
 import type { CellLanguage, CellType } from 'react-notebook/src/types/notebook'
 import type { EditOp, EditSummary } from './types'
 
