@@ -35,14 +35,21 @@
       </div>
       <div class="d-flex iconActionButton">
         <template v-for="chart in chartConfig" :key="chart.name">
-          <chartButton
-            @clickEv="switchChart(chart)"
-            :name="chart.name"
-            :icon="chart.icon"
-            :iconGroup="chart.iconGroup"
-            :title="getText(chart.tooltip)"
-            :activeChart="getActiveChart"
-          />
+          <DisabledHoverPopover
+            :disabled="isBelowMinCohortSize"
+            :header="getText('MRI_PA_CHART_UNAVAILABLE', getText(chart.tooltip))"
+            :message="getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', String(minCohortSize))"
+          >
+            <chartButton
+              @clickEv="switchChart(chart)"
+              :name="chart.name"
+              :icon="chart.icon"
+              :iconGroup="chart.iconGroup"
+              :title="getText(chart.tooltip)"
+              :activeChart="getActiveChart"
+              :disabled="isBelowMinCohortSize"
+            />
+          </DisabledHoverPopover>
           <span class="separator"></span>
         </template>
 
@@ -184,6 +191,7 @@ import { mapActions, mapGetters } from 'vuex'
 import ChartButton from './ChartButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import patientCount from './PatientCount.vue'
+import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import Constants from '../utils/Constants'
 import icon from '../lib/ui/app-icon.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -313,6 +321,7 @@ export default {
       'getBookmarkFromIFR',
       'getConstraint',
       'getCanDatasetMaterializeCohorts',
+      'getCurrentPatientCount',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -353,6 +362,16 @@ export default {
     },
     enableIntersectViewInclusionReport() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.intersectViewInclusionReport
+    },
+    isBelowMinCohortSize() {
+      const minCohortSize = this.getAllChartConfigs?.minCohortSize
+      if (minCohortSize == null) return false
+      // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
+      const patientCount = Number(this.getCurrentPatientCount)
+      return Number.isNaN(patientCount) || patientCount < Number(minCohortSize)
+    },
+    minCohortSize() {
+      return this.getAllChartConfigs?.minCohortSize
     },
   },
   methods: {
@@ -537,6 +556,7 @@ export default {
     DropDownMenu,
     icon,
     patientCount,
+    DisabledHoverPopover,
     appIcon,
     DownloadMenu,
     ShinyDashboardModal,

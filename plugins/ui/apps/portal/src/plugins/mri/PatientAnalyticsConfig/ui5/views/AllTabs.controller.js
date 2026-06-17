@@ -87,9 +87,9 @@ sap.ui.define([
                 }).done(function (mData) {
                     mriConfig.config = {
                         filtercards: [],
-                        chartOptions: defaultValues.chartOptions,
-                        panelOptions: defaultValues.panelOptions,
-                        configInformations: defaultValues.configInformations
+                        chartOptions: mData.chartOptions,
+                        panelOptions: mData.panelOptions,
+                        configInformations: mData.configInformations
                     };
                     oAnalyticsModel.setProperty(path + "/config", mriConfig.config);
                 }).fail(function () {
