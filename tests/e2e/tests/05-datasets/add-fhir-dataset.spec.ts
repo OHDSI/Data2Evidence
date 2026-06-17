@@ -6,7 +6,7 @@ const randomString = Math.random().toString(36).substring(2, 10)
 
 test(TEST_NAME, async ({ page }) => {
   // Sign in
-  await page.goto('https://localhost:41100/d2e/portal')
+  await page.goto('/d2e/portal')
   const loginButton = page.getByRole('button', { name: 'Login' })
   if (await loginButton.isVisible().catch(() => false)) {
     await loginButton.click()
