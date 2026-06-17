@@ -71,6 +71,8 @@ jobs:
         if: success() || failure()
         run: npm install
 
+      # UI is not needed for regression tests
+      # so we skip downloading and extracting the UI package to save time and resources.
       # - name: Download UI package tarball
       #   uses: actions/download-artifact@v4
       #   with:
@@ -158,6 +160,24 @@ jobs:
           echo "$resTrexDB"
           export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
           echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: Restart d2e services
         if: success() || failure()
@@ -261,14 +281,6 @@ jobs:
           BEARER_TOKEN: ${{ env.BEARER_TOKEN }}
           NODE_TLS_REJECT_UNAUTHORIZED: "0"
         run: npm run test
-
-      # - name: Upload regression baseline
-      #   if: always()
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: regression-baseline-${{ inputs.attempt }}
-      #     path: ./tests/regression/baseline.json
-      #     overwrite: true
 
       - name: Upload regression failure report
         if: failure()

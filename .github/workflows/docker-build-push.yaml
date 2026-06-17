@@ -272,13 +272,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - PKGPATH: ./plugins/flows/base/
-          # - PKGPATH: ./plugins/flows/i2b2/
-          # - PKGPATH: ./plugins/flows/search_embedding/
-          # - PKGPATH: ./plugins/flows/data_management/
-          # - PKGPATH: ./plugins/flows/hades/
-          # - PKGPATH: ./plugins/flows/loyalty_score/
-          # - PKGPATH: ./plugins/flows/data_transformation/
+          - PKGPATH: ./plugins/flows/base/
+          - PKGPATH: ./plugins/flows/i2b2/
+          - PKGPATH: ./plugins/flows/search_embedding/
+          - PKGPATH: ./plugins/flows/data_management/
+          - PKGPATH: ./plugins/flows/hades/
+          - PKGPATH: ./plugins/flows/loyalty_score/
+          - PKGPATH: ./plugins/flows/data_transformation/
           - PKGPATH: ./plugins/ui
             NPM: bun
             NODE_VERSION: "20.x"
@@ -783,18 +783,18 @@ jobs:
       - name: Patch seed config for e2e tests
         run: node ./scripts/patch-seed-for-e2e.js
 
-      # - name: Download UI package tarball
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: ui-tgz
-      #     path: ./plugins/ui
+      - name: Download UI package tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: ui-tgz
+          path: ./plugins/ui
 
-      # - name: Extract UI package
-      #   run: |
-      #     TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-      #     rm -rf ./plugins/ui-built
-      #     mkdir -p ./plugins/ui-built
-      #     tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
+      - name: Extract UI package
+        run: |
+          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
+          rm -rf ./plugins/ui-built
+          mkdir -p ./plugins/ui-built
+          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
 
       - name: Initialise d2e
         if: success() || failure()
@@ -921,10 +921,10 @@ jobs:
             sleep 5
           done
 
-      # - name: Pull e2e Docker image
-      #   run: |
-      #     docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
-      #     docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
+      - name: Pull e2e Docker image
+        run: |
+          docker pull ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME}
+          docker tag ${REG_URL}/d2e-e2e:${DOCKER_TAG_NAME} d2e-e2e
 
       - name: Verify app is reachable
         run: |
@@ -1223,7 +1223,7 @@ jobs:
     secrets: inherit
 
   test_regression:
-    needs: [setup]
+    needs: [setup, build_images, build_trex_image, build_plugins]
     if: |
       needs.setup.outputs.is_publish_push == 'true' ||
       contains(github.base_ref, 'release/') ||
@@ -1234,7 +1234,7 @@ jobs:
     with:
       attempt: "1"
       runner: ${{ needs.setup.outputs.random_runner }}
-      run_tag: develop
+      run_tag: ${{ needs.setup.outputs.run_tag }}
       reg_url: ghcr.io/ohdsi
       prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
