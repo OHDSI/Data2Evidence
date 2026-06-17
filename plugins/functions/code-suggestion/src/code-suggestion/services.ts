@@ -213,8 +213,26 @@ export const getCohortResponse = async (req: any) => {
         const invalid: number[] = [];
         await Promise.all(
           uniqueIds.map(async (id) => {
+            // 0 (and any non-positive / non-integer id) is the "unset" sentinel
+            // and is never a real persisted concept set — reject it without a
+            // round-trip.
+            if (!Number.isInteger(id) || id <= 0) {
+              invalid.push(id);
+              return;
+            }
             try {
-              await getConceptSetTool.invoke({ conceptSetId: id }, config);
+              const res: any = await getConceptSetTool.invoke(
+                { conceptSetId: id },
+                config,
+              );
+              // MCP tool failures may surface as an isError result (or error
+              // text) instead of a thrown exception depending on the adapter,
+              // so inspect the return value too.
+              const text =
+                typeof res === "string" ? res : JSON.stringify(res ?? "");
+              if (res?.isError === true || /not found/i.test(text)) {
+                invalid.push(id);
+              }
             } catch {
               invalid.push(id);
             }
@@ -260,7 +278,7 @@ export const getCohortResponse = async (req: any) => {
       );
 
     const messages = [
-      new SystemMessage(getCohortPrompting(uiChat.userInput)),
+      new SystemMessage(getCohortPrompting()),
       ...historyMessages,
       new HumanMessage(uiChat.userInput),
     ];
