@@ -35,7 +35,7 @@ const PieChart: FC<PieChartProps> = ({ data, title, extraChartConfigs }) => {
       show: true,
       bottom: 0,
       feature: {
-        dataView: { readOnly: false },
+        dataView: { readOnly: true },
         saveAsImage: {},
         restore: {},
       },
