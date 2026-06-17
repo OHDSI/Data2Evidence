@@ -124,7 +124,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
 
   // Remove condition concept name value in filter card
-  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').locator('i').click()
+  await conditionOccConceptName.locator('i').click()
 
   // Set X2-axis to race concept id
   await page.getByTestId('pa-axis-menu-btn-x2').click()
