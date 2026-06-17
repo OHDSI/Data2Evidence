@@ -1,6 +1,6 @@
 # Regression Performance Tests
 
-Measures p95 response times against a locked baseline.
+Measures response times against a locked baseline.
 
 ## Setup
 

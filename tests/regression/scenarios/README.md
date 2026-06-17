@@ -10,8 +10,6 @@ Each subdirectory here is one named scenario. The runner auto-discovers them.
 2. Create a folder: `scenarios/<descriptive-name>/`
 3. Save the file as `input.har` inside that folder
 
-Each request entry in the HAR becomes a separately timed scenario named `<folder-name>_<index>`.
-
 ### From a curl command (single endpoint)
 
 1. In Chrome DevTools → right-click a request → Copy → "Copy as cURL"
