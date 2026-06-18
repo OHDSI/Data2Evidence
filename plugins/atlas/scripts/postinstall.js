@@ -1,17 +1,8 @@
 #!/usr/bin/env node
 /**
- * Postinstall script for the Atlas3 plugin.
- *
- * Copies the prebuilt @ohdsi/atlas3 `dist/` into resources/atlas, then overlays
- * d2e-specific runtime config so Atlas3 connects to WebAPI through d2e:
- *   - config-local.json  -> api.url "/WebAPI" + auth providers (DB + OpenID/Logto)
- *   - config/plugins.json <- plugins.standalone.json (nav/theme/header for the
- *     standalone /atlas serve)
- *
- * @ohdsi/atlas3 ships a static SPA with RELATIVE asset paths (./assets, ./vendor)
- * and fetches ./config-local.json at runtime, so it is served as-is at /atlas/
- * (via the trex `/atlas -> /resources/atlas` route) with NO build step and NO
- * changes to Atlas3 itself.
+ * Postinstall for the Atlas3 plugin: copy the prebuilt @ohdsi/atlas3 dist into
+ * resources/atlas, overlay d2e runtime config (config-local.json, plugins.json),
+ * and apply d2e branding. Served as-is at /atlas; no Atlas3 source changes.
  */
 
 import { cpSync, mkdirSync, rmSync, existsSync, copyFileSync, readFileSync, writeFileSync, readdirSync } from 'fs';
@@ -41,11 +32,8 @@ mkdirSync(resourcesDir, { recursive: true });
 console.log('[postinstall] Copying @ohdsi/atlas3 dist to resources/atlas...');
 cpSync(atlasDistDir, resourcesDir, { recursive: true });
 
-// The published @ohdsi/atlas3 dist/vendor is incomplete — it omits the
-// single-spa + React UMD files its own index.html loads to register the
-// SystemJS plugin runtime (single-spa-vue/-react, react, react-dom). Without
-// these, no Atlas3 plugin can load ("Unable to resolve bare specifier
-// 'single-spa-vue'"). Supply them from node_modules.
+// @ohdsi/atlas3 dist omits the single-spa + React UMD files its index.html loads
+// to register the plugin runtime; supply them from node_modules.
 const vendorDir = join(resourcesDir, 'vendor');
 mkdirSync(vendorDir, { recursive: true });
 const vendorFiles = [
@@ -66,24 +54,17 @@ for (const [from, to] of vendorFiles) {
 }
 console.log('[postinstall] Supplied single-spa/react vendor files for the Atlas3 plugin runtime');
 
-// d2e brand recolor: Atlas3 hardcodes its accent color (#eb6622, the orange used
-// for the page-header accent rules, the theme's --v-theme-orange chart accent, and
-// the criteria "ANY" match-type styling). It is NOT exposed via config/plugins.json
-// theme (only primaryColor is), so we string-replace it in the copied dist assets.
-// This is a build-time overlay on resources/atlas, NOT a change to the upstream
-// @ohdsi/atlas3 package — same mechanism as the config/vendor/script overlays above.
+// Atlas3's accent and chart palettes aren't config-exposed (theme only has
+// primaryColor), so re-brand them by string-replacing the copied dist assets.
 const COLOR_OVERRIDES = {
-  '#eb6622': '#ff5e59', // accent orange -> d2e coral rgb(255,94,89)
+  '#eb6622': '#ff5e59', // accent orange -> d2e coral
 };
-// Atlas3's chart palettes are hardcoded arrays, not config-exposed. We replace
-// the array LITERALS (keyed on the colors, not the minified var name — which
-// changes per build) so charts go on-brand. The full array strings are unique,
-// so the bare-array swap is safe. Plain split/join — no regex escaping concerns.
+// Palette arrays keyed on the colors (the minified var name changes per build).
 const PALETTE_OVERRIDES = {
-  // categorical palette (gender pie uses [0]/[1]): lead navy (primary) + coral (secondary)
+  // categorical palette (gender slices [0]/[1]): lead navy + coral
   '["#4e79a7","#f28e2c","#e15759","#76b7b2","#59a14f","#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"]':
     '["#000080","#ff5e59","#4e79a7","#76b7b2","#59a14f","#edc949","#af7aa1","#9c755f","#bab0ab","#e15759"]',
-  // treemap continuous gradient (visualMap inRange): light -> navy #000080
+  // treemap gradient: light -> navy
   '["#7e9bbf","#4e79a7","#1f425a"]':
     '["#c3cce8","#4a5fb0","#000080"]',
 };
@@ -156,14 +137,10 @@ if (existsSync(logoSrc)) {
   copyFileSync(logoSrc, join(resourcesDir, 'config', 'd2e2.svg'));
 }
 
-// Token keeper: a small script Atlas3's index.html loads to silently refresh
-// the Logto bearerToken before it expires (Logto access tokens are ~1h), so the
-// standalone session stays alive and Atlas3 stops re-showing its login dialog.
 // Helper scripts injected into Atlas3's index.html:
-//  - login-guard.js: bounces a tokenless/broken-welcome session through the Logto
-//    bridge for silent SSO (must run first, before Atlas3 boots its own flow).
+//  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
 //  - logo-link.js: routes the header logo to the d2e portal.
-//  - token-keeper.js: silently refreshes the Logto bearerToken before expiry.
+//  - token-keeper.js: refreshes the Logto bearerToken before expiry.
 const headScripts = ['login-guard.js', 'logo-link.js', 'token-keeper.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;

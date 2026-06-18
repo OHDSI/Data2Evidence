@@ -1,16 +1,8 @@
 /*
- * Standalone /atlas login bridge.
- *
- * Atlas3 (when opened directly, not embedded in the d2e portal) has no portal to
- * hand it a token. Its own "OpenID" provider goes through WebAPI, which mints a
- * WebAPI session token that trex's authn middleware rejects (it only accepts
- * Logto tokens). So this page performs a Logto OIDC login itself — reusing the
- * exact OIDC client config the d2e portal uses (loaded from /d2e/portal/env.js) —
- * and writes the resulting Logto access token into localStorage.bearerToken,
- * which is where Atlas3 reads it (same origin). trex then exchanges that Logto
- * token for a WebAPI token on each /WebAPI call, just like the integrated path.
- *
- * Plain ES (no bundler): served as static files by the atlas plugin at /atlas-login/.
+ * Standalone /atlas Logto login bridge. Performs a Logto OIDC login (reusing the
+ * portal's OIDC config from /d2e/portal/env.js) and writes the Logto access token
+ * to localStorage.bearerToken for Atlas3; trex exchanges it per /WebAPI call.
+ * Plain ES, served as static files at /atlas-login/.
  */
 (function () {
   "use strict";

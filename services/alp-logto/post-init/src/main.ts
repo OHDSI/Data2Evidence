@@ -113,11 +113,9 @@ async function queryPostgres(
   return await client.query(query, values);
 }
 
-// Ensure Logto signs OIDC tokens with RSA (RS256). Logto defaults to an EC
-// (ES384) signing key, but the OHDSI WebAPI's Spring OIDC decoder defaults to
-// RS256 and rejects ES384 ("Another algorithm expected"), which breaks Atlas3
-// login and the WebAPI token exchange. Rotating to an RSA key (and dropping
-// non-RSA keys) makes WebAPI accept Logto tokens. Idempotent.
+// Ensure Logto signs OIDC tokens with RS256: WebAPI's Spring OIDC decoder rejects
+// Logto's default ES384 ("Another algorithm expected"). Rotate to an RSA key and
+// drop non-RSA keys so only RS256 tokens are issued. Idempotent.
 async function ensureRsaSigningKey(headers: any) {
   console.log(
     "*********************************** OIDC SIGNING KEY ******************************************",
@@ -153,11 +151,9 @@ async function ensureRsaSigningKey(headers: any) {
   }
 }
 
-// Ensure the Logto app allows the standalone Atlas login bridge's redirect URI.
-// The bridge (served at /atlas-login/) performs a Logto OIDC login for direct
-// (non-portal) /atlas access. Logto validates redirect_uri exactly, so the
-// bridge callback must be registered. Origin is derived from the existing
-// portal callback URI so this stays environment-agnostic. Idempotent.
+// Register the Atlas login bridge's redirect URI (/atlas-login/) on the Logto app
+// so direct /atlas login works. Origin derived from the existing portal callback
+// URI to stay environment-agnostic. Idempotent.
 async function ensureAtlasLoginRedirectUri(headers: any, appId: string) {
   const resp = await logto.get(`applications/${appId}`, headers);
   if (!resp.ok) {

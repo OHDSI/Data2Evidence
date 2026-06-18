@@ -1,18 +1,9 @@
 /*
- * Atlas3 standalone login guard (served at /atlas, injected into index.html).
- *
- * In the d2e setup Atlas3 must authenticate via the Logto bridge (/atlas-login/),
- * which yields an RS256 Logto token that trex accepts. Atlas3 ALSO has a built-in
- * "OpenID" path through WebAPI's native OIDC; when the session is gone it can
- * auto-bounce the browser to "/atlas/#/welcome&token=<HS256 WebAPI token>". That
- * is broken twice over: the URL is malformed (Atlas3's router only reads a token
- * from "?token=", not "&token="), and the token is an HS256 WebAPI token that
- * trex's authn middleware rejects. The net effect is the login dialog/loop.
- *
- * This guard runs before Atlas3 boots: if there is no usable token (localStorage
- * or cookie) — or we've landed on the broken WebAPI welcome URL — it redirects to
- * the Logto bridge, which silently re-auths via the existing Logto SSO session
- * (no password prompt when it's still valid) and returns with a good RS256 token.
+ * Atlas3 login guard (injected into index.html, runs before Atlas3 boots).
+ * If there's no usable token — or we've landed on Atlas3's broken WebAPI
+ * "/#/welcome&token=<HS256>" fallback (which trex rejects) — redirect through the
+ * Logto bridge (/atlas-login/) for silent SSO. Also enforces the admin feature
+ * flags: blocks /atlas when "atlas" is off, hides the Pythia FAB when "pythia" is off.
  */
 (function () {
   "use strict";
@@ -72,8 +63,7 @@
         if (!Array.isArray(list)) return;
         // "atlas" disabled -> block direct /atlas access, bounce to the portal.
         if (isDisabled(list, "atlas")) { location.replace("/d2e/portal"); return; }
-        // "pythia" disabled -> hide the Pythia FAB (the agent's entry point). A
-        // global style works regardless of when Atlas3 teleports the FAB to body.
+        // "pythia" disabled -> hide the Pythia FAB via a global style.
         if (isDisabled(list, "pythia")) {
           var s = document.createElement("style");
           s.textContent = '[data-testid="plugin-fab-pythia-plugin"]{display:none!important}';

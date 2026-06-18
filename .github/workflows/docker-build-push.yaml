@@ -344,9 +344,8 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Atlas plugin: run scripts (postinstall bakes Atlas3 + the Pythia UI from
-      # @ohdsi GitHub Packages into resources/) + build the portal entry. Packs
-      # only resources/ (see "files" in plugins/atlas/package.json).
+      # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
+      # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
         if: ${{ matrix.ATLAS }}
         working-directory: ${{ matrix.PKGPATH }}

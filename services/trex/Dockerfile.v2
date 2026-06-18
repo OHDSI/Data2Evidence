@@ -4,7 +4,7 @@
 # (started by core/server with SELECT webapi_start()), not as a separate Java
 # process. Overlays d2e's core, plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-db59648d16b7e687104cb32ab8059c2c0fd8760b@sha256:d083ceffa155c5dad0ac3e27d1740abfca935106e189c71c669a66f685e3005a AS base
+FROM ghcr.io/ohdsi/trexsql:sha-7b1b872abf2f61fa4d3580a403ad43e26cf71d38@sha256:d09a84ce3fa8ea1c2bd065095123e0f30d227440917d6ab377de9d543ea9e4e1 AS base
 
 USER root
 WORKDIR /usr/src
@@ -74,8 +74,7 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token 
       fi; \
     fi; \
     npm config set @data2evidence:registry "$REG"; \
-    # @ohdsi/* plugins are published to GitHub Packages; configure that scope
-    # when a github_token build secret is supplied.
+    # @ohdsi/* plugins come from GitHub Packages (when github_token is supplied).
     if [ -s /run/secrets/github_token ]; then \
       npm config set @ohdsi:registry "https://npm.pkg.github.com"; \
       npm config set //npm.pkg.github.com/:_authToken "$(cat /run/secrets/github_token)"; \

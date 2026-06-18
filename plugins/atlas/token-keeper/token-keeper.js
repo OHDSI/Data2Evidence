@@ -1,13 +1,7 @@
 /*
- * Atlas3 token keeper.
- *
- * The standalone login bridge (/atlas-login/) obtains a Logto token with
- * `offline_access` and stores it as localStorage.bearerToken (which Atlas3 and
- * the MRI iframe read). Logto access tokens are short-lived (~1h); Atlas3 shows
- * its login dialog the moment the token is expired (isTokenValid checks exp).
- * This keeper, loaded by Atlas3's index.html, silently refreshes bearerToken
- * with the stored refresh token before it expires, so the session stays alive
- * and the login dialog doesn't keep reappearing.
+ * Atlas3 token keeper (injected into index.html): silently refreshes the Logto
+ * bearerToken (stored by /atlas-login/) with the stored refresh token before it
+ * expires (~1h), so the session stays alive and the login dialog doesn't reappear.
  */
 (function () {
   "use strict";

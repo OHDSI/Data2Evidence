@@ -7,13 +7,10 @@ services:
       dockerfile: ./Dockerfile.v2
       platforms:
         - ${TREX_PLATFORM:-linux/amd64}
-      # GitHub Packages token so the build can install @ohdsi/* plugins
-      # (e.g. @ohdsi/pythia-agent). Sourced from the GITHUB_TOKEN env var.
+      # GitHub Packages token for installing @ohdsi/* plugins (the Pythia agent).
       secrets:
         - github_token
       args:
-        # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        # @ohdsi/pythia-agent (Pythia backend Deno fn) comes from GitHub Packages.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a}
     networks:
       alp:
@@ -30,14 +27,11 @@ services:
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
-      # Pythia agent (@ohdsi/pythia-agent) is now installed into the image at build
-      # time via PLUGINS_FROM_REGISTRY (-> /usr/src/bundled-plugins/pythia-agent),
-      # so it no longer needs a bind-mount from the sibling trex-dx repo.
       # - ./plugins/chat_functions:/usr/src/plugins/chat
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core  # live trex core (authz /agent allow + worker memoryLimitMb)
+      - ./services/trex/core:/usr/src/core  # live trex core for local dev
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -47,10 +41,6 @@ services:
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       # Bind-mounted source plugins win over bundled ones with the same package name.
       PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
-      # Pythia / bao agent (Amazon Bedrock). AWS_BEARER_TOKEN_BEDROCK from .env.local.
-      AWS_REGION: ${AWS_REGION:-us-east-1}
-      BAO_AGENT_MODEL: ${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}
-      AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:-}
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       SWARM_CONFIG: |-
         {
@@ -226,8 +216,7 @@ services:
       retries: 3
       start_period: 10s
 
-# Build-time secret: GitHub Packages token for installing @ohdsi/* trex plugins
-# (the Pythia agent). Provide GITHUB_TOKEN in the build env (e.g. `gh auth token`).
+# Build-time GitHub Packages token for installing @ohdsi/* plugins.
 secrets:
   github_token:
     environment: GITHUB_TOKEN
