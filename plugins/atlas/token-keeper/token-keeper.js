@@ -38,7 +38,8 @@
       body.set("refresh_token", rt);
       body.set("client_id", cfg.clientId);
       if (cfg.resource) body.set("resource", cfg.resource);
-      if (cfg.scope) body.set("scope", cfg.scope);
+      // Omit scope: re-requesting offline_access on refresh is rejected by Logto
+      // ("refresh token missing requested scope"); reuse the original grant.
 
       var resp = await fetch(cfg.tokenEndpoint, {
         method: "POST",

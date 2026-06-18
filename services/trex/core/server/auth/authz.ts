@@ -9,10 +9,6 @@ const isDev = true;
 const PUBLIC_API_PATHS = [
   "^/system-portal/dataset/public/list(.*)",
   "^/system-portal/config/public(.*)",
-  // The /agent fn declares no scopes in its manifest, so it isn't in
-  // REQUIRED_URL_SCOPES and authz would 404 it. authn still runs first (valid
-  // token required) — this only skips the per-route scope check.
-  "^/agent(/|$)",
 ];
 
 type CachedUserGroups = { value: any; expiresAt: number };
