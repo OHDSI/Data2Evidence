@@ -62,8 +62,11 @@ test(TEST_NAME, async ({ browser }) => {
   await page.getByPlaceholder('Enter search term').press('Escape')
 
   // Step 7 - Validate supported syntax help appears
-  await page.getByText('Supported SyntaxEnter a').first().click()
-  await expect(page.getByRole('application')).toContainText('Supported Syntax')
+  const firstBox = page.locator('div.form-group.constraint').first()
+  await firstBox.hover()
+  await page.getByTestId('help-popover-icon').first().click()
+  await expect(page.getByRole('banner').filter({ hasText: 'Supported Syntax' }).locator('div')).toBeVisible()
+  await page.keyboard.press('Escape')
 
   // Step 8 - Create concept set
   await page.locator('button:has(span[title="Select Filter Attributes"])').nth(1).click()
@@ -142,7 +145,6 @@ test(TEST_NAME, async ({ browser }) => {
   await page.waitForSelector('.loading-animation-component', { state: 'hidden' })
   await page.getByRole('button', { name: 'Select an Attribute ◢' }).click()
   await page.waitForSelector('text=2,226 / 2,694', { state: 'visible' })
-
   // Step 10 - Reset filters
   await page.getByRole('button', { name: '↺' }).click()
   await page.getByRole('button', { name: 'Reset' }).click()
