@@ -598,6 +598,7 @@ export const i18nDefault = {
       "Please try again. To report the error, please send an email to help@data4life.care.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
     FEATURE__CDM_DOWNLOAD: "CDM download",
+    FEATURE__CONCEPT_RECORD_COUNTS: "Concept record counts",
     FLOW_RUN_NOTIFICATION_DIALOG__CLOSE: "Close",
     FLOW_RUN_NOTIFICATION_DIALOG__VIEW_FLOW_RUN: "View flow run",
     FLOW_RUN_NOTIFICATION_DIALOG__PROGRESS_MESSAGE: "You can monitor its progress in the jobs page.",
