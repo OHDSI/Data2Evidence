@@ -73,8 +73,12 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token 
         REG="$SECRET_REG"; \
       fi; \
     fi; \
+    # Keep npm auth (incl. the @ohdsi GitHub Packages token) in a throwaway
+    # userconfig that is deleted when this layer's shell exits, so it is never
+    # written to a persistent .npmrc baked into the image.
+    NPMRC="$(mktemp)"; export NPM_CONFIG_USERCONFIG="$NPMRC"; \
+    trap 'rm -f "$NPMRC"' EXIT; \
     npm config set @data2evidence:registry "$REG"; \
-    # @ohdsi/* plugins come from GitHub Packages (when github_token is supplied).
     if [ -s /run/secrets/github_token ]; then \
       npm config set @ohdsi:registry "https://npm.pkg.github.com"; \
       npm config set //npm.pkg.github.com/:_authToken "$(cat /run/secrets/github_token)"; \
@@ -84,8 +88,7 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token 
       printf '%s' "$PLUGINS_FROM_REGISTRY" | tr ', ' '\n\n' > /tmp/registry-plugins.txt; \
       sh /scripts/fetch-external-plugins.sh /tmp/registry-plugins.txt /usr/src/bundled-plugins; \
       rm -f /tmp/registry-plugins.txt; \
-    fi; \
-    rm -f /root/.npmrc  # drop the GitHub Packages auth token; never persist it in the image layer
+    fi
 # NOTE: The legacy @data2evidence/d2e-atlas ("Atlas Lite") is no longer bundled.
 # Atlas3 (@ohdsi/atlas3) is shipped by the local plugins/atlas plugin, which owns
 # the /atlas route. Re-adding a d2e-atlas bundle here would reclaim /atlas (it
