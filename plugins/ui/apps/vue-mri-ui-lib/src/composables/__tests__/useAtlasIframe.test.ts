@@ -17,12 +17,11 @@ describe('useAtlasIframe', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    sessionStorage.clear()
+    localStorage.clear()
   })
 
-  it('preloads session storage and sends SETUP_ATLAS on interval and load', async () => {
+  it('seeds the Atlas3 bearerToken in localStorage on preload, interval and load', async () => {
     vi.useFakeTimers()
-    const postMessage = vi.fn()
 
     ;(usePortalContext as any).mockReturnValue({
       getToken: vi.fn(async () => 'test-token'),
@@ -31,6 +30,7 @@ describe('useAtlasIframe', () => {
     })
     ;(useAtlasStore as any).mockReturnValue({ closeAtlas: vi.fn() })
 
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem')
     const addEventListenerSpy = vi.spyOn(window, 'addEventListener')
     const removeEventListenerSpy = vi.spyOn(window, 'removeEventListener')
 
@@ -38,7 +38,7 @@ describe('useAtlasIframe', () => {
 
     const TestComp = defineComponent({
       setup() {
-        const iframeRef = ref({ contentWindow: { postMessage } } as any)
+        const iframeRef = ref({ contentWindow: { postMessage: vi.fn() } } as any)
         const hook = useAtlasIframe(iframeRef)
         return { hook }
       },
@@ -50,21 +50,18 @@ describe('useAtlasIframe', () => {
     const wrapper = mount(TestComp)
     await (wrapper.vm as any).hook.preloadToken()
 
-    expect(sessionStorage.getItem('d2e-token')).toBe('test-token')
-    expect(sessionStorage.getItem('d2e-datasetId')).toBe('dataset-1')
-    expect(sessionStorage.getItem('d2e-username')).toBe('user-1')
+    // Atlas3 reads its token from localStorage['bearerToken'] on boot.
+    expect(localStorage.getItem('bearerToken')).toBe('test-token')
+    // The old Atlas Lite sessionStorage handshake must no longer be used.
+    expect(sessionStorage.getItem('d2e-token')).toBeNull()
 
+    setItemSpy.mockClear()
     await vi.advanceTimersByTimeAsync(1000)
-    expect(postMessage).toHaveBeenCalled()
+    expect(setItemSpy).toHaveBeenCalledWith('bearerToken', 'test-token')
 
-    const payload = postMessage.mock.calls[0][0]
-    expect(payload.type).toBe('SETUP_ATLAS')
-    expect(payload.token).toBe('test-token')
-    expect(payload.datasetId).toBe('dataset-1')
-    expect(payload.username).toBe('user-1')
-
+    setItemSpy.mockClear()
     await (wrapper.vm as any).hook.handleIframeLoad()
-    expect(postMessage).toHaveBeenCalledTimes(2)
+    expect(setItemSpy).toHaveBeenCalledWith('bearerToken', 'test-token')
 
     wrapper.unmount()
     expect(addEventListenerSpy).toHaveBeenCalledWith('message', expect.any(Function))

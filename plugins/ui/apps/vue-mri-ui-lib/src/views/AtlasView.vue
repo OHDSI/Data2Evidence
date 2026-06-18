@@ -6,7 +6,7 @@
       :src="`/atlas${atlasStore.atlasPath}`"
       @load="handleIframeLoad"
       class="atlas-iframe"
-      title="Atlas Lite"
+      title="Atlas"
     />
   </div>
 </template>

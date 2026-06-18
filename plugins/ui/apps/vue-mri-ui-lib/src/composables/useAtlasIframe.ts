@@ -12,32 +12,31 @@ export function useAtlasIframe(iframeRef: Ref<HTMLIFrameElement | null>) {
   const originUrl = `${window.location.protocol}//${window.location.hostname}${
     window.location.port ? ':' + window.location.port : ''
   }`
-  const targetOrigin = `${window.location.protocol}//${window.location.hostname}${window.location.port ? ':' + window.location.port : ''}`
 
+  // Atlas3 stores its auth token in localStorage under this key and restores the
+  // session from it on boot (initializeFromStorage). The Patient Analytics app and
+  // the /atlas iframe are the same origin, so localStorage is shared between them.
+  // trex's authn middleware exchanges this Logto token for a WebAPI token on each
+  // /WebAPI/* request.
+  const ATLAS_TOKEN_KEY = 'bearerToken'
+
+  // Seed the token into shared (same-origin) localStorage BEFORE the iframe loads,
+  // so Atlas3 authenticates on boot without showing its login screen.
   const preloadToken = async () => {
     const token = await portalContext.getToken()
-    sessionStorage.setItem('d2e-token', token)
-    sessionStorage.setItem('d2e-datasetId', portalContext.datasetId)
-    sessionStorage.setItem('d2e-username', portalContext.username)
+    localStorage.setItem(ATLAS_TOKEN_KEY, token)
     tokenReady.value = true
   }
 
+  // Keep the shared localStorage token fresh so Atlas3 keeps using a valid token
+  // across refreshes. A parent-window write fires a `storage` event in the iframe
+  // (Atlas3 listens for it to sync its in-memory token); re-writing the same value
+  // is a no-op event-wise, so the interval is safe.
   const sendToken = async () => {
-    const iframeWindow = iframeRef.value?.contentWindow
-    if (!iframeWindow) {
-      return
-    }
-
     const token = await portalContext.getToken()
-    iframeWindow.postMessage(
-      {
-        type: 'SETUP_ATLAS',
-        token,
-        datasetId: portalContext.datasetId,
-        username: portalContext.username,
-      },
-      targetOrigin
-    )
+    if (token) {
+      localStorage.setItem(ATLAS_TOKEN_KEY, token)
+    }
   }
 
   closeListener = event => {
