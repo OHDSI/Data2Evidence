@@ -46,6 +46,7 @@
         :parentBottom="parentBottomLocation"
         @updateBinningEv="setBinSize"
         :title="getText('MRI_PA_BINNING_SIZE')"
+        :testId="`pa-binning-btn-${axisName}`"
       ></binningButton>
     </div>
   </div>

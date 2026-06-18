@@ -137,7 +137,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByTestId('pa-axis-menu-btn-x2').click()
   await page.getByTestId('pa-dropdown-menu-x2').getByTestId('pa-axis-dropdown-item-Basic Data').click()
   await page.getByTestId('pa-dropdown-menu-x2').getByTestId('pa-axis-dropdown-item-Year of Birth').click()
-  await page.getByTestId('pa-binning-btn').click()
+  await page.getByTestId('pa-binning-btn-x2').click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).click()
   await page.getByRole('textbox', { name: 'Size of the Bins' }).fill('50')
   await page.getByRole('textbox', { name: 'Size of the Bins' }).press('Enter')
