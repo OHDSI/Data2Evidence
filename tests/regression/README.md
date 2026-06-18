@@ -22,4 +22,4 @@ source .env && npm run baseline
 source .env && npm test
 ```
 
-Results print a table showing min response time, delta per scenario, min and max response times. Tests fail if any scenario exceeds 20% above baseline (`PERF_FAIL_THRESHOLD`).
+Results print a table showing p95 response time vs baseline, delta per scenario, and min/max. Tests fail if any scenario exceeds 20% above baseline p95 (`PERF_FAIL_THRESHOLD`), if a non-2xx response is returned, or if no baseline entry exists for the scenario. The run exits immediately if `BEARER_TOKEN` is not set.
