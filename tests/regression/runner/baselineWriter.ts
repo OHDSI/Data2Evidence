@@ -46,7 +46,12 @@ async function main() {
     process.stdout.write(`  ${scenario.name} ... `);
     try {
       const result = await runScenario(scenario);
-      newBaseline[scenario.name] = { minMs: result.minMs };
+      const badStatuses = result.statusCodes.filter(s => s < 200 || s >= 300);
+      if (badStatuses.length > 0) {
+        console.log(`SKIPPED — non-2xx responses: ${[...new Set(badStatuses)].join(", ")} (baseline not updated)`);
+        continue;
+      }
+      newBaseline[scenario.name] = { p95Ms: result.p95Ms };
       console.log(`p95=${result.p95Ms.toFixed(1)}ms  p50=${result.p50Ms.toFixed(1)}ms  min=${result.minMs.toFixed(1)}ms  max=${result.maxMs.toFixed(1)}ms`);
     } catch (err) {
       console.log(`ERROR: ${(err as Error).message}`);

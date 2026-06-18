@@ -6,14 +6,14 @@ export type CompareStatus = "pass" | "warn" | "fail" | "no-baseline";
 export interface CompareResult {
   scenarioName: string;
   status: CompareStatus;
-  currentMinMs: number;
-  baselineMinMs: number | null;
+  currentP95Ms: number;
+  baselineP95Ms: number | null;
   deltaFraction: number | null;
   minMs: number;
   maxMs: number;
 }
 
-export type Baseline = Record<string, { minMs: number }>;
+export type Baseline = Record<string, { p95Ms: number }>;
 
 export function compareToBaseline(result: TimingResult, baseline: Baseline): CompareResult {
   const entry = baseline[result.scenarioName];
@@ -22,15 +22,15 @@ export function compareToBaseline(result: TimingResult, baseline: Baseline): Com
     return {
       scenarioName: result.scenarioName,
       status: "no-baseline",
-      currentMinMs: result.minMs,
-      baselineMinMs: null,
+      currentP95Ms: result.p95Ms,
+      baselineP95Ms: null,
       deltaFraction: null,
       minMs: result.minMs,
       maxMs: result.maxMs,
     };
   }
 
-  const delta = (result.minMs - entry.minMs) / entry.minMs;
+  const delta = (result.p95Ms - entry.p95Ms) / entry.p95Ms;
   let status: CompareStatus = "pass";
   if (delta > config.failThreshold) status = "fail";
   else if (delta > config.warnThreshold) status = "warn";
@@ -38,8 +38,8 @@ export function compareToBaseline(result: TimingResult, baseline: Baseline): Com
   return {
     scenarioName: result.scenarioName,
     status,
-    currentMinMs: result.minMs,
-    baselineMinMs: entry.minMs,
+    currentP95Ms: result.p95Ms,
+    baselineP95Ms: entry.p95Ms,
     deltaFraction: delta,
     minMs: result.minMs,
     maxMs: result.maxMs,

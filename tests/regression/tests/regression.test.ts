@@ -199,6 +199,8 @@ if (scenarios.length === 0) {
         const comparison = compareToBaseline(timing, baseline);
         results.push(comparison);
 
+        expect(comparison.status, `${scenario.name}: no baseline found — run the baseline writer first`).not.toBe("no-baseline");
+
         expect(
           comparison.status,
           `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
