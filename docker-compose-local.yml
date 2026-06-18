@@ -110,28 +110,6 @@ services:
           "mcp-server": false
         }
 
-  trex-warmup:
-    image: curlimages/curl:latest
-    depends_on:
-      trex:
-        condition: service_healthy
-    networks:
-      - alp
-    entrypoint: ["sh", "-c"]
-    command:
-      - |
-        echo "Warming up Deno functions..."
-        for path in \
-          /system-portal/config/public/overview-description \
-          /system-portal/config/public/header-image \
-          /system-portal/dataset/public/list \
-          /system-portal/feature/list \
-          /portal/plugin.json; do
-          curl -sk "https://${PROJECT_NAME:-alp}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33000$$path" -o /dev/null &
-        done
-        wait
-        echo "Warmup complete"
-
   alp-caddy:
     ports:
       - 41000:41000
