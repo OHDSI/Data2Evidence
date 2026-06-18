@@ -10,6 +10,7 @@ import { config } from "../config";
 import { usePostLoginRedirectUri, useUser } from "../contexts";
 import { ResultsDialogWithEventLister } from "../plugins/SystemAdmin/DQD/ResultsDialog/ResultsDialogWithEventListener";
 import { DisclaimerDialog } from "../containers/shared/Legal/DisclaimerDialog";
+import { AiAssistantPanel } from "../components/AiAssistant";
 
 export const PrivateApp: FC = () => {
   const { popPostLoginRedirectUri } = usePostLoginRedirectUri();
@@ -39,6 +40,7 @@ export const PrivateApp: FC = () => {
       <ResultsDialogWithEventLister />
       <DisclaimerDialog />
       <LoginSilent />
+      <AiAssistantPanel />
       <Routes>
         {user?.canAccessSystemAdminPortal && (
           <Route path={`${config.ROUTES.systemadmin}/*`} element={<SystemAdmin />} />

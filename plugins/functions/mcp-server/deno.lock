@@ -5,6 +5,7 @@
     "npm:@modelcontextprotocol/sdk@^1.20.2": "1.25.1_zod@3.25.76_ajv@8.17.1_express@5.2.1",
     "npm:axios@^1.7.9": "1.13.2",
     "npm:express@^4.19.2": "4.22.1",
+    "npm:pako@1.0.11": "1.0.11",
     "npm:papaparse@^5.4.1": "5.5.3",
     "npm:zod@^3.25.76": "3.25.76"
   },
@@ -528,6 +529,9 @@
         "wrappy"
       ]
     },
+    "pako@1.0.11": {
+      "integrity": "sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw=="
+    },
     "papaparse@5.5.3": {
       "integrity": "sha512-5QvjGxYVjxO59MGU2lHVYpRWBBtKHnlIAcSe1uNFCkkptUh63NFRj0FJQm7nR67puEruUci/ZkjmEFrjCAyP4A=="
     },
@@ -758,6 +762,7 @@
       "npm:@modelcontextprotocol/sdk@^1.20.2",
       "npm:axios@^1.7.9",
       "npm:express@^4.19.2",
+      "npm:pako@1.0.11",
       "npm:papaparse@^5.4.1",
       "npm:zod@^3.25.76"
     ]

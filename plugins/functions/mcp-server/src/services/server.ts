@@ -4,8 +4,10 @@ import { registerCohortManagementTools } from "../tools/cohort-management.tools"
 import { registerPhenotypeLibraryTools } from "../tools/phenotype-library.tools";
 import { registerCohortInstructionTools } from "../tools/cohort-instruction.tools";
 import { registerCohortValidationTools } from "../tools/cohort-validation.tools";
+import { registerCohortBuilderTools } from "../tools/cohort-builder.tools";
 import { registerCohortPrompts } from "../prompts/cohort.prompts";
 import { registerStrategusTools } from "../tools/strategus.tools";
+import { registerConceptSetManagementTools } from "../tools/concept-set-management.tools";
 
 export const server = new McpServer({
   name: MCP_SERVER_CONFIG.NAME,
@@ -17,9 +19,13 @@ registerCohortManagementTools(server);
 registerPhenotypeLibraryTools(server);
 registerCohortInstructionTools(server);
 registerCohortValidationTools(server);
+registerCohortBuilderTools(server);
 
 // Register Strategus tools
 registerStrategusTools(server);
+
+// Register concept set tools (includes search_concepts: clinical term -> OMOP concept ids)
+registerConceptSetManagementTools(server);
 
 // Register prompts
 registerCohortPrompts(server);
