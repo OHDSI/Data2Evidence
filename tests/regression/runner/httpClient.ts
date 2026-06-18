@@ -9,6 +9,7 @@ export interface TimingResult {
   minMs: number;
   maxMs: number;
   samples: number[];
+  statusCodes: number[];
 }
 
 async function warmupScenario(scenario: Scenario, headers: Record<string, string>): Promise<void> {
@@ -16,6 +17,9 @@ async function warmupScenario(scenario: Scenario, headers: Record<string, string
     try {
       const res = await fetch(scenario.url, { method: scenario.method, headers, body: scenario.body });
       await res.text();
+      if (!res.ok) {
+        console.warn(`[warmup] ${scenario.name} request ${i + 1} returned HTTP ${res.status} ${res.statusText}`);
+      }
     } catch (err) {
       console.warn(`[warmup] ${scenario.name} request ${i + 1} failed:`, err);
     }
@@ -24,6 +28,7 @@ async function warmupScenario(scenario: Scenario, headers: Record<string, string
 
 export async function runScenario(scenario: Scenario): Promise<TimingResult> {
   const samples: number[] = [];
+  const statusCodes: number[] = [];
   const headers: Record<string, string> = { ...scenario.headers };
   if (config.bearerToken) {
     headers["Authorization"] = `Bearer ${config.bearerToken}`;
@@ -41,6 +46,7 @@ export async function runScenario(scenario: Scenario): Promise<TimingResult> {
     const elapsed = performance.now() - start;
     // Drain the body so the connection is properly closed
     await res.text();
+    statusCodes.push(res.status);
     samples.push(elapsed);
   }
 
@@ -53,6 +59,7 @@ export async function runScenario(scenario: Scenario): Promise<TimingResult> {
     minMs: samples[0],
     maxMs: samples[samples.length - 1],
     samples,
+    statusCodes,
   };
 }
 
