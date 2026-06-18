@@ -503,7 +503,7 @@ jobs:
           builder: ${{ steps.builder.outputs.name }}
           context: ./services/trex
           file: ./services/trex/Dockerfile.v2
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}
           provenance: false
