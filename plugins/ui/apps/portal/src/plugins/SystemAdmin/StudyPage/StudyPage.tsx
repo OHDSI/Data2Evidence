@@ -83,6 +83,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
           strategus_json: study.analysisSpec,
           type: StrategusStudyType.LOCAL,
           viewerCode: study.viewerCode ?? RESULT_VIEWER_TEMPLATE,
+          tokenDatasetCode: study.tokenStudyCode ?? undefined,
         }));
         setStrategusStudies(convertedStudies);
       } catch (error) {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <a v-bind:href="imageURL" ref="imgDownloadBtn" download="MRI Chart.png"></a>
+    <a v-bind:href="imageURL" ref="imgDownloadBtn" :download="downloadFileName"></a>
   </div>
 </template>
 
@@ -9,6 +9,7 @@ import { mapActions, mapGetters } from 'vuex'
 import MessageBox from './MessageBox.vue'
 import Constants from '../utils/Constants'
 import { createChartCanvas } from '../utils/ExportUtils'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 
 export default {
   name: 'exportImage',
@@ -20,7 +21,10 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['getActiveChart', 'getText', 'getResponse', 'getKMSeries']),
+    ...mapGetters(['getActiveChart', 'getActiveBookmark', 'getText', 'getResponse', 'getKMSeries']),
+    downloadFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'png')
+    },
     response() {
       if (this.overrideResponse) {
         return this.overrideResponse
