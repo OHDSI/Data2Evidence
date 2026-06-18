@@ -797,7 +797,8 @@ jobs:
         if: success() || failure()
         working-directory: ./plugins/atlas
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Patch seed config for e2e tests
@@ -1052,7 +1053,8 @@ jobs:
         if: success() || failure()
         working-directory: ./plugins/atlas
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm install
 
       - name: Initialise d2e
