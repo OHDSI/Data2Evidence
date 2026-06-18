@@ -1,64 +1,51 @@
 <template>
-  <div class="cohorts-plugin">
-    <VueMriLoader />
-  </div>
+  <!-- Inline styles (Atlas3's plugin loader doesn't load the plugin CSS sidecar).
+       MRI Patient Analytics runs in an isolated iframe (its own document at
+       /atlas-mri/) so its SAP UI5 + Vuetify CSS can't leak into the Atlas3 host.
+       Token + dataset are passed via query because the iframe can't always rely
+       on reading the parent's localStorage. -->
+  <iframe
+    v-if="src"
+    :src="src"
+    :style="frameStyle"
+    title="Patient Analytics"
+    allow="clipboard-read; clipboard-write"
+  />
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import VueMriLoader from './components/VueMriLoader.vue';
+import { ref, onMounted, inject } from 'vue';
+import type { PluginProps } from './types';
 
-onMounted(() => {
-  // Force parent containers to take full height
-  // This is needed for D2E's layout which doesn't properly size plugin containers
-  const fixParentHeights = () => {
-    const container = document.getElementById('single-spa-application:cohorts-plugin');
-    if (container) {
-      console.log('[Cohorts Plugin] Fixing parent heights...');
+const pluginProps = inject<PluginProps>('pluginProps');
+const src = ref('');
+const frameStyle =
+  'display:block;width:100%;height:calc(100vh - 56px);min-height:calc(100vh - 56px);border:0;';
 
-      // Walk up the DOM tree and ensure all parents have height: 100%
-      let parent = container.parentElement;
-      let depth = 0;
-      while (parent && parent !== document.body && depth < 10) {
-        const currentHeight = window.getComputedStyle(parent).height;
-        console.log(`[Cohorts Plugin] Parent ${depth} current height:`, currentHeight);
+onMounted(async () => {
+  // Prefer Atlas3's plugin token (always fresh), fall back to shared localStorage.
+  let token = '';
+  try {
+    if (typeof pluginProps?.getToken === 'function') token = (await pluginProps.getToken()) || '';
+  } catch { /* ignore */ }
+  if (!token) token = localStorage.getItem('bearerToken') || '';
 
-        parent.style.height = '100%';
-        parent.style.minHeight = '100%';
-        parent.style.display = 'flex';
-        parent.style.flexDirection = 'column';
+  const studyId =
+    localStorage.getItem('selectedVocabulary') ||
+    (pluginProps as any)?.datasetId ||
+    '';
 
-        parent = parent.parentElement;
-        depth++;
-      }
+  // The d2e username (id_token `username` claim, captured by the login bridge)
+  // — vue-mri needs it to show the current user's own cohort definitions/bookmarks.
+  const username =
+    localStorage.getItem('atlas_username') ||
+    (pluginProps as any)?.username ||
+    '';
 
-      console.log('[Cohorts Plugin] Fixed', depth, 'parent elements');
-    }
-  };
-
-  // Try immediately and also after a delay
-  fixParentHeights();
-  setTimeout(fixParentHeights, 100);
-  setTimeout(fixParentHeights, 500);
+  const params = new URLSearchParams();
+  if (studyId) params.set('studyId', studyId);
+  if (token) params.set('token', token);
+  if (username) params.set('username', username);
+  src.value = '/atlas-mri/' + (params.toString() ? `?${params.toString()}` : '');
 });
 </script>
-
-<style>
-/* Ensure the single-spa container takes full height */
-#single-spa-application\\:cohorts-plugin {
-  width: 100% !important;
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-</style>
-
-<style scoped>
-.cohorts-plugin {
-  width: 100%;
-  height: 100%;
-  background: #fafafa;
-  display: flex;
-  flex-direction: column;
-}
-</style>

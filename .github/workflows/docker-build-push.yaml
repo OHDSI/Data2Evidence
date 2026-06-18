@@ -115,6 +115,7 @@ jobs:
               - "package.json"
               - "docker-compose.yml"
               - "plugins/ui/**"
+              - "plugins/atlas/**"
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
               - "services/trex/ext/**"
@@ -278,6 +279,9 @@ jobs:
           - PKGPATH: ./plugins/ui
             NPM: bun
             NODE_VERSION: "20.x"
+          - PKGPATH: ./plugins/atlas
+            NODE_VERSION: "20.x"
+            ATLAS: true
           - PKGPATH: ./plugins/functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/d2e-functions
             RUNNER: ubuntu-24.04
@@ -333,12 +337,26 @@ jobs:
           cd ${{ matrix.PKGPATH }}
           jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
       - name: Build
+        if: ${{ !matrix.ATLAS }}
         run: |
           cd ${{ matrix.PKGPATH }}
           ${{ matrix.NPM == 'bun' && 'bun install' ||'npm install --ignore-scripts' }}
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Atlas plugin: run scripts (postinstall bakes Atlas3 + the Pythia UI from
+      # @ohdsi GitHub Packages into resources/) + build the portal entry. Packs
+      # only resources/ (see "files" in plugins/atlas/package.json).
+      - name: Build Atlas plugin
+        if: ${{ matrix.ATLAS }}
+        working-directory: ${{ matrix.PKGPATH }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm install
+          npm run build:portal
       - name: Patch Package
         if: ${{ matrix.NPM }}
         working-directory: ${{ matrix.PKGPATH }}
@@ -495,8 +513,10 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+            "github_token=${{ secrets.GITHUB_TOKEN }}"
 
       - name: Prune system
         if: always()

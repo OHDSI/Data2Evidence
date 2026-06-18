@@ -27235,7 +27235,7 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true,
+        "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": true,
         "intersectViewInclusionReport": false,
