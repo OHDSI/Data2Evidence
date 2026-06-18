@@ -1,8 +1,15 @@
 services:
   trex:
+    # Build/run native to the host (overrides the amd64 pin in docker-compose.yml).
+    platform: ${TREX_PLATFORM:-linux/amd64}
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
+      platforms:
+        - ${TREX_PLATFORM:-linux/amd64}
+      args:
+        # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow}
     extra_hosts:
       - "physionet-host:host-gateway"
     networks:
@@ -164,7 +171,7 @@ services:
   alp-minerva-postgres:
     ports:
       - 41190:5432
-      - 5432:5432
+      # - 5432:5432  # 41190 already exposes it; avoids clashing with other local stacks
 
   demodb:
     ports:

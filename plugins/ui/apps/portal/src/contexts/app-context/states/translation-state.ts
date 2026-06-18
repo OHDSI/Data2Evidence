@@ -2,7 +2,7 @@ export const i18nDefault = {
   default: {
     ACCESS_PANEL__ACCESS: "Access",
     ACCESS_PANEL__ADD_EXISTING: "Add existing users",
-    ACCESS_PANEL__EMAIL: "Email",
+    ACCESS_PANEL__NAME: "Name",
     ACCESS_PANEL__ERROR: "An error has occurred.",
     ACCESS_PANEL__ERROR_2: "User {0} cannot be added as they have not completed registration",
     ACCESS_PANEL__ERROR_DESCRIPTION:
@@ -170,6 +170,10 @@ export const i18nDefault = {
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE: "An error has occurred.",
+    CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_SUCCESS: "Language updated successfully",
+    CHANGE_LANGUAGE_DIALOG__NO_CHANGES: "No language changes were made.",
+    CHANGE_LANGUAGE_DIALOG__TRY_AGAIN: "Try again",
+    CHANGE_LANGUAGE_DIALOG__UPDATE_FAILED: "Unable to update language. Please try again.",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL: "Cancel",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_GENERATE: "Generate",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE: "Update",
@@ -883,7 +887,7 @@ export const i18nDefault = {
     QUERIES_SECTION__SQL: "SQL",
     RELEASE_SELECTOR__RELEASE_SELECTION: "Release selection",
     REQUEST_PANEL__APPROVE: "Approve",
-    REQUEST_PANEL__EMAIL: "Email",
+    REQUEST_PANEL__NAME: "Name",
     REQUEST_PANEL__NO_DATA: "No data available",
     REQUEST_PANEL__REJECT: "Reject",
     REQUEST_PANEL__REQUESTED: "Requested on",
