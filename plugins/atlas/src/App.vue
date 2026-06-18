@@ -1,9 +1,9 @@
 <template>
-  <!-- Inline styles (Atlas3's plugin loader doesn't load the plugin CSS sidecar).
-       MRI Patient Analytics runs in an isolated iframe (its own document at
+  <!-- MRI Patient Analytics runs in an isolated iframe (its own document at
        /atlas-mri/) so its SAP UI5 + Vuetify CSS can't leak into the Atlas3 host.
-       Token + dataset are passed via query because the iframe can't always rely
-       on reading the parent's localStorage. -->
+       The iframe is same-origin, so it reads the auth token and dataset from the
+       shared localStorage — they are never put in the URL (which would leak the
+       bearer token via history, logs and Referer). -->
   <iframe
     v-if="src"
     :src="src"
@@ -42,10 +42,13 @@ onMounted(async () => {
     (pluginProps as any)?.username ||
     '';
 
-  const params = new URLSearchParams();
-  if (studyId) params.set('studyId', studyId);
-  if (token) params.set('token', token);
-  if (username) params.set('username', username);
-  src.value = '/atlas-mri/' + (params.toString() ? `?${params.toString()}` : '');
+  // Hand the freshest values to the same-origin iframe via shared localStorage
+  // (never via the URL), then load it. The iframe reads these keys on boot.
+  try {
+    if (token) localStorage.setItem('bearerToken', token);
+    if (studyId) localStorage.setItem('selectedVocabulary', studyId);
+    if (username) localStorage.setItem('atlas_username', username);
+  } catch { /* ignore */ }
+  src.value = '/atlas-mri/';
 });
 </script>
