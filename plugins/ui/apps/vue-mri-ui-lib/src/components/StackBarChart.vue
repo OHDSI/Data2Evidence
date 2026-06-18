@@ -325,7 +325,7 @@ export default {
       return Object.values(Constants.ChartColorway)
     },
     legendBarOpacity() {
-      // Overlapping histogram draws transluscent bars
+      // Overlapping histogram draws translucent bars
       const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
       return effectiveMode === 'overlay' ? OVERLAY_BAR_OPACITY : 1
     },

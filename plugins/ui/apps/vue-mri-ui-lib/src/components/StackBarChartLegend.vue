@@ -6,7 +6,7 @@
         :key="index"
         class="stackbar-legend-entry"
         tabindex="0"
-        :aria-label="item.fullName"
+        :aria-label="item.ariaLabel"
         @mouseenter="item.isTruncated && showTooltip($event, item.fullName)"
         @mouseleave="hideTooltip"
         @focus="item.isTruncated && showTooltip($event, item.fullName)"
@@ -109,6 +109,9 @@ const legendItems = computed(() => {
       kind,
       displayName,
       fullName,
+      // Bar and curve entries share the same text, so disambiguate for screen
+      // readers by appending the kind to the curve's aria-label.
+      ariaLabel: kind === 'curve' ? `${fullName} distribution` : fullName,
       isTruncated: fullName !== displayName,
       color: props.colorway.length > 0 ? props.colorway[originalIndex % props.colorway.length] : '#cccccc',
     }
