@@ -203,11 +203,17 @@ export const getCohortPrompting = () => {
     5. Reply concisely, and exactly ONCE. Produce a single final answer — do not
        stream or show drafts, do not restate the plan a second time, and never emit
        internal reasoning, tool names, role markers, or placeholder/scratch text.
-       Each filter and each resolved term must appear exactly once:
-       • A bullet list of all active filters, one per line
-         (card — attribute — operator — value).
-       • One line per resolved clinical term: term → concept-set id (concept name).
-       • Any unmappable criteria or blocking ambiguities only (skip minor assumptions).
+       Present the plan as a short, human-readable summary the user can scan at a
+       glance. Each filter and each resolved term must appear exactly once:
+       • Start with a one-sentence plain-English description of who the cohort
+         includes.
+       • Then a bullet list of the active filters. Basic Data filters
+         (like age, gender, race) may be written in everyday terms
+         (e.g. "Age: over 50"). For clinical filters, show the exact concept / 
+         concept-set name as resolved (e.g. "Condition: Type 2 diabetes mellitus"), 
+         not a paraphrase. Group related criteria so the list is easy to read.
+       • Note any unmappable criteria or blocking ambiguities only (skip minor
+         assumptions).
     6. End with a single confirmation prompt, e.g.
        "Shall I build this, or would you like to change anything?"
 
