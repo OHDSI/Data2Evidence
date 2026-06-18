@@ -26,6 +26,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { usePortalContext } from '@/composables/usePortalContext'
+import { buildShinyDashboardAuthMessage, buildShinyDashboardIframeUrl } from '@/utils/shinyDashboardContext'
 
 const props = defineProps<{
   datasetId: string
@@ -37,7 +38,6 @@ const props = defineProps<{
 const store = useStore()
 const getText = (key: string, param?: string | string[]) => store.getters.getText(key, param)
 
-const CURRENT_ORIGIN = window.location.origin
 const iframeRef = ref<HTMLIFrameElement | null>(null)
 const bearerToken = ref<string>('')
 const isIframeReady = ref(false)
@@ -48,13 +48,7 @@ const error = ref<string | null>(null)
 const portalContext = usePortalContext()
 
 const iframeUrl = computed(() => {
-  if (!props.wizardConfig?.dashboardType) {
-    return ''
-  }
-
-  const resourceId = `${props.datasetId}_cohort_${props.wizardConfig.dashboardType}_python`
-  const url = `/gateway/api/dataset/shiny-live/${resourceId}/`
-  return url
+  return buildShinyDashboardIframeUrl(props.datasetId, props.wizardConfig)
 })
 
 // Watch for wizardConfig changes and reset state when it changes
@@ -146,33 +140,14 @@ function sendTokenToIframe(source?: MessageEventSource) {
     return
   }
 
-  // Serialize wizard config to plain object (remove Vue Proxy)
-  // This is needed because postMessage can't clone Proxy objects
-  let serializedWizardConfig = null
-  if (props.wizardConfig) {
-    try {
-      serializedWizardConfig = JSON.parse(JSON.stringify(props.wizardConfig))
-    } catch (e) {
-      console.warn('[Parent] Failed to serialize wizard config:', e)
-      serializedWizardConfig = null
-    }
-  }
-
-  const message = {
-    type: 'AUTH_TOKEN',
-    token: bearerToken.value,
-    timestamp: Date.now(),
-    parentOrigin: CURRENT_ORIGIN,
-
-    context: {
+  try {
+    const message = buildShinyDashboardAuthMessage({
+      token: bearerToken.value,
       datasetId: props.datasetId,
       cohortId: props.cohortId,
-      wizardConfig: serializedWizardConfig,
-      mriquery: props.mriquery || null,
-    },
-  }
-
-  try {
+      wizardConfig: props.wizardConfig,
+      mriquery: props.mriquery,
+    })
     source?.postMessage(message)
   } catch (err) {
     console.error('[Parent] Error sending message to iframe:', err)

@@ -131,7 +131,7 @@ $alp-alert-severities: (
   // Floating top-right; position overridable via CSS vars for the host's header.
   &--toast {
     position: fixed;
-    top: var(--alp-alert-toast-top, 84px); // ~72px header + 12px gap
+    top: var(--alp-alert-toast-top, 68px); // 56px header + 12px gap
     right: var(--alp-alert-toast-right, 16px);
     z-index: 5;
     width: auto;

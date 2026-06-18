@@ -121,6 +121,17 @@
   </Teleport>
 
   <Teleport to="#app">
+    <ConfigureTable1Dialog
+      :is-open="dashboardFlow.showTable1ConfigModal"
+      :dataset-id="getSelectedDataset?.id || ''"
+      :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
+      @cancel="dashboardFlow.handleTable1ConfigCancel"
+      @close="dashboardFlow.closeDashboardFlow"
+      @confirm="dashboardFlow.handleTable1ConfigConfirm"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
     <ShinyDashboardModal
       v-if="dashboardFlow.showDashboardModal"
       :is-open="dashboardFlow.showDashboardModal"
@@ -140,6 +151,7 @@
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
+      @close="dashboardFlow.closeDashboardFlow"
     />
   </Teleport>
 
@@ -195,6 +207,7 @@ import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
 import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
+import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
 import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -557,6 +570,7 @@ export default {
     SaveCohortModal,
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
+    ConfigureTable1Dialog,
     Button,
     VButton,
     VDialog,

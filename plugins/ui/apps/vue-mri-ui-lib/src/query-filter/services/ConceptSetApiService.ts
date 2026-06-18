@@ -58,7 +58,10 @@ export const clearConceptSetExpressionCache = () => {
   conceptSetExpressionCache.clear()
 }
 
-export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
+export const loadConceptSets = async (
+  datasetId: string,
+  options: { throwOnError?: boolean } = {}
+): Promise<ConceptSetDomainValues> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept set API call')
     return {
@@ -90,6 +93,9 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
     }
   } catch (error) {
     console.error('Error loading concept sets:', error)
+    if (options.throwOnError) {
+      throw error
+    }
     return {
       values: [],
       isLoading: false,
