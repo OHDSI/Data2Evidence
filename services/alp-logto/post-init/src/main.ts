@@ -399,7 +399,11 @@ async function main() {
       `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
-    signInMode: process.env.LOGTO__CONNECTOR_CONFIG ? "SignInAndRegister" : "SignIn",
+    // Registration is opt-in via LOGTO__ENABLE_REGISTRATION so that connectors
+    // which don't want a self-service Register button (e.g. Entra / Entra
+    // External ID) keep a pure sign-in screen even when LOGTO__CONNECTOR_CONFIG
+    // is set. PhysioNet-style self-registration deployments set it to "true".
+    signInMode: process.env.LOGTO__ENABLE_REGISTRATION === "true" ? "SignInAndRegister" : "SignIn",
     unknownSessionRedirectUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal`,
     termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
     privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
@@ -502,7 +506,7 @@ button[name="submit"]{ background: #000080 !important; }`,
       socialSignInConnectorTargets: string[];
     } = {
       ...signinExperience,
-      signInMode: "SignInAndRegister",
+      signInMode: process.env.LOGTO__ENABLE_REGISTRATION === "true" ? "SignInAndRegister" : "SignIn",
       socialSignIn: { automaticAccountLinking: true },
       signUp: { verify: false, password: false, identifiers: [] },
       signIn: {

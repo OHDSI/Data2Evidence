@@ -37,4 +37,6 @@
 | `USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL`     | url            | PhysioNet base URL the entitlements sync calls (e.g. `https://physionet.org`).      |
 | `USERMGMT__ENTITLEMENTS_TIMEOUT_MS`             | number         | Entitlements fetch abort timeout in ms (default `10000`).                           |
 | `USERMGMT__ENTITLEMENTS_TOKEN_CLAIM`            | string         | JWT claim name carrying the upstream access token (default `physionet_access_token`). |
+| `USERMGMT__ENTITLEMENTS_DATASET_MAPPING`        | json           | Fallback map of `token_dataset_code` → PhysioNet `slug/version` used when the `portal.dataset` PhysioNet columns are absent, e.g. `{"mimic-iv":"mimiciv/2.2"}`. |
 | `LOGTO__SOCIAL_SIGNIN_TARGETS`                  | csv            | Logto social-connector targets to enable on the sign-in screen. Defaults to the target of `LOGTO__CONNECTOR_CONFIG`. |
+| `LOGTO__ENABLE_REGISTRATION`                    | bool           | Show the self-service Register button on the sign-in screen (`SignInAndRegister`). Default `false` so connectors like Entra keep a pure sign-in screen; set `true` for self-registration (e.g. PhysioNet). |

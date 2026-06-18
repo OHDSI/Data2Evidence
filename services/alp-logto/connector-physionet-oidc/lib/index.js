@@ -28,12 +28,12 @@ var defaultMetadata = {
   platform: ConnectorPlatform.Universal,
   name: {
     en: "PhysioNet (OIDC)",
-    "zh-CN": "OIDC"
+    "zh-CN": "PhysioNet (OIDC)"
   },
   logo: "./logo.svg",
   logoDark: null,
   description: {
-    en: OpenID Connect 1.0 federation to PhysioNet, with upstream access/refresh tokens exposed via globalThis.tokenMap so d2e can call PhysioNet APIs on behalf of the user. Originally a fork of the standard Logto OIDC connector. (en) is a simple identity layer on top of the OAuth 2.0 protocol.",
+    en: "OpenID Connect 1.0 federation to PhysioNet, with upstream access/refresh tokens exposed via globalThis.tokenMap so d2e can call PhysioNet APIs on behalf of the user.",
     "zh-CN": "OpenID Connect 1.0 \u662F\u57FA\u4E8E OAuth 2.0 \u534F\u8BAE\u7684\u4E00\u4E2A\u7B80\u5355\u8EAB\u4EFD\u5C42\u3002"
   },
   readme: "./README.md",

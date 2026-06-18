@@ -178,6 +178,10 @@ export class EntitlementsSyncService {
         signal: controller.signal,
       })
       if (!response.ok) {
+        // 404 = PhysioNet has no access record for this user/dataset (or the
+        // slug/version is unknown). Treat as "no access" so the researcher role
+        // is withheld/revoked rather than erroring; any other non-OK status is
+        // a transient/server failure and throws so the caller keeps existing roles.
         if (response.status === 404) return false
         const body = await response.text().then(t => t.slice(0, 200)).catch(() => '')
         throw new Error(`HTTP ${response.status}: ${body}`)

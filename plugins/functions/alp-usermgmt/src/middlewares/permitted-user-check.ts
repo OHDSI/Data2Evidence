@@ -5,7 +5,7 @@ import { createLogger } from '../Logger'
 import { IAppRequest } from '../types'
 import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
-import { ROLES } from '../const'
+import { ROLES, SERVICE_USER_ID } from '../const'
 
 interface RoleCheckOptions {
   userIdPath?: string
@@ -32,11 +32,17 @@ export const permittedUserCheck =
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
 
-      // Service tokens (e.g. WebAPI internal calls) have empty ctxUserId.
-      // Permission checks require a resolved user to enforce; without one
-      // the caller is an already-authenticated service, so pass through.
-      if (!ctxUserId) {
+      // Service / M2M tokens (e.g. WebAPI internal calls) are tagged with the
+      // SERVICE_USER_ID sentinel by add-user-object-to-req; they are already
+      // authenticated services, so pass through. Any other falsy userId means
+      // an end-user with no resolved usermgmt.user row — deny rather than
+      // bypass, to avoid privilege escalation for unprovisioned users.
+      if (ctxUserId === SERVICE_USER_ID) {
         return next()
+      }
+      if (!ctxUserId) {
+        logger.error('No resolved user for request; denying')
+        return res.status(403).send()
       }
 
       const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)

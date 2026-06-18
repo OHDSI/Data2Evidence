@@ -2,7 +2,7 @@ import { NextFunction, Response } from 'express'
 import { createLogger } from '../Logger'
 import { IAppRequest, ITokenUser } from '../types'
 import jwt from 'jsonwebtoken'
-import { CONTAINER_KEY } from '../const'
+import { CONTAINER_KEY, SERVICE_USER_ID } from '../const'
 import { env } from '../env'
 import { Container } from 'typedi'
 import { UserService } from '../services'
@@ -30,9 +30,12 @@ export const addUserObjToReq = async (req: IAppRequest, res: Response, next: Nex
     const idpUserId = oid! || sub!
 
     // M2M tokens have sub === client_id; skip user lookup but still
-    // set a minimal req.user so downstream middleware doesn't crash.
+    // set a minimal req.user so downstream middleware doesn't crash. Tag the
+    // userId with the SERVICE_USER_ID sentinel so authz middleware bypasses
+    // checks only for true service tokens — not for unprovisioned end-users
+    // (who get an empty userId below and must NOT bypass).
     if (sub === token.client_id) {
-      req.user = { userId: '', idpUserId: sub } as ITokenUser
+      req.user = { userId: SERVICE_USER_ID, idpUserId: sub } as ITokenUser
       return next()
     }
 

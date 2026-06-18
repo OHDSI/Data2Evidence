@@ -65,6 +65,11 @@ export class AutoProvisionService {
       return null
     }
 
+    // Callers pass the raw Authorization header ("Bearer <jwt>"); strip the
+    // scheme so jwt.decode (entitlements sync) and the role-hook payload
+    // receive the bare token rather than null / a "Bearer "-prefixed string.
+    bearerToken = bearerToken?.replace(/bearer /i, '')
+
     const allowlist = getAutoProvisionConnectors()
     if (allowlist.length === 0) {
       this.logger.warn(
