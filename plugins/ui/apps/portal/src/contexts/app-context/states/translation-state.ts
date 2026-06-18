@@ -170,6 +170,10 @@ export const i18nDefault = {
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to help@data4life.care.",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE: "An error has occurred.",
+    CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_SUCCESS: "Language updated successfully",
+    CHANGE_LANGUAGE_DIALOG__NO_CHANGES: "No language changes were made.",
+    CHANGE_LANGUAGE_DIALOG__TRY_AGAIN: "Try again",
+    CHANGE_LANGUAGE_DIALOG__UPDATE_FAILED: "Unable to update language. Please try again.",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL: "Cancel",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_GENERATE: "Generate",
     CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE: "Update",
