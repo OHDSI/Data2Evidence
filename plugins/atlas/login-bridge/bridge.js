@@ -71,10 +71,17 @@
   }
 
   function safeReturn(ret) {
-    if (!ret || ret.charAt(0) !== "/" || ret.charAt(1) === "/" || ret.charAt(1) === "\\") {
+    if (!ret) return DEFAULT_RETURN;
+    try {
+      // Resolve against our own origin and keep only the same-origin path; this
+      // drops protocol-relative ("//host"), absolute, and "javascript:" targets,
+      // so only a same-origin path+hash can ever reach location.replace.
+      var u = new URL(ret, location.origin);
+      if (u.origin !== location.origin) return DEFAULT_RETURN;
+      return u.pathname + u.search + u.hash;
+    } catch (e) {
       return DEFAULT_RETURN;
     }
-    return ret;
   }
 
   async function handleCallback(cfg, params) {
