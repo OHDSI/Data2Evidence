@@ -60,6 +60,7 @@ const scopeForeignLink = async (link: HTMLLinkElement) => {
   link.dataset.mriProcessed = '1';
   try {
     const resp = await fetch(link.href);
+    if (!resp.ok) return; // leave the original <link> intact on error responses
     const css = await resp.text();
     const style = document.createElement('style');
     style.dataset.mriScoped = '1';

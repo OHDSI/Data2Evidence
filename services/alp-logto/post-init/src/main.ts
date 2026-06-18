@@ -142,7 +142,14 @@ async function ensureRsaSigningKey(headers: any) {
   }
 
   // Drop any non-RSA (e.g. EC/ES384) keys so only RS256 tokens are ever issued.
-  const after = await (await logto.get("configs/oidc/private-keys", headers)).json();
+  const afterResp = await logto.get("configs/oidc/private-keys", headers);
+  if (!afterResp.ok) {
+    console.warn(
+      `Could not re-read OIDC private-keys (status ${afterResp.status}); skipping non-RSA cleanup`,
+    );
+    return;
+  }
+  const after = await afterResp.json();
   for (const key of after as Array<{ id: string; signingKeyAlgorithm: string }>) {
     if (key.signingKeyAlgorithm !== "RSA") {
       const d = await logto.del(`configs/oidc/private-keys/${key.id}`, headers);

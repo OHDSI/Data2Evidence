@@ -15,6 +15,7 @@
   var DEFAULT_RETURN = "/atlas/#/cohorts";
   var VERIFIER_KEY = "atlas_pkce_verifier";
   var RETURN_KEY = "atlas_login_return_to";
+  var STATE_KEY = "atlas_oidc_state";
 
   function fail(msg) {
     var s = document.getElementById("spinner");
@@ -63,13 +64,28 @@
     var rd = params.get("returnTo") || params.get("redirectUrl");
     if (!rd) return DEFAULT_RETURN;
     if (rd.charAt(0) === "#") return "/atlas/" + rd;
-    if (rd.charAt(0) === "/") return rd;
-    return "/atlas/#/" + rd;
+    // Only same-origin absolute paths; reject protocol-relative "//host" and
+    // backslash variants to prevent open redirects.
+    if (rd.charAt(0) === "/" && rd.charAt(1) !== "/" && rd.charAt(1) !== "\\") return rd;
+    return DEFAULT_RETURN;
+  }
+
+  function safeReturn(ret) {
+    if (!ret || ret.charAt(0) !== "/" || ret.charAt(1) === "/" || ret.charAt(1) === "\\") {
+      return DEFAULT_RETURN;
+    }
+    return ret;
   }
 
   async function handleCallback(cfg, params) {
     var verifier = sessionStorage.getItem(VERIFIER_KEY);
     if (!verifier) { fail("missing PKCE verifier (stale callback)"); return; }
+    // Validate the OIDC state to prevent CSRF/login injection.
+    var expectedState = sessionStorage.getItem(STATE_KEY);
+    sessionStorage.removeItem(STATE_KEY);
+    if (!expectedState || params.get("state") !== expectedState) {
+      fail("state mismatch (possible CSRF)"); return;
+    }
     var body = new URLSearchParams();
     body.set("grant_type", "authorization_code");
     body.set("code", params.get("code"));
@@ -109,14 +125,16 @@
       scope: cfg.scope
     }));
     sessionStorage.removeItem(VERIFIER_KEY);
-    var ret = sessionStorage.getItem(RETURN_KEY) || DEFAULT_RETURN;
+    var ret = safeReturn(sessionStorage.getItem(RETURN_KEY));
     sessionStorage.removeItem(RETURN_KEY);
     location.replace(ret);
   }
 
   async function startLogin(cfg, params) {
     var verifier = randomString(32);
+    var state = randomString(16);
     sessionStorage.setItem(VERIFIER_KEY, verifier);
+    sessionStorage.setItem(STATE_KEY, state);
     sessionStorage.setItem(RETURN_KEY, resolveReturnTarget(params));
     var challenge = b64url(await sha256(verifier));
     var url = new URL(cfg.authorize);
@@ -127,7 +145,7 @@
     url.searchParams.set("resource", RESOURCE);
     url.searchParams.set("code_challenge", challenge);
     url.searchParams.set("code_challenge_method", "S256");
-    url.searchParams.set("state", randomString(8));
+    url.searchParams.set("state", state);
     location.assign(url.toString());
   }
 
