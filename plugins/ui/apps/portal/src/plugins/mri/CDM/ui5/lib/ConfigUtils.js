@@ -159,6 +159,32 @@ sap.ui.define([
         ConfigUtils.log("error", sMessage, sDetails);
     };
 
+    ConfigUtils.buildConfigDownloadFileName = function (sPrefix, aParts) {
+        var sanitizePart = function (vValue, sFallback) {
+            var sSafeFallback = sFallback || "unknown";
+            var sValue = vValue === null || typeof vValue === "undefined" ? "" : String(vValue).trim();
+
+            if (!sValue || sValue === "undefined" || sValue === "null") {
+                sValue = sSafeFallback;
+            }
+
+            sValue = sValue.replace(/[\u0000-\u001f\u007f\/\\:?*"<>|]/g, "_");
+
+            if (!sValue || sValue === "." || sValue === "..") {
+                return sSafeFallback;
+            }
+
+            return sValue;
+        };
+        var aFileNameParts = [sanitizePart(sPrefix, "config")];
+
+        aParts.forEach(function (mPart) {
+            aFileNameParts.push(sanitizePart(mPart.value, mPart.fallback));
+        });
+
+        return aFileNameParts.join("_") + ".json";
+    };
+
     /**
      * 
      * @param {JSON} input - object to search and run fnDo 
