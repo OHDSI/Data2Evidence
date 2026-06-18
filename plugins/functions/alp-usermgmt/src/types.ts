@@ -147,4 +147,5 @@ export interface IDataset {
 export interface IPortalDataset {
   id: string
   tokenStudyCode: string
+  type?: string
 }

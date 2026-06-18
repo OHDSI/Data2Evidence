@@ -83,19 +83,19 @@ export class StrategusResults {
     });
   }
 
-  public uploadResultsFromStorage(studyId: string, datasetId: string, analysisSpec?: string) {
+  public uploadResultsFromStorage(tokenStudyCode: string, datasetId: string, analysisSpec?: string) {
     return request({
       baseURL: "jobplugins",
       url: "/prefect/strategus-results/upload",
       method: "POST",
-      data: { studyId, datasetId, analysisSpec },
+      data: { tokenStudyCode, datasetId, analysisSpec },
     });
   }
 
-  public dropResultsFromStorage(studyId: string, datasetId: string) {
+  public dropResultsFromStorage(tokenStudyCode: string, datasetId: string) {
     return request({
       baseURL: "jobplugins",
-      url: `/prefect/strategus-results/drop/${studyId}/${datasetId}`,
+      url: `/prefect/strategus-results/drop/${tokenStudyCode}/${datasetId}`,
       method: "DELETE",
     });
   }

@@ -12,7 +12,7 @@ test('test', async ({ page }) => {
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
     .locator('div')
-    .filter({ hasText: /^Overview descriptionConfigure overview description textConfigure$/ })
+    .filter({ hasText: /^Platform content & legal textsSet image, descriptions, and legal textsConfigure$/ })
     .getByTestId('button')
     .click()
   if ((await page.getByText('Display Terms Of Use').isChecked()) === false) {

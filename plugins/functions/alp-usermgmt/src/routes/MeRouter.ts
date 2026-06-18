@@ -4,7 +4,7 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 import { MemberService, UserGroupService, UserService } from '../services'
 import { IAppRequest, UserDeleteRequest } from '../types'
 import { createLogger } from '../Logger'
-import { LogtoAPI } from '../api'
+import { LogtoAPI, WebAPI } from '../api'
 
 @Service()
 export class MeRouter {
@@ -15,7 +15,8 @@ export class MeRouter {
     private readonly userService: UserService,
     private readonly userGroupService: UserGroupService,
     private readonly memberService: MemberService,
-    private readonly logtoApi: LogtoAPI
+    private readonly logtoApi: LogtoAPI,
+    private readonly webApi: WebAPI
   ) {
     this.registerRoutes()
   }
@@ -131,6 +132,22 @@ export class MeRouter {
         }
 
         this.logger.error(`Error when updating user password ${idpUserId}`)
+        return next(err)
+      }
+    })
+
+    // Forwards the caller's own token to WebAPI /user/me to sync sec_user_role from JWT scopes.
+    this.router.post('/sync-webapi-roles', async (req: IAppRequest, res: Response, next: NextFunction) => {
+      const authHeader = req.headers['authorization']
+      if (!authHeader) {
+        return res.status(401).send({ message: 'Authorization header is required' })
+      }
+
+      try {
+        const result = await this.webApi.syncUserRoles(authHeader)
+        return res.status(result.ok ? 200 : 502).json(result)
+      } catch (err) {
+        this.logger.error(`Error syncing roles to WebAPI: ${JSON.stringify(err)}`)
         return next(err)
       }
     })

@@ -2,7 +2,7 @@ export const DATASET_QUERY_ROLES = ["researcher", "systemAdmin"] as const;
 export const DATASET_RESEARCHER_ROLE = "researcher";
 export const DATASET_SYSTEM_ADMIN_ROLE = "systemAdmin";
 export const VISIBILITY_STATUS = ["HIDDEN", "PUBLIC", "DEFAULT"];
-export const DATABASE_DIALECTS = ["postgres", "hana"];
+export const DATABASE_DIALECTS = ["postgres", "hana", "duckdb"];
 export const CDM_SCHEMA_OPTIONS = [
   "create_cdm",
   "no_cdm",
