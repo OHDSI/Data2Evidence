@@ -93,7 +93,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating cachedb file flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error creating cachedb file flow run");
     }
   }
 
@@ -107,7 +107,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating fhir cache file flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error creating fhir cache file flow run");
     }
   }
 
@@ -122,7 +122,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting cachedb file results: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting cachedb file results");
     }
   }
 
@@ -137,7 +137,7 @@ export class CachedbController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting completed flow run id: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting completed flow run id");
     }
   }
 }
