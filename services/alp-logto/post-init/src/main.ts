@@ -113,6 +113,84 @@ async function queryPostgres(
   return await client.query(query, values);
 }
 
+// Ensure Logto signs OIDC tokens with RS256: WebAPI's Spring OIDC decoder rejects
+// Logto's default ES384 ("Another algorithm expected"). Rotate to an RSA key and
+// drop non-RSA keys so only RS256 tokens are issued. Idempotent.
+async function ensureRsaSigningKey(headers: any) {
+  console.log(
+    "*********************************** OIDC SIGNING KEY ******************************************",
+  );
+  const resp = await logto.get("configs/oidc/private-keys", headers);
+  if (!resp.ok) {
+    console.warn(
+      `Could not read OIDC private-keys (status ${resp.status}); skipping RSA rotation`,
+    );
+    return;
+  }
+  const keys: Array<{ id: string; signingKeyAlgorithm: string }> =
+    await resp.json();
+
+  // The active signing key is the newest (first) entry.
+  if (keys[0]?.signingKeyAlgorithm !== "RSA") {
+    console.log("Rotating OIDC signing key to RSA (RS256) for WebAPI compatibility");
+    const rot = await logto.post("configs/oidc/private-keys/rotate", headers, {
+      signingKeyAlgorithm: "RSA",
+    });
+    console.log(`Rotate OIDC signing key -> RSA: status ${rot.status}`);
+  } else {
+    console.log("OIDC signing key already RSA; no rotation needed");
+  }
+
+  // Drop any non-RSA (e.g. EC/ES384) keys so only RS256 tokens are ever issued.
+  const afterResp = await logto.get("configs/oidc/private-keys", headers);
+  if (!afterResp.ok) {
+    console.warn(
+      `Could not re-read OIDC private-keys (status ${afterResp.status}); skipping non-RSA cleanup`,
+    );
+    return;
+  }
+  const after = await afterResp.json();
+  for (const key of after as Array<{ id: string; signingKeyAlgorithm: string }>) {
+    if (key.signingKeyAlgorithm !== "RSA") {
+      const d = await logto.del(`configs/oidc/private-keys/${key.id}`, headers);
+      console.log(`Removed non-RSA OIDC key ${key.id}: status ${d.status}`);
+    }
+  }
+}
+
+// Register the Atlas login bridge's redirect URI (/atlas-login/) on the Logto app
+// so direct /atlas login works. Origin derived from the existing portal callback
+// URI to stay environment-agnostic. Idempotent.
+async function ensureAtlasLoginRedirectUri(headers: any, appId: string) {
+  const resp = await logto.get(`applications/${appId}`, headers);
+  if (!resp.ok) {
+    console.warn(`Could not read application ${appId} (status ${resp.status}); skipping Atlas login redirect URI`);
+    return;
+  }
+  const app = await resp.json();
+  const meta = app.oidcClientMetadata || {};
+  const uris: string[] = meta.redirectUris || [];
+
+  // Derive origin from a known portal callback entry.
+  const portalCb = uris.find((u) => u.includes("/d2e/portal/login-callback"));
+  if (!portalCb) {
+    console.warn("No portal login-callback redirect URI found; skipping Atlas login redirect URI");
+    return;
+  }
+  const origin = new URL(portalCb).origin;
+  const bridgeUri = `${origin}/atlas-login/`;
+
+  if (uris.includes(bridgeUri)) {
+    console.log(`Atlas login redirect URI already registered: ${bridgeUri}`);
+    return;
+  }
+  meta.redirectUris = uris.concat(bridgeUri);
+  const patch = await logto.patch(`applications/${appId}`, headers, {
+    oidcClientMetadata: meta,
+  });
+  console.log(`Registered Atlas login redirect URI ${bridgeUri}: status ${patch.status}`);
+}
+
 async function main() {
   let apps: Array<{ name: string; id: string }> =
     JSON.parse(process.env.LOGTO__CLIENT_APPS) || [];
@@ -138,6 +216,14 @@ async function main() {
   const headers = {
     Authorization: `Bearer ${accessToken}`,
   };
+
+  // Make sure WebAPI (RS256) can verify Logto tokens before anything else.
+  await ensureRsaSigningKey(headers);
+
+  // Allow the standalone Atlas login bridge's redirect URI on the OIDC app(s).
+  for (const app of apps) {
+    await ensureAtlasLoginRedirectUri(headers, app.id);
+  }
 
   // Create Apps
   console.log(
@@ -430,6 +516,27 @@ button[name="submit"]{ background: #000080 !important; }`,
       }
       payload.environmentVariables = payload.environmentVariables || {};
       payload.environmentVariables.scopeRewrites = JSON.stringify(parsed);
+    }
+
+    // The access token must carry the human username/name claims so that
+    // downstream consumers (OHDSI WebAPI, Atlas3) display the real login instead
+    // of the opaque Logto `sub` (e.g. "zqxtfkfcpma4"). The access-token JWT
+    // customizer runs with a `context.user` object that exposes `username`,
+    // `name` and `primaryEmail` (see contextSample), and the canonical script in
+    // docker-compose.yml returns `username`, `name`, `preferred_username` and
+    // `email`. Warn loudly if the supplied script omits the username claim so a
+    // misconfigured LOGTO__CUSTOM_JWT does not silently regress Atlas3 back to
+    // showing the `sub`.
+    if (
+      typeof payload.script === "string" &&
+      !payload.script.includes("username")
+    ) {
+      console.warn(
+        "WARNING: LOGTO__CUSTOM_JWT script does not emit a `username` claim. " +
+          "Atlas3 / OHDSI WebAPI will fall back to displaying the opaque Logto `sub`. " +
+          "Add `username: context.user?.username` (and optionally `name`/`preferred_username`) " +
+          "to the customizer's returned claims.",
+      );
     }
 
     console.log("payload", payload);
