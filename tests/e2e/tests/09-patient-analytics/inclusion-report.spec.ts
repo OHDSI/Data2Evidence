@@ -18,7 +18,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
     await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
   await test.step('Add Basic Data: Year of birth > 1950', async () => {
@@ -30,20 +30,20 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByTitle('Basic Data - Year of Birth').click()
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').fill('>1950')
     await page.getByTitle('Basic Data - Year of Birth').getByRole('textbox').press('Enter')
-    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
   await test.step('Add Basic Data: Gender = Female', async () => {
     await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Female')
     await page.getByText('FEMALE - FEMALE').click()
-    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
   await test.step('Add Condition Occurrence inclusion filter (Chronic sinusitis)', async () => {
-    await page.getByTestId('pa-add-filter-btn').click()
+    await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-    await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-1').getByText('All').click()
+    await page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]').getByText('All').click()
     await page.getByTitle('Condition Occurrence A -').getByPlaceholder('Enter search term').fill('Chronic sinusitis')
     try {
       await expect(page.getByText('Chronic sinusitis')).toBeVisible({ timeout: 2000 })
@@ -61,26 +61,26 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Create' }).click()
       await expect(page.getByRole('button', { name: 'Update' })).toBeVisible()
       await page.getByRole('button', { name: 'Close' }).click()
-      await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+      await expect(page.locator('.loading-animation-component')).not.toBeVisible()
       try {
         await page.mouse.move(0, 0)
-        await page.getByTestId('pa-modal-wrapper').click()
+        await page.locator('.modal-wrapper').click()
       } catch {
         // modal not present, continue
       }
     }
-    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
   await test.step('Add Visit exclusion filter card', async () => {
     await page.getByRole('link', { name: /Exclusion \(\d+\)/ }).click()
-    await page.getByTestId('pa-add-filter-btn').click()
+    await page.getByTitle('Add Filter Card').getByRole('button').click()
     await page.getByRole('menuitem', { name: 'Visit' }).click()
     await expect(page.getByText('A filter card has been added: Visit A')).toBeVisible()
-    await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+    await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   })
 
-  const dialog = page.getByTestId('pa-inclusion-report-dialog')
+  const dialog = page.locator('.inclusion-report-dialog')
 
   await test.step('Open Inclusion Report dialog and wait for data', async () => {
     await expect(page.getByRole('button', { name: 'Attrition Plot' })).toBeVisible()
@@ -91,7 +91,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Attrition Plot' }).click()
     await reportResponse
     await expect(dialog).toBeVisible()
-    await expect(dialog.getByTestId('pa-inclusion-report-dialog-title')).toHaveText('Attrition Plot')
+    await expect(dialog.locator('.inclusion-report-dialog__title-text')).toHaveText('Attrition Plot')
     await expect(dialog.locator('.status-message.loading')).not.toBeVisible()
     await expect(dialog.locator('.inclusion-report-container')).toBeVisible()
   })
@@ -162,7 +162,7 @@ test(TEST_NAME, async ({ page }) => {
   })
 
   await test.step('Close Inclusion Report dialog', async () => {
-    await dialog.getByTestId('pa-inclusion-report-dialog-close-btn').click()
+    await dialog.locator('.inclusion-report-dialog__close-btn').click()
     await expect(dialog).not.toBeVisible()
     await expect(page.getByRole('button', { name: 'Attrition Plot' })).toBeVisible()
   })

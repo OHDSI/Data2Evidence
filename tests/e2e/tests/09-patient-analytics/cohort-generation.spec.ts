@@ -37,7 +37,7 @@ test('cohort-generation', async ({ page }) => {
   // ========================
   // Start creating a new cohort using D2E cohort builder
   await page.getByRole('button', { name: 'D2E' }).click()
-  await expect(page.getByTestId('pa-pane-left')).toContainText('New cohort')
+  await expect(page.locator('#pane-left')).toContainText('New cohort')
 
   // Save the initial cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
@@ -52,8 +52,8 @@ test('cohort-generation', async ({ page }) => {
   // Name the cohort with unique timestamp-based name and save
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill(cohortName)
-  await page.getByTestId('pa-save-dialog-save-btn').click()
-  await expect(page.getByTestId('pa-pane-left')).toContainText(cohortName)
+  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('#pane-left')).toContainText(cohortName)
 
   // ========================
   // AGE FILTER CONFIGURATION
@@ -64,17 +64,17 @@ test('cohort-generation', async ({ page }) => {
   await page.getByRole('textbox').press('Enter')
 
   // Verify that age filter results in 2223 patients
-  await expect(page.getByTestId('pa-pane-right')).toContainText('2,223')
+  await expect(page.locator('#pane-right')).toContainText('2,223')
 
   // ========================
   // CONDITION OCCURRENCE FILTER
   // ========================
   // Add a new condition occurrence filter to further narrow the cohort
-  await page.getByTestId('pa-add-filter-btn').click()
+  await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
 
   // Verify the condition occurrence filter was added
-  await expect(page.getByTestId('pa-pane-left')).toContainText('Condition Occurrence A')
+  await expect(page.locator('#pane-left')).toContainText('Condition Occurrence A')
   await expect(page.locator('[id="patient\\.interactions\\.conditionoccurrence\\.1"]')).toContainText(
     'Condition concept set'
   )
@@ -104,22 +104,22 @@ test('cohort-generation', async ({ page }) => {
   // COHORT RESULTS VERIFICATION
   // ========================
   // Verify that the combined filters (age 35-80 + acute allergic reaction) result in 104 patients
-  await expect(page.getByTestId('pa-pane-right')).toContainText('104')
+  await expect(page.locator('#pane-right')).toContainText('104')
 
   // Save the final cohort configuration
   await page.getByRole('button', { name: 'Save' }).click()
-  await page.getByTestId('pa-save-dialog-save-btn').click()
-  await expect(page.getByTestId('pa-app-container')).toContainText('Saved filter updated.')
+  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+  await expect(page.locator('#app')).toContainText('Saved filter updated.')
 
   // ========================
   // CLEANUP SECTION
   // ========================
   // Navigate back to cohorts list and delete the specific test cohort
-  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
 
   // Find and delete the specific cohort by name to avoid deleting wrong cohorts
   // The delete button is the last img element in the action buttons container for each cohort
   // Navigate from cohort title to its parent container, then to the action buttons container
-  await page.getByTestId('pa-cohort-delete-btn').first().click()
+  await page.locator('.footer > div:nth-child(5)').first().click()
   await page.getByRole('button', { name: 'Delete' }).click()
 })

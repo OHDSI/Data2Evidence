@@ -16,21 +16,21 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Add filtercards
-  await page.getByTestId('pa-add-filter-btn').click()
+  await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await page.getByTestId('pa-add-filter-btn').click()
+  await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Drug Exposure' }).click()
-  await page.getByTestId('pa-add-filter-btn').click()
+  await page.getByTitle('Add Filter Card').getByRole('button').click()
   await page.getByRole('menuitem', { name: 'Condition Occurrence' }).click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page.getByText('2,694 / 2,694')).toBeVisible()
   // Add basic data - month of birth
-  await page.getByTitle('Basic Data - Month of Birth').locator('div').click()
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').fill('6')
-  await page.getByTitle('Basic Data - Month of Birth').getByRole('textbox').press('Enter')
+  await page.locator('div[title="Basic Data - Month of Birth"]').click()
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').fill('6')
+  await page.locator('div[title="Basic Data - Month of Birth"]').getByRole('textbox').press('Enter')
   // Add basic data - gender === MALE
   await page.getByTitle('Basic Data - Gender', { exact: true }).locator('div').nth(1).click()
   await page.getByPlaceholder('Enter search term').fill('MALE')
@@ -44,28 +44,30 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('button', { name: 'AND ' }).first().click()
   // This one does the actual change to AND
   await page.getByRole('button', { name: 'AND ' }).first().click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Click OR to change into AND
   await page.getByRole('button', { name: 'OR ' }).first().click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Click AND to change into OR
   await page.getByRole('button', { name: 'AND ' }).first().click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Click x1 and ensure only the filtercards that do not associate with any OR condition should be available to select
-  await page.getByTestId('pa-axis-menu-btn-x1').click()
-  await expect(page.getByTestId('pa-pane-right').getByText('Condition Occurrence B')).toBeVisible()
-  await expect(page.getByTestId('pa-pane-right').getByText('Condition Occurrence A')).not.toBeVisible()
-  await expect(page.getByTestId('pa-pane-right').getByText('Device Exposure A')).not.toBeVisible()
+  await page.getByRole('button', { name: 'Basic Data Month of Birth ◢' }).first().click()
+  await expect(page.locator('#pane-right').getByText('Condition Occurrence B')).toBeVisible()
+  // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
+  await expect(page.locator('#pane-right').getByText('Condition Occurrence A')).not.toBeVisible()
+  // await page.getByRole('button', { name: 'Select an Attribute ◢' }).first().click()
+  await expect(page.locator('#pane-right').getByText('Device Exposure A')).not.toBeVisible()
 
   // Add condition start date to x1
-  await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition Occurrence B').hover()
-  await page.getByTestId('pa-dropdown-menu-x1').getByTestId('pa-axis-dropdown-item-Condition Start Date').click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await page.getByText('Condition Occurrence B').nth(1).hover()
+  await page.locator('#pane-right').getByText('Condition Start Date').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Click and Drag and press drilldown
@@ -74,36 +76,36 @@ test(TEST_NAME, async ({ page }) => {
   await page.mouse.move(1200, 600, { steps: 10 })
   await page.mouse.up()
   await page.getByTitle('Filter by Selection').click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
 
   // Save filter
   await page.getByRole('button', { name: 'Save' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).click()
   await page.getByRole('textbox', { name: 'Enter name' }).fill('Extended Logic Filter')
-  await page.getByTestId('pa-save-dialog-save-btn').click()
+  await page.locator('footer').getByRole('button', { name: 'Save' }).click()
   // Wait for save dialog to disappear
   await expect(page.getByText('Save Current Filters')).not.toBeVisible()
 
   // Remove condition occurrence B and drug exposure A filter cards
-  await page.getByTestId('pa-filter-card-patient-interactions-drugexposure-1').getByTestId('filter-card-menu-trigger').click()
-  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
-  await page.getByTestId('pa-filter-card-patient-interactions-conditionoccurrence-2').getByTestId('filter-card-menu-trigger').click()
-  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).filter({ visible: true }).click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await page.getByText('Drug Exposure A').locator('..').locator('..').locator('.bs-dropdown').click()
+  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
+  await page.getByText('Condition Occurrence B').locator('..').locator('..').locator('.bs-dropdown').click()
+  await page.getByRole('menuitem', { name: 'Remove Filter Card' }).click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
 
   // Reload saved filter
-  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
   await page.getByRole('button', { name: 'Discard' }).click()
-  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByText('Extended Logic Filter').click()
   await page.getByRole('button', { name: 'Discard' }).click()
-  await expect(page.getByTestId('pa-loading-indicator')).not.toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
 
   // Delete saved filter
-  await page.getByTestId('pa-pane-left').getByRole('link', { name: 'Cohorts' }).click()
+  await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page
     .getByText('Extended Logic Filter')
     .locator('..')
