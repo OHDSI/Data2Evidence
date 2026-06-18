@@ -65,7 +65,7 @@ ARG PLUGINS_FEED=d2e
 # @data2evidence/* packages to pull from the feed. Empty in CI (uses
 # plugin-artifacts/); local builds set it via docker-compose-local.yml.
 ARG PLUGINS_FROM_REGISTRY=""
-RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
+RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token set -eu; \
     REG="https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/${PLUGINS_FEED}/npm/registry/"; \
     if [ -f /run/secrets/PLUGINS_REGISTRY ]; then \
       SECRET_REG="$(cat /run/secrets/PLUGINS_REGISTRY)"; \
@@ -73,19 +73,26 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
         REG="$SECRET_REG"; \
       fi; \
     fi; \
+    # Keep npm auth (incl. the @ohdsi GitHub Packages token) in a throwaway
+    # userconfig that is deleted when this layer's shell exits, so it is never
+    # written to a persistent .npmrc baked into the image.
+    NPMRC="$(mktemp)"; export NPM_CONFIG_USERCONFIG="$NPMRC"; \
+    trap 'rm -f "$NPMRC"' EXIT; \
     npm config set @data2evidence:registry "$REG"; \
+    if [ -s /run/secrets/github_token ]; then \
+      npm config set @ohdsi:registry "https://npm.pkg.github.com"; \
+      npm config set //npm.pkg.github.com/:_authToken "$(cat /run/secrets/github_token)"; \
+    fi; \
     sh /scripts/fetch-external-plugins.sh /scripts/external-plugins.txt /usr/src/bundled-plugins; \
     if [ -n "$PLUGINS_FROM_REGISTRY" ]; then \
       printf '%s' "$PLUGINS_FROM_REGISTRY" | tr ', ' '\n\n' > /tmp/registry-plugins.txt; \
       sh /scripts/fetch-external-plugins.sh /tmp/registry-plugins.txt /usr/src/bundled-plugins; \
       rm -f /tmp/registry-plugins.txt; \
-    fi; \
-    WORK="$(mktemp -d)"; \
-    cd "$WORK" && npm init -y >/dev/null 2>&1; \
-    echo "@data2evidence:registry=$REG" > .npmrc; \
-    npm install @data2evidence/d2e-atlas --no-save; \
-    mv "node_modules/@data2evidence/d2e-atlas" /usr/src/bundled-plugins/d2e-atlas; \
-    rm -rf "$WORK"
+    fi
+# NOTE: The legacy @data2evidence/d2e-atlas ("Atlas Lite") is no longer bundled.
+# Atlas3 (@ohdsi/atlas3) is shipped by the local plugins/atlas plugin, which owns
+# the /atlas route. Re-adding a d2e-atlas bundle here would reclaim /atlas (it
+# declares source:/atlas) and shadow Atlas3.
 
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 
