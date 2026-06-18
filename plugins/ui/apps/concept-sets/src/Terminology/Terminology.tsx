@@ -77,8 +77,9 @@ const WithDrawer = ({
       open={open}
       onClose={onClose}
       anchor="right"
+      sx={{ zIndex: 11000 }}
       PaperProps={{
-        sx: { width: "85%", overflowY: "hidden" },
+        sx: { width: "85%", overflowY: "hidden", zIndex: 11001 },
       }}
     >
       {children}

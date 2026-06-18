@@ -41,6 +41,7 @@ import d3 from 'd3'
 import { mapActions, mapGetters } from 'vuex'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import boxplotInfo from './BoxplotInfo.vue'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
@@ -103,12 +104,17 @@ export default {
       'getChartSize',
       'getText',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getFireRequest',
       'isFireRequestHeld',
       'getActiveAxes',
       'getBookmarksData',
       'processResponse',
     ]),
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
   },
   watch: {
     getSplitterWidth() {
@@ -191,7 +197,7 @@ export default {
     },
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(err => {
           // do nothing
         })
