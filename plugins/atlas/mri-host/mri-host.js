@@ -15,10 +15,12 @@
   "use strict";
 
   var TOKEN_KEY = "bearerToken";
-  var D2E = location.origin + "/d2e/";
+  // Root-relative so assets inherit the page's origin and scheme (always https
+  // in deployment); avoids building absolute URLs from location.origin.
+  var D2E = "/d2e/";
   var ASSETS_URL = D2E + "mri/assets.json";
   var SAP_CORE_URL = D2E + "ui/sap-ui-core.js";
-  var D4L_LOADER = location.origin + "/atlas/d4l-ui/d4l-ui.esm.js";
+  var D4L_LOADER = "/atlas/d4l-ui/d4l-ui.esm.js";
 
   // Same-origin with the Atlas3 host, so token + dataset come straight from the
   // shared localStorage the parent populates (never from the URL).
