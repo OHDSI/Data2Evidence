@@ -26,7 +26,7 @@ test(TEST_NAME, async ({ page }) => {
   await demoDataset.click()
   await page.getByRole('option', { name: 'Run data quality' }).click()
   await page.getByRole('button', { name: 'Run Analysis' }).click()
-  await expect(page.getByTestId('alert-title')).toContainText('Successfully generated dqd')
+  await expect(page.getByTestId('alert-message')).toContainText('Successfully generated dqd')
 
   // Grant researcher dataset permissions
   await demoDataset.click()
@@ -46,7 +46,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(page.getByRole('menuitem', { name: /admin/ })).toBeVisible()
     await page.getByRole('menuitem', { name: /admin/ }).click()
     await expect(page.getByRole('cell', { name: /admin/ })).toBeVisible()
-    await expect(page.getByTestId('alert-title')).toContainText('User admin has been granted permission')
+    await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission')
   }
   await page.getByTestId('dialog-close').click()
 
