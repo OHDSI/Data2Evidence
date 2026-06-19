@@ -569,6 +569,7 @@
   "FLOW_RUN_NOTIFICATION_DIALOG__VIEW_FLOW_RUN": "Flow-Lauf anzeigen",
   "FLOW_RUN_NOTIFICATION_DIALOG__PROGRESS_MESSAGE": "Den Fortschritt können Sie auf der Seite Jobs verfolgen.",
   "FEATURE__CDM_DOWNLOAD": "CDM-Download",
+  "FEATURE__CONCEPT_RECORD_COUNTS": "Konzept-Datensatzanzahlen",
   "FEATURE__COHORT": "Kohorte",
   "FEATURE__CONCEPTS": "Konzepte",
   "FEATURE__DASHBOARD": "Dashboard",
