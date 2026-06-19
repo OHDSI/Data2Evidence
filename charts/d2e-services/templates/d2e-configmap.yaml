@@ -12,6 +12,7 @@ data:
   LOGTO__SCOPE: {{ .Values.idp.LOGTO__SCOPE | quote }}
   LOGTO__SCOPES: {{ .Values.idp.LOGTO__SCOPES | quote }}
   LOGTO__ROLES: {{ .Values.idp.LOGTO__ROLES | quote }}
+  LOGTO__ROLES_SCOPES: {{ .Values.idp.LOGTO__ROLES_SCOPES | quote }}
   baseJobTemplate.json: {{ .Values.config.baseJobTemplate.configuration | toJson }}
   TREX_PACKAGE_JSON_PLUGIN: {{ .Values.config.TREX_PACKAGE_JSON_PLUGIN | toJson }}
   TREX_NPMRC: {{ .Values.config.TREX_NPMRC | quote }}
