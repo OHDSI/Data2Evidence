@@ -1,15 +1,18 @@
 services:
   trex:
-    # Build/run native to the host (overrides the amd64 pin in docker-compose.yml).
-    platform: ${TREX_PLATFORM:-linux/amd64}
+    # No platform pin: the trexsql base and d2e-trex image are multi-arch
+    # (amd64/arm64), so Docker runs/builds native to the host.
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
-      platforms:
-        - ${TREX_PLATFORM:-linux/amd64}
+      # GitHub Packages token for installing @ohdsi/* plugins (the Pythia agent).
+      secrets:
+        - github_token
       args:
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a}
+    extra_hosts:
+      - "physionet-host:host-gateway"
     networks:
       alp:
         aliases:
@@ -29,7 +32,7 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      # - ./services/trex/core:/usr/src/core
+      - ./services/trex/core:/usr/src/core  # live trex core for local dev
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -40,6 +43,15 @@ services:
       # Bind-mounted source plugins win over bundled ones with the same package name.
       PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
+      # PhysioNet auto-provision / entitlements sync are OFF by default for local
+      # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
+      # USERMGMT__ENTITLEMENTS_SYNC_ENABLED=true; the rest is pre-wired below.
+      USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
+      USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-physionet}
+      USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-e0348e4d-2e17-43f2-a3c6-efd752d17c23}
+      USERMGMT__ENTITLEMENTS_SYNC_ENABLED: ${USERMGMT__ENTITLEMENTS_SYNC_ENABLED:-false}
+      USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL: ${USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL:-http://physionet-host:8000}
+      USERMGMT__ENTITLEMENTS_DATASET_MAPPING: '${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-{"demo":"demoeicu/1.0"}}'
       SWARM_CONFIG: |-
         {
           "cluster_id": "d2e",
@@ -118,8 +130,16 @@ services:
     build:
       context: ./services/alp-logto
       dockerfile: Dockerfile
-    # volumes:
-    #   - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
+    extra_hosts:
+      - "physionet-host:host-gateway"
+    volumes:
+      # Overlay the bundled connector-oidc with a d2e-patched version that
+      # writes the upstream access/refresh tokens to globalThis.tokenMap so the
+      # Logto JWT customizer can surface them as physionet_access_token /
+      # physionet_refresh_token claims. Mirrors the connector-alp-azuread
+      # override pattern below.
+      - ./services/alp-logto/connector-oidc-patched/lib:/etc/logto/packages/connectors/connector-oidc/lib
+      # - ./services/alp-logto/connector-alp-azuread/lib:/etc/logto/packages/connectors/connector-alp-azuread/lib
 
   alp-minerva-pg-mgmt-init:
     ports:
@@ -213,3 +233,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+# Build-time GitHub Packages token for installing @ohdsi/* plugins.
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN
