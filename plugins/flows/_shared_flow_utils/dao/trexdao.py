@@ -334,11 +334,11 @@ class TrexDao(DaoBase):
             con: Optional existing connection to reuse (skips opening a new connection)
             on_conflict: Optional ON CONFLICT clause, e.g. "ON CONFLICT DO NOTHING"
         """
-        columns_str = ", ".join(columns)
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s{conflict}").format(
+        columns_sql = pg_sql.SQL(", ").join(pg_sql.Identifier(col) for col in columns)
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_sql}) VALUES %s{conflict}").format(
             schema_name=self._schema_ident(schema_name),
             table_name=pg_sql.Identifier(table_name),
-            columns_str=pg_sql.SQL(columns_str),
+            columns_sql=columns_sql,
             conflict=pg_sql.SQL(f" {on_conflict}" if on_conflict else ""),
         )
 

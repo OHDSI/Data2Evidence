@@ -4,4 +4,5 @@ try {
     await seed();
 } catch (error) {
     console.error("FHIR init failed:", error);
+    throw error;
 }
