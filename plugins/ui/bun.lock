@@ -444,6 +444,7 @@
         "@vitest/mocker": "^4.0.17",
         "@vitest/pretty-format": "^4.0.17",
         "@vue/test-utils": "2",
+        "concurrently": "^9.2.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",
         "fflate": "0.7.4",
@@ -451,6 +452,7 @@
         "obug": "^2.1.1",
         "prettier": "3.6.2",
         "sass": "^1.32.8",
+        "single-spa-vue": "^3.0.1",
         "streamsaver": "2.0.6",
         "tinyexec": "^1.0.2",
         "tinyrainbow": "^3.0.3",
@@ -6027,6 +6029,8 @@
     "single-spa": ["single-spa@6.0.3", "", {}, "sha512-pXlwHXHhs3hx/MnGQHBLdFCVAN2rlm9TLBKazbDMyZ25QRxoen2vlUZ47MyXKa9K8Gd5UZs/gkuQad4TGbViwg=="],
 
     "single-spa-react": ["single-spa-react@6.0.2", "", { "dependencies": { "browserslist-config-single-spa": "^1.0.1" }, "peerDependencies": { "@types/react": "*", "@types/react-dom": "*", "react": "*" }, "optionalPeers": ["@types/react", "@types/react-dom"] }, "sha512-nRz5Izf57iYZXMXdTh+RmHnxxQojFL8NCIVUyA7PpXRib1ykmbat6JgT3yFPgXRs129BCC4+j+O5TLQOmLzF4Q=="],
+
+    "single-spa-vue": ["single-spa-vue@3.0.1", "", {}, "sha512-GX6uQBBMGG3/ZQh6Z+tuqKGIuWKMbDhj3O/6xwX4j0NQJhW9kynHXbOWwwel1DFq6tkjzk7a0qBlhJwRCgn/lg=="],
 
     "sirv": ["sirv@2.0.4", "", { "dependencies": { "@polka/url": "^1.0.0-next.24", "mrmime": "^2.0.0", "totalist": "^3.0.0" } }, "sha512-94Bdh3cC2PKrbgSOUqTiGPWVZeSiXfKOVZNJniWoqrWrRkB1CJzBU3NEbiTsPcYy1lDsANA/THzS+9WBiy5nfQ=="],
 
