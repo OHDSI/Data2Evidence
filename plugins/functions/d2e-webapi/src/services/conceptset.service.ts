@@ -150,7 +150,10 @@ export const deleteConceptSet = async (
   // If another user adds a reference to the concept set between this check and the
   // actual deletion, the reference could become broken. This is an acceptable risk
   // for this feature, as the window is small and the impact is limited.
-  const usage = await getConceptSetUsage(token, datasetId, ref.externalId);
+  // Pass the original unparsed conceptSetId so getConceptSetUsage performs its
+  // own single parse. Forwarding ref.externalId here would re-enter the parser
+  // and could mis-classify a webapi externalId < 1_000_000_000 as legacy.
+  const usage = await getConceptSetUsage(token, datasetId, conceptSetId);
 
   if (usage.inUse) {
     throw new ConceptSetInUseError(usage.cohortDefinitions, usage.bookmarks);
@@ -183,16 +186,19 @@ export const getConceptSetUsage = async (
   try {
     externalId = parseConceptSetRef(conceptSetId).externalId;
   } catch (error) {
+    // The parser's own message already embeds the raw input via JSON.stringify,
+    // so we rethrow it as-is rather than prefixing a second copy of the input.
     throw new ConceptSetValidationError(
-      `Invalid concept set ID: ${String(conceptSetId)}. ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      error instanceof Error ? error.message : String(error),
     );
   }
 
+  // Defence against CodesetId:0 false-positives in the JSON pattern matcher below.
+  // (parseConceptSetRef already enforces non-negative integer; this rejects the legitimate
+  //  parsed-but-unusable id 0 specifically.)
   if (externalId <= 0) {
     throw new ConceptSetValidationError(
-      `Invalid concept set ID: ${String(conceptSetId)}. Must be a positive integer.`,
+      `Invalid concept set ID: ${String(conceptSetId)}. Concept set ID 0 is reserved.`,
     );
   }
 
