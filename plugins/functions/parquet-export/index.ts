@@ -82,8 +82,8 @@ function isValidWildcardFlag(val: string): boolean {
 }
 
 function isValidConceptIdArray(arr: unknown): arr is number[] {
-  if (!Array.isArray(arr)) return false;
-  return arr.every((item) => typeof item === "number" && Number.isInteger(item) && item > 0);
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  return arr.every((item) => typeof item === "number" && Number.isInteger(item) && item >= 0);
 }
 
 function sanitizeParamValue(value: string): string {
@@ -124,6 +124,7 @@ function substituteTemplateParams(
     resultsSchema: string;
   },
   additionalParams: Record<string, string>,
+  conceptIds: number[],
 ): string {
   if (!isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
@@ -223,7 +224,7 @@ function substituteTemplateParams(
     )
     .replace(
       /\{\{CONCEPT_IDS\}\}/g,
-      additionalParams["CONCEPT_IDS"] || "",
+      conceptIds.join(","),
     );
 
   const remainingPlaceholders = extractPlaceholders(result);
@@ -479,7 +480,7 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const conceptIds = req.body.conceptIds as unknown | undefined;
-    if (conceptIds !== undefined && !isValidConceptIdArray(conceptIds)) {
+    if (!isValidConceptIdArray(conceptIds)) {
       return res.status(400).json({
         error: "Invalid parameter",
         message: "conceptIds must be an array of positive integers",
@@ -523,11 +524,6 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    // Handle conceptIds array
-    if (conceptIds && Array.isArray(conceptIds) && conceptIds.length > 0) {
-      additionalParams["CONCEPT_IDS"] = conceptIds.join(",");
-    }
-
     let substitutedSql: string;
     try {
       substitutedSql = substituteTemplateParams(
@@ -539,6 +535,7 @@ router.post("/", async (req: Request, res: Response) => {
           resultsSchema: dataset.resultsSchemaName,
         },
         additionalParams,
+        conceptIds,
       );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
