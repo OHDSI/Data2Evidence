@@ -22,8 +22,5 @@
     "dotenv": "16.0.1",
     "pg": "8.7.3",
     "winston": "3.8.1"
-  },
-  "resolutions": {
-    "pg-protocol": "1.14.0"
   }
 }
