@@ -1,4 +1,10 @@
-import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig } from "../types/wizard";
+import type {
+  WizardDefinition,
+  WizardConfig,
+  FieldDefinition,
+  WizardStepConfig,
+  WizardSurface,
+} from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
@@ -17,6 +23,10 @@ const DEFAULT_STEPS: WizardStepConfig[] = [
     config: { submitLabel: "Open cohort", submitAction: "deep-link" },
   },
 ];
+
+export function isWizardVisibleOnSurface(wizard: Pick<WizardConfig, "surfaces">, surface: WizardSurface): boolean {
+  return !wizard.surfaces || wizard.surfaces.includes(surface);
+}
 
 /**
  * Enrich a field definition using CDW config data looked up via configPath.
@@ -282,6 +292,14 @@ const mockWizardConfigs: WizardConfig[] = [
     name: "Cross sectional Demographics",
     description: "Assessment of hypertension and cholesterol levels in post-operative patients.",
     fields: WIZARD_FIELDS,
+  },
+  {
+    id: "table1",
+    name: "Table 1",
+    description: "Generate a Table 1 summary using selected covariate concept sets.",
+    surfaces: ["cohortBuilder"],
+    flow: "table1-config",
+    fields: [],
   },
 ];
 

@@ -177,6 +177,9 @@ const headers = new Headers({
 });
 
 const getFullyQualifiedUserFunctionName = (function_name: string) => {
+  // Some plugin manifests omit `env` on their api entry, so this can be called
+  // with undefined — guard it instead of throwing.
+  function_name = function_name || "fn";
   return function_name.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase())
     ? function_name
     : `${env.PROJECT_NAME}-${function_name}`; // Add Project prefix if not exists
@@ -257,13 +260,16 @@ async function _callWorker(
   dir: string,
   xenv: any
 ) {
+  // Fall back to the route source when the manifest omits `env`, so each such
+  // fn still gets a stable, unique worker name.
+  const fnEnvName = fncfg.env || fncfg.source || "fn";
   const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(
-    fncfg.env
+    fnEnvName
   );
   const myenv = Object.assign(
     { TREX_CURRENT_USER_FUNCTION_NAME },
     xenv["_shared"],
-    fncfg.env in xenv ? xenv[fncfg.env] : {},
+    fncfg.env && fncfg.env in xenv ? xenv[fncfg.env] : {},
     {
       SERVICE_ROUTES: env.SERVICE_ROUTES,
       DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY,
@@ -278,7 +284,10 @@ async function _callWorker(
 
   const options: any = {
     servicePath: servicePath,
-    memoryLimitMb: 1000,
+    // Per-function worker memory cap. Default raised from 1000 -> 4096 MB and made
+    // overridable via the plugin manifest (trex.functions memoryLimitMb), because
+    // heavier fns can exceed 1 GB and otherwise get killed (502).
+    memoryLimitMb: fncfg.memoryLimitMb ?? 4096,
     workerTimeoutMs: env.WATCH[fncfg.env] ? 1 * 60 * 1000 : 30 * 60 * 1000,
     noModuleCache: false,
     importMapPath: imports,

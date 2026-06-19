@@ -8,6 +8,7 @@ import { SystemAdminSingleSpaPluginRenderer } from "../../plugins/core/SystemAdm
 import { SystemAdminPluginRenderer } from "../../plugins/core/SystemAdminPluginRenderer";
 import { initializeImportMap } from "../../singleSpa";
 import { Account } from "../shared/Account/Account";
+import { FeedbackToast } from "../shared/FeedbackToast/FeedbackToast";
 import env from "../../env";
 import "./Etl.scss";
 
@@ -48,6 +49,7 @@ export const Etl: FC = () => {
     <div className="etl__container">
       <Header portalType="etl" etlPlugins={etlPluginsFlat} />
       <main>
+        <FeedbackToast />
         {singleSpaApps.map((item: IPluginItem) => {
           const isActiveRoute = location.pathname.includes(`/etl/${item.route}`);
           return (
