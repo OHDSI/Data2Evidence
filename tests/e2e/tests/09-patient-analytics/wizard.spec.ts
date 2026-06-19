@@ -85,6 +85,18 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('menuitem', { name: 'admin' }).click()
     await expect(page.getByTestId('alert-title')).toContainText("You've added access for admin")
     await page.getByTestId('dialog-close').click()
+
+    // Check dashboard wizard is accessible and can be opened
+    await page.getByRole('link', { name: 'Setup' }).click()
+    await page.getByTestId('button').nth(2).click()
+    // check if Dashboard and Wizards are checked
+    if (!(await page.getByText('Dashboards').isChecked())) {
+      await page.getByText('Dashboards').click()
+    }
+    if (!(await page.getByText('Wizards').isChecked())) {
+      await page.getByText('Wizards').click()
+    }
+    await page.getByTestId('button').click()
   })
 
   // Edit Wizard in Cohort Builder Config card
@@ -843,5 +855,10 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Delete dataset' }).click()
     await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('wizardE2E')
     await page.getByRole('button', { name: 'Yes, delete' }).click()
+    await page.getByRole('link', { name: 'Setup' }).click()
+    await page.getByTestId('button').nth(2).click()
+    await page.getByText('Dashboards').click()
+    await page.getByText('Wizards').click()
+    await page.getByTestId('button').click()
   })
 })
