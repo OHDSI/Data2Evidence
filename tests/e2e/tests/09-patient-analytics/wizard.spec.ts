@@ -76,6 +76,15 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('button', { name: 'Add' }).click()
     await expect(page.getByText('Dataset wizardE2E has been created successfully')).toBeVisible({ timeout: MINUTE_1 })
     await page.getByTestId('dialog').getByTestId('button').click()
+    const wizardRow = page.locator('tr', { hasText: 'wizardE2E' }).first()
+    await wizardRow.scrollIntoViewIfNeeded()
+    await wizardRow.getByText('Select action').click()
+    await page.getByRole('option', { name: 'Permissions' }).click()
+    await page.getByRole('tab', { name: 'Access' }).click()
+    await page.getByTestId('dialog').getByTestId('button').click()
+    await page.getByRole('menuitem', { name: 'admin' }).click()
+    await expect(page.getByTestId('alert-title')).toContainText("You've added access for admin")
+    await page.getByTestId('dialog-close').click()
   })
 
   // Edit Wizard in Cohort Builder Config card
@@ -96,7 +105,7 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: /^Cohort builder configConfigure cohort builderConfigure$/ })
       .getByTestId('button')
       .click()
-    await page.getByRole('button', { name: 'Arrow Down' }).click()
+    await page.locator('[id$="dataModelConfigurationsCombo-arrow"]').click()
     await page.getByRole('option', { name: 'OMOP_DM' }).click()
     await page.getByRole('button', { name: 'Wizards JSON :' }).click()
     await page
@@ -121,7 +130,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Cohort' }).click()
     await page.getByRole('textbox', { name: 'Enter new name' }).click()
     await page.getByRole('textbox', { name: 'Enter new name' }).fill('cross-sectional-demographics')
-    await page.getByText('R Shiny Server').click()
+    await page.getByRole('combobox').filter({ hasText: /^R$/ }).click()
     await page.getByRole('option', { name: 'Python' }).click()
 
     await setMonacoContent(
@@ -768,14 +777,15 @@ test(TEST_NAME, async ({ page }) => {
 
     await page.getByRole('button', { name: 'Save' }).click()
     await page.getByRole('button', { name: 'Add query' }).click()
-    await page.getByRole('textbox', { name: 'Query name' }).click()
-    await page.getByRole('textbox', { name: 'Query name' }).fill('cross-sectional-demographics')
-    await page.getByRole('textbox', { name: 'SQL' }).click()
-    await page
-      .getByRole('textbox', { name: 'SQL' })
-      .fill(
-        "WITH ancestor_concepts AS (\n    SELECT\n        c.concept_id AS ancestor_concept_id,\n        cc.concept_code,\n        cc.wildcard_flag\n    FROM (\n        SELECT '{{CONCEPT_CODE1}}' AS concept_code, {{WILDCARD_FLAG1}} AS wildcard_flag\n    ) cc\n    INNER JOIN {{VOCAB_SCHEMA}}.concept c\n    ON c.concept_code = cc.concept_code\n        AND UPPER(c.domain_id) = 'CONDITION'\n),\n\nconcept_set AS (\n    SELECT\n        ac.concept_code,\n        ac.ancestor_concept_id,\n        COALESCE(ca.descendant_concept_id, ac.ancestor_concept_id) AS condition_source_concept_id\n    FROM ancestor_concepts ac\n    LEFT JOIN {{VOCAB_SCHEMA}}.concept_ancestor ca\n        ON ac.ancestor_concept_id = ca.ancestor_concept_id\n        AND ac.wildcard_flag = 1\n    WHERE ac.ancestor_concept_id != 0\n),\n\nbins AS (\n  SELECT\n    CAST((n * 5) AS VARCHAR) || '-' || CAST((n * 5) + 4 AS VARCHAR) AS age_bin,\n    n * 5 AS bin_start\n  FROM (\n    SELECT UNNEST(generate_series(0, 17)) AS n\n  )\n  UNION ALL\n  SELECT '90+', 90\n),\n\nperson_ages AS (\n  SELECT\n    p.person_id,\n    g.concept_name AS gender_concept_name,\n    EXTRACT(YEAR FROM CURRENT_DATE) AS year,\n    (COALESCE(EXTRACT(YEAR FROM d.death_date), EXTRACT(YEAR FROM CURRENT_DATE)) - p.year_of_birth) AS age\n  FROM {{SCHEMA}}.person p\n  INNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\n  LEFT JOIN {{SCHEMA}}.death d ON p.person_id = d.person_id\n  LEFT JOIN {{VOCAB_SCHEMA}}.concept g ON p.gender_concept_id = g.concept_id\n  INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n  INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n  WHERE c.cohort_definition_id = {{COHORT_ID}}\n    AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n),\n\ngender_age_counts AS (\n  SELECT\n    gender_concept_name,\n    CASE\n      WHEN age >= 90 THEN '90+'\n      ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR)\n    END AS age_bin,\n    CASE\n      WHEN age >= 90 THEN 90\n      ELSE CAST(age / 5 AS INTEGER) * 5\n    END AS bin_start,\n    COUNT(DISTINCT person_id) AS persons\n  FROM person_ages\n  GROUP BY gender_concept_name,\n    CASE WHEN age >= 90 THEN '90+' ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR) END,\n    CASE WHEN age >= 90 THEN 90 ELSE CAST(age / 5 AS INTEGER) * 5 END\n)\n\nSELECT\n    'race' AS attribute,\n    COALESCE(r.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept r ON p.race_concept_id = r.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY r.concept_name\n\nUNION ALL\n\nSELECT\n    'ethnicity' AS attribute,\n    COALESCE(e.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept e ON p.ethnicity_concept_id = e.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY e.concept_name\n\nUNION ALL\n\nSELECT\n  'gender' AS attribute,\n  COALESCE(g.gender_concept_name, '') AS attribute_value,\n  b.age_bin,\n  COALESCE(c.persons, 0) AS persons\nFROM bins b\nCROSS JOIN (\n  SELECT DISTINCT gender_concept_name FROM person_ages\n) g\nLEFT JOIN gender_age_counts c\n  ON c.gender_concept_name = g.gender_concept_name AND c.bin_start = b.bin_start\n\nUNION ALL\n\nSELECT\n  'condition_start_year' AS attribute,\n  CAST(t1.y_year AS VARCHAR) AS attribute_value,\n  NULL AS age_bin,\n  COUNT(DISTINCT t2.person_id) AS persons\nFROM (\n  SELECT UNNEST(generate_series({{STARTYEAR}}, {{ENDYEAR}})) AS y_year\n) t1\nLEFT JOIN (\n    SELECT\n        p.person_id,\n        EXTRACT(YEAR FROM co.condition_start_date) AS condition_start_year\n    FROM {{SCHEMA}}.person p\n    INNER JOIN {{RESULTS_SCHEMA}}.cohort c\n        ON p.person_id = c.subject_id\n        AND c.cohort_definition_id = {{COHORT_ID}}\n    INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n    INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n        AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n) t2\nON t1.y_year = t2.condition_start_year\nGROUP BY t1.y_year\nORDER BY attribute_value ASC"
-      )
+    const queryName = page.getByRole('textbox', { name: 'Query name' })
+    await expect(queryName).toBeVisible()
+    await queryName.fill('cross-sectional-demographics')
+    const sql = page.getByRole('textbox', { name: 'SQL' })
+    await expect(sql).toBeVisible()
+    await sql.click()
+    await sql.fill(
+      "WITH ancestor_concepts AS (\n    SELECT\n        c.concept_id AS ancestor_concept_id,\n        cc.concept_code,\n        cc.wildcard_flag\n    FROM (\n        SELECT '{{CONCEPT_CODE1}}' AS concept_code, {{WILDCARD_FLAG1}} AS wildcard_flag\n    ) cc\n    INNER JOIN {{VOCAB_SCHEMA}}.concept c\n    ON c.concept_code = cc.concept_code\n        AND UPPER(c.domain_id) = 'CONDITION'\n),\n\nconcept_set AS (\n    SELECT\n        ac.concept_code,\n        ac.ancestor_concept_id,\n        COALESCE(ca.descendant_concept_id, ac.ancestor_concept_id) AS condition_source_concept_id\n    FROM ancestor_concepts ac\n    LEFT JOIN {{VOCAB_SCHEMA}}.concept_ancestor ca\n        ON ac.ancestor_concept_id = ca.ancestor_concept_id\n        AND ac.wildcard_flag = 1\n    WHERE ac.ancestor_concept_id != 0\n),\n\nbins AS (\n  SELECT\n    CAST((n * 5) AS VARCHAR) || '-' || CAST((n * 5) + 4 AS VARCHAR) AS age_bin,\n    n * 5 AS bin_start\n  FROM (\n    SELECT UNNEST(generate_series(0, 17)) AS n\n  )\n  UNION ALL\n  SELECT '90+', 90\n),\n\nperson_ages AS (\n  SELECT\n    p.person_id,\n    g.concept_name AS gender_concept_name,\n    EXTRACT(YEAR FROM CURRENT_DATE) AS year,\n    (COALESCE(EXTRACT(YEAR FROM d.death_date), EXTRACT(YEAR FROM CURRENT_DATE)) - p.year_of_birth) AS age\n  FROM {{SCHEMA}}.person p\n  INNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\n  LEFT JOIN {{SCHEMA}}.death d ON p.person_id = d.person_id\n  LEFT JOIN {{VOCAB_SCHEMA}}.concept g ON p.gender_concept_id = g.concept_id\n  INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n  INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n  WHERE c.cohort_definition_id = {{COHORT_ID}}\n    AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n),\n\ngender_age_counts AS (\n  SELECT\n    gender_concept_name,\n    CASE\n      WHEN age >= 90 THEN '90+'\n      ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR)\n    END AS age_bin,\n    CASE\n      WHEN age >= 90 THEN 90\n      ELSE CAST(age / 5 AS INTEGER) * 5\n    END AS bin_start,\n    COUNT(DISTINCT person_id) AS persons\n  FROM person_ages\n  GROUP BY gender_concept_name,\n    CASE WHEN age >= 90 THEN '90+' ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR) END,\n    CASE WHEN age >= 90 THEN 90 ELSE CAST(age / 5 AS INTEGER) * 5 END\n)\n\nSELECT\n    'race' AS attribute,\n    COALESCE(r.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept r ON p.race_concept_id = r.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY r.concept_name\n\nUNION ALL\n\nSELECT\n    'ethnicity' AS attribute,\n    COALESCE(e.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept e ON p.ethnicity_concept_id = e.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY e.concept_name\n\nUNION ALL\n\nSELECT\n  'gender' AS attribute,\n  COALESCE(g.gender_concept_name, '') AS attribute_value,\n  b.age_bin,\n  COALESCE(c.persons, 0) AS persons\nFROM bins b\nCROSS JOIN (\n  SELECT DISTINCT gender_concept_name FROM person_ages\n) g\nLEFT JOIN gender_age_counts c\n  ON c.gender_concept_name = g.gender_concept_name AND c.bin_start = b.bin_start\n\nUNION ALL\n\nSELECT\n  'condition_start_year' AS attribute,\n  CAST(t1.y_year AS VARCHAR) AS attribute_value,\n  NULL AS age_bin,\n  COUNT(DISTINCT t2.person_id) AS persons\nFROM (\n  SELECT UNNEST(generate_series({{STARTYEAR}}, {{ENDYEAR}})) AS y_year\n) t1\nLEFT JOIN (\n    SELECT\n        p.person_id,\n        EXTRACT(YEAR FROM co.condition_start_date) AS condition_start_year\n    FROM {{SCHEMA}}.person p\n    INNER JOIN {{RESULTS_SCHEMA}}.cohort c\n        ON p.person_id = c.subject_id\n        AND c.cohort_definition_id = {{COHORT_ID}}\n    INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n    INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n        AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n) t2\nON t1.y_year = t2.condition_start_year\nGROUP BY t1.y_year\nORDER BY attribute_value ASC"
+    )
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Code saved successfully')).toBeVisible()
 
@@ -802,15 +812,14 @@ test(TEST_NAME, async ({ page }) => {
 
     await page.getByRole('link', { name: 'Cohorts' }).click()
     await page.getByRole('button', { name: 'D2E' }).click()
-    await page.getByRole('button', { name: 'Open Dashboard' }).click()
-    await page.getByRole('radio', { name: 'Cross sectional Demographics' }).check()
-    await page.getByRole('button', { name: 'Continue' }).click()
+    await page.getByRole('button', { name: 'Analyze' }).click()
+    await page.getByRole('button', { name: 'Cross sectional Demographics' }).click()
     await page.getByRole('textbox', { name: 'Disease/Condition *' }).click()
     await page.getByRole('textbox', { name: 'Disease/Condition *' }).fill('acute bro')
     // Concept search is debounced/async — wait for the suggestion before selecting it
     await page.getByText('Acute bronchitis').first().click()
     await page.getByRole('button', { name: 'Apply Filters' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    await page.getByRole('button', { name: 'Confirm' }).click()
 
     // The dashboard is a Shinylive (Python/WASM) app nested two iframes deep; booting
     // the in-browser runtime is slow, so allow a generous timeout for first render.
