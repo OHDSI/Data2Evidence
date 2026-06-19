@@ -1,6 +1,5 @@
 import { Request, Response, Router } from "express";
 import { param, validationResult } from "express-validator";
-import { validatePerseusFlowRunDto } from "../middlewares/PerseusValidatorMiddlewares.ts";
 import { PerseusService } from "../services/PerseusService.ts";
 import { IPrefectArtifact } from "../types.ts";
 
@@ -43,14 +42,13 @@ export class PerseusController {
     try {
       const token = req.headers.authorization!;
       const flowRunId = req.params.flowRunId;
-      console.log("in get");
       const result: IPrefectArtifact[] =
         await this.perseusService.getFlowRunArtifacts(flowRunId, token);
 
       return result;
     } catch (error) {
       console.error(`Error getting perseus flow run artifacts: ${error}`);
-      res.status(500).send(`Error: ${error}`);
+      res.status(500).send("Error getting perseus flow run artifacts");
     }
   }
 }

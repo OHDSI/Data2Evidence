@@ -39,7 +39,7 @@ export class DataModelFlowController {
           res.status(400).json({ errors: errors.array() });
         }
         await this.createGetVersionInfoFlowRun(req, res);
-      }
+      },
     );
 
     // POST /datamodel/create_datamodel_run
@@ -51,7 +51,7 @@ export class DataModelFlowController {
           res.status(400).json({ errors: errors.array() });
         }
         await this.createDatamodelFlowRun(req, res);
-      }
+      },
     );
 
     // POST /datamodel/create_datamart_run
@@ -63,7 +63,7 @@ export class DataModelFlowController {
           res.status(400).json({ errors: errors.array() });
         }
         await this.createDatamartFlowRun(req, res);
-      }
+      },
     );
   }
 
@@ -73,7 +73,7 @@ export class DataModelFlowController {
       res.send(result);
     } catch (error) {
       console.error(`Error getting datamodels: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error getting datamodels");
     }
   }
 
@@ -85,14 +85,16 @@ export class DataModelFlowController {
       const result =
         await this.DataModelFlowService.createGetVersionInfoFlowRun(
           getVersionInfoFlowRunDto,
-          token
+          token,
         );
       res.send(result);
     } catch (error) {
       console.error(
-        `Error creating data model get version info flow run: ${error}`
+        `Error creating data model get version info flow run: ${error}`,
       );
-      res.status(500).send(`Error occurs: ${error}`);
+      res
+        .status(500)
+        .send("Error occurs creating data model get version info flow run");
     }
   }
 
@@ -103,14 +105,16 @@ export class DataModelFlowController {
       await ensureOptionsCacheId(createDatamodelFlowRunDto, token);
       const result = await this.DataModelFlowService.createDatamodelFlowRun(
         createDatamodelFlowRunDto,
-        token
+        token,
       );
       res.send(result);
     } catch (error) {
       console.error(
-        `Error creating data model get version info flow run: ${error}`
+        `Error creating data model get version info flow run: ${error}`,
       );
-      res.status(500).send(`Error occurs: ${error}`);
+      res
+        .status(500)
+        .send("Error occurs creating data model get version info flow run");
     }
   }
 
@@ -121,12 +125,12 @@ export class DataModelFlowController {
       await ensureOptionsCacheId(createDatamartFlowRunDto, token);
       const result = await this.DataModelFlowService.createDatamartFlowRun(
         createDatamartFlowRunDto,
-        token
+        token,
       );
       res.send(result);
     } catch (error) {
       console.error(`Error creating datamart flow run: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error occurs creating datamart flow run");
     }
   }
 }

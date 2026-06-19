@@ -139,6 +139,7 @@ const DeleteStudyDialog: FC<DeleteStudyDialogProps> = ({ study, open, onClose })
         <Button
           text={getText(i18nKeys.DELETE_STUDY_DIALOG__YES_DELETE)}
           onClick={handleDelete}
+          disabled={inputData !== (study?.studyDetail?.name || "")}
           block
           loading={deleting}
         />

@@ -396,8 +396,8 @@ class D2ECli {
       : Buffer.from(str).toString("base64");
     return base64
       .replace(/=/g, "") // Remove '=' padding
-      .replace(/\+/g, "_") // Replace '+' with '_'
-      .replace(/\//g, "-") // Replace '/' with '-'
+      .replace(/\+/g, "-") // Replace '+' with '-'
+      .replace(/\//g, "_") // Replace '/' with '_'
       .replace(/\n/g, ""); // Remove newlines
   }
 
