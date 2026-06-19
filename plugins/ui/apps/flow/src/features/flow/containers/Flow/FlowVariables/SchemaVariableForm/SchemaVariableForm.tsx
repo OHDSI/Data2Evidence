@@ -2,26 +2,9 @@ import React, { FC, useCallback } from "react";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import MuiIconButton from "@mui/material/IconButton";
-import { SxProps } from "@mui/system";
 import { TextField, TrashIcon } from "@portal/components";
 import { SchemaVariable } from "../../../../types";
 import "./SchemaVariableForm.scss";
-
-const inputStyles: SxProps = {
-  color: "#000080",
-  "&::after, &:hover:not(.Mui-disabled)::before": {
-    borderBottom: "2px solid #000080",
-  },
-  ".MuiInputLabel-root": {
-    color: "#000080",
-    "&.MuiInputLabel-shrink, &.Mui-focused": {
-      color: "var(--color-neutral)",
-    },
-  },
-  ".MuiInput-input:focus": {
-    backgroundColor: "transparent",
-  },
-};
 
 export interface SchemaVariableFormProps {
   schema: SchemaVariable;
@@ -55,7 +38,7 @@ export const SchemaVariableForm: FC<SchemaVariableFormProps> = ({
   return (
     <div className="schema-variable-form-component">
       <div className="u-padding-vertical--small">
-        <FormControl sx={inputStyles} className="schema-variable-form" variant="standard" fullWidth>
+        <FormControl className="schema-variable-form" variant="standard" fullWidth>
           <TextField
             label="Variable name"
             value={schema.name}

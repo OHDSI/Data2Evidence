@@ -5,27 +5,10 @@ import InputLabel from "@mui/material/InputLabel";
 import MuiIconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
-import { SxProps } from "@mui/system";
 import { TextField, TrashIcon } from "@portal/components";
 import { DatabaseVariable } from "../../../../types";
 import { Database } from "../../../../slices";
 import "./DatabaseVariableForm.scss";
-
-const inputStyles: SxProps = {
-  color: "#000080",
-  "&::after, &:hover:not(.Mui-disabled)::before": {
-    borderBottom: "2px solid #000080",
-  },
-  ".MuiInputLabel-root": {
-    color: "#000080",
-    "&.MuiInputLabel-shrink, &.Mui-focused": {
-      color: "var(--color-neutral)",
-    },
-  },
-  ".MuiInput-input:focus": {
-    backgroundColor: "transparent",
-  },
-};
 
 export interface DatabaseVariableFormProps {
   database: DatabaseVariable;
@@ -63,7 +46,7 @@ export const DatabaseVariableForm: FC<DatabaseVariableFormProps> = ({
   return (
     <div className="database-variable-form-component">
       <div className="u-padding-vertical--small">
-        <FormControl sx={inputStyles} className="database-variable-form" variant="standard" fullWidth>
+        <FormControl className="database-variable-form" variant="standard" fullWidth>
           <TextField
             label="Variable name"
             value={database.name}

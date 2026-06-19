@@ -1,3 +1,5 @@
+@use "../_variable-form-input.scss" as *;
+
 .schema-variable-form-component {
   .schema-variable-form {
     width: 95%;
@@ -6,6 +8,7 @@
     flex-direction: row;
     gap: 16px;
     align-items: flex-start;
+    @include variable-form-input;
   }
 
   .u-padding-vertical--small {
