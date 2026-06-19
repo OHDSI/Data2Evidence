@@ -1,5 +1,4 @@
-const fhirTransform = require('@synanetics/fhir-transform');
-const transform = fhirTransform.default;
+const transform = require('@synanetics/fhir-transform');
 
 let structureDefinitions = {}
 
