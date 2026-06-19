@@ -1,12 +1,10 @@
 services:
   trex:
-    # Build/run native to the host (overrides the amd64 pin in docker-compose.yml).
-    platform: ${TREX_PLATFORM:-linux/amd64}
+    # No platform pin: the trexsql base and d2e-trex image are multi-arch
+    # (amd64/arm64), so Docker runs/builds native to the host.
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
-      platforms:
-        - ${TREX_PLATFORM:-linux/amd64}
       # GitHub Packages token for installing @ohdsi/* plugins (the Pythia agent).
       secrets:
         - github_token
