@@ -1,6 +1,16 @@
 import { test, expect } from '../fixtures'
 import type { Page } from '@playwright/test'
-import { MINUTE_1, MINUTE_5, MINUTE_2 } from '../const'
+import { MINUTE_1, MINUTE_2 } from '../const'
+
+// Shinylive runs Python in WebAssembly, which only boots in a secure context.
+// The self-signed local/CI cert isn't treated as secure by default, so mark the
+// app origin secure for THIS spec's browser only (worker-scoped override).
+const appOrigin = new URL(process.env.D2E_BASE_URL ?? 'https://localhost:41100').origin
+test.use({
+  launchOptions: {
+    args: ['--ignore-certificate-errors', `--unsafely-treat-insecure-origin-as-secure=${appOrigin}`],
+  },
+})
 
 const TEST_NAME = 'patient-analytics-wizard-dashboard'
 const SHOULD_SKIP = false
@@ -842,7 +852,7 @@ test(TEST_NAME, async ({ page }) => {
         .locator('iframe')
         .contentFrame()
         .getByRole('heading', { name: 'Cross-sectional dashboard' })
-    ).toBeVisible({ timeout: MINUTE_5 })
+    ).toBeVisible({ timeout: MINUTE_2 })
     await page.getByRole('button', { name: '✕' }).click()
   })
 
