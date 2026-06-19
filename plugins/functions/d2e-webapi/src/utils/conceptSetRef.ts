@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type ConceptSetSource = "legacy" | "webapi";
 
 export interface ConceptSetRef {
@@ -12,12 +14,26 @@ export interface ConceptSetRef {
  */
 export const CONCEPT_SET_LEGACY_OFFSET_BOUNDARY = 1_000_000_000;
 
-// Canonical compound form: "<source>:<non-negative integer in canonical form>".
-// Only accepts "0" or a digit sequence without leading zeros (e.g. "legacy:1",
-// "webapi:42"). Rejects negatives, decimals, and leading-zero numerics like
-// "legacy:007" so that isConceptSetRefString agrees with parseConceptSetRef
-// about what counts as a valid compound ref string.
-const COMPOUND_PATTERN = /^(legacy|webapi):(0|[1-9]\d*)$/;
+/**
+ * Canonical compound form: "<source>:<non-negative integer in canonical form>".
+ * Only accepts "0" or a digit sequence without leading zeros (e.g. "legacy:1",
+ * "webapi:42"). Rejects negatives, decimals, and leading-zero numerics like
+ * "legacy:007" so that isConceptSetRefString agrees with parseConceptSetRef
+ * about what counts as a valid compound ref string.
+ *
+ * This is the SINGLE source of truth for the canonical compound-id regex.
+ * Do NOT duplicate this literal in DTOs or routes — import the constant or
+ * one of the Zod schemas below.
+ */
+export const CONCEPT_SET_COMPOUND_PATTERN = /^(legacy|webapi):(0|[1-9]\d*)$/;
+
+/**
+ * Bare-numeric back-compat form: a sequence of digits (no sign, no decimal).
+ * Used by request-input validators that must continue to resolve historical
+ * bare-id references from existing artifacts (bookmarks, cohort JSON, old
+ * query strings, etc.).
+ */
+export const CONCEPT_SET_BARE_NUMERIC_PATTERN = /^\d+$/;
 
 const toNonNegativeInteger = (value: number, raw: string | number): number => {
   if (!Number.isInteger(value) || value < 0) {
@@ -47,7 +63,7 @@ export const parseConceptSetRef = (input: string | number): ConceptSetRef => {
     );
   }
 
-  const compoundMatch = COMPOUND_PATTERN.exec(input);
+  const compoundMatch = CONCEPT_SET_COMPOUND_PATTERN.exec(input);
   if (compoundMatch) {
     const source = compoundMatch[1] as ConceptSetSource;
     const externalId = Number(compoundMatch[2]);
@@ -69,4 +85,31 @@ export const formatConceptSetRef = (ref: ConceptSetRef): string =>
   `${ref.source}:${ref.externalId}`;
 
 export const isConceptSetRefString = (input: unknown): boolean =>
-  typeof input === "string" && COMPOUND_PATTERN.test(input);
+  typeof input === "string" && CONCEPT_SET_COMPOUND_PATTERN.test(input);
+
+/**
+ * Strict canonical compound form: "legacy:N" or "webapi:N".
+ * Use on RESPONSE shapes (DTOs that the facade emits) and any place that
+ * has been migrated to compound-only.
+ */
+export const ConceptSetCompoundIdSchema = z
+  .string()
+  .regex(CONCEPT_SET_COMPOUND_PATTERN);
+
+/**
+ * Permissive form: accepts the canonical compound id OR a bare numeric
+ * string. Use on REQUEST inputs that must still resolve historical bare-id
+ * references from existing artifacts (bookmarks, cohort JSON, old query
+ * strings, etc.).
+ */
+export const ConceptSetIdParamSchema = z
+  .string()
+  .refine(
+    (v) =>
+      CONCEPT_SET_COMPOUND_PATTERN.test(v) ||
+      CONCEPT_SET_BARE_NUMERIC_PATTERN.test(v),
+    {
+      message:
+        "id must be compound \"legacy:N\" / \"webapi:N\" or a bare numeric (back-compat)",
+    },
+  );

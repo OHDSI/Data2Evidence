@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ConceptSetExpression } from "../types.ts";
+import { ConceptSetCompoundIdSchema } from "../utils/conceptSetRef.ts";
 
 export const ConceptSetDto = z.object({
   id: z.number(),
@@ -125,7 +126,7 @@ export const ConceptSetResponseDto = z.object({
   hasReadAccess: z.boolean().nullable().optional(),
   tags: z.array(ConceptSetTag).nullable().optional(),
   description: z.string().nullable().optional(),
-  id: z.string().regex(/^(legacy|webapi):(0|[1-9]\d*)$/),
+  id: ConceptSetCompoundIdSchema,
   externalId: z.number().int().nonnegative(),
   name: z.string(),
   shared: z.boolean(),

@@ -2,6 +2,8 @@ import { assertEquals, assertThrows } from "@std/assert";
 
 import {
   CONCEPT_SET_LEGACY_OFFSET_BOUNDARY,
+  ConceptSetCompoundIdSchema,
+  ConceptSetIdParamSchema,
   ConceptSetRef,
   formatConceptSetRef,
   isConceptSetRefString,
@@ -201,4 +203,65 @@ Deno.test("parseConceptSetRef returns a fresh object on each call (immutability)
 Deno.test("ConceptSetRef type is exported and usable", () => {
   const ref: ConceptSetRef = { source: "webapi", externalId: 1 };
   assertEquals(ref.source, "webapi");
+});
+
+// --- ConceptSetCompoundIdSchema (strict canonical compound form) ---
+
+Deno.test("ConceptSetCompoundIdSchema accepts legacy:1", () => {
+  assertEquals(ConceptSetCompoundIdSchema.safeParse("legacy:1").success, true);
+});
+
+Deno.test("ConceptSetCompoundIdSchema accepts webapi:7", () => {
+  assertEquals(ConceptSetCompoundIdSchema.safeParse("webapi:7").success, true);
+});
+
+Deno.test("ConceptSetCompoundIdSchema rejects bare numeric 869", () => {
+  assertEquals(ConceptSetCompoundIdSchema.safeParse("869").success, false);
+});
+
+Deno.test("ConceptSetCompoundIdSchema rejects legacy:1.5 (non-integer)", () => {
+  assertEquals(
+    ConceptSetCompoundIdSchema.safeParse("legacy:1.5").success,
+    false,
+  );
+});
+
+Deno.test("ConceptSetCompoundIdSchema rejects empty string", () => {
+  assertEquals(ConceptSetCompoundIdSchema.safeParse("").success, false);
+});
+
+// --- ConceptSetIdParamSchema (permissive: compound OR bare numeric) ---
+
+Deno.test("ConceptSetIdParamSchema accepts legacy:1", () => {
+  assertEquals(ConceptSetIdParamSchema.safeParse("legacy:1").success, true);
+});
+
+Deno.test("ConceptSetIdParamSchema accepts webapi:7", () => {
+  assertEquals(ConceptSetIdParamSchema.safeParse("webapi:7").success, true);
+});
+
+Deno.test("ConceptSetIdParamSchema accepts bare numeric 869 (back-compat)", () => {
+  assertEquals(ConceptSetIdParamSchema.safeParse("869").success, true);
+});
+
+Deno.test("ConceptSetIdParamSchema accepts offset-encoded numeric 1000000007 (back-compat)", () => {
+  assertEquals(
+    ConceptSetIdParamSchema.safeParse("1000000007").success,
+    true,
+  );
+});
+
+Deno.test("ConceptSetIdParamSchema rejects abc", () => {
+  assertEquals(ConceptSetIdParamSchema.safeParse("abc").success, false);
+});
+
+Deno.test("ConceptSetIdParamSchema rejects empty string", () => {
+  assertEquals(ConceptSetIdParamSchema.safeParse("").success, false);
+});
+
+Deno.test("ConceptSetIdParamSchema rejects legacy:abc", () => {
+  assertEquals(
+    ConceptSetIdParamSchema.safeParse("legacy:abc").success,
+    false,
+  );
 });
