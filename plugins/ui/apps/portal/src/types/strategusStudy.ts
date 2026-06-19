@@ -4,6 +4,7 @@ export interface StrategusStudy {
   email?: string;
   name: string;
   id: string;
+  tokenDatasetCode?: string;
   type: StrategusStudyType;
   viewerCode: string;
 }
