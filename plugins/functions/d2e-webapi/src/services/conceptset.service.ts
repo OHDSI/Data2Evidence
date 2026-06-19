@@ -21,23 +21,13 @@ import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   ConceptSetInUseError,
   ConceptSetExpressionError,
-  LegacyConceptSetReadOnlyError,
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
 import { resolveSourceKey } from "./source.service.ts";
-
-export const WEBAPI_CONCEPT_SET_ID_OFFSET = 1_000_000_000;
-export const LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE =
-  "Legacy concept sets are read-only. Create a new WebAPI concept set to make changes.";
-
-export const encodeWebApiConceptSetId = (conceptSetId: number): number =>
-  WEBAPI_CONCEPT_SET_ID_OFFSET + conceptSetId;
-
-const decodeWebApiConceptSetId = (conceptSetId: number): number =>
-  conceptSetId - WEBAPI_CONCEPT_SET_ID_OFFSET;
-
-export const isWebApiConceptSetId = (conceptSetId: number): boolean =>
-  conceptSetId >= WEBAPI_CONCEPT_SET_ID_OFFSET;
+import {
+  formatConceptSetRef,
+  parseConceptSetRef,
+} from "../utils/conceptSetRef.ts";
 
 const mapItemsToTerminologyConcepts = (
   conceptSetItemList: IConceptSetItemListDto,
@@ -50,30 +40,24 @@ const mapItemsToTerminologyConcepts = (
   }));
 };
 
-export const assertConceptSetWritable = (conceptSetId: number): void => {
-  if (!isWebApiConceptSetId(conceptSetId)) {
-    throw new LegacyConceptSetReadOnlyError(
-      LEGACY_CONCEPT_SET_FORBIDDEN_MESSAGE,
-    );
-  }
-};
-
 export const getConceptSet = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
 ): Promise<IConceptSetResponseDto> => {
-  if (isWebApiConceptSetId(conceptSetId)) {
+  const ref = parseConceptSetRef(conceptSetId);
+
+  if (ref.source === "webapi") {
     const webApiConceptSetApi = new WebApiConceptSetAPI(token);
     const webApiConceptSet = await webApiConceptSetApi.getConceptSet(
-      decodeWebApiConceptSetId(conceptSetId),
+      ref.externalId,
     );
     return mapWebApiConceptSetToFacadeConceptSet(webApiConceptSet);
   }
 
   const terminologySvcApi = new TerminologySvcAPI(token);
   const terminologyConceptSet = await terminologySvcApi.getConceptSet(
-    conceptSetId,
+    ref.externalId,
     datasetId,
   );
 
@@ -117,17 +101,19 @@ export const createConceptSet = async (
 export const updateConceptSet = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
   conceptSetDto: IConceptSetCreateDto,
 ): Promise<boolean> => {
-  if (!isWebApiConceptSetId(conceptSetId)) {
+  const ref = parseConceptSetRef(conceptSetId);
+
+  if (ref.source === "legacy") {
     const terminologySvcApi = new TerminologySvcAPI(token);
     const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
       datasetId,
-      conceptSetId,
+      ref.externalId,
     );
 
-    await terminologySvcApi.updateConceptSet(datasetId, conceptSetId, {
+    await terminologySvcApi.updateConceptSet(datasetId, ref.externalId, {
       concepts: terminologyConceptSet.concepts.map((concept) => ({
         id: concept.id,
         useMapped: concept.useMapped,
@@ -143,14 +129,11 @@ export const updateConceptSet = async (
   }
 
   const webApiConceptSetApi = new WebApiConceptSetAPI(token);
-  await webApiConceptSetApi.updateConceptSet(
-    decodeWebApiConceptSetId(conceptSetId),
-    {
-      id: decodeWebApiConceptSetId(conceptSetId),
-      name: conceptSetDto.name,
-      description: conceptSetDto.description,
-    },
-  );
+  await webApiConceptSetApi.updateConceptSet(ref.externalId, {
+    id: ref.externalId,
+    name: conceptSetDto.name,
+    description: conceptSetDto.description,
+  });
 
   return true;
 };
@@ -158,51 +141,58 @@ export const updateConceptSet = async (
 export const deleteConceptSet = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
 ): Promise<void> => {
-  const resolvedConceptSetId = isWebApiConceptSetId(conceptSetId)
-    ? decodeWebApiConceptSetId(conceptSetId)
-    : conceptSetId;
+  const ref = parseConceptSetRef(conceptSetId);
 
   // Check if concept set is in use
   // Note: There is a potential race condition between this check and the deletion.
   // If another user adds a reference to the concept set between this check and the
   // actual deletion, the reference could become broken. This is an acceptable risk
   // for this feature, as the window is small and the impact is limited.
-  const usage = await getConceptSetUsage(
-    token,
-    datasetId,
-    resolvedConceptSetId,
-  );
+  const usage = await getConceptSetUsage(token, datasetId, ref.externalId);
 
   if (usage.inUse) {
     throw new ConceptSetInUseError(usage.cohortDefinitions, usage.bookmarks);
   }
 
   // Proceed with deletion if not in use
-  if (!isWebApiConceptSetId(conceptSetId)) {
+  if (ref.source === "legacy") {
     const terminologySvcApi = new TerminologySvcAPI(token);
-    await terminologySvcApi.deleteConceptSet(datasetId, conceptSetId);
+    await terminologySvcApi.deleteConceptSet(datasetId, ref.externalId);
     return;
   }
 
   const webApiConceptSetApi = new WebApiConceptSetAPI(token);
-  await webApiConceptSetApi.deleteConceptSet(resolvedConceptSetId);
+  await webApiConceptSetApi.deleteConceptSet(ref.externalId);
 };
 
 export const getConceptSetUsage = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
 ): Promise<{
   inUse: boolean;
   cohortDefinitions: Array<{ id: number; name: string }>;
   bookmarks: Array<{ id: string; name: string }>;
 }> => {
-  // Validate concept set ID is a valid positive integer
-  if (!Number.isInteger(conceptSetId) || conceptSetId <= 0) {
+  // Parse the input via the shared parser; accept compound or bare numeric.
+  // The parser guarantees a non-negative integer externalId, which is what
+  // the JSON pattern matchers below need.
+  let externalId: number;
+  try {
+    externalId = parseConceptSetRef(conceptSetId).externalId;
+  } catch (error) {
     throw new ConceptSetValidationError(
-      `Invalid concept set ID: ${conceptSetId}. Must be a positive integer.`,
+      `Invalid concept set ID: ${String(conceptSetId)}. ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+
+  if (externalId <= 0) {
+    throw new ConceptSetValidationError(
+      `Invalid concept set ID: ${String(conceptSetId)}. Must be a positive integer.`,
     );
   }
 
@@ -223,8 +213,8 @@ export const getConceptSetUsage = async (
     }),
   ]);
 
-  // conceptSetId is validated as a positive integer above, safe to use in string matching
-  const conceptSetIdStr = String(conceptSetId);
+  // externalId is guaranteed a non-negative integer; safe for string matching.
+  const conceptSetIdStr = String(externalId);
 
   const usingCohorts = cohortDefinitions.filter((cohort) => {
     const json = JSON.stringify(cohort.expression);
@@ -266,17 +256,19 @@ export const getConceptSetUsage = async (
 export const updateConceptSetItems = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
   conceptSetItemList: IConceptSetItemListDto,
 ): Promise<boolean> => {
-  if (!isWebApiConceptSetId(conceptSetId)) {
+  const ref = parseConceptSetRef(conceptSetId);
+
+  if (ref.source === "legacy") {
     const terminologySvcApi = new TerminologySvcAPI(token);
     const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
       datasetId,
-      conceptSetId,
+      ref.externalId,
     );
 
-    await terminologySvcApi.updateConceptSet(datasetId, conceptSetId, {
+    await terminologySvcApi.updateConceptSet(datasetId, ref.externalId, {
       concepts: mapItemsToTerminologyConcepts(conceptSetItemList),
       name: terminologyConceptSet.name,
       shared: terminologyConceptSet.shared,
@@ -296,10 +288,7 @@ export const updateConceptSetItems = async (
     }),
   );
 
-  await webApiConceptSetApi.updateConceptSetItems(
-    decodeWebApiConceptSetId(conceptSetId),
-    items,
-  );
+  await webApiConceptSetApi.updateConceptSetItems(ref.externalId, items);
 
   return true;
 };
@@ -307,9 +296,11 @@ export const updateConceptSetItems = async (
 export const getConceptSetExpression = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
 ): Promise<IConceptSetItemsResponseDto> => {
-  if (isWebApiConceptSetId(conceptSetId)) {
+  const ref = parseConceptSetRef(conceptSetId);
+
+  if (ref.source === "webapi") {
     const webApiConceptSetApi = new WebApiConceptSetAPI(token);
 
     let sourceKey: string;
@@ -327,12 +318,12 @@ export const getConceptSetExpression = async (
 
     try {
       return await webApiConceptSetApi.getConceptSetExpression(
-        decodeWebApiConceptSetId(conceptSetId),
+        ref.externalId,
         sourceKey,
       );
     } catch (error) {
       console.error(
-        `[ConceptSetExpression] Failed to fetch expression for WebAPI concept set ${conceptSetId} using source key ${sourceKey}`,
+        `[ConceptSetExpression] Failed to fetch expression for WebAPI concept set ${ref.externalId} using source key ${sourceKey}`,
         error,
       );
       throw new ConceptSetExpressionError(
@@ -345,7 +336,7 @@ export const getConceptSetExpression = async (
 
   const terminologyConceptSet = await terminologySvcApi.getConceptSetById(
     datasetId,
-    conceptSetId,
+    ref.externalId,
   );
 
   // Map results to webapi format
@@ -380,27 +371,35 @@ export const getConceptSetExpression = async (
 export const checkIfConceptSetExists = async (
   token: string,
   datasetId: string,
-  conceptSetId: number,
+  conceptSetId: string | number,
   conceptSetName: string,
 ): Promise<number> => {
+  const ref = parseConceptSetRef(conceptSetId);
   const terminologySvcApi = new TerminologySvcAPI(token);
   const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+
+  // Probe WebAPI with the source-scoped externalId so that an in-flight
+  // rename of the same row doesn't false-positive against itself. For
+  // legacy refs there is no WebAPI counterpart to exclude, so use 0 (a
+  // never-existing id) which still surfaces unrelated WebAPI duplicates.
+  const webApiExcludeId = ref.source === "webapi" ? ref.externalId : 0;
+
   const [terminologyConceptSets, webApiExistsCount] = await Promise.all([
     terminologySvcApi.getConceptSets(datasetId),
     webApiConceptSetApi
-      .checkIfConceptSetExists(
-        isWebApiConceptSetId(conceptSetId)
-          ? decodeWebApiConceptSetId(conceptSetId)
-          : 0,
-        conceptSetName,
-      )
+      .checkIfConceptSetExists(webApiExcludeId, conceptSetName)
       .catch(() => 0),
   ]);
 
-  const result = terminologyConceptSets.find(
-    (terminologyConceptSet) =>
-      terminologyConceptSet.id !== conceptSetId &&
-      terminologyConceptSet.name === conceptSetName,
+  // For legacy refs we must exclude the same legacy row by id; for webapi
+  // refs the legacy table is a disjoint namespace, so no row should match
+  // the externalId (matching here would be a separate legacy row that
+  // happens to share the name and is still a duplicate to surface).
+  const result = terminologyConceptSets.find((terminologyConceptSet) =>
+    ref.source === "legacy"
+      ? terminologyConceptSet.id !== ref.externalId &&
+        terminologyConceptSet.name === conceptSetName
+      : terminologyConceptSet.name === conceptSetName,
   );
 
   return (result === undefined ? 0 : 1) + webApiExistsCount;
@@ -421,7 +420,8 @@ export const mapLegacyConceptSetToWebApiConceptSet = (
     tags: [],
     hasWriteAccess: true,
     hasReadAccess: true,
-    id: conceptSet.id,
+    id: formatConceptSetRef({ source: "legacy", externalId: conceptSet.id }),
+    externalId: conceptSet.id,
     name: conceptSet.name,
     shared: conceptSet.shared,
     source: "legacy",
@@ -447,7 +447,8 @@ export const mapWebApiConceptSetToFacadeConceptSet = (
     tags: conceptSet.tags ?? [],
     hasWriteAccess: conceptSet.writeAccess ?? true,
     hasReadAccess: conceptSet.readAccess ?? true,
-    id: encodeWebApiConceptSetId(conceptSet.id),
+    id: formatConceptSetRef({ source: "webapi", externalId: conceptSet.id }),
+    externalId: conceptSet.id,
     name: conceptSet.name,
     shared: false,
     description: conceptSet.description ?? undefined,

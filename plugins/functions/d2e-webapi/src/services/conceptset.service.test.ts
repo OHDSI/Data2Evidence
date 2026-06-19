@@ -1,25 +1,42 @@
 import { assertEquals, assertRejects } from "@std/assert";
 
-import {
-  WEBAPI_CONCEPT_SET_ID_OFFSET,
-  encodeWebApiConceptSetId,
+// Stub the Trex global and SERVICE_ROUTES env BEFORE importing any module
+// that constructs an API class or reads env at load time. Static imports
+// are hoisted, so we use dynamic imports for the modules-under-test.
+// deno-lint-ignore no-explicit-any
+(globalThis as any).Trex = (globalThis as any).Trex ?? {
+  tokioChannel: () => ({
+    get: () => Promise.resolve({ data: undefined }),
+    post: () => Promise.resolve({ data: undefined }),
+    put: () => Promise.resolve({ data: undefined }),
+    delete: () => Promise.resolve({ data: undefined }),
+  }),
+};
+
+if (!Deno.env.get("SERVICE_ROUTES")) {
+  Deno.env.set(
+    "SERVICE_ROUTES",
+    JSON.stringify({
+      terminology: "http://localhost:0",
+      portalServer: "http://localhost:0",
+      bookmark: "http://localhost:0",
+    }),
+  );
+}
+
+const {
+  getConceptSet,
   getConceptSetExpression,
-  isWebApiConceptSetId,
   mapLegacyConceptSetToWebApiConceptSet,
   mapWebApiConceptSetToFacadeConceptSet,
-} from "./conceptset.service.ts";
+} = await import("./conceptset.service.ts");
 
-import { ConceptSetExpressionError } from "../errors/ConceptSetErrors.ts";
-import { WebApiConceptSetAPI } from "../api/WebApiConceptSetAPI.ts";
-import { PortalServerAPI } from "../api/PortalServerAPI.ts";
-
-Deno.test("encodes native WebAPI concept set ids into a dedicated facade namespace", () => {
-  const encodedId = encodeWebApiConceptSetId(42);
-
-  assertEquals(encodedId, WEBAPI_CONCEPT_SET_ID_OFFSET + 42);
-  assertEquals(isWebApiConceptSetId(encodedId), true);
-  assertEquals(isWebApiConceptSetId(42), false);
-});
+const { ConceptSetExpressionError } = await import(
+  "../errors/ConceptSetErrors.ts"
+);
+const { WebApiConceptSetAPI } = await import("../api/WebApiConceptSetAPI.ts");
+const { PortalServerAPI } = await import("../api/PortalServerAPI.ts");
+const { TerminologySvcAPI } = await import("../api/TerminologySvcAPI.ts");
 
 Deno.test("legacy concept sets remain writable in facade responses", () => {
   const conceptSet = mapLegacyConceptSetToWebApiConceptSet({
@@ -34,7 +51,8 @@ Deno.test("legacy concept sets remain writable in facade responses", () => {
     modifiedDate: "2026-05-02T00:00:00.000Z",
   });
 
-  assertEquals(conceptSet.id, 15);
+  assertEquals(conceptSet.id, "legacy:15");
+  assertEquals(conceptSet.externalId, 15);
   assertEquals(conceptSet.hasReadAccess, true);
   assertEquals(conceptSet.hasWriteAccess, true);
   assertEquals(conceptSet.createdBy.name, "legacy-owner");
@@ -42,9 +60,9 @@ Deno.test("legacy concept sets remain writable in facade responses", () => {
   assertEquals(conceptSet.source, "legacy");
 });
 
-Deno.test("native WebAPI concept sets are exposed with encoded facade ids", () => {
+Deno.test("native WebAPI concept sets are exposed with compound facade ids", () => {
   const conceptSet = mapWebApiConceptSetToFacadeConceptSet({
-    id: 7,
+    id: 42,
     name: "Native set",
     description: "Stored in OHDSI WebAPI",
     createdBy: {
@@ -64,18 +82,151 @@ Deno.test("native WebAPI concept sets are exposed with encoded facade ids", () =
     tags: [],
   });
 
-  assertEquals(conceptSet.id, WEBAPI_CONCEPT_SET_ID_OFFSET + 7);
+  assertEquals(conceptSet.id, "webapi:42");
+  assertEquals(conceptSet.externalId, 42);
+  assertEquals(conceptSet.source, "webapi");
   assertEquals(conceptSet.hasWriteAccess, true);
   assertEquals(conceptSet.createdBy.name, "WebAPI User");
   assertEquals(conceptSet.createdBy.login, "webapi-user");
   assertEquals(conceptSet.description, "Stored in OHDSI WebAPI");
   assertEquals(conceptSet.shared, false);
-  assertEquals(conceptSet.source, "webapi");
+});
+
+Deno.test("getConceptSet routes compound legacy id to terminology-svc", async () => {
+  const originalGetConceptSet = TerminologySvcAPI.prototype.getConceptSet;
+  let seenId: number | undefined;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSet = (
+      id: number,
+      _datasetId: string,
+    ) => {
+      seenId = id;
+      return Promise.resolve({
+        id,
+        name: "Legacy via compound",
+        shared: false,
+        concepts: [],
+        userName: "owner",
+        createdBy: "owner",
+        modifiedBy: "owner",
+        createdDate: "2026-05-01T00:00:00.000Z",
+        modifiedDate: "2026-05-02T00:00:00.000Z",
+      } as any);
+    };
+
+    const result = await getConceptSet("token", "dataset-1", "legacy:869");
+
+    assertEquals(seenId, 869);
+    assertEquals(result.id, "legacy:869");
+    assertEquals(result.externalId, 869);
+    assertEquals(result.source, "legacy");
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSet = originalGetConceptSet;
+  }
+});
+
+Deno.test("getConceptSet routes compound webapi id to WebAPI", async () => {
+  const originalGetConceptSet = WebApiConceptSetAPI.prototype.getConceptSet;
+  let seenId: number | undefined;
+
+  try {
+    WebApiConceptSetAPI.prototype.getConceptSet = (id: number) => {
+      seenId = id;
+      return Promise.resolve({
+        id,
+        name: "WebAPI via compound",
+        description: null,
+        createdBy: { id: 1, login: "u", name: "U" },
+        modifiedBy: { id: 1, login: "u", name: "U" },
+        createdDate: 1,
+        modifiedDate: 2,
+        readAccess: true,
+        writeAccess: true,
+        tags: [],
+      } as any);
+    };
+
+    const result = await getConceptSet("token", "dataset-1", "webapi:7");
+
+    assertEquals(seenId, 7);
+    assertEquals(result.id, "webapi:7");
+    assertEquals(result.externalId, 7);
+    assertEquals(result.source, "webapi");
+  } finally {
+    WebApiConceptSetAPI.prototype.getConceptSet = originalGetConceptSet;
+  }
+});
+
+Deno.test("getConceptSet back-compat: bare numeric id routes to terminology-svc", async () => {
+  const originalGetConceptSet = TerminologySvcAPI.prototype.getConceptSet;
+  let seenId: number | undefined;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSet = (
+      id: number,
+      _datasetId: string,
+    ) => {
+      seenId = id;
+      return Promise.resolve({
+        id,
+        name: "Legacy bare",
+        shared: false,
+        concepts: [],
+        userName: "owner",
+        createdBy: "owner",
+        modifiedBy: "owner",
+        createdDate: "2026-05-01T00:00:00.000Z",
+        modifiedDate: "2026-05-02T00:00:00.000Z",
+      } as any);
+    };
+
+    const result = await getConceptSet("token", "dataset-1", 869);
+
+    assertEquals(seenId, 869);
+    assertEquals(result.id, "legacy:869");
+    assertEquals(result.source, "legacy");
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSet = originalGetConceptSet;
+  }
+});
+
+Deno.test("getConceptSet back-compat: offset-encoded numeric id routes to WebAPI", async () => {
+  const originalGetConceptSet = WebApiConceptSetAPI.prototype.getConceptSet;
+  let seenId: number | undefined;
+
+  try {
+    WebApiConceptSetAPI.prototype.getConceptSet = (id: number) => {
+      seenId = id;
+      return Promise.resolve({
+        id,
+        name: "WebAPI offset",
+        description: null,
+        createdBy: { id: 1, login: "u", name: "U" },
+        modifiedBy: { id: 1, login: "u", name: "U" },
+        createdDate: 1,
+        modifiedDate: 2,
+        readAccess: true,
+        writeAccess: true,
+        tags: [],
+      } as any);
+    };
+
+    const result = await getConceptSet("token", "dataset-1", 1_000_000_007);
+
+    assertEquals(seenId, 7);
+    assertEquals(result.id, "webapi:7");
+    assertEquals(result.externalId, 7);
+    assertEquals(result.source, "webapi");
+  } finally {
+    WebApiConceptSetAPI.prototype.getConceptSet = originalGetConceptSet;
+  }
 });
 
 Deno.test("WebAPI concept set expression resolves sourceStudyId before fetching", async () => {
   const originalGetStudy = PortalServerAPI.prototype.getStudy;
-  const originalGetConceptSetExpression = WebApiConceptSetAPI.prototype.getConceptSetExpression;
+  const originalGetConceptSetExpression =
+    WebApiConceptSetAPI.prototype.getConceptSetExpression;
   let seenSourceKey: string | undefined;
 
   try {
@@ -117,20 +268,22 @@ Deno.test("WebAPI concept set expression resolves sourceStudyId before fetching"
     const result = await getConceptSetExpression(
       "token",
       "cached-dataset-id",
-      WEBAPI_CONCEPT_SET_ID_OFFSET + 1,
+      "webapi:1",
     );
 
     assertEquals(seenSourceKey, "source-dataset-id");
     assertEquals(result.items.length, 1);
   } finally {
     PortalServerAPI.prototype.getStudy = originalGetStudy;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = originalGetConceptSetExpression;
+    WebApiConceptSetAPI.prototype.getConceptSetExpression =
+      originalGetConceptSetExpression;
   }
 });
 
 Deno.test("WebAPI concept set expression falls back to datasetId for source datasets", async () => {
   const originalGetStudy = PortalServerAPI.prototype.getStudy;
-  const originalGetConceptSetExpression = WebApiConceptSetAPI.prototype.getConceptSetExpression;
+  const originalGetConceptSetExpression =
+    WebApiConceptSetAPI.prototype.getConceptSetExpression;
   let seenSourceKey: string | undefined;
 
   try {
@@ -150,14 +303,15 @@ Deno.test("WebAPI concept set expression falls back to datasetId for source data
     const result = await getConceptSetExpression(
       "token",
       "source-dataset-id",
-      WEBAPI_CONCEPT_SET_ID_OFFSET + 1,
+      "webapi:1",
     );
 
     assertEquals(seenSourceKey, "source-dataset-id");
     assertEquals(result.items.length, 0);
   } finally {
     PortalServerAPI.prototype.getStudy = originalGetStudy;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = originalGetConceptSetExpression;
+    WebApiConceptSetAPI.prototype.getConceptSetExpression =
+      originalGetConceptSetExpression;
   }
 });
 
@@ -173,7 +327,7 @@ Deno.test("WebAPI concept set expression throws ConceptSetExpressionError when s
         getConceptSetExpression(
           "token",
           "cached-dataset-id",
-          WEBAPI_CONCEPT_SET_ID_OFFSET + 1,
+          "webapi:1",
         ),
       ConceptSetExpressionError,
       "Failed to resolve source configuration for dataset cached-dataset-id",
