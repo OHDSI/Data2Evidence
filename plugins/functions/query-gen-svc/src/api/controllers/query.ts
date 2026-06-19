@@ -314,6 +314,12 @@ function enrichConfigWithBasicDataInteraction(
         oneToN: false,
         condition: false,
     });
-    config.advancedSettings.tableMapping["@PATIENT.INTERACTION_ID"] =
-        '"person_id"';
+
+    const patientId =
+        config.advancedSettings.tableMapping["@PATIENT.PATIENT_ID"];
+    // use PATIENT_ID as cased per CDM/dialect
+    if (patientId) {
+        config.advancedSettings.tableMapping["@PATIENT.INTERACTION_ID"] =
+            patientId;
+    }
 }

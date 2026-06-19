@@ -5,6 +5,7 @@ import {
     IMRIRequest,
     CohortType,
     CohortDefinitionTableType,
+    StudyDbMetadata,
 } from "../../types";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import { Logger, getUser, User } from "@alp/alp-base-utils";
@@ -24,19 +25,53 @@ const mriConfigConnection = new MriConfigConnection(
     env.SERVICE_ROUTES?.paConfig
 );
 
+/*
+Returns cache results schema name and source results schema name
+*/
+const _getResultsSchemaNames = async (
+    studyDbMetadata: StudyDbMetadata
+): Promise<[string, string]> => {
+    if (studyDbMetadata.type === "webapi") {
+        return [studyDbMetadata.resultsSchemaName, ""];
+    } else {
+        const sourceDatasetResultsSchema =
+            await _getSourceDatasetResultsSchemaName(
+                studyDbMetadata.sourceStudyId
+            );
+        return [studyDbMetadata.resultsSchemaName, sourceDatasetResultsSchema];
+    }
+};
+
+const _getSourceDatasetResultsSchemaName = async (
+    sourceDatasetId: string | null
+): Promise<string> => {
+    if (!sourceDatasetId) {
+        return "";
+    }
+    const portalServerAPI = new PortalServerAPI();
+    const sourceDataset = await portalServerAPI.getStudy(sourceDatasetId);
+
+    return sourceDataset.resultsSchemaName;
+};
+
 export function getCohortAnalyticsConnection(req: IMRIRequest) {
-    const { analyticsConnection, sourceConnection } = req.dbConnections;
-    return sourceConnection ?? analyticsConnection;
+    const { analyticsConnection } = req.dbConnections;
+    return analyticsConnection;
 }
 
 export async function getAllCohorts(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = getCohortAnalyticsConnection(req);
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         const offset = req.query.offset;
@@ -69,11 +104,16 @@ export async function getFilteredCohorts(req: IMRIRequest, res: Response) {
         const offset = req.query.offset;
         const limit = req.query.limit;
         const excludePatientIds = req.query.excludePatientIds === "true";
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         let result = await cohortEndpoint.queryCohorts(
@@ -191,7 +231,9 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         }
 
         //Currently streaming is only supported for Hana
-        const stream = req.dbCredentials.studyAnalyticsCredential.dialect.toLowerCase() === "hana" && env.ANALYTICS_HANA_STREAMING_ENABLED === "true";
+        const stream =
+            req.dbCredentials.studyAnalyticsCredential.dialect.toLowerCase() ===
+                "hana" && env.ANALYTICS_HANA_STREAMING_ENABLED === "true";
 
         const querySvcParams = {
             queryParams: {
@@ -216,11 +258,16 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         );
 
         const cohort = await getCohortFromMriQuery(req, bookmark.bookmark_name);
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         // Check if materialized cohort exists for current bookmark
@@ -240,7 +287,10 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             // If there exists an existing materialized cohort
             // Update existing cohort definition and remove all existing records from cohort table before saving cohort to db
             cohortDefinitionId = existingMaterializedCohort.id;
-            await cohortEndpoint.updateCohortDefinitionToDb({...cohort, id: cohortDefinitionId});
+            await cohortEndpoint.updateCohortDefinitionToDb({
+                ...cohort,
+                id: cohortDefinitionId,
+            });
 
             // Remove existing records from cohort table before saving cohort to db
             await cohortEndpoint.deleteCohortFromDb(cohortDefinitionId);
@@ -256,22 +306,23 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         }
 
         if (stream) {
-                await cohortEndpoint.streamCohortToDb(
-                    cohortDefinitionId,
-                    cohort,
-                    queryResponse.queryObject,
-                    { datasetId: req.selectedstudyDbMetadata.id,
-                      token: req.headers.authorization,
-                      dbCredential: req.dbCredentials.studyAnalyticsCredential
-                    }
-                );
-            } else {
-                await cohortEndpoint.saveCohortToDb(
-                    cohortDefinitionId,
-                    cohort,
-                    queryResponse.queryObject
-                );
-            }
+            await cohortEndpoint.streamCohortToDb(
+                cohortDefinitionId,
+                cohort,
+                queryResponse.queryObject,
+                {
+                    datasetId: req.selectedstudyDbMetadata.id,
+                    token: req.headers.authorization,
+                    dbCredential: req.dbCredentials.studyAnalyticsCredential,
+                }
+            );
+        } else {
+            await cohortEndpoint.saveCohortToDb(
+                cohortDefinitionId,
+                cohort,
+                queryResponse.queryObject
+            );
+        }
 
         res.status(200).send(`Cohort successfully materialized`);
     } catch (err) {
@@ -329,11 +380,16 @@ export async function getCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = getCohortAnalyticsConnection(req);
 
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         const result = await cohortEndpoint.getCohortDefinition(
@@ -351,11 +407,16 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
     try {
         const analyticsConnection = getCohortAnalyticsConnection(req);
 
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         const cohortDefiniton = <CohortDefinitionTableType>{
@@ -370,9 +431,8 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
         await cohortEndpoint.saveCohortDefinitionToDb(cohortDefiniton);
 
         // Get inserted cohort definition id from cohort definition
-        const cohortDefinitionId = await cohortEndpoint.queryCohortDefinitionId(
-            cohortDefiniton
-        );
+        const cohortDefinitionId =
+            await cohortEndpoint.queryCohortDefinitionId(cohortDefiniton);
         res.status(200).send({
             data: cohortDefinitionId,
         });
@@ -393,11 +453,16 @@ export async function updateCohortDefinition(req: IMRIRequest, res: Response) {
 
         const analyticsConnection = getCohortAnalyticsConnection(req);
 
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         // Get existing cohort definition via cohort definition id
@@ -439,11 +504,16 @@ export async function deleteCohort(req: IMRIRequest, res: Response) {
         const cohortId = req.query.cohortId;
         const analyticsConnection = getCohortAnalyticsConnection(req);
 
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         let cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         // Delete cohort definition from database
@@ -475,29 +545,37 @@ export async function materializeCohort(req: IMRIRequest, res: Response) {
         const insertCohortQueryInBatches = `INSERT INTO cdmsynpuf.COHORT 
                                                             (COHORT_DEFINITION_ID, SUBJECT_ID, COHORT_START_DATE, COHORT_END_DATE) VALUES 
                                                             (6, ?, ?, ?)`;
-        const bulkInsert = promisify(analyticsConnection.executeBulkInsert.bind(analyticsConnection));
-        let start = 0, end = batchData.length >= 5000 ? 5000 : batchData.length;
+        const bulkInsert = promisify(
+            analyticsConnection.executeBulkInsert.bind(analyticsConnection)
+        );
+        let start = 0,
+            end = batchData.length >= 5000 ? 5000 : batchData.length;
         let inserts = [];
         while (start < batchData.length) {
-            inserts.push(bulkInsert(
-                insertCohortQueryInBatches,
-                batchData.slice(start, end)
-            ));
+            inserts.push(
+                bulkInsert(
+                    insertCohortQueryInBatches,
+                    batchData.slice(start, end)
+                )
+            );
             // inserts.push([start, end]);
             start = end;
-            end = batchData.length >= (end + 5000) ? (end + 5000) : batchData.length;
+            end =
+                batchData.length >= end + 5000 ? end + 5000 : batchData.length;
         }
 
         if (start === end) {
-            inserts.push(bulkInsert(
-                insertCohortQueryInBatches,
-                batchData.slice(start, end)
-            ));
+            inserts.push(
+                bulkInsert(
+                    insertCohortQueryInBatches,
+                    batchData.slice(start, end)
+                )
+            );
         }
 
         console.log(`Total batches to insert: ${inserts.length}`);
 
-        await Promise.allSettled(inserts)
+        await Promise.allSettled(inserts);
 
         analyticsConnection.close();
         res.status(200).send({ message: "Cohort materialized successfully" });
@@ -507,7 +585,6 @@ export async function materializeCohort(req: IMRIRequest, res: Response) {
     }
 }
 
-        
 export async function checkIfSchemaCanMaterializeCohort(
     req: IMRIRequest,
     res: Response
@@ -515,11 +592,16 @@ export async function checkIfSchemaCanMaterializeCohort(
     try {
         const analyticsConnection = await getCohortAnalyticsConnection(req);
 
+        const [cacheResultsSchemaName, sourceResultsSchemaName] =
+            await _getResultsSchemaNames(req.selectedstudyDbMetadata);
         const cohortEndpoint = await CohortEndpoint.createCohortEndpoint(
             analyticsConnection,
-            req.dbCredentials.studyAnalyticsCredential.resultsSchemaName,
+            cacheResultsSchemaName,
             req.dbCredentials.studyAnalyticsCredential.dialect,
-            req.dbCredentials.studyAnalyticsCredential.authentication_mode
+            req.dbCredentials.studyAnalyticsCredential.authentication_mode,
+            req.dbCredentials.studyAnalyticsCredential.code,
+            req.selectedstudyDbMetadata.type,
+            sourceResultsSchemaName
         );
 
         const result = await cohortEndpoint.checkIfSchemaCanMaterializeCohort();

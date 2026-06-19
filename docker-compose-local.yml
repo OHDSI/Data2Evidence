@@ -1,8 +1,15 @@
 services:
   trex:
+    # No platform pin: the trexsql base and d2e-trex image are multi-arch
+    # (amd64/arm64), so Docker runs/builds native to the host.
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
+      # GitHub Packages token for installing @ohdsi/* plugins (the Pythia agent).
+      secrets:
+        - github_token
+      args:
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a}
     networks:
       alp:
         aliases:
@@ -12,6 +19,7 @@ services:
       - 25432:5432
       - 25433:5433
       - 33000:33000
+      - 8094:8094
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
@@ -21,7 +29,7 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      # - ./services/trex/core:/usr/src/core
+      - ./services/trex/core:/usr/src/core  # live trex core for local dev
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -64,7 +72,7 @@ services:
         {
           "analytics-svc": false,
           "mri-pg-config": false,
-          "alp-fhir-gateway": false,
+          "fhir-gateway": false,
           "alp-dataflow-gen-init": false,
           "query-gen-svc": false,
           "alp-usermgmt": false,
@@ -125,7 +133,7 @@ services:
   alp-minerva-postgres:
     ports:
       - 41190:5432
-      - 5432:5432
+      # - 5432:5432  # 41190 already exposes it; avoids clashing with other local stacks
 
   demodb:
     ports:
@@ -142,18 +150,6 @@ services:
       dockerfile: Dockerfile
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
-
-  # alp-fhir-server-post-init:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/alp-fhir/Dockerfile.client
-  #   volumes:
-  #     - ./services/alp-fhir/dist:/home/docker/src/alp-data-node/app/dist
-  #     - ./services/alp-fhir/src:/home/docker/src/alp-data-node/app/src
-  #   environment:
-  #     LOCAL_DEBUG: "true"
-  #   ports:
-  #     - 9226:9226
 
 
   enterprise-gateway:
@@ -217,3 +213,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+# Build-time GitHub Packages token for installing @ohdsi/* plugins.
+secrets:
+  github_token:
+    environment: GITHUB_TOKEN

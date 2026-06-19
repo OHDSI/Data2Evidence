@@ -48,7 +48,7 @@ export const ResearcherFeatures = ["Notebooks", "Results", "Concepts", "Cohorts"
 
 export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
   source: ["info", "metadata", "version", "delete", "transform-to-webapi"],
-  fhir: ["info", "metadata", "version", "delete", "transform-to-webapi"],
+  fhir: ["info", "metadata", "delete"],
   non_omop: ["metadata", "permissions", "resources", "delete", "create-cache"],
   omop: [
     "metadata",
@@ -69,6 +69,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "delete",
     "data-quality",
     "data-characterization",
+    "setup-semantic-search",
     "manage-dashboard",
   ],
   hana__non_omop: ["metadata", "permissions", "resources", "delete", "manage-dashboard"],
