@@ -810,8 +810,6 @@ test(TEST_NAME, async ({ page }) => {
     )
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Code saved successfully')).toBeVisible()
-    await page.getByText('+ New').click();
-    await page.getByRole('option', { name: 'cross-sectional-demographics' }).click();
     await page.getByRole('button', { name: 'Build Shiny assets' }).click()
     await expect(page.getByText('Shiny assets build triggered successfully.')).toBeVisible()
     await page.getByTestId('dialog-close').click()
