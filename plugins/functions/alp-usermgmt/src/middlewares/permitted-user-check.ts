@@ -5,7 +5,7 @@ import { createLogger } from '../Logger'
 import { IAppRequest } from '../types'
 import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
-import { ROLES } from '../const'
+import { ROLES, SERVICE_USER_ID } from '../const'
 
 interface RoleCheckOptions {
   userIdPath?: string
@@ -31,6 +31,20 @@ export const permittedUserCheck =
     try {
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
+
+      // Service / M2M tokens (e.g. WebAPI internal calls) are tagged with the
+      // SERVICE_USER_ID sentinel by add-user-object-to-req; they are already
+      // authenticated services, so pass through. Any other falsy userId means
+      // an end-user with no resolved usermgmt.user row — deny rather than
+      // bypass, to avoid privilege escalation for unprovisioned users.
+      if (ctxUserId === SERVICE_USER_ID) {
+        return next()
+      }
+      if (!ctxUserId) {
+        logger.error('No resolved user for request; denying')
+        return res.status(403).send()
+      }
+
       const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)
       const url = `${req.baseUrl}${req.url}`
 
@@ -46,7 +60,15 @@ export const permittedUserCheck =
       if (userId) {
         if (opts.isIdpUserId) {
           const userService = Container.get(UserService)
-          const user = await userService.getUserByIdpUserId(userId)
+          let user = await userService.getUserByIdpUserId(userId)
+          // During first login, a concurrent request may be provisioning
+          // this user. Retry briefly before failing.
+          if (!user) {
+            for (let i = 0; i < 3 && !user; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              user = await userService.getUserByIdpUserId(userId)
+            }
+          }
           if (!user) {
             logger.error(`IDP user ID ${userId} not found`)
             throw `IDP user ID ${userId} not found`
