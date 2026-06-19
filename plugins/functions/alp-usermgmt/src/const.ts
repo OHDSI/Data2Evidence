@@ -51,6 +51,11 @@ export const DEMO_USER: ITokenUser = {
   userId: 'e30e6fa8-5064-4adc-af88-e9e00ad78198'
 }
 
+// Sentinel userId for machine-to-machine / service tokens (sub === client_id).
+// Authorization middleware bypasses checks only for this explicit value, so an
+// unprovisioned end-user (whose userId is the empty string) cannot slip through.
+export const SERVICE_USER_ID = '__service__'
+
 export const INVITE_EXPIRY_SECONDS = 604800
 
 export const CONTAINER_KEY = {
