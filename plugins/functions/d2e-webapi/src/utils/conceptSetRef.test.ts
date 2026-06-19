@@ -147,6 +147,49 @@ Deno.test("isConceptSetRefString rejects non-string values", () => {
   assertEquals(isConceptSetRefString(869), false);
 });
 
+Deno.test("isConceptSetRefString rejects non-integer compound form", () => {
+  assertEquals(isConceptSetRefString("legacy:1.5"), false);
+});
+
+Deno.test("isConceptSetRefString rejects negative compound form", () => {
+  assertEquals(isConceptSetRefString("legacy:-1"), false);
+});
+
+Deno.test("isConceptSetRefString rejects compound form with leading zeros (non-canonical)", () => {
+  assertEquals(isConceptSetRefString("legacy:007"), false);
+});
+
+Deno.test("parseConceptSetRef throws on whitespace-padded input", () => {
+  assertThrows(
+    () => parseConceptSetRef("  legacy:1  "),
+    Error,
+  );
+});
+
+Deno.test("parseConceptSetRef throws on NaN", () => {
+  assertThrows(
+    () => parseConceptSetRef(NaN),
+    Error,
+  );
+});
+
+Deno.test("parseConceptSetRef throws on Infinity", () => {
+  assertThrows(
+    () => parseConceptSetRef(Infinity),
+    Error,
+  );
+});
+
+// Decision: bare numeric strings with leading zeros are accepted (back-compat
+// tolerance). The compound form is canonical and strict; the bare-numeric path
+// is the back-compat lenient path. Pins current behaviour of parseConceptSetRef("007").
+Deno.test("parseConceptSetRef accepts bare numeric string with leading zeros (back-compat)", () => {
+  assertEquals(parseConceptSetRef("007"), {
+    source: "legacy",
+    externalId: 7,
+  });
+});
+
 Deno.test("parseConceptSetRef returns a fresh object on each call (immutability)", () => {
   const a = parseConceptSetRef("legacy:1");
   const b = parseConceptSetRef("legacy:1");

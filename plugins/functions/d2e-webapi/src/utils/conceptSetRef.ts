@@ -12,7 +12,12 @@ export interface ConceptSetRef {
  */
 export const CONCEPT_SET_LEGACY_OFFSET_BOUNDARY = 1_000_000_000;
 
-const COMPOUND_PATTERN = /^(legacy|webapi):(-?\d+(?:\.\d+)?)$/;
+// Canonical compound form: "<source>:<non-negative integer in canonical form>".
+// Only accepts "0" or a digit sequence without leading zeros (e.g. "legacy:1",
+// "webapi:42"). Rejects negatives, decimals, and leading-zero numerics like
+// "legacy:007" so that isConceptSetRefString agrees with parseConceptSetRef
+// about what counts as a valid compound ref string.
+const COMPOUND_PATTERN = /^(legacy|webapi):(0|[1-9]\d*)$/;
 
 const toNonNegativeInteger = (value: number, raw: string | number): number => {
   if (!Number.isInteger(value) || value < 0) {
@@ -49,6 +54,8 @@ export const parseConceptSetRef = (input: string | number): ConceptSetRef => {
     return { source, externalId: toNonNegativeInteger(externalId, input) };
   }
 
+  // Bare numeric strings accept leading zeros (e.g. "007" -> 7) as a
+  // back-compat tolerance. The compound form is the canonical, strict path.
   if (/^-?\d+$/.test(input)) {
     return parseBareNumeric(Number(input), input);
   }
