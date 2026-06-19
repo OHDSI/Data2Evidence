@@ -9,9 +9,6 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
-import { pipeline } from "node:stream/promises";
-import { Transform } from "node:stream";
-import { promisify } from "node:util";
 import axios from "npm:axios";
 import https from "node:https";
 import fs from "node:fs";
@@ -23,14 +20,20 @@ export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
         public schemaName: string,
-        public dialect: string
+        public dialect: string,
+        public databaseCode: string,
+        public datasetType: string,
+        private sourceResultsSchemaName?: string
     ) {}
 
     public static async createCohortEndpoint(
         connection: ConnectionInterface,
         schemaName: string,
         dialect: string,
-        authMode: string
+        authMode: string,
+        databaseCode: string,
+        datasetType: string,
+        sourceResultsSchemaName: string = ""
     ): Promise<CohortEndpoint> {
         let cohortResultsSchemaName;
         if (dialect === ANALYTICS_DB_DIALECTS.HANA && authMode === "JWT") {
@@ -38,9 +41,8 @@ export class CohortEndpoint {
                 QueryObject.format(`SELECT TABLE_NAME FROM TABLES WHERE 
                                                     SCHEMA_NAME='${connection.cohortSchemaName}' AND 
                                                     TABLE_NAME IN ('COHORT','COHORT_DEFINITION');`);
-            const tables = await checkCohortTablesExist.executeQuery(
-                connection
-            );
+            const tables =
+                await checkCohortTablesExist.executeQuery(connection);
 
             if (
                 !tables.data.some((table) => table["TABLE_NAME"] === "COHORT")
@@ -78,7 +80,14 @@ export class CohortEndpoint {
             cohortResultsSchemaName = schemaName;
         }
 
-        return new CohortEndpoint(connection, cohortResultsSchemaName, dialect);
+        return new CohortEndpoint(
+            connection,
+            cohortResultsSchemaName,
+            dialect,
+            databaseCode,
+            datasetType,
+            sourceResultsSchemaName
+        );
     }
 
     private createCohortQuery(
@@ -144,20 +153,38 @@ export class CohortEndpoint {
             this.connection.constructor.name === "TrexConnection" &&
             this.dialect !== ANALYTICS_DB_DIALECTS.BIGQUERY // If bigquery, execute cohort queries on cache instead of sourcedb
         ) {
+            // Special case for webapi, only needs to execute on source database and treats source database as default instead of cache
+            if (this.datasetType === "webapi") {
+                query.queryString = query.queryString.replaceAll(
+                    this.schemaName,
+                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                );
+                query.queryString = query.queryString.replaceAll(
+                    "$$RESULT_SCHEMA$$",
+                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                );
+
+                // Return early
+                return await query.executeQueryOnWriteConnection(
+                    this.connection
+                );
+            }
+
             if (isWriteAction) {
                 // Additionally execute query on sourcedb
                 // Clone and manipulate query to execute on srcdb so that original query is unaffected
                 const queryClone = Object.create(Object.getPrototypeOf(query));
                 Object.assign(queryClone, structuredClone(query));
-                // Normalize the catalog to the postgres `__srcdb` ATTACH alias. writeConn.__database
-                // may be `<db>`, `<db>_trexpg`, or already `<db>__srcdb` depending on how Trex
-                // created the connection — appending `__srcdb` blindly produces `<db>__srcdb__srcdb`.
-                let writeDb: string = this.connection.writeConn?.__database || "";
-                if (writeDb.endsWith("_trexpg")) writeDb = writeDb.slice(0, -"_trexpg".length);
-                const srcCatalog = writeDb.endsWith("__srcdb") ? writeDb : `${writeDb}__srcdb`;
+
+                if (!this.sourceResultsSchemaName) {
+                    throw new Error(
+                        "sourceResultsSchemaName is required for write operations on the source database"
+                    );
+                }
+
                 queryClone.queryString = queryClone.queryString.replaceAll(
                     this.schemaName,
-                    `${srcCatalog}.${this.schemaName}`
+                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}`
                 );
                 await queryClone.executeQueryOnWriteConnection(this.connection);
             }
@@ -244,9 +271,8 @@ export class CohortEndpoint {
                 ...queryParameters
             );
 
-            const selectQueryResult = await this.executeCohortQuery(
-                selectQuery
-            );
+            const selectQueryResult =
+                await this.executeCohortQuery(selectQuery);
 
             const processingCohort = async (
                 cohortDefObj,
@@ -324,9 +350,8 @@ export class CohortEndpoint {
                 ...queryParameters
             );
 
-            const selectQueryResult = await this.executeCohortQuery(
-                selectQuery
-            );
+            const selectQueryResult =
+                await this.executeCohortQuery(selectQuery);
             if (selectQueryResult.data[0]) {
                 return selectQueryResult.data[0].COUNT;
             } else {
@@ -504,9 +529,9 @@ export class CohortEndpoint {
         cohortDefinitionId: number,
         cohort: CohortType,
         queryObject: QueryObjectType,
-        metadata: {datasetId: string, token: string, dbCredential: any},
+        metadata: { datasetId: string; token: string; dbCredential: any }
     ) {
-         try {
+        try {
             const partialInsertQuery = QueryObject.formatDict(
                 queryObject.queryString,
                 { cohortDefinitionId }
@@ -520,31 +545,37 @@ export class CohortEndpoint {
                     ...partialInsertQuery.parameterPlaceholders,
                 ]
             );
-            
+
             const preparedQuery = insertQuery._prepareQuery();
-            const translatedSql = this.connection.getTranslatedSql(preparedQuery.sql)
+            const translatedSql = this.connection.getTranslatedSql(
+                preparedQuery.sql
+            );
 
             const result = await axios.post(
-                            `${env.SERVICE_ROUTES.materializeCohorts}/api/stream/run-all`,
-                            {   datasetId: metadata.datasetId, 
-                                query: translatedSql,
-                                sqlQueryParameters: preparedQuery.placeholders,
-                                cohortDefinitionId,
-                                resultsSchema: this.schemaName,
-                                databaseCode: metadata.dbCredential.code,
-                                dbCredential: metadata.dbCredential
-                            }, 
-                            { headers: { 
-                                "Content-Type": "application/json",
-                                Authorization: metadata.token }, 
-                              httpsAgent: new https.Agent({ 
-                                    keepAlive: true,
-                                    cert: fs.readFileSync('/usr/src/cert/client.crt'),
-                                    key: fs.readFileSync('/usr/src/cert/client.key'),
-                                    ca: fs.readFileSync('/usr/src/cert/ca.crt'),
-                                    rejectUnauthorized: true
-                                }),
-                            })
+                `${env.SERVICE_ROUTES.materializeCohorts}/api/stream/run-all`,
+                {
+                    datasetId: metadata.datasetId,
+                    query: translatedSql,
+                    sqlQueryParameters: preparedQuery.placeholders,
+                    cohortDefinitionId,
+                    resultsSchema: this.schemaName,
+                    databaseCode: metadata.dbCredential.code,
+                    dbCredential: metadata.dbCredential,
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": metadata.token,
+                    },
+                    httpsAgent: new https.Agent({
+                        keepAlive: true,
+                        cert: fs.readFileSync("/usr/src/cert/client.crt"),
+                        key: fs.readFileSync("/usr/src/cert/client.key"),
+                        ca: fs.readFileSync("/usr/src/cert/ca.crt"),
+                        rejectUnauthorized: true,
+                    }),
+                }
+            );
 
             return result.data.processedRows;
         } catch (err) {
@@ -597,9 +628,8 @@ export class CohortEndpoint {
                 cohortDefinitionId
             );
 
-            const selectQueryResult = await this.executeCohortQuery(
-                selectQuery
-            );
+            const selectQueryResult =
+                await this.executeCohortQuery(selectQuery);
             // Extract subject ids from array of objects
             let patientIds;
             if (selectQueryResult.data instanceof Array) {
@@ -647,9 +677,8 @@ export class CohortEndpoint {
                 selectQueryString,
                 ...sqlParams
             );
-            const selectQueryResult = await this.executeCohortQuery(
-                selectQuery
-            );
+            const selectQueryResult =
+                await this.executeCohortQuery(selectQuery);
             let cohortDefinitionId =
                 selectQueryResult.data[0].COHORT_DEFINITION_ID;
 
@@ -667,6 +696,13 @@ export class CohortEndpoint {
         // To successfully materialize cohort, schema must have the following tables
         // 1. cohort
         // 2. cohort_definition
+        const getsourceResultsSchemaName = (): string => {
+            if (this.sourceResultsSchemaName) {
+                return this.sourceResultsSchemaName;
+            } else {
+                return this.schemaName;
+            }
+        };
 
         let sql, sqlParams;
         if (this.connection.constructor.name === "TrexConnection") {
@@ -681,8 +717,8 @@ export class CohortEndpoint {
                         and table_name in ('cohort', 'cohort_definition');
                     `;
             sqlParams = [
-                this.connection.connection.__database, // Check against cache file instead of source db
-                this.schemaName,
+                `${this.databaseCode}__srcdb`, // Check against source db
+                getsourceResultsSchemaName(),
             ];
         } else {
             sql = `

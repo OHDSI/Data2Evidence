@@ -109,12 +109,12 @@ export class DataCharacterizationController {
         res
           .status(404)
           .send(
-            `No Data Characterization result found for flowRunId: ${flowRunId}`
+            "No Data Characterization result found for for given flowRunId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving Data Characterization result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving Data Characterization result");
     }
   }
 
@@ -141,12 +141,12 @@ export class DataCharacterizationController {
         res
           .status(404)
           .send(
-            `No Data Characterization result drill down found for flowRunId: ${flowRunId}`
+            "No Data Characterization result drill down found for for given flowRunId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving DC result drill down: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DC result drill down");
     }
   }
 
@@ -169,12 +169,12 @@ export class DataCharacterizationController {
         res
           .status(404)
           .send(
-            `No Data Characterization result found for datasetId: ${datasetId}`
+            "No Data Characterization result found for given datasetId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving DC result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DC result");
     }
   }
 
@@ -195,12 +195,12 @@ export class DataCharacterizationController {
         res
           .status(404)
           .send(
-            `No Data Characterization result found for datasetId: ${datasetId}`
+            "No Data Characterization result found for given datasetId"
           );
       }
     } catch (error) {
       console.error(`Error retrieving DC result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DC result");
     }
   }
 
@@ -217,7 +217,7 @@ export class DataCharacterizationController {
       res.send(dcResult);
     } catch (error) {
       console.error(`Error retrieving DC result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DC result");
     }
   }
 
@@ -230,7 +230,7 @@ export class DataCharacterizationController {
       res.send(dcResult);
     } catch (error) {
       console.error(`Error retrieving DC result: ${error}`);
-      res.status(500).send(`Error occurs: ${error}`);
+      res.status(500).send("Error retrieving DC result");
     }
   }
 }

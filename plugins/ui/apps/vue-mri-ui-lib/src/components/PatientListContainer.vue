@@ -131,6 +131,7 @@ export default {
           createZip(
             {
               responses,
+              cohortName: this.getActiveBookmark?.bookmarkname,
             },
             () => {
               this.completeDownloadZIP()
@@ -155,6 +156,7 @@ export default {
       'getSelectedAttributes',
       'getSelectedDataset',
       'translate',
+      'getActiveBookmark',
     ]),
     currentPage() {
       return this.getPLModel.currentPage

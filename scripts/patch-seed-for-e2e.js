@@ -60,5 +60,14 @@ content = content.replaceAll(
                         "initial": true,`
 );
 
+// Re-enable the Atlas cohort-definition feature (the "Atlas" + "Import" cohort
+// buttons) for e2e only. The committed seed keeps it off because the in-PA Atlas
+// button is superseded by standalone Atlas3; e2e still asserts the button exists
+// (without opening the removed Atlas Lite iframe), so flip it on just for tests.
+content = content.replaceAll(
+  '"atlasCohortDefinition": false',
+  '"atlasCohortDefinition": true'
+);
+
 fs.writeFileSync(SEED_FILE, content, "utf8");
-console.log("Patched seed file: replaced Age with monthOfBirth in categories arrays and set monthOfBirth initial to true");
+console.log("Patched seed file: replaced Age with monthOfBirth in categories arrays, set monthOfBirth initial to true, and enabled atlasCohortDefinition for e2e");

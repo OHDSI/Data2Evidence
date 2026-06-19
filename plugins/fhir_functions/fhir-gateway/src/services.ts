@@ -1,4 +1,3 @@
-import { get } from "http";
 import { FhirServerAPI } from "./api/FhirServerAPI";
 
 import { PortalAPI } from "./api/PortalAPI";
@@ -11,7 +10,6 @@ import {
   Headers,
   filterHeaders,
   IFhirDatasets,
-  FhirBundleType,
   IFhirHealthCheckAPI,
 } from "./types.ts";
 
@@ -25,13 +23,6 @@ const getPortalDataset = async (
   } catch {
     return null;
   }
-};
-
-const checkPortalDatasetExists = async (
-  portalDatasetId: string,
-  token: string,
-): Promise<boolean> => {
-  return (await getPortalDataset(portalDatasetId, token)) !== null;
 };
 
 const getPortalDatasetIdByStudyToken = async (
@@ -61,9 +52,16 @@ const checkFhirDatasetExists = async (
   fhirAPI: FhirServerAPI,
 ): Promise<boolean> => {
   try {
+    // Portal dataset ids use underscores, the FHIR server uses hyphens for the same id
+    const normalizedId = fhirDatasetId.replace(/_/g, "-");
     const fhirDatasets = await fhirAPI.getFhirDatasets();
+    console.log(
+      "Checking if FHIR dataset with id '%s' exists in the FHIR server",
+      normalizedId,
+    );
+    console.log("Existing FHIR datasets:", fhirDatasets);
     return Array.isArray(fhirDatasets)
-      ? fhirDatasets.some((item) => item.id === fhirDatasetId)
+      ? fhirDatasets.some((item) => item.id === normalizedId)
       : false;
   } catch (error: any) {
     console.error(

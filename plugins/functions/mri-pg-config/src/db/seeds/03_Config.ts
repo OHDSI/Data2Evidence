@@ -13334,7 +13334,8 @@ const paConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27204,7 +27205,8 @@ const paConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27235,7 +27237,7 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true,
+        "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": true,
         "intersectViewInclusionReport": false,
@@ -28836,6 +28838,7 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
+      maxPatientsExport: 2000000,
     },
     vb: {
       visible: true,
@@ -34684,7 +34687,8 @@ const pajsonfhirConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -38173,7 +38177,8 @@ const omopHanaLeanPAConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
