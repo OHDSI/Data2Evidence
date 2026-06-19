@@ -10,13 +10,7 @@
     <v-card class="save-cohort-card">
       <div v-if="isSaving" class="save-cohort-saving">
         <h2 class="save-cohort-saving__title">{{ getText('MRI_PA_GENERATING_DASHBOARD') }}</h2>
-        <VProgressCircular
-          indeterminate
-          class="save-cohort-saving__spinner"
-          color="primary"
-          :size="96"
-          :width="8"
-        />
+        <VProgressCircular indeterminate class="save-cohort-saving__spinner" color="primary" :size="96" :width="8" />
         <p class="save-cohort-saving__status">{{ savingStatusText }}</p>
       </div>
 
@@ -143,7 +137,7 @@ import VDialog from '../vuetify/VDialog.vue'
 import VProgressCircular from '../vuetify/VProgressCircular.vue'
 import appMessageStrip from '@/lib/ui/app-message-strip.vue'
 import * as types from '../../store/mutation-types'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '../../composables/usePortalContext'
 
 export default {
   name: 'SaveCohortModal',
@@ -168,7 +162,9 @@ export default {
     },
   },
   data() {
+    const portalContext = usePortalContext()
     return {
+      portalContext,
       cohortName: this.generateDefaultName(),
       cohortDescription: '',
       cohortNameValidationState: 'valid' as 'valid' | 'empty' | 'invalid' | 'duplicate',
@@ -340,7 +336,7 @@ export default {
         return true
       }
 
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const isDuplicate = this.getBookmarks.some(
         bookmark =>
           bookmark.user_id === username &&
@@ -389,9 +385,7 @@ export default {
         this.bookmarkSavedButMaterializationFailed = false
 
         const successMessage =
-          this.mode === 'bookmark-only'
-            ? this.getText('MRI_PA_BOOKMARK_SAVED')
-            : this.getText('MRI_PA_COHORT_SAVED')
+          this.mode === 'bookmark-only' ? this.getText('MRI_PA_BOOKMARK_SAVED') : this.getText('MRI_PA_COHORT_SAVED')
 
         this.messageStrip = {
           show: true,
@@ -430,7 +424,7 @@ export default {
 
       const bookmarkName = this.isNewCohort ? this.cohortName.trim() : activeBookmark?.bookmarkname
 
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const bookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
 
       if (!bookmark) {
@@ -444,7 +438,7 @@ export default {
 
     async saveBookmark() {
       const activeBookmark = this.getActiveBookmark
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       const bookmarkData = this.getBookmarksData
       const selectedDataset = this.getSelectedDataset
 
