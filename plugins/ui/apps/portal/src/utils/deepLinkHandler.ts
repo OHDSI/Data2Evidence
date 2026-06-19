@@ -46,8 +46,6 @@ export const isValidDatasetId = (datasetId: string | null | undefined): datasetI
 };
 
 export interface SyncDatasetFromUrlParams {
-  /** Full URL to extract datasetId from (typically window.location.href) */
-  url: string;
   /** List of available datasets user has access to */
   availableDatasets: Array<{ id: string; tenant?: { id: string }; [key: string]: any }>;
   /** Function to set the active dataset ID */
@@ -61,7 +59,7 @@ export interface SyncDatasetFromUrlParams {
 }
 
 export interface SyncDatasetFromUrlResult {
-  /** Whether a datasetId was found in URL */
+  /** Whether a stored datasetId was found */
   hasDatasetParam: boolean;
   /** Whether sync was successful */
   syncSuccess: boolean;
@@ -70,31 +68,28 @@ export interface SyncDatasetFromUrlResult {
 }
 
 /**
- * Synchronizes Portal's selected dataset based on URL parameter and routes to appropriate page.
+ * Synchronizes Portal's selected dataset based on captured deep-link params and routes to appropriate page.
  * Uses 'path' for navigation target, restores 'linkType' and 'query' to URL for PA.
  */
 export const syncDatasetFromUrl = ({
-  url,
   availableDatasets,
   setActiveDatasetId,
   setFeedback,
   navigate,
   basePath,
 }: SyncDatasetFromUrlParams): SyncDatasetFromUrlResult => {
-  const datasetId = extractDatasetIdFromUrl(url);
   const storedParams = loadDeepLinkParams();
+  const datasetId = storedParams?.datasetId ?? null;
 
   // No datasetId parameter — check if we have a path-based deep link (e.g., /researcher/wizards)
   if (!isValidDatasetId(datasetId)) {
-    if (storedParams?.path && availableDatasets.length > 0) {
-      // Path-based deep link without datasetId — use first available dataset
-      setActiveDatasetId(availableDatasets[0].id);
-      navigate(storedParams.path);
+    if (storedParams) {
+      // Without an explicit datasetId, let the portal's persisted activeDataset rehydration choose the dataset.
       clearDeepLinkParams();
       return {
         hasDatasetParam: false,
-        syncSuccess: true,
-        datasetId: availableDatasets[0].id,
+        syncSuccess: false,
+        datasetId: null,
       };
     }
     return {
@@ -131,22 +126,13 @@ export const syncDatasetFromUrl = ({
   // Determine target path from stored path (default: basePath/information)
   const targetPath = storedParams?.path || `${basePath}/information`;
 
-  // Restore all non-portal query params from URL or sessionStorage
-  const urlObj = new URL(url);
+  // Restore all non-portal query params from sessionStorage captured during portal startup.
   const restoredParams = new URLSearchParams();
-
-  // Merge: sessionStorage params first, then URL params override
   if (storedParams?.queryParams) {
     for (const [key, value] of Object.entries(storedParams.queryParams)) {
       restoredParams.set(key, value);
     }
   }
-  // URL params take precedence over stored params
-  urlObj.searchParams.forEach((value, key) => {
-    if (key !== "datasetId") {
-      restoredParams.set(key, value);
-    }
-  });
 
   // Build navigation path
   const queryString = restoredParams.toString();
