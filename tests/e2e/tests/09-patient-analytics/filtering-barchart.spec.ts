@@ -212,11 +212,10 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page).toHaveScreenshot()
 
   // Export to ZIP file
-  await page.locator('button.toolbarButton').nth(1).click()
+  await page.locator('.download-menu-container').getByTitle('Export to File').click()
   await page.getByRole('menuitem').getByText('Export to ZIP File').click()
-  await page.locator('span.buttonContent').nth(1).click()
-  await page.waitForTimeout(5000) // Wait for download to complete
-  await expect(page).toHaveScreenshot() // Not sure what to expect
+  await expect(page.getByText('ZIP file exported successfully')).toBeVisible()
+  await expect(page.getByText('ZIP file exported successfully')).toBeHidden()
 
   // Switch to chart view
   await page.locator('button.chartButton').first().click()

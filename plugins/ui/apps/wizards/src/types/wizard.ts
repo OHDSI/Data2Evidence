@@ -1,4 +1,6 @@
 export type FieldType = "text" | "num" | "datetime" | "time" | "yearRange";
+export type WizardSurface = "wizardApp" | "cohortBuilder";
+export type WizardFlow = "required-fields" | "table1-config";
 
 export interface FieldDefinition {
   id: string;
@@ -83,6 +85,10 @@ export interface WizardConfig {
   id: string;
   name: string;
   description: string;
+  /** Optional UI surfaces. Missing means visible in all wizard-aware surfaces. */
+  surfaces?: WizardSurface[];
+  /** Optional flow override. Missing means use the default required-fields flow. */
+  flow?: WizardFlow;
   /** All fields — MRI bookmark fields and wizard-only fields (isWizardField: true) */
   fields: FieldDefinition[];
 }

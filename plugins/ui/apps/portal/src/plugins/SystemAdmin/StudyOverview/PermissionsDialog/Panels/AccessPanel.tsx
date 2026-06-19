@@ -204,7 +204,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
             </colgroup>
             <TableHead>
               <TableRow>
-                <TableCell>{getText(i18nKeys.ACCESS_PANEL__EMAIL)}</TableCell>
+                <TableCell>{getText(i18nKeys.ACCESS_PANEL__NAME)}</TableCell>
                 <TableCell>{getText(i18nKeys.ACCESS_PANEL__ROLE)}</TableCell>
                 <TableCell></TableCell>
               </TableRow>
