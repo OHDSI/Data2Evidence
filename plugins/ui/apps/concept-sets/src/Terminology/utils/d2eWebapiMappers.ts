@@ -104,6 +104,7 @@ export const mapd2eWebapiConceptSet = (
     concepts: [],
     name: conceptSet.name,
     id: conceptSet.id,
+    externalId: conceptSet.externalId,
     shared: conceptSet.shared,
     hasWriteAccess: conceptSet.hasWriteAccess,
     hasReadAccess: conceptSet.hasReadAccess,
