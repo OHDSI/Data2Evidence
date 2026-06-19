@@ -242,7 +242,7 @@ jobs:
           builder: ${{ steps.builder.outputs.name }}
           context: ${{ matrix.DOCKER_BUILD_CONTEXT_PATH }}
           file: ${{ matrix.DOCKER_BUILD_FILE_PATH }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           pull: ${{ matrix.pull_base == 'true' || false }}
           tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
