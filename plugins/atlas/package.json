@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ohdsi/atlas3": "0.1.0-20260618090542-6f6ed84",
+    "@ohdsi/notebook-plugin": "^0.1.0",
     "@ohdsi/pythia-plugin": "0.1.0-develop.2.g8edf28a",
     "@ohdsi/results-viewer": "^0.2.0",
     "@ohdsi/strategus-plugin": "^0.1.0",
