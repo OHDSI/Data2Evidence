@@ -39,6 +39,16 @@
         "author": "OHDSI",
         "description": "OHDSI HADES analysis results viewer — runs OhdsiShinyModules via WebR + DuckDB-WASM in-browser"
       }
+    },
+    {
+      "id": "strategus-plugin",
+      "name": "Strategus",
+      "version": "0.1.0",
+      "entryPoint": "strategus-plugin/index.system.js",
+      "menuItems": [
+        { "id": "strategus.main", "name": "Strategus", "route": "/plugins/strategus-plugin/", "icon": "mdi-flask-outline", "order": 50 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
     }
   ],
   "settings": {

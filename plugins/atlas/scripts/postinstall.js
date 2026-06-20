@@ -185,6 +185,7 @@ const PLUGINS = [
     id: 'results-viewer',
     repoints: [],
   },
+  { pkg: '@ohdsi/strategus-plugin', id: 'strategus-plugin', repoints: [] },
 ];
 
 for (const { pkg, id, repoints } of PLUGINS) {
