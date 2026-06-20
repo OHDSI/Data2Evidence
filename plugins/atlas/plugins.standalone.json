@@ -20,6 +20,25 @@
         "author": "Atlas Team",
         "description": "Pythia — AI-assisted cohort design advisor for ATLAS v3.0"
       }
+    },
+    {
+      "id": "results-viewer",
+      "name": "Analysis Results",
+      "version": "0.2.0",
+      "entryPoint": "results-viewer/index.system.js",
+      "menuItems": [
+        {
+          "id": "results-viewer.main",
+          "name": "Results",
+          "route": "/plugins/results-viewer/",
+          "icon": "mdi-chart-box-outline",
+          "order": 70
+        }
+      ],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "OHDSI HADES analysis results viewer — runs OhdsiShinyModules via WebR + DuckDB-WASM in-browser"
+      }
     }
   ],
   "settings": {
