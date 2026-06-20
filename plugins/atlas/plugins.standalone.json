@@ -49,6 +49,15 @@
         { "id": "strategus.main", "name": "Strategus", "route": "/plugins/strategus-plugin/", "icon": "mdi-flask-outline", "order": 50 }
       ],
       "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
+    },
+    {
+      "id": "notebook-plugin",
+      "version": "0.1.0",
+      "entryPoint": "notebook-plugin/index.system.js",
+      "menuItems": [
+        { "id": "notebook.main", "name": "Notebooks", "route": "/plugins/notebook-plugin/", "icon": "mdi-notebook-outline", "order": 52 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)" }
     }
   ],
   "settings": {
