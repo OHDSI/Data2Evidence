@@ -52,6 +52,7 @@
     },
     {
       "id": "notebook-plugin",
+      "name": "Notebooks",
       "version": "0.1.0",
       "entryPoint": "notebook-plugin/index.system.js",
       "menuItems": [
