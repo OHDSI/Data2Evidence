@@ -434,7 +434,8 @@ services:
             "+white_rabbit": {},
             "+trex": {},
             "+storage": {},
-            "+strategus": {}
+            "+strategus": {},
+            "+notebook": {}
            }
           }
          }
