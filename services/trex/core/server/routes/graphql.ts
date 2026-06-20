@@ -40,8 +40,6 @@ export function getSchemas(): string[] {
     .filter(Boolean);
 }
 
-const graphiqlEnabled = Deno.env.get("ENABLE_GRAPHIQL") === "true";
-
 /** Lazily-instantiated grafserv instance (one per process). */
 let servInstance: ReturnType<typeof createServ> | null = null;
 
@@ -60,8 +58,9 @@ function createServ() {
     ],
     grafserv: {
       graphqlPath: GRAPHQL_PATH,
-      graphiqlPath: `${GRAPHQL_PATH}/../graphiql`,
-      graphiql: graphiqlEnabled,
+      // GraphiQL is intentionally not wired here: serving it would require
+      // `serv.addTo(app)`, which mounts grafserv's own routes and bypasses the
+      // `authn` gate below. We only call `handleGraphQLEvent` behind `authn`.
     },
   });
 
@@ -90,7 +89,27 @@ export function addRoutes(app: Hono) {
       const serv = getServ();
       return await serv.handleGraphQLEvent(c);
     } catch (e) {
-      logger.error(`GraphQL handler error: ${(e as Error).message}`);
+      // grafserv's Hono adaptor THROWS for GraphQL error-results; the thrown
+      // value is an `errorWithStatus` carrying a numeric `status` and the real
+      // message. Preserve both instead of collapsing everything into an opaque
+      // 500. The error shape may vary, so guard defensively.
+      const err = e as { status?: unknown; message?: unknown } | null;
+      const message = typeof err?.message === "string"
+        ? err.message
+        : String(e);
+      if (typeof err?.status === "number") {
+        logger.error(
+          `GraphQL handler error (status ${err.status}): ${message}`,
+        );
+        return new Response(
+          JSON.stringify({ errors: [{ message }] }),
+          {
+            status: err.status,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      logger.error(`GraphQL handler error: ${message}`);
       return new Response(
         JSON.stringify({ errors: [{ message: "GraphQL handler error" }] }),
         { status: 500, headers: { "Content-Type": "application/json" } },

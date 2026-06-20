@@ -39,8 +39,7 @@
     "@trex/pgwire": "^0.5.0-1779020307-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
     "@trex/pool": "^0.1.0-1779020281-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
     "@trex/tpm": "^0.5.0-1779020146-ff7632fa89aa77af33e94a4a3c5db8c9ba730495",
-    "graphile-utils": "^5.0.0-rc.6",
-    "postgraphile": "^5.0.0-rc.4",
-    "postgraphile-plugin-connection-filter": "^3.0.0-rc.1"
+    "postgraphile": "5.0.3",
+    "postgraphile-plugin-connection-filter": "3.0.1"
   }
 }
