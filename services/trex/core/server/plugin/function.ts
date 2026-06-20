@@ -355,7 +355,17 @@ function _addFunction(
   fnmap[`${name}${fncfg.function}`] = (req) =>
     _callWorker(req, `${path}`, imports, fncfg, dir, xenv);
   app.all(url + "/*", authn, authz, (c: Context) => {
-    return _callWorker(c.req.raw, `${path}`, imports, fncfg, dir, xenv);
+    // Inject the authenticated subject as x-user-id for edge functions
+    // (mirrors upstream trex's pgSettings -> x-user-id behavior). Only set
+    // when a subject is present; otherwise leave headers untouched.
+    const uid = c.get("logtoSubject");
+    let req = c.req.raw;
+    if (uid) {
+      const headers = new Headers(c.req.raw.headers);
+      headers.set("x-user-id", String(uid));
+      req = new Request(c.req.raw, { headers });
+    }
+    return _callWorker(req, `${path}`, imports, fncfg, dir, xenv);
   });
 }
 
