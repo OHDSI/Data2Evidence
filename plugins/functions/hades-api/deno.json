@@ -1,0 +1,9 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["deno.window"],
+    "strict": false
+  },
+  "imports": {}
+}

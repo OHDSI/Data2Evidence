@@ -303,6 +303,13 @@
           "function": "/parquet-export",
           "imports": "/parquet-export/deno.json",
           "env": "parquet-export"
+        },
+        {
+          "source": "/hades-api",
+          "function": "/hades-api",
+          "imports": "/hades-api/deno.json",
+          "env": "hades-api",
+          "allowHostFsAccess": true
         }
       ],
       "env": {
@@ -636,6 +643,11 @@
           "PG_SCHEMA": "notebook",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+        },
+        "hades-api": {
+          "HADES_ENVS_BASE_DIR": "${HADES_ENVS_BASE_DIR:-/tmp/hades/envs}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR:-/tmp/hades/output}",
+          "HADES_WORK_SCHEMA": "${HADES_WORK_SCHEMA:-work}"
         }
       },
       "roles": {
