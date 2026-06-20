@@ -170,24 +170,46 @@ if (existsSync(loginSrc)) {
   console.log('[postinstall] Copied login bridge to resources/login');
 }
 
-// Serve the @ohdsi/pythia-plugin SystemJS bundle (installed via this plugin's
-// dependency + .npmrc, like @ohdsi/atlas3) at /atlas/plugins/pythia-plugin/.
-const pythiaSrc = join(rootDir, 'node_modules', '@ohdsi', 'pythia-plugin', 'dist');
-const pythiaDest = join(resourcesDir, 'plugins', 'pythia-plugin');
-if (existsSync(pythiaSrc)) {
-  mkdirSync(pythiaDest, { recursive: true });
-  cpSync(pythiaSrc, pythiaDest, { recursive: true });
-  // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
-  const pythiaEntry = join(pythiaDest, 'index.system.js');
-  if (existsSync(pythiaEntry)) {
-    let js = readFileSync(pythiaEntry, 'utf8');
-    if (js.includes('/WebAPI/trexsql/agent')) {
-      js = js.split('/WebAPI/trexsql/agent').join('/d2e/agent');
-      writeFileSync(pythiaEntry, js);
-      console.log('[postinstall] Repointed Pythia agent endpoint -> /d2e/agent (direct trex fn)');
+// Table-driven plugin loader: copy each published SystemJS plugin's dist into
+// resources/atlas/plugins/<id>/ and apply any endpoint repoints. Mirrors how
+// @ohdsi/atlas3 itself is staged; see plugins.standalone.json for registration.
+const PLUGINS = [
+  {
+    pkg: '@ohdsi/pythia-plugin',
+    id: 'pythia-plugin',
+    // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
+    repoints: [['/WebAPI/trexsql/agent', '/d2e/agent']],
+  },
+  {
+    pkg: '@ohdsi/results-viewer',
+    id: 'results-viewer',
+    repoints: [],
+  },
+];
+
+for (const { pkg, id, repoints } of PLUGINS) {
+  const src = join(rootDir, 'node_modules', ...pkg.split('/'), 'dist');
+  const dest = join(resourcesDir, 'plugins', id);
+  if (!existsSync(src)) {
+    console.warn(`[postinstall] WARN: ${pkg} dist not found at ${src}; skipping ${id}`);
+    continue;
+  }
+  rmSync(dest, { recursive: true, force: true });
+  mkdirSync(dest, { recursive: true });
+  cpSync(src, dest, { recursive: true });
+  const entry = join(dest, 'index.system.js');
+  if (repoints.length && existsSync(entry)) {
+    let js = readFileSync(entry, 'utf8');
+    let changed = false;
+    for (const [from, to] of repoints) {
+      if (js.includes(from)) { js = js.split(from).join(to); changed = true; }
+    }
+    if (changed) {
+      writeFileSync(entry, js);
+      console.log(`[postinstall] Applied repoints for ${id}: ${repoints.map(([f, t]) => `${f}->${t}`).join(', ')}`);
     }
   }
-  console.log('[postinstall] Served Pythia plugin at /atlas/plugins/pythia-plugin');
+  console.log(`[postinstall] Served ${id} at /atlas/plugins/${id}`);
 }
 
 console.log('[postinstall] Atlas3 plugin setup complete!');
