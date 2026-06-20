@@ -9,6 +9,7 @@ import { addRoutes as addDBMRoutes } from "./routes/dbm.ts"
 import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
+import { addRoutes as addGraphqlRoutes } from "./routes/graphql.ts"
 import { authn } from "./auth/authn.ts"
 import { ensureAttached, ensureCacheAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
@@ -185,6 +186,7 @@ export async function initTrex() {
     addPluginRoutes(app);
     addPortalRoutes(app);
     addLogRoutes(app);
+    addGraphqlRoutes(app);
 
     // Proxy WebAPI requests with Logto token exchange
     app.all('/WebAPI/*', authn, async (c) => {
