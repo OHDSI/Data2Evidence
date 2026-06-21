@@ -321,6 +321,13 @@
           "function": "/network-api",
           "imports": "/network-api/deno.json",
           "env": "network-api"
+        },
+        {
+          "source": "/metadata-api",
+          "function": "/metadata-api",
+          "imports": "/metadata-api/deno.json",
+          "env": "metadata-api",
+          "allowHostFsAccess": true
         }
       ],
       "env": {
@@ -677,6 +684,13 @@
           "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET:-}",
           "NETWORK_TOKEN_SCOPE": "${NETWORK_TOKEN_SCOPE:-}",
           "NETWORK_ENC_KEY": "${NETWORK_ENC_KEY:-}"
+        },
+        "metadata-api": {
+          "METADATA_ENC_KEY": "${METADATA_ENC_KEY:-}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR:-/tmp/hades/output}",
+          "STORAGE_BASE_URL": "${STORAGE_BASE_URL:-http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000/storage/v1}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "TREX_BASE_URL": "${TREX_BASE_URL:-http://localhost:8001/trex}"
         }
       },
       "roles": {
