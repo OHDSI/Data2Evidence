@@ -435,7 +435,8 @@ services:
             "+trex": {},
             "+storage": {},
             "+strategus": {},
-            "+notebook": {}
+            "+notebook": {},
+            "+network": {}
            }
           }
          }

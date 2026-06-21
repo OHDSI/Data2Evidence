@@ -26,6 +26,11 @@
           "env": "notebook-init"
         },
         {
+          "function": "/network-init",
+          "imports": "/network-init/deno.json",
+          "env": "network-init"
+        },
+        {
           "function": "/jobplugins-init",
           "imports": "/jobplugins-init/deno.json",
           "env": "jobplugins-init"
@@ -310,6 +315,12 @@
           "imports": "/hades-api/deno.json",
           "env": "hades-api",
           "allowHostFsAccess": true
+        },
+        {
+          "source": "/network-api",
+          "function": "/network-api",
+          "imports": "/network-api/deno.json",
+          "env": "network-api"
         }
       ],
       "env": {
@@ -648,6 +659,24 @@
           "HADES_ENVS_BASE_DIR": "${HADES_ENVS_BASE_DIR:-/tmp/hades/envs}",
           "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR:-/tmp/hades/output}",
           "HADES_WORK_SCHEMA": "${HADES_WORK_SCHEMA:-work}"
+        },
+        "network-init": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "PG_SCHEMA": "network",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+        },
+        "network-api": {
+          "NETWORK_COGNITO_DOMAIN": "${NETWORK_COGNITO_DOMAIN:-}",
+          "NETWORK_CENTRAL_API_URL": "${NETWORK_CENTRAL_API_URL:-}",
+          "NETWORK_MACHINE_CLIENT_ID": "${NETWORK_MACHINE_CLIENT_ID:-}",
+          "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET:-}",
+          "NETWORK_TOKEN_SCOPE": "${NETWORK_TOKEN_SCOPE:-}",
+          "NETWORK_ENC_KEY": "${NETWORK_ENC_KEY:-}"
         }
       },
       "roles": {
