@@ -69,6 +69,16 @@
         { "id": "network.main", "name": "Network", "route": "/plugins/network-plugin/", "icon": "mdi-lan", "order": 60 }
       ],
       "metadata": { "author": "OHDSI", "description": "Federated network studies — site plugin. Loads inactive until NETWORK_* config is provided." }
+    },
+    {
+      "id": "jobs-plugin",
+      "name": "Jobs",
+      "version": "0.1.0",
+      "entryPoint": "jobs-plugin/index.system.js",
+      "menuItems": [
+        { "id": "jobs.main", "name": "Jobs", "route": "/plugins/jobs-plugin/", "icon": "mdi-clipboard-list-outline", "order": 55 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "HADES/Strategus job runs and R environment management" }
     }
   ],
   "settings": {
