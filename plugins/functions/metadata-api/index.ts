@@ -24,10 +24,11 @@ const OUTPUT_BASE = Deno.env.get("HADES_OUTPUT_BASE_DIR") ?? "";
 // through STORAGE_BASE_URL instead of going via TREX_BASE_URL. STORAGE_BASE_URL is the
 // base you append `/bucket` and `/object/{bucket}/{key}` to — mirroring d2e's portal
 // SupabaseStorageClient (plugins/functions/portal/src/supabase-storage), whose
-// `services.supabaseStorage` base already includes the `/storage/v1` prefix and is
-// authed with a Bearer SUPABASE_STORAGE_JWT_TOKEN.
+// `services.supabaseStorage` base serves the storage REST API at the ROOT (NO
+// `/storage/v1` prefix — it's `http://...-supabase-storage-1:9000`) and is authed with
+// a Bearer SUPABASE_STORAGE_JWT_TOKEN.
 const STORAGE_BASE_URL =
-  Deno.env.get("STORAGE_BASE_URL") ?? "http://d2e-supabase-storage-1:9000/storage/v1";
+  Deno.env.get("STORAGE_BASE_URL") ?? "http://d2e-supabase-storage-1:9000";
 const STORAGE_JWT = Deno.env.get("SUPABASE_STORAGE_JWT_TOKEN") ?? "";
 const PREFIX = "/metadata-api";
 
@@ -90,6 +91,17 @@ Deno.serve(async (req: Request) => {
       return json({ status: "ok", bucket, key, sizeBytes: bytes.length });
     }
 
+    // POST /results/sign  { bucket, key, expiresIn? }
+    // Mint a presigned download URL via the supabase-storage service. The browser
+    // can't call storage directly (it holds the user bearer, not the storage
+    // service JWT), so the jobs plugin's storageClient routes through here.
+    if (path === "/results/sign" && req.method === "POST") {
+      const b = await req.json();
+      if (!b.bucket || !b.key) return json({ error: "BAD_REQUEST" }, 400);
+      const signed = await signObject(String(b.bucket), String(b.key), b.expiresIn);
+      return json(signed);
+    }
+
     // POST /results/export-gz  { jobId, uploadUrl, dbFilename? }
     // Gzip the run's results DB and PUT it to a central presigned S3 URL.
     if (path === "/results/export-gz" && req.method === "POST") {
@@ -133,6 +145,23 @@ async function uploadObject(bucket: string, key: string, bytes: Uint8Array) {
     body: bytes,
   });
   if (!resp.ok) throw new Error(`storage upload ${resp.status}: ${await resp.text()}`);
+}
+// signObject(): ask the supabase-storage service to mint a presigned download URL
+// for an existing object (native REST shape `POST /object/sign/{bucket}/{key}`),
+// authed with the storage service-role Bearer JWT. Returns the service JSON, which
+// contains `signedURL`.
+async function signObject(
+  bucket: string,
+  key: string,
+  expiresIn?: number,
+): Promise<unknown> {
+  const resp = await fetch(`${STORAGE_BASE_URL}/object/sign/${bucket}/${key}`, {
+    method: "POST",
+    headers: storageHeaders("application/json"),
+    body: JSON.stringify({ expiresIn: expiresIn ?? 3600 }),
+  });
+  if (!resp.ok) throw new Error(`storage sign ${resp.status}: ${await resp.text()}`);
+  return await resp.json();
 }
 function storageHeaders(contentType: string): Record<string, string> {
   const h: Record<string, string> = { "Content-Type": contentType };
