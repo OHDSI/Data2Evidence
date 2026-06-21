@@ -15,7 +15,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260618090542-6f6ed84",
+    "@ohdsi/atlas3": "0.1.0-20260621142339-0a13950",
     "@ohdsi/pythia-plugin": "0.1.0-develop.2.g8edf28a",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
