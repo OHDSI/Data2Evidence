@@ -59,6 +59,16 @@
         { "id": "notebook.main", "name": "Notebooks", "route": "/plugins/notebook-plugin/", "icon": "mdi-notebook-outline", "order": 52 }
       ],
       "metadata": { "author": "OHDSI", "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)" }
+    },
+    {
+      "id": "network-plugin",
+      "name": "Network",
+      "version": "0.1.0",
+      "entryPoint": "network-plugin/index.system.js",
+      "menuItems": [
+        { "id": "network.main", "name": "Network", "route": "/plugins/network-plugin/", "icon": "mdi-lan", "order": 60 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Federated network studies — site plugin. Loads inactive until NETWORK_* config is provided." }
     }
   ],
   "settings": {
