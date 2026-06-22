@@ -25,8 +25,6 @@ export const meta = {
   configFlag: 'overlappingHistogramEnabled',
 }
 
-// Opacity applied to the overlapping bars so stacked groups remain visible through one another.
-// Exported so the legend can render swatches with the same color the bars actually use.
 export const OVERLAY_BAR_OPACITY = 0.3
 
 type Ctx = {

@@ -15,8 +15,7 @@ export const meta = {
   configFlag: 'kernelDensityPlotEnabled',
 }
 
-// Hex alpha suffix appended to the curve color to produce the translucent area fill under each
-// kernel-density curve. Exported so the legend can render swatches with the same fill color.
+// Hex alpha suffix appended to the curve color to produce the translucent area fill
 export const KDE_FILL_ALPHA = '30'
 
 type Ctx = {

@@ -38,10 +38,9 @@ interface Props {
   colorway: string[]
   barOpacity?: number
   showDistributionCurve?: boolean
-  // When true, bar swatches render as an area-fill square (translucent fill + solid border)
-  // to match the kernel-density-plot rendering instead of a solid filled square.
+  // When true, bar swatches render as area-fill square (translucent fill + solid border)
   areaFill?: boolean
-  // Hex alpha suffix used for the translucent fill when areaFill is true.
+  // Hex alpha suffix used for the translucent fill
   fillAlpha?: string
 }
 
@@ -109,8 +108,7 @@ const legendItems = computed(() => {
       kind,
       displayName,
       fullName,
-      // Bar and curve entries share the same text, so disambiguate for screen
-      // readers by appending the kind to the curve's aria-label.
+      // append distribution to relevant aria-label for screen reader clarity
       ariaLabel: kind === 'curve' ? `${fullName} distribution` : fullName,
       isTruncated: fullName !== displayName,
       color: props.colorway.length > 0 ? props.colorway[originalIndex % props.colorway.length] : '#cccccc',
