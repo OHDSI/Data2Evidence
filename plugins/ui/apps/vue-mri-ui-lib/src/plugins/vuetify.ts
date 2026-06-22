@@ -185,6 +185,7 @@ export default createVuetify({
     VDialog: {
       maxWidth: 600,
       rounded: 'sm',
+      noClickAnimation: true, // no bouncing animation when clicking outside of persistent dialog
     },
 
     // Data table defaults
