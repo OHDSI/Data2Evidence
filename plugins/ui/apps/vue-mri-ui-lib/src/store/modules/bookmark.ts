@@ -166,13 +166,10 @@ const getters = {
     if (modulestate.isRestoringBookmark) {
       return false
     }
-    const baseline = modulestate.activeBookmarkBaseline
-    if (baseline != null) {
-      return !isEqual(moduleGetters.getBookmarksData, baseline)
-    }
-    // For bookmarks without saved data, there are no changes to compare
+    // For bookmarks without saved data (new/deep-link/Atlas), compare against the captured baseline.
     if (!modulestate.activeBookmark.bookmark) {
-      return false
+      const baseline = modulestate.activeBookmarkBaseline
+      return baseline != null ? !isEqual(moduleGetters.getBookmarksData, baseline) : false
     }
     const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
@@ -448,7 +445,9 @@ const actions = {
       skipFireRequest: chartIsChanging || !isRightPaneMounted,
     })
       .then(result => {
-        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        if (!getters.getActiveBookmark.bookmark) {
+          commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        }
         return result
       })
       .finally(() => {

@@ -44,6 +44,8 @@ const handleSingleSpaRouting = (event: Event): void => {
   const detail = (event as CustomEvent<{ newUrl?: string; cancelNavigation?: (v?: unknown) => void }>).detail
   const newUrl = detail?.newUrl ?? window.location.href
 
+  if (showDialog.value) return
+
   if (expectedNavigationUrl && expectedNavigationUrl === newUrl) {
     expectedNavigationUrl = null
     return
@@ -52,6 +54,9 @@ const handleSingleSpaRouting = (event: Event): void => {
 
   if (!isDirty.value) return
 
+  if (event.cancelable) {
+    event.preventDefault()
+  }
   detail?.cancelNavigation?.()
   pendingUrl.value = newUrl
   showDialog.value = true

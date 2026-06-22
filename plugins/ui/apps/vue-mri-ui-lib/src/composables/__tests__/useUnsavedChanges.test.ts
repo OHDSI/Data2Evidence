@@ -97,6 +97,16 @@ describe('useUnsavedChanges', () => {
     expect(isDirty.value).toBe(true)
   })
 
+  it('isDirty=false when saved bookmark has no changes', async () => {
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved', bookmark: '{"filter":{}}' }
+    mockStore.getters.getCurrentBookmarkHasChanges = false
+
+    const { useUnsavedChanges } = await import('../useUnsavedChanges')
+    const { isDirty } = useUnsavedChanges()
+
+    expect(isDirty.value).toBe(false)
+  })
+
   it('install is idempotent', async () => {
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { install } = useUnsavedChanges()
@@ -218,6 +228,32 @@ describe('useUnsavedChanges', () => {
 
     expect(cancelNavigation).toHaveBeenCalledWith()
     expect(showDialog.value).toBe(true)
+    expect(pendingUrl.value).toBe('http://localhost:3000/another-app')
+  })
+
+  it('single-spa:before-routing-event is ignored while dialog is already open', async () => {
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
+    const firstCancelNavigation = vi.fn()
+    const secondCancelNavigation = vi.fn()
+    const { useUnsavedChanges } = await import('../useUnsavedChanges')
+    const { install, showDialog, pendingUrl } = useUnsavedChanges()
+    install()
+
+    fireEvent('single-spa:before-routing-event', {
+      newUrl: 'http://localhost:3000/another-app',
+      cancelNavigation: firstCancelNavigation,
+    })
+
+    expect(showDialog.value).toBe(true)
+    expect(pendingUrl.value).toBe('http://localhost:3000/another-app')
+
+    fireEvent('single-spa:before-routing-event', {
+      newUrl: 'http://localhost:3000/yet-another-app',
+      cancelNavigation: secondCancelNavigation,
+    })
+
+    expect(secondCancelNavigation).not.toHaveBeenCalled()
     expect(pendingUrl.value).toBe('http://localhost:3000/another-app')
   })
 
