@@ -189,7 +189,7 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
-      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
+      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-1024}
       TREXSQL_ENABLED: "true"
       SWARM_NODE: d2e
       SWARM_CONFIG: |-
