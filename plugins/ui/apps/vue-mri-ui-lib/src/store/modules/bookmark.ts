@@ -27,6 +27,7 @@ const state = {
   loading: false,
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
+  isRestoringBookmark: false,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -37,6 +38,7 @@ const getters = {
   getBookmarksLoading: modulestate => modulestate.loading,
   getBookmarks: modulestate => modulestate.bookmarks,
   getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
+  getIsRestoringBookmark: modulestate => modulestate.isRestoringBookmark,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
   getAddNewCohort: modulestate => modulestate.addNewCohort,
@@ -390,6 +392,7 @@ const actions = {
    * Unlike loadbookmarkToState, this takes the parsed bookmark object directly
    */
   loadBookmarkDataToState({ commit, dispatch, getters, rootGetters }, { bookmark, chartType }) {
+    commit(types.SET_IS_RESTORING_BOOKMARK, true)
     // Set a virtual active bookmark so the UI shows the cohort tab
     commit(types.SET_ACTIVE_BOOKMARK, {
       bookmarkname: 'Linked Cohort',
@@ -412,9 +415,12 @@ const actions = {
       parsedBookmark: bookmark,
       chartType,
       skipFireRequest: chartIsChanging,
+    }).finally(() => {
+      commit(types.SET_IS_RESTORING_BOOKMARK, false)
     })
   },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
+    commit(types.SET_IS_RESTORING_BOOKMARK, true)
     const parsedBookmark = getters.getBookmarkById(bmkId)
     const currentActiveChart = rootGetters.getActiveChart
     const chartIsChanging = chartType && chartType !== currentActiveChart
@@ -425,6 +431,8 @@ const actions = {
       parsedBookmark,
       chartType,
       skipFireRequest: chartIsChanging || !isRightPaneMounted,
+    }).finally(() => {
+      commit(types.SET_IS_RESTORING_BOOKMARK, false)
     })
   },
   /**
@@ -668,7 +676,10 @@ const mutations = {
     modulestate.schemaName = schemaName
   },
   [types.SET_ACTIVE_BOOKMARK](modulestate, bookmark) {
-    modulestate.activeBookmark = bookmark
+    modulestate.activeBookmark = bookmark ? { ...bookmark, isNew: Boolean(bookmark.isNew) } : null
+  },
+  [types.SET_IS_RESTORING_BOOKMARK](modulestate, isRestoring) {
+    modulestate.isRestoringBookmark = isRestoring
   },
   [types.SET_ADD_NEW_COHORT](modulestate, { addNewCohort }) {
     modulestate.addNewCohort = addNewCohort

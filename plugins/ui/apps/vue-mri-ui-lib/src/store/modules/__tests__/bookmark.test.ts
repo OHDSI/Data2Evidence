@@ -51,7 +51,7 @@ describe('store - bookmark', () => {
     it('SET_ACTIVE_BOOKMARK sets new bookmark', () => {
       const bookmark = { bmkId: '123', bookmarkname: 'Test' }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK](state, bookmark)
-      expect(state.activeBookmark).toEqual(bookmark)
+      expect(state.activeBookmark).toEqual({ ...bookmark, isNew: false })
     })
 
     it('SET_ACTIVE_BOOKMARK preserves properties when updating bookmarkname', () => {
