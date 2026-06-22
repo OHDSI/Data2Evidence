@@ -64,14 +64,14 @@ export interface IWebAPICohortDefinitionPayload {
   tags?: string[];
 }
 
-export class WebAPICohortDefinitionAPI {
+export class WebAPIAPI {
   private readonly baseURL: string;
   private readonly token: string;
 
   constructor(token: string) {
     this.token = token;
     if (!token) {
-      throw new Error("No token passed for WebAPICohortDefinitionAPI!");
+      throw new Error("No token passed for WebAPIAPI!");
     }
 
     this.baseURL = (env.SERVICE_ROUTES.webapi || DEFAULT_WEBAPI_URL).replace(

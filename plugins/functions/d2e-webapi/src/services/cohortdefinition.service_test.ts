@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import type { IWebAPICohortDefinition } from "../api/WebAPI.ts";
+import type { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
 
 type INormalizedWebAPICohortDefinition =
   Omit<IWebAPICohortDefinition, "expression"> & {

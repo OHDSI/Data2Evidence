@@ -13,7 +13,7 @@ import {
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
-import { WebAPICohortDefinitionAPI } from "../api/WebAPI.ts";
+import { WebAPIAPI } from "../api/WebAPIAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
@@ -120,8 +120,8 @@ export const generateCohort = async (
   const cacheId = dataset.cacheId ?? dataset.databaseCode;
 
   // Get atlas cohort definition from WebAPI via cohort definition id
-  const webApi = new WebAPICohortDefinitionAPI(token);
-  const webApiCohortDefinition = await webApi.getCohortDefinition(
+  const webApiApi = new WebAPIAPI(token);
+  const webApiCohortDefinition = await webApiApi.getCohortDefinition(
     atlasCohortDefinitionId,
   );
   const { name, description, expressionType } = webApiCohortDefinition;
@@ -216,9 +216,9 @@ export const createCohortDefinition = async (
   _datasetId: string,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
+  const webApiApi = new WebAPIAPI(token);
   const cohortDefinition =
-    await webApi.createCohortDefinition(cohortDefinitionDto);
+    await webApiApi.createCohortDefinition(cohortDefinitionDto);
   return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
@@ -227,7 +227,7 @@ export const getCohortDefinitionList = async (
   datasetId: string,
   isAtlas: boolean,
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
+  const webApiApi = new WebAPIAPI(token);
 
   const parseDateToEpoch = (value: number | string | null | undefined) => {
     if (typeof value === "number") {
@@ -261,7 +261,7 @@ export const getCohortDefinitionList = async (
 
   const mapAtlasCohortDefinitions = (
     atlasCohortDefinitions: Awaited<
-      ReturnType<typeof webApi.getCohortDefinitionList>
+      ReturnType<typeof webApiApi.getCohortDefinitionList>
     >,
   ): IAtlasCohortDefinition[] =>
     atlasCohortDefinitions.map((atlasCohortDefinition) => ({
@@ -279,7 +279,7 @@ export const getCohortDefinitionList = async (
 
   // isAtlas=true only needs atlas cohort definitions and return early
   if (isAtlas) {
-    const atlasCohortDefinitions = await webApi.getCohortDefinitionList();
+    const atlasCohortDefinitions = await webApiApi.getCohortDefinitionList();
     return mapAtlasCohortDefinitions(atlasCohortDefinitions);
   }
   const bookmarksApi = new BookmarksAPI(token);
@@ -291,12 +291,12 @@ export const getCohortDefinitionList = async (
     rawDataFromBookmarks,
     baseMaterializedCohorts,
   ] = await Promise.all([
-    webApi.getCohortDefinitionList().catch((error) => {
+    webApiApi.getCohortDefinitionList().catch((error) => {
       console.error(
         "Failed to fetch atlas cohort definitions, continuing with empty list:",
         error,
       );
-      return [] as Awaited<ReturnType<typeof webApi.getCohortDefinitionList>>;
+      return [] as Awaited<ReturnType<typeof webApiApi.getCohortDefinitionList>>;
     }),
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(
@@ -423,8 +423,8 @@ export const getCohortDefinition = async (
   _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
-  const cohortDefinition = await webApi.getCohortDefinition(cohortDefinitionId);
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition = await webApiApi.getCohortDefinition(cohortDefinitionId);
   return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
@@ -434,8 +434,8 @@ export const updateCohortDefinition = async (
   cohortDefinitionId: number,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
-  const cohortDefinition = await webApi.updateCohortDefinition({
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition = await webApiApi.updateCohortDefinition({
     ...cohortDefinitionDto,
     id: cohortDefinitionId,
   });
@@ -470,8 +470,8 @@ export const deleteCohortDefinition = async (
     await analyticsSvcAPI.deleteCohort(datasetId, materializedCohort.id);
   }
 
-  const webApi = new WebAPICohortDefinitionAPI(token);
-  await webApi.deleteCohortDefinition(cohortDefinitionId);
+  const webApiApi = new WebAPIAPI(token);
+  await webApiApi.deleteCohortDefinition(cohortDefinitionId);
   return;
 };
 
@@ -480,9 +480,9 @@ export const copyCohortDefinition = async (
   _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
+  const webApiApi = new WebAPIAPI(token);
   const cohortDefinition =
-    await webApi.copyCohortDefinition(cohortDefinitionId);
+    await webApiApi.copyCohortDefinition(cohortDefinitionId);
   return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
@@ -492,8 +492,8 @@ export const checkIfAtlasCohortDefinitionExists = async (
   cohortDefinitionId: number,
   cohortDefinitionName: string,
 ): Promise<number> => {
-  const webApi = new WebAPICohortDefinitionAPI(token);
-  const webApiCohortDefinitions = await webApi.getCohortDefinitionList();
+  const webApiApi = new WebAPIAPI(token);
+  const webApiCohortDefinitions = await webApiApi.getCohortDefinitionList();
 
   const nameUsedInOtherDefinition = webApiCohortDefinitions.find(
     (cohortDefinition) =>
