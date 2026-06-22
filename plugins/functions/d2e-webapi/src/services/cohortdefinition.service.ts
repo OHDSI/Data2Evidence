@@ -196,30 +196,61 @@ export const getCohortDefinitionList = async (
   datasetId: string,
   isAtlas: boolean,
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
-  const portalServerApi = new PortalServerAPI(token);
+  const webApi = new WebAPICohortDefinitionAPI(token);
+
+  const parseDateToEpoch = (value: number | string | null | undefined) => {
+    if (typeof value === "number") {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsedDate = Date.parse(value);
+      return Number.isNaN(parsedDate) ? null : parsedDate;
+    }
+    return null;
+  };
+
+  const getUserLogin = (
+    value:
+      | string
+      | null
+      | undefined
+      | { login?: string | null },
+  ) => {
+    if (typeof value === "string") {
+      return value;
+    }
+    if (value && typeof value === "object") {
+      return value.login ?? null;
+    }
+    return null;
+  };
+
+  const getTagName = (tag: string | { name?: string | null }) => {
+    if (typeof tag === "string") {
+      return tag;
+    }
+    return tag.name ?? "";
+  };
 
   const mapAtlasCohortDefinitions = (
-    atlasCohortDefinitions: Awaited<
-      ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
-    >,
+    atlasCohortDefinitions: Awaited<ReturnType<typeof webApi.getCohortDefinitionList>>,
   ): IAtlasCohortDefinition[] =>
     atlasCohortDefinitions.map((atlasCohortDefinition) => ({
       id: atlasCohortDefinition.id,
       name: atlasCohortDefinition.name,
-      description: atlasCohortDefinition.description,
-      createdBy: atlasCohortDefinition.createdBy,
-      createdDate: atlasCohortDefinition.createdDate,
-      modifiedBy: atlasCohortDefinition.modifiedBy,
-      modifiedDate: atlasCohortDefinition.modifiedDate,
+      description: atlasCohortDefinition.description ?? null,
+      createdBy: getUserLogin(atlasCohortDefinition.createdBy),
+      createdDate: parseDateToEpoch(atlasCohortDefinition.createdDate),
+      modifiedBy: getUserLogin(atlasCohortDefinition.modifiedBy),
+      modifiedDate: parseDateToEpoch(atlasCohortDefinition.modifiedDate),
       hasWriteAccess: true,
       hasReadAccess: true,
-      tags: atlasCohortDefinition.tags,
+      tags: (atlasCohortDefinition.tags ?? []).map(getTagName),
     }));
 
   // isAtlas=true only needs atlas cohort definitions and return early
   if (isAtlas) {
-    const atlasCohortDefinitions =
-      await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+    const atlasCohortDefinitions = await webApi.getCohortDefinitionList();
     return mapAtlasCohortDefinitions(atlasCohortDefinitions);
   }
   const bookmarksApi = new BookmarksAPI(token);
@@ -231,14 +262,12 @@ export const getCohortDefinitionList = async (
     rawDataFromBookmarks,
     baseMaterializedCohorts,
   ] = await Promise.all([
-    portalServerApi.getAtlasCohortDefinitionList(datasetId).catch((error) => {
+    webApi.getCohortDefinitionList().catch((error) => {
       console.error(
         "Failed to fetch atlas cohort definitions, continuing with empty list:",
         error,
       );
-      return [] as Awaited<
-        ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
-      >;
+      return [] as Awaited<ReturnType<typeof webApi.getCohortDefinitionList>>;
     }),
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(

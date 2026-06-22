@@ -51,6 +51,39 @@ const rawUpdateResponse: IWebAPICohortDefinition = {
   modifiedDate: "2026-06-19T16:34:00.000Z",
 };
 
+const rawListResponse: IWebAPICohortDefinition[] = [{
+  id: 401,
+  name: "List Cohort",
+  description: "List Description",
+  hasWriteAccess: false,
+  tags: [{
+    name: "Tag A",
+    id: 11,
+    hasWriteAccess: false,
+    modifiedBy: { id: 3, login: "tag-modifier", name: "Tag Modifier" },
+    createdBy: { id: 4, login: "tag-creator", name: "Tag Creator" },
+    createdDate: "2026-06-19T16:35:00.000Z",
+    modifiedDate: "2026-06-19T16:36:00.000Z",
+    icon: "tag",
+    permissionProtected: false,
+    multiSelection: false,
+    mandatory: false,
+    type: "CUSTOM",
+    description: "Tag Description",
+    count: 1,
+    groups: [],
+    color: "#ffffff",
+    showGroup: false,
+    allowCustom: true,
+  }],
+  expressionType: "SIMPLE_EXPRESSION",
+  expression: "{}",
+  modifiedBy: { id: 1, login: "modifier", name: "Modifier User" },
+  createdBy: { id: 2, login: "creator", name: "Creator User" },
+  createdDate: "2026-06-19T16:30:00.000Z",
+  modifiedDate: "2026-06-19T16:31:00.000Z",
+}];
+
 const webApiCallLog = {
   get: [] as string[],
   post: [] as string[],
@@ -80,6 +113,10 @@ globalThis.fetch = async (
   }
 
   if (method === "GET") {
+    if (url === "http://localhost:33001/WebAPI/cohortdefinition/") {
+      webApiCallLog.get.push(url);
+      return Response.json(rawListResponse);
+    }
     webApiCallLog.get.push(url);
     return Response.json(rawGetResponse);
   }
@@ -130,6 +167,7 @@ globalThis.Trex = {
 
 const {
   getCohortDefinition,
+  getCohortDefinitionList,
   createCohortDefinition,
   updateCohortDefinition,
   deleteCohortDefinition,
@@ -155,6 +193,28 @@ Deno.test("getCohortDefinition returns raw WebAPI response without mapping", asy
     webApiCallLog.get[0],
     "http://localhost:33001/WebAPI/cohortdefinition/101",
   );
+});
+
+Deno.test("getCohortDefinitionList uses WebAPI list source and preserves atlas list shape", async () => {
+  resetLogs();
+  const result = await getCohortDefinitionList("Bearer token", "dataset-id", true);
+  assertEquals(webApiCallLog.get.length, 1);
+  assertEquals(
+    webApiCallLog.get[0],
+    "http://localhost:33001/WebAPI/cohortdefinition/",
+  );
+  assertEquals(result, [{
+    id: 401,
+    name: "List Cohort",
+    description: "List Description",
+    createdBy: "creator",
+    createdDate: Date.parse("2026-06-19T16:30:00.000Z"),
+    modifiedBy: "modifier",
+    modifiedDate: Date.parse("2026-06-19T16:31:00.000Z"),
+    hasWriteAccess: true,
+    hasReadAccess: true,
+    tags: ["Tag A"],
+  }]);
 });
 
 Deno.test("createCohortDefinition returns raw WebAPI response without mapping", async () => {
