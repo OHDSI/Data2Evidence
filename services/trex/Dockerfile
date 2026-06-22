@@ -1,65 +1,32 @@
 # syntax=docker/dockerfile:1.4
 
-FROM debian:trixie-slim AS base
+# d2e-trex = the canonical trexsql runtime image (trex main+event eszips,
+# @trex runtime, core plugins) + d2e config layered on top. d2e-specific
+# main behavior is provided by ../trex's D2E_COMPAT layer (gated by env),
+# not by a forked main. See docs/superpowers/specs/2026-06-20-d2e-trex-main-migration-design.md
+# NOTE: trexsql has no `develop` tag — use `dev`, or pin an immutable sha-<commit>.
+# Pinned to the same base develop's Dockerfile.v2 uses.
+ARG TREXSQL_TAG=sha-347a91227639060f76608589321f2d2a255aca44
+FROM ghcr.io/ohdsi/trexsql:${TREXSQL_TAG}
 
-ENV ONNXRUNTIME_VERSION=1.20.1
+USER root
 
-RUN mkdir -p ./scripts
-COPY install_onnx.sh ./scripts
-COPY install_libchdb.sh ./scripts
-
-RUN apt-get update && apt-get install -y \
-    curl clang libgomp1 unzip wget libssl-dev default-jre-headless mesa-vulkan-drivers libopenblas-dev npm libstdc++6 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN ./scripts/install_onnx.sh $ONNXRUNTIME_VERSION linux linux/amd64 /root/onnxruntime && \
-    cp -a /root/onnxruntime/lib/libonnxruntime.so* /usr/lib/ && \
-    rm -rf /root/onnxruntime
-
-RUN bash ./scripts/install_libchdb.sh
-
-RUN mkdir -p /usr/src /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in
-
-WORKDIR /usr/src
-
-COPY deno.json package.json package-lock.json .npmrc ./
-
-RUN npm install
-
-# Pre-install DuckDB extensions for offline use
-ENV DUCKDB_VERSION=1.4.4
-RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
-    cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_amd64 && \
-    for lib in autocomplete avro aws azure fts httpfs icu inet json mysql_scanner parquet postgres_scanner spatial sqlite sqlite_scanner ui vss; do \
-        wget -q http://extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
-        gzip -d ${lib}.duckdb_extension.gz; \
-    done && \
-    for lib in bigquery; do \
-        wget -q http://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_amd64/${lib}.duckdb_extension.gz && \
-        gzip -d ${lib}.duckdb_extension.gz; \
-    done
-
-RUN mkdir -p ./cert ./core
-
-ENV TREXAS_HOST=0.0.0.0
-ENV TREXAS_PORT=9876
-ENV PGWIRE_HOST=0.0.0.0
-ENV PGWIRE_PORT=5433
-ENV TLS_CERT_PATH=""
-ENV TLS_KEY_PATH=""
-ENV TLS_PORT=9443
-ENV MAIN_PATH=/usr/src/main
-
-EXPOSE 33001 5432 33000
-
-COPY ./core ./core
-
-RUN npx trex bundle -e ./core/server/index.ts -o ./core/server/index.eszip && \
-    npx trex bundle -e ./core/event/index.ts -o ./core/event/index.eszip
-
-RUN mkdir -p ./logto
-COPY ./logto ./logto
-
+# d2e cdw validation schema consumed by the D2E_COMPAT cdw_config_svc attach.
+RUN mkdir -p /usr/src/cdw_data/built_in
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
-CMD ["npm", "run", "start"]
+# d2e logto worker served by the D2E_COMPAT /logto route.
+COPY ./logto /usr/src/logto
+
+# LOCAL-TEST workaround: the trexsql base installs DuckDB extensions under
+# DUCKDB_EXTENSION_DIRECTORY (/usr/share/trexsql/extensions), but worker
+# connections' `LOAD <ext>` resolves against DuckDB's default ~/.duckdb path, so
+# `LOAD fts` crashes the main worker. Mirror the extensions into the default path.
+# (The real fix lives in ../trex/Dockerfile, applied once trexsql is rebuilt.)
+RUN mkdir -p /home/node/.duckdb/extensions && \
+    cp -r /usr/share/trexsql/extensions/* /home/node/.duckdb/extensions/ 2>/dev/null || true
+
+RUN chown -R node:node /usr/src/cdw_data /usr/src/logto /home/node/.duckdb
+USER node
+
+# Entrypoint + SWARM_CONFIG-driven startup are inherited from trexsql.

@@ -96,11 +96,21 @@ services:
     ports:
       - "8090:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:33001/_internal/health || exit 1"]
+      # trex's main mounts built-in routes under BASE_PATH (=/trex), so the
+      # internal health endpoint is /trex/_internal/health. (D2E_COMPAT routes
+      # like /WebAPI and /portal are mounted at root, separately.)
+      test: ["CMD-SHELL", "curl -fk https://localhost:33000/trex/_internal/health || curl -f http://localhost:33001/trex/_internal/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 30
       start_period: 120s
+    entrypoint: ["/bin/sh","-c"]
+    command:
+      - |
+        mkdir -p /usr/src/cert
+        printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        exec /usr/src/entrypoint.sh
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -382,6 +392,18 @@ services:
       ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
       # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       # RUST_LOG: ${RUST_LOG:-info}
+      # --- trex main (FROM trexsql) requirements ---
+      # trexsql entrypoint refuses to start without TREX_ROOT_KEY (>=40 chars).
+      TREX_ROOT_KEY: ${TREX_ROOT_KEY}
+      # trex main connects to Postgres for trexdb schema, auth keys, event_log.
+      DATABASE_URL: postgres://postgres:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-${TREX_ROOT_KEY}}
+      BETTER_AUTH_URL: "http://localhost:33001/trex"
+      BASE_PATH: /trex
+      SCHEMA_DIR: /usr/src/core/schema
+      PLUGINS_DEV_PATH: /usr/src/plugins-dev
+      # Phase 0: keep d2e behaviors OFF until Phase 1 lands.
+      D2E_COMPAT: "true"
 
 
   alp-minerva-pg-mgmt-init:
