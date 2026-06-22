@@ -171,6 +171,7 @@ const {
   createCohortDefinition,
   updateCohortDefinition,
   deleteCohortDefinition,
+  checkIfAtlasCohortDefinitionExists,
 } = await import("./cohortdefinition.service.ts");
 
 const resetLogs = () => {
@@ -316,4 +317,23 @@ Deno.test("deleteCohortDefinition fail-open on analytics lookup error and still 
     webApiCallLog.delete[0],
     "http://localhost:33001/WebAPI/cohortdefinition/405",
   );
+});
+
+Deno.test("checkIfAtlasCohortDefinitionExists uses WebAPI list and matches name excluding current id", async () => {
+  resetLogs();
+  const existing = await checkIfAtlasCohortDefinitionExists(
+    "Bearer token",
+    "dataset-id",
+    999,
+    "List Cohort",
+  );
+  const sameId = await checkIfAtlasCohortDefinitionExists(
+    "Bearer token",
+    "dataset-id",
+    401,
+    "List Cohort",
+  );
+
+  assertEquals(existing, 1);
+  assertEquals(sameId, 0);
 });

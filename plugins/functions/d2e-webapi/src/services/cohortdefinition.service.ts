@@ -442,18 +442,17 @@ export const deleteCohortDefinition = async (
 
 export const checkIfAtlasCohortDefinitionExists = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
   cohortDefinitionName: string,
 ): Promise<number> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const userArtifactAtlasCohortDefinitions =
-    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  const webApiCohortDefinitions = await webApi.getCohortDefinitionList();
 
-  const nameUsedInOtherDefinition = userArtifactAtlasCohortDefinitions.find(
-    (cd) => {
-      cd.id !== cohortDefinitionId && cd.name === cohortDefinitionName;
-    },
+  const nameUsedInOtherDefinition = webApiCohortDefinitions.find(
+    (cohortDefinition) =>
+      cohortDefinition.id !== cohortDefinitionId &&
+      cohortDefinition.name === cohortDefinitionName,
   );
   const result = nameUsedInOtherDefinition ? 1 : 0;
   return result;
