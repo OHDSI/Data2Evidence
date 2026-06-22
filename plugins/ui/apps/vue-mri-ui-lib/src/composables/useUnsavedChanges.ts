@@ -30,9 +30,8 @@ const isRestoring = (): boolean => {
 const isDirty: ComputedRef<boolean> = computed(() => {
   const store = getStore()
   if (isRestoring()) return false
-  const activeBookmark = store?.getters?.getActiveBookmark
-  if (!activeBookmark) return false
-  return Boolean(activeBookmark.isNew) || Boolean(store.getters.getCurrentBookmarkHasChanges)
+  if (!store?.getters?.getActiveBookmark) return false
+  return Boolean(store.getters.getCurrentBookmarkHasChanges)
 })
 
 const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
@@ -53,7 +52,7 @@ const handleSingleSpaRouting = (event: Event): void => {
 
   if (!isDirty.value) return
 
-  detail?.cancelNavigation?.(true)
+  detail?.cancelNavigation?.()
   pendingUrl.value = newUrl
   showDialog.value = true
 }

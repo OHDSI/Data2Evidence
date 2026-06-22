@@ -346,7 +346,7 @@ export default {
       'generateDataQualityFlowRun',
       'resetChart',
     ]),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.CONFIG_SET_HAS_ASSIGNED]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE, types.CONFIG_SET_HAS_ASSIGNED]),
     openCompareDialog() {
       this.showCohortCompareDialog = true
     },
@@ -400,6 +400,10 @@ export default {
 
           // Switch to Patient Analytics view after loading
           this.$emit('unloadBookmarkEv', false, true)
+
+          // Allow the QueryFilter to settle before capturing the baseline
+          await this.$nextTick()
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
         } catch (error) {
           console.error('Failed to load Atlas bookmark:', error)
           this.messageStrip = {
@@ -558,12 +562,13 @@ export default {
       this.cohortName = ''
       this.isInvalidName = false
     },
-    addNewCohort() {
+    async addNewCohort() {
       this.cohortName = this.checkCohortName(this.cohortName)
       this[types.SET_ACTIVE_BOOKMARK]({ bookmarkname: this.cohortName, isNew: true })
       this.closeAddNewCohort()
       this.$emit('unloadBookmarkEv', false)
-      this.reset()
+      await this.reset()
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
     },
     checkCohortName(bookmarkName, suffix = '') {
       const username = this.portalContext.username
@@ -660,8 +665,8 @@ export default {
         this.openNewAtlasBookmark()
       }
     },
-    openNewAtlasBookmark() {
-      this.unsavedChanges.guard(() => {
+    async openNewAtlasBookmark() {
+      this.unsavedChanges.guard(async () => {
         // Create a new Atlas bookmark object
         const atlasBookmark = {
           bookmarkname: 'New Atlas Cohort',
@@ -678,6 +683,10 @@ export default {
 
         // Switch to Patient Analytics view
         this.$emit('unloadBookmarkEv', false, true)
+
+        // Allow the QueryFilter to settle before capturing the baseline
+        await this.$nextTick()
+        this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
       })
     },
     openImportAtlasCohortDefinition() {

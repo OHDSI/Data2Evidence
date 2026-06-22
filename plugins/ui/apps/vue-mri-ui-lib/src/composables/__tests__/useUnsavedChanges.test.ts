@@ -66,13 +66,14 @@ describe('useUnsavedChanges', () => {
     expect(showDialog.value).toBe(false)
   })
 
-  it('isDirty=true when active bookmark is new', async () => {
+  it('isDirty=false when active bookmark is new but no actual changes', async () => {
     mockStore.getters.getActiveBookmark = { isNew: true, bookmarkname: 'Untitled' }
+    mockStore.getters.getCurrentBookmarkHasChanges = false
 
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { isDirty } = useUnsavedChanges()
 
-    expect(isDirty.value).toBe(true)
+    expect(isDirty.value).toBe(false)
   })
 
   it('isDirty=false while restoring bookmark', async () => {
@@ -142,7 +143,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('guard queues pendingAction and shows dialog when dirty', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { guard, showDialog } = useUnsavedChanges()
 
@@ -154,7 +156,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('guard ignores subsequent calls while dialog is open', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { guard, showDialog, pendingAction } = useUnsavedChanges()
 
@@ -168,7 +171,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('confirmLeave runs the queued pendingAction and closes the dialog', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { guard, confirmLeave, showDialog } = useUnsavedChanges()
 
@@ -184,7 +188,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('cancelLeave clears pending state and closes dialog without running action', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { guard, cancelLeave, showDialog } = useUnsavedChanges()
 
@@ -199,7 +204,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('single-spa:before-routing-event opens dialog and cancels navigation when dirty', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const cancelNavigation = vi.fn()
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { install, showDialog, pendingUrl } = useUnsavedChanges()
@@ -210,7 +216,7 @@ describe('useUnsavedChanges', () => {
       cancelNavigation,
     })
 
-    expect(cancelNavigation).toHaveBeenCalledWith(true)
+    expect(cancelNavigation).toHaveBeenCalledWith()
     expect(showDialog.value).toBe(true)
     expect(pendingUrl.value).toBe('http://localhost:3000/another-app')
   })
@@ -232,7 +238,8 @@ describe('useUnsavedChanges', () => {
 
   it('confirmLeave after routing event navigates via single-spa', async () => {
     const { navigateToUrl } = await import('single-spa')
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
 
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { install, confirmLeave } = useUnsavedChanges()
@@ -250,7 +257,8 @@ describe('useUnsavedChanges', () => {
 
   it('expected navigation URL is skipped without reopening dialog', async () => {
     const { navigateToUrl } = await import('single-spa')
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
 
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { install, confirmLeave, showDialog } = useUnsavedChanges()
@@ -274,7 +282,8 @@ describe('useUnsavedChanges', () => {
   })
 
   it('beforeunload preventDefault when dirty', async () => {
-    mockStore.getters.getActiveBookmark = { isNew: true }
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
     const { useUnsavedChanges } = await import('../useUnsavedChanges')
     const { install } = useUnsavedChanges()
     install()

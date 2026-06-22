@@ -28,6 +28,7 @@ const state = {
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
   isRestoringBookmark: false,
+  activeBookmarkBaseline: null as any,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -39,6 +40,7 @@ const getters = {
   getBookmarks: modulestate => modulestate.bookmarks,
   getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
   getIsRestoringBookmark: modulestate => modulestate.isRestoringBookmark,
+  getActiveBookmarkBaseline: modulestate => modulestate.activeBookmarkBaseline,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
   getAddNewCohort: modulestate => modulestate.addNewCohort,
@@ -160,7 +162,15 @@ const getters = {
     if (modulestate.activeBookmark == null) {
       return false
     }
-    // For new bookmarks or bookmarks without saved data, there are no changes to compare
+    // While restoring a bookmark, suppress change detection until the restore is complete.
+    if (modulestate.isRestoringBookmark) {
+      return false
+    }
+    const baseline = modulestate.activeBookmarkBaseline
+    if (baseline != null) {
+      return !isEqual(moduleGetters.getBookmarksData, baseline)
+    }
+    // For bookmarks without saved data, there are no changes to compare
     if (!modulestate.activeBookmark.bookmark) {
       return false
     }
@@ -415,9 +425,14 @@ const actions = {
       parsedBookmark: bookmark,
       chartType,
       skipFireRequest: chartIsChanging,
-    }).finally(() => {
-      commit(types.SET_IS_RESTORING_BOOKMARK, false)
     })
+      .then(result => {
+        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        return result
+      })
+      .finally(() => {
+        commit(types.SET_IS_RESTORING_BOOKMARK, false)
+      })
   },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
     commit(types.SET_IS_RESTORING_BOOKMARK, true)
@@ -431,9 +446,14 @@ const actions = {
       parsedBookmark,
       chartType,
       skipFireRequest: chartIsChanging || !isRightPaneMounted,
-    }).finally(() => {
-      commit(types.SET_IS_RESTORING_BOOKMARK, false)
     })
+      .then(result => {
+        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        return result
+      })
+      .finally(() => {
+        commit(types.SET_IS_RESTORING_BOOKMARK, false)
+      })
   },
   /**
    * Internal action to load a parsed bookmark to state
@@ -677,6 +697,10 @@ const mutations = {
   },
   [types.SET_ACTIVE_BOOKMARK](modulestate, bookmark) {
     modulestate.activeBookmark = bookmark ? { ...bookmark, isNew: Boolean(bookmark.isNew) } : null
+    modulestate.activeBookmarkBaseline = null
+  },
+  [types.SET_ACTIVE_BOOKMARK_BASELINE](modulestate, baseline) {
+    modulestate.activeBookmarkBaseline = baseline
   },
   [types.SET_IS_RESTORING_BOOKMARK](modulestate, isRestoring) {
     modulestate.isRestoringBookmark = isRestoring

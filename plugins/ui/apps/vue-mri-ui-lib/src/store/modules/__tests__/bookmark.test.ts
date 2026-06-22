@@ -31,6 +31,8 @@ describe('store - bookmark', () => {
       loading: boolean
       canDatasetMaterializeCohorts: boolean
       canMaterializeCohortDatasetId: string
+      isRestoringBookmark: boolean
+      activeBookmarkBaseline: any
     }
 
     beforeEach(() => {
@@ -45,13 +47,17 @@ describe('store - bookmark', () => {
         loading: false,
         canDatasetMaterializeCohorts: false,
         canMaterializeCohortDatasetId: '',
+        isRestoringBookmark: false,
+        activeBookmarkBaseline: null,
       }
     })
 
-    it('SET_ACTIVE_BOOKMARK sets new bookmark', () => {
+    it('SET_ACTIVE_BOOKMARK sets new bookmark and resets baseline', () => {
       const bookmark = { bmkId: '123', bookmarkname: 'Test' }
+      state.activeBookmarkBaseline = { filter: {} }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK](state, bookmark)
       expect(state.activeBookmark).toEqual({ ...bookmark, isNew: false })
+      expect(state.activeBookmarkBaseline).toBeNull()
     })
 
     it('SET_ACTIVE_BOOKMARK preserves properties when updating bookmarkname', () => {
@@ -73,10 +79,18 @@ describe('store - bookmark', () => {
       expect(state.activeBookmark.bookmark).toBe('{"filter":{}}')
     })
 
-    it('SET_ACTIVE_BOOKMARK clears active bookmark when null', () => {
+    it('SET_ACTIVE_BOOKMARK clears baseline when null', () => {
+      state.activeBookmarkBaseline = { filter: {} }
       state.activeBookmark = { bmkId: '123', bookmarkname: 'Test' }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK](state, null)
       expect(state.activeBookmark).toBeNull()
+      expect(state.activeBookmarkBaseline).toBeNull()
+    })
+
+    it('SET_ACTIVE_BOOKMARK_BASELINE stores the baseline data', () => {
+      const baseline = { filter: { foo: 'bar' }, chartType: 'stacked' }
+      bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK_BASELINE](state, baseline)
+      expect(state.activeBookmarkBaseline).toEqual(baseline)
     })
   })
 })

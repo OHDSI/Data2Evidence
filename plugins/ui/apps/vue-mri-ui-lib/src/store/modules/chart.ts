@@ -371,8 +371,7 @@ const actions = {
   resetChart({ dispatch, getters }) {
     dispatch('resetChartProperties')
     const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
-    dispatch('setIFRState', { ifr: initialIFR })
-    dispatch('setupChartDefaults')
+    return dispatch('setIFRState', { ifr: initialIFR }).then(() => dispatch('setupChartDefaults'))
   },
   setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode
