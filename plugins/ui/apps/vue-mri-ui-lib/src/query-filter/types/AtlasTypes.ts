@@ -28,8 +28,8 @@ export interface ConceptSetExpression {
 }
 
 export interface ConceptSet {
-  id: number
-  conceptSetId?: number
+  id: number // LOCAL Circe id (1..N per cohort) — keep as number, NOT a global ref
+  conceptSetId?: string // GLOBAL concept-set id in compound form ("legacy:N" / "webapi:N")
   name: string
   expression: ConceptSetExpression
 }

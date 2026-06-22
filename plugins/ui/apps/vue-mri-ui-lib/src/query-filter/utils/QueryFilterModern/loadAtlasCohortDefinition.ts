@@ -262,7 +262,7 @@ export const loadAtlasCohortDefinition = async (
   }
 
   const handleConceptSetFromAtlas = async (
-    atlasConceptSet: ConceptSet & { conceptSetId?: number }
+    atlasConceptSet: ConceptSet
   ): Promise<ConceptSetItemDisplay | null> => {
     const datasetId = getDatasetId()
     if (!datasetId) {
@@ -270,10 +270,10 @@ export const loadAtlasCohortDefinition = async (
       return null
     }
 
-    // Check if concept set already exists by conceptSetId (system ID)
+    // Check if concept set already exists by conceptSetId (system ID, compound string form)
     if (atlasConceptSet.conceptSetId) {
       const existingConceptSet = allConceptSets.value.find(cs => {
-        return cs.value.toString().trim() === atlasConceptSet.conceptSetId!.toString().trim()
+        return cs.value.toString().trim() === atlasConceptSet.conceptSetId!.trim()
       })
       if (existingConceptSet) {
         return existingConceptSet
@@ -290,8 +290,8 @@ export const loadAtlasCohortDefinition = async (
         )
       })
       if (existingConceptSetByName) {
-        // Set conceptSetId for Atlas conversion mapping
-        atlasConceptSet.conceptSetId = parseInt(existingConceptSetByName.value, 10)
+        // Set conceptSetId for Atlas conversion mapping (compound id string)
+        atlasConceptSet.conceptSetId = existingConceptSetByName.value
         return existingConceptSetByName
       }
     }
@@ -322,7 +322,7 @@ export const loadAtlasCohortDefinition = async (
         // Create a temporary concept set item to return immediately
         // The actual reload will happen at the end of all concept set processing
         const tempConceptSet: ConceptSetItemDisplay = {
-          value: newConceptSetId.toString(),
+          value: newConceptSetId,
           text: sanitizedName,
           display_value: sanitizedName,
         }
@@ -401,22 +401,25 @@ export const loadAtlasCohortDefinition = async (
     }
 
     // Get concept set IDs referenced in the Atlas JSON
-    // If we have ConceptSets with conceptSetId, use those instead of CodesetIds from criteria
-    let referencedConceptSetIds: Set<number>
+    // If we have ConceptSets with conceptSetId, use those (compound global ids, string).
+    // Otherwise fall back to CodesetIds (local Circe ids, numeric) from criteria — these
+    // get stringified for the existence check below.
+    const referencedConceptSetIds = new Set<string>()
     if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
-      referencedConceptSetIds = new Set<number>()
       atlasExpression.ConceptSets.forEach(cs => {
         if (cs.conceptSetId) {
           referencedConceptSetIds.add(cs.conceptSetId)
         }
       })
     } else {
-      referencedConceptSetIds = extractConceptSetIds(atlasExpression)
+      extractConceptSetIds(atlasExpression).forEach(id => {
+        referencedConceptSetIds.add(id.toString())
+      })
     }
 
     // Check if referenced concept sets exist locally
     for (const conceptSetId of referencedConceptSetIds) {
-      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId.toString())
+      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId)
       if (!existingConceptSet) {
         console.error(
           `Referenced concept set ${conceptSetId} not found locally and no ConceptSets definition provided in Atlas JSON`
@@ -442,9 +445,10 @@ export const loadAtlasCohortDefinition = async (
 
             // Use sequential ID starting from 0 for Atlas JSON
             const sequentialId = index
-            const systemConceptSetId = parseInt(handledConceptSet.value)
+            const systemConceptSetId = handledConceptSet.value
 
-            // Update Atlas concept set with system concept set ID (ID will be updated later by updateCodesetIdReferences)
+            // Update Atlas concept set with system concept set ID (compound string)
+            // (Sequential local id will be updated later by updateCodesetIdReferences)
             atlasConceptSet.conceptSetId = systemConceptSetId
 
             // Track the ID mapping (original → sequential)

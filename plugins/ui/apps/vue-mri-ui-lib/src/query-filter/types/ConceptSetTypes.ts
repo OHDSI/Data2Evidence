@@ -305,8 +305,9 @@ export interface ConceptSetExpression {
 }
 
 // WebAPI interface for d2e-webapi endpoints (matching portal's format)
+// `id` is the GLOBAL concept-set id in compound form ("legacy:N" / "webapi:N").
 export interface IWebapiConceptSet {
-  id: number
+  id: string
   name: string
   createdDate?: string
   modifiedDate?: string
