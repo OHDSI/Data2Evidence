@@ -4,6 +4,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="540"
     persistent
+    attach="#app"
     role="alertdialog"
     aria-labelledby="unsaved-changes-title"
     aria-describedby="unsaved-changes-body"

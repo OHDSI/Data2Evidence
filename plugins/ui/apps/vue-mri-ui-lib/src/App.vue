@@ -70,6 +70,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unsavedChanges.uninstall()
+  unsavedChanges.showDialog.value = false
+  unsavedChanges.pendingUrl.value = null
+  unsavedChanges.pendingAction.value = null
 })
 </script>
 <style lang="scss" src="./styles/style.scss"></style>

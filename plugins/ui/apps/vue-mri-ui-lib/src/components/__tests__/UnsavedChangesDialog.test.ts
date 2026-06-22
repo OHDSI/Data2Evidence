@@ -18,6 +18,16 @@ const createTestStore = () =>
     },
   })
 
+const createAppContainer = (): HTMLElement => {
+  let app = document.querySelector('#app')
+  if (!app) {
+    app = document.createElement('div')
+    app.id = 'app'
+    document.body.appendChild(app)
+  }
+  return app as HTMLElement
+}
+
 const clearBody = (): void => {
   while (document.body.firstChild) {
     document.body.removeChild(document.body.firstChild)
@@ -44,6 +54,7 @@ const queryCloseButton = (): HTMLElement | null => document.querySelector('[data
 describe('UnsavedChangesDialog', () => {
   beforeEach(() => {
     clearBody()
+    createAppContainer()
   })
 
   it('renders dialog content when modelValue is true', async () => {
