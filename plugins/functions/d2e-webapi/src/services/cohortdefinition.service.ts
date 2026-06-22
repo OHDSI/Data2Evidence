@@ -124,11 +124,11 @@ export const generateCohort = async (
   const webApiCohortDefinition = await webApi.getCohortDefinition(
     atlasCohortDefinitionId,
   );
-  const { name, description, expressionType, expression } =
-    webApiCohortDefinition;
+  const { name, description, expressionType } = webApiCohortDefinition;
   const tags = (webApiCohortDefinition.tags ?? [])
     .map((tag) => (typeof tag === "string" ? tag : tag.name))
     .filter((tag): tag is string => tag.length > 0);
+  const expression = parseExpressionToJson(webApiCohortDefinition.expression);
 
   // If cohortJson expression has any CRITICAL warnings, reject cohort generation
   const cohortJsonValidation = await checkV2(token, datasetId, expression);
@@ -240,14 +240,14 @@ export const getCohortDefinitionList = async (
     return null;
   };
 
-  const getUserLogin = (
-    value: string | null | undefined | { login?: string | null },
+  const getUserName = (
+    value: string | null | undefined | { name?: string | null },
   ) => {
     if (typeof value === "string") {
       return value;
     }
     if (value && typeof value === "object") {
-      return value.login ?? null;
+      return value.name ?? null;
     }
     return null;
   };
@@ -268,9 +268,9 @@ export const getCohortDefinitionList = async (
       id: atlasCohortDefinition.id,
       name: atlasCohortDefinition.name,
       description: atlasCohortDefinition.description ?? null,
-      createdBy: getUserLogin(atlasCohortDefinition.createdBy),
+      createdBy: getUserName(atlasCohortDefinition.createdBy),
       createdDate: parseDateToEpoch(atlasCohortDefinition.createdDate),
-      modifiedBy: getUserLogin(atlasCohortDefinition.modifiedBy),
+      modifiedBy: getUserName(atlasCohortDefinition.modifiedBy),
       modifiedDate: parseDateToEpoch(atlasCohortDefinition.modifiedDate),
       hasWriteAccess: true,
       hasReadAccess: true,
@@ -365,6 +365,9 @@ export const getCohortDefinitionList = async (
   // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
   const bookmarkIdToCohortId = new Map<string, number>();
   const atlasDefIdToCohortId = new Map<number, number>();
+
+  // Sort baseMaterializedCohorts so that the latest materialized cohort definition is matched with the corresponding atlas cohort definition
+  baseMaterializedCohorts.sort((a, b) => a.id - b.id);
   for (const cohort of baseMaterializedCohorts) {
     let syntax: { bookmarkId?: string; atlasCohortDefinitionId?: number };
     try {
