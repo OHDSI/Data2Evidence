@@ -10,6 +10,9 @@ export interface FlowVariablesButtonProps {}
 export const FlowVariablesButton: FC<FlowVariablesButtonProps> = ({}) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const variables = useSelector((state: RootState) => state.flow.variables);
+  const databases = useSelector((state: RootState) => state.flow.databases);
+  const schemas = useSelector((state: RootState) => state.flow.schemas);
+  const totalCount = (variables?.length ?? 0) + (databases?.length ?? 0) + (schemas?.length ?? 0);
 
   const handleClick = useCallback(() => {
     setDrawerVisible(true);
@@ -24,9 +27,9 @@ export const FlowVariablesButton: FC<FlowVariablesButtonProps> = ({}) => {
       <Tooltip title="Variables">
         <div>
           <Badge
-            badgeContent={variables?.length}
+            badgeContent={totalCount}
             color="default"
-            invisible={variables?.length === 0}
+            invisible={totalCount === 0}
             anchorOrigin={{
               vertical: "top",
               horizontal: "right",
