@@ -181,6 +181,28 @@ export class WebAPICohortDefinitionAPI {
     }
   }
 
+  async copyCohortDefinition(
+    cohortDefinitionId: number,
+  ): Promise<IWebAPICohortDefinition> {
+    const url = `${this.baseURL}/cohortdefinition/${encodeURIComponent(cohortDefinitionId)}/copy`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        ...this.buildHeaders(),
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Failed to copy WebAPI cohort definition: ${response.status} ${errorText}`,
+      );
+    }
+
+    return response.json();
+  }
+
   private buildHeaders(contentType?: string): Record<string, string> {
     const headers: Record<string, string> = {
       Authorization: this.token.toLowerCase().startsWith("bearer ")

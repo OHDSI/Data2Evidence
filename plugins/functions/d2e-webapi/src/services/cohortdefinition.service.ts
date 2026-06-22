@@ -17,12 +17,11 @@ import { WebAPICohortDefinitionAPI } from "../api/WebAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
-  CohortDefinitionCopyResponseDto,
   IGenerateCohortResponseDto,
   ICohortDefinitionCheckV2ResponseDto,
 } from "../dto/cohortdefinition.ts";
 import { BookmarksSchema } from "../api/types.ts";
-import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
+import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
 const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
@@ -100,7 +99,7 @@ export const generateCohort = async (
   const { name, description, expressionType, expression } =
     webApiCohortDefinition;
   const tags = (webApiCohortDefinition.tags ?? [])
-    .map((tag) => tag.name)
+    .map((tag) => (typeof tag === "string" ? tag : tag.name))
     .filter((tag): tag is string => tag.length > 0);
 
   // If cohortJson expression has any CRITICAL warnings, reject cohort generation
@@ -443,44 +442,11 @@ export const deleteCohortDefinition = async (
 
 export const copyCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  // Get atlas cohort definition from cohort definition id
-  const userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      cohortDefinitionId,
-    );
-
-  const copyAtlasCohortDefinitionId =
-    await portalServerApi.getUserArtifactSequenceNextval(
-      datasetId,
-      UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS,
-    );
-
-  const copyUserArtifactAtlasCohortDefinition = {
-    ...userArtifactAtlasCohortDefinition,
-    id: copyAtlasCohortDefinitionId,
-  };
-  // Create copy of atlas cohort definition
-  await portalServerApi.createAtlasCohortDefinition(
-    datasetId,
-    copyUserArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionCopyResponseDto> = {
-    id: copyAtlasCohortDefinitionId,
-    name: copyUserArtifactAtlasCohortDefinition.name,
-    createdDate: copyUserArtifactAtlasCohortDefinition.createdDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    expressionType: copyUserArtifactAtlasCohortDefinition.expressionType,
-    expression: copyUserArtifactAtlasCohortDefinition.expression,
-  };
-  return result;
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  return await webApi.copyCohortDefinition(cohortDefinitionId);
 };
 
 export const checkIfAtlasCohortDefinitionExists = async (

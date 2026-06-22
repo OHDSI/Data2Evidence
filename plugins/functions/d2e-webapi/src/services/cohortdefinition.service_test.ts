@@ -84,6 +84,20 @@ const rawListResponse: IWebAPICohortDefinition[] = [{
   modifiedDate: "2026-06-19T16:31:00.000Z",
 }];
 
+const rawCopyResponse: IWebAPICohortDefinition = {
+  id: 501,
+  name: "Copied Cohort",
+  hasWriteAccess: true,
+  expressionType: "SIMPLE_EXPRESSION",
+  expression: '{"PrimaryCriteria":{}}',
+  createdBy: { id: 8, login: "copy-creator", name: "Copy Creator" },
+  modifiedBy: { id: 9, login: "copy-modifier", name: "Copy Modifier" },
+  createdDate: "2026-06-20T10:00:00.000Z",
+  modifiedDate: "2026-06-20T10:00:00.000Z",
+  description: "",
+  tags: [],
+};
+
 const webApiCallLog = {
   get: [] as string[],
   post: [] as string[],
@@ -113,6 +127,10 @@ globalThis.fetch = async (
   }
 
   if (method === "GET") {
+    if (url === "http://localhost:33001/WebAPI/cohortdefinition/501/copy") {
+      webApiCallLog.get.push(url);
+      return Response.json(rawCopyResponse);
+    }
     if (url === "http://localhost:33001/WebAPI/cohortdefinition/") {
       webApiCallLog.get.push(url);
       return Response.json(rawListResponse);
@@ -171,6 +189,7 @@ const {
   createCohortDefinition,
   updateCohortDefinition,
   deleteCohortDefinition,
+  copyCohortDefinition,
   checkIfAtlasCohortDefinitionExists,
 } = await import("./cohortdefinition.service.ts");
 
@@ -336,4 +355,16 @@ Deno.test("checkIfAtlasCohortDefinitionExists uses WebAPI list and matches name 
 
   assertEquals(existing, 1);
   assertEquals(sameId, 0);
+});
+
+Deno.test("copyCohortDefinition uses WebAPI copy endpoint and returns raw response", async () => {
+  resetLogs();
+  const result = await copyCohortDefinition("Bearer token", "dataset-id", 501);
+
+  assertEquals(webApiCallLog.get.length, 1);
+  assertEquals(
+    webApiCallLog.get[0],
+    "http://localhost:33001/WebAPI/cohortdefinition/501/copy",
+  );
+  assertEquals(result, rawCopyResponse);
 });

@@ -9,7 +9,6 @@ import {
   AtlasCohortDefinitionDto,
   CohortDefinitionCheckV2ResponseDto,
   CohortDefinitionCreateResponseDto,
-  CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
   WebAPICohortDefinitionResponseDto,
   GenerateCohortResponseDto,
@@ -195,7 +194,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         tags: ["cohortdefinition"],
         params: z.object({ id: z.coerce.number() }),
         response: {
-          200: CohortDefinitionCopyResponseDto,
+          200: WebAPICohortDefinitionResponseDto,
         },
         security: [
           {
