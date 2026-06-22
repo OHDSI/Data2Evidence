@@ -1,0 +1,23 @@
+@use "../../../../../theme/variables.scss" as *;
+
+@mixin variable-form-input {
+  color: $primary-color;
+
+  &::after,
+  &:hover:not(.Mui-disabled)::before {
+    border-bottom: 2px solid $primary-color;
+  }
+
+  .MuiInputLabel-root {
+    color: $primary-color;
+
+    &.MuiInputLabel-shrink,
+    &.Mui-focused {
+      color: var(--color-neutral);
+    }
+  }
+
+  .MuiInput-input:focus {
+    background-color: transparent;
+  }
+}
