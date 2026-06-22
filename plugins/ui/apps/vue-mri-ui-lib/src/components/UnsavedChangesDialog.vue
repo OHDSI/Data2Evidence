@@ -14,6 +14,7 @@
         <v-btn
           icon="mdi-close"
           variant="text"
+          color="primary"
           size="small"
           :aria-label="closeLabel"
           data-testid="close-dialog-button"
@@ -30,7 +31,6 @@
           class="unsaved-dialog__btn unsaved-dialog__btn--leave"
           variant="outlined"
           color="primary"
-          block
           data-testid="leave-page-button"
           @click="$emit('leave')"
         >
@@ -41,7 +41,6 @@
           class="unsaved-dialog__btn unsaved-dialog__btn--stay"
           variant="elevated"
           color="primary"
-          block
           autofocus
           data-testid="stay-page-button"
           @click="$emit('stay')"
@@ -103,7 +102,8 @@ watch(
 
 <style scoped lang="scss">
 .unsaved-dialog {
-  width: 540px;
+  width: 100%;
+  max-width: 540px;
   border-radius: 16px;
   overflow: hidden;
   box-shadow:
