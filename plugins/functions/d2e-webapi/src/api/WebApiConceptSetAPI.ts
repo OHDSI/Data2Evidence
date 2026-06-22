@@ -35,22 +35,24 @@ export interface IWebApiConceptSetItemWrite {
   includeMapped: boolean;
 }
 
+export interface IWebApiConcept {
+  CONCEPT_ID: number;
+  CONCEPT_NAME: string;
+  STANDARD_CONCEPT: string | null;
+  STANDARD_CONCEPT_CAPTION: string;
+  INVALID_REASON: string | null;
+  INVALID_REASON_CAPTION: string;
+  CONCEPT_CODE: string;
+  DOMAIN_ID: string;
+  VOCABULARY_ID: string;
+  CONCEPT_CLASS_ID: string;
+  VALID_START_DATE: string | number;
+  VALID_END_DATE: string | number;
+}
+
 export interface IWebApiConceptSetExpression {
   items: Array<{
-    concept: {
-      CONCEPT_ID: number;
-      CONCEPT_NAME: string;
-      STANDARD_CONCEPT: string | null;
-      STANDARD_CONCEPT_CAPTION: string;
-      INVALID_REASON: string | null;
-      INVALID_REASON_CAPTION: string;
-      CONCEPT_CODE: string;
-      DOMAIN_ID: string;
-      VOCABULARY_ID: string;
-      CONCEPT_CLASS_ID: string;
-      VALID_START_DATE: string | number;
-      VALID_END_DATE: string | number;
-    };
+    concept: IWebApiConcept;
     isExcluded: boolean;
     includeDescendants: boolean;
     includeMapped: boolean;
@@ -225,6 +227,50 @@ export class WebApiConceptSetAPI {
     if (!response.ok) {
       throw new Error(
         `Failed to check WebAPI concept set existence for ${id}: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  async resolveConceptSetExpression(
+    sourceKey: string,
+    expression: IWebApiConceptSetExpression
+  ): Promise<number[]> {
+    const response = await fetch(
+      `${this.baseUrl}/vocabulary/${encodeURIComponent(sourceKey)}/resolveConceptSetExpression`,
+      {
+        method: "POST",
+        headers: buildHeaders(this.token, "application/json"),
+        body: JSON.stringify(expression),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to resolve WebAPI concept set expression for source ${sourceKey}: ${response.status}`
+      );
+    }
+
+    return response.json();
+  }
+
+  async lookupIdentifiers(
+    sourceKey: string,
+    conceptIds: number[]
+  ): Promise<IWebApiConcept[]> {
+    const response = await fetch(
+      `${this.baseUrl}/vocabulary/${encodeURIComponent(sourceKey)}/lookup/identifiers`,
+      {
+        method: "POST",
+        headers: buildHeaders(this.token, "application/json"),
+        body: JSON.stringify(conceptIds),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to lookup WebAPI identifiers for source ${sourceKey}: ${response.status}`
       );
     }
 

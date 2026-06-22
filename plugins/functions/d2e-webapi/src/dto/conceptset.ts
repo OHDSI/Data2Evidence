@@ -156,3 +156,29 @@ export const ConceptSetInUseErrorDto = z.object({
   ),
 });
 export type IConceptSetInUseErrorDto = z.infer<typeof ConceptSetInUseErrorDto>;
+
+export const IncludedConceptDto = z.object({
+  CONCEPT_ID: z.number(),
+  CONCEPT_NAME: z.string(),
+  DOMAIN_ID: z.string(),
+  VOCABULARY_ID: z.string(),
+  CONCEPT_CLASS_ID: z.string(),
+  STANDARD_CONCEPT: z.string().nullable(),
+  CONCEPT_CODE: z.string(),
+  VALID_START_DATE: z.number(),
+  VALID_END_DATE: z.number(),
+  INVALID_REASON: z.string().nullable(),
+  USEMAPPED: z.boolean(),
+  USEDESCENDANTS: z.boolean(),
+});
+export type IIncludedConcept = z.infer<typeof IncludedConceptDto>;
+
+export const IncludedConceptsRequestDto = z.object({
+  conceptSetIds: z.array(z.string()),
+  datasetId: z.string(),
+});
+export type IIncludedConceptsRequestDto = z.infer<
+  typeof IncludedConceptsRequestDto
+>;
+
+export const IncludedConceptsResponseDto = z.array(IncludedConceptDto);

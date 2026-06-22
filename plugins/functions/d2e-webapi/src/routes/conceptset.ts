@@ -10,6 +10,8 @@ import {
   ConceptSetCreateDto,
   ConceptSetInUseErrorDto,
   IConceptSetCheckResponseDto,
+  IncludedConceptsRequestDto,
+  IncludedConceptsResponseDto,
 } from "../dto/conceptset.ts";
 import { ConceptSetInUseError } from "../errors/ConceptSetErrors.ts";
 
@@ -22,6 +24,7 @@ import {
   updateConceptSetItems,
   getConceptSetExpression,
   deleteConceptSet,
+  getIncludedConcepts,
 } from "../services/conceptset.service.ts";
 import { ConceptSetIdParamSchema } from "../utils/conceptSetRef.ts";
 
@@ -71,6 +74,33 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         req.body
       );
       res.send(results);
+    }
+  );
+
+  app.post(
+    "/included-concepts",
+    {
+      schema: {
+        description:
+          "Resolve one or more concept sets to their included concepts. Accepts compound ids (legacy:N / webapi:N) and bare-numeric back-compat values.",
+        tags: ["conceptset"],
+        body: IncludedConceptsRequestDto,
+        response: { 200: IncludedConceptsResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const result = await getIncludedConcepts(
+        req.token,
+        req.datasetId,
+        req.body.conceptSetIds,
+      );
+      res.send(result);
     }
   );
 

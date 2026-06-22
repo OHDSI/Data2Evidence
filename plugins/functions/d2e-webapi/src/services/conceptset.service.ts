@@ -1,5 +1,6 @@
 import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
+  IWebApiConcept,
   IWebApiConceptSetHeader,
   IWebApiConceptSetItemWrite,
   WebApiConceptSetAPI,
@@ -24,10 +25,12 @@ import {
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
 import { resolveSourceKey } from "./source.service.ts";
+import { getConceptsFromIdentifiers } from "./vocabulary.service.ts";
 import {
   formatConceptSetRef,
   parseConceptSetRef,
 } from "../utils/conceptSetRef.ts";
+import { IIncludedConcept } from "../dto/conceptset.ts";
 
 const mapItemsToTerminologyConcepts = (
   conceptSetItemList: IConceptSetItemListDto,
@@ -409,6 +412,256 @@ export const checkIfConceptSetExists = async (
   );
 
   return (result === undefined ? 0 : 1) + webApiExistsCount;
+};
+
+const parseDateValue = (value: string | number): number => {
+  if (typeof value === "number") {
+    return value;
+  }
+  return Date.parse(value);
+};
+
+const mapWebApiConceptToIncludedConcept = (
+  concept: IWebApiConcept,
+  flags: { useMapped: boolean; useDescendants: boolean }
+): IIncludedConcept => ({
+  CONCEPT_ID: concept.CONCEPT_ID,
+  CONCEPT_NAME: concept.CONCEPT_NAME,
+  DOMAIN_ID: concept.DOMAIN_ID,
+  VOCABULARY_ID: concept.VOCABULARY_ID,
+  CONCEPT_CLASS_ID: concept.CONCEPT_CLASS_ID,
+  STANDARD_CONCEPT: concept.STANDARD_CONCEPT,
+  CONCEPT_CODE: concept.CONCEPT_CODE,
+  VALID_START_DATE: parseDateValue(concept.VALID_START_DATE),
+  VALID_END_DATE: parseDateValue(concept.VALID_END_DATE),
+  INVALID_REASON: concept.INVALID_REASON,
+  USEMAPPED: flags.useMapped,
+  USEDESCENDANTS: flags.useDescendants,
+});
+
+const mapLegacyConceptToIncludedConcept = (
+  concept: {
+    conceptId: number;
+    display: string;
+    domainId: string;
+    system: string;
+    conceptClassId: string;
+    standardConcept: string;
+    code: string;
+    validStartDate: string;
+    validEndDate: string;
+    validity: string;
+    useMapped: boolean;
+    useDescendants: boolean;
+  }
+): IIncludedConcept => ({
+  CONCEPT_ID: concept.conceptId,
+  CONCEPT_NAME: concept.display,
+  DOMAIN_ID: concept.domainId,
+  VOCABULARY_ID: concept.system,
+  CONCEPT_CLASS_ID: concept.conceptClassId,
+  STANDARD_CONCEPT: concept.standardConcept,
+  CONCEPT_CODE: concept.code,
+  VALID_START_DATE: Date.parse(concept.validStartDate),
+  VALID_END_DATE: Date.parse(concept.validEndDate),
+  INVALID_REASON: concept.validity,
+  USEMAPPED: concept.useMapped,
+  USEDESCENDANTS: concept.useDescendants,
+});
+
+const getLegacyIncludedConcepts = async (
+  token: string,
+  datasetId: string,
+  externalIds: number[]
+): Promise<IIncludedConcept[]> => {
+  if (externalIds.length === 0) {
+    return [];
+  }
+
+  const terminologySvcApi = new TerminologySvcAPI(token);
+  const conceptSets = await Promise.all(
+    externalIds.map((id) => terminologySvcApi.getConceptSetById(datasetId, id))
+  );
+
+  const resolvedIds = await Promise.all(
+    conceptSets.map((conceptSet) =>
+      terminologySvcApi.resolveConceptSetExpression(
+        datasetId,
+        conceptSet.concepts.map((concept) => ({
+          id: concept.id,
+          useMapped: concept.useMapped,
+          useDescendants: concept.useDescendants,
+          isExcluded: concept.isExcluded,
+        }))
+      )
+    )
+  );
+
+  const allResolvedIds = Array.from(new Set(resolvedIds.flat()));
+  const conceptDetails = allResolvedIds.length > 0
+    ? await getConceptsFromIdentifiers(token, datasetId, allResolvedIds)
+    : [];
+
+  const result: IIncludedConcept[] = [];
+  const seen = new Set<number>();
+
+  for (const conceptSet of conceptSets) {
+    const conceptFlagMap = new Map(
+      conceptSet.concepts.map((concept) => [
+        concept.id,
+        { useMapped: concept.useMapped, useDescendants: concept.useDescendants },
+      ])
+    );
+
+    for (const resolvedId of resolvedIds[conceptSets.indexOf(conceptSet)]) {
+      if (seen.has(resolvedId)) {
+        continue;
+      }
+      seen.add(resolvedId);
+
+      const directConcept = conceptSet.concepts.find((c) => c.id === resolvedId);
+      if (directConcept) {
+        result.push(mapLegacyConceptToIncludedConcept(directConcept));
+        continue;
+      }
+
+      const detail = conceptDetails.find((c) => c.CONCEPT_ID === resolvedId);
+      if (detail) {
+        result.push({
+          ...detail,
+          VALID_START_DATE: parseDateValue(detail.VALID_START_DATE),
+          VALID_END_DATE: parseDateValue(detail.VALID_END_DATE),
+          USEMAPPED: false,
+          USEDESCENDANTS: false,
+        });
+      }
+    }
+  }
+
+  return result;
+};
+
+const getWebApiIncludedConcepts = async (
+  token: string,
+  datasetId: string,
+  externalIds: number[]
+): Promise<IIncludedConcept[]> => {
+  if (externalIds.length === 0) {
+    return [];
+  }
+
+  let sourceKey: string;
+  try {
+    sourceKey = await resolveSourceKey(token, datasetId);
+  } catch (error) {
+    console.error(
+      `[getIncludedConcepts] Failed to resolve source key for dataset ${datasetId}`,
+      error,
+    );
+    throw new ConceptSetExpressionError(
+      `Failed to resolve source configuration for dataset ${datasetId}`,
+    );
+  }
+
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+
+  const expressions = await Promise.all(
+    externalIds.map((id) =>
+      webApiConceptSetApi.getConceptSetExpression(id, sourceKey)
+    )
+  );
+
+  const resolvedIds = await Promise.all(
+    expressions.map((expression) =>
+      webApiConceptSetApi.resolveConceptSetExpression(sourceKey, expression)
+    )
+  );
+
+  const allResolvedIds = Array.from(new Set(resolvedIds.flat()));
+  const conceptDetails = allResolvedIds.length > 0
+    ? await webApiConceptSetApi.lookupIdentifiers(sourceKey, allResolvedIds)
+    : [];
+
+  const result: IIncludedConcept[] = [];
+  const seen = new Set<number>();
+
+  for (const expression of expressions) {
+    const expressionFlagMap = new Map(
+      expression.items.map((item) => [
+        item.concept.CONCEPT_ID,
+        { useMapped: item.includeMapped, useDescendants: item.includeDescendants },
+      ])
+    );
+
+    const resolvedIdList = resolvedIds[expressions.indexOf(expression)];
+    for (const resolvedId of resolvedIdList) {
+      if (seen.has(resolvedId)) {
+        continue;
+      }
+      seen.add(resolvedId);
+
+      const expressionItem = expression.items.find(
+        (item) => item.concept.CONCEPT_ID === resolvedId
+      );
+      if (expressionItem) {
+        result.push(
+          mapWebApiConceptToIncludedConcept(expressionItem.concept, {
+            useMapped: expressionItem.includeMapped,
+            useDescendants: expressionItem.includeDescendants,
+          })
+        );
+        continue;
+      }
+
+      const detail = conceptDetails.find((c) => c.CONCEPT_ID === resolvedId);
+      if (detail) {
+        const flags = expressionFlagMap.get(resolvedId) ?? {
+          useMapped: false,
+          useDescendants: false,
+        };
+        result.push(mapWebApiConceptToIncludedConcept(detail, flags));
+      }
+    }
+  }
+
+  return result;
+};
+
+export const getIncludedConcepts = async (
+  token: string,
+  datasetId: string,
+  conceptSetIds: string[],
+): Promise<IIncludedConcept[]> => {
+  const refs = conceptSetIds.map((id) => parseConceptSetRef(id));
+  const legacyRefs = refs.filter((r) => r.source === "legacy");
+  const webapiRefs = refs.filter((r) => r.source === "webapi");
+
+  const [legacyConcepts, webapiConcepts] = await Promise.all([
+    legacyRefs.length > 0
+      ? getLegacyIncludedConcepts(
+        token,
+        datasetId,
+        legacyRefs.map((r) => r.externalId),
+      )
+      : Promise.resolve([]),
+    webapiRefs.length > 0
+      ? getWebApiIncludedConcepts(
+        token,
+        datasetId,
+        webapiRefs.map((r) => r.externalId),
+      )
+      : Promise.resolve([]),
+  ]);
+
+  const seen = new Set<number>();
+  const result: IIncludedConcept[] = [];
+  for (const concept of [...legacyConcepts, ...webapiConcepts]) {
+    if (!seen.has(concept.CONCEPT_ID)) {
+      seen.add(concept.CONCEPT_ID);
+      result.push(concept);
+    }
+  }
+  return result;
 };
 
 export const mapLegacyConceptSetToWebApiConceptSet = (
