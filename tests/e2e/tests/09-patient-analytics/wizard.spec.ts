@@ -92,7 +92,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
     await page.getByRole('menuitem', { name: 'admin' }).click()
-    await expect(page.getByTestId('alert-title')).toContainText('User admin has been granted permission.')
+    await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission.')
     await page.getByTestId('dialog-close').click()
 
     // Check dashboard wizard is accessible and can be opened
