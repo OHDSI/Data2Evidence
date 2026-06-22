@@ -159,12 +159,15 @@
     <VDialog
       :model-value="showInclusionReportModal"
       @update:modelValue="showInclusionReportModal = $event"
+      @keydown.esc="closeInclusionReportModal"
       max-width="90%"
       persistent
     >
       <div class="inclusion-report-dialog" data-testid="pa-inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">Attrition Plot</div>
+          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">
+            Attrition Plot
+          </div>
           <button
             class="inclusion-report-dialog__close-btn"
             @click="closeInclusionReportModal"
