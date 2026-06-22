@@ -80,9 +80,6 @@ export const WebAPICohortDefinitionResponseDto = z.object({
   modifiedDate: z.union([z.number(), z.string()]).optional(),
 });
 
-export const CohortDefinitionCopyResponseDto =
-  CohortDefinitionCreateResponseDto.omit({ description: true });
-
 export const CohortDefinitionSqlDto = z.object({
   expression: CohortExpression,
   options: CohortExpressionQueryOptions,

@@ -9,7 +9,6 @@ import {
   AtlasCohortDefinitionDto,
   CohortDefinitionCheckV2ResponseDto,
   CohortDefinitionCreateResponseDto,
-  CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
   WebAPICohortDefinitionResponseDto,
   GenerateCohortResponseDto,
@@ -22,7 +21,6 @@ import {
   getCohortDefinitionList,
   getCohortDefinition,
   deleteCohortDefinition,
-  copyCohortDefinition,
   checkIfAtlasCohortDefinitionExists,
   checkV2,
 } from "../services/cohortdefinition.service.ts";
@@ -184,32 +182,6 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
 
       await deleteCohortDefinition(req.token, req.datasetId, id);
       await res.status(204).send();
-    }
-  );
-
-  app.get(
-    "/:id/copy",
-    {
-      schema: {
-        description: "Copies the specified cohort definition.",
-        tags: ["cohortdefinition"],
-        params: z.object({ id: z.coerce.number() }),
-        response: {
-          200: CohortDefinitionCopyResponseDto,
-        },
-        security: [
-          {
-            bearerAuth: [],
-            datasetid: [],
-          },
-        ],
-      },
-    },
-    async (req, res) => {
-      const { id } = req.params;
-
-      const result = await copyCohortDefinition(req.token, req.datasetId, id);
-      res.status(200).send(result);
     }
   );
 
