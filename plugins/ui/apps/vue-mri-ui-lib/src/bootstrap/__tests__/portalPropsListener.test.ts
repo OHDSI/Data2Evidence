@@ -1,5 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createPortalContextStore } from '@/stores/portalContext'
 import { installPortalPropsListener } from '../portalPropsListener'
 
@@ -68,6 +68,93 @@ describe('bootstrap/portalPropsListener', () => {
     )
 
     expect(portalContext.datasetId).toBe('ds-1')
+
+    stop()
+  })
+
+  it('routes dataset/release changes through guardChange when provided', () => {
+    setActivePinia(createPinia())
+
+    const portalContext = createPortalContextStore({
+      getToken: async () => 'token',
+      datasetId: 'ds-1',
+      releaseId: 'rel-1',
+      username: 'user-1',
+      locale: 'en',
+      features: [],
+      featuresLoading: false,
+    })
+
+    const guardChange = vi.fn()
+    const stop = installPortalPropsListener(portalContext, { guardChange })
+
+    window.dispatchEvent(
+      new CustomEvent('custom-props-changed', {
+        detail: { datasetId: 'ds-2' },
+      })
+    )
+
+    expect(guardChange).toHaveBeenCalledTimes(1)
+    expect(portalContext.datasetId).toBe('ds-1')
+
+    const [, applyFn] = guardChange.mock.calls[0]
+    applyFn()
+    expect(portalContext.datasetId).toBe('ds-2')
+
+    stop()
+  })
+
+  it('skips guardChange for non-material updates (e.g. locale)', () => {
+    setActivePinia(createPinia())
+
+    const portalContext = createPortalContextStore({
+      getToken: async () => 'token',
+      datasetId: 'ds-1',
+      releaseId: 'rel-1',
+      username: 'user-1',
+      locale: 'en',
+      features: [],
+      featuresLoading: false,
+    })
+
+    const guardChange = vi.fn()
+    const stop = installPortalPropsListener(portalContext, { guardChange })
+
+    window.dispatchEvent(
+      new CustomEvent('custom-props-changed', {
+        detail: { locale: 'de' },
+      })
+    )
+
+    expect(guardChange).not.toHaveBeenCalled()
+    expect(portalContext.locale).toBe('de')
+
+    stop()
+  })
+
+  it('skips guardChange when datasetId is unchanged', () => {
+    setActivePinia(createPinia())
+
+    const portalContext = createPortalContextStore({
+      getToken: async () => 'token',
+      datasetId: 'ds-1',
+      releaseId: 'rel-1',
+      username: 'user-1',
+      locale: 'en',
+      features: [],
+      featuresLoading: false,
+    })
+
+    const guardChange = vi.fn()
+    const stop = installPortalPropsListener(portalContext, { guardChange })
+
+    window.dispatchEvent(
+      new CustomEvent('custom-props-changed', {
+        detail: { datasetId: 'ds-1' },
+      })
+    )
+
+    expect(guardChange).not.toHaveBeenCalled()
 
     stop()
   })

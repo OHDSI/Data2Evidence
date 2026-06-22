@@ -1,90 +1,75 @@
 <template>
   <div id="app" class="mri-app-vue-container" data-testid="pa-app-container">
     <NotificationStack />
-    <splashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
+    <SplashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
+    <UnsavedChangesDialog
+      v-model="showUnsavedDialog"
+      @leave="unsavedChanges.confirmLeave"
+      @stay="unsavedChanges.cancelLeave"
+    />
   </div>
 </template>
 
-<script lang="ts">
-import { mapActions, mapGetters } from 'vuex'
-import configSelection from './components/ConfigSelection.vue'
+<script setup lang="ts">
+import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { useStore } from 'vuex'
 import patientanalytics from './components/PatientAnalytics.vue'
 import SplashScreen from './components/SplashScreen.vue'
 import NotificationStack from './components/NotificationStack.vue'
+import UnsavedChangesDialog from './components/UnsavedChangesDialog.vue'
 import { useDeepLink } from './composables/useDeepLink'
-import CohortUrlCodec from './utils/CohortUrlCodec'
+import { useUnsavedChanges } from './composables/useUnsavedChanges'
 import { usePortalContext } from './composables/usePortalContext'
+import CohortUrlCodec from './utils/CohortUrlCodec'
 
-export default {
-  name: 'app',
-  props: {},
-  data() {
-    return {
-      showDialog: false,
-      portalContext: usePortalContext(),
-    }
-  },
-  created() {
-    this.setDataset()
-    this.setDatasetReleaseId()
-  },
-  mounted() {
-    this.setLocale()
-    // Bind shareCohortDefinition to window for manual testing
-    this.bindShareCohortDefinition()
+const store = useStore()
+const unsavedChanges = useUnsavedChanges()
 
-    // Process deep link if present in URL
-    this.processDeepLinkIfPresent()
-  },
-  computed: {
-    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad', 'getDatasetReloadInProgress']),
-    showSplashScreen() {
-      return this.getInitialLoad || this.getDatasetReloadInProgress
-    },
-  },
-  methods: {
-    ...mapActions([
-      'requestMriConfig',
-      'setDataset',
-      'setDatasetReleaseId',
-      'toggleConfigSelectionDialog',
-      'setFireRequest',
-      'refreshPatientCount',
-      'setLocale',
-    ]),
-    bindShareCohortDefinition() {
-      // Bind to window for manual testing
-      ;(window as any).shareCohortDefinition = () => {
-        return CohortUrlCodec.shareCohortDefinition(this.$store)
-      }
-      if (process.env.NODE_ENV === 'development') {
-        console.log(
-          'Deep link utility loaded. Use window.shareCohortDefinition() to generate a shareable URL for the current cohort definition.'
-        )
-      }
-    },
-    async processDeepLinkIfPresent() {
-      try {
-        // Wait for config to be loaded
-        await this.requestMriConfig()
+usePortalContext()
 
-        // Process deep link (useDeepLink handles all checks internally)
-        const { processDeepLink } = useDeepLink(this.$store.dispatch)
-        await processDeepLink()
-      } catch (e) {
-        // requestMriConfig dispatches setFatalMessage for app-level config errors;
-        // this catch handles unexpected network/HTTP failures so the app doesn't hang silently.
-        console.error('[App] Failed to load config or process deep link', e)
-      }
-    },
+const getInitialLoad = computed<boolean>(() => store.getters.getInitialLoad)
+const getDatasetReloadInProgress = computed<boolean>(() => store.getters.getDatasetReloadInProgress)
+const showSplashScreen = computed<boolean>(() => getInitialLoad.value || getDatasetReloadInProgress.value)
+const showUnsavedDialog = computed<boolean>({
+  get: () => unsavedChanges.showDialog.value,
+  set: value => {
+    unsavedChanges.showDialog.value = value
   },
-  components: {
-    patientanalytics,
-    configSelection,
-    SplashScreen,
-    NotificationStack,
-  },
+})
+
+const bindShareCohortDefinition = (): void => {
+  ;(window as unknown as { shareCohortDefinition?: () => unknown }).shareCohortDefinition = () =>
+    CohortUrlCodec.shareCohortDefinition(store)
+  if (process.env.NODE_ENV === 'development') {
+    console.log(
+      'Deep link utility loaded. Use window.shareCohortDefinition() to generate a shareable URL for the current cohort definition.'
+    )
+  }
 }
+
+const processDeepLinkIfPresent = async (): Promise<void> => {
+  try {
+    await store.dispatch('requestMriConfig')
+    const { processDeepLink } = useDeepLink(store.dispatch)
+    await processDeepLink()
+  } catch (error) {
+    console.error('[App] Failed to load config or process deep link', error)
+  }
+}
+
+store.dispatch('setDataset')
+store.dispatch('setDatasetReleaseId')
+
+onMounted(() => {
+  store.dispatch('setLocale')
+  bindShareCohortDefinition()
+  void processDeepLinkIfPresent()
+  unsavedChanges.install()
+})
+
+onBeforeUnmount(() => {
+  unsavedChanges.uninstall()
+})
 </script>
 <style lang="scss" src="./styles/style.scss"></style>

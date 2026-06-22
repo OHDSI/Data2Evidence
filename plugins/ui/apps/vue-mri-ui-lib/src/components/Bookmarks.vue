@@ -88,29 +88,6 @@
       </template>
     </messageBox>
 
-    <messageBox
-      messageType="warning"
-      dim="true"
-      dialogWidth="400px"
-      v-if="showSaveOrDiscardDialog"
-      @close="closeSaveOrDiscardDialog"
-    >
-      <template v-slot:header>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_TITLE') }}</template>
-      <template v-slot:body>
-        <div>
-          <div class="div-bookmark-dialog">
-            <div>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_TEXT') }}</div>
-            <div>{{ getText('MRI_PA_BOOKMARK_UNSAVED_DIALOG_QUESTION_TEXT') }}</div>
-          </div>
-        </div>
-      </template>
-      <template v-slot:footer>
-        <div class="flex-spacer"></div>
-        <appButton :click="discardCohortChanges" :text="getText('MRI_PA_BUTTON_DISCARD')" v-focus></appButton>
-        <appButton :click="saveCohortChanges" :text="getText('MRI_PA_BUTTON_SAVE')"></appButton>
-      </template>
-    </messageBox>
-
     <ImportAtlasCohortDefinitionDialog
       v-if="showImportAtlasCohortDefinition"
       @closeEv="closeImportAtlasCohortDefinition"
@@ -245,9 +222,15 @@ import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
+import { useUnsavedChanges } from '../composables/useUnsavedChanges'
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
+  setup() {
+    return {
+      unsavedChanges: useUnsavedChanges(),
+    }
+  },
   data() {
     return {
       atlasStore: useAtlasStore(),
@@ -270,8 +253,6 @@ export default {
       showIncompatibleMessage: false,
       cohortName: 'New cohort',
       cohortNameValidationState: 'valid' as 'invalid' | 'valid' | 'empty',
-      showSaveOrDiscardDialog: false,
-      isAddNewCohort: false,
       selectedBmkId: '',
       selectedChartType: '',
       messageStrip: {
@@ -328,9 +309,6 @@ export default {
     isAtlas() {
       return import.meta.env.VITE_STANDALONE_ATLAS === 'true'
     },
-    hasChanges() {
-      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
-    },
     showCohortCompareBtn() {
       return this.aSelBookmarkList.length > 1
     },
@@ -383,15 +361,11 @@ export default {
     loadBookmarkCheck(bmkId, chartType) {
       if (this.getActiveBookmark && bmkId === this.getActiveBookmark.bmkId) {
         this.$emit('unloadBookmarkEv', false)
-      } else {
-        this.selectedBmkId = bmkId
-        this.selectedChartType = chartType
-        if (this.hasChanges) {
-          this.openSaveOrDiscardDialog()
-        } else {
-          this.loadBookmark()
-        }
+        return
       }
+      this.selectedBmkId = bmkId
+      this.selectedChartType = chartType
+      this.unsavedChanges.guard(() => this.loadBookmark())
     },
     loadBookmark() {
       this.loadbookmarkToState({ bmkId: this.selectedBmkId, chartType: this.selectedChartType })
@@ -575,32 +549,8 @@ export default {
     closeIncompatibleMessage() {
       this.showIncompatibleMessage = false
     },
-    openSaveOrDiscardDialog(isAddNewCohort = false) {
-      this.showSaveOrDiscardDialog = true
-      if (isAddNewCohort) this.isAddNewCohort = true
-    },
-    closeSaveOrDiscardDialog() {
-      this.showSaveOrDiscardDialog = false
-      this.isAddNewCohort = false
-    },
-    discardCohortChanges() {
-      this.showSaveOrDiscardDialog = false
-      if (this.isAddNewCohort) {
-        this.addNewCohort()
-      } else {
-        this.loadBookmark()
-      }
-    },
-    saveCohortChanges() {
-      this.showSaveOrDiscardDialog = false
-      this.$emit('unloadBookmarkEv', false)
-    },
     openAddNewCohort() {
-      if (this.hasChanges) {
-        this.openSaveOrDiscardDialog(true)
-      } else {
-        this.addNewCohort()
-      }
+      this.unsavedChanges.guard(() => this.addNewCohort())
     },
     closeAddNewCohort() {
       this.cohortName = ''
