@@ -112,7 +112,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         description: "Returns the 'raw' cohort definition for the given id.",
         tags: ["cohortdefinition"],
         params: z.object({ id: z.coerce.number() }),
-        response: { 200: CohortDefinitionResponseDto },
+        response: { 200: WebAPICohortDefinitionResponseDto },
         security: [
           {
             bearerAuth: [],
