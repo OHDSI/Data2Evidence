@@ -45,7 +45,7 @@ export interface TerminologyProps {
   userId?: string;
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
-  selectedConceptSetId?: number;
+  selectedConceptSetId?: string;
   mode?:
     | "CONCEPT_MAPPING"
     | "CONCEPT_SET"
@@ -107,7 +107,7 @@ const NameSection = ({
   isUserConceptSet: boolean;
   saveConceptSet(): void;
   isLoading: boolean;
-  conceptSetId: number | null;
+  conceptSetId: string | null;
   onClickClose(): void;
   errorMsg: string;
   canShare: boolean;
@@ -348,7 +348,7 @@ export const Terminology: FC<TerminologyProps> = ({
   >(initialSelectedConcepts || []);
   const [tab, setTab] = useState<TabName>(tabNames.SEARCH);
   const [conceptSetName, setConceptSetName] = useState("");
-  const [conceptSetId, setConceptSetId] = useState<number | null>(null);
+  const [conceptSetId, setConceptSetId] = useState<string | null>(null);
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
@@ -417,7 +417,7 @@ export const Terminology: FC<TerminologyProps> = ({
   );
 
   const checkIfConceptSetExists = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetName: string,
     datasetId: string,
   ): Promise<number> => {
@@ -429,10 +429,13 @@ export const Terminology: FC<TerminologyProps> = ({
     return Number(result);
   };
 
+  type ConceptSetDraft = Pick<ConceptSet, "concepts" | "name" | "shared"> &
+    Partial<Pick<ConceptSet, "userName">>;
+
   const createConceptSet = async (
-    conceptSet: Omit<ConceptSet, "id">,
+    conceptSet: ConceptSetDraft,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     const conceptSetId = await api.d2eWebapi.createConceptSet(
       conceptSet.name,
       datasetId,
@@ -450,16 +453,12 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const updateConceptSet = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSet: Partial<ConceptSet>,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(
-      conceptSetId,
-      { id: Number(conceptSetId), ...conceptSet },
-      datasetId,
-    );
+    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -467,7 +466,7 @@ export const Terminology: FC<TerminologyProps> = ({
       conceptSetItems,
       datasetId,
     );
-    return Number(conceptSetId);
+    return conceptSetId;
   };
 
   const saveConceptSet = useCallback(async () => {
@@ -491,9 +490,9 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
-      // 0 is the conceptSetId placeholder when creating a new concept set
+      // Empty string is the conceptSetId placeholder when creating a new concept set
       const isNameUsed = await checkIfConceptSetExists(
-        conceptSetId || 0,
+        conceptSetId || "",
         conceptSet.name,
         activeDatasetId,
       );
@@ -508,14 +507,16 @@ export const Terminology: FC<TerminologyProps> = ({
       }
 
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(
-            conceptSetId,
-            { id: Number(conceptSetId), ...conceptSet },
-            activeDatasetId,
-          )
+        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
-      setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
+      // Refetch the persisted concept set so currentConceptSet carries
+      // server-controlled fields (externalId, source, access flags).
+      const savedConceptSet = await getConceptSetWithConceptDetails(
+        updatedConceptSetId,
+        activeDatasetId,
+      );
+      setCurrentConceptSet(savedConceptSet);
       setConceptSetId(updatedConceptSetId);
       return;
     } catch {
@@ -538,7 +539,7 @@ export const Terminology: FC<TerminologyProps> = ({
   ]);
 
   const getConceptSetWithConceptDetails = async (
-    conceptSetId: number,
+    conceptSetId: string,
     activeDatasetId: string,
   ): Promise<ConceptSetWithConceptDetails> => {
     const [conceptSet, conceptSetExpression] = await Promise.all([
@@ -564,7 +565,7 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const getConceptSet = useCallback(
-    async (conceptSetId: number) => {
+    async (conceptSetId: string) => {
       if (!activeDatasetId) {
         return;
       }
@@ -723,12 +724,7 @@ export const Terminology: FC<TerminologyProps> = ({
     } else if (isConceptSet) {
       // Return concept set for concept set mode
       const onCloseReturnValues: OnCloseReturnValues = {
-        currentConceptSet: currentConceptSet
-          ? ({
-              ...currentConceptSet,
-              id: currentConceptSet.id.toString(),
-            } as OnCloseReturnValues["currentConceptSet"])
-          : null,
+        currentConceptSet: currentConceptSet,
       };
       onClose(onCloseReturnValues);
     } else {

@@ -60,32 +60,34 @@ describe("ConceptSetsTable", () => {
       <ConceptSetsTable
         data={[
           {
-            id: 15,
+            id: "legacy:15",
+            externalId: 15,
+            source: "legacy",
             name: "Legacy set",
             concepts: [],
             shared: false,
             createdBy: "owner",
             userName: "owner",
             hasWriteAccess: true,
+            hasReadAccess: true,
           },
         ]}
         isLoading={false}
-        userName="owner"
         onAddEdit={onAddEdit}
         onDelete={onDelete}
       />
     );
 
-    const row = screen.getByTestId("row-15");
+    const row = screen.getByTestId("row-legacy:15");
     const buttons = within(row).getAllByRole("button");
     expect(screen.getByText("EditIcon")).toBeTruthy();
     expect(buttons).toHaveLength(2);
 
     fireEvent.click(buttons[0]);
     fireEvent.click(buttons[1]);
-    expect(onAddEdit).toHaveBeenCalledWith(15);
+    expect(onAddEdit).toHaveBeenCalledWith("legacy:15");
     expect(onDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 15, hasWriteAccess: true })
+      expect.objectContaining({ id: "legacy:15", hasWriteAccess: true })
     );
   });
 
@@ -97,23 +99,25 @@ describe("ConceptSetsTable", () => {
       <ConceptSetsTable
         data={[
           {
-            id: 1000000007,
+            id: "webapi:7",
+            externalId: 7,
+            source: "webapi",
             name: "Native set",
             concepts: [],
             shared: false,
             createdBy: "owner",
             userName: "owner",
             hasWriteAccess: true,
+            hasReadAccess: true,
           },
         ]}
         isLoading={false}
-        userName="owner"
         onAddEdit={onAddEdit}
         onDelete={onDelete}
       />
     );
 
-    const row = screen.getByTestId("row-1000000007");
+    const row = screen.getByTestId("row-webapi:7");
     const buttons = within(row).getAllByRole("button");
     expect(screen.getByText("EditIcon")).toBeTruthy();
     expect(buttons).toHaveLength(2);
@@ -121,9 +125,9 @@ describe("ConceptSetsTable", () => {
     fireEvent.click(buttons[0]);
     fireEvent.click(buttons[1]);
 
-    expect(onAddEdit).toHaveBeenCalledWith(1000000007);
+    expect(onAddEdit).toHaveBeenCalledWith("webapi:7");
     expect(onDelete).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1000000007, hasWriteAccess: true })
+      expect.objectContaining({ id: "webapi:7", hasWriteAccess: true })
     );
   });
 
@@ -135,18 +139,19 @@ describe("ConceptSetsTable", () => {
       <ConceptSetsTable
         data={[
           {
-            id: 15,
+            id: "legacy:15",
+            externalId: 15,
+            source: "legacy",
             name: "Legacy set",
             concepts: [],
             shared: false,
             createdBy: "owner",
             userName: "owner",
             hasWriteAccess: true,
-            source: "legacy",
+            hasReadAccess: true,
           },
         ]}
         isLoading={false}
-        userName="owner"
         onAddEdit={onAddEdit}
         onDelete={onDelete}
       />
@@ -164,18 +169,19 @@ describe("ConceptSetsTable", () => {
       <ConceptSetsTable
         data={[
           {
-            id: 1000000007,
+            id: "webapi:7",
+            externalId: 7,
+            source: "webapi",
             name: "Native set",
             concepts: [],
             shared: false,
             createdBy: "owner",
             userName: "owner",
             hasWriteAccess: true,
-            source: "webapi",
+            hasReadAccess: true,
           },
         ]}
         isLoading={false}
-        userName="owner"
         onAddEdit={onAddEdit}
         onDelete={onDelete}
       />

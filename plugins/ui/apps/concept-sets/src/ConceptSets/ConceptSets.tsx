@@ -31,7 +31,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   const [tabValue, setTabValue] = useState(ConceptSetTab.ConceptSearch);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conceptSetToDelete, setConceptSetToDelete] = useState<
-    { id: number; name: string } | undefined
+    { id: string; name: string } | undefined
   >(undefined);
 
   const handleTabSelectionChange = async (
@@ -77,7 +77,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
   }, [fetchData]);
 
   const handleAddAndEditConceptSet = useCallback(
-    (conceptSetId?: number) => {
+    (conceptSetId?: string) => {
       if (!datasetId) return;
       const event = new CustomEvent<{ props: TerminologyProps }>(
         "alp-terminology-open",

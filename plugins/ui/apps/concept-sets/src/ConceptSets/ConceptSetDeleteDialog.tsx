@@ -8,7 +8,7 @@ import { i18nKeys } from "../context/state";
 import "./ConceptSetDeleteDialog.scss";
 
 interface ConceptSetDeleteDialogProps {
-  conceptSet?: { id: number; name: string };
+  conceptSet?: { id: string; name: string };
   open: boolean;
   datasetId: string;
   setMainFeedback: (feedback: Feedback) => void;

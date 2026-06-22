@@ -22,7 +22,7 @@ import "./ConceptSets.scss";
 interface ConceptSetsTableProps {
   data: ConceptSet[];
   isLoading: boolean;
-  onAddEdit: (conceptSetId?: number) => void;
+  onAddEdit: (conceptSetId?: string) => void;
   onDelete: (conceptSet: ConceptSet) => void;
 }
 
@@ -47,7 +47,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   const columns = useMemo<MRT_ColumnDef<ConceptSet>[]>(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "externalId",
         header: getText(i18nKeys.CONCEPT_SETS__ID),
         size: 80,
         sortDescFirst: false,
