@@ -107,6 +107,7 @@
     "./src/utils/MRIEndpointErrorHandler": "./src/utils/MRIEndpointErrorHandler.ts",
     "./src/utils/AnnotationError": "./src/utils/AnnotationError.ts",
     "./src/utils/Utils": "./src/utils/Utils.ts",
+    "./src/utils/conceptSetRef": "./src/utils/conceptSetRef.ts",
     "./src/utils/Logger": "./src/utils/Logger.ts",
     "./src/utils/formatter/BookmarkFormatter": "./src/utils/formatter/BookmarkFormatter.ts",
     "./src/utils/formatter/ConceptSetToConceptConverter": "./src/utils/formatter/ConceptSetToConceptConverter.ts",

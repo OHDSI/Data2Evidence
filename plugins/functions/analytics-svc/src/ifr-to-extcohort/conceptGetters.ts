@@ -2,6 +2,7 @@ import _ from "lodash";
 import { ExtCohortConcept } from "./types";
 import { terminologyRequest } from "../utils/TerminologySvcProxy";
 import { IMRIRequest } from "../types";
+import { parseConceptSetRef } from "../utils/conceptSetRef";
 
 function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
     const result = {};
@@ -81,10 +82,20 @@ export const getConceptsFromConceptSet = async ({
     req: IMRIRequest;
     datasetId: string;
 }): Promise<ExtCohortConcept[] | null> => {
+    // Route by source: terminology-svc only understands the legacy bare-numeric
+    // ids. WebAPI-sourced ids need a different resolution path that isn't
+    // wired up yet — warn and return null so callers degrade gracefully.
+    const ref = parseConceptSetRef(conceptSetId);
+    if (ref.source === "webapi") {
+        console.warn(
+            `[analytics-svc] getConceptsFromConceptSet: skipping WebAPI-sourced concept set "${conceptSetId}" — terminology-svc resolution not yet implemented for that source.`
+        );
+        return null;
+    }
     const { concepts } = await terminologyRequest(
         req,
         "GET",
-        `concept-set/${conceptSetId}?datasetId=${datasetId}`,
+        `concept-set/${ref.externalId}?datasetId=${datasetId}`,
         null
     );
 

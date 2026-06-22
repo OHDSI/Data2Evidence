@@ -18,6 +18,10 @@ import {
     getConceptByName,
     getConceptsFromConceptSet,
 } from "./conceptGetters";
+import {
+    formatConceptSetRef,
+    parseConceptSetRef,
+} from "../utils/conceptSetRef";
 
 export const getExtCohortKeyForEvent = (
     cdmConfig: CdmConfig,
@@ -183,18 +187,27 @@ const extractConceptSets = async (
                 continue;
             }
             if (type === "conceptSet") {
+                // conceptValue may be a bare number (legacy IFR JSON), a
+                // bare-numeric string, or a compound id like "legacy:N" /
+                // "webapi:N" from upgraded frontends. Normalize through the
+                // parser so downstream callers see a canonical compound id.
+                const ref = parseConceptSetRef(
+                    conceptValue as string | number
+                );
                 const concepts = await getConceptsFromConceptSet({
-                    conceptSetId: String(conceptValue),
+                    conceptSetId: formatConceptSetRef(ref),
                     req,
                     datasetId,
                 });
-                concepts.forEach((concept) => {
-                    conceptsForSet.push({
-                        concept,
-                        includeDescendants: concept.USEDESCENDANTS,
-                        includeMapped: concept.USEMAPPED,
+                if (concepts) {
+                    concepts.forEach((concept) => {
+                        conceptsForSet.push({
+                            concept,
+                            includeDescendants: concept.USEDESCENDANTS,
+                            includeMapped: concept.USEMAPPED,
+                        });
                     });
-                });
+                }
             }
             if (!conceptIdentifierType) {
                 continue;
