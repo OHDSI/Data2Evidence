@@ -29,17 +29,6 @@ export class ConceptSetValidationError extends Error {
 }
 
 /**
- * Thrown when attempting to mutate a concept set that only exists in the
- * legacy user-artifact store.
- */
-export class LegacyConceptSetReadOnlyError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "LegacyConceptSetReadOnlyError";
-  }
-}
-
-/**
  * Thrown when fetching a concept set expression fails, typically due to
  * missing source configuration in WebAPI.
  */
