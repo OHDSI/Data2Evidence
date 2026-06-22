@@ -2,9 +2,11 @@
 #
 # d2e-trex: trexsql base with WebAPI running in-engine via webapi.trex
 # (started by core/server with SELECT webapi_start()), not as a separate Java
-# process. Overlays d2e's core, plugins, CDW data, logto, ONNX and DuckDB extensions.
+# process. The base image already ships trex's canonical main/event core with the
+# env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
+# this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-347a91227639060f76608589321f2d2a255aca44@sha256:5210493ee36c67df9f38d0e2efb8dedea60b5dc0d1b22c0576709f0797457ef3 AS base
+FROM ghcr.io/ohdsi/trexsql:sha-464e0fcae9a9665ce4e24682d34c67ab8bd74f70@sha256:f9d3035a11f0da5e4999bd1c49d3d14a17a57a9484514279eb56909664f5cd6e AS base
 
 USER root
 WORKDIR /usr/src
@@ -96,15 +98,23 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token 
 
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 
-# d2e core overlays the base's /usr/src/core; trex bundle takes positional args.
-RUN rm -rf /usr/src/core
-COPY ./core ./core
-RUN trex bundle ./core/server/index.ts ./core/server/index.eszip && \
-    trex bundle ./core/event/index.ts ./core/event/index.eszip
+# NOTE: the core (main + event, with D2E_COMPAT) is NOT vendored — it is provided
+# by the base trexsql image at /usr/src/core (index.eszip already bundled there).
+# D2E_COMPAT is activated at runtime via the D2E_COMPAT=true env (set in compose).
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
+
+# Seed DuckDB's default per-user extension path so trex's main `LOAD <ext>`
+# (icu/fts) resolves — the base installs to DUCKDB_EXTENSION_DIRECTORY
+# (/usr/share/trexsql/extensions) but worker connections look in ~/.duckdb.
+# This image runs as root, so /root/.duckdb. (Belt-and-suspenders for node too.)
+RUN for HOME_DIR in /root /home/node; do \
+      mkdir -p "$HOME_DIR/.duckdb/extensions" && \
+      cp -r /usr/share/trexsql/extensions/* "$HOME_DIR/.duckdb/extensions/" 2>/dev/null || true; \
+    done; \
+    chown -R node:node /home/node/.duckdb 2>/dev/null || true
 
 # WebAPI, trexas HTTP/TLS, pgwire, gossip, FHIR.
 EXPOSE 8080 33001 33000 5433 5432 4200 8094
