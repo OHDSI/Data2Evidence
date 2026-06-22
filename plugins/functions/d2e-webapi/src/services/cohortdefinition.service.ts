@@ -13,13 +13,11 @@ import {
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { WebAPICohortDefinitionAPI } from "../api/WebAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
-  CohortDefinitionCreateResponseDto,
   CohortDefinitionCopyResponseDto,
-  CohortDefinitionResponseDto,
-  IUserArtifactAtlasCohortDefinitionDto,
   IGenerateCohortResponseDto,
   ICohortDefinitionCheckV2ResponseDto,
 } from "../dto/cohortdefinition.ts";
@@ -186,40 +184,11 @@ export const generateCohort = async (
 
 export const createCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  // Get atlas cohort definition id from sequence
-  const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinitionId =
-    await portalServerApi.getUserArtifactSequenceNextval(
-      datasetId,
-      UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS,
-    );
-
-  const userArtifactAtlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto =
-    {
-      ...cohortDefinitionDto,
-      id: atlasCohortDefinitionId,
-    };
-  // Create atlas_cohort_definition in user artifact
-  const portalUserArtifacts = await portalServerApi.createAtlasCohortDefinition(
-    datasetId,
-    userArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const response: z.infer<typeof CohortDefinitionCreateResponseDto> = {
-    id: atlasCohortDefinitionId,
-    name: cohortDefinitionDto.name,
-    description: cohortDefinitionDto.description,
-    expressionType: cohortDefinitionDto.expressionType,
-    expression: cohortDefinitionDto.expression,
-    createdDate: Date.parse(portalUserArtifacts.createdDate),
-    hasWriteAccess: true,
-    hasReadAccess: true,
-  };
-  return response;
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  return await webApi.createCohortDefinition(cohortDefinitionDto);
 };
 
 export const getCohortDefinitionList = async (
@@ -276,7 +245,7 @@ export const getCohortDefinitionList = async (
         "Failed to fetch bookmarks, continuing with empty list:",
         error,
       );
-      return { bookmarks: [], schemaName: "" };
+      return { bookmarks: [] as IBookmark[], schemaName: "" };
     }),
     (async (): Promise<IBaseMaterializedCohort[]> => {
       const canMaterializeCohort = await withRetry(
@@ -303,15 +272,12 @@ export const getCohortDefinitionList = async (
         () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
         MATERIALIZED_COHORT_RETRY_DELAYS_MS,
       ).catch((error) => {
-        console.error(
-          "Failed to fetch materialized cohorts after retries:",
-          {
-            datasetId,
-            attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
-            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
-            error: getErrorDetails(error),
-          },
-        );
+        console.error("Failed to fetch materialized cohorts after retries:", {
+          datasetId,
+          attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
+          elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+          error: getErrorDetails(error),
+        });
         throw error;
       });
 
@@ -393,71 +359,24 @@ export const getCohortDefinitionList = async (
 
 export const getCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinition = await portalServerApi.getAtlasCohortDefinition(
-    datasetId,
-    cohortDefinitionId,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionResponseDto> = {
-    id: atlasCohortDefinition.id,
-    name: atlasCohortDefinition.name,
-    description: atlasCohortDefinition.description,
-    createdBy: atlasCohortDefinition.createdBy,
-    createdDate: atlasCohortDefinition.createdDate,
-    modifiedBy: atlasCohortDefinition.modifiedBy,
-    modifiedDate: atlasCohortDefinition.modifiedDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    tags: atlasCohortDefinition.tags,
-    expression: atlasCohortDefinition.expression,
-    expressionType: atlasCohortDefinition.expressionType,
-  };
-  return result;
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  return await webApi.getCohortDefinition(cohortDefinitionId);
 };
 
 export const updateCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  // Get existing atlas cohort definition from user artifacts via cohort definition id
-  let userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      cohortDefinitionId,
-    );
-
-  // Update existing atlas cohort definition with incoming params
-  userArtifactAtlasCohortDefinition = {
-    ...userArtifactAtlasCohortDefinition,
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  return await webApi.updateCohortDefinition({
     ...cohortDefinitionDto,
-  };
-  await portalServerApi.updateAtlasCohortDefinition(
-    datasetId,
-    userArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionResponseDto> = {
     id: cohortDefinitionId,
-    name: userArtifactAtlasCohortDefinition.name,
-    description: userArtifactAtlasCohortDefinition.description,
-    expressionType: userArtifactAtlasCohortDefinition.expressionType,
-    expression: userArtifactAtlasCohortDefinition.expression,
-    createdDate: userArtifactAtlasCohortDefinition.createdDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    tags: userArtifactAtlasCohortDefinition.tags,
-    modifiedDate: userArtifactAtlasCohortDefinition.modifiedDate,
-  };
-  return result;
+  });
 };
 
 export const deleteCohortDefinition = async (
@@ -488,12 +407,8 @@ export const deleteCohortDefinition = async (
     await analyticsSvcAPI.deleteCohort(datasetId, materializedCohort.id);
   }
 
-  // Delete atlas cohort definition from user artifacts
-  const portalServerApi = new PortalServerAPI(token);
-  await portalServerApi.deleteAtlasCohortDefinition(
-    datasetId,
-    cohortDefinitionId,
-  );
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  await webApi.deleteCohortDefinition(cohortDefinitionId);
   return;
 };
 

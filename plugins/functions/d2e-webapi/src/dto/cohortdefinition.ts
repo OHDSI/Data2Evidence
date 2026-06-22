@@ -39,6 +39,47 @@ export const CohortDefinitionResponseDto = z.object({
 export const CohortDefinitionCreateResponseDto =
   CohortDefinitionResponseDto.omit({ modifiedDate: true, tags: true });
 
+const WebAPICohortUserDto = z.object({
+  name: z.string(),
+  id: z.number(),
+  login: z.string(),
+});
+
+const WebAPICohortTagDto = z.object({
+  name: z.string(),
+  id: z.number(),
+  hasWriteAccess: z.boolean(),
+  modifiedBy: WebAPICohortUserDto,
+  createdBy: WebAPICohortUserDto,
+  createdDate: z.string(),
+  modifiedDate: z.string(),
+  icon: z.string(),
+  permissionProtected: z.boolean(),
+  multiSelection: z.boolean(),
+  mandatory: z.boolean(),
+  type: z.enum(["SYSTEM", "CUSTOM", "PRIZM"]),
+  description: z.string(),
+  count: z.number(),
+  groups: z.array(z.unknown()),
+  color: z.string(),
+  showGroup: z.boolean(),
+  allowCustom: z.boolean(),
+});
+
+export const WebAPICohortDefinitionResponseDto = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().optional(),
+  hasWriteAccess: z.boolean().optional(),
+  tags: z.array(WebAPICohortTagDto).optional(),
+  expressionType: z.enum(["SIMPLE_EXPRESSION", "CUSTOM_SQL", "EXTERNAL_SOURCED"]),
+  expression: z.union([CohortExpression, z.string()]),
+  modifiedBy: WebAPICohortUserDto.optional(),
+  createdBy: WebAPICohortUserDto,
+  createdDate: z.union([z.number(), z.string()]),
+  modifiedDate: z.union([z.number(), z.string()]).optional(),
+});
+
 export const CohortDefinitionCopyResponseDto =
   CohortDefinitionCreateResponseDto.omit({ description: true });
 

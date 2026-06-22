@@ -11,6 +11,7 @@ import {
   CohortDefinitionCreateResponseDto,
   CohortDefinitionCopyResponseDto,
   CohortDefinitionResponseDto,
+  WebAPICohortDefinitionResponseDto,
   GenerateCohortResponseDto,
   ICohortDefinitionIdInfoResponseDto,
 } from "../dto/cohortdefinition.ts";
@@ -65,7 +66,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         description: "Creates a cohort definition in the database.",
         tags: ["cohortdefinition"],
         body: AtlasCohortDefinitionDto,
-        response: { 200: CohortDefinitionCreateResponseDto },
+        response: { 200: WebAPICohortDefinitionResponseDto },
         security: [
           {
             bearerAuth: [],
@@ -139,7 +140,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         tags: ["cohortdefinition"],
         params: z.object({ id: z.coerce.number() }),
         body: AtlasCohortDefinitionDto,
-        response: { 200: CohortDefinitionCreateResponseDto },
+        response: { 200: WebAPICohortDefinitionResponseDto },
         security: [
           {
             bearerAuth: [],
