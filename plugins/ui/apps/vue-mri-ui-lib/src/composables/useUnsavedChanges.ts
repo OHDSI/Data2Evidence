@@ -8,7 +8,8 @@ const showDialog = ref(false)
 const pendingUrl = ref<string | null>(null)
 const pendingAction = ref<PendingAction | null>(null)
 let cachedStore: Store<unknown> | null = null
-let bypassNextRoutingEvent = false
+let expectedNavigationUrl: string | null = null
+let installed = false
 
 const getStore = (): Store<unknown> => {
   if (!cachedStore) {
@@ -21,8 +22,14 @@ const setStore = (store: Store<unknown>): void => {
   cachedStore = store
 }
 
+const isRestoring = (): boolean => {
+  const store = getStore()
+  return Boolean(store?.getters?.getIsRestoringBookmark)
+}
+
 const isDirty: ComputedRef<boolean> = computed(() => {
   const store = getStore()
+  if (isRestoring()) return false
   const activeBookmark = store?.getters?.getActiveBookmark
   if (!activeBookmark) return false
   return Boolean(activeBookmark.isNew) || Boolean(store.getters.getCurrentBookmarkHasChanges)
@@ -35,29 +42,38 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 }
 
 const handleSingleSpaRouting = (event: Event): void => {
-  if (bypassNextRoutingEvent) {
-    bypassNextRoutingEvent = false
+  const detail = (event as CustomEvent<{ newUrl?: string; cancelNavigation?: (v?: unknown) => void }>).detail
+  const newUrl = detail?.newUrl ?? window.location.href
+
+  if (expectedNavigationUrl && expectedNavigationUrl === newUrl) {
+    expectedNavigationUrl = null
     return
   }
+  expectedNavigationUrl = null
+
   if (!isDirty.value) return
 
-  const routingEvent = event as CustomEvent<{ newUrl?: string }>
-  routingEvent.preventDefault()
-  pendingUrl.value = routingEvent.detail?.newUrl ?? window.location.href
+  detail?.cancelNavigation?.(true)
+  pendingUrl.value = newUrl
   showDialog.value = true
 }
 
 const install = (): void => {
+  if (installed) return
+  installed = true
   window.addEventListener('beforeunload', handleBeforeUnload)
   window.addEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }
 
 const uninstall = (): void => {
+  if (!installed) return
+  installed = false
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }
 
 const guard = (action: PendingAction): void => {
+  if (showDialog.value) return
   if (!isDirty.value) {
     action()
     return
@@ -78,7 +94,7 @@ const confirmLeave = (): void => {
     return
   }
   if (url) {
-    bypassNextRoutingEvent = true
+    expectedNavigationUrl = url
     navigateToUrl(url)
   }
 }
@@ -87,6 +103,7 @@ const cancelLeave = (): void => {
   showDialog.value = false
   pendingAction.value = null
   pendingUrl.value = null
+  expectedNavigationUrl = null
 }
 
 export interface UnsavedChangesApi {
