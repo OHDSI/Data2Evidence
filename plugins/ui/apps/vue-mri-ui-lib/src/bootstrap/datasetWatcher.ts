@@ -1,6 +1,6 @@
 import type { Store } from 'vuex'
 import { usePortalContextStore } from '@/stores/portalContext'
-import { SET_DATASET_RELOAD_IN_PROGRESS } from '@/store/mutation-types'
+import { SET_DATASET_RELOAD_IN_PROGRESS, SET_ACTIVE_BOOKMARK } from '@/store/mutation-types'
 
 type PortalContextLike = ReturnType<typeof usePortalContextStore>
 
@@ -23,6 +23,7 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
     const requestId = latestRequestId
 
     vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: true })
+    vuexStore.commit(SET_ACTIVE_BOOKMARK, null)
 
     const isStale = () => requestId !== latestRequestId
 

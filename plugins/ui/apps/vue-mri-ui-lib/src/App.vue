@@ -51,7 +51,7 @@ const bindShareCohortDefinition = (): void => {
 const processDeepLinkIfPresent = async (): Promise<void> => {
   try {
     await store.dispatch('requestMriConfig')
-    const { processDeepLink } = useDeepLink(store.dispatch)
+    const { processDeepLink } = useDeepLink(store.dispatch, { guard: unsavedChanges.guard })
     await processDeepLink()
   } catch (error) {
     console.error('[App] Failed to load config or process deep link', error)

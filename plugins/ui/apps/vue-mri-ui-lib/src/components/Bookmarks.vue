@@ -379,34 +379,36 @@ export default {
         })
     },
     async loadAtlasBookmark(atlasDefinitionId) {
-      try {
-        // Get Atlas JSON using our new store action
-        const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
+      this.unsavedChanges.guard(async () => {
+        try {
+          // Get Atlas JSON using our new store action
+          const atlasJson = await this.$store.dispatch('fireGetAtlasCohortDefinitionQuery', atlasDefinitionId)
 
-        // Create a fake bookmark object for the tab display
-        const atlasBookmark = {
-          bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
-          bmkId: `${atlasDefinitionId}`,
-          isAtlas: true,
-          isNew: false, // Currently always false as we have to import one first
+          // Create a fake bookmark object for the tab display
+          const atlasBookmark = {
+            bookmarkname: atlasJson.name || `Atlas Cohort ${atlasDefinitionId}`,
+            bmkId: `${atlasDefinitionId}`,
+            isAtlas: true,
+            isNew: false, // Currently always false as we have to import one first
+          }
+
+          // Set as active bookmark to create the tab
+          this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+
+          // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
+          this.$emit('loadAtlasCohortDefinition', atlasJson)
+
+          // Switch to Patient Analytics view after loading
+          this.$emit('unloadBookmarkEv', false, true)
+        } catch (error) {
+          console.error('Failed to load Atlas bookmark:', error)
+          this.messageStrip = {
+            show: true,
+            message: 'Failed to load Atlas cohort definition',
+            messageType: 'error',
+          }
         }
-
-        // Set as active bookmark to create the tab
-        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
-
-        // Emit event to parent to load Atlas JSON into the correct QueryFilter (in Filters.vue)
-        this.$emit('loadAtlasCohortDefinition', atlasJson)
-
-        // Switch to Patient Analytics view after loading
-        this.$emit('unloadBookmarkEv', false, true)
-      } catch (error) {
-        console.error('Failed to load Atlas bookmark:', error)
-        this.messageStrip = {
-          show: true,
-          message: 'Failed to load Atlas cohort definition',
-          messageType: 'error',
-        }
-      }
+      })
     },
     closeRenameBookmark() {
       if (this.isRenamingBookmark) return
@@ -659,22 +661,24 @@ export default {
       }
     },
     openNewAtlasBookmark() {
-      // Create a new Atlas bookmark object
-      const atlasBookmark = {
-        bookmarkname: 'New Atlas Cohort',
-        bmkId: null, // No ID yet as it's new
-        isAtlas: true,
-        isNew: true,
-      }
+      this.unsavedChanges.guard(() => {
+        // Create a new Atlas bookmark object
+        const atlasBookmark = {
+          bookmarkname: 'New Atlas Cohort',
+          bmkId: null, // No ID yet as it's new
+          isAtlas: true,
+          isNew: true,
+        }
 
-      // Set as active bookmark
-      this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
+        // Set as active bookmark
+        this[types.SET_ACTIVE_BOOKMARK](atlasBookmark)
 
-      // Pass null Atlas data to initialize empty QueryFilter
-      this.$emit('loadAtlasCohortDefinition', null)
+        // Pass null Atlas data to initialize empty QueryFilter
+        this.$emit('loadAtlasCohortDefinition', null)
 
-      // Switch to Patient Analytics view
-      this.$emit('unloadBookmarkEv', false, true)
+        // Switch to Patient Analytics view
+        this.$emit('unloadBookmarkEv', false, true)
+      })
     },
     openImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = true
