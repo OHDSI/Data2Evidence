@@ -8,8 +8,8 @@ import { MINUTE_1, MINUTE_2 } from '../const'
 const appOrigin = new URL(process.env.D2E_BASE_URL ?? 'https://localhost:41100').origin
 test.use({
   launchOptions: {
-    args: ['--ignore-certificate-errors', `--unsafely-treat-insecure-origin-as-secure=${appOrigin}`],
-  },
+    args: ['--ignore-certificate-errors', `--unsafely-treat-insecure-origin-as-secure=${appOrigin}`]
+  }
 })
 
 const TEST_NAME = 'patient-analytics-wizard-dashboard'
@@ -92,7 +92,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('tab', { name: 'Access' }).click()
     await page.getByTestId('dialog').getByTestId('button').click()
     await page.getByRole('menuitem', { name: 'admin' }).click()
-    await expect(page.getByTestId('alert-title')).toContainText("You've added access for admin")
+    await expect(page.getByTestId('alert-title')).toContainText('User admin has been granted permission.')
     await page.getByTestId('dialog-close').click()
 
     // Check dashboard wizard is accessible and can be opened
