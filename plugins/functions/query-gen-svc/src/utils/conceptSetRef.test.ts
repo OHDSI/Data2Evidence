@@ -1,3 +1,4 @@
+import { assertEquals, assertThrows } from "@std/assert";
 import {
   CONCEPT_SET_LEGACY_OFFSET_BOUNDARY,
   formatConceptSetRef,
@@ -5,71 +6,78 @@ import {
   parseConceptSetRef,
 } from "./conceptSetRef";
 
-describe("parseConceptSetRef", () => {
-  it("parses canonical legacy compound form", () => {
-    expect(parseConceptSetRef("legacy:869")).toEqual({
-      source: "legacy",
-      externalId: 869,
-    });
-  });
-
-  it("parses canonical webapi compound form", () => {
-    expect(parseConceptSetRef("webapi:7")).toEqual({
-      source: "webapi",
-      externalId: 7,
-    });
-  });
-
-  it("parses bare numeric string below boundary as legacy (back-compat)", () => {
-    expect(parseConceptSetRef("869")).toEqual({
-      source: "legacy",
-      externalId: 869,
-    });
-  });
-
-  it("decodes offset-encoded numeric string as webapi (back-compat)", () => {
-    expect(
-      parseConceptSetRef(String(CONCEPT_SET_LEGACY_OFFSET_BOUNDARY + 7))
-    ).toEqual({ source: "webapi", externalId: 7 });
-  });
-
-  it("throws on unknown source prefix", () => {
-    expect(() => parseConceptSetRef("foo:1")).toThrow(/foo:1/);
-  });
-
-  it("throws on garbage input", () => {
-    expect(() => parseConceptSetRef("not-an-id")).toThrow();
-  });
-
-  it("throws on empty string", () => {
-    expect(() => parseConceptSetRef("")).toThrow();
+Deno.test("parseConceptSetRef parses canonical legacy compound form", () => {
+  assertEquals(parseConceptSetRef("legacy:869"), {
+    source: "legacy",
+    externalId: 869,
   });
 });
 
-describe("formatConceptSetRef", () => {
-  it("round-trips legacy compound form", () => {
-    expect(formatConceptSetRef(parseConceptSetRef("legacy:1"))).toEqual(
-      "legacy:1"
-    );
-  });
-
-  it("round-trips webapi compound form", () => {
-    expect(formatConceptSetRef(parseConceptSetRef("webapi:42"))).toEqual(
-      "webapi:42"
-    );
+Deno.test("parseConceptSetRef parses canonical webapi compound form", () => {
+  assertEquals(parseConceptSetRef("webapi:7"), {
+    source: "webapi",
+    externalId: 7,
   });
 });
 
-describe("isConceptSetRefString", () => {
-  it("accepts canonical legacy form", () => {
-    expect(isConceptSetRefString("legacy:1")).toBe(true);
-  });
+Deno.test(
+  "parseConceptSetRef parses bare numeric string below boundary as legacy (back-compat)",
+  () => {
+    assertEquals(parseConceptSetRef("869"), {
+      source: "legacy",
+      externalId: 869,
+    });
+  },
+);
 
-  it("rejects bare numeric strings (not canonical)", () => {
-    expect(isConceptSetRefString("869")).toBe(false);
-  });
+Deno.test(
+  "parseConceptSetRef decodes offset-encoded numeric string as webapi (back-compat)",
+  () => {
+    assertEquals(
+      parseConceptSetRef(String(CONCEPT_SET_LEGACY_OFFSET_BOUNDARY + 7)),
+      { source: "webapi", externalId: 7 },
+    );
+  },
+);
 
-  it("rejects arbitrary strings", () => {
-    expect(isConceptSetRefString("foo")).toBe(false);
-  });
+Deno.test("parseConceptSetRef throws on unknown source prefix", () => {
+  assertThrows(
+    () => parseConceptSetRef("foo:1"),
+    Error,
+    "foo:1",
+  );
+});
+
+Deno.test("parseConceptSetRef throws on garbage input", () => {
+  assertThrows(() => parseConceptSetRef("not-an-id"), Error);
+});
+
+Deno.test("parseConceptSetRef throws on empty string", () => {
+  assertThrows(() => parseConceptSetRef(""), Error);
+});
+
+Deno.test("formatConceptSetRef round-trips legacy compound form", () => {
+  assertEquals(
+    formatConceptSetRef(parseConceptSetRef("legacy:1")),
+    "legacy:1",
+  );
+});
+
+Deno.test("formatConceptSetRef round-trips webapi compound form", () => {
+  assertEquals(
+    formatConceptSetRef(parseConceptSetRef("webapi:42")),
+    "webapi:42",
+  );
+});
+
+Deno.test("isConceptSetRefString accepts canonical legacy form", () => {
+  assertEquals(isConceptSetRefString("legacy:1"), true);
+});
+
+Deno.test("isConceptSetRefString rejects bare numeric strings (not canonical)", () => {
+  assertEquals(isConceptSetRefString("869"), false);
+});
+
+Deno.test("isConceptSetRefString rejects arbitrary strings", () => {
+  assertEquals(isConceptSetRefString("foo"), false);
 });

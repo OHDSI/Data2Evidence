@@ -2,6 +2,9 @@
     "workspace": [],
     "nodeModulesDir": "auto",
     "allowScripts": [],
+    "tasks": {
+        "test": "deno test --allow-read --allow-env --no-check"
+    },
     "compilerOptions": {
         "lib": ["deno.window"],
         "strict": false,
@@ -9,6 +12,7 @@
         "emitDecoratorMetadata": true
     },
     "imports": {
+        "@std/assert": "jsr:@std/assert@1",
         "@alp/alp-base-utils": "../_shared/alp-base-utils/src/index.ts",
         "@alp/alp-config-utils": "../_shared/alp-config-utils/src/index.ts",
         "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
