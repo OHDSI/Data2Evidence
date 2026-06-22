@@ -328,7 +328,7 @@ export class TrexDAO {
   }
 
   async validateCohortJsonExpression(
-    cohortJsonExpression: ICohortExpression
+    cohortJsonExpression: ICohortExpression | string
   ): Promise<ICohortDefinitionCheckV2ResponseDto> {
     try {
       const result = await this.conn.validateCohortJsonExpression(

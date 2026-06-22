@@ -91,14 +91,16 @@ export const generateCohort = async (
     dataset;
   const cacheId = dataset.cacheId ?? dataset.databaseCode;
 
-  // Get atlas cohort definition from user artifacts via cohort definition id
-  const userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      atlasCohortDefinitionId,
-    );
-  const { name, description, expressionType, expression, tags } =
-    userArtifactAtlasCohortDefinition;
+  // Get atlas cohort definition from WebAPI via cohort definition id
+  const webApi = new WebAPICohortDefinitionAPI(token);
+  const webApiCohortDefinition = await webApi.getCohortDefinition(
+    atlasCohortDefinitionId,
+  );
+  const { name, description, expressionType, expression } =
+    webApiCohortDefinition;
+  const tags = (webApiCohortDefinition.tags ?? [])
+    .map((tag) => tag.name)
+    .filter((tag): tag is string => tag.length > 0);
 
   // If cohortJson expression has any CRITICAL warnings, reject cohort generation
   const cohortJsonValidation = await checkV2(token, datasetId, expression);
@@ -209,11 +211,7 @@ export const getCohortDefinitionList = async (
   };
 
   const getUserLogin = (
-    value:
-      | string
-      | null
-      | undefined
-      | { login?: string | null },
+    value: string | null | undefined | { login?: string | null },
   ) => {
     if (typeof value === "string") {
       return value;
@@ -232,7 +230,9 @@ export const getCohortDefinitionList = async (
   };
 
   const mapAtlasCohortDefinitions = (
-    atlasCohortDefinitions: Awaited<ReturnType<typeof webApi.getCohortDefinitionList>>,
+    atlasCohortDefinitions: Awaited<
+      ReturnType<typeof webApi.getCohortDefinitionList>
+    >,
   ): IAtlasCohortDefinition[] =>
     atlasCohortDefinitions.map((atlasCohortDefinition) => ({
       id: atlasCohortDefinition.id,
@@ -461,7 +461,7 @@ export const checkIfAtlasCohortDefinitionExists = async (
 export const checkV2 = async (
   token: string,
   datasetId: string,
-  cohortJsonExpression: ICohortExpression,
+  cohortJsonExpression: ICohortExpression | string,
 ): Promise<ICohortDefinitionCheckV2ResponseDto> => {
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
   const warnings =
