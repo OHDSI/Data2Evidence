@@ -176,18 +176,34 @@ const getters = {
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection
     const currentBookmarksAxisSelection = bookmark?.axisSelection
-    // Only compare barChartType for stacked-bar bookmarks
+    // Only compare barChartType for stacked-bar bookmarks.
+    // Normalize both sides consistently:
+    //   - Disabled modes fall back to 'stack' (handled above).
+    //   - showDistributionOverlay is forced to false when the effective mode
+    //     does not support distribution overlays, matching the behaviour in
+    //     _loadParsedBookmarkToState. This prevents false-positive dirty state
+    //     when a saved overlay-capable mode is disabled by the current config.
     let barChartTypeChanged = false
     if (bookmark?.chartType === 'stacked') {
       const mriFrontendConfig = rootGetters.getMriFrontendConfig
       const defaultBarChartType = { mode: 'stack', showDistributionOverlay: false }
       const newRaw = moduleGetters.getBookmarksData.barChartType ?? defaultBarChartType
       const curRaw = bookmark?.barChartType ?? defaultBarChartType
-      // Normalize disabled modes to 'stack' on both sides so a freshly-loaded bookmark whose
-      // saved mode is disabled by the current config does not appear dirty.
+
+      const newEffectiveMode = getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig)
+      const curEffectiveMode = getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig)
+      const newEffectiveModeMeta = modeOrder.find(m => m.id === newEffectiveMode)
+      const curEffectiveModeMeta = modeOrder.find(m => m.id === curEffectiveMode)
+
       barChartTypeChanged = !isEqual(
-        { ...newRaw, mode: getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig) },
-        { ...curRaw, mode: getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig) }
+        {
+          mode: newEffectiveMode,
+          showDistributionOverlay: newEffectiveModeMeta?.hasDistributionOverlay && !!newRaw.showDistributionOverlay,
+        },
+        {
+          mode: curEffectiveMode,
+          showDistributionOverlay: curEffectiveModeMeta?.hasDistributionOverlay && !!curRaw.showDistributionOverlay,
+        }
       )
     }
     const newColorAxis = moduleGetters.getBookmarksData.colorAxis ?? null

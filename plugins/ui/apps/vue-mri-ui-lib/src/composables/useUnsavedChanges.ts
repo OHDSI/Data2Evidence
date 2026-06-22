@@ -1,6 +1,7 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import { useStore, Store } from 'vuex'
 import { navigateToUrl } from 'single-spa'
+import { MRI_APP_NAME, unsavedChangesRegistry } from '../shared/unsavedChangesRegistry'
 
 type PendingAction = () => void
 
@@ -65,6 +66,7 @@ const handleSingleSpaRouting = (event: Event): void => {
 const install = (): void => {
   if (installed) return
   installed = true
+  unsavedChangesRegistry.register(MRI_APP_NAME, { hasUnsavedChanges: () => isDirty.value })
   window.addEventListener('beforeunload', handleBeforeUnload)
   window.addEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }
@@ -72,6 +74,7 @@ const install = (): void => {
 const uninstall = (): void => {
   if (!installed) return
   installed = false
+  unsavedChangesRegistry.unregister(MRI_APP_NAME)
   window.removeEventListener('beforeunload', handleBeforeUnload)
   window.removeEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }

@@ -93,4 +93,95 @@ describe('store - bookmark', () => {
       expect(state.activeBookmarkBaseline).toEqual(baseline)
     })
   })
+
+  describe('getters', () => {
+    describe('getCurrentBookmarkHasChanges', () => {
+      const createConfig = (overrides = {}) => ({
+        _internalConfig: {
+          chartOptions: {
+            stacked: {
+              overlappingHistogramEnabled: true,
+              kernelDensityPlotEnabled: true,
+              partialOverlaySolidEnabled: true,
+              ...overrides,
+            },
+          },
+        },
+      })
+
+      const createState = () => ({
+        bookmarks: [],
+        materializedCohorts: [],
+        atlasCohortDefinitions: [],
+        filterSummaryVisible: false,
+        schemaName: '',
+        activeBookmark: null,
+        addNewCohort: false,
+        loading: false,
+        canDatasetMaterializeCohorts: false,
+        canMaterializeCohortDatasetId: '',
+        isRestoringBookmark: false,
+        activeBookmarkBaseline: null,
+      })
+
+      const callGetter = (state, moduleGetters, rootGetters) =>
+        bookmarkModule.getters.getCurrentBookmarkHasChanges(state, moduleGetters, {}, rootGetters)
+
+      it('returns false when the stacked bookmark barChartType matches after normalization', () => {
+        const bookmarkData = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(bookmarkData) }
+        const moduleGetters = { getBookmarksData: bookmarkData }
+        const rootGetters = { getMriFrontendConfig: createConfig() }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+
+      it('returns false when a saved overlay mode is disabled by the current config', () => {
+        const savedBookmark = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'overlay', showDistributionOverlay: true },
+          colorAxis: null,
+        }
+        const liveData = {
+          ...savedBookmark,
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+        }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(savedBookmark) }
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig({ overlappingHistogramEnabled: false }) }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+
+      it('returns true when overlay flag differs and the mode is enabled', () => {
+        const savedBookmark = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'overlay', showDistributionOverlay: true },
+          colorAxis: null,
+        }
+        const liveData = {
+          ...savedBookmark,
+          barChartType: { mode: 'overlay', showDistributionOverlay: false },
+        }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(savedBookmark) }
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig() }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(true)
+      })
+    })
+  })
 })

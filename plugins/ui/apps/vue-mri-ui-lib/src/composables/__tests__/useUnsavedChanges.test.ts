@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { nextTick } from 'vue'
+import { MRI_APP_NAME } from '../../shared/unsavedChangesRegistry'
 
 vi.mock('single-spa', () => ({
   navigateToUrl: vi.fn(),
@@ -44,12 +45,14 @@ describe('useUnsavedChanges', () => {
     mockStore.getters.getActiveBookmark = null
     mockStore.getters.getCurrentBookmarkHasChanges = false
     mockStore.getters.getIsRestoringBookmark = false
+    window.__d2eUnsavedChangesRegistry?.unregister(MRI_APP_NAME)
     vi.clearAllMocks()
   })
 
   afterEach(() => {
     window.addEventListener = originalAddEventListener
     window.removeEventListener = originalRemoveEventListener
+    window.__d2eUnsavedChangesRegistry?.unregister(MRI_APP_NAME)
   })
 
   const fireEvent = (name: string, detail?: unknown): Event => {
@@ -105,6 +108,29 @@ describe('useUnsavedChanges', () => {
     const { isDirty } = useUnsavedChanges()
 
     expect(isDirty.value).toBe(false)
+  })
+
+  it('install registers with the global unsaved-changes registry', async () => {
+    mockStore.getters.getActiveBookmark = null
+    const { useUnsavedChanges } = await import('../useUnsavedChanges')
+    const { install } = useUnsavedChanges()
+
+    install()
+
+    expect(window.__d2eUnsavedChangesRegistry?.hasAnyUnsavedChanges()).toBe(false)
+  })
+
+  it('uninstall unregisters from the global unsaved-changes registry', async () => {
+    mockStore.getters.getActiveBookmark = { isNew: false, bookmarkname: 'Saved' }
+    mockStore.getters.getCurrentBookmarkHasChanges = true
+    const { useUnsavedChanges } = await import('../useUnsavedChanges')
+    const { install, uninstall } = useUnsavedChanges()
+
+    install()
+    expect(window.__d2eUnsavedChangesRegistry?.hasAnyUnsavedChanges()).toBe(true)
+
+    uninstall()
+    expect(window.__d2eUnsavedChangesRegistry?.hasAnyUnsavedChanges()).toBe(false)
   })
 
   it('install is idempotent', async () => {
