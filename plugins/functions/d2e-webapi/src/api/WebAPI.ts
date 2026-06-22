@@ -43,7 +43,7 @@ export interface IWebAPICohortDefinition {
   hasWriteAccess: boolean;
   tags: IWebAPICohortDefinitionTag[];
   expressionType: IWebAPICohortDefinitionExpressionType;
-  expression: string;
+  expression: ICohortExpression | string;
   modifiedBy: IWebAPICohortDefinitionUser;
   createdBy: IWebAPICohortDefinitionUser;
   createdDate: string;

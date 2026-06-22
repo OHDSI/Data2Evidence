@@ -73,7 +73,7 @@ export const WebAPICohortDefinitionResponseDto = z.object({
   hasWriteAccess: z.boolean().optional(),
   tags: z.array(WebAPICohortTagDto).optional(),
   expressionType: z.enum(["SIMPLE_EXPRESSION", "CUSTOM_SQL", "EXTERNAL_SOURCED"]),
-  expression: z.union([CohortExpression, z.string()]),
+  expression: CohortExpression,
   modifiedBy: WebAPICohortUserDto.optional(),
   createdBy: WebAPICohortUserDto,
   createdDate: z.union([z.number(), z.string()]),

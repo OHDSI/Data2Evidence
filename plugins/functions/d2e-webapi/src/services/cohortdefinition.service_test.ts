@@ -1,6 +1,11 @@
 import { assertEquals } from "@std/assert";
 import type { IWebAPICohortDefinition } from "../api/WebAPI.ts";
 
+type INormalizedWebAPICohortDefinition =
+  Omit<IWebAPICohortDefinition, "expression"> & {
+    expression: Record<string, unknown>;
+  };
+
 Deno.env.set(
   "SERVICE_ROUTES",
   JSON.stringify({
@@ -16,11 +21,16 @@ const rawGetResponse: IWebAPICohortDefinition = {
   hasWriteAccess: false,
   tags: [],
   expressionType: "SIMPLE_EXPRESSION",
-  expression: "{}",
+  expression: { PrimaryCriteria: {} },
   modifiedBy: { id: 1, login: "modifier", name: "Modifier User" },
   createdBy: { id: 2, login: "creator", name: "Creator User" },
   createdDate: "2026-06-19T16:30:00.000Z",
   modifiedDate: "2026-06-19T16:31:00.000Z",
+};
+
+const expectedGetResponse: INormalizedWebAPICohortDefinition = {
+  ...rawGetResponse,
+  expression: { PrimaryCriteria: {} },
 };
 
 const rawCreateResponse: IWebAPICohortDefinition = {
@@ -30,11 +40,16 @@ const rawCreateResponse: IWebAPICohortDefinition = {
   hasWriteAccess: true,
   tags: [],
   expressionType: "CUSTOM_SQL",
-  expression: "SELECT * FROM PERSON",
+  expression: { AdditionalCriteria: {} },
   modifiedBy: { id: 1, login: "modifier", name: "Modifier User" },
   createdBy: { id: 2, login: "creator", name: "Creator User" },
   createdDate: "2026-06-19T16:32:00.000Z",
   modifiedDate: "2026-06-19T16:32:00.000Z",
+};
+
+const expectedCreateResponse: INormalizedWebAPICohortDefinition = {
+  ...rawCreateResponse,
+  expression: { AdditionalCriteria: {} },
 };
 
 const rawUpdateResponse: IWebAPICohortDefinition = {
@@ -44,11 +59,16 @@ const rawUpdateResponse: IWebAPICohortDefinition = {
   hasWriteAccess: true,
   tags: [],
   expressionType: "EXTERNAL_SOURCED",
-  expression: '{"external":true}',
+  expression: { external: true },
   modifiedBy: { id: 1, login: "modifier", name: "Modifier User" },
   createdBy: { id: 2, login: "creator", name: "Creator User" },
   createdDate: "2026-06-19T16:33:00.000Z",
   modifiedDate: "2026-06-19T16:34:00.000Z",
+};
+
+const expectedUpdateResponse: INormalizedWebAPICohortDefinition = {
+  ...rawUpdateResponse,
+  expression: { external: true },
 };
 
 const rawListResponse: IWebAPICohortDefinition[] = [{
@@ -77,7 +97,7 @@ const rawListResponse: IWebAPICohortDefinition[] = [{
     allowCustom: true,
   }],
   expressionType: "SIMPLE_EXPRESSION",
-  expression: "{}",
+  expression: { PrimaryCriteria: {} },
   modifiedBy: { id: 1, login: "modifier", name: "Modifier User" },
   createdBy: { id: 2, login: "creator", name: "Creator User" },
   createdDate: "2026-06-19T16:30:00.000Z",
@@ -96,6 +116,11 @@ const rawCopyResponse: IWebAPICohortDefinition = {
   modifiedDate: "2026-06-20T10:00:00.000Z",
   description: "",
   tags: [],
+};
+
+const expectedCopyResponse: INormalizedWebAPICohortDefinition = {
+  ...rawCopyResponse,
+  expression: { PrimaryCriteria: {} },
 };
 
 const webApiCallLog = {
@@ -207,7 +232,7 @@ const resetLogs = () => {
 Deno.test("getCohortDefinition returns raw WebAPI response without mapping", async () => {
   resetLogs();
   const result = await getCohortDefinition("Bearer token", "dataset-id", 101);
-  assertEquals(result, rawGetResponse);
+  assertEquals(result, expectedGetResponse);
   assertEquals(webApiCallLog.get.length, 1);
   assertEquals(
     webApiCallLog.get[0],
@@ -252,7 +277,7 @@ Deno.test("createCohortDefinition returns raw WebAPI response without mapping", 
     tags: [] as string[],
   });
 
-  assertEquals(result, rawCreateResponse);
+  assertEquals(result, expectedCreateResponse);
   assertEquals(webApiCallLog.post.length, 1);
   assertEquals(
     webApiCallLog.post[0],
@@ -303,7 +328,7 @@ Deno.test("updateCohortDefinition returns raw WebAPI response without mapping", 
     },
   );
 
-  assertEquals(result, rawUpdateResponse);
+  assertEquals(result, expectedUpdateResponse);
   assertEquals(webApiCallLog.put.length, 1);
   assertEquals(
     webApiCallLog.put[0],
@@ -357,7 +382,7 @@ Deno.test("checkIfAtlasCohortDefinitionExists uses WebAPI list and matches name 
   assertEquals(sameId, 0);
 });
 
-Deno.test("copyCohortDefinition uses WebAPI copy endpoint and returns raw response", async () => {
+Deno.test("copyCohortDefinition uses WebAPI copy endpoint and returns parsed expression response", async () => {
   resetLogs();
   const result = await copyCohortDefinition("Bearer token", "dataset-id", 501);
 
@@ -366,5 +391,5 @@ Deno.test("copyCohortDefinition uses WebAPI copy endpoint and returns raw respon
     webApiCallLog.get[0],
     "http://localhost:33001/WebAPI/cohortdefinition/501/copy",
   );
-  assertEquals(result, rawCopyResponse);
+  assertEquals(result, expectedCopyResponse);
 });

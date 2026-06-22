@@ -79,6 +79,34 @@ const getErrorDetails = (error: unknown) => {
   };
 };
 
+const parseExpressionToJson = (
+  expression: ICohortExpression | string,
+): ICohortExpression => {
+  if (typeof expression !== "string") {
+    return expression;
+  }
+
+  const parsedExpression = JSON.parse(expression);
+  if (
+    typeof parsedExpression !== "object" ||
+    parsedExpression === null ||
+    Array.isArray(parsedExpression)
+  ) {
+    throw new Error("Parsed cohort expression was not a JSON object");
+  }
+
+  return parsedExpression as ICohortExpression;
+};
+
+const normalizeCohortDefinitionExpression = <
+  T extends { expression: ICohortExpression | string },
+>(
+  cohortDefinition: T,
+): Omit<T, "expression"> & { expression: ICohortExpression } => ({
+  ...cohortDefinition,
+  expression: parseExpressionToJson(cohortDefinition.expression),
+});
+
 export const generateCohort = async (
   token: string,
   datasetId: string,
@@ -189,7 +217,9 @@ export const createCohortDefinition = async (
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
   const webApi = new WebAPICohortDefinitionAPI(token);
-  return await webApi.createCohortDefinition(cohortDefinitionDto);
+  const cohortDefinition =
+    await webApi.createCohortDefinition(cohortDefinitionDto);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const getCohortDefinitionList = async (
@@ -391,7 +421,8 @@ export const getCohortDefinition = async (
   cohortDefinitionId: number,
 ) => {
   const webApi = new WebAPICohortDefinitionAPI(token);
-  return await webApi.getCohortDefinition(cohortDefinitionId);
+  const cohortDefinition = await webApi.getCohortDefinition(cohortDefinitionId);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const updateCohortDefinition = async (
@@ -401,10 +432,11 @@ export const updateCohortDefinition = async (
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
   const webApi = new WebAPICohortDefinitionAPI(token);
-  return await webApi.updateCohortDefinition({
+  const cohortDefinition = await webApi.updateCohortDefinition({
     ...cohortDefinitionDto,
     id: cohortDefinitionId,
   });
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const deleteCohortDefinition = async (
@@ -446,7 +478,9 @@ export const copyCohortDefinition = async (
   cohortDefinitionId: number,
 ) => {
   const webApi = new WebAPICohortDefinitionAPI(token);
-  return await webApi.copyCohortDefinition(cohortDefinitionId);
+  const cohortDefinition =
+    await webApi.copyCohortDefinition(cohortDefinitionId);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const checkIfAtlasCohortDefinitionExists = async (
