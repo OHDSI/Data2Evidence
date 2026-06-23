@@ -1,7 +1,7 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
-import { createStaticMcpTools } from "../mcp/staticTools";
+import { createMcpClient } from "../mcp/client";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting } from "./prompts";
@@ -63,13 +63,14 @@ export const getChatResponse = async (req: any) => {
 
   try {
     const chatStart = performance.now();
-    const tools = createStaticMcpTools(token, datasetId);
+    const mcpClient = createMcpClient(token, datasetId);
+    const tools = await mcpClient.getTools();
     const agent = createAgent({
       model: model,
       tools: tools,
     });
     console.log(
-      `[MCP-TIMING] [code-suggestion] Statictools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
+      `[MCP-TIMING] [code-suggestion] MCP tools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
     );
     // prompt parameter in createAgent doesn't work as expected - the system message needs to be in the messages array
     const messages = [

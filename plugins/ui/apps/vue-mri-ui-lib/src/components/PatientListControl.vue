@@ -50,6 +50,7 @@
                 :data-path="attribute.path"
                 :data-parent-path="attribute.parentPath"
                 :class="interactionCellBorderClass(index, item.children.length)"
+                :data-testid="`pa-patient-list-header-${attribute.text}`"
               >
                 <div class="headerContainer">
                   <div class="headerAttributeTextContent" :title="item.text + ' - ' + attribute.text">

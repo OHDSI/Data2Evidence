@@ -38,6 +38,6 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByRole('dialog')).toMatchAriaSnapshot(`- text: Delete file`)
   await expect(page.getByRole('dialog')).toContainText('Are you sure you want to delete the following file:')
   await page.getByRole('button', { name: 'Delete' }).click()
-  await expect(page.getByTestId('alert-title')).toContainText('File deleted successfully.')
+  await expect(page.getByTestId('alert-message')).toContainText('File deleted successfully.')
   await page.getByRole('button', { name: 'Done' }).click()
 })
