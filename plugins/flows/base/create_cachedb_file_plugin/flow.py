@@ -26,7 +26,8 @@ def create_cachedb_file_plugin(options: CreateCacheOptions):
     match options.flow_action_type:
         case CacheFlowAction.CREATE_DATAMART_CACHE:
             create_cache_flow(options)
-            has_snapshot_config = bool(options.snapshot_copy_config)
+            snap = options.snapshot_copy_config
+            has_snapshot_config = bool(snap and (snap.timestamp or snap.table_config or snap.patients_to_be_copied))
             if options.results_schema_name and options.schema_name != options.results_schema_name and not has_snapshot_config:
                 create_results_cache_flow(options)
 
