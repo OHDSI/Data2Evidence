@@ -192,7 +192,9 @@
             "defaultEnabled": true,
             "name": "Cohorts",
             "nameI18nKey": "UI_PLUGIN_COHORTS",
-            "pluginPath": "plugins/mri/PatientAnalytics/module",
+            "type": "app",
+            "autoMount": false,
+            "pluginPath": "/mri/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
