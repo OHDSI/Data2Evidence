@@ -15,7 +15,7 @@ export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
 >;
 
 export const CohortDefinitionListResponseDto = z.array(
-  CombinedCohortDefinitionListSchema
+  CombinedCohortDefinitionListSchema,
 );
 export type ICohortDefinitionListResponseDto = z.infer<
   typeof CohortDefinitionListResponseDto
@@ -69,16 +69,23 @@ const WebAPICohortTagDto = z.object({
 export const WebAPICohortDefinitionResponseDto = z.object({
   id: z.number(),
   name: z.string(),
-  description: z.string().optional(),
+  description: z.string().nullish(),
   hasWriteAccess: z.boolean().optional(),
   tags: z.array(WebAPICohortTagDto).optional(),
-  expressionType: z.enum(["SIMPLE_EXPRESSION", "CUSTOM_SQL", "EXTERNAL_SOURCED"]),
+  expressionType: z.enum([
+    "SIMPLE_EXPRESSION",
+    "CUSTOM_SQL",
+    "EXTERNAL_SOURCED",
+  ]),
   expression: CohortExpression,
   modifiedBy: WebAPICohortUserDto.optional(),
   createdBy: WebAPICohortUserDto,
   createdDate: z.union([z.number(), z.string()]),
   modifiedDate: z.union([z.number(), z.string()]).optional(),
 });
+export type IWebAPICohortDefinitionResponseDto = z.infer<
+  typeof WebAPICohortDefinitionResponseDto
+>;
 
 export const CohortDefinitionCopyResponseDto =
   CohortDefinitionCreateResponseDto.omit({ description: true });
@@ -98,7 +105,7 @@ export const CohortDefinitionIdVersionResponseDto = z.array(
     version: z.number(),
     archived: z.boolean(),
     createdDate: z.number(),
-  })
+  }),
 );
 
 export const CohortDefinitionIdInfoResponseDto = z.array(
@@ -113,7 +120,7 @@ export const CohortDefinitionIdInfoResponseDto = z.array(
     personCount: z.number().nullable(),
     recordCount: z.number().nullable(),
     createdBy: z.string().nullable(),
-  })
+  }),
 );
 export type ICohortDefinitionIdInfoResponseDto = z.infer<
   typeof CohortDefinitionIdInfoResponseDto
@@ -126,7 +133,7 @@ export const CohortDefinitionCheckV2ResponseDto = z.object({
       severity: z.string(),
       message: z.string(),
       conceptSetId: z.number().optional(),
-    })
+    }),
   ),
 });
 export type ICohortDefinitionCheckV2ResponseDto = z.infer<

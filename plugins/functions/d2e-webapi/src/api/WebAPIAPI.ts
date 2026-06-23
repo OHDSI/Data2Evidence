@@ -40,7 +40,8 @@ export interface IWebAPICohortDefinition {
   id: number;
   name: string;
   description: string;
-  hasWriteAccess: boolean;
+  readAccess: boolean;
+  writeAccess: boolean;
   tags: IWebAPICohortDefinitionTag[];
   expressionType: IWebAPICohortDefinitionExpressionType;
   expression: ICohortExpression | string;

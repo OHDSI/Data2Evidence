@@ -9,7 +9,6 @@ import {
   IBaseMaterializedCohort,
   IAtlasCohortDefinition,
 } from "../api/types.ts";
-
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
@@ -19,7 +18,9 @@ import {
   AtlasCohortDefinitionDto,
   IGenerateCohortResponseDto,
   ICohortDefinitionCheckV2ResponseDto,
+  IWebAPICohortDefinitionResponseDto,
 } from "../dto/cohortdefinition.ts";
+import { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
 import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
@@ -98,11 +99,9 @@ const parseExpressionToJson = (
   return parsedExpression as ICohortExpression;
 };
 
-const normalizeCohortDefinitionExpression = <
-  T extends { expression: ICohortExpression | string },
->(
-  cohortDefinition: T,
-): Omit<T, "expression"> & { expression: ICohortExpression } => ({
+const normalizeCohortDefinitionExpression = (
+  cohortDefinition: IWebAPICohortDefinition,
+): IWebAPICohortDefinitionResponseDto => ({
   ...cohortDefinition,
   expression: parseExpressionToJson(cohortDefinition.expression),
 });
@@ -272,8 +271,8 @@ export const getCohortDefinitionList = async (
       createdDate: parseDateToEpoch(atlasCohortDefinition.createdDate),
       modifiedBy: getUserName(atlasCohortDefinition.modifiedBy),
       modifiedDate: parseDateToEpoch(atlasCohortDefinition.modifiedDate),
-      hasWriteAccess: true,
-      hasReadAccess: true,
+      hasWriteAccess: atlasCohortDefinition.writeAccess,
+      hasReadAccess: atlasCohortDefinition.readAccess,
       tags: (atlasCohortDefinition.tags ?? []).map(getTagName),
     }));
 
@@ -296,7 +295,9 @@ export const getCohortDefinitionList = async (
         "Failed to fetch atlas cohort definitions, continuing with empty list:",
         error,
       );
-      return [] as Awaited<ReturnType<typeof webApiApi.getCohortDefinitionList>>;
+      return [] as Awaited<
+        ReturnType<typeof webApiApi.getCohortDefinitionList>
+      >;
     }),
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(
@@ -424,7 +425,8 @@ export const getCohortDefinition = async (
   cohortDefinitionId: number,
 ) => {
   const webApiApi = new WebAPIAPI(token);
-  const cohortDefinition = await webApiApi.getCohortDefinition(cohortDefinitionId);
+  const cohortDefinition =
+    await webApiApi.getCohortDefinition(cohortDefinitionId);
   return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 

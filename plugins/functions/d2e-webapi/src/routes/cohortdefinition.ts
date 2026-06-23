@@ -52,10 +52,10 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       const result = await getCohortDefinitionList(
         req.token,
         req.datasetId,
-        isAtlas
+        isAtlas,
       );
       res.send(result);
-    }
+    },
   );
 
   app.post(
@@ -78,10 +78,10 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       const result = await createCohortDefinition(
         req.token,
         req.datasetId,
-        req.body
+        req.body,
       );
       res.send(result);
-    }
+    },
   );
 
   app.post(
@@ -103,7 +103,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
     (_req, res) => {
       // TODO: ADD  LOGIC
       res.send({ templateSql: "dummy response" });
-    }
+    },
   );
 
   app.get(
@@ -128,7 +128,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       const result = await getCohortDefinition(req.token, req.datasetId, id);
 
       res.status(200).send(result);
-    }
+    },
   );
 
   app.put(
@@ -155,11 +155,11 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         req.token,
         req.datasetId,
         id,
-        req.body
+        req.body,
       );
 
       res.status(200).send(result);
-    }
+    },
   );
 
   app.delete(
@@ -183,7 +183,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
 
       await deleteCohortDefinition(req.token, req.datasetId, id);
       await res.status(204).send();
-    }
+    },
   );
 
   app.get(
@@ -209,7 +209,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
 
       const result = await copyCohortDefinition(req.token, req.datasetId, id);
       res.status(200).send(result);
-    }
+    },
   );
 
   app.get(
@@ -264,7 +264,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         },
       ];
       res.status(200).send(dummyresponse);
-    }
+    },
   );
 
   app.get(
@@ -295,7 +295,7 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       ];
 
       res.send(dummyresult);
-    }
+    },
   );
 
   app.post(
@@ -320,11 +320,11 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       const result = await checkV2(
         req.token,
         req.datasetId,
-        req.body.expression
+        req.body.expression,
       );
 
       res.send(result);
-    }
+    },
   );
 
   app.get(
@@ -354,11 +354,11 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         req.token,
         req.datasetId,
         id,
-        name
+        name,
       );
 
       res.send(result);
-    }
+    },
   );
 
   app.get(
@@ -382,6 +382,6 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
       const result = await generateCohort(req.token, req.datasetId, id);
 
       res.send(result);
-    }
+    },
   );
 };
