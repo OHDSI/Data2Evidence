@@ -326,11 +326,11 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: ACHILLES_THREAD_COUNT
-            - name: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            - name: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
               valueFrom:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+                  key: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
             - name: USER_MGMT__ROLE_SOURCE
               value: "usermgmt"
             - name: CADDY__D2E__PUBLIC_FQDN
@@ -399,11 +399,6 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__APP_CLIENT_ID
-            - name: LOGTO__CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: LOGTO__APP_CLIENT_SECRET
             - name: LOGTO__D2E_DATA__CLIENT_ID
               valueFrom:
                 secretKeyRef:
@@ -636,6 +631,154 @@ spec:
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
+            # --- v0.16 embedded WebAPI: static config ---
+            - name: SECURITY_PROVIDER
+              value: AtlasRegularSecurity
+            - name: SECURITY_SSL_ENABLED
+              value: "false"
+            - name: SECURITY_ORIGIN
+              value: "*"
+            - name: SERVER_FORWARD_HEADERS_STRATEGY
+              value: NATIVE
+            - name: SECURITY_AUTH_JDBC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_OIDC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_AD_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_CAS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_FACEBOOK_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GITHUB_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GOOGLE_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_KERBEROS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_LDAP_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_WINDOWS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_OIDC_ROLESCLAIM
+              value: roles
+            - name: DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: DATASOURCE_OHDSI_SCHEMA
+              value: webapi
+            - name: SPRING_FLYWAY_SCHEMAS
+              value: webapi
+            - name: SPRING_FLYWAY_TABLE
+              value: flyway_schema_history
+            - name: SPRING_FLYWAY_PLACEHOLDERS_OHDSISCHEMA
+              value: webapi
+            - name: SPRING_BATCH_REPOSITORY_TABLEPREFIX
+              value: webapi.batch_
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA
+              value: webapi
+            - name: SECURITY_DB_DATASOURCE_SCHEMA
+              value: webapi_security
+            - name: SECURITY_DB_DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: SECURITY_DB_DATASOURCE_AUTHENTICATIONQUERY
+              value: "SELECT password, email AS firstname, NULL AS middlename, email AS lastname FROM webapi_security.security WHERE email = ?"
+            # --- v0.16 embedded WebAPI: DB connection ---
+            - name: DATASOURCE_USERNAME
+              value: "$(POSTGRES_SUPERUSER)"
+            - name: DATASOURCE_PASSWORD
+              value: "$(POSTGRES_SUPERUSER_PASSWORD)"
+            - name: DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: WEBAPI__DATASOURCE__URL
+            - name: FLYWAY_DATASOURCE_USERNAME
+              value: "$(POSTGRES_SUPERUSER)"
+            - name: FLYWAY_DATASOURCE_PASSWORD
+              value: "$(POSTGRES_SUPERUSER_PASSWORD)"
+            - name: SPRING_FLYWAY_USER
+              value: "$(POSTGRES_SUPERUSER)"
+            - name: SPRING_FLYWAY_PASSWORD
+              value: "$(POSTGRES_SUPERUSER_PASSWORD)"
+            - name: SPRING_FLYWAY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: WEBAPI__DATASOURCE__URL
+            - name: SECURITY_DB_DATASOURCE_USERNAME
+              value: "$(POSTGRES_SUPERUSER)"
+            - name: SECURITY_DB_DATASOURCE_PASSWORD
+              value: "$(POSTGRES_SUPERUSER_PASSWORD)"
+            - name: SECURITY_DB_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: WEBAPI__SECURITY__URL
+            # --- v0.16 embedded WebAPI: OIDC ---
+            - name: SECURITY_AUTH_OIDC_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_ID
+            - name: SECURITY_AUTH_OIDC_APISECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_SECRET
+            - name: SECURITY_AUTH_OIDC_URL
+              value: "http://idp.d2e.svc.cluster.local:443/oidc/.well-known/openid-configuration"
+            - name: SECURITY_AUTH_OIDC_EXTERNALURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc"
+            - name: SECURITY_AUTH_OIDC_LOGOUTURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc/session/end"
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_API
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback"
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_UI
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/atlas/#/welcome"
+            # --- v0.16 trex internals ---
+            - name: TREX_ROUTES
+              value: '{"d2e":"http://localhost:33001"}'
+            - name: TREX_EXTENSIONS_PATH
+              value: /usr/src/node_modules/@trex
+            - name: TREX_POOL_SIZE
+              value: "64"
+            - name: TREXSQL_ENABLED
+              value: "true"
+            - name: SWARM_NODE
+              value: d2e
+            - name: SWARM_CONFIG
+              value: |-
+                {
+                  "cluster_id": "d2e",
+                  "nodes": {
+                    "d2e": {
+                      "gossip_addr": "0.0.0.0:4200",
+                      "extensions": [
+                        {
+                          "name": "trexas",
+                          "config": {
+                            "host": "0.0.0.0",
+                            "port": 33001,
+                            "main_service_path": "/usr/src/core/server/index.eszip",
+                            "event_worker_path": "/usr/src/core/event/index.eszip",
+                            "tls_port": 33000,
+                            "tls_cert_path": "/usr/src/cert/cert.pem",
+                            "tls_key_path": "/usr/src/cert/key.pem"
+                          }
+                        },
+                        {
+                          "name": "pgwire",
+                          "config": { "host": "0.0.0.0", "port": 5433 }
+                        }
+                      ]
+                    }
+                  }
+                }
+            - name: IDP__AUTO_PROVISION_USERS
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: IDP__AUTO_PROVISION_USERS
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           command: ["npm", "run", "start"]

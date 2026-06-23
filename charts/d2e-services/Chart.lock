@@ -1,0 +1,6 @@
+dependencies:
+- name: d2e-core
+  repository: ""
+  version: 0.16.0
+digest: sha256:f89f3fcbdb93256bec31f5e84fadd9e799d7ce64425dc0ed19991ef7c211f525
+generated: "2026-06-04T09:55:35.009897+08:00"
