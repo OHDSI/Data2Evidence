@@ -13,7 +13,6 @@
     <v-card
       class="unsaved-dialog"
       data-testid="unsaved-changes-dialog"
-      rounded="lg"
     >
       <div class="unsaved-dialog__title">
         <span id="unsaved-changes-title" class="unsaved-dialog__title-text">{{ title }}</span>
@@ -112,7 +111,7 @@ watch(
   width: 100%;
   max-width: 540px;
   overflow: hidden;
-  border-radius: 32px;
+  border-radius: 16px !important;
   box-shadow:
     0 6px 30px 5px rgba(0, 0, 0, 0.12),
     0 16px 24px 2px rgba(0, 0, 0, 0.14),
