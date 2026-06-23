@@ -12,6 +12,12 @@ export interface TimingResult {
   statusCodes: number[];
 }
 
+function buildHeaders(scenario: Scenario): Record<string, string> {
+  const headers: Record<string, string> = { ...scenario.headers };
+  if (config.bearerToken) headers["Authorization"] = `Bearer ${config.bearerToken}`;
+  return headers;
+}
+
 async function warmupScenario(scenario: Scenario, headers: Record<string, string>): Promise<void> {
   for (let i = 0; i < config.warmupRequests; i++) {
     try {
@@ -26,23 +32,34 @@ async function warmupScenario(scenario: Scenario, headers: Record<string, string
   }
 }
 
-export async function runScenario(scenario: Scenario): Promise<TimingResult> {
+// Warms up a group of scenarios by running the full sequence warmupRequests times.
+// Use before timing individual HAR steps so the whole flow is warm, not just each step in isolation.
+export async function warmupScenarios(scenarios: Scenario[]): Promise<void> {
+  for (let pass = 0; pass < config.warmupRequests; pass++) {
+    for (const scenario of scenarios) {
+      const headers = buildHeaders(scenario);
+      try {
+        const res = await fetch(scenario.url, { method: scenario.method, headers, body: scenario.body });
+        await res.text();
+      } catch (err) {
+        console.warn(`[group-warmup] ${scenario.name} failed:`, err);
+      }
+    }
+  }
+}
+
+export async function runScenario(scenario: Scenario, options?: { skipWarmup?: boolean }): Promise<TimingResult> {
   const samples: number[] = [];
   const statusCodes: number[] = [];
-  const headers: Record<string, string> = { ...scenario.headers };
-  if (config.bearerToken) {
-    headers["Authorization"] = `Bearer ${config.bearerToken}`;
-  }
+  const headers = buildHeaders(scenario);
 
-  await warmupScenario(scenario, headers);
+  if (!options?.skipWarmup) {
+    await warmupScenario(scenario, headers);
+  }
 
   for (let i = 0; i < config.repetitions; i++) {
     const start = performance.now();
-    const res = await fetch(scenario.url, {
-      method: scenario.method,
-      headers,
-      body: scenario.body,
-    });
+    const res = await fetch(scenario.url, { method: scenario.method, headers, body: scenario.body });
     const elapsed = performance.now() - start;
     // Drain the body so the connection is properly closed
     await res.text();

@@ -1,5 +1,5 @@
 export const config = {
-  repetitions: Number(process.env.PERF_REPETITIONS ?? 3),
+  repetitions: Number(process.env.PERF_REPETITIONS ?? 10),
 
   // Fraction above baseline p95 that triggers a warning (default 10%)
   warnThreshold: Number(process.env.PERF_WARN_THRESHOLD ?? 0.1),
@@ -19,5 +19,5 @@ export const config = {
   // PA_CONFIG_ID: process.env.PA_CONFIG_ID ?? "4321DCBAB",
   PA_CONFIG_ID: process.env.PA_CONFIG_ID ?? "4fce3cb7-32bf-4b46-8cba-32e4f77a14dd",
 
-  warmupRequests: Number(process.env.PERF_WARMUP_REQUESTS ?? 1),
+  warmupRequests: Number(process.env.PERF_WARMUP_REQUESTS ?? 2),
 } as const;

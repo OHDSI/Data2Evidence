@@ -1,27 +1,27 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it, expect, afterAll } from "vitest";
+import { describe, it, expect, afterAll, beforeAll } from "vitest";
 import { parseHar } from "../runner/harParser.js";
 import { parseCurl } from "../runner/curlParser.js";
-import { runScenario } from "../runner/httpClient.js";
+import { runScenario, warmupScenarios } from "../runner/httpClient.js";
 import { compareToBaseline } from "../runner/compare.js";
 import type { Baseline, CompareResult, CompareStatus } from "../runner/compare.js";
 import type { Scenario } from "../runner/harParser.js";
-import { config } from "../config.js";
-
-if (!config.bearerToken) {
-  console.error("ERROR: BEARER_TOKEN is not set — set it via the BEARER_TOKEN environment variable and re-run.");
-  process.exit(1);
-}
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SCENARIOS_DIR = join(ROOT, "scenarios");
-const BASELINE_FILE = join(ROOT, "baseline.json");
 
 function loadBaseline(): Baseline {
-  if (!existsSync(BASELINE_FILE)) return {};
-  return JSON.parse(readFileSync(BASELINE_FILE, "utf8"));
+  if (!existsSync(SCENARIOS_DIR)) return {};
+  const baseline: Baseline = {};
+  for (const entry of readdirSync(SCENARIOS_DIR, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const file = join(SCENARIOS_DIR, entry.name, "baseline.json");
+    if (!existsSync(file)) continue;
+    Object.assign(baseline, JSON.parse(readFileSync(file, "utf8")));
+  }
+  return baseline;
 }
 
 function loadScenarios(): Scenario[] {
@@ -182,6 +182,37 @@ if (scenarios.length === 0) {
 } else {
   const results: CompareResult[] = [];
 
+  // Group HAR scenarios (name ends _N) by base name; collect remaining curl scenarios
+  const harGroups = new Map<string, Scenario[]>();
+  const curlScenarios: Scenario[] = [];
+  for (const scenario of scenarios) {
+    const base = scenario.name.replace(/_\d+$/, "");
+    if (base !== scenario.name) {
+      if (!harGroups.has(base)) harGroups.set(base, []);
+      harGroups.get(base)!.push(scenario);
+    } else {
+      curlScenarios.push(scenario);
+    }
+  }
+
+  function runStep(scenario: Scenario, skipWarmup: boolean) {
+    it(scenario.name, async () => {
+      const timing = await runScenario(scenario, { skipWarmup });
+      const badStatuses = timing.statusCodes.filter(s => s < 200 || s >= 300);
+      expect(badStatuses, `${scenario.name} returned non-2xx status codes: ${[...new Set(badStatuses)].join(", ")} — ${scenario.method} ${scenario.url}`).toHaveLength(0);
+
+      const comparison = compareToBaseline(timing, baseline);
+      results.push(comparison);
+
+      expect(comparison.status, `${scenario.name}: no baseline found — run the baseline writer first`).not.toBe("no-baseline");
+      expect(
+        comparison.status,
+        `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
+        (comparison.baselineP95Ms ? ` (baseline ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
+      ).not.toBe("fail");
+    });
+  }
+
   describe("performance regression", () => {
     afterAll(() => {
       if (results.some(r => r.status === "fail")) {
@@ -190,23 +221,22 @@ if (scenarios.length === 0) {
       printTable(groupResults(results));
     });
 
-    for (const scenario of scenarios) {
-      it(scenario.name, async () => {
-        const timing = await runScenario(scenario);
-        const badStatuses = timing.statusCodes.filter(s => s < 200 || s >= 300);
-        expect(badStatuses, `${scenario.name} returned non-2xx status codes: ${[...new Set(badStatuses)].join(", ")}`).toHaveLength(0);
-
-        const comparison = compareToBaseline(timing, baseline);
-        results.push(comparison);
-
-        expect(comparison.status, `${scenario.name}: no baseline found — run the baseline writer first`).not.toBe("no-baseline");
-
-        expect(
-          comparison.status,
-          `${scenario.name} p95 ${timing.p95Ms.toFixed(1)}ms exceeded fail threshold` +
-          (comparison.baselineP95Ms ? ` (baseline ${comparison.baselineP95Ms.toFixed(1)}ms)` : "")
-        ).not.toBe("fail");
+    // Each HAR group gets its own nested describe with a beforeAll that warms up
+    // the full sequence right before timing any of its steps.
+    for (const [base, group] of harGroups) {
+      describe(base, () => {
+        beforeAll(async () => {
+          await warmupScenarios(group);
+        });
+        for (const scenario of group) {
+          runStep(scenario, true);
+        }
       });
+    }
+
+    // curl scenarios use the existing per-request warmup inside runScenario
+    for (const scenario of curlScenarios) {
+      runStep(scenario, false);
     }
   });
 }

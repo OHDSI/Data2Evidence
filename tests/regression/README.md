@@ -10,16 +10,18 @@ cp env.example .env
 npm install
 ```
 
-## Run baseline (write new baseline.json)
+## Run baseline (write per-scenario baseline.json)
 
 ```sh
-source .env && npm run baseline
+set -a && source .env && set +a && npm run baseline
 ```
+
+Each scenario directory gets its own `baseline.json`. Commit these files to lock the baseline.
 
 ## Run tests (compare against baseline)
 
 ```sh
-source .env && npm test
+set -a && source .env && set +a && npm test
 ```
 
 Results print a table showing p95 response time vs baseline, delta per scenario, and min/max. Tests fail if any scenario exceeds 20% above baseline p95 (`PERF_FAIL_THRESHOLD`), if a non-2xx response is returned, or if no baseline entry exists for the scenario. The run exits immediately if `BEARER_TOKEN` is not set.

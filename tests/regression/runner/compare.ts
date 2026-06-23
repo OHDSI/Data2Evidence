@@ -18,7 +18,7 @@ export type Baseline = Record<string, { p95Ms: number }>;
 export function compareToBaseline(result: TimingResult, baseline: Baseline): CompareResult {
   const entry = baseline[result.scenarioName];
 
-  if (!entry) {
+  if (!entry || typeof entry.p95Ms !== "number") {
     return {
       scenarioName: result.scenarioName,
       status: "no-baseline",
