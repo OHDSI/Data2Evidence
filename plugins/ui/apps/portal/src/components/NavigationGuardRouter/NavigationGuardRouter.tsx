@@ -10,6 +10,7 @@ import { UnsavedChangesDialog } from "../UnsavedChangesDialog/UnsavedChangesDial
 interface D2EUnsavedChangesRegistry {
   hasAnyUnsavedChanges: () => boolean;
   getDirtyApps: () => string[];
+  clearAll?: () => void;
 }
 
 declare global {
@@ -23,13 +24,23 @@ type PendingNavigation =
   | { type: "replace"; to: To; state?: unknown }
   | null;
 
-export interface DirtyStateAwareRouterProps {
+export interface NavigationGuardRouterProps {
   basename?: string;
   children?: ReactNode;
   history?: History;
 }
 
-export const DirtyStateAwareRouter: FC<DirtyStateAwareRouterProps> = ({
+/**
+ * Guards in-app (link/button) navigation when a mounted microfrontend reports
+ * unsaved changes, by intercepting react-router history.push/replace.
+ *
+ * NOTE: this deliberately does NOT attempt to block the browser back/forward
+ * button. Doing so reliably is not possible in this single-spa + declarative
+ * react-router setup - see docs UNSAVED_CHANGES_BACK_BUTTON_LIMITATION.md.
+ * The browser back/forward case is covered only by the native `beforeunload`
+ * guard (registered per-app), which fires on full page unload.
+ */
+export const NavigationGuardRouter: FC<NavigationGuardRouterProps> = ({
   basename,
   children,
   history: injectedHistory,
@@ -74,6 +85,11 @@ export const DirtyStateAwareRouter: FC<DirtyStateAwareRouterProps> = ({
     const navigation = pendingNavigation.current;
     pendingNavigation.current = null;
 
+    // The user chose to abandon their changes; tell every dirty app to reset
+    // its state so it does not immediately re-block the navigation we are about
+    // to perform.
+    window.__d2eUnsavedChangesRegistry?.clearAll?.();
+
     if (!navigation || !historyRef.current) {
       return;
     }
@@ -98,4 +114,4 @@ export const DirtyStateAwareRouter: FC<DirtyStateAwareRouterProps> = ({
   );
 };
 
-export default DirtyStateAwareRouter;
+export default NavigationGuardRouter;

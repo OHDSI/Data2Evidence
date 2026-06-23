@@ -3,6 +3,8 @@ import { Select, SelectChangeEvent, SelectProps } from "@portal/components";
 import { MenuItem } from "@mui/material";
 import { useDatasetReleases } from "../../../hooks";
 import { useActiveDataset, useTranslation } from "../../../contexts";
+import { useGuardedChange } from "../../../hooks/useGuardedChange";
+import { UnsavedChangesDialog } from "../../UnsavedChangesDialog/UnsavedChangesDialog";
 import { DatasetRelease } from "../../../plugins/SystemAdmin/DQD/types";
 
 interface SelectReleaseProps extends Omit<SelectProps, "onChange"> {
@@ -14,19 +16,25 @@ export const SelectRelease: FC<SelectReleaseProps> = ({ onChange, ...props }) =>
   const { getText, i18nKeys } = useTranslation();
   const { activeDataset, setActiveReleaseId } = useActiveDataset();
   const [releases, loading, error] = useDatasetReleases(activeDataset.id);
+  const guard = useGuardedChange();
 
   const handleChange = useCallback(
     (releaseId: string) => {
-      setActiveReleaseId(releaseId);
-      typeof onChange === "function" && onChange(releaseId);
+      // Defer the switch when a mounted app has unsaved changes; only commit on
+      // confirm so the dropdown stays on the current release if the user stays.
+      guard.request(() => {
+        setActiveReleaseId(releaseId);
+        typeof onChange === "function" && onChange(releaseId);
+      });
     },
-    [onChange]
+    [onChange, guard]
   );
 
   if (error) console.error(error?.message);
   if (releases.length === 0) return null;
 
   return (
+    <>
     <Select
       className="select-release"
       variant="outlined"
@@ -57,5 +65,7 @@ export const SelectRelease: FC<SelectReleaseProps> = ({ onChange, ...props }) =>
         </MenuItem>
       ))}
     </Select>
+    <UnsavedChangesDialog open={guard.open} onLeave={guard.onLeave} onCancel={guard.onCancel} />
+    </>
   );
 };
