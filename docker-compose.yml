@@ -115,6 +115,18 @@ services:
       DATASOURCE_USERNAME: postgres
       DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       DATASOURCE_OHDSI_SCHEMA: webapi
+      # WebAPI source-credential encryption (Jasypt, Hibernate column encryption
+      # of webapi.source username/password/connection). `d2e init` writes both
+      # JASYPT_ENCRYPTOR_ENABLED=true and a generated JASYPT_ENCRYPTOR_PASSWORD,
+      # so fresh installs are encrypted. Existing envs that never re-ran `init`
+      # have neither, so the flag defaults to false (a clean boolean — WebAPI
+      # binds it to a primitive, which rejects an empty string) and they keep
+      # storing credentials in plaintext. When enabled, both password and
+      # algorithm are required by WebAPI's EncryptorUtils; the algorithm is
+      # BouncyCastle AES-256 (strong; avoids the weak PBEWithMD5AndDES path).
+      JASYPT_ENCRYPTOR_ENABLED: ${JASYPT_ENCRYPTOR_ENABLED:-false}
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:-}
+      JASYPT_ENCRYPTOR_ALGORITHM: ${JASYPT_ENCRYPTOR_ALGORITHM:-PBEWITHSHA256AND256BITAES-CBC-BC}
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: webapi
       SPRING_BATCH_REPOSITORY_TABLEPREFIX: webapi.batch_
       # Flyway migration settings

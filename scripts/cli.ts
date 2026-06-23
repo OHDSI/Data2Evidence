@@ -205,6 +205,15 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      // WebAPI Jasypt source-credential encryption (Hibernate column encryption
+      // of webapi.source username/password/connection). Fresh installs turn this
+      // on with a freshly generated master password; existing envs that never
+      // re-ran `init` have neither key, so docker-compose defaults the flag to
+      // false and they keep storing credentials in plaintext.
+      JASYPT_ENCRYPTOR_ENABLED: `true`,
+      JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
+        this.DEFAULT_PASSWORD_LENGTH,
+      )}`,
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: `${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}`,
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
