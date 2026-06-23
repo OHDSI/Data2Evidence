@@ -166,10 +166,33 @@ const getters = {
     if (modulestate.isRestoringBookmark) {
       return false
     }
+    // A colorAxis that was set by automatic default-selection (not by the user
+    // or a restored bookmark) must not count as a change: opening a bookmark
+    // saved with colorAxis = null auto-picks a color axis after the chart loads.
+    //
+    // The auto value can leak into EITHER side of the comparison depending on
+    // timing: if onChartDataReady fires after the baseline snapshot the baseline
+    // holds null, but if it fires before (e.g. cached data on re-open) the
+    // baseline holds the auto value. Normalize BOTH sides so the comparison is
+    // invariant to that timing. A user-chosen colorAxis keeps
+    // isColorAxisAutoDefaulted false and is still compared.
+    const colorAxisAutoDefaulted = Boolean(rootGetters.getIsColorAxisAutoDefaulted)
+    const normalizeColorAxis = (data: any) =>
+      colorAxisAutoDefaulted && data && typeof data === 'object' && 'colorAxis' in data
+        ? { ...data, colorAxis: null }
+        : data
+    const currentData = moduleGetters.getBookmarksData
+    const normalizedCurrentData = normalizeColorAxis(currentData)
+
     // For bookmarks without saved data (new/deep-link/Atlas), compare against the captured baseline.
+    // For saved bookmarks we also capture a baseline after restore so that auto-defaulted
+    // fields (e.g. colorAxis) do not cause false-positive dirty state.
+    const baseline = modulestate.activeBookmarkBaseline
+    if (baseline != null) {
+      return !isEqual(normalizedCurrentData, normalizeColorAxis(baseline))
+    }
     if (!modulestate.activeBookmark.bookmark) {
-      const baseline = modulestate.activeBookmarkBaseline
-      return baseline != null ? !isEqual(moduleGetters.getBookmarksData, baseline) : false
+      return false
     }
     const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
@@ -206,7 +229,7 @@ const getters = {
         }
       )
     }
-    const newColorAxis = moduleGetters.getBookmarksData.colorAxis ?? null
+    const newColorAxis = colorAxisAutoDefaulted ? null : moduleGetters.getBookmarksData.colorAxis ?? null
     const currentColorAxis = bookmark?.colorAxis ?? null
     return (
       !isEqual(newBookmarksFilter, currentBookmarksFilter) ||
@@ -461,9 +484,12 @@ const actions = {
       skipFireRequest: chartIsChanging || !isRightPaneMounted,
     })
       .then(result => {
-        if (!getters.getActiveBookmark.bookmark) {
-          commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
-        }
+        // Capture the post-restore live state as the comparison baseline.
+        // Saved bookmarks may omit keys that the app auto-defaults after load
+        // (e.g. colorAxis), so comparing against the raw saved JSON produces
+        // false-positive dirty state. The baseline reflects the normalized
+        // state the user actually sees.
+        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
         return result
       })
       .finally(() => {

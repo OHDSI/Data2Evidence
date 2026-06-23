@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { unsavedChangesRegistry, MRI_APP_NAME } from '../unsavedChangesRegistry'
 
 describe('unsavedChangesRegistry', () => {
@@ -35,5 +35,22 @@ describe('unsavedChangesRegistry', () => {
     unsavedChangesRegistry.unregister('test-dirty')
     expect(unsavedChangesRegistry.hasAnyUnsavedChanges()).toBe(false)
     expect(unsavedChangesRegistry.getDirtyApps()).toEqual([])
+  })
+
+  it('clearAll invokes clearUnsavedChanges on every registered app', () => {
+    const clearClean = vi.fn()
+    const clearDirty = vi.fn()
+    unsavedChangesRegistry.register('test-clean', { hasUnsavedChanges: () => false, clearUnsavedChanges: clearClean })
+    unsavedChangesRegistry.register('test-dirty', { hasUnsavedChanges: () => true, clearUnsavedChanges: clearDirty })
+
+    unsavedChangesRegistry.clearAll()
+
+    expect(clearClean).toHaveBeenCalledTimes(1)
+    expect(clearDirty).toHaveBeenCalledTimes(1)
+  })
+
+  it('clearAll tolerates apps without a clearUnsavedChanges hook', () => {
+    unsavedChangesRegistry.register('test-dirty', { hasUnsavedChanges: () => true })
+    expect(() => unsavedChangesRegistry.clearAll()).not.toThrow()
   })
 })

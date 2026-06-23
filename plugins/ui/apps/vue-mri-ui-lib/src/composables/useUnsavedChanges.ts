@@ -1,15 +1,12 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import { useStore, Store } from 'vuex'
-import { navigateToUrl } from 'single-spa'
 import { MRI_APP_NAME, unsavedChangesRegistry } from '../shared/unsavedChangesRegistry'
 
 type PendingAction = () => void
 
 const showDialog = ref(false)
-const pendingUrl = ref<string | null>(null)
 const pendingAction = ref<PendingAction | null>(null)
 let cachedStore: Store<unknown> | null = null
-let expectedNavigationUrl: string | null = null
 let installed = false
 
 const getStore = (): Store<unknown> => {
@@ -41,34 +38,26 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
   event.returnValue = ''
 }
 
-const handleSingleSpaRouting = (event: Event): void => {
-  const detail = (event as CustomEvent<{ newUrl?: string; cancelNavigation?: (v?: unknown) => void }>).detail
-  const newUrl = detail?.newUrl ?? window.location.href
-
-  if (showDialog.value) return
-
-  if (expectedNavigationUrl && expectedNavigationUrl === newUrl) {
-    expectedNavigationUrl = null
-    return
-  }
-  expectedNavigationUrl = null
-
-  if (!isDirty.value) return
-
-  if (event.cancelable) {
-    event.preventDefault()
-  }
-  detail?.cancelNavigation?.()
-  pendingUrl.value = newUrl
-  showDialog.value = true
+/**
+ * Reset the dirty baseline to the current state. Invoked by the portal shell
+ * (via the cross-app registry) once the user confirms "Leave" in the portal's
+ * dialog, so PA stops reporting dirty and does not re-block subsequent
+ * cross-app navigation.
+ */
+const clearUnsavedChanges = (): void => {
+  const store = getStore()
+  if (!store?.getters?.getActiveBookmark) return
+  store.commit('SET_ACTIVE_BOOKMARK_BASELINE', store.getters.getBookmarksData)
 }
 
 const install = (): void => {
   if (installed) return
   installed = true
-  unsavedChangesRegistry.register(MRI_APP_NAME, { hasUnsavedChanges: () => isDirty.value })
+  unsavedChangesRegistry.register(MRI_APP_NAME, {
+    hasUnsavedChanges: () => isDirty.value,
+    clearUnsavedChanges,
+  })
   window.addEventListener('beforeunload', handleBeforeUnload)
-  window.addEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }
 
 const uninstall = (): void => {
@@ -76,7 +65,6 @@ const uninstall = (): void => {
   installed = false
   unsavedChangesRegistry.unregister(MRI_APP_NAME)
   window.removeEventListener('beforeunload', handleBeforeUnload)
-  window.removeEventListener('single-spa:before-routing-event', handleSingleSpaRouting)
 }
 
 const guard = (action: PendingAction): void => {
@@ -91,32 +79,21 @@ const guard = (action: PendingAction): void => {
 
 const confirmLeave = (): void => {
   const action = pendingAction.value
-  const url = pendingUrl.value
   showDialog.value = false
   pendingAction.value = null
-  pendingUrl.value = null
-
   if (action) {
     action()
-    return
-  }
-  if (url) {
-    expectedNavigationUrl = url
-    navigateToUrl(url)
   }
 }
 
 const cancelLeave = (): void => {
   showDialog.value = false
   pendingAction.value = null
-  pendingUrl.value = null
-  expectedNavigationUrl = null
 }
 
 export interface UnsavedChangesApi {
   isDirty: ComputedRef<boolean>
   showDialog: Ref<boolean>
-  pendingUrl: Ref<string | null>
   pendingAction: Ref<PendingAction | null>
   install: () => void
   uninstall: () => void
@@ -134,7 +111,6 @@ export function useUnsavedChanges(storeOverride?: Store<unknown>): UnsavedChange
   return {
     isDirty,
     showDialog,
-    pendingUrl,
     pendingAction,
     install,
     uninstall,

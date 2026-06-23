@@ -270,7 +270,12 @@ export default {
   watch: {
     initBookmarkId() {
       if (this.initBookmarkId !== '') {
-        this.loadBookmark(this.initBookmarkId, null)
+        // Restore the bookmark referenced by the URL (?bmkId=) on (re)mount.
+        // loadBookmark() reads selectedBmkId/selectedChartType, so set them first
+        // (mirrors loadBookmarkCheck); passing them as args would be ignored.
+        this.selectedBmkId = this.initBookmarkId
+        this.selectedChartType = null
+        this.loadBookmark()
       }
     },
     isBookmarksLoading() {

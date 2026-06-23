@@ -15,7 +15,7 @@
         <v-btn
           icon="mdi-close"
           variant="text"
-          color="primary"
+          color="#000080"
           size="small"
           :aria-label="closeLabel"
           data-testid="close-dialog-button"
@@ -31,7 +31,7 @@
         <v-btn
           class="unsaved-dialog__btn unsaved-dialog__btn--leave"
           variant="outlined"
-          color="primary"
+          color="#000080"
           data-testid="leave-page-button"
           @click="$emit('leave')"
         >
@@ -41,7 +41,7 @@
           ref="stayButtonRef"
           class="unsaved-dialog__btn unsaved-dialog__btn--stay"
           variant="elevated"
-          color="primary"
+          color="#000080"
           autofocus
           data-testid="stay-page-button"
           @click="$emit('stay')"
@@ -121,9 +121,9 @@ watch(
 
   &__title-text {
     font-weight: 500;
-    font-size: 24px;
+    font-size: 18px;
     line-height: 1.2;
-    letter-spacing: -0.48px;
+    letter-spacing: 0;
     color: #000080;
   }
 
@@ -149,6 +149,10 @@ watch(
     flex: 1 1 0;
     height: 40px;
     border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
   }
 
   &__btn--leave {
@@ -158,6 +162,7 @@ watch(
 
   &__btn--stay {
     color: #faf8f8;
+    background-color: #000080;
     box-shadow:
       0 1px 5px 0 rgba(0, 0, 0, 0.12),
       0 2px 2px 0 rgba(0, 0, 0, 0.14),

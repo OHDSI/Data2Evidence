@@ -17,6 +17,11 @@
 
 export interface UnsavedChangesRegistration {
   hasUnsavedChanges: () => boolean
+  /**
+   * Optional acknowledge hook. Called when the user confirms leaving despite
+   * unsaved changes, so the app can reset its dirty state (e.g. re-baseline).
+   */
+  clearUnsavedChanges?: () => void
 }
 
 export interface D2EUnsavedChangesRegistry {
@@ -24,6 +29,8 @@ export interface D2EUnsavedChangesRegistry {
   unregister: (appName: string) => void
   hasAnyUnsavedChanges: () => boolean
   getDirtyApps: () => string[]
+  /** Ask every registered app to clear its unsaved-changes state. */
+  clearAll: () => void
 }
 
 declare global {
@@ -58,6 +65,11 @@ function createRegistry(): D2EUnsavedChangesRegistry {
         }
       }
       return dirtyApps
+    },
+    clearAll() {
+      for (const api of registry.values()) {
+        api.clearUnsavedChanges?.()
+      }
     },
   }
 }

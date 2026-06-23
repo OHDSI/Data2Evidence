@@ -127,7 +127,49 @@ describe('store - bookmark', () => {
       const callGetter = (state, moduleGetters, rootGetters) =>
         bookmarkModule.getters.getCurrentBookmarkHasChanges(state, moduleGetters, {}, rootGetters)
 
-      it('returns false when the stacked bookmark barChartType matches after normalization', () => {
+      it('returns false when baseline matches even if raw saved JSON differs (auto-defaulted colorAxis)', () => {
+        const savedBookmark = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        const liveData = {
+          ...savedBookmark,
+          colorAxis: 'some.auto.defaulted.axis',
+        }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(savedBookmark) }
+        state.activeBookmarkBaseline = liveData
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig() }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+
+      it('returns true when baseline differs from live state for a saved bookmark', () => {
+        const savedBookmark = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        const liveData = {
+          ...savedBookmark,
+          filter: { changed: true },
+        }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(savedBookmark) }
+        state.activeBookmarkBaseline = savedBookmark
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig() }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(true)
+      })
+
+      it('falls back to saved JSON comparison when no baseline exists', () => {
         const bookmarkData = {
           filter: {},
           chartType: 'stacked',
@@ -181,6 +223,85 @@ describe('store - bookmark', () => {
         const moduleGetters = { getBookmarksData: liveData }
         const rootGetters = { getMriFrontendConfig: createConfig() }
         expect(callGetter(state, moduleGetters, rootGetters)).toBe(true)
+      })
+
+      it('returns false when colorAxis was auto-defaulted over a null baseline', () => {
+        const baseline = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        // The chart auto-picked a color axis after the baseline was captured.
+        const liveData = { ...baseline, colorAxis: 'some.auto.defaulted.axis' }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(baseline) }
+        state.activeBookmarkBaseline = baseline
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: true }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+
+      it('returns true when colorAxis was chosen by the user over a null baseline', () => {
+        const baseline = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        const liveData = { ...baseline, colorAxis: 'user.chosen.axis' }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(baseline) }
+        state.activeBookmarkBaseline = baseline
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: false }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(true)
+      })
+
+      it('returns false when the auto-defaulted colorAxis leaked into the baseline (re-open/cached race)', () => {
+        // Re-open / navigate-back: onChartDataReady fired BEFORE the baseline was
+        // captured, so the baseline holds the auto-selected colorAxis, not null.
+        const baseline = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: 'some.auto.defaulted.axis',
+        }
+        const liveData = { ...baseline }
+        const state = createState()
+        state.activeBookmark = {
+          bmkId: '1',
+          bookmarkname: 'Test',
+          bookmark: JSON.stringify({ ...baseline, colorAxis: null }),
+        }
+        state.activeBookmarkBaseline = baseline
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: true }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+
+      it('ignores auto-defaulted colorAxis in the saved-JSON fallback comparison', () => {
+        const savedBookmark = {
+          filter: {},
+          chartType: 'stacked',
+          axisSelection: [],
+          datasetId: 'ds1',
+          barChartType: { mode: 'stack', showDistributionOverlay: false },
+          colorAxis: null,
+        }
+        const liveData = { ...savedBookmark, colorAxis: 'some.auto.defaulted.axis' }
+        const state = createState()
+        state.activeBookmark = { bmkId: '1', bookmarkname: 'Test', bookmark: JSON.stringify(savedBookmark) }
+        // No baseline -> exercises the raw-JSON branch.
+        const moduleGetters = { getBookmarksData: liveData }
+        const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: true }
+        expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
       })
     })
   })

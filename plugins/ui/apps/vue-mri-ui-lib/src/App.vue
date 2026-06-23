@@ -69,9 +69,13 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  // Vuex modules use object (not factory) state, so the bookmark module's state
+  // is shared across the per-mount store instances and survives unmount. Clear
+  // the active bookmark (and its baseline) when PA unloads so a stale tab/dirty
+  // state does not reappear when the user navigates back.
+  store.commit('SET_ACTIVE_BOOKMARK', null)
   unsavedChanges.uninstall()
   unsavedChanges.showDialog.value = false
-  unsavedChanges.pendingUrl.value = null
   unsavedChanges.pendingAction.value = null
 })
 </script>
