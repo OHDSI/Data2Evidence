@@ -441,13 +441,16 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 log.error(err);
             });
 
-            pipeline(responseData, ...csvStreamTransforms, res, (err) => {
+            pipeline(responseData, ...csvStreamTransforms, res, async (err) => {
                 if (
                     result.data.constructor.prototype.toString() ===
                     "[object AsyncGenerator]"
                 ) {
                     //Detach Native DB -> At this point duckdb complains connection is closed already (Since res.end might have been called already)
                 }
+                // Drop the DuckDB backing table now that all data has been
+                // written (or the pipeline has failed). No-op for HANA.
+                await result.cleanup?.();
                 if (err) {
                     console.error("Pipeline failed", err);
                     console.error(err.stack);
@@ -486,7 +489,8 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             result.data
                 .pipe(parquetTransform)
                 .pipe(res)
-                .on("finish", () => {
+                .on("finish", async () => {
+                    await result.cleanup?.();
                     return res.status(200);
                 });
         }
