@@ -3,20 +3,26 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="540"
+    rounded="0"
     persistent
     attach="#app"
     role="alertdialog"
     aria-labelledby="unsaved-changes-title"
     aria-describedby="unsaved-changes-body"
   >
-    <v-card class="unsaved-dialog" data-testid="unsaved-changes-dialog">
+    <v-card
+      class="unsaved-dialog"
+      data-testid="unsaved-changes-dialog"
+      rounded="lg"
+    >
       <div class="unsaved-dialog__title">
         <span id="unsaved-changes-title" class="unsaved-dialog__title-text">{{ title }}</span>
         <v-btn
           icon="mdi-close"
-          variant="text"
           color="#000080"
           size="small"
+          class="unsaved-dialog__close-btn"
+          variant="text"
           :aria-label="closeLabel"
           data-testid="close-dialog-button"
           @click="$emit('stay')"
@@ -105,8 +111,8 @@ watch(
 .unsaved-dialog {
   width: 100%;
   max-width: 540px;
-  border-radius: 16px;
   overflow: hidden;
+  border-radius: 32px;
   box-shadow:
     0 6px 30px 5px rgba(0, 0, 0, 0.12),
     0 16px 24px 2px rgba(0, 0, 0, 0.14),
@@ -124,7 +130,7 @@ watch(
     font-size: 18px;
     line-height: 1.2;
     letter-spacing: 0;
-    color: #000080;
+    color: var(--color-primary, #000080);
   }
 
   &__body {
@@ -134,7 +140,7 @@ watch(
       margin: 0;
       font-size: 16px;
       line-height: 1.5;
-      color: #000000;
+      color: var(--color-neutral-dark, #000000);
     }
   }
 
@@ -142,7 +148,7 @@ watch(
     display: flex;
     gap: 16px;
     padding: 16px 24px;
-    border-top: 1px solid #dedcda;
+    border-top: 1px solid var(--color-neutral-lighter, #dedcda);
   }
 
   &__btn {
@@ -156,17 +162,21 @@ watch(
   }
 
   &__btn--leave {
-    color: #000080;
-    border: 1px solid #cccfe5;
+    color: var(--color-primary, #000080);
+    border: 1px solid var(--color-neutral-lighter, #cccfe5);
   }
 
   &__btn--stay {
-    color: #faf8f8;
-    background-color: #000080;
+    color: var(--color-neutral-extra-lightest, #faf8f8);
+    background-color: var(--color-primary, #000080);
     box-shadow:
       0 1px 5px 0 rgba(0, 0, 0, 0.12),
       0 2px 2px 0 rgba(0, 0, 0, 0.14),
       0 3px 1px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  &__close-btn {
+    border-radius: 50% !important;
   }
 }
 </style>
