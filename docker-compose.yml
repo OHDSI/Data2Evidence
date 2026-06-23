@@ -209,7 +209,7 @@ services:
                 },
                 {
                   "name": "pgwire",
-                  "config": { "host": "0.0.0.0", "port": 5433 }
+                  "config": { "host": "0.0.0.0", "port": 5433, "password": "${TREX__SQL__PASSWORD:-pencil}" }
                 }
               ]
             }
