@@ -28,16 +28,17 @@
       v-model="snackbar"
       location="top right"
       color="var(--color-mri-success-bg)"
-      :timeout="3000"
+      :timeout="snackbarTimeout"
       rounded="16px"
     >
       <span class="snackbar-content">
         <appIcon icon="successCheck" class="snackbar-success-icon" />
-        {{ snackbarText }}
+        {{ successSnackbarText }}
       </span>
     </VSnackbar>
-    <VSnackbar v-model="errorSnackbar" location="top right" color="#FDEDED" :timeout="3000" rounded="16px">
+    <VSnackbar v-model="errorSnackbar" location="top right" color="#FDEDED" :timeout="snackbarTimeout" rounded="16px">
       <span class="snackbar-content">
+        <appIcon icon="alertCircle" class="snackbar-error-icon" />
         {{ errorSnackbarText }}
       </span>
     </VSnackbar>
@@ -52,6 +53,7 @@ import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
+import Constants from '../utils/Constants'
 
 export default {
   name: 'downloadMenu',
@@ -60,7 +62,7 @@ export default {
       csvShow: false,
       imageShow: false,
       snackbar: false,
-      snackbarText: '',
+      successSnackbarText: '',
       errorSnackbar: false,
       errorSnackbarText: '',
       pendingDownload: null,
@@ -77,6 +79,7 @@ export default {
       'getAllChartConfigs',
       'getActiveChart',
       'getCurrentPatientCount',
+      'getCSVDownloadError',
       'getZIPDownloadCompleted',
       'getZIPDownloadError',
     ]),
@@ -89,6 +92,9 @@ export default {
       // The maxPatientsExport limit only applies to the patient list view.
       if (this.exceedsExportLimit) return true
       return false
+    },
+    snackbarTimeout() {
+      return Constants.SnackbarTimeout
     },
     minCohortSize() {
       return this.getAllChartConfigs?.minCohortSize
@@ -155,6 +161,11 @@ export default {
         this.showExportError()
       }
     },
+    getCSVDownloadError(val) {
+      if (val && this.pendingDownload === 'csv') {
+        this.showExportError()
+      }
+    },
   },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
@@ -176,14 +187,18 @@ export default {
     },
     onCsvClosed(payload) {
       this.csvShow = false
-      if (payload && payload.success && this.pendingDownload === 'csv') {
+      if (payload && payload.success && this.pendingDownload === 'csv' && !this.getCSVDownloadError) {
         this.showExportToast('MRI_PA_EXPORT_FILE_CSV')
       }
     },
-    onImageExported() {
+    onImageExported(payload) {
       this.imageShow = false
       if (this.pendingDownload === 'image') {
-        this.showExportToast('MRI_PA_EXPORT_FILE_PNG')
+        if (payload && payload.success) {
+          this.showExportToast('MRI_PA_EXPORT_FILE_PNG')
+        } else {
+          this.showExportError()
+        }
       }
     },
     showExportToast(fileTypeKey) {
@@ -218,7 +233,12 @@ export default {
 }
 
 .snackbar-success-icon {
-  margin-right: 8px;
+  margin-right: 12px;
   color: #00855f;
+}
+
+.snackbar-error-icon {
+  margin-right: 12px;
+  color: var(--color-feedback-alarm);
 }
 </style>
