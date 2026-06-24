@@ -1,6 +1,5 @@
 import { env, global, logger } from "../env.ts";
 import { waitfor } from "./utils.ts";
-import * as LogtoAPI from "../api/LogtoAPI.ts";
 import { authn } from "../auth/authn.ts";
 import { authz } from "../auth/authz.ts";
 import { Hono, Context } from "npm:hono";
@@ -177,6 +176,9 @@ const headers = new Headers({
 });
 
 const getFullyQualifiedUserFunctionName = (function_name: string) => {
+  // Some plugin manifests omit `env` on their api entry, so this can be called
+  // with undefined — guard it instead of throwing.
+  function_name = function_name || "fn";
   return function_name.toUpperCase().startsWith(env.PROJECT_NAME.toUpperCase())
     ? function_name
     : `${env.PROJECT_NAME}-${function_name}`; // Add Project prefix if not exists
@@ -257,13 +259,16 @@ async function _callWorker(
   dir: string,
   xenv: any
 ) {
+  // Fall back to the route source when the manifest omits `env`, so each such
+  // fn still gets a stable, unique worker name.
+  const fnEnvName = fncfg.env || fncfg.source || "fn";
   const TREX_CURRENT_USER_FUNCTION_NAME = getFullyQualifiedUserFunctionName(
-    fncfg.env
+    fnEnvName
   );
   const myenv = Object.assign(
     { TREX_CURRENT_USER_FUNCTION_NAME },
     xenv["_shared"],
-    fncfg.env in xenv ? xenv[fncfg.env] : {},
+    fncfg.env && fncfg.env in xenv ? xenv[fncfg.env] : {},
     {
       SERVICE_ROUTES: env.SERVICE_ROUTES,
       DB_CREDENTIALS__PRIVATE_KEY: env.DB_CREDENTIALS__PRIVATE_KEY,
@@ -278,7 +283,10 @@ async function _callWorker(
 
   const options: any = {
     servicePath: servicePath,
-    memoryLimitMb: 1000,
+    // Per-function worker memory cap. Default raised from 1000 -> 4096 MB and made
+    // overridable via the plugin manifest (trex.functions memoryLimitMb), because
+    // heavier fns can exceed 1 GB and otherwise get killed (502).
+    memoryLimitMb: fncfg.memoryLimitMb ?? 4096,
     workerTimeoutMs: env.WATCH[fncfg.env] ? 1 * 60 * 1000 : 30 * 60 * 1000,
     noModuleCache: false,
     importMapPath: imports,
@@ -438,24 +446,6 @@ export async function addPlugin(
           .filter((v: any, i: any, self: any) => self.lastIndexOf(v) == i);
       else {
         global.ROLE_SCOPES[_name] = cfg;
-        const roleName = _name;
-        // Create the Logto role when the role doesn't exist
-        try {
-          const result = await LogtoAPI.createLogtoRole(roleName);
-          if (result.status === 200) {
-            logger.info(`Created Logto role: ${roleName}`);
-          } else if (result.status === 422) {
-            logger.info(`Logto role '${roleName}' exists`);
-          } else {
-            logger.info(
-              `Logto role creation for '${roleName}' returned status ${
-                result.status
-              }: ${JSON.stringify(result.data)}`
-            );
-          }
-        } catch (err) {
-          logger.error(`Failed to create Logto role '${roleName}': ${err}`);
-        }
       }
     });
   }
@@ -463,11 +453,6 @@ export async function addPlugin(
     global.REQUIRED_URL_SCOPES = global.REQUIRED_URL_SCOPES.concat(
       value.scopes
     );
-    try {
-      await LogtoAPI.createLogtoApisAndScopes(value.scopes);
-    } catch (error) {
-      logger.error(`Failed to create Logto APIs and scopes: ${error}`);
-    }
   }
 
   if (value.api)

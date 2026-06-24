@@ -1,6 +1,11 @@
 <template>
   <div class="axis-menu-button-wrapper">
-    <button ref="binButton" class="binningButton" v-on:click="toggleBinningDialog">
+    <button
+      ref="binButton"
+      class="binningButton"
+      v-on:click="toggleBinningDialog"
+      :data-testid="testId || 'pa-binning-btn'"
+    >
       <span class="icon"></span>
     </button>
     <dialogBox
@@ -41,7 +46,7 @@ import DialogBox from './DialogBox.vue'
 
 export default {
   name: 'binningButton',
-  props: ['binningValue', 'parentBottom', 'updateBinningEv'],
+  props: ['binningValue', 'parentBottom', 'updateBinningEv', 'testId'],
   data() {
     return {
       binningDialogVisibility: false,

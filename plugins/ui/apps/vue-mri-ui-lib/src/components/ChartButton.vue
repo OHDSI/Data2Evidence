@@ -1,5 +1,13 @@
 <template>
-  <button @click="clicked" v-bind:class="{ active: active }" v-bind:title="title" class="chartButton" tabindex="0">
+  <button
+    @click="clicked"
+    v-bind:class="{ active: active }"
+    v-bind:title="title"
+    class="chartButton"
+    tabindex="0"
+    :disabled="disabled"
+    :data-testid="`pa-chart-btn-${name}`"
+  >
     <span class="icon" v-bind:style="'font-family:' + iconGroup">{{ icon }}</span>
   </button>
 </template>
@@ -7,7 +15,7 @@
 <script lang="ts">
 export default {
   name: 'chartButton',
-  props: ['clickEv', 'icon', 'name', 'title', 'iconGroup', 'activeChart'],
+  props: ['clickEv', 'icon', 'name', 'title', 'iconGroup', 'activeChart', 'disabled'],
   data() {
     return {
       selected: false,

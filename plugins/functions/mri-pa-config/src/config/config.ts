@@ -298,6 +298,9 @@ export class MRIConfig {
         return {
             filtercards: defaultValues.filtercards,
             attributes: defaultValues.attributes,
+            chartOptions: defaultValues.chartOptions,
+            panelOptions: defaultValues.panelOptions,
+            configInformations: defaultValues.configInformations,
         };
     }
 

@@ -108,6 +108,44 @@
       line-height: 18px;
     }
   }
+  .min-cohort-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    padding: 24px;
+    background-color: var(--color-ui-lightest-bg);
+    color:var(--color-neutral);
+
+    &__icon {
+      width: 96px;
+      height: 96px;
+
+      path {
+        fill: var(--color-neutral);
+      }
+      line,
+      polyline {
+        stroke: var(--color-neutral);
+      }
+    }
+    &__title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    &__message {
+      max-width: 420px;
+      font-size: 14px;
+    }
+  }
 }
 
 .chartController.withoutAxis {

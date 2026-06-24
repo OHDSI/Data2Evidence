@@ -52,6 +52,24 @@ class TrexDao(DaoBase):
             authMode=AuthMode.PASSWORD,
         )
 
+    def query_dataframe(self, query: str):
+        """
+        Run a read query and return a pandas DataFrame with column names
+        taken from the cursor description.
+        """
+        import pandas as pd
+
+        with self._get_connection() as con:
+            cur = None
+            try:
+                cur = con.cursor()
+                cur.execute(query)
+                columns = [desc[0] for desc in cur.description] if cur.description else []
+                return pd.DataFrame(cur.fetchall(), columns=columns)
+            finally:
+                if cur:
+                    cur.close()
+
     @contextmanager
     def _get_connection(self):
         """Get a PostgreSQL connection"""
@@ -316,11 +334,11 @@ class TrexDao(DaoBase):
             con: Optional existing connection to reuse (skips opening a new connection)
             on_conflict: Optional ON CONFLICT clause, e.g. "ON CONFLICT DO NOTHING"
         """
-        columns_str = ", ".join(columns)
-        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_str}) VALUES %s{conflict}").format(
+        columns_sql = pg_sql.SQL(", ").join(pg_sql.Identifier(col) for col in columns)
+        sql = pg_sql.SQL("INSERT INTO {schema_name}.{table_name} ({columns_sql}) VALUES %s{conflict}").format(
             schema_name=self._schema_ident(schema_name),
             table_name=pg_sql.Identifier(table_name),
-            columns_str=pg_sql.SQL(columns_str),
+            columns_sql=columns_sql,
             conflict=pg_sql.SQL(f" {on_conflict}" if on_conflict else ""),
         )
 

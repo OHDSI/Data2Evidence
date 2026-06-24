@@ -82,13 +82,13 @@ new CustomEvent("alp-terminology-open", {
 });
 ```
 
-**2. Portal API Props** (shared context):
+**2. Portal Context Props** (shared context):
 
 ```typescript
 interface PortalProps {
   getToken: () => Promise<string>;
   username: string;
-  datasetId: string; // from portalAPI.studyId
+  datasetId: string;
   locale: string;
   isAtlas: boolean; // from portalAPI.isAtlas
 }
@@ -106,7 +106,8 @@ Mode note: `portalAPI.isAtlas` is the runtime mode flag.
 
 ### Single-SPA Integration
 
-Concept Sets app uses single-spa lifecycle (bootstrap/mount/unmount), registered via AppRegistry.ts with SystemJS import maps. Enables independent deployment and runtime loading.
+Both `vue-mri-ui-lib` and Concept Sets use single-spa lifecycles (`bootstrap`/`mount`/`unmount`).
+The portal registers MRI as an app plugin (`/mri/lifecycles.js`), and MRI receives runtime context through single-spa custom props, bridged into a reactive Pinia `portalContext` store.
 
 ## 3. Component Architecture
 
@@ -217,7 +218,7 @@ Component: [QueryFilterEntryExit.vue:147-230](apps/vue-mri-ui-lib/src/query-filt
 | `USE_CACHE` | `true` | Response caching |
 | `DEBUG` | `false` | Debug mode |
 
-**Development** (`public/index.html`):
+**Development** (`vite serve`):
 
 ```javascript
 portalAPI = {

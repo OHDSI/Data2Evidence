@@ -3,7 +3,15 @@
     <div class="stackbar-chart-area">
       <div class="stackbar-container" id="stacked-chart"></div>
     </div>
-    <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
+    <StackBarChartLegend
+      v-if="legendTraces.length > 1"
+      :traces="legendTraces"
+      :colorway="legendColorway"
+      :bar-opacity="legendBarOpacity"
+      :show-distribution-curve="showDistributionCurveLegend"
+      :area-fill="legendAreaFill"
+      :fill-alpha="legendFillAlpha"
+    />
   </div>
 </template>
 
@@ -13,9 +21,10 @@ import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
-import { applyById, getEffectiveBarChartMode } from './StackBarModes/modes'
+import { applyById, getEffectiveBarChartMode, OVERLAY_BAR_OPACITY, KDE_FILL_ALPHA } from './StackBarModes/modes'
 
 const DEFAULT_BAR_GAP = 0.3
 
@@ -121,7 +130,7 @@ export default {
     },
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(() => {
           // do something
         })
@@ -161,12 +170,7 @@ export default {
               currentPatientCount: '--',
             })
 
-            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.notificationStore.setAlertMessage({
-                messageType: 'info',
-                message: this.chartData.noDataReason,
-              })
-            } else {
+            if (this.chartData.noDataReason !== this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
               this.notificationStore.setAlertMessage({
                 message: this.chartData.noDataReason,
               })
@@ -276,6 +280,8 @@ export default {
       'getMriFrontendConfig',
       'getChartSize',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getText',
       'getFireRequest',
       'isFireRequestHeld',
@@ -289,7 +295,9 @@ export default {
       'getBarChartType',
       'getShowDistributionOverlay',
     ]),
-
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
     legendTraces() {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => ({
@@ -315,6 +323,28 @@ export default {
         return this.chartData.colorLegend.map(item => item.color)
       }
       return Object.values(Constants.ChartColorway)
+    },
+    legendBarOpacity() {
+      // Overlapping histogram draws translucent bars
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      return effectiveMode === 'overlay' ? OVERLAY_BAR_OPACITY : 1
+    },
+    showDistributionCurveLegend() {
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      const supportsDistributionCurve = effectiveMode === 'overlay' || effectiveMode === 'partialOverlaySolid'
+      if (!supportsDistributionCurve || !this.getShowDistributionOverlay) return false
+      const firstTrace = this.chartData?.traces?.[0]
+      return (firstTrace?.y?.length || 0) > 1
+    },
+    legendAreaFill() {
+      // for kdp, fill color background with the solid curve color as the border.
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      if (effectiveMode !== 'distribution') return false
+      const firstTrace = this.chartData?.traces?.[0]
+      return (firstTrace?.y?.length || 0) > 1
+    },
+    legendFillAlpha() {
+      return KDE_FILL_ALPHA
     },
   },
   beforeUnmount() {

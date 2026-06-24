@@ -1,7 +1,11 @@
 import { meta as StackedMeta, apply as applyStacked } from './StackedMode.vue'
-import { meta as OverlayMeta, apply as applyOverlay } from './OverlayMode.vue'
+import { meta as OverlayMeta, apply as applyOverlay, OVERLAY_BAR_OPACITY } from './OverlayMode.vue'
 import { meta as PartialOverlaySolidMeta, apply as applyPartialOverlaySolid } from './PartialOverlaySolidMode.vue'
-import { meta as DistributionCurvesMeta, apply as applyDistributionCurves } from './KernelDensityPlotMode.vue'
+import {
+  meta as DistributionCurvesMeta,
+  apply as applyDistributionCurves,
+  KDE_FILL_ALPHA,
+} from './KernelDensityPlotMode.vue'
 
 export type ModeMeta = {
   id: string
@@ -18,6 +22,8 @@ export type ModeApplyCtx = {
 }
 
 export type ModeApply = (traces: any[], layout: any, ctx: ModeApplyCtx) => { traces: any[]; layout: any }
+
+export { OVERLAY_BAR_OPACITY, KDE_FILL_ALPHA }
 
 export const modeOrder: ModeMeta[] = [StackedMeta, OverlayMeta, PartialOverlaySolidMeta, DistributionCurvesMeta]
 

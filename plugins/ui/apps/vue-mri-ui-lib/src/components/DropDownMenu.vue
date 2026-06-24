@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdownmenu-container" v-bind:class="{ 'fixed-right': overflowRight }">
+  <div class="dropdownmenu-container" v-bind:class="{ 'fixed-right': overflowRight }" :data-testid="testId || 'pa-dropdown-menu'">
     <div class="menuWrapper" v-bind:class="{ closed: !opened }" :style="menuWrapperStyle">
       <ul>
         <template v-for="sub in subMenuStub" :key="sub.idx">
@@ -67,6 +67,7 @@ export default {
     'target', // type: node element
     'placement', // type: string
     'boundariesElement', // type: string
+    'testId',
   ],
   data() {
     return {

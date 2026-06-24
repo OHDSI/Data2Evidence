@@ -1,9 +1,10 @@
 <template>
   <div :class="['pa-component-wrapper']">
+    <AtlasView v-if="atlasStore.showAtlas" />
     <div :class="['fullHeight', 'pa-splitter', { 'right-pane-opened': rightPaneEverOpened }]">
       <splitpanes class="default-theme" @resize="onSplitterDrag($event)">
         <pane :size="paneSize" :min-size="hideLeftPane ? 0 : splitterMinWidth">
-          <div id="pane-left" class="split">
+          <div id="pane-left" class="split" data-testid="pa-pane-left">
             <div class="panel-header filters-toolbar d-flex">
               <div v-if="!isAtlasBookmark">
                 <button
@@ -11,6 +12,7 @@
                   class="actionButton"
                   @click="togglePanel(PANEL.RIGHT)"
                   :title="getText('MRI_PA_TOOLTIP_ENTER_EXPANDED_FILTERS_VIEW')"
+                  data-testid="pa-fullscreen-btn"
                 >
                   <icon icon="fullScreen" />
                 </button>
@@ -30,30 +32,32 @@
                 </ul>
               </div>
             </div>
-            <bookmarks
-              @unloadBookmarkEv="toggleCohorts"
-              @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
-              :init-bookmark-id="querystring.bmkId"
-              v-if="getMriFrontendConfig && displayCohorts"
-            ></bookmarks>
+            <div class="pane-left-content">
+              <bookmarks
+                @unloadBookmarkEv="toggleCohorts"
+                @loadAtlasCohortDefinition="handleLoadAtlasCohortDefinition"
+                :init-bookmark-id="querystring.bmkId"
+                v-if="getMriFrontendConfig && displayCohorts"
+              ></bookmarks>
 
-            <filters
-              ref="filtersRef"
-              v-if="!showQueryFilter && !displayCohorts"
-              v-bind:class="{ hidden: displayCohorts }"
-            ></filters>
+              <filters
+                ref="filtersRef"
+                v-if="!showQueryFilter && !displayCohorts"
+                v-bind:class="{ hidden: displayCohorts }"
+              ></filters>
 
-            <QueryFilter
-              v-else-if="showQueryFilter"
-              ref="queryFilterRef"
-              :atlas-data="atlasDataForQueryFilter"
-              :key="atlasDataForQueryFilter?.id || 'new-cohort'"
-            />
+              <QueryFilter
+                v-else-if="showQueryFilter"
+                ref="queryFilterRef"
+                :atlas-data="atlasDataForQueryFilter"
+                :key="atlasDataForQueryFilter?.id || 'new-cohort'"
+              />
+            </div>
           </div>
         </pane>
 
         <pane :size="PANE_SIZE.FULL - paneSize">
-          <div id="pane-right" class="split">
+          <div id="pane-right" class="split" data-testid="pa-pane-right">
             <template v-if="rightPaneEverOpened">
               <chartToolbar
                 :showUnHideFilters="hideLeftPane"
@@ -179,6 +183,8 @@ import ResizeObserver from './ResizeObserver.vue'
 import { Splitpanes, Pane } from 'splitpanes'
 import 'splitpanes/dist/splitpanes.css'
 import { QueryFilter } from '@/query-filter'
+import AtlasView from '../views/AtlasView.vue'
+import { useAtlasStore } from '../stores/atlas'
 
 const PANE_SIZE = {
   FULL: 100,
@@ -214,6 +220,7 @@ export default {
       showQueryFilter: false,
       atlasDataForQueryFilter: null,
       rightPaneEverOpened: false,
+      atlasStore: useAtlasStore(),
     }
   },
   created() {},
@@ -238,14 +245,16 @@ export default {
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
-        this.loadAllSharedBookmark()
         this.loadDefaultFilters()
         this.loadValuesForAttributePath({
           attributePathUid: 'conceptSets',
           searchQuery: '',
           attributeType: 'conceptSet',
         })
-        this.initializeBookmarks()
+        if (!this.getDatasetReloadInProgress) {
+          this.loadAllSharedBookmark()
+          this.initializeBookmarks()
+        }
       }
     },
   },
@@ -269,6 +278,7 @@ export default {
       'getPLModel',
       'getActiveBookmark',
       'getBookmarkById',
+      'getDatasetReloadInProgress',
     ]),
     initBookmarkId() {
       const url = window.location.href
@@ -503,6 +513,7 @@ export default {
     Splitpanes,
     Pane,
     QueryFilter,
+    AtlasView,
   },
 }
 </script>
