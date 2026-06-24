@@ -31,9 +31,14 @@
       :timeout="3000"
       rounded="16px"
     >
-      <span style="color: rgba(0, 0, 0, 0.87); display: inline-flex; align-items: center">
-        <appIcon icon="successCheck" style="margin-right: 8px; color: #00855f" />
+      <span class="snackbar-content">
+        <appIcon icon="successCheck" class="snackbar-success-icon" />
         {{ snackbarText }}
+      </span>
+    </VSnackbar>
+    <VSnackbar v-model="errorSnackbar" location="top right" color="#FDEDED" :timeout="3000" rounded="16px">
+      <span class="snackbar-content">
+        {{ errorSnackbarText }}
       </span>
     </VSnackbar>
   </div>
@@ -56,7 +61,14 @@ export default {
       imageShow: false,
       snackbar: false,
       snackbarText: '',
+      errorSnackbar: false,
+      errorSnackbarText: '',
       pendingDownload: null,
+      fileTypeKeyMap: {
+        csv: 'MRI_PA_EXPORT_FILE_CSV',
+        image: 'MRI_PA_EXPORT_FILE_PNG',
+        zip: 'MRI_PA_EXPORT_FILE_ZIP',
+      },
     }
   },
   computed: {
@@ -66,6 +78,7 @@ export default {
       'getActiveChart',
       'getCurrentPatientCount',
       'getZIPDownloadCompleted',
+      'getZIPDownloadError',
     ]),
     isDownloadDisabled() {
       const minCohortSize = this.getAllChartConfigs.minCohortSize
@@ -137,6 +150,11 @@ export default {
         this.showExportToast('MRI_PA_EXPORT_FILE_ZIP')
       }
     },
+    getZIPDownloadError(val) {
+      if (val && this.pendingDownload === 'zip') {
+        this.showExportError()
+      }
+    },
   },
   methods: {
     ...mapActions(['setFireDownloadZIP']),
@@ -173,6 +191,12 @@ export default {
       this.snackbar = true
       this.pendingDownload = null
     },
+    showExportError() {
+      const fileTypeKey = this.fileTypeKeyMap[this.pendingDownload]
+      this.errorSnackbarText = this.getText('MRI_PA_EXPORT_FAILED', this.getText(fileTypeKey))
+      this.errorSnackbar = true
+      this.pendingDownload = null
+    },
   },
   components: {
     ImageExport,
@@ -185,3 +209,16 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.snackbar-content {
+  color: rgba(0, 0, 0, 0.87);
+  display: inline-flex;
+  align-items: center;
+}
+
+.snackbar-success-icon {
+  margin-right: 8px;
+  color: #00855f;
+}
+</style>
