@@ -183,12 +183,12 @@ const actions = {
       method: 'get',
       cancelToken,
       url: urlWithQuerystring,
-    }).catch(({ response }) => {
-      if (response) {
-        commit(types.CSV_DOWNLOAD_ERROR, { csvDownloadError: true })
+    }).catch(err => {
+      if (axios.isCancel(err)) {
+        throw err
       }
-
-      throw response
+      commit(types.CSV_DOWNLOAD_ERROR, { csvDownloadError: true })
+      throw err
     })
   },
   downloadZIP({ state, dispatch, rootGetters }, additionalParameter) {

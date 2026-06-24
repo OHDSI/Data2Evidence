@@ -56,21 +56,7 @@ export class PluginEndpoint {
         private schemaName: string
     ) {
         const hex = crypto.randomBytes(24).toString("hex");
-        // ARCHITECTURAL CONSTRAINT: in analytics-svc there are exactly two
-        // connection paths (see main.ts -> getDBConnections / getTrexDbConnection):
-        //   1. dialect === "hana" -> NodeHDBConnection (HANA engine)
-        //   2. everything else    -> Trex/DuckDB runtime (postgresql, bigquery)
-        // A direct PostgresConnection is never used here for analytics queries
-        // (it only serves config DBs in cdw-svc/mri-pa-config/bookmark-svc), so
-        // `!== "hana"` reliably means "Trex/DuckDB". If a direct non-HANA, non-Trex
-        // path is ever added, this check AND the DuckDB-specific table name /
-        // CREATE TABLE syntax below must be revisited.
         if (connection.dialect !== "hana") {
-            // Non-HANA datasets execute via the Trex/DuckDB runtime.
-            // DuckDB TEMPORARY TABLEs are connection-local; the separate
-            // streaming connection cannot see them.  Use a regular table in
-            // DuckDB's shared in-process memory catalog instead; it is visible
-            // to every client in the same DuckDB process.
             // Dropped explicitly via dropFn / cleanup() after use.
             this.uniquePatientTempTableName = `memory.main."MRI_PLUGIN_${hex}"`;
         } else {
@@ -139,10 +125,9 @@ export class PluginEndpoint {
     private genLocalTempTableCreationQuery(existingPatientTable): string {
         let query: string;
         if (this.connection.dialect !== "hana") {
-            // Trex/DuckDB path: plain CREATE TABLE so the statement is NOT
-            // converted to CREATE TEMPORARY TABLE by translateHanaToDuckdb,
-            // and the table lands in memory.main where the streaming connection
-            // can see it.  Dropped explicitly via dropFn / cleanup().
+            // Trex/DuckDB path: plain CREATE TABLE so the table lands
+            // in memory.main where the streaming connection can see it.
+            // Dropped explicitly via dropFn / cleanup().
             query = `CREATE TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
         } else {
             query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
@@ -507,7 +492,7 @@ export class PluginEndpoint {
 
                 // For non-HANA (Trex/DuckDB) the backing table is a regular
                 // table in memory.main so the separate Trex streaming connection
-                // can see it. It must be explicitly dropped after use.
+                // can see it. Drop it explicitly after use.
                 if (this.connection.dialect !== "hana") {
                     dropFn = () =>
                         new Promise<void>((res) => {
