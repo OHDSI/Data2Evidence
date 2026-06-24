@@ -192,7 +192,12 @@ const getters = {
       return !isEqual(normalizedCurrentData, normalizeColorAxis(baseline))
     }
     if (!modulestate.activeBookmark.bookmark) {
-      return false
+      // No saved JSON and no baseline: this bookmark came from an external
+      // source (deep link / Atlas import) and has never been saved as a PA
+      // bookmark. Treat it as always dirty so navigation prompts until saved.
+      // Contrast with addNewCohort, which captures a baseline immediately so
+      // an unmodified new cohort correctly reports clean.
+      return true
     }
     const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
@@ -463,7 +468,10 @@ const actions = {
       skipFireRequest: chartIsChanging,
     })
       .then(result => {
-        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        // Do NOT capture a baseline for deep-link bookmarks. A deep link is
+        // unsaved external work that has never been persisted as a PA bookmark,
+        // so getCurrentBookmarkHasChanges should always report dirty (no baseline +
+        // no .bookmark JSON → true). The user must explicitly save to clear dirty.
         return result
       })
       .finally(() => {
