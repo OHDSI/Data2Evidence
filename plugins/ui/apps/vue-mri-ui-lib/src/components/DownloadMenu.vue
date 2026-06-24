@@ -25,21 +25,15 @@
     <downloadCSVDialog v-if="csvShow" @closeEv="onCsvClosed"></downloadCSVDialog>
     <imageExport v-if="imageShow" @closeEv="onImageExported"></imageExport>
     <VSnackbar
-      v-model="snackbar"
+      v-model="snackbarVisible"
       location="top right"
-      color="var(--color-mri-success-bg)"
+      :color="snackbarColor"
       :timeout="snackbarTimeout"
       rounded="16px"
     >
       <span class="snackbar-content">
-        <appIcon icon="successCheck" class="snackbar-success-icon" />
-        {{ successSnackbarText }}
-      </span>
-    </VSnackbar>
-    <VSnackbar v-model="errorSnackbar" location="top right" color="#FDEDED" :timeout="snackbarTimeout" rounded="16px">
-      <span class="snackbar-content">
-        <appIcon icon="alertCircle" class="snackbar-error-icon" />
-        {{ errorSnackbarText }}
+        <appIcon :icon="snackbarIcon" :class="snackbarIconClass" />
+        {{ snackbarText }}
       </span>
     </VSnackbar>
   </div>
@@ -61,10 +55,7 @@ export default {
     return {
       csvShow: false,
       imageShow: false,
-      snackbar: false,
-      successSnackbarText: '',
-      errorSnackbar: false,
-      errorSnackbarText: '',
+      snackbar: { visible: false, type: 'success', text: '' },
       pendingDownload: null,
       fileTypeKeyMap: {
         csv: 'MRI_PA_EXPORT_FILE_CSV',
@@ -92,6 +83,26 @@ export default {
       // The maxPatientsExport limit only applies to the patient list view.
       if (this.exceedsExportLimit) return true
       return false
+    },
+    snackbarVisible: {
+      get() {
+        return this.snackbar.visible
+      },
+      set(val) {
+        this.snackbar.visible = val
+      },
+    },
+    snackbarColor() {
+      return this.snackbar.type === 'success' ? 'var(--color-mri-success-bg)' : '#FDEDED'
+    },
+    snackbarIcon() {
+      return this.snackbar.type === 'success' ? 'successCheck' : 'alertCircle'
+    },
+    snackbarIconClass() {
+      return this.snackbar.type === 'success' ? 'snackbar-success-icon' : 'snackbar-error-icon'
+    },
+    snackbarText() {
+      return this.snackbar.text
     },
     snackbarTimeout() {
       return Constants.SnackbarTimeout
@@ -153,17 +164,17 @@ export default {
   watch: {
     getZIPDownloadCompleted(val) {
       if (val && this.pendingDownload === 'zip') {
-        this.showExportToast('MRI_PA_EXPORT_FILE_ZIP')
+        this.showExportSuccessToast('MRI_PA_EXPORT_FILE_ZIP')
       }
     },
     getZIPDownloadError(val) {
       if (val && this.pendingDownload === 'zip') {
-        this.showExportError()
+        this.showExportErrorToast()
       }
     },
     getCSVDownloadError(val) {
       if (val && this.pendingDownload === 'csv') {
-        this.showExportError()
+        this.showExportErrorToast()
       }
     },
   },
@@ -188,29 +199,29 @@ export default {
     onCsvClosed(payload) {
       this.csvShow = false
       if (payload && payload.success && this.pendingDownload === 'csv' && !this.getCSVDownloadError) {
-        this.showExportToast('MRI_PA_EXPORT_FILE_CSV')
+        this.showExportSuccessToast('MRI_PA_EXPORT_FILE_CSV')
       }
     },
     onImageExported(payload) {
       this.imageShow = false
       if (this.pendingDownload === 'image') {
         if (payload && payload.success) {
-          this.showExportToast('MRI_PA_EXPORT_FILE_PNG')
+          this.showExportSuccessToast('MRI_PA_EXPORT_FILE_PNG')
         } else {
-          this.showExportError()
+          this.showExportErrorToast(this.fileTypeKeyMap['image'])
         }
       }
     },
-    showExportToast(fileTypeKey) {
-      this.snackbarText = this.getText('MRI_PA_EXPORT_SUCCESS', this.getText(fileTypeKey))
-      this.snackbar = true
+    _showExportToast(type, fileTypeKey) {
+      const textKey = type === 'success' ? 'MRI_PA_EXPORT_SUCCESS' : 'MRI_PA_EXPORT_FAILED'
+      this.snackbar = { visible: true, type, text: this.getText(textKey, this.getText(fileTypeKey)) }
       this.pendingDownload = null
     },
-    showExportError() {
-      const fileTypeKey = this.fileTypeKeyMap[this.pendingDownload]
-      this.errorSnackbarText = this.getText('MRI_PA_EXPORT_FAILED', this.getText(fileTypeKey))
-      this.errorSnackbar = true
-      this.pendingDownload = null
+    showExportSuccessToast(fileTypeKey) {
+      this._showExportToast('success', fileTypeKey)
+    },
+    showExportErrorToast(fileTypeKey) {
+      this._showExportToast('error', fileTypeKey ?? this.fileTypeKeyMap[this.pendingDownload])
     },
   },
   components: {
