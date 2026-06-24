@@ -100,7 +100,10 @@ class DaoBase(ABC):
         """
         if getattr(self, "_pa_cdm_config", None) is None:
             result = {}
-            if self.dialect == SupportedDatabaseDialects.HANA:
+            if (
+                self.dialect == SupportedDatabaseDialects.HANA
+                and self.cache_id != self.database_code
+            ):
                 try:
                     from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
                     result = PortalServerAPI().pa_cdm_config_session_vars(self.cache_id)
