@@ -7,7 +7,7 @@ import {
   buildKernelAssetUrls,
   createEmptyNotebook,
   serializeIpynb,
-} from "react-notebook/src/index";
+} from "@trex/notebook/src/index";
 import * as notebookApi from "../api/notebook-api";
 import { PyqeReadyPyodideKernel } from "../kernels/pyqeReadyPyodideKernel";
 import { RD2EReadyWebRKernel } from "../kernels/rD2EReadyWebRKernel";

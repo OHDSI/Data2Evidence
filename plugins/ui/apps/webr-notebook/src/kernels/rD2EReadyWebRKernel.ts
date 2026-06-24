@@ -2,7 +2,7 @@ import {
   WebRKernel,
   type KernelConfig,
   type KernelOutput,
-} from 'react-notebook/src/index'
+} from '@trex/notebook/src/index'
 import { buildRD2EBootstrapCode } from './rD2EBootstrap'
 
 // WebRKernel subclass that loads d2e's rD2E as part of connect(). The upstream

@@ -113,7 +113,7 @@ export default defineConfig(({ command }) => ({
       
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, '../../node_modules/react-notebook/src'),
+      '@': path.resolve(__dirname, '../../node_modules/@trex/notebook/src'),
     },
     dedupe: [
       'react',
