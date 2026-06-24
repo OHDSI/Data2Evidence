@@ -139,7 +139,7 @@ export default {
           )
         })
         .catch(() => {
-          // do nothing
+          this.setZIPDownloadError(true)
         })
     },
   },
@@ -182,6 +182,7 @@ export default {
       'setFireRequest',
       'completeDownloadCSV',
       'completeDownloadZIP',
+      'setZIPDownloadError',
       'initPLModel',
       'setPLRequest',
       'changePage',

@@ -36,6 +36,7 @@ const state = {
 
   zipFireDownload: '',
   zipDownloadCompleted: false,
+  zipDownloadError: false,
   columnsToInclude: 'SELECTED',
 
   // fire chart request
@@ -84,6 +85,7 @@ const splitEntitiesByColumns = (columns: Array<{ configPath: string; order: stri
 const getters = {
   getCSVDownloadCompleted: modulestate => modulestate.csvDownloadCompleted,
   getZIPDownloadCompleted: modulestate => modulestate.zipDownloadCompleted,
+  getZIPDownloadError: modulestate => modulestate.zipDownloadError,
   getSplitterWidth: modulestate => modulestate.layout.width,
   getChartSize: modulestate => modulestate.chartSize,
   getPdfChartReady: modulestate => modulestate.pdfReady,
@@ -288,19 +290,22 @@ const actions = {
           }),
         })
           .then(response => {
+            if (!response.ok) {
+              throw { response: { status: response.status, data: {} } }
+            }
             return { filename: `${el}.csv`, response }
           })
           .catch(err => {
             let noDataReason = rootGetters.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
-            if (err.response.data.errorType === 'MRILoggedError') {
+            if (err?.response?.data?.errorType === 'MRILoggedError') {
               noDataReason = rootGetters.getText('MRI_DB_LOGGED_MESSAGE', err.response.data.logId)
             }
 
             useNotificationStore().setAlertMessage({
               message: noDataReason,
             })
-            throw err.response
+            throw err?.response
           })
       })
 
@@ -315,8 +320,12 @@ const actions = {
   },
   setFireDownloadZIP({ commit }, { columnsToInclude }) {
     commit(types.ZIP_DOWNLOAD_COMPLETED, { downloadCompleted: false })
+    commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError: false })
     commit(types.CHART_ZIP_DOWNLOAD, Math.random())
     commit(types.CHART_COLUMNS_TO_INCLUDE, columnsToInclude)
+  },
+  setZIPDownloadError({ commit }, zipDownloadError) {
+    commit(types.ZIP_DOWNLOAD_ERROR, { zipDownloadError })
   },
   setInitialAxisSelection({ getters, dispatch, rootGetters }) {
     const initialAxis = rootGetters.getMriFrontendConfig.getInitialAxisSelection()
@@ -505,6 +514,9 @@ const mutations = {
   },
   [types.ZIP_DOWNLOAD_COMPLETED](modulestate, { downloadCompleted }) {
     modulestate.zipDownloadCompleted = downloadCompleted
+  },
+  [types.ZIP_DOWNLOAD_ERROR](modulestate, { zipDownloadError }) {
+    modulestate.zipDownloadError = zipDownloadError
   },
   [types.PDF_READY](modulestate, pdfReady) {
     modulestate.pdfReady = pdfReady
