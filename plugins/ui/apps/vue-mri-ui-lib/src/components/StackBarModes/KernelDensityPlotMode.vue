@@ -15,6 +15,9 @@ export const meta = {
   configFlag: 'kernelDensityPlotEnabled',
 }
 
+// Hex alpha suffix appended to the curve color to produce the translucent area fill
+export const KDE_FILL_ALPHA = '30'
+
 type Ctx = {
   showDistributionOverlay: boolean
   barGap: number
@@ -149,7 +152,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; la
         meta: trace.meta,
         line: { color: ctx.colorway[i % ctx.colorway.length], width: 2 },
         fill: 'tozeroy',
-        fillcolor: ctx.colorway[i % ctx.colorway.length] + '30',
+        fillcolor: ctx.colorway[i % ctx.colorway.length] + KDE_FILL_ALPHA,
         showlegend: trace.showlegend,
         customdata: perPointCustomdata,
         hovertemplate: hoverTemplate,
