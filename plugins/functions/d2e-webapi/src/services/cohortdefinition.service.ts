@@ -24,7 +24,6 @@ import { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
 import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
-import { getUserArtifactAtlasCohortDefinitionList } from "./cohortdefinition-user-artifact.service.ts";
 
 const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
 const MATERIALIZED_COHORT_RETRY_DELAYS_MS = [500, 1000, 1500, 2000];
@@ -283,13 +282,11 @@ export const getCohortDefinitionList = async (
     return mapAtlasCohortDefinitions(atlasCohortDefinitions);
   }
   const bookmarksApi = new BookmarksAPI(token);
-  const portalServerApi = new PortalServerAPI(token);
   const analyticsSvcAPI = new AnalyticsSvcAPI(token);
   const materializedCohortFetchStartedAt = Date.now();
 
   const [
     atlasCohortDefinitions,
-    userArtifactAtlasCohortDefinitions,
     rawDataFromBookmarks,
     baseMaterializedCohorts,
   ] = await Promise.all([
@@ -301,16 +298,6 @@ export const getCohortDefinitionList = async (
       return [] as Awaited<
         ReturnType<typeof webApiApi.getCohortDefinitionList>
       >;
-    }),
-    getUserArtifactAtlasCohortDefinitionList(
-      portalServerApi,
-      datasetId,
-    ).catch((error) => {
-      console.error(
-        "Failed to fetch user artifact atlas cohort definitions, continuing with empty list:",
-        error,
-      );
-      return [] as IAtlasCohortDefinition[];
     }),
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
       console.error(
@@ -372,13 +359,9 @@ export const getCohortDefinitionList = async (
   const parsedbookmarks = bookmarksParse.success
     ? bookmarksParse.data.bookmarks
     : [];
-  const mappedAtlasCohortDefinitions = mapAtlasCohortDefinitions(
+  const parsedAtlasCohortDefinitions = mapAtlasCohortDefinitions(
     atlasCohortDefinitions,
   );
-  const parsedAtlasCohortDefinitions = [
-    ...mappedAtlasCohortDefinitions,
-    ...userArtifactAtlasCohortDefinitions,
-  ];
 
   // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
   const bookmarkIdToCohortId = new Map<string, number>();

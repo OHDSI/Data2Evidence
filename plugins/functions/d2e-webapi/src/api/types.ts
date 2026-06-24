@@ -191,7 +191,6 @@ export const AtlasCohortDefinitionSchema = z.object({
   hasReadAccess: z.boolean(),
   tags: z.array(z.string()),
   cohortDefinitionId: z.number().optional(),
-  isUserArtifact: z.boolean().optional(),
 });
 export type IAtlasCohortDefinition = z.infer<
   typeof AtlasCohortDefinitionSchema
