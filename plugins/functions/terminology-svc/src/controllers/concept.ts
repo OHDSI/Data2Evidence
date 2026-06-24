@@ -353,7 +353,7 @@ export const getStandardConcepts = async (
             filters
           );
 
-          if (!concepts?.expansion.contains) {
+          if (!concepts?.expansion.contains?.length) {
             return {};
           }
 
@@ -375,6 +375,25 @@ export const getStandardConcepts = async (
     );
 
     res.send(results);
+  } catch (e) {
+    next(e);
+  }
+};
+
+export const checkConceptCoverage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { body: { datasetId, conceptIds } } = schemas.checkConceptCoverage.parse(req);
+    const cachedbService = await CachedbService.createCacheDBService(req, datasetId);
+    const foundConcepts = await cachedbService.getConceptsByIds(conceptIds);
+    const foundIds = new Set(foundConcepts.map((c) => c.conceptId));
+    res.send({
+      found: conceptIds.filter((id) => foundIds.has(id)),
+      missing: conceptIds.filter((id) => !foundIds.has(id)),
+    });
   } catch (e) {
     next(e);
   }

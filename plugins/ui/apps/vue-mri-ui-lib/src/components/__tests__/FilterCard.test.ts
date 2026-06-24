@@ -44,6 +44,7 @@ describe('FilterCard.vue', () => {
       getSplitterWidth: () => 800,
       getFilterCardConstraints: () => () => [],
       getHasAssignedConfig: () => false,
+      getFilterCardCount: () => () => 2,
     }
     store = createStore({
       getters,

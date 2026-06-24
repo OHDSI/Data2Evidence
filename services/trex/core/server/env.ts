@@ -20,10 +20,15 @@ export let global = {
       "scopes": [
         "trex.log.write"
       ]
+    },{
+      "path": "^/agent(/|$)",
+      "scopes": [
+        "trex.agent.invoke"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex'],
-      "TENANT_VIEWER": ['trex.log.write']
+      "ALP_SYSTEM_ADMIN": ['trex', 'trex.agent.invoke'],
+      "TENANT_VIEWER": ['trex.log.write', 'trex.agent.invoke']
     },
     PLUGINS_JSON: "{}"
 }
@@ -52,7 +57,7 @@ export const publicURLs = [
     '^/callback$',
     '^/prefect/docs$',
     '^/openapi.json$',
-    '^/fhir-server/healthcheck$',
+    '^/fhir-gateway/healthcheck$',
     '^/gateway/api/dataset/shiny-live/.*$'
   ]
 
@@ -88,7 +93,7 @@ export const env = {
     LOGTO__DEFAULT_TENANT__FQDN_URL : _env.LOGTO__DEFAULT_TENANT__FQDN_URL || "https://default.logto.app/api",
     LOGTO_RESOURCE_API: _env.LOGTO__RESOURCE_API,
     GATEWAY_IDP_SUBJECT_PROP: _env.GATEWAY__IDP_SUBJECT_PROP,
-    PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "./plugins",
+    PLUGINS_DEV_PATH: _env.PLUGINS_DEV_PATH || "/usr/src/bundled-plugins:/usr/src/plugins",
     REP_PG: _env.REP_PG,
     PORTAL__LOG_DISCLAIMER: _env.PORTAL__LOG_DISCLAIMER,
     PREFECT_DOCKER_NETWORK: _env.PREFECT_DOCKER_NETWORK || `${_env.PROJECT_NAME}_data`,
@@ -126,11 +131,10 @@ export const env = {
     PUBLIC_WEBAPI_DATASOURCE: _env.PUBLIC_WEBAPI_DATASOURCE,
     GOOGLE_APPLICATION_CREDENTIALS: _env.GOOGLE_APPLICATION_CREDENTIALS,
     REDIS_PASSWORD: _env.REDIS_PASSWORD,
-
-    INSTALL_SQLALCHEMY: _env.INSTALL_SQLALCHEMY,
     D2E_MEMORY_LIMIT: _env.D2E_MEMORY_LIMIT,
     D2E_SWAP_LIMIT: _env.D2E_SWAP_LIMIT,
 
     CACHE_FLOW_LEVEL_CONCURRENCY: _env.CACHE_FLOW_LEVEL_CONCURRENCY || '1',
     CACHE_TABLE_LEVEL_CONCURRENCY: _env.CACHE_TABLE_LEVEL_CONCURRENCY || '1',
+    TREX__STRATEGUS_RESULTS_DB_NAME: _env.TREX__STRATEGUS_RESULTS_DB_NAME || 'strategus_results',
 }

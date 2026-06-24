@@ -121,7 +121,7 @@ sap.ui.define([
         testDialogControls.forEach(function (control) {
             var cnt = that.testDialogContent.byId(control);
             if (cnt) {
-                cnt.setVisible(showData);
+                cnt.setVisible(false);
             }
         });
     };
@@ -147,6 +147,7 @@ sap.ui.define([
         };
 
         this.oTestModel.setData(testModelData);
+        this._testDialogShow(false);
 
         var testDialogi18nModel = this.testDialog.getModel("hc.hph.cdw.config.ui.i18n");
         if (!testDialogi18nModel) {

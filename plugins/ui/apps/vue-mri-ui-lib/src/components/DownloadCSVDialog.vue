@@ -26,6 +26,7 @@ export default {
   data() {
     return {
       busy: false,
+      cancelled: false,
     }
   },
   computed: {
@@ -34,7 +35,7 @@ export default {
   watch: {
     getCSVDownloadCompleted(val) {
       if (val) {
-        this.$emit('closeEv')
+        this.$emit('closeEv', { success: !this.cancelled })
       }
     },
   },
@@ -42,13 +43,15 @@ export default {
     ...mapActions(['setFireDownloadCSV', 'cancelDownloadCSV']),
     download() {
       this.busy = true
+      this.cancelled = false
       this.setFireDownloadCSV()
     },
     cancel() {
       if (this.busy) {
+        this.cancelled = true
         this.cancelDownloadCSV()
       }
-      this.$emit('closeEv')
+      this.$emit('closeEv', { success: false })
     },
   },
   components: {

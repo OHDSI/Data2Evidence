@@ -1,4 +1,6 @@
 export type WizardFieldType = 'text' | 'num' | 'datetime' | 'time' | 'yearRange' | 'conceptSet'
+export type WizardSurface = 'wizardApp' | 'cohortBuilder'
+export type WizardFlow = 'required-fields' | 'table1-config'
 
 export interface WizardFixedAttribute {
   configPath: string
@@ -17,6 +19,7 @@ export interface WizardFieldDefinition {
   isWizardField?: boolean
   allowFreeText?: boolean
   placeholder?: string
+  excludeDescendantsByDefault?: boolean
 }
 
 export interface WizardDefinitionLike {
@@ -28,7 +31,17 @@ export interface WizardDefinition {
   id: string
   name: string
   description?: string
+  surfaces?: WizardSurface[]
+  flow?: WizardFlow
   fields: WizardFieldDefinition[]
+}
+
+export function isWizardVisibleOnSurface(wizard: Pick<WizardDefinition, 'surfaces'>, surface: WizardSurface): boolean {
+  return !wizard.surfaces || wizard.surfaces.includes(surface)
+}
+
+export function getWizardFlow(wizard: Pick<WizardDefinition, 'flow'>): WizardFlow {
+  return wizard.flow || 'required-fields'
 }
 
 export interface BookmarkExpression {

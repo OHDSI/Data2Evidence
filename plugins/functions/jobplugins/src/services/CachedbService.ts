@@ -6,8 +6,7 @@ import {
   PrefectFlowName,
 } from "../const.ts";
 import {
-  ICreateCachedbFileFlowRunDto,
-  ICreateFhirCacheFlowRunDto,
+  ICreateCachedbFileFlowRunDto
 } from "../types.ts";
 
 export class CachedbService {
@@ -28,23 +27,6 @@ export class CachedbService {
     return { flowRunId };
   }
 
-  public async createFhirCacheFileFlowRun(
-    createFhirCacheFileFlowRunDto: ICreateFhirCacheFlowRunDto,
-    token: string
-  ) {
-    const prefectApi = new PrefectAPI(token);
-    const flowRunName = `create-fhir-cache-file-${createFhirCacheFileFlowRunDto.cacheSchemaName}`;
-    const flowName = PrefectFlowName.CREATE_FHIR_CACHE_FILE;
-    const deploymentName = PrefectDeploymentName.CREATE_FHIR_CACHE_FILE;
-    const parameters = { options: createFhirCacheFileFlowRunDto };
-    const flowRunId = await prefectApi.createFlowRun(
-      flowRunName,
-      deploymentName,
-      flowName,
-      parameters
-    );
-    return { flowRunId };
-  }
 
   public async getFlowRunResults(flowRunId: string, token: string) {
     const prefectApi = new PrefectAPI(token);

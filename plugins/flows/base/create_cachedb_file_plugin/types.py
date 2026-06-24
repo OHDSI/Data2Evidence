@@ -94,10 +94,10 @@ class CreateCacheOptions(BaseModel):
     chunk_size: Optional[int] = Field(default=None, alias="chunkSize")
 
     # Optional flag used to determine which tables to create duckdb FTS indexes.
-    # By default only creates FTS indexes for concept table.
+    # By default creates FTS indexes for concept and concept_synonym tables.
     # If required, more table names can be added accordingly to the keys in DUCKDB_FULLTEXT_SEARCH_CONFIG
     tables_to_create_duckdb_fts_index: Optional[List[str]] = Field(
-        default=["concept"], alias="tablesToCreateDuckdbFtsIndex"
+        default=["concept", "concept_synonym"], alias="tablesToCreateDuckdbFtsIndex"
     )
 
     snapshot_schema_name: Optional[str] = Field(
@@ -120,10 +120,6 @@ class CreateCacheOptions(BaseModel):
     @property
     def use_trex_connection(self) -> bool:
         return True
-
-    @property
-    def use_cache_db(self) -> bool:
-        return False
 
     @model_validator(mode="after")
     def check_required_fields(self) -> Self:
@@ -176,7 +172,3 @@ class CreateCDWValidationConfig(BaseModel):
     @property
     def use_trex_connection(self) -> bool:
         return True
-
-    @property
-    def use_cache_db(self) -> bool:
-        return False

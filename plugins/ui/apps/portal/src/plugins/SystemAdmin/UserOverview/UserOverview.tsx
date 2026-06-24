@@ -104,7 +104,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
   const handleActivateUser = useCallback(
     async (user: UserWithRolesInfoExt, active: boolean) => {
       await api.userMgmt.activateUser(user.userId, active);
-      fetchUserOverview();
+      await fetchUserOverview();
     },
     [fetchUserOverview]
   );
@@ -115,7 +115,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       setActiveUser(undefined);
 
       if (type === "success") {
-        await fetchUserOverview();
+        await fetchUserOverview(true);
       }
     },
     [fetchUserOverview, closeEditRoleDialog]
@@ -135,7 +135,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       setActiveUser(undefined);
 
       if (type === "success") {
-        await fetchUserOverview();
+        await fetchUserOverview(true);
       }
     },
     [fetchUserOverview, closeDeleteUserDialog]
@@ -193,7 +193,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       closeAddUserDialog();
 
       if (type === "success") {
-        await fetchUserOverview();
+        await fetchUserOverview(true);
       }
     },
     [fetchUserOverview, closeAddUserDialog]

@@ -192,7 +192,9 @@
             "defaultEnabled": true,
             "name": "Cohorts",
             "nameI18nKey": "UI_PLUGIN_COHORTS",
-            "pluginPath": "plugins/mri/PatientAnalytics/module",
+            "type": "app",
+            "autoMount": false,
+            "pluginPath": "/mri/lifecycles.js",
             "requiredRoles": [
               "RESEARCHER"
             ],
@@ -367,10 +369,10 @@
             "route": "ps-config"
           },
           {
-            "description": "Configure overview description text",
+            "description": "Set image, descriptions, and legal texts",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_OVERVIEW_DESCRIPTION",
             "visible": true,
-            "name": "Overview description",
+            "name": "Platform content & legal texts",
             "nameI18nKey": "UI_PLUGIN_OVERVIEW_DESCRIPTION",
             "notes": "",
             "pluginPath": "plugins/Setup/OverviewDescription/module",
@@ -390,6 +392,8 @@
             "description": "Manage plugins",
             "descriptionI18nKey": "UI_PLUGIN_SETUP_PLUGINS_DESCRIPTION",
             "visible": true,
+            "featureFlag": "trexPlugins",
+            "defaultEnabled": false,
             "name": "Plugins",
             "nameI18nKey": "UI_PLUGIN_PLUGINS",
             "notes": "",

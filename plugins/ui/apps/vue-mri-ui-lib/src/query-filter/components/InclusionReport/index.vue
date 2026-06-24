@@ -10,10 +10,12 @@ import GroupButtons from '../GroupButtons.vue'
 import SummaryTable from './components/SummaryTable.vue'
 import FilterControls from './components/FilterControls.vue'
 import RulesTable from './components/RulesTable.vue'
+import EstimatedProgressSpinner from './components/EstimatedProgressSpinner.vue'
 import { useInclusionReportData } from './composables/useInclusionReportData'
 import { useRuleManagement } from './composables/useRuleManagement'
 import { useFunnelChart } from './composables/useFunnelChart'
 import { useTreemapChart } from './composables/useTreemapChart'
+import { computeExpectedDurationMs } from './estimatedProgressSpinnerDuration'
 import VButton from '@/components/vuetify/VButton.vue'
 import VMenu from '@/components/vuetify/VMenu.vue'
 import appTab from '@/lib/ui/app-tab.vue'
@@ -30,6 +32,7 @@ const props = withDefaults(
     showPersonEventSwitch?: boolean
     filterCardDetails?: RuleFilterCardDetails[]
     showIntersectView?: boolean
+    patientCount?: number | null
     fetchInclusionReport: (
       cohortDefinitionId: string,
       sourceKey: string,
@@ -138,6 +141,35 @@ const { treemapChartRef, disposeTreemap, downloadTreemapImage, downloadTreemapCS
   getText
 )
 
+// Fall back to 1 (not 0) when filterCardDetails isn't provided by the caller,
+// so that patientCount still influences the estimated duration in computeExpectedDurationMs.
+const ruleCount = computed(() => props.filterCardDetails?.length ?? 1)
+const expectedDurationMs = computed(() => computeExpectedDurationMs(ruleCount.value, props.patientCount))
+
+// Keep the loader mounted until the progress spinner animates to 100%.
+const showLoader = ref(false)
+const showReorderLoader = ref(false)
+
+watch(
+  isLoadingInclusionReport,
+  newVal => {
+    if (newVal) showLoader.value = true
+  },
+  { immediate: true }
+)
+
+watch(isReorderLoading, newVal => {
+  if (newVal) showReorderLoader.value = true
+})
+
+function handleLoaderFinished() {
+  if (!isLoadingInclusionReport.value) showLoader.value = false
+}
+
+function handleReorderLoaderFinished() {
+  if (!isReorderLoading.value) showReorderLoader.value = false
+}
+
 // Event handlers
 function handlePersonEventViewChange(newView: 'PERSON' | 'EVENT') {
   selectedPersonEventView.value = newView
@@ -180,7 +212,15 @@ onUnmounted(() => {
     <p v-else>{{ getText('MRI_PA_INCLUSION_REPORT_USING_ALL_EVENTS') }}</p>
   </div>
 
-  <div v-if="isLoadingInclusionReport" class="status-message loading"><d4l-spinner /></div>
+  <div v-if="showLoader" class="status-message loading">
+    <EstimatedProgressSpinner
+      :loading="isLoadingInclusionReport"
+      :expected-duration-ms="expectedDurationMs"
+      @finished="handleLoaderFinished"
+      :size="96"
+      :stroke="6"
+    />
+  </div>
 
   <div v-else-if="inclusionReportResponse" class="inclusion-report-container">
     <!-- Summary Table -->
@@ -218,8 +258,14 @@ onUnmounted(() => {
 
         <div class="rules-section">
           <div class="rules-table-wrapper">
-            <div v-if="isReorderLoading" class="reorder-loading-overlay">
-              <d4l-spinner />
+            <div v-if="showReorderLoader" class="reorder-loading-overlay">
+              <EstimatedProgressSpinner
+                :loading="isReorderLoading"
+                :expected-duration-ms="expectedDurationMs"
+                @finished="handleReorderLoaderFinished"
+                :size="96"
+                :stroke="6"
+              />
             </div>
             <!-- Rules Table -->
             <RulesTable
@@ -239,7 +285,12 @@ onUnmounted(() => {
               @update:draggable-attrition-stats="draggableAttritionStats = $event"
             />
           </div>
-          <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
+          <div>
+            <p class="footnote"><sup>1</sup> {{ getText('MRI_PA_INCLUSION_REPORT_FOOTNOTE') }}</p>
+            <p class="footnote">
+              {{ getText('MRI_PA_MESSAGE_CENSORING_DISCLAIMER') }}
+            </p>
+          </div>
           <!-- Filtered Summary (only show in INTERSECT view) -->
           <div v-if="selectedVisualization === 'INTERSECT'" class="filtered-summary">
             <p>
@@ -436,6 +487,7 @@ h4 {
     height: fit-content;
     border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
+    margin-bottom: 2em;
   }
 
   .treemap-chart {

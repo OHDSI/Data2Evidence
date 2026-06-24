@@ -4,7 +4,13 @@ import { Container } from 'typedi'
 import jwt from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 import { createLogger } from '../Logger'
-import { B2cGroupService, UserGroupService, UserService } from '../services'
+import {
+  AutoProvisionService,
+  B2cGroupService,
+  EntitlementsSyncService,
+  UserGroupService,
+  UserService,
+} from '../services'
 import { env, getAutoGrantDatasetCodes } from '../env'
 import { LogtoAPI } from '../api'
 import { IDataset, ITokenUser } from '../types'
@@ -33,6 +39,12 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     }
 
     sub = token[subProp]
+
+    // M2M tokens have sub === client_id; skip user provisioning for those.
+    if (sub === token.client_id) {
+      return next()
+    }
+
     if (isSync) {
       logger.info(`Assigning roles for user with subject "${sub}"`)
     }
@@ -57,7 +69,14 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
       userId = user?.id
 
       if (user == null) {
-        if (env.IDP_AUTO_PROVISION_USERS) {
+        const autoProvisionService = Container.get(AutoProvisionService)
+        const provisioned = await autoProvisionService.provision(sub, { email, username }, bearerToken)
+        if (provisioned) {
+          userId = provisioned.id
+          const tokenUser: ITokenUser = { userId: provisioned.id, idpUserId: sub }
+          req.user = tokenUser
+          Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+        } else if (env.IDP_AUTO_PROVISION_USERS) {
           if (isSync) {
             logger.info(`First time login for new user, create user: "${sub}"`)
             const newUser: Partial<UserField> = { id: uuidv4(), username: username, idp_user_id: sub }
@@ -71,12 +90,49 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
             req.user = tokenUser
             Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
           } else {
-            logger.error(`User "${sub}" or "${username}" does not exist for non-sync request`)
-            return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            // Non-sync request while user doesn't exist — a concurrent sync
+            // request may be provisioning. Retry the lookup with backoff.
+            let retryUser = null
+            for (let i = 0; i < 3; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
+              if (retryUser) break
+            }
+            if (retryUser) {
+              userId = retryUser.id
+              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
+              req.user = tokenUser
+              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+            } else {
+              logger.error(`User "${sub}" or "${username}" does not exist after retries`)
+              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            }
           }
         } else {
-          logger.error(`User "${sub}" or "${username}" does not exist`)
-          return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+          // Auto-provision not enabled via IDP_AUTO_PROVISION_USERS — retry
+          // in case a concurrent request is provisioning the user via the
+          // PhysioNet OIDC connector.
+          if (env.USERMGMT_AUTO_PROVISION_ENABLED) {
+            logger.info(`[RaceRetry] user "${sub}" not found, USERMGMT_AUTO_PROVISION_ENABLED=true, retrying...`)
+            let retryUser = null
+            for (let i = 0; i < 3; i++) {
+              await new Promise(r => setTimeout(r, (i + 1) * 1000))
+              retryUser = await userService.getUserByIdpUserId(sub) || await userService.getUserByUsername(username)
+              if (retryUser) break
+            }
+            if (retryUser) {
+              userId = retryUser.id
+              const tokenUser: ITokenUser = { userId: retryUser.id!, idpUserId: sub }
+              req.user = tokenUser
+              Container.set(CONTAINER_KEY.CURRENT_USER, tokenUser)
+            } else {
+              logger.error(`User "${sub}" or "${username}" does not exist`)
+              return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+            }
+          } else {
+            logger.error(`User "${sub}" or "${username}" does not exist`)
+            return res.status(500).send({ message: `User "${sub}" or "${username}" does not exist` })
+          }
         }
       } else if (!user.idpUserId) {
         logger.info(`First time login for existing user, update idp_user_id: "${sub}"`)
@@ -94,6 +150,11 @@ export const grantRolesByScopes = async (req: Request, res: Response, next: Next
     if (!userId) {
       return next()
     }
+
+    const entitlementsSync = Container.get(EntitlementsSyncService)
+    await entitlementsSync.sync(userId!, sub, token).catch(err => {
+      logger.warn(`[Entitlements] sync threw for ${sub}: ${err}; keeping existing roles`)
+    })
 
     if (isSync && env.IDP_AUTO_PROVISION_USERS) {
       const tenantId = env.APP_TENANT_ID
@@ -201,7 +262,9 @@ const grantOrRevokeResearcherRole = async (userId: string, tenantId: string, rol
   }
 
   // Automatically grant viewer role when is researcher
-  await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  if (isResearcher) {
+    await grantOrRevokeTenantRole(userId, tenantId, ROLES.TENANT_VIEWER, isResearcher)
+  }
 }
 
 const addUserToGroup = async (userId: string, groupId: string) => {

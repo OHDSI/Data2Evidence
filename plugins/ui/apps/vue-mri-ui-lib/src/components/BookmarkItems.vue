@@ -17,9 +17,14 @@ import { onErrorCaptured } from 'vue'
 import MriFrontendConfig from '../lib/MriFrontEndConfig'
 import AxisModel from '../lib/models/AxisModel'
 import { getBookmarkType, canModifyBookmark } from '../utils/BookmarkUtils'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { useAtlasStore } from '../stores/atlas'
+import { usePortalContext } from '../composables/usePortalContext'
+import { modeOrder } from './StackBarModes/modes'
 
 const store = useStore()
+const atlasStore = useAtlasStore()
+const portalContext = usePortalContext()
+const isAtlasStandalone = import.meta.env.VITE_STANDALONE_ATLAS === 'true'
 
 const {
   getText,
@@ -39,10 +44,10 @@ const {
   getSelectedDataset: { id: string }
 } = store.getters
 
-const isAtlas = getPortalAPI()?.isAtlas || false
+const isAtlas = isAtlasStandalone
 
 // Get current username from JWT token for ownership checks
-const currentUsername = computed(() => getPortalAPI()?.username || '')
+const currentUsername = computed(() => portalContext.username || '')
 
 const props = defineProps<{
   bookmarksDisplay: BookmarkDisplay[]
@@ -144,7 +149,7 @@ const totalPages = computed(() => {
   return Math.ceil(bookmarksDisplaySorted.value.length / Number(itemsPerPage.value))
 })
 
-const paginatedBookmarks = computed(() => {  
+const paginatedBookmarks = computed(() => {
   if (!isAtlas) {
     return bookmarksDisplaySorted.value
   }
@@ -152,6 +157,16 @@ const paginatedBookmarks = computed(() => {
   const start = (currentPage.value - 1) * Number(itemsPerPage.value)
   const end = start + Number(itemsPerPage.value)
   return bookmarksDisplaySorted.value.slice(start, end)
+})
+
+const barChartModeLabels = computed(() => {
+  const map = new WeakMap<Bookmark, string>()
+  for (const bd of paginatedBookmarks.value) {
+    if (bd.bookmark) {
+      map.set(bd.bookmark, getBarChartModeLabel(bd.bookmark))
+    }
+  }
+  return map
 })
 
 // Watch for changes in bookmarks and reset pagination if needed
@@ -246,6 +261,17 @@ const getChartInfo = (chart: string, type: string) => {
   return ''
 }
 
+const getBarChartModeLabel = (bookmark: Bookmark): string => {
+  if (!bookmark || bookmark.chartType !== 'stacked' || !bookmark.data) return ''
+  try {
+    const mode = JSON.parse(bookmark.data)?.barChartType?.mode
+    const meta = modeOrder.find(m => m.id === mode)
+    return meta?.labelKey ? getText(meta.labelKey) : (meta?.label ?? '')
+  } catch {
+    return ''
+  }
+}
+
 const getConstraint = (constraint: any): string => {
   try {
     constraint = typeof JSON.parse(constraint) === 'object' ? JSON.parse(constraint).text : constraint
@@ -265,7 +291,7 @@ const openAtlasLink = (id: number) => {
   if (selection.toString().length > 0) {
     return
   }
-  getPortalAPI()?.toggleAtlas(true, `/#/cohortdefinition/${id}`)
+  atlasStore.openAtlas(`/#/cohortdefinition/${id}`)
 }
 
 const getBookmarkCardClass = (bookmarkDisplay: any) => {
@@ -313,18 +339,7 @@ onErrorCaptured((err, instance, info) => {
 </script>
 
 <template>
-  <div
-    style="
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      margin-left: 1rem;
-      margin-right: 1rem;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      width: calc(100% - 30px);
-    "
-  >
+  <div style="display: flex; flex-direction: column; height: 100%">
     <!-- Bookmarks Grid -->
     <div
       style="
@@ -336,14 +351,14 @@ onErrorCaptured((err, instance, info) => {
         overflow-y: auto;
         scrollbar-width: thin;
         gap: 10px;
-        padding: 10px;
-        padding-bottom: 80px;
+        padding: 1rem;
       "
     >
       <div
         v-for="bookmarkDisplay in paginatedBookmarks"
         :key="bookmarkDisplay.displayName"
         class="item-card"
+        :data-testid="`pa-cohort-card-${bookmarkDisplay.displayName}`"
         style="
           min-width: 300px;
           display: flex;
@@ -440,7 +455,12 @@ onErrorCaptured((err, instance, info) => {
                         :style="'font-family:' + getChartInfo(bookmarkDisplay.bookmark.chartType, 'iconGroup')"
                         >{{ getChartInfo(bookmarkDisplay.bookmark.chartType, 'icon') }}</span
                       >
-                      <div>{{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}</div>
+                      <div>
+                        {{ getText(getChartInfo(bookmarkDisplay.bookmark.chartType, 'tooltip')) }}
+                        <template v-if="barChartModeLabels.get(bookmarkDisplay.bookmark)">
+                          - {{ barChartModeLabels.get(bookmarkDisplay.bookmark) }}
+                        </template>
+                      </div>
                     </div>
                     <div style="display: flex">
                       <div>
@@ -469,12 +489,6 @@ onErrorCaptured((err, instance, info) => {
                           </div>
                         </template>
                       </div>
-                    </div>
-                    <div style="display: flex">
-                      <div>
-                        <span class="icon"></span>
-                      </div>
-                      <div>{{ getText('MRI_PA_EXTENSION_EXPORT_HEADER') }}</div>
                     </div>
                   </div>
                 </div>
@@ -547,6 +561,7 @@ onErrorCaptured((err, instance, info) => {
         </div>
         <div
           class="footer"
+          data-testid="pa-cohort-footer"
           style="
             display: flex;
             align-items: center;
@@ -564,6 +579,7 @@ onErrorCaptured((err, instance, info) => {
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
             @click="onSelectBookmark(bookmarkDisplay)"
             :title="getText('MRI_PA_TOOLTIP_SELECT_BOOKMARK')"
+            data-testid="pa-cohort-select-btn"
           >
             <PlusInBoxIcon
               :type="
@@ -586,6 +602,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_TOOLTIP_RENAME_BOOKMARK')
                 : 'You can only modify filters you own'
             "
+            :data-testid="`pa-cohort-rename-btn-${getBookmarkType(bookmarkDisplay)}-${bookmarkDisplay.displayName}`"
           >
             <EditIcon />
           </div>
@@ -603,6 +620,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_BUTTON_ADD_TO_COLLECTION')
                 : getText('MRI_PA_TOOLTIP_MATERIALIZE_DISABLED')
             "
+            data-testid="pa-cohort-add-btn"
           >
             <GenerateCohortActiveIcon />
           </div>
@@ -628,6 +646,7 @@ onErrorCaptured((err, instance, info) => {
                 ? getText('MRI_PA_TOOLTIP_DELETE_BOOKMARK')
                 : 'You can only modify filters you own'
             "
+            :data-testid="`pa-cohort-delete-btn-${getBookmarkType(bookmarkDisplay)}-${bookmarkDisplay.displayName}`"
           >
             <TrashCanIcon />
           </div>

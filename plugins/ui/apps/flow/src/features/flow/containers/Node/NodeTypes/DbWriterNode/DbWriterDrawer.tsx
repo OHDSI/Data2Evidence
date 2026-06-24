@@ -2,13 +2,14 @@ import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { NodeProps } from "reactflow";
 import FormHelperText from "@mui/material/FormHelperText";
 import { Box, TextInput } from "@portal/components";
 import { useFormData } from "~/features/flow/hooks";
-import { useGetDatabasesQuery } from "~/features/flow/slices";
 import {
   markStatusAsDraft,
   selectNodeById,
@@ -41,6 +42,7 @@ const EMPTY_FORM_DATA: FormData = {
   schemaname: "",
   dataframe: "",
   dbtablename: "",
+  truncate: false,
 };
 
 const EMPTY_FORM_ERROR: FormError = {
@@ -54,8 +56,8 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
 }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
-  const { data: databases = [], isLoading: isLoadingDatabases } =
-    useGetDatabasesQuery();
+  const databases = useSelector((state: RootState) => state.flow.databases);
+  const schemas = useSelector((state: RootState) => state.flow.schemas);
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
@@ -71,6 +73,7 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
         dbtablename: node.data.dbtablename,
         database: node.data.database,
         schemaname: node.data.schemaname,
+        truncate: node.data.truncate ?? false,
       });
     } else {
       setFormData({
@@ -79,6 +82,13 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
       });
     }
   }, [node.data]);
+
+  const handleDatabaseVariableChange = useCallback(
+    (variableName: string) => {
+      onFormDataChange({ database: variableName });
+    },
+    [onFormDataChange]
+  );
 
   const handleOk = useCallback(() => {
     if (isDuplicateNodeName(allNodes, node.id, formData.name)) {
@@ -150,25 +160,69 @@ export const DbWriterDrawer: FC<DbWriterDrawerProps> = ({
           <Select
             value={formData.database}
             onChange={(e: SelectChangeEvent<string>) =>
-              onFormDataChange({ database: e.target.value })
+              handleDatabaseVariableChange(e.target.value)
             }
-            disabled={isLoadingDatabases}
+            disabled={databases.length === 0}
           >
-            {databases.map((db) => (
-              <MenuItem key={db.code} value={db.code}>
-                {db.code} - {db.dialect}
+            {databases.length === 0 ? (
+              <MenuItem value="" disabled>
+                No databases configured — add them in Variables
               </MenuItem>
-            ))}
+            ) : (
+              databases.map((db) => (
+                <MenuItem key={db.name} value={db.name}>
+                  {db.name} ({db.code})
+                </MenuItem>
+              ))
+            )}
           </Select>
+          {databases.length === 0 && (
+            <FormHelperText>
+              Configure database variables in the Variables panel first.
+            </FormHelperText>
+          )}
         </FormControl>
       </Box>
       <Box mb={4}>
-        <TextInput
-          label="Schema name"
-          value={formData.schemaname}
-          onChange={(e: ChangeEvent<HTMLInputElement>) =>
-            onFormDataChange({ schemaname: e.target.value })
+        <FormControl variant="standard" fullWidth>
+          <InputLabel>Schema</InputLabel>
+          <Select
+            value={formData.schemaname}
+            onChange={(e: SelectChangeEvent<string>) =>
+              onFormDataChange({ schemaname: e.target.value })
+            }
+            disabled={schemas.length === 0}
+          >
+            {schemas.length === 0 ? (
+              <MenuItem value="" disabled>
+                No schemas configured — add them in Variables
+              </MenuItem>
+            ) : (
+              schemas.map((s) => (
+                <MenuItem key={s.name} value={s.name}>
+                  {s.name} ({s.schema})
+                </MenuItem>
+              ))
+            )}
+          </Select>
+          {schemas.length === 0 && (
+            <FormHelperText>
+              Configure schema variables in the Variables panel first.
+            </FormHelperText>
+          )}
+        </FormControl>
+      </Box>
+      <Box mb={4}>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={formData.truncate}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onFormDataChange({ truncate: e.target.checked })
+              }
+            />
           }
+          label="Truncate table before writing"
         />
       </Box>
     </NodeDrawer>

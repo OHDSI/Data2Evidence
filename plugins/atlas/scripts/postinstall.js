@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Postinstall script for Atlas plugin
- * Copies Atlas3 dist files and vendor dependencies to resources/atlas
+ * Postinstall for the Atlas3 plugin: copy the prebuilt @ohdsi/atlas3 dist into
+ * resources/atlas, overlay d2e runtime config (config-local.json, plugins.json),
+ * and apply d2e branding. Served as-is at /atlas; no Atlas3 source changes.
  */
 
-import { cpSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdirSync, rmSync, existsSync, copyFileSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,159 +14,180 @@ const __dirname = dirname(__filename);
 const rootDir = join(__dirname, '..');
 
 const resourcesDir = join(rootDir, 'resources', 'atlas');
-const nodeModulesDir = join(rootDir, 'node_modules');
+const atlasDistDir = join(rootDir, 'node_modules', '@ohdsi', 'atlas3', 'dist');
 
-console.log('[postinstall] Setting up Atlas plugin resources...');
+console.log('[postinstall] Setting up Atlas3 plugin resources...');
 
-// Create resources directory
-mkdirSync(resourcesDir, { recursive: true });
-
-// 1. Copy Atlas3 dist files
-const atlas3Dist = join(nodeModulesDir, '@ohdsi', 'atlas3', 'dist');
-if (existsSync(atlas3Dist)) {
-  console.log('[postinstall] Copying Atlas3 dist files...');
-  cpSync(atlas3Dist, resourcesDir, { recursive: true });
-} else {
-  console.error('[postinstall] ERROR: Atlas3 dist not found at', atlas3Dist);
+if (!existsSync(atlasDistDir)) {
+  console.error('[postinstall] ERROR: @ohdsi/atlas3 dist not found at', atlasDistDir);
+  console.error('[postinstall] Did the GitHub Packages install succeed? Ensure GITHUB_TOKEN is set (see .npmrc).');
   process.exit(1);
 }
 
-// 2. Create vendor directory and copy vendor files
+// Reset resources/atlas so a previous Atlas build doesn't bleed through.
+rmSync(resourcesDir, { recursive: true, force: true });
+mkdirSync(resourcesDir, { recursive: true });
+
+// Copy the entire prebuilt Atlas3 dist (index.html, assets/, vendor/, config/, ...).
+console.log('[postinstall] Copying @ohdsi/atlas3 dist to resources/atlas...');
+cpSync(atlasDistDir, resourcesDir, { recursive: true });
+
+// @ohdsi/atlas3 dist omits the single-spa + React UMD files its index.html loads
+// to register the plugin runtime; supply them from node_modules.
 const vendorDir = join(resourcesDir, 'vendor');
 mkdirSync(vendorDir, { recursive: true });
-
 const vendorFiles = [
-  { src: 'systemjs/dist/system.js', dest: 'system.js' },
-  { src: 'systemjs/dist/extras/named-register.js', dest: 'named-register.js' },
-  { src: 'vue/dist/vue.global.js', dest: 'vue.global.js' },
-  { src: 'vue-router/dist/vue-router.global.js', dest: 'vue-router.global.js' },
-  { src: 'single-spa-vue/dist/system/single-spa-vue.js', dest: 'single-spa-vue.js' },
-  { src: 'react/umd/react.development.js', dest: 'react.development.js' },
-  { src: 'react/umd/react.production.min.js', dest: 'react.production.min.js' },
-  { src: 'react-dom/umd/react-dom.development.js', dest: 'react-dom.development.js' },
-  { src: 'react-dom/umd/react-dom.production.min.js', dest: 'react-dom.production.min.js' },
-  { src: 'single-spa-react/lib/umd/single-spa-react.js', dest: 'single-spa-react.js' },
+  ['single-spa-vue/dist/system/single-spa-vue.js', 'single-spa-vue.js'],
+  ['single-spa-react/lib/system/single-spa-react.js', 'single-spa-react.js'],
+  ['react/umd/react.production.min.js', 'react.production.min.js'],
+  ['react/umd/react.development.js', 'react.development.js'],
+  ['react-dom/umd/react-dom.production.min.js', 'react-dom.production.min.js'],
+  ['react-dom/umd/react-dom.development.js', 'react-dom.development.js'],
 ];
-
-console.log('[postinstall] Copying vendor files...');
-for (const { src, dest } of vendorFiles) {
-  const srcPath = join(nodeModulesDir, src);
-  const destPath = join(vendorDir, dest);
-  if (existsSync(srcPath)) {
-    cpSync(srcPath, destPath);
-    console.log(`  Copied ${dest}`);
+for (const [from, to] of vendorFiles) {
+  const src = join(rootDir, 'node_modules', from);
+  if (existsSync(src)) {
+    copyFileSync(src, join(vendorDir, to));
   } else {
-    console.warn(`  WARNING: ${src} not found`);
+    console.warn('[postinstall] WARN: vendor file missing in node_modules:', from);
   }
 }
+console.log('[postinstall] Supplied single-spa/react vendor files for the Atlas3 plugin runtime');
 
-// 3. Copy d4l web components
-const d4lDir = join(vendorDir, 'd4l-ui');
-mkdirSync(d4lDir, { recursive: true });
-
-const d4lSrcDir = join(nodeModulesDir, '@d4l', 'web-components-library', 'dist', 'd4l-ui');
-if (existsSync(d4lSrcDir)) {
-  console.log('[postinstall] Copying d4l web components...');
-  cpSync(d4lSrcDir, d4lDir, { recursive: true });
-
-  // Also copy loader
-  const loaderSrc = join(nodeModulesDir, '@d4l', 'web-components-library', 'dist', 'loader', 'index.js');
-  if (existsSync(loaderSrc)) {
-    cpSync(loaderSrc, join(d4lDir, 'loader.js'));
+// Atlas3's accent and chart palettes aren't config-exposed (theme only has
+// primaryColor), so re-brand them by string-replacing the copied dist assets.
+const COLOR_OVERRIDES = {
+  '#eb6622': '#ff5e59', // accent orange -> d2e coral
+};
+// Palette arrays keyed on the colors (the minified var name changes per build).
+const PALETTE_OVERRIDES = {
+  // categorical palette (gender slices [0]/[1]): lead navy + coral
+  '["#4e79a7","#f28e2c","#e15759","#76b7b2","#59a14f","#edc949","#af7aa1","#ff9da7","#9c755f","#bab0ab"]':
+    '["#000080","#ff5e59","#4e79a7","#76b7b2","#59a14f","#edc949","#af7aa1","#9c755f","#bab0ab","#e15759"]',
+  // treemap gradient: light -> navy
+  '["#7e9bbf","#4e79a7","#1f425a"]':
+    '["#c3cce8","#4a5fb0","#000080"]',
+};
+const assetsDir = join(resourcesDir, 'assets');
+if (existsSync(assetsDir)) {
+  let recolored = 0;
+  for (const file of readdirSync(assetsDir)) {
+    if (!/\.(js|css)$/.test(file)) continue;
+    const p = join(assetsDir, file);
+    let txt = readFileSync(p, 'utf8');
+    let changed = false;
+    for (const [from, to] of Object.entries(COLOR_OVERRIDES)) {
+      const re = new RegExp(from.replace('#', '#?'), 'gi');
+      if (re.test(txt)) {
+        txt = txt.replace(re, (m) => (m.startsWith('#') ? to : to.slice(1)));
+        changed = true;
+      }
+    }
+    for (const [from, to] of Object.entries(PALETTE_OVERRIDES)) {
+      if (txt.includes(from)) { txt = txt.split(from).join(to); changed = true; }
+    }
+    if (changed) { writeFileSync(p, txt); recolored++; }
   }
-} else {
-  console.warn('[postinstall] WARNING: d4l web components not found');
+  console.log(`[postinstall] Recolored Atlas3 accent + chart palette (brand navy/coral) in ${recolored} asset file(s)`);
+
+  // d2e landing-page image: Atlas3's landing hero is a hardcoded asset
+  // (`const A = new URL("atlas-loading-<hash>.svg", import.meta.url)` rendered as
+  // <img class="landing__logo">) — there is NO landing-image theme option (only
+  // logoUrl). Repoint just the LandingView reference to the d2e brand image served
+  // at /atlas/config/d2e2.svg (../config/ resolves from the assets/ module dir),
+  // leaving the shared loading-screen graphic untouched. Version-specific: the
+  // hashed filenames change on @ohdsi/atlas3 bumps, so re-verify after upgrades.
+  const LANDING_IMAGE = '../config/d2e2.svg';
+  let landingPatched = 0;
+  for (const file of readdirSync(assetsDir)) {
+    if (!/^LandingView.*\.js$/.test(file)) continue;
+    const p = join(assetsDir, file);
+    let txt = readFileSync(p, 'utf8');
+    const re = /atlas-loading-[A-Za-z0-9_-]+\.svg/g;
+    if (re.test(txt)) {
+      txt = txt.replace(re, LANDING_IMAGE);
+      writeFileSync(p, txt);
+      landingPatched++;
+    }
+  }
+  console.log(`[postinstall] Repointed Atlas3 landing image -> ${LANDING_IMAGE} in ${landingPatched} LandingView file(s)`);
 }
 
-// 4. Create plugins directory
-const pluginsDir = join(resourcesDir, 'plugins');
-mkdirSync(pluginsDir, { recursive: true });
-mkdirSync(join(pluginsDir, 'cohorts'), { recursive: true });
+// Overlay d2e runtime config: point Atlas3 at WebAPI through d2e.
+const configLocalSrc = join(rootDir, 'config-local.json');
+if (!existsSync(configLocalSrc)) {
+  console.error('[postinstall] ERROR: config-local.json source not found at', configLocalSrc);
+  process.exit(1);
+}
+copyFileSync(configLocalSrc, join(resourcesDir, 'config-local.json'));
+console.log('[postinstall] Wrote resources/atlas/config-local.json');
 
-// 5. Create config directory and copy config files
-const configDir = join(resourcesDir, 'config');
-mkdirSync(configDir, { recursive: true });
-
-// Copy plugins configuration files (standalone and portal versions)
-const pluginsStandaloneSrc = join(rootDir, 'plugins.standalone.json');
-const pluginsPortalSrc = join(rootDir, 'plugins.portal.json');
-
-if (existsSync(pluginsStandaloneSrc)) {
-  // Default plugins.json is standalone version
-  cpSync(pluginsStandaloneSrc, join(configDir, 'plugins.json'));
-  cpSync(pluginsStandaloneSrc, join(configDir, 'plugins.standalone.json'));
-  console.log('[postinstall] Copied plugins.standalone.json');
+// Overlay nav/theme/header config for the standalone /atlas serve.
+const pluginsConfigSrc = join(rootDir, 'plugins.standalone.json');
+if (existsSync(pluginsConfigSrc)) {
+  mkdirSync(join(resourcesDir, 'config'), { recursive: true });
+  copyFileSync(pluginsConfigSrc, join(resourcesDir, 'config', 'plugins.json'));
+  console.log('[postinstall] Wrote resources/atlas/config/plugins.json (from plugins.standalone.json)');
 }
 
-if (existsSync(pluginsPortalSrc)) {
-  cpSync(pluginsPortalSrc, join(configDir, 'plugins.portal.json'));
-  console.log('[postinstall] Copied plugins.portal.json');
-}
-
-// Copy logo if it exists
+// Make the d2e logo referenced by the portal config available under /atlas/config.
 const logoSrc = join(rootDir, 'd2e2.svg');
 if (existsSync(logoSrc)) {
-  cpSync(logoSrc, join(configDir, 'd2e2.svg'));
-  console.log('[postinstall] Copied d2e2.svg');
+  mkdirSync(join(resourcesDir, 'config'), { recursive: true });
+  copyFileSync(logoSrc, join(resourcesDir, 'config', 'd2e2.svg'));
 }
 
-// 6. Modify index.html to inject auth-helper.js, import map, and fix paths
-const indexPath = join(resourcesDir, 'index.html');
-if (existsSync(indexPath)) {
-  console.log('[postinstall] Modifying index.html...');
-  let html = readFileSync(indexPath, 'utf-8');
-
-  // Inject SystemJS import map before SystemJS loads (must be before system.js script)
-  const importMap = `<script type="systemjs-importmap">
-{
-  "imports": {
-    "react": "/atlas/vendor/react.production.min.js",
-    "react-dom": "/atlas/vendor/react-dom.production.min.js",
-    "react-dom/client": "/atlas/vendor/react-dom.production.min.js",
-    "single-spa-react": "/atlas/vendor/single-spa-react.js",
-    "vue": "/atlas/vendor/vue.global.js",
-    "vue-router": "/atlas/vendor/vue-router.global.js",
-    "single-spa-vue": "/atlas/vendor/single-spa-vue.js"
+// Helper scripts injected into Atlas3's index.html:
+//  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
+//  - logo-link.js: routes the header logo to the d2e portal.
+//  - token-keeper.js: refreshes the Logto bearerToken before expiry.
+const headScripts = ['login-guard.js', 'logo-link.js', 'token-keeper.js'];
+let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
+let indexChanged = false;
+for (const script of headScripts) {
+  const src = join(rootDir, 'token-keeper', script);
+  if (!existsSync(src)) continue;
+  copyFileSync(src, join(resourcesDir, script));
+  if (!indexHtml.includes(script)) {
+    indexHtml = indexHtml.replace('</head>', `    <script src="./${script}"></script>\n  </head>`);
+    indexChanged = true;
   }
 }
-</script>`;
+if (indexChanged) writeFileSync(join(resourcesDir, 'index.html'), indexHtml);
+console.log('[postinstall] Injected helper scripts into Atlas3 index.html');
 
-  // Inject import map after <head> (before other scripts)
-  html = html.replace('<head>', '<head>\n' + importMap);
+// Portal resources directory (for the /atlas-portal iframe wrapper build).
+mkdirSync(join(rootDir, 'resources', 'portal'), { recursive: true });
 
-  // Inject auth-helper.js and d4l components before </head>
-  const injection = `<link rel="stylesheet" href="/atlas/vendor/d4l-ui/d4l-ui.css"><script type="module">import "/atlas/vendor/d4l-ui/d4l-ui.esm.js";</script><script src="/atlas/auth-helper.js"></script>`;
-  html = html.replace('</head>', injection + '</head>');
-
-  // Replace System.set calls with System.register pattern or remove them since import map handles it
-  // Remove the problematic System.set calls for react/react-dom
-  html = html.replace(/window\.System\.set\('react',\s*reactModule\);/g,
-    "console.log('[SystemJS] React module available via import map');");
-  html = html.replace(/window\.System\.set\('react-dom',\s*reactDOMModule\);/g,
-    "console.log('[SystemJS] ReactDOM module available via import map');");
-  html = html.replace(/window\.System\.set\('react-dom\/client',\s*reactDOMClientModule\);/g,
-    "console.log('[SystemJS] ReactDOM/client module available via import map');");
-  html = html.replace(/window\.System\.set\('single-spa-react',\s*\{[^}]+\}\);/g,
-    "console.log('[SystemJS] single-spa-react module available via import map');");
-
-  // Note: Atlas3 is now built with VITE_BASE_PATH=/atlas, so paths already have /atlas prefix
-  // Only fix case-sensitivity if needed: /Atlas/ -> /atlas/
-  html = html.replace(/\/Atlas\//g, '/atlas/');
-
-  writeFileSync(indexPath, html);
-  console.log('[postinstall] Updated index.html with import map, auth-helper and fixed paths');
+// Standalone login bridge (served at /atlas-login): copy the static page that
+// performs a Logto OIDC login and seeds localStorage.bearerToken for Atlas3.
+const loginSrc = join(rootDir, 'login-bridge');
+const loginDest = join(rootDir, 'resources', 'login');
+if (existsSync(loginSrc)) {
+  rmSync(loginDest, { recursive: true, force: true });
+  mkdirSync(loginDest, { recursive: true });
+  cpSync(loginSrc, loginDest, { recursive: true });
+  console.log('[postinstall] Copied login bridge to resources/login');
 }
 
-// 7. Copy auth-helper.js to resources
-const authHelperSrc = join(rootDir, 'auth-helper.js');
-if (existsSync(authHelperSrc)) {
-  cpSync(authHelperSrc, join(resourcesDir, 'auth-helper.js'));
-  console.log('[postinstall] Copied auth-helper.js');
+// Serve the @ohdsi/pythia-plugin SystemJS bundle (installed via this plugin's
+// dependency + .npmrc, like @ohdsi/atlas3) at /atlas/plugins/pythia-plugin/.
+const pythiaSrc = join(rootDir, 'node_modules', '@ohdsi', 'pythia-plugin', 'dist');
+const pythiaDest = join(resourcesDir, 'plugins', 'pythia-plugin');
+if (existsSync(pythiaSrc)) {
+  mkdirSync(pythiaDest, { recursive: true });
+  cpSync(pythiaSrc, pythiaDest, { recursive: true });
+  // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
+  const pythiaEntry = join(pythiaDest, 'index.system.js');
+  if (existsSync(pythiaEntry)) {
+    let js = readFileSync(pythiaEntry, 'utf8');
+    if (js.includes('/WebAPI/trexsql/agent')) {
+      js = js.split('/WebAPI/trexsql/agent').join('/d2e/agent');
+      writeFileSync(pythiaEntry, js);
+      console.log('[postinstall] Repointed Pythia agent endpoint -> /d2e/agent (direct trex fn)');
+    }
+  }
+  console.log('[postinstall] Served Pythia plugin at /atlas/plugins/pythia-plugin');
 }
 
-// 8. Create portal resources directory (for portal plugin wrapper)
-const portalDir = join(rootDir, 'resources', 'portal');
-mkdirSync(portalDir, { recursive: true });
-console.log('[postinstall] Created portal resources directory');
-
-console.log('[postinstall] Atlas plugin setup complete!');
+console.log('[postinstall] Atlas3 plugin setup complete!');

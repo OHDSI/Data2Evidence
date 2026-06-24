@@ -657,6 +657,20 @@ const actions = {
       props.binsize = attributeConfig.getDefaultBinSize() === undefined ? 0 : attributeConfig.getDefaultBinSize()
     }
 
+    // KDP: force binsize 0 on whichever of X1/X2 is the active (non-disabled) x-axis.
+    const X1 = Constants.MRIChartDimensions.X1
+    const X2 = Constants.MRIChartDimensions.X2
+    if ((id === X1 || id === X2) && getters.getBarChartType === 'distribution') {
+      const x1Disabled = !!getters.getAxis(X1)?.props?.disabled
+      const x2Disabled = !!getters.getAxis(X2)?.props?.disabled
+      const activeXSlot = x1Disabled ? X2 : x2Disabled ? X1 : X1
+      if (id === activeXSlot) {
+        props.binsize = 0
+        commit(types.SET_PREVIOUS_X_AXIS_BINSIZE, null)
+        commit(types.SET_PREVIOUS_X_AXIS_ATTRIBUTE_ID, props.attributeId ?? null)
+      }
+    }
+
     dispatch('setAxisValue', {
       id,
       props,
@@ -899,6 +913,25 @@ const actions = {
         break
       }
     }
+
+    // Clear advanced time filters on remaining cards that reference the deleted card
+    const boolFilterContainers = getters.getBoolFilterContainers()
+    Object.keys(boolFilterContainers).forEach(containerId => {
+      const container = boolFilterContainers[containerId]
+      container.props.filterCards.forEach(cardId => {
+        if (cardId === filterCardId) return // skip the card being deleted
+        const card = getters.getFilterCard(cardId)
+        const timeFilters = card.props.layout?.advancedTimeLayout?.props?.timeFilterModel?.timeFilters || []
+        const hasDependency = timeFilters.some(tf => tf.targetInteraction === filterCardId)
+        if (hasDependency) {
+          commit(types.ADVANCEDTIME_SET_TIMEFILTER, {
+            filterCardId: cardId,
+            timeFilters: []
+          })
+        }
+      })
+    })
+
     commit(types.FILTERCARD_DELETE, { filterCardId })
   },
   updateDateConstraintValue(

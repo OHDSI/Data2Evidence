@@ -22,9 +22,12 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   const theme = useTheme();
   const borderSelectedColor = theme.palette.custom.selectedRowBorder;
 
-  // Create a unique key for each item
-  const getItemKey = (item: any) => {
-    return item.value?.[4] || item.name;
+  // Create a composite key from conceptId (value[3]) and conceptPath (value[4]).
+  // Two nodes can share a conceptId with different paths or share a name with different conceptIds.
+  const getItemKey = (item: any): string => {
+    const conceptId = item.value?.[3];
+    const conceptPath = item.value?.[4] ?? item.name ?? "";
+    return `${conceptId ?? ""}-${conceptPath}`;
   };
 
   // Detect if records per person data is meaningful (not just placeholder values)
@@ -67,7 +70,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         };
       });
     },
-    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor],
+    [data, selectedItemKey, hasRecordsPerPerson, theme.palette.custom.treeMapLegendColor, borderSelectedColor]
   );
 
   // Compute chart data on each render, reading the current visualMap range from the ECharts instance.
@@ -96,6 +99,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         // Parse conceptPath string, replace || with breaklines with growing indentation
         const parsedConceptPath = conceptPath
           .split("||")
+          .filter((s: string) => s.trim() !== "")
           .map((e: string, index: number) => {
             return `<div style="padding-left: ${index * 10}px">${e.trim()}</div>`;
           })
@@ -111,7 +115,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
         // Only show records per person if the data has meaningful values
         if (hasRecordsPerPerson) {
           tooltipLines.push(
-            `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${formatNumber(recordsPerPerson)}`,
+            `${getText(i18nKeys.TREE_MAP_CHART__RECORDS_PER_PERSON)}: ${formatNumber(recordsPerPerson)}`
           );
         }
 
@@ -123,7 +127,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     toolbox: {
       show: true,
       feature: {
-        dataView: { readOnly: false },
+        dataView: { readOnly: true },
         saveAsImage: {},
         restore: {},
       },
@@ -182,17 +186,22 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
   // Merge with extra configs if provided
   const option = extraChartConfigs ? { ...baseOption, ...extraChartConfigs } : baseOption;
 
-  const handleNodeClick = (conceptId: string, conceptName: string, itemName: string) => {
-    setSelectedConcept({ id: conceptId, name: conceptName });
-    // Use conceptName or itemName as the unique key
-    const itemKey = conceptName || itemName;
+  const handleNodeClick = (conceptId: any, conceptName: string, conceptPath: string) => {
+    // Build the same composite key that getItemKey produces so buildStyledData
+    // can match it and apply the border highlight to exactly the right node.
+    const itemKey = `${conceptId ?? ""}-${conceptPath}`;
     setSelectedItemKey(itemKey);
+    // Only trigger the drilldown fetch when conceptId is present.
+    if (conceptId != null) {
+      setSelectedConcept({ id: String(conceptId), name: conceptName });
+    }
   };
 
   const onEvents = {
     click: (e: any) => {
       // e.value[3] = conceptId, e.value[4] = conceptPath (if available), e.name = display name
-      return handleNodeClick(e.value[3], e.value[4] || e.name, e.name);
+      const conceptPath = e.value?.[4] ?? e.name ?? "";
+      return handleNodeClick(e.value[3], e.value[4] || e.name, conceptPath);
     },
     datarangeselected: (e: any) => {
       if (e.selected != null) {

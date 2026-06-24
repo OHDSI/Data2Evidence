@@ -35,18 +35,26 @@ export const startStrategusResultsViewer = async (
       studyId,
       manager
     );
-    // dynamically generate the shiny module config.
+    // dynamically generate the shiny module config and resolve viewerCode.
     const strategusAnalysisRepository = dataSource.getRepository("StrategusAnalysis");
     const strategusAnalysisObj = await strategusAnalysisRepository.findOne({
             where: { studyId: studyId }
         });
     const moduleConfig = await createShinyModuleConfig(strategusAnalysisObj);
 
-    const r_code = viewerCode
+    // When the caller sends an empty viewerCode, fall back to the one stored in the DB.
+    const resolvedViewerCode = viewerCode.trim() || strategusAnalysisObj?.viewerCode;
+    if (!resolvedViewerCode) {
+      throw new Error(
+        `Viewer code is not configured for study ${studyId}. Please contact your Admin.`
+      );
+    }
+
+    const r_code = resolvedViewerCode
       .replace("$DATABASE_SCHEMA", "results_" + studyId)
       .replace(
         "$DATABASE_CONNECTION_STRING",
-        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__SQL__DBNAME}?preferQueryMode=simple&autocommit=true`
+        `jdbc:postgresql://${env.TREX__SQL__HOST}:${env.TREX__SQL__PORT}/${env.TREX__STRATEGUS_RESULTS_DB_NAME}?preferQueryMode=simple&autocommit=true`
       )
       .replace("$DATABASE_USER", env.TREX__SQL__USER)
       .replace("$DATABASE_PASSWORD", env.TREX__SQL__PASSWORD)
@@ -83,12 +91,16 @@ export const startStrategusResultsViewer = async (
           msg.content.text.includes("Listening on http://0.0.0.0:3838")
         ) {
           executionComplete = true;
+          kernelConnection.dispose();
+          manager.dispose();
           resolve();
         }
       };
 
       setTimeout(() => {
         if (!executionComplete) {
+          kernelConnection.dispose();
+          manager.dispose();
           reject(new Error("Timeout error: Shiny app failed to start"));
         }
       }, 60000);
@@ -136,12 +148,13 @@ const getKernel = async (
     await manager.ready;
     await manager.refreshRunning();
 
-    const runningKernels: Kernel.IModel[] = manager.running();
+    const runningKernels: Kernel.IModel[] = await manager.running();
 
     return runningKernels.find(
       (kernel: IKernelModel) => kernel.username === studyId
     );
   } catch (error) {
+    console.log("Error in getKernel for study %s: %o", studyId, error);
     throw new Error("Failed to get kernel");
   }
 };
@@ -168,6 +181,7 @@ const getKernelConnection = async (
       });
     }
   } catch (error) {
+    console.log("Error in getKernelConnection for study %s: %o", studyId, error);
     throw Error(`Failed to create or connect to kernel for study ${studyId}`);
   }
 };

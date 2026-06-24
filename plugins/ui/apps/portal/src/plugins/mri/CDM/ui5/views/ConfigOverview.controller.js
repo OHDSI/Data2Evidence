@@ -324,6 +324,7 @@ sap.ui.define([
     ConfigOverviewController.prototype.onExportConfigVersion = function (oEvent) {
         var oBindingContext = oEvent.getSource().getBindingContext("configOverviewModel");
         var sId = oBindingContext.getModel().getProperty(oBindingContext.getPath().split("versions")[0] + "configId");
+        var sName = oBindingContext.getModel().getProperty(oBindingContext.getPath().split("versions")[0] + "name");
         var iVersion = oBindingContext.getProperty("version");
         
     	var genericErrorString = "HPH_CDM_CFG_ERROR";
@@ -345,15 +346,22 @@ sap.ui.define([
     			
     			//var configData = JSON.stringify(beConfig);
     			var configData = encodeURIComponent(JSON.stringify(beConfig.config));
+                var downloadFileName = ConfigUtils.buildConfigDownloadFileName("CDM", [{
+                    value: beConfig.configName || sName,
+                    fallback: "unknown"
+                }, {
+                    value: beConfig.configVersion || iVersion,
+                    fallback: "unknown-version"
+                }]);
     			
     	        if(window.navigator.msSaveOrOpenBlob) {
     			    var blob = new Blob([JSON.stringify(beConfig.config)], {type: 'application/json'});
-    			    window.navigator.msSaveBlob(blob, beConfig.configName + ".json");
+                window.navigator.msSaveBlob(blob, downloadFileName);
     			} else {
     			    var xDocument = that.getView().getDomRef().ownerDocument;
     			    var xDownloadLink = xDocument.createElement("a");
     			    xDownloadLink.href = "data:application/json;charset=utf-8," + configData;
-                    xDownloadLink.download = beConfig.configName + ".json";
+                    xDownloadLink.download = downloadFileName;
     	            xDocument.body.appendChild(xDownloadLink);
     	            xDownloadLink.click();
     	            xDocument.body.removeChild(xDownloadLink);
@@ -365,7 +373,10 @@ sap.ui.define([
     
     ConfigOverviewController.prototype.onCDMConfigSelected = function(oEvent) {
         var sourceControl = oEvent.getParameters().srcControl;
-        var path = sourceControl.getBindingContext("configOverviewModel");
+        var path = oEvent.getParameters().bindingContext || (sourceControl && sourceControl.getBindingContext("configOverviewModel"));
+        if (!path) {
+            return;
+        }
         
         this.oConfigModel.setData({
             selectedCard: path
@@ -380,6 +391,7 @@ sap.ui.define([
         var deleteModeVersionAll = true;
         var that = this;
         var configOverviewModel = this.getView().getModel("configOverviewModel");
+        var deleteSelectionCount = 0;
         
         configOverviewModel.getProperty("/configurations").forEach(function(config, cfgidx){
             deleteModeVersionAll = true;
@@ -387,9 +399,13 @@ sap.ui.define([
                 if(!version.deleteFlagSelect){
                     deleteModeVersionAll = false;
                 }
+                if(version.deleteFlagSelect){
+                    deleteSelectionCount++;
+                }
             });
             that.getView().getModel("configOverviewModel").setProperty("/configurations/" + cfgidx + "/deleteFlagAllVersion", deleteModeVersionAll);
         });
+        configOverviewModel.setProperty("/deleteSelectionCount", deleteSelectionCount);
     };
     
     ConfigOverviewController.prototype.clearSelection = function(oEvent) {
@@ -405,6 +421,7 @@ sap.ui.define([
             });
         });
         this.getView().getModel("configOverviewModel").setProperty("/deleteModeConfig", false);
+        this.getView().getModel("configOverviewModel").setProperty("/deleteSelectionCount", 0);
     };
     
     
@@ -423,6 +440,7 @@ sap.ui.define([
     
     ConfigOverviewController.prototype.enterDeleteMode = function(oEvent) {
         this.getView().getModel("configOverviewModel").setProperty("/deleteModeConfig", true);
+        this.updateDeleteMode(oEvent);
     };
     
     ConfigOverviewController.prototype.deleteMultipleConfig = function (oEvent) {
@@ -456,8 +474,14 @@ sap.ui.define([
         
         if(configurations.length > 0) {
             var sIcon = MessageBox.Icon.WARNING;
-            var sMessageKey = "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_MSG";
-            var sTitle = ConfigUtils.getText("HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_TITLE", []);
+            var deleteSelectionCount = configOverviewModel.getProperty("/deleteSelectionCount");
+            var sTitleKey = deleteSelectionCount === 1
+                ? "HPH_CDM_CFG_OVERVIEW_DELETE_SINGLE_CONFIGURATION_VERSION_TITLE"
+                : "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_TITLE";
+            var sMessageKey = deleteSelectionCount === 1
+                ? "HPH_CDM_CFG_OVERVIEW_DELETE_SINGLE_CONFIGURATION_VERSION_MSG"
+                : "HPH_CDM_CFG_OVERVIEW_DELETE_MULTIPLE_CONFIGURATION_VERSION_MSG";
+            var sTitle = ConfigUtils.getText(sTitleKey, []);
             var sMessage = ConfigUtils.getText(sMessageKey);
                 
             MessageBox.show(sMessage, {

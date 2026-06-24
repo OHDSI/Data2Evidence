@@ -47,11 +47,28 @@
     text-align: left;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 0 24px 0;
 
+    .axis-menu-button-wrapper {
+      position: static;
+    }
+    .axis-group {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .axis-subgroup {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
     .sort-label {
-      position: absolute;
-      top: 10px;
-      left: 40px;
+      position: static;
+      padding-left: 40px;
+      padding-bottom: 4px;
       direction: inherit;
       text-align: left;
       color: var(--color-mri-header-text-dark);
@@ -89,6 +106,44 @@
       font-size: 17px;
       margin-top: 0;
       line-height: 18px;
+    }
+  }
+  .min-cohort-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    padding: 24px;
+    background-color: var(--color-ui-lightest-bg);
+    color:var(--color-neutral);
+
+    &__icon {
+      width: 96px;
+      height: 96px;
+
+      path {
+        fill: var(--color-neutral);
+      }
+      line,
+      polyline {
+        stroke: var(--color-neutral);
+      }
+    }
+    &__title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    &__message {
+      max-width: 420px;
+      font-size: 14px;
     }
   }
 }

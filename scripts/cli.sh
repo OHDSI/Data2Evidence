@@ -173,7 +173,8 @@ case $cmd in
         hanapw=${HANAPW:-$(random-password 16)}
         echo HANA_SYSTEM_PASSWORD=$hanapw >> $ENVFILE
         cat >> $ENVFILE << 'EOF'
-INSTALL_SQLALCHEMY="bash -c 'if [ "$INSTALL_SQLALCHEMY_HANA" = "true" ]; then echo "Installing sqlalchemy-hana..." && uv pip install sqlalchemy-hana==2.2.0 && echo "Running prefect flow-run execute..." && prefect flow-run execute; else echo "Running prefect flow-run execute..." && prefect flow-run execute; fi'"
+INSTALL_SQLALCHEMY_HANA=true
+INSTALL_SQLALCHEMY="bash -c 'INSTALL_SQLALCHEMY_HANA=true /app/install_hana_drivers.sh prefect flow-run execute'"
 EOF
         cmd="$dockerbasecmd --profile hana run --rm hana --master-password $hanapw --agree-to-sap-license"
         echo . ENV_TYPE=$ENV_TYPE CADDY__CONFIG=$CADDY__CONFIG PORT=$PORT $cmd
@@ -281,8 +282,6 @@ EOF
             echo CADDY__D2E__PUBLIC_FQDN=$CADDY__D2E__PUBLIC_FQDN >> $DOTENV_FILE
             echo DOCKER_TAG_NAME=$DOCKER_TAG_NAME >> $DOTENV_FILE
             echo ENV_TYPE=$ENV_TYPE >> $DOTENV_FILE
-            echo FHIR__CLIENT_ID=$(generate_uuid) >> $DOTENV_FILE
-            echo FHIR__CLIENT_SECRET=$(random-password 64) >> $DOTENV_FILE
             echo LOGTO__D2E_APP__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE
             echo LOGTO__D2E_APP__CLIENT_SECRET=$(random-password 30) >> $DOTENV_FILE
             echo LOGTO__D2E_DATA__CLIENT_ID=$(random-password 21) >> $DOTENV_FILE

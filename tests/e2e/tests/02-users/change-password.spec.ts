@@ -20,7 +20,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Newpassword12345')
   await page.getByRole('button', { name: 'Update' }).click()
-  await expect(page.getByTestId('snackbar-message')).toContainText('Password updated')
+  await expect(page.getByTestId('alert-message')).toContainText('Password updated')
   await page.getByTestId('dialog-close').click()
 
   // Verify by login with new password
@@ -37,6 +37,6 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
   await page.getByRole('button', { name: 'Update' }).click()
-  await expect(page.getByTestId('snackbar-message')).toContainText('Password updated')
+  await expect(page.getByTestId('alert-message')).toContainText('Password updated')
   await page.getByTestId('dialog-close').click()
 })

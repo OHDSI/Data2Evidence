@@ -118,14 +118,10 @@
     />
 
     <div class="bookmark-content">
-      <div class="bookmark-content__header">
+      <div class="bookmark-content__header" ref="bookmarkHeaderRef">
         <div class="bookmark-content__header-title" v-if="!isAtlas">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button
-            :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')"
-            :onClick="openAddNewCohort"
-            v-if="!isAtlas"
-          ></Button>
+          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isAtlas"></Button>
           <Button
             v-if="useAtlasLite || usePaAtlas"
             :text="isAtlas ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
@@ -156,29 +152,31 @@
         </div>
       </div>
 
-      <div class="bookmark-content__break" />
+      <div class="bookmark-content__break" ref="bookmarkBreakRef" />
 
-      <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
-        <d4l-spinner />
-      </div>
-      <div v-else>
-        <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
-          {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+      <div class="bookmark-content__body" :style="bookmarkBodyStyle">
+        <div v-if="isBookmarksLoading" class="bookmark-content__spinner">
+          <d4l-spinner />
         </div>
-        <div v-else class="bookmark-content__list">
-          <BookmarkItems
-            :bookmarksDisplay="bookmarksDisplay"
-            :compareCohortsSelectionList="aSelBookmarkList"
-            :useQueryFilterForAtlas="usePaAtlas"
-            :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
-            @onSelectBookmark="onSelectBookmark"
-            @renameBookmark="renameBookmark"
-            @deleteBookmark="deleteBookmark"
-            @addCohort="addCohort"
-            @openDataQualityDialog="openDataQualityDialog"
-            @loadBookmarkCheck="loadBookmarkCheck"
-            @loadAtlasBookmark="loadAtlasBookmark"
-          />
+        <div v-else>
+          <div v-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-noContent">
+            {{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}
+          </div>
+          <div v-else class="bookmark-content__list">
+            <BookmarkItems
+              :bookmarksDisplay="bookmarksDisplay"
+              :compareCohortsSelectionList="aSelBookmarkList"
+              :useQueryFilterForAtlas="usePaAtlas"
+              :canDatasetMaterializeCohorts="canDatasetMaterializeCohorts"
+              @onSelectBookmark="onSelectBookmark"
+              @renameBookmark="renameBookmark"
+              @deleteBookmark="deleteBookmark"
+              @addCohort="addCohort"
+              @openDataQualityDialog="openDataQualityDialog"
+              @loadBookmarkCheck="loadBookmarkCheck"
+              @loadAtlasBookmark="loadAtlasBookmark"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -238,7 +236,6 @@ import cohortComparisonDialog from './CohortComparisonDialog.vue'
 import messageBox from './MessageBox.vue'
 import addCohort from './AddCohort.vue'
 import cohortListDialog from './CohortListDialog.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
 import * as types from '../store/mutation-types'
 import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
@@ -246,11 +243,15 @@ import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
+import { useAtlasStore } from '../stores/atlas'
+import { usePortalContext } from '../composables/usePortalContext'
 export default {
   name: 'bookmark',
   props: ['unloadBookmarkEv', 'initBookmarkId'],
   data() {
     return {
+      atlasStore: useAtlasStore(),
+      portalContext: usePortalContext(),
       maxLength: 255,
       selectedBookmark: {},
       renamedBookmark: '',
@@ -281,6 +282,8 @@ export default {
       cohortDefinitionType: '',
       atlasCohortDefinitionId: null,
       showImportAtlasCohortDefinition: false,
+      bookmarkBodyOffset: 0,
+      headerResizeObserver: null as ResizeObserver | null,
     }
   },
   watch: {
@@ -288,6 +291,11 @@ export default {
       if (this.initBookmarkId !== '') {
         this.loadBookmark(this.initBookmarkId, null)
       }
+    },
+    isBookmarksLoading() {
+      this.$nextTick(() => {
+        this.updateBookmarkBodyOffset()
+      })
     },
   },
   computed: {
@@ -315,10 +323,10 @@ export default {
       return this.getCanDatasetMaterializeCohorts
     },
     bookmarksDisplay() {
-      return this.getDisplayBookmarks(this.showSharedBookmarks, getPortalAPI().username)
+      return this.getDisplayBookmarks(this.showSharedBookmarks, this.portalContext.username)
     },
     isAtlas() {
-      return getPortalAPI()?.isAtlas === true
+      return import.meta.env.VITE_STANDALONE_ATLAS === 'true'
     },
     hasChanges() {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
@@ -332,6 +340,22 @@ export default {
     isBookmarksLoading() {
       return this.bookmarksDisplay.length === 0 && this.getBookmarksLoading
     },
+    bookmarkBodyStyle() {
+      return {
+        top: `${this.bookmarkBodyOffset}px`,
+      }
+    },
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.updateBookmarkBodyOffset()
+      this.setupBookmarkLayoutObserver()
+    })
+    window.addEventListener('resize', this.updateBookmarkBodyOffset)
+  },
+  beforeUnmount() {
+    window.removeEventListener('resize', this.updateBookmarkBodyOffset)
+    this.teardownBookmarkLayoutObserver()
   },
   methods: {
     ...mapActions([
@@ -437,7 +461,7 @@ export default {
       }
 
       // Check if the new name is already taken
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       for (const bookmark of this.getBookmarks) {
         if (
           username === bookmark.user_id &&
@@ -472,7 +496,10 @@ export default {
           params: request,
           bookmarkId: bookmarkDisplay.bookmark.id,
         })
-        this[types.SET_ACTIVE_BOOKMARK]({ bookmark: bookmarkDisplay.bookmark.data, bookmarkname: request.newName })
+        const activeBookmark = this.getActiveBookmark
+        if (activeBookmark && activeBookmark.bmkId === bookmarkDisplay.bookmark.id) {
+          this[types.SET_ACTIVE_BOOKMARK]({ ...activeBookmark, bookmarkname: request.newName })
+        }
         await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.showRenameDialog = false
         this.cohortNameValidationState = 'valid'
@@ -587,7 +614,7 @@ export default {
       this.reset()
     },
     checkCohortName(bookmarkName, suffix = '') {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       let uniqueName = bookmarkName + (suffix ? ` ${suffix}` : '')
       for (const bookmark of this.getBookmarks) {
         if (username === bookmark.user_id && bookmark.bookmarkname === uniqueName) {
@@ -675,7 +702,7 @@ export default {
     openAtlasLink() {
       if (this.useAtlasLite) {
         // Existing behavior: open atlas-lite
-        getPortalAPI()?.toggleAtlas(true, '/#/cohortdefinitions')
+        this.atlasStore.openAtlas('/#/cohortdefinitions')
       } else if (this.usePaAtlas) {
         // New behavior: create empty Atlas bookmark for pa-atlas
         this.openNewAtlasBookmark()
@@ -704,6 +731,54 @@ export default {
     },
     closeImportAtlasCohortDefinition() {
       this.showImportAtlasCohortDefinition = false
+    },
+    setupBookmarkLayoutObserver() {
+      if (typeof window === 'undefined' || typeof ResizeObserver === 'undefined') {
+        return
+      }
+
+      this.teardownBookmarkLayoutObserver()
+
+      this.headerResizeObserver = new ResizeObserver(() => {
+        this.updateBookmarkBodyOffset()
+      })
+
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      if (headerEl) {
+        this.headerResizeObserver.observe(headerEl)
+      }
+
+      if (breakEl) {
+        this.headerResizeObserver.observe(breakEl)
+      }
+    },
+    teardownBookmarkLayoutObserver() {
+      if (!this.headerResizeObserver) {
+        return
+      }
+
+      this.headerResizeObserver.disconnect()
+      this.headerResizeObserver = null
+    },
+    updateBookmarkBodyOffset() {
+      const headerEl = this.$refs.bookmarkHeaderRef as HTMLElement | undefined
+      const breakEl = this.$refs.bookmarkBreakRef as HTMLElement | undefined
+
+      let offset = 0
+      if (headerEl) {
+        offset += headerEl.offsetHeight
+      }
+
+      if (breakEl) {
+        const breakStyles = getComputedStyle(breakEl)
+        const marginTop = Number.parseFloat(breakStyles.marginTop || '0') || 0
+        const marginBottom = Number.parseFloat(breakStyles.marginBottom || '0') || 0
+        offset += breakEl.offsetHeight + marginTop + marginBottom
+      }
+
+      this.bookmarkBodyOffset = Math.max(offset, 0)
     },
     loadBookmarks() {
       this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })

@@ -1,4 +1,4 @@
-import { createStore } from 'vuex'
+import { createStore as createVuexStore } from 'vuex'
 import auth from './modules/auth'
 import bookmark from './modules/bookmark'
 import chart from './modules/chart'
@@ -21,33 +21,38 @@ import cohortDefinition from './modules/cohortDefinition'
 import samples from './modules/samples'
 import wizardConfig from './modules/wizardConfig'
 
-export default createStore({
-  // strict: process.env.NODE_ENV !== 'production',
-  modules: {
-    auth,
-    bookmark,
-    chart,
-    chartUtils,
-    collections,
-    config,
-    domainService,
-    filter,
-    genomics,
-    i18n,
-    km,
-    loading,
-    patientList,
-    pcount,
-    query,
-    search,
-    shared,
-    dqd,
-    cohortDefinition,
-    samples,
-    wizardConfig,
-  },
-  state: {},
-  getters: {},
-  mutations: {},
-  actions: {},
-})
+export const createStore = () =>
+  createVuexStore({
+    // strict: process.env.NODE_ENV !== 'production',
+    modules: {
+      auth,
+      bookmark,
+      chart,
+      chartUtils,
+      collections,
+      config,
+      domainService,
+      filter,
+      genomics,
+      i18n,
+      km,
+      loading,
+      patientList,
+      pcount,
+      query,
+      search,
+      shared,
+      dqd,
+      cohortDefinition,
+      samples,
+      wizardConfig,
+    },
+    state: {},
+    getters: {},
+    mutations: {},
+    actions: {},
+  })
+
+const store = createStore()
+
+export default store

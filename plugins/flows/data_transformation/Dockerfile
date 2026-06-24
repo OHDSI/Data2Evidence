@@ -125,7 +125,12 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install spacy-transformers==1.3.9 \
     && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
     && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
-    && /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/main/en_core_med7_trf-any-py3-none-any.whl" \
+    # HuggingFace intermittently returns HTTP 429 for this wheel; retry with
+    # backoff so a transient rate-limit doesn't fail the image build.
+    && ( for i in 1 2 3 4 5 6; do \
+           /app/.venv/bin/pip install --no-deps "en-core-med7-trf @ https://huggingface.co/kormilitzin/en_core_med7_trf/resolve/a24b622/en_core_med7_trf-1.1.0-py3-none-any.whl" && exit 0; \
+           echo "med7 wheel download attempt $i failed; retrying in $((i*20))s"; sleep $((i*20)); \
+         done; exit 1 ) \
     # For PyNer
     && pip install git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8 \
     && pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
@@ -134,6 +139,7 @@ WORKDIR /app
 
 COPY --chown=docker:docker --chmod=711 ./_shared_flow_utils _shared_flow_utils
 COPY --chown=docker:docker --chmod=711 ./data_transformation flows
+COPY --chown=docker:docker --chmod=755 ./install_hana_drivers.sh /app/install_hana_drivers.sh
 
 RUN chmod -R 755 /app
 
@@ -171,6 +177,5 @@ RUN chmod +x /app/install_and_verify_r_packages.R && \
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH"
-ENV INSTALL_SQLALCHEMY_HANA=false
 
 USER docker

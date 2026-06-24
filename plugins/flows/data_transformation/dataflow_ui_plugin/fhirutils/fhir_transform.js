@@ -1,5 +1,4 @@
-const fhirTransform = require('@synanetics/fhir-transform');
-const transform = fhirTransform.default;
+const transform = require('@synanetics/fhir-transform');
 
 let structureDefinitions = {}
 
@@ -22,29 +21,34 @@ const _conceptMapResolver = async (url) => {
 };
 
 async function main() {
-    const [,, structureMapJsonString, resourceJsonString, sourceStructureDefinition, targetStructureDefinition] = process.argv;
-    if (!structureMapJsonString || !resourceJsonString || !sourceStructureDefinition || !targetStructureDefinition) {
-      console.error('Invalid input arguments. Please provide structure map, resource, source structure definition, and target structure definition.');
+    const [,, structureMapJsonString, resourcesJsonString, sourceStructureDefinition, targetStructureDefinition] = process.argv;
+    if (!structureMapJsonString || !resourcesJsonString || !sourceStructureDefinition || !targetStructureDefinition) {
+      console.error('Invalid input arguments. Please provide structure map, resources array, source structure definition, and target structure definition.');
       process.exit(1);
     }
     try {
       const structureMap = JSON.parse(structureMapJsonString);
-      const resource = JSON.parse(resourceJsonString);
+      const resources = JSON.parse(resourcesJsonString);
+      const parsedSourceDef = JSON.parse(sourceStructureDefinition);
+      const parsedTargetDef = JSON.parse(targetStructureDefinition);
       structureMap.structure.forEach((struct) => {
-        if(struct.mode == 'source'){
-          structureDefinitions[struct.url] = JSON.parse(sourceStructureDefinition)
-        }
-        else if (struct.mode == 'target' && struct.url === JSON.parse(targetStructureDefinition).url) {
-          structureDefinitions[struct.url] = JSON.parse(targetStructureDefinition)
+        if (struct.mode == 'source') {
+          structureDefinitions[struct.url] = parsedSourceDef;
+        } else if (struct.mode == 'target' && struct.url === parsedTargetDef.url) {
+          structureDefinitions[struct.url] = parsedTargetDef;
         }
       })
-      const result = await transform({
-        content: JSON.parse(resource),
-        structureMap: structureMap,
-        structureDefinitionResolver: _structureDefinitionResolver,
-        conceptMapResolver : _conceptMapResolver,
-      });
-      process.stdout.write(JSON.stringify(result));
+      const results = [];
+      for (const resource of resources) {
+        const result = await transform({
+          content: JSON.parse(resource),
+          structureMap: structureMap,
+          structureDefinitionResolver: _structureDefinitionResolver,
+          conceptMapResolver : _conceptMapResolver,
+        });
+        results.push(result);
+      }
+      process.stdout.write(JSON.stringify(results));
     } catch (err) {
       let errorMsg;
       if (err && typeof err === 'object' && err.default) {
@@ -54,7 +58,6 @@ async function main() {
         errorMsg = `Transform failed: ${err}`;
         console.error(errorMsg);
       }
-      process.stdout.write(JSON.stringify({ error: true }));
       process.exit(1);
     }
 }

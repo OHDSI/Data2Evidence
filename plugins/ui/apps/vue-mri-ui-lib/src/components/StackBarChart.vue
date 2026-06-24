@@ -1,6 +1,8 @@
 <template>
   <div class="stackbar-wrapper">
-    <div class="stackbar-container" id="stacked-chart"></div>
+    <div class="stackbar-chart-area">
+      <div class="stackbar-container" id="stacked-chart"></div>
+    </div>
     <StackBarChartLegend v-if="legendTraces.length > 1" :traces="legendTraces" :colorway="legendColorway" />
   </div>
 </template>
@@ -11,8 +13,12 @@ import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import { postProcessBarChartData } from './helpers/postProcessBarChartData'
 import StackBarChartLegend from './StackBarChartLegend.vue'
+import { applyById, getEffectiveBarChartMode } from './StackBarModes/modes'
+
+const DEFAULT_BAR_GAP = 0.3
 
 let stackBarChart
 
@@ -116,7 +122,7 @@ export default {
     },
     getCsvFireDownload() {
       this.downloadCSV({ ...this.getBookmarksData })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(() => {
           // do something
         })
@@ -156,12 +162,7 @@ export default {
               currentPatientCount: '--',
             })
 
-            if (this.chartData.noDataReason === this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.notificationStore.setAlertMessage({
-                messageType: 'info',
-                message: this.chartData.noDataReason,
-              })
-            } else {
+            if (this.chartData.noDataReason !== this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
               this.notificationStore.setAlertMessage({
                 message: this.chartData.noDataReason,
               })
@@ -243,6 +244,27 @@ export default {
     colorAxisIndex() {
       this.renderChart()
     },
+    getBarChartType() {
+      // Plotly.react does not reliably reset trace-level (marker.opacity, width, offset) or
+      // layout-level (bargap, barmode, xaxis.type/range/autorange, xaxis2, yaxis.rangemode)
+      // properties set by mode apply() functions. Tear down and rebuild on every chart type change
+      // so each chart starts from a clean Plotly state. setupPlotly already renders via newPlot
+      // using the canonical bar traces in chartData.traces, so a follow-up renderChart would
+      // race Plotly.react against newPlot's internal staging (manifests as the xaxis2/scatter
+      // overlays being dropped on the first overlay-curve toggle after a mode dance).
+      if (stackBarChart) {
+        Plotly.purge(stackBarChart)
+      }
+      this.setupPlotly()
+    },
+    getShowDistributionOverlay() {
+      // Toggling the overlay adds/removes xaxis2 and scatter traces; Plotly.react does not
+      // pick up newly added layout axes reliably, so rebuild for the same reason as above.
+      if (stackBarChart) {
+        Plotly.purge(stackBarChart)
+      }
+      this.setupPlotly()
+    },
   },
   computed: {
     ...mapGetters([
@@ -250,6 +272,8 @@ export default {
       'getMriFrontendConfig',
       'getChartSize',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getText',
       'getFireRequest',
       'isFireRequestHeld',
@@ -260,8 +284,12 @@ export default {
       'processResponse',
       'getChartProperty',
       'getAllAxes',
+      'getBarChartType',
+      'getShowDistributionOverlay',
     ]),
-
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
     legendTraces() {
       if (this.chartData?.colorLegend?.length > 0) {
         return this.chartData.colorLegend.map(item => ({
@@ -269,7 +297,18 @@ export default {
           meta: { fullName: item.name },
         }))
       }
-      return this.chartData?.traces || []
+      return (this.chartData?.traces || []).filter(t => t.showlegend !== false)
+    },
+    yAxisTitle() {
+      if (getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig) === 'distribution') {
+        // KDP requires at least two bins to compute a kernel density curve. When there
+        // is only a single bin the mode falls back to rendering count bars, and the axis
+        // title falls back to the measure name.
+        const firstTrace = this.chartData?.traces?.[0]
+        const hasInsufficientBins = !!firstTrace && (firstTrace.y?.length || 0) <= 1
+        if (!hasInsufficientBins) return this.getText('MRI_PA_CHART_YAXIS_DENSITY')
+      }
+      return this.chartData?.measures?.[0]?.name || ''
     },
     legendColorway() {
       if (this.chartData?.colorLegend?.length > 0) {
@@ -338,6 +377,7 @@ export default {
       const layout = JSON.parse(JSON.stringify(Constants.PlotlyConsts.layout))
       layout.showlegend = false
       layout.xaxis.type = this.chartData.axisType
+      layout.yaxis.title = { text: this.yAxisTitle }
 
       if (this.chartData?.axisType === 'category' && this.chartData?.tickvals && this.chartData?.ticktext) {
         const labelAlias = this.chartData.tickvals.reduce((acc, value, index) => {
@@ -393,22 +433,18 @@ export default {
       if (this.chartData?.traces) {
         const clearedSelectedPoints = this.chartData.traces.map(() => null)
         this.chartData = this.dataToTraces(this.chartData, clearedSelectedPoints, 0)
+        this.applyXAxisColoring()
       }
 
-      if (!targetElement || !this.chartData?.traces) {
-        return
-      }
-
-      const layout = this.buildPlotlyLayout(resetAxes)
-      Plotly.react(targetElement, this.chartData.traces, layout, this.config)
+      this.reactWithCurrentMode(targetElement, { resetAxes })
     },
     setupAxes() {
       this.disableAllAxesandProperties()
       this.setChartPropertyValue({
         id: Constants.MRIChartProperties.Sort,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '31px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-icons',
@@ -418,8 +454,8 @@ export default {
       this.setAxisValue({
         id: Constants.MRIChartDimensions.StackAttribute,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '150px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-icons',
@@ -431,8 +467,8 @@ export default {
       this.setAxisValue({
         id: Constants.MRIChartDimensions.Y,
         props: {
-          layoutLeft: '0px',
-          layoutTop: '108px',
+          layoutLeft: '',
+          layoutTop: '',
           layoutBottom: '',
           icon: '',
           iconFamily: 'app-MRI-icons',
@@ -441,14 +477,13 @@ export default {
           active: true,
         },
       })
-      const iLevelHeight = 41
       for (let i = 0; i <= Constants.MRIChartDimensions.X2; i += 1) {
         this.setAxisValue({
           id: i,
           props: {
-            layoutLeft: '0px',
+            layoutLeft: '',
             layoutTop: '',
-            layoutBottom: `${20 + i * iLevelHeight}px`,
+            layoutBottom: '',
             icon: { 0: '', 1: '', 2: '' }[i],
             iconFamily: 'app-MRI-icons',
             isCategory: true,
@@ -456,6 +491,69 @@ export default {
             active: true,
           },
         })
+      }
+    },
+    applyChartType(traces, layout) {
+      if (!traces || !traces.length) return { traces, layout }
+      const colorway = Object.values(Constants.ChartColorway)
+      const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
+      const modeApply = applyById[effectiveMode] || applyById.stack
+      // Each mode apply() is pure: it returns new trace objects/arrays without mutating its inputs.
+      // This removes the need to JSON-clone this.chartData.traces before calling apply().
+      return modeApply(traces, layout, {
+        showDistributionOverlay: this.getShowDistributionOverlay,
+        barGap: DEFAULT_BAR_GAP,
+        colorway,
+      })
+    },
+    reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
+      if (!targetElement || !this.chartData?.traces) return
+      const layout = this.buildPlotlyLayout(resetAxes)
+      // applyChartType returns new traces/layout objects — no clone needed.
+      const { traces: tracesForPlotly, layout: finalLayout } = this.applyChartType(this.chartData.traces, layout)
+      Plotly.react(targetElement, tracesForPlotly, finalLayout, this.config)
+    },
+    applyXAxisColoring() {
+      // Apply x-axis category coloring if a color axis is selected.
+      // Called after every dataToTraces() invocation so selection/deselection
+      // does not wipe the per-bar marker colors set by XAxisColorButton.
+      if (this.colorAxisIndex != null && this.chartData?.traces) {
+        const colorValues = Object.values(Constants.ChartColorway)
+        const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+        // Resolve raw allAxes slot index to position within filtered xAxes/values[]
+        const allAxesForColor = this.getAllAxes
+        const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
+        const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
+        if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
+          // Collect unique x-axis values across all traces in stable order
+          const uniqueVals: string[] = []
+          const seen = new Set<string>()
+          this.chartData.traces.forEach(trace => {
+            trace.customdata?.forEach(cd => {
+              const val = String(cd.values?.[valuesIndex] ?? '')
+              if (val && !seen.has(val)) {
+                seen.add(val)
+                uniqueVals.push(val)
+              }
+            })
+          })
+          // Map each unique value to a ChartColorway color (cycling)
+          const valColorMap: Record<string, string> = {}
+          uniqueVals.forEach((val, i) => {
+            valColorMap[val] = colorValues[i % colorValues.length]
+          })
+          // Assign per-bar marker colors on each trace
+          this.chartData.traces.forEach(trace => {
+            const colors =
+              trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
+            trace.marker = { ...trace.marker, color: colors }
+          })
+          // Build color legend for the legend component
+          this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
+        }
+      } else {
+        // Clear color-by state when no color axis is selected
+        delete this.chartData.colorLegend
       }
     },
     renderChart() {
@@ -482,49 +580,10 @@ export default {
         })
 
         this.chartData = this.dataToTraces(data)
-        const freshLayout = this.buildPlotlyLayout()
 
-        // Apply x-axis category coloring if a color axis is selected
-        if (this.colorAxisIndex != null && this.chartData.traces) {
-          const colorValues = Object.values(Constants.ChartColorway)
-          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
-          // Resolve raw allAxes slot index to position within filtered xAxes/values[]
-          const allAxesForColor = this.getAllAxes
-          const selectedAxisAttrId = allAxesForColor?.[this.colorAxisIndex]?.props?.attributeId
-          const valuesIndex = selectedAxisAttrId != null ? xAxes.findIndex(cat => cat.id === selectedAxisAttrId) : -1
-          if (valuesIndex >= 0 && valuesIndex < xAxes.length) {
-            // Collect unique x-axis values across all traces in stable order
-            const uniqueVals: string[] = []
-            const seen = new Set<string>()
-            this.chartData.traces.forEach(trace => {
-              trace.customdata?.forEach(cd => {
-                const val = String(cd.values?.[valuesIndex] ?? '')
-                if (val && !seen.has(val)) {
-                  seen.add(val)
-                  uniqueVals.push(val)
-                }
-              })
-            })
-            // Map each unique value to a ChartColorway color (cycling)
-            const valColorMap: Record<string, string> = {}
-            uniqueVals.forEach((val, i) => {
-              valColorMap[val] = colorValues[i % colorValues.length]
-            })
-            // Assign per-bar marker colors on each trace
-            this.chartData.traces.forEach(trace => {
-              const colors =
-                trace.customdata?.map(cd => valColorMap[String(cd.values?.[valuesIndex] ?? '')] || colorValues[0]) || []
-              trace.marker = { ...trace.marker, color: colors }
-            })
-            // Build color legend for the legend component
-            this.chartData.colorLegend = uniqueVals.map(val => ({ name: val, color: valColorMap[val] }))
-          }
-        } else {
-          // Clear color-by state when no color axis is selected
-          delete this.chartData.colorLegend
-        }
+        this.applyXAxisColoring()
 
-        Plotly.react(stackBarChart, this.chartData.traces, freshLayout, this.config)
+        this.reactWithCurrentMode()
 
         // Resize chart after DOM updates to account for legend space
         this.$nextTick(() => {
@@ -536,60 +595,79 @@ export default {
       stackBarChart = this.$el.querySelector('.stackbar-container')
 
       const initialLayout = this.buildPlotlyLayout()
-      Plotly.newPlot(stackBarChart, this.chartData.traces, initialLayout, this.config)
+      // applyChartType returns new traces/layout — no clone needed.
+      const { traces: initialTracesForPlotly, layout: finalInitialLayout } = this.applyChartType(
+        this.chartData.traces || [],
+        initialLayout
+      )
+      Plotly.newPlot(stackBarChart, initialTracesForPlotly, finalInitialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
       this.$nextTick(() => {
         Plotly.Plots.resize(stackBarChart)
       })
 
-      const selectionUpdate = () => {
-        // Update selection in state to activate drilldown
-        const selectedData = []
-        let selectedCount = 0
-        const pushPoint = (dataId, dataValue) => {
-          selectedData.push({ id: dataId, value: dataValue })
-        }
-        this.chartData.traces.forEach(trace => {
-          if (!trace.selectedpoints) {
-            return
-          }
-          trace.selectedpoints.forEach(pointIndex => {
-            const pointCustomData = trace.customdata[pointIndex]
-            const xAxes = pointCustomData.x
-            const yAxis = pointCustomData.y
-
-            xAxes.forEach((xAxis, axisIndex) => {
-              // Use the canonical plotted value from trace.x (full, untruncated)
-              let canonicalValue: string
-              if (Array.isArray(trace.x[0])) {
-                // multicategory display labels may be truncated; prefer canonical values from customdata
-                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[axisIndex][pointIndex])
-              } else {
-                // single axis
-                canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[pointIndex])
-              }
-              pushPoint(xAxis.id, canonicalValue)
-            })
-            if (yAxis.length > 0) {
-              pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
-            }
-            selectedCount++
-          })
-        })
-        if (selectedCount === 0) {
+      const selectionUpdate = eventData => {
+        // Guard: no points in payload → treat as deselect.
+        // Plotly sets selectedpoints on the cloned traces it received (not on
+        // this.chartData.traces), so we must source selection from the event
+        // payload rather than reading trace.selectedpoints from the canonical copy.
+        if (!eventData?.points?.length) {
           this.clearSelectionState()
           return
         }
 
+        const selectedData = []
+        const pushPoint = (dataId, dataValue) => {
+          selectedData.push({ id: dataId, value: dataValue })
+        }
+
+        eventData.points.forEach(point => {
+          // Skip generated non-bar traces (KDP scatter, distribution overlay): their
+          // pointIndex doesn't map to canonical bar categories.
+          if (point.data?.type !== 'bar') return
+          const traceIndex = point.curveNumber
+          const pointIndex = point.pointIndex
+          const trace = this.chartData.traces[traceIndex]
+          if (!trace) return
+
+          const pointCustomData = trace.customdata[pointIndex]
+          if (!pointCustomData) return
+          const xAxes = pointCustomData.x
+          const yAxis = pointCustomData.y
+
+          xAxes.forEach((xAxis, axisIndex) => {
+            // Use the canonical plotted value from trace.x (full, untruncated)
+            let canonicalValue: string
+            if (Array.isArray(trace.x[0])) {
+              // multicategory display labels may be truncated; prefer canonical values from customdata
+              canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[axisIndex][pointIndex])
+            } else {
+              // single axis
+              canonicalValue = String(pointCustomData.values?.[axisIndex] ?? trace.x[pointIndex])
+            }
+            pushPoint(xAxis.id, canonicalValue)
+          })
+          if (yAxis.length > 0) {
+            pushPoint(yAxis[0].id, trace.meta ? trace.meta.fullName : trace.name)
+          }
+        })
+
         this.setChartSelection({ selection: selectedData })
 
-        // Persist selection across Plotly react
-        const selectedPoints = this.chartData.traces.map(trace => trace.selectedpoints)
-        this.chartData = this.dataToTraces(this.chartData, selectedPoints, selectedCount)
-
-        const selectionLayout = this.buildPlotlyLayout()
-        Plotly.react(stackBarChart, this.chartData.traces, selectionLayout, this.config)
+        // Mirror Plotly's selection onto the canonical traces so subsequent renders
+        // (mode switch, color-axis change, deselect) preserve it. Do NOT call
+        // dataToTraces/reactWithCurrentMode here: Plotly has already drawn the
+        // active selection visual, and reactWithCurrentMode clones the traces
+        // before calling Plotly.react, which Plotly treats as a data swap and
+        // tears down the in-flight selection highlight.
+        // applyXAxisColoring() has already run on the canonical traces during
+        // the last renderChart() call, so per-bar colors are already in place.
+        this.chartData.traces.forEach((trace, i) => {
+          trace.selectedpoints = eventData.points
+            .filter(p => p.curveNumber === i && p.data?.type === 'bar')
+            .map(p => p.pointIndex)
+        })
       }
 
       const deselectionUpdate = () => {
@@ -610,6 +688,13 @@ export default {
   width: 100%;
   height: 100%;
   gap: 8px;
+}
+.stackbar-chart-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
 }
 .stackbar-container {
   flex: 1;

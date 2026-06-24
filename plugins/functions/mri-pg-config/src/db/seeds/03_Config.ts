@@ -13302,7 +13302,10 @@ const paConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -13331,7 +13334,8 @@ const paConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -13365,7 +13369,7 @@ const paConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -27169,7 +27173,10 @@ const paConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -27198,7 +27205,8 @@ const paConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27229,10 +27237,10 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true,
+        "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": true,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -28798,6 +28806,9 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       fillMissingValuesEnabled: true,
+      overlappingHistogramEnabled: false,
+      overlappingBarChartEnabled: false,
+      kernelDensityPlotEnabled: false,
     },
     boxplot: {
       visible: true,
@@ -28827,6 +28838,7 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
+      maxPatientsExport: 2000000,
     },
     vb: {
       visible: true,
@@ -28859,7 +28871,7 @@ const paI2b2ConfigDuckdb = {
     externalAccessPoints: true,
     cohortEntryExit: false,
     inclusionReport: false,
-    intersectViewInclusionReport: false
+    intersectViewInclusionReport: false,
   },
 };
 
@@ -34643,7 +34655,10 @@ const pajsonfhirConfigDuckdb = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -34672,7 +34687,8 @@ const pajsonfhirConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -34706,7 +34722,7 @@ const pajsonfhirConfigDuckdb = {
         "atlasCohortDefinition": true,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };
 
@@ -38129,7 +38145,10 @@ const omopHanaLeanPAConfig = {
             "imageDownloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "fillMissingValuesEnabled": true
+            "fillMissingValuesEnabled": true,
+            "overlappingHistogramEnabled": false,
+            "overlappingBarChartEnabled": false,
+            "kernelDensityPlotEnabled": false
         },
         "boxplot": {
             "visible": true,
@@ -38158,7 +38177,8 @@ const omopHanaLeanPAConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -38192,6 +38212,6 @@ const omopHanaLeanPAConfig = {
         "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": false,
-        "intersectViewInclusionReport": false
+        "intersectViewInclusionReport": false,
     }
 };

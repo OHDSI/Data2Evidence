@@ -44,15 +44,18 @@ export const ExportFlowButton: FC<ExportFlowButtonProps> = () => {
     let { flow, createdDate, createdBy } = isLatest
       ? revisions[0]
       : revisions.find((revision) => revision.id === revisionId) || {
-          flow: { nodes: [], edges: [], variables: [], importLibs: [] },
+          flow: { nodes: [], edges: [], variables: [], importLibs: [], databases: [], schemas: [] },
         };
 
     const exportDataflow: DataflowExportDto = {
       id: dataflowId,
       name: dataflow.name,
-      flow,
-      createdBy,
-      createdDate,
+      nodes: flow.nodes,
+      edges: flow.edges,
+      variables: flow.variables,
+      importLibs: flow.importLibs,
+      databases: flow.databases ?? [],
+      schemas: flow.schemas ?? [],
     };
 
     const jsonData = JSON.stringify(exportDataflow);
