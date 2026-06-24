@@ -12,6 +12,8 @@ import * as notebookApi from "../api/notebook-api";
 import { PyqeReadyPyodideKernel } from "../kernels/pyqeReadyPyodideKernel";
 import type { NotebookRecord } from "../types";
 import { parseNotebookContent } from "../utils/starboard";
+import { applyEdits as applyNotebookEdits } from "../agent/applyEdits";
+import type { EditOp } from "../agent/types";
 import { CodingAssistant } from "./CodingAssistant";
 import { CreateNotebookDialog } from "./CreateNotebookDialog";
 import { DeleteDialog } from "./DeleteDialog";
@@ -376,9 +378,13 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
     [datasetId, notebooks, showFeedback],
   );
 
-  const getNotebookContent = useCallback(() => {
-    return serializeIpynb(notebookData);
-  }, [notebookData]);
+  const getNotebookDataForAgent = useCallback(() => notebookData, [notebookData]);
+
+  const applyAgentEdits = useCallback((edits: EditOp[]) => {
+    const handle = notebookRef.current;
+    if (!handle) return { added: 0, updated: 0, deleted: 0, skipped: edits.length };
+    return applyNotebookEdits(handle, edits);
+  }, []);
 
   const handleExport = useCallback(() => {
     if (!activeNotebook) return;
@@ -483,7 +489,8 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
               open={chatOpen}
               onClose={() => setChatOpen(false)}
               datasetId={datasetId}
-              getNotebookContent={getNotebookContent}
+              getNotebookData={getNotebookDataForAgent}
+              applyEdits={applyAgentEdits}
               getToken={getToken}
             />
 

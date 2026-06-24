@@ -1,4 +1,5 @@
-import { getCodeSuggestion, getChatResponse } from "./services";
+import { getCodeSuggestion, getChatResponse, getNotebookAgentResponse } from "./services";
+import { frameEdits } from "./notebookAgent";
 import express, { Request, Response } from "express";
 import { env } from "../env";
 
@@ -75,6 +76,36 @@ export class CodeSuggestionRouter {
         res.status(500).json({
           error: true,
           message: `Cannot fetch chat response: ${error.message}`,
+        });
+      }
+    });
+    this.router.post("/agent", async (req: Request, res: Response) => {
+      try {
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        req.body.model = AI_MODEL;
+
+        const { stream, edits } = await getNotebookAgentResponse(req);
+
+        for await (const [token, metadata] of stream) {
+          if (
+            metadata.langgraph_node === "model_request" &&
+            token.contentBlocks?.[0]?.text
+          ) {
+            res.write(token.contentBlocks[0].text);
+            if (typeof res.flush === "function") res.flush();
+          }
+        }
+
+        // After the agent loop, the edit tools have populated `edits`.
+        res.write(frameEdits(edits));
+        res.status(200);
+        res.end();
+      } catch (error) {
+        res.status(500).json({
+          error: true,
+          message: `Cannot run notebook agent: ${error.message}`,
         });
       }
     });
