@@ -1,4 +1,4 @@
-import { KeyValue } from "./common";
+import { DatabaseVariable, SchemaVariable, KeyValue } from "./common";
 import { EdgeState } from "./edge.state";
 import { NodeState } from "./node.state";
 
@@ -45,6 +45,8 @@ export interface DataflowExportDto {
   edges: EdgeState[];
   variables: KeyValue[];
   importLibs: string[];
+  databases: DatabaseVariable[];
+  schemas: SchemaVariable[];
 }
 
 export interface SaveDataflowDto {
@@ -122,6 +124,8 @@ interface ReactFlowDto {
   edges: EdgeState[];
   variables: KeyValue[];
   importLibs: string[];
+  databases: DatabaseVariable[];
+  schemas: SchemaVariable[];
 }
 
 export interface SaveFlowDialogState {

@@ -2,7 +2,7 @@
 import ChartConfigService from '../../lib/ChartConfigService'
 import MriFrontEndConfig from '../../lib/MriFrontEndConfig'
 import * as types from '../mutation-types'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import { useNotificationStore } from '../../stores/notifications'
 
 let chartConfigServiceInstance
@@ -54,6 +54,13 @@ const actions = {
   requestMriConfig({ dispatch, commit, rootGetters }) {
     if (configRequestPromise) {
       return configRequestPromise
+    }
+    // Skip fetch while no dataset is selected yet — the backend endpoint
+    // requires datasetId/tokenDatasetCode and returns 400 otherwise. The
+    // dataset change watcher re-fires this action once a real id arrives.
+    if (!rootGetters.getSelectedDataset?.id) {
+      console.debug('[config] requestMriConfig skipped: no datasetId yet')
+      return Promise.resolve(null)
     }
     const processData = aData => {
       if (aData.length === 0) {
@@ -150,11 +157,11 @@ const actions = {
     })
   },
   setDataset({ commit }, dataset) {
-    const datasetId = getPortalAPI().studyId
+    const datasetId = usePortalContext().datasetId
     commit(types.SET_SELECTED_DATASET, { id: datasetId })
   },
   setDatasetReleaseId({ commit }) {
-    const releaseId = getPortalAPI().releaseId
+    const releaseId = usePortalContext().releaseId
     commit(types.SET_SELECTED_DATASET_RELEASE_ID, releaseId)
   },
 }

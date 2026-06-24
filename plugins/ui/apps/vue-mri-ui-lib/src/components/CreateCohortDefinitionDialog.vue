@@ -24,14 +24,16 @@ import { mapActions, mapGetters } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import LoadingAnimation from './LoadingAnimation.vue'
 import messageBox from './MessageBox.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 import { convertIFRToExtCohort } from '../utils/IfrToExtCohort'
 
 export default {
   name: 'download-cohort-definition-dialog',
   props: ['closeEv'],
   data() {
+    const portalContext = usePortalContext()
     return {
+      portalContext,
       isLoading: false,
     }
   },
@@ -78,9 +80,9 @@ export default {
           id: 0, // 0 is used by webapi for new cohort definitions
           name: this.getActiveBookmark?.bookmarkname || 'Atlas Cohort Definition',
           tags: [],
-          createdBy: getPortalAPI().username,
+          createdBy: this.portalContext.username,
           expression,
-          modifiedBy: getPortalAPI().username,
+          modifiedBy: this.portalContext.username,
           createdDate: now,
           description: 'Generated from a D2E Cohort Definition',
           modifiedDate: now,

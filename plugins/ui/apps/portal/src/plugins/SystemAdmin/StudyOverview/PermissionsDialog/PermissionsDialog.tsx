@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState, useEffect } from "react";
-import { Study, UserWithRoles } from "../../../../types";
-import { Dialog, Button, Feedback } from "@portal/components";
+import { Feedback, Study, UserWithRoles } from "../../../../types";
+import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
 import "./PermissionsDialog.scss";
 import Tabs from "@mui/material/Tabs";
@@ -186,6 +186,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
     await Promise.all(promises)
       .then(() => {
         setFeedback({
+          variant: "alert",
           type: "success",
           message: getText(i18nKeys.PERMISSIONS_DIALOG__SUCCESS),
         });
@@ -195,6 +196,7 @@ const PermissionsDialog: FC<PermissionsDialogProps> = ({ study, open, onClose })
       })
       .catch((e) => {
         setFeedback({
+          variant: "alert",
           type: "error",
           message: getText(i18nKeys.PERMISSIONS_DIALOG__ERROR, [e]),
         });
