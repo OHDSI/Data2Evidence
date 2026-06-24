@@ -65,8 +65,8 @@ export class DatasetQueryService {
       throw new HttpException(
         400,
         "Dataset id or tokenDatasetCode is required",
-    );
-  }
+      );
+    }
     // Lookup supports UUID id, sanitized cache_id (analytics-svc passes this on
     // the CDM-version path), or tokenDatasetCode.
     const isUuid =
@@ -95,7 +95,10 @@ export class DatasetQueryService {
       .getOne();
 
     if (!dataset) {
-      throw new HttpException(404, `Dataset with identifier ${lookupValue} not found`);
+      throw new HttpException(
+        404,
+        `Dataset with identifier ${lookupValue} not found`,
+      );
     } else if (!dataset.datasetDetail) {
       throw new HttpException(
         404,
@@ -262,7 +265,7 @@ export class DatasetQueryService {
       return baseColumns.concat([
         "dataset.type",
         "dataset.visibilityStatus",
-        "dataset.fhir_project_id",
+        "dataset.fhirDatasetId",
       ]);
     }
     return baseColumns;

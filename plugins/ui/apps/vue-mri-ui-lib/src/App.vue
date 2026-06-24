@@ -1,7 +1,7 @@
 <template>
-  <div id="app" class="mri-app-vue-container">
+  <div id="app" class="mri-app-vue-container" data-testid="pa-app-container">
     <NotificationStack />
-    <splashScreen v-if="getInitialLoad" />
+    <splashScreen v-if="showSplashScreen" :overlay="!getInitialLoad" />
     <patientanalytics v-show="!getInitialLoad" />
   </div>
 </template>
@@ -11,18 +11,18 @@ import { mapActions, mapGetters } from 'vuex'
 import configSelection from './components/ConfigSelection.vue'
 import patientanalytics from './components/PatientAnalytics.vue'
 import SplashScreen from './components/SplashScreen.vue'
-import store from './store'
 import NotificationStack from './components/NotificationStack.vue'
 import { useDeepLink } from './composables/useDeepLink'
 import CohortUrlCodec from './utils/CohortUrlCodec'
+import { usePortalContext } from './composables/usePortalContext'
 
 export default {
-  store,
   name: 'app',
   props: {},
   data() {
     return {
       showDialog: false,
+      portalContext: usePortalContext(),
     }
   },
   created() {
@@ -31,32 +31,6 @@ export default {
   },
   mounted() {
     this.setLocale()
-
-    const datasetChangeHandler = () => {
-      this.setDataset()
-      this.setDatasetReleaseId()
-      this.$store.commit('RESET_DATASET_CACHE')
-      // Update the config in state before doing further queries
-      this.requestMriConfig()
-        .then(() => {
-          this.setFireRequest()
-        })
-        .catch(e => {
-          console.error('[App] Config reload on dataset change failed', e)
-        })
-    }
-    const listenerInfo = { type: 'alp-dataset-change', app: 'patient-analytics', listener: datasetChangeHandler }
-    if (!window.d2eListeners) {
-      window.d2eListeners = {
-        'alp-dataset-change': [listenerInfo],
-      }
-    } else if (!window.d2eListeners['alp-dataset-change']) {
-      window.d2eListeners['alp-dataset-change'] = [listenerInfo]
-    } else {
-      window.d2eListeners['alp-dataset-change'].push(listenerInfo)
-    }
-    window.addEventListener('alp-dataset-change', datasetChangeHandler)
-
     // Bind shareCohortDefinition to window for manual testing
     this.bindShareCohortDefinition()
 
@@ -64,7 +38,10 @@ export default {
     this.processDeepLinkIfPresent()
   },
   computed: {
-    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad']),
+    ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad', 'getDatasetReloadInProgress']),
+    showSplashScreen() {
+      return this.getInitialLoad || this.getDatasetReloadInProgress
+    },
   },
   methods: {
     ...mapActions([

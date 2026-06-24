@@ -164,8 +164,6 @@ class D2ECli {
       CADDY__D2E__PUBLIC_FQDN: `${this.CADDY__D2E__PUBLIC_FQDN}`,
       DOCKER_TAG_NAME: `${this.DOCKER_TAG_NAME}`,
       ENV_TYPE: `${this.ENV_TYPE}`,
-      FHIR__CLIENT_ID: `${this.generate_uuid()}`,
-      FHIR__CLIENT_SECRET: `${this.generate_random_password(64)}`,
       LOGTO__D2E_APP__CLIENT_ID: `${this.generate_random_password(21)}`,
       LOGTO__D2E_APP__CLIENT_SECRET: `${this.generate_random_password(30)}`,
       LOGTO__D2E_DATA__CLIENT_ID: `${this.generate_random_password(21)}`,
@@ -398,8 +396,8 @@ class D2ECli {
       : Buffer.from(str).toString("base64");
     return base64
       .replace(/=/g, "") // Remove '=' padding
-      .replace(/\+/g, "_") // Replace '+' with '_'
-      .replace(/\//g, "-") // Replace '/' with '-'
+      .replace(/\+/g, "-") // Replace '+' with '-'
+      .replace(/\//g, "_") // Replace '/' with '_'
       .replace(/\n/g, ""); // Remove newlines
   }
 

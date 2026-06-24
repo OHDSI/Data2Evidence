@@ -2,7 +2,7 @@ import { Injectable } from '@danet/core'
 import { services } from '../env.ts'
 import { createLogger } from '../logger.ts'
 import { sanitizeIdForCacheId } from '../dataset/entity/dataset.entity.ts'
-import { ISourceInfo, ISourceRequest } from './types.ts'
+import { IRole, ISourceInfo, ISourceRequest } from './types.ts'
 
 const DEFAULT_WEBAPI_URL = 'http://localhost:33001/WebAPI'
 
@@ -106,6 +106,37 @@ export class WebApiSourceApi {
     }
   }
 
+  async getRoles(authToken?: string): Promise<IRole[]> {
+    const url = `${this.baseUrl}/role`
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        ...this.buildHeaders(authToken),
+        'Accept': 'application/json',
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to get WebAPI roles: ${response.status} ${errorText}`)
+    }
+
+    return response.json()
+  }
+
+  async deleteRole(roleId: number, authToken?: string): Promise<void> {
+    const url = `${this.baseUrl}/role/${roleId}`
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: this.buildHeaders(authToken),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Failed to delete WebAPI role: ${response.status} ${errorText}`)
+    }
+  }
+
   async createCache(
     sourceKey: string,
     schemaName: string,
@@ -117,7 +148,7 @@ export class WebApiSourceApi {
     const response = await fetch(url, {
       method: 'POST',
       headers: this.buildHeaders(authToken, 'application/json'),
-      body: JSON.stringify({ schemaName, databaseCode }),
+      body: JSON.stringify({ schemaName, databaseCode, ftsTables: ['concept', 'concept_synonym'] }),
     })
 
     if (!response.ok) {

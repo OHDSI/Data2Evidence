@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import messageBox from './MessageBox.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 import { validateAtlasJson } from '../utils/AtlasJSONValidator'
 
 defineProps({
@@ -20,6 +20,7 @@ defineProps({
 const emit = defineEmits(['closeEv', 'createdEv'])
 
 const store = useStore()
+const portalContext = usePortalContext()
 
 const input = ref('')
 const error = ref('')
@@ -55,14 +56,14 @@ const clearInputs = () => {
 const onClickCreateCohortDefinition = async () => {
   try {
     const now = +new Date()
-    const content = {
-      id: 0,
-      name: name.value || 'Imported Atlas Cohort Definition',
-      tags: [],
-      createdBy: getPortalAPI().username,
-      expression: JSON.parse(input.value),
-      modifiedBy: getPortalAPI().username,
-      createdDate: now,
+      const content = {
+        id: 0,
+        name: name.value || 'Imported Atlas Cohort Definition',
+        tags: [],
+        createdBy: portalContext.username,
+        expression: JSON.parse(input.value),
+        modifiedBy: portalContext.username,
+        createdDate: now,
       description: description.value || '',
       modifiedDate: now,
       expressionType: 'SIMPLE_EXPRESSION',

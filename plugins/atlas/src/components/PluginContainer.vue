@@ -14,6 +14,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, inject, watch } from 'vue';
 import type { PluginProps } from '../types';
+import { scopeStyleElement, scopeCssText } from '../utils/scriptLoader';
+
+// vue-mri mounts into `.vue-main`; its runtime-injected styles are scoped here.
+const MRI_SCOPE = '.vue-main';
 
 const containerRef = ref<HTMLElement | null>(null);
 const isLoading = ref(true);
@@ -21,6 +25,132 @@ const isLoading = ref(true);
 const pluginProps = inject<PluginProps>('pluginProps');
 
 const messageBus = pluginProps?.messageBus;
+
+// vue-mri bundles its own Vuetify + SAP UI5, which add global CSS to <head> at
+// runtime — both `<style>` (Vuetify theme `:root{--v-theme-*}` + components) and
+// `<link>` (SAP `library.css`, which sets `body{font-family}`). Atlas3 is also a
+// Vuetify app, so these leak. We snapshot Atlas3's own styles first, then scope
+// every *foreign* stylesheet added afterwards under `.vue-main`:
+//   - <style>: rewrite in place, and re-scope if its content is later rewritten
+//              (Vuetify mutates its theme node's text, not the node itself).
+//   - <link>:  fetch + scope into a sibling <style>, disable the original link.
+// Everything we add/disable is tracked and reverted on unmount so it can't
+// affect other Atlas3 pages.
+let styleGuardObserver: MutationObserver | null = null;
+let atlasStyleNodes: Element[] = [];
+const perStyleObservers: MutationObserver[] = [];
+const injectedScopedStyles: HTMLStyleElement[] = [];
+const disabledLinks: HTMLLinkElement[] = [];
+const ROOT_LEAK_RE = /(^|[}])\s*(:root|html|body|\*)\b/;
+
+const watchStyleForRescope = (el: HTMLStyleElement) => {
+  const obs = new MutationObserver(() => {
+    // Re-scope only if the content was rewritten back to an unscoped root rule.
+    if (ROOT_LEAK_RE.test(el.textContent || '')) {
+      delete el.dataset.mriScoped;
+      scopeStyleElement(el, MRI_SCOPE);
+    }
+  });
+  obs.observe(el, { childList: true, characterData: true, subtree: true });
+  perStyleObservers.push(obs);
+};
+
+const scopeForeignLink = async (link: HTMLLinkElement) => {
+  if (link.dataset.mriProcessed) return;
+  link.dataset.mriProcessed = '1';
+  try {
+    const resp = await fetch(link.href);
+    if (!resp.ok) return; // leave the original <link> intact on error responses
+    const css = await resp.text();
+    const style = document.createElement('style');
+    style.dataset.mriScoped = '1';
+    style.setAttribute('data-href', link.href);
+    style.textContent = scopeCssText(css, MRI_SCOPE);
+    link.after(style);
+    injectedScopedStyles.push(style);
+    link.media = 'not all'; // disable the original (keep node so SAP refs still resolve)
+    disabledLinks.push(link);
+  } catch {
+    /* leave link as-is on failure */
+  }
+};
+
+const scopeForeignNodes = (nodes: Iterable<Node>) => {
+  for (const n of nodes) {
+    const el = n as HTMLElement;
+    if (atlasStyleNodes.includes(el)) continue;
+    if (el.tagName === 'STYLE') {
+      scopeStyleElement(el as HTMLStyleElement, MRI_SCOPE);
+      watchStyleForRescope(el as HTMLStyleElement);
+    } else if (
+      el.tagName === 'LINK' &&
+      (el as HTMLLinkElement).rel === 'stylesheet' &&
+      /\/d2e\/|sap|d4l|\/mri\//.test((el as HTMLLinkElement).href)
+    ) {
+      void scopeForeignLink(el as HTMLLinkElement);
+    }
+  }
+};
+
+// vue-mri's getPortalAPI() only returns the portalAPI when there is EXACTLY ONE
+// `.plugin-container` in the document. But vue-mri renders its own
+// `.plugin-container` inside its layout, so two exist — and ours (the one with
+// portalAPI) isn't the only one, so getPortalAPI() returns null and vue-mri
+// never gets the token/studyId (stuck on "Content is loading"). Patch
+// getElementsByClassName so a 'plugin-container' lookup resolves to the one
+// carrying portalAPI.
+let originalGetElementsByClassName: typeof Document.prototype.getElementsByClassName | null = null;
+
+const installContainerLookupPatch = () => {
+  if (originalGetElementsByClassName) return;
+  originalGetElementsByClassName = Document.prototype.getElementsByClassName;
+  const orig = originalGetElementsByClassName;
+  Document.prototype.getElementsByClassName = function (className: string) {
+    const result = orig.call(this, className);
+    if (className === 'plugin-container' && result.length > 1) {
+      for (let i = 0; i < result.length; i++) {
+        if ((result[i] as any).portalAPI) {
+          const single: any = [result[i]];
+          single.item = function (idx: number) { return this[idx] || null; };
+          Object.defineProperty(single, 'length', { value: 1, writable: false });
+          return single as unknown as HTMLCollectionOf<Element>;
+        }
+      }
+    }
+    return result;
+  };
+};
+
+const uninstallContainerLookupPatch = () => {
+  if (originalGetElementsByClassName) {
+    Document.prototype.getElementsByClassName = originalGetElementsByClassName;
+    originalGetElementsByClassName = null;
+  }
+};
+
+const installStyleGuard = () => {
+  // Snapshot Atlas3's stylesheets (present before vue-mri loads its own).
+  atlasStyleNodes = Array.from(
+    document.head.querySelectorAll('link[rel="stylesheet"], style')
+  );
+  styleGuardObserver = new MutationObserver((mutations) => {
+    for (const m of mutations) scopeForeignNodes(m.addedNodes);
+  });
+  styleGuardObserver.observe(document.head, { childList: true });
+};
+
+const uninstallStyleGuard = () => {
+  styleGuardObserver?.disconnect();
+  styleGuardObserver = null;
+  perStyleObservers.forEach((o) => o.disconnect());
+  perStyleObservers.length = 0;
+  // Remove the scoped styles we injected and re-enable the links we disabled,
+  // so nothing vue-mri-related lingers on other Atlas3 pages.
+  injectedScopedStyles.forEach((s) => s.parentNode?.removeChild(s));
+  injectedScopedStyles.length = 0;
+  disabledLinks.forEach((l) => l.removeAttribute('media'));
+  disabledLinks.length = 0;
+};
 
 // Get sourceKey from Atlas3's localStorage (same browsing context)
 // Falls back to server-provided default if localStorage is empty
@@ -176,6 +306,12 @@ watch(containerRef, (newVal) => {
 }, { immediate: true });
 
 onMounted(() => {
+  // Ensure vue-mri's getPortalAPI() resolves to our container (with portalAPI).
+  installContainerLookupPatch();
+
+  // Keep Atlas3's styles winning over vue-mri's runtime-injected CSS.
+  installStyleGuard();
+
   // Install fetch interceptor to add auth headers (for script/style loading)
   installFetchInterceptor();
 
@@ -260,6 +396,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // Restore patched lookup + stop guarding styles
+  uninstallContainerLookupPatch();
+  uninstallStyleGuard();
+
   // Cleanup: remove fetch interceptor
   uninstallFetchInterceptor();
 

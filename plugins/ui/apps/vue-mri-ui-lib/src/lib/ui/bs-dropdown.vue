@@ -7,6 +7,7 @@
       :aria-expanded="isOpen"
       :aria-haspopup="true"
       :disabled="disabled"
+      :data-testid="triggerTestid || undefined"
       type="button"
     >
       <slot name="button-content">{{ text }}</slot>
@@ -38,6 +39,11 @@ const props = defineProps({
   dropup: { type: Boolean, default: false },
   autoFlip: { type: Boolean, default: true },
   align: { type: String, default: 'center' }, // 'left', 'center', 'right'
+  // Optional data-testid forwarded to the trigger <button>. Lets parent
+  // components (e.g. FilterCard) give the actual click target a stable
+  // hook for Playwright, since wrapping the slot in a span doesn't make
+  // the inner element the click target of the encapsulating button.
+  triggerTestid: { type: String, default: '' },
 })
 
 const emit = defineEmits(['show', 'hide'])

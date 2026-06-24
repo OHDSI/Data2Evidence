@@ -1,4 +1,5 @@
 from __future__ import annotations
+from prefect.variables import Variable
 
 from _shared_flow_utils.dao.ibisdao import IbisDao
 from _shared_flow_utils.dao.trexdao import TrexDao
@@ -35,6 +36,10 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
     Raises:
         ValueError: If the dialect is not supported.
     """
+    # Database code FHIR always use TrexDao regardless of dialect
+    if (kwargs.get("database_code") or "").lower() == "fhir":
+        return TrexDao(database_code=Variable.get("fhir_database_code"))
+
     # Only DaoBase and TrexDao __init__ accept cache_id; pop it so the
     # SqlAlchemyDao probe constructor doesn't reject it, then re-attach
     # to the probe so vars(test_instance) carries it forward.
@@ -63,6 +68,8 @@ def DBDao(dialect=None, **kwargs) -> DaoBase:
         # Only TrexDao's __init__ accepts cache_id; for other DAOs the
         # superclass DaoBase.__init__ defaults self.cache_id from database_code.
         if dao_class is TrexDao:
+            if dialect is None and cache_id is None:
+                attrs["cache_id"] = test_instance.tenant_configs.databaseName
             return dao_class(**attrs)
         attrs_no_cache = {k: v for k, v in attrs.items() if k != "cache_id"}
         return dao_class(**attrs_no_cache)

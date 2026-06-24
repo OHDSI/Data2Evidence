@@ -1,5 +1,5 @@
 <template>
-  <div class="patientlist-container" ref="patientlistContainer">
+  <div class="patientlist-container" ref="patientlistContainer" data-testid="pa-patient-list-table">
     <template v-if="errorMessage">
       <chartErrorMessage :errorMessage="errorMessage"></chartErrorMessage>
     </template>
@@ -131,6 +131,7 @@ export default {
           createZip(
             {
               responses,
+              cohortName: this.getActiveBookmark?.bookmarkname,
             },
             () => {
               this.completeDownloadZIP()
@@ -155,6 +156,7 @@ export default {
       'getSelectedAttributes',
       'getSelectedDataset',
       'translate',
+      'getActiveBookmark',
     ]),
     currentPage() {
       return this.getPLModel.currentPage

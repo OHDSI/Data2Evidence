@@ -2,6 +2,7 @@
   <div
     v-bind:class="['FilterCard', cssClass, this.isNew && !this.isBasic ? 'MriPaFilterCardNew' : '']"
     @click="onFiltercardClick"
+    :data-testid="testId"
   >
     <!--Filtercard rename messageBox-->
     <messageBox messageType="custom" @close="cancel" :busy="busy" v-if="renameModal.show">
@@ -61,6 +62,7 @@
               class="btn-filtercard-menu"
               no-caret
               align="right"
+              trigger-testid="filter-card-menu-trigger"
               @show="onDropdownShow"
             >
               <template v-slot:button-content>
@@ -241,6 +243,14 @@ export default {
         this.$emit('renameModalShown', value)
       },
     },
+    totalFilterCardCount: {
+      handler(newCount) {
+        if (this.displayAdvanceTime && newCount <= 1) {
+          this.displayAdvanceTime = false
+          this.clearFilterCardTimeFilter({ filterCardId: this.id })
+        }
+      },
+    },
   },
   computed: {
     ...mapGetters([
@@ -251,6 +261,7 @@ export default {
       'getHasAssignedConfig',
       'getNewCardStates',
       'getSplitterWidth',
+      'getFilterCardCount',
     ]),
     isNew() {
       return this.getNewCardStates[this.id]
@@ -344,7 +355,13 @@ export default {
 
       // item for Advanced Time Filter
       // Advance Time filter is not supported if filter is in exclusion tab
-      if (!this.isExcluded && !this.isBasic) {
+      // And requires at least 2 filter cards (source and target)
+      const totalFilterCards = this.getFilterCardCount({
+        excludeBasicCard: true,
+        excludedOnly: false,
+        matchType: 'matchall',
+      })
+      if (!this.isExcluded && !this.isBasic && totalFilterCards > 1) {
         menu.push({
           text: this.getText('MRI_PA_TEMPORAL_FILTER_ADVANCED_TIME_FILTER'),
           key: 'advancedTime',
@@ -408,6 +425,16 @@ export default {
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
     },
+    testId() {
+      return `pa-filter-card-${this.id.replace(/\./g, '-')}`
+    },
+    totalFilterCardCount() {
+      return this.getFilterCardCount({
+        excludeBasicCard: true,
+        excludedOnly: false,
+        matchType: 'matchall',
+      })
+    },
   },
   methods: {
     ...mapMutations([FILTERCARD_REMOVE_NEW_STATE]),
@@ -467,6 +494,10 @@ export default {
         })
       } else if (key === 'clear') {
         this.clearAllConstraintsOfFilterCard({ filterCardId: this.id })
+        if (this.displayAdvanceTime) {
+          this.displayAdvanceTime = false
+          this.clearFilterCardTimeFilter({ filterCardId: this.id })
+        }
       } else if (key === 'rename') {
         this.openRenameDialog()
       } else if (this.getFilterCardConstraints(this.id).findIndex(fcconst => fcconst.props.attrKey === key) > -1) {

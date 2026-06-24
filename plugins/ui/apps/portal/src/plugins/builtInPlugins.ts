@@ -1,7 +1,6 @@
 const moduleNames = [
   "mri/CDM",
   "mri/PatientAnalyticsConfig",
-  "mri/PatientAnalytics",
   "mri/Search",
   "Researcher/KaplanMeier",
   "Researcher/ShinyLive",

@@ -20,10 +20,15 @@ export let global = {
       "scopes": [
         "trex.log.write"
       ]
+    },{
+      "path": "^/agent(/|$)",
+      "scopes": [
+        "trex.agent.invoke"
+      ]
     }],
     ROLE_SCOPES: {
-      "ALP_SYSTEM_ADMIN": ['trex'],
-      "TENANT_VIEWER": ['trex.log.write']
+      "ALP_SYSTEM_ADMIN": ['trex', 'trex.agent.invoke'],
+      "TENANT_VIEWER": ['trex.log.write', 'trex.agent.invoke']
     },
     PLUGINS_JSON: "{}"
 }
@@ -52,7 +57,7 @@ export const publicURLs = [
     '^/callback$',
     '^/prefect/docs$',
     '^/openapi.json$',
-    '^/fhir-server/healthcheck$',
+    '^/fhir-gateway/healthcheck$',
     '^/gateway/api/dataset/shiny-live/.*$'
   ]
 
