@@ -109,7 +109,6 @@ export default {
 
       if (patientCount && patientCount > 0) {
         try {
-          throw new Error('simulate error')
           let chartId = ''
           if (this.compareChartType) {
             chartId = '#' + this.compareChartType + '-chart'
