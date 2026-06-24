@@ -4,13 +4,13 @@ import {
   type NotebookData,
   type NotebookHandle,
   type NotebookTheme,
-  WebRKernel,
   buildKernelAssetUrls,
   createEmptyNotebook,
   serializeIpynb,
 } from "react-notebook/src/index";
 import * as notebookApi from "../api/notebook-api";
 import { PyqeReadyPyodideKernel } from "../kernels/pyqeReadyPyodideKernel";
+import { RD2EReadyWebRKernel } from "../kernels/rD2EReadyWebRKernel";
 import type { NotebookRecord } from "../types";
 import { parseNotebookContent } from "../utils/starboard";
 import { CodingAssistant } from "./CodingAssistant";
@@ -76,7 +76,7 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
   // on every mount; the cleanup terminates the old worker so reconnect actually
   // produces fresh state.
   const [pyodideKernel] = useState(() => new PyqeReadyPyodideKernel());
-  const [webRKernel] = useState(() => new WebRKernel());
+  const [webRKernel] = useState(() => new RD2EReadyWebRKernel());
   const kernels = useMemo(
     () => [pyodideKernel, webRKernel],
     [pyodideKernel, webRKernel],
