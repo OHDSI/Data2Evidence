@@ -25,6 +25,8 @@ export const meta = {
   configFlag: 'overlappingHistogramEnabled',
 }
 
+export const OVERLAY_BAR_OPACITY = 0.3
+
 type Ctx = {
   showDistributionOverlay: boolean
   barGap: number
@@ -37,7 +39,7 @@ export function apply(traces: any[], layout: any, ctx: Ctx): { traces: any[]; la
   // Create new trace objects so the canonical chartData.traces are never mutated.
   const newTraces = traces.map(trace => ({
     ...trace,
-    marker: { ...trace.marker, opacity: 0.3 },
+    marker: { ...trace.marker, opacity: OVERLAY_BAR_OPACITY },
   }))
   if (ctx.showDistributionOverlay) {
     // appendDistributionOverlay pushes to newTraces (safe — it's a fresh array) and
