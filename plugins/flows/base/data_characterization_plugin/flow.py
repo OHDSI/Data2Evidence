@@ -56,7 +56,7 @@ def data_characterization_plugin(options: DCOptionsType):
         )
     # If HANA dialect is used, substitute the cacheId with datasetId for PA/CDM config resolution
     else:
-        dbdao.cache_id = options.datasetId
+        dbdao.cache_id = options.datasetId if options.datasetId else options.cacheId
 
     # Todo: Update implementation if Hana uses trex
     # If the actual dialect is HANA, force use_trex_connection to False

@@ -27,7 +27,7 @@ class PortalServerAPI(BaseAPI):
 
     def pa_cdm_config_session_vars(self, dataset_id: str) -> dict:
         """
-        Resolve the dataset's PA and CDM config id/version as 
+        Resolve the dataset's PA and CDM config id/version as session variables
         """
         if not dataset_id:
             raise Exception(
@@ -56,7 +56,6 @@ class PortalServerAPI(BaseAPI):
         except Exception as e:
             raise Exception(
                 f"Failed to resolve PA/CDM config for dataset '{dataset_id}': {e}")
-            return {}
 
     def update_dataset_attributes_table(self, study_id: str, attribute_id: str, attribute_value: str | None):
         result = requests.put(
