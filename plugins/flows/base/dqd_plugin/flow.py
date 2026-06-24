@@ -31,11 +31,11 @@ def dqd_plugin(options: DqdOptionsType):
     logger.info(f"Flow parameters received: {options.json()}")
     flow_run_id = runtime.flow_run.id
 
-    dbdao = DBDao(
-        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-        database_code=options.databaseCode,
-        cache_id=options.cacheId,
-    )
+    db_parameters = {
+        'database_code': options.databaseCode,
+        'cache_id': options.cacheId,
+    }
+    dbdao = DBDao(**db_parameters)
     
     if dbdao.dialect != SupportedDatabaseDialects.HANA:
         dbdao = DBDao(
@@ -43,6 +43,9 @@ def dqd_plugin(options: DqdOptionsType):
             database_code=options.databaseCode,
             cache_id=options.cacheId,
         )
+    # If HANA dialect is used, substitute the cacheId with datasetId for PA/CDM config resolution
+    else:
+        dbdao.cache_id = options.datasetId
     
     # Todo: Update implementation if Hana uses trex
     use_trex_connection = (

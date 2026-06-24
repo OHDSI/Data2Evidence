@@ -104,7 +104,6 @@ class DaoBase(ABC):
                 try:
                     from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
                     result = PortalServerAPI().pa_cdm_config_session_vars(self.cache_id)
-                    print(f"Resolved PA/CDM config for dataset '{self.cache_id}': {result}")
                 except Exception:
                     result = {}
             self._pa_cdm_config = result

@@ -11,6 +11,7 @@ class DCOptionsType(BaseModel):
     releaseDate: Optional[str] = None
     resultsSchema: str
     executeConceptRecordCount: Optional[bool] = True
+    datasetId: Optional[str] = None
 
     @property
     def use_trex_connection(self) -> bool:
