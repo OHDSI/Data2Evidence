@@ -471,7 +471,11 @@ function getDistinctValuesFromReference(
         placeholderAliasMap,
         attrRefExpression
     );
-    const aliasedRefFilter = attrRefExpression
+    // Skip the reference filter for empty searches so all values are returned.
+    // removeEmptySearchCondition() only strips AND clauses; when the filter is
+    // the sole WHERE clause it leaves __EMPTY_SEARCH__ in the SQL, which HANA's
+    // CONTAINS (and Postgres JARO_SIMILARITY) won't match.
+    const aliasedRefFilter = (attrRefExpression && referenceFilter && searchQuery)
         ? ` WHERE ${replacePlaceholderWithCustomString(
               placeholderAliasMap,
               referenceFilter
