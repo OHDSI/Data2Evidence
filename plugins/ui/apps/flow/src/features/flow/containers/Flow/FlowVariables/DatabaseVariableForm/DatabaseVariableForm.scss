@@ -1,8 +1,8 @@
 @use "../_variable-form-input.scss" as *;
 
-.variable-form-component {
-  .variable-form {
-    width: 90%;
+.database-variable-form-component {
+  .database-variable-form {
+    width: 95%;
     position: relative;
     display: flex;
     flex-direction: row;
@@ -15,20 +15,19 @@
     padding: 0.75em 0;
   }
 
-  .variable-form__key-field {
+  .database-variable-form__name-field {
     flex: 1;
-    min-width: 150px;
+    min-width: 120px;
   }
 
-  .variable-form__value-field {
+  .database-variable-form__code-field {
     flex: 2;
-    min-width: 200px;
-    @include variable-form-input;
+    min-width: 150px;
   }
 
   .trash-btn {
     position: absolute;
-    right: -60px;
+    right: -52px;
     top: 10px;
   }
 
