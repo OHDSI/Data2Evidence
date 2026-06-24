@@ -528,6 +528,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV file',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP file',
     MRI_PA_EXPORT_FILE_PNG: 'PNG file',
+    MRI_PA_EXPORT_FAILED: 'Unable to export {0}',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: 'Save and activate the current configuration in the back-end system',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC:
       'You can define attributes that apply to all interactions (except Basic Data).',
@@ -1559,6 +1560,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV-Datei',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP-Datei',
     MRI_PA_EXPORT_FILE_PNG: 'PNG-Datei',
+    MRI_PA_EXPORT_FAILED: '{0} kann nicht exportiert werden',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: 'Aktuelle Konfiguration im Backend-System sichern und aktivieren',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC:
       'Sie können Attribute definieren, die für alle Interaktionen (ausgenommen Grunddaten) gültig sind.',
@@ -1989,8 +1991,7 @@ export const i18n = {
     MRI_PA_COHORT_NAME_REQUIRED: 'Für neue Kohorten ist ein Kohortenname erforderlich.',
     MRI_PA_BOOKMARK_NOT_FOUND_AFTER_REFRESH: 'Lesezeichen wurde nach der Aktualisierung nicht gefunden.',
     MRI_PA_NO_DATASET_SELECTED: 'Kein Datensatz ausgewählt.',
-    MRI_PA_NO_SAVED_BOOKMARK_FOR_MATERIALIZATION:
-      'Kein gespeichertes Lesezeichen für die Materialisierung angegeben.',
+    MRI_PA_NO_SAVED_BOOKMARK_FOR_MATERIALIZATION: 'Kein gespeichertes Lesezeichen für die Materialisierung angegeben.',
     MRI_PA_BOOKMARK_MISSING_COHORT_DEFINITION:
       'Das Lesezeichen hat nach der Materialisierung keine cohortDefinitionId.',
     MRI_PA_MATERIALIZED_COHORT_NOT_FOUND: 'Materialisierte Kohorte wurde nicht gefunden.',
@@ -2553,6 +2554,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV 文件',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP 文件',
     MRI_PA_EXPORT_FILE_PNG: 'PNG 文件',
+    MRI_PA_EXPORT_FAILED: '无法导出{0}',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: '保存并激活后端系统中的当前配置',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC: '可定义应用于所有交互的属性（基本数据除外）。',
     MRI_PA_BUTTON_SEARCH_VB: '导航到基因组的特定位置',
