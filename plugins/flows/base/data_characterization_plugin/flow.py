@@ -304,21 +304,20 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             )
         
 
-    except RRuntimeError as e:
-        logger.error(f"RRuntimeError from Achilles: {e}")
+    except (RRuntimeError, Exception) as e:
+        logger.error(f"Achilles run failed: {e}")
 
-        error_file_name = "errorReportR.txt"
+        diagnostics = collect_achilles_diagnostics(achilles_params.outputFolder)
 
+        # errorReportR.txt is captured inside diagnostics; use it as the primary message
         error_message = (
-            get_error_message(error_file_name, achilles_params.outputFolder)
-            or f"{error_file_name} does not exist at {achilles_params.outputFolder}."
+            diagnostics["files"].get("errorReportR.txt")
+            or str(e)
         )
-
         logger.error(f"Error message from Achilles run: {error_message}")
 
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
         failed_analysis_ids_str = ""
-
         if failed_analysis_ids:
             failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
             logger.error(f"The following analysis IDs failed: \"{failed_analysis_ids_str}\"")
@@ -329,22 +328,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             "error": True,
             "error_message": error_message,
             "failed_analysis_ids": failed_analysis_ids_str,
-        }
-
-        create_markdown_artifact(
-            key="data-characterization-error", markdown=json.dumps(error_result)
-        )
-
-        raise
-    except Exception as e:
-        logger.error(f"Unexpected error in Achilles run: {e}")
-
-        error_result = {
-            "flow_run_id": flow_run_id,
-            "result": {},
-            "error": True,
-            "error_message": e.__str__(),
-            "failed_analysis_ids": "",
+            "diagnostics": diagnostics,
         }
 
         create_markdown_artifact(

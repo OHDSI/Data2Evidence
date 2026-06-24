@@ -15,6 +15,85 @@ def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
     return sorted_failed_ids if sorted_failed_ids else None
 
 
+def _read_text_snippet(file_path: Path, max_chars: int) -> str:
+    """
+    Read a bounded text snippet from a diagnostic file.
+    """
+    try:
+        text = file_path.read_text(errors="replace")
+    except Exception as e:
+        return f"<unable to read {file_path.name}: {e}>"
+
+    if len(text) <= max_chars:
+        return text
+
+    return f"{text[:max_chars]}\n... truncated after {max_chars} characters ..."
+
+
+def _analysis_id_from_error_file(file_path: Path) -> int:
+    try:
+        return int(file_path.stem.split("_")[-1])
+    except ValueError:
+        return 0
+
+
+def collect_achilles_diagnostics(
+    output_folder: str,
+    max_error_files: int = 10,
+    max_log_files: int = 3,
+    max_chars_per_file: int = 4000,
+) -> dict:
+    """
+    Collect bounded Achilles diagnostic files for failure artifacts.
+
+    Achilles can fail while parsing its own log files, which hides the original
+    SQL error. Capturing generated achillesError/log files lets users debug
+    failed runs without direct database access.
+    """
+    output_path = Path(output_folder)
+    diagnostics = {
+        "output_folder": str(output_path),
+        "files": {},
+        "truncated_file_groups": {},
+    }
+
+    if not output_path.exists():
+        diagnostics["error"] = f"Output folder does not exist: {output_path}"
+        return diagnostics
+
+    for file_name in ("errorReportR.txt", "errorReportSql.txt"):
+        file_path = output_path / file_name
+        if file_path.exists():
+            diagnostics["files"][file_name] = _read_text_snippet(
+                file_path, max_chars_per_file
+            )
+
+    error_files = sorted(
+        output_path.glob("achillesError_*.txt"),
+        key=_analysis_id_from_error_file,
+    )
+    for file_path in error_files[:max_error_files]:
+        diagnostics["files"][file_path.name] = _read_text_snippet(
+            file_path, max_chars_per_file
+        )
+    if len(error_files) > max_error_files:
+        diagnostics["truncated_file_groups"]["achillesError_*.txt"] = (
+            f"{len(error_files) - max_error_files} additional file(s) omitted"
+        )
+
+    log_files = sorted(output_path.glob("log_achilles*.txt"))
+    for file_path in log_files[:max_log_files]:
+        diagnostics["files"][file_path.name] = _read_text_snippet(
+            file_path, max_chars_per_file
+        )
+    if len(log_files) > max_log_files:
+        diagnostics["truncated_file_groups"]["log_achilles*.txt"] = (
+            f"{len(log_files) - max_log_files} additional file(s) omitted"
+        )
+
+    return diagnostics
+
+
 def failed_analysis_ids_to_str(failed_ids: list[int]) -> str:
     """
     Convert the list of failed analysis IDs to a comma separated string.
