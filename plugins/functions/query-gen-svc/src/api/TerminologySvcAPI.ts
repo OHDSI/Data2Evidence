@@ -28,16 +28,23 @@ export default class TerminologySvcAPI {
         this.d2eWebapi = Trex.tokioChannel("d2e-functions/d2e-webapi");
     }
 
-    private async getRequestConfig(token: string) {
+    private async getRequestConfig(token: string, datasetId?: string) {
         let options: any = {
             httpAgent: this.httpAgent,
         };
+        const headers: Record<string, string> = {};
         if (token) {
+            headers.Authorization = token;
+        }
+        // d2e-webapi routes require the dataset via the `datasetid` header
+        // (its datasetRoutes preHandler returns 400 without it).
+        if (datasetId) {
+            headers.datasetid = datasetId;
+        }
+        if (Object.keys(headers).length > 0) {
             options = {
                 ...options,
-                headers: {
-                    Authorization: token,
-                },
+                headers,
             };
         }
         return options;
@@ -56,7 +63,7 @@ export default class TerminologySvcAPI {
             return [];
         }
 
-        const options = await this.getRequestConfig(token);
+        const options = await this.getRequestConfig(token, datasetId);
         const data = { conceptSetIds, datasetId };
         const result = await this.d2eWebapi.post(
             `${this.d2eWebapiBaseUrl}/conceptset/included-concepts`,
