@@ -115,36 +115,47 @@ export function useDeepLink(dispatch: any, options?: { guard?: (action: () => vo
       // Use the existing bookmark loading action
       console.debug('[DeepLink] Calling loadBookmarkDataToState...')
       const load = async () => {
-        await dispatch('loadBookmarkDataToState', {
-          bookmark,
-          chartType: bookmark.chartType,
-        })
-        console.debug('[DeepLink] loadBookmarkDataToState completed successfully')
+        // This runs detached when invoked via the unsaved-changes guard (the guard
+        // does not await it), so the error path must live here rather than relying
+        // on the outer try/catch — otherwise a failed restore surfaces nothing.
+        try {
+          await dispatch('loadBookmarkDataToState', {
+            bookmark,
+            chartType: bookmark.chartType,
+          })
+          console.debug('[DeepLink] loadBookmarkDataToState completed successfully')
 
-        // Clean up URL by removing deep link params
-        const cleanUrl = new URL(window.location.href)
-        cleanUrl.searchParams.delete('linkType')
-        cleanUrl.searchParams.delete('query')
-        cleanUrl.searchParams.delete('wizards')
-        window.history.replaceState({}, '', cleanUrl.toString())
+          // Clean up URL by removing deep link params
+          const cleanUrl = new URL(window.location.href)
+          cleanUrl.searchParams.delete('linkType')
+          cleanUrl.searchParams.delete('query')
+          cleanUrl.searchParams.delete('wizards')
+          window.history.replaceState({}, '', cleanUrl.toString())
 
-        // Show success message, enhanced if wizard config has conditions/years
-        let successMessage = 'Cohort definition loaded successfully from shared link.'
-        if (wizardConfigData) {
-          const hasConditions = Array.isArray(wizardConfigData.conditions) && wizardConfigData.conditions.length > 0
-          const hasYears = wizardConfigData.year && (wizardConfigData.year.from || wizardConfigData.year.to)
-          if (hasConditions || hasYears) {
-            const parts: string[] = []
-            if (hasConditions) parts.push('conditions')
-            if (hasYears) parts.push('years')
-            successMessage += ` Note that ${parts.join(' and ')} do not appear in the filter cards but are used in the dashboard.`
+          // Show success message, enhanced if wizard config has conditions/years
+          let successMessage = 'Cohort definition loaded successfully from shared link.'
+          if (wizardConfigData) {
+            const hasConditions = Array.isArray(wizardConfigData.conditions) && wizardConfigData.conditions.length > 0
+            const hasYears = wizardConfigData.year && (wizardConfigData.year.from || wizardConfigData.year.to)
+            if (hasConditions || hasYears) {
+              const parts: string[] = []
+              if (hasConditions) parts.push('conditions')
+              if (hasYears) parts.push('years')
+              successMessage += ` Note that ${parts.join(' and ')} do not appear in the filter cards but are used in the dashboard.`
+            }
           }
+          useNotificationStore().setAlertMessage({
+            message: successMessage,
+            messageType: 'success',
+            title: 'Success',
+          })
+        } catch (error) {
+          console.error('[DeepLink] Failed to load cohort definition:', error)
+          const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+          useNotificationStore().setAlertMessage({
+            message: `Failed to load cohort definition: ${errorMessage}`,
+          })
         }
-        useNotificationStore().setAlertMessage({
-          message: successMessage,
-          messageType: 'success',
-          title: 'Success',
-        })
       }
 
       if (options?.guard) {

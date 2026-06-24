@@ -1,6 +1,7 @@
 import { ref, computed, ComputedRef, Ref } from 'vue'
 import { useStore, Store } from 'vuex'
 import { MRI_APP_NAME, unsavedChangesRegistry } from '../shared/unsavedChangesRegistry'
+import * as types from '../store/mutation-types'
 
 type PendingAction = () => void
 
@@ -47,7 +48,7 @@ const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
 const clearUnsavedChanges = (): void => {
   const store = getStore()
   if (!store?.getters?.getActiveBookmark) return
-  store.commit('SET_ACTIVE_BOOKMARK_BASELINE', store.getters.getBookmarksData)
+  store.commit(types.SET_ACTIVE_BOOKMARK_BASELINE, store.getters.getBookmarksData)
 }
 
 const install = (): void => {

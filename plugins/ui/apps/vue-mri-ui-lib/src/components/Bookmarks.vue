@@ -483,7 +483,15 @@ export default {
         })
         const activeBookmark = this.getActiveBookmark
         if (activeBookmark && activeBookmark.bmkId === bookmarkDisplay.bookmark.id) {
+          // Rename is metadata-only and must not change dirty state. SET_ACTIVE_BOOKMARK
+          // clears activeBookmarkBaseline, so preserve and restore it — keeping the exact
+          // dirty semantics (clean stays clean, in-progress edits stay dirty) instead of
+          // falling back to the fragile legacy raw-JSON comparison.
+          const baseline = this.$store.getters.getActiveBookmarkBaseline
           this[types.SET_ACTIVE_BOOKMARK]({ ...activeBookmark, bookmarkname: request.newName })
+          if (baseline != null) {
+            this[types.SET_ACTIVE_BOOKMARK_BASELINE](baseline)
+          }
         }
         await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
         this.showRenameDialog = false
@@ -573,6 +581,10 @@ export default {
       this.closeAddNewCohort()
       this.$emit('unloadBookmarkEv', false)
       await this.reset()
+      // Let chart defaults that are applied reactively after resetChart (axes /
+      // auto-default colorAxis via onChartDataReady) flush before snapshotting the
+      // baseline; otherwise it captures the previous cohort's not-yet-reset state.
+      await this.$nextTick()
       this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.$store.getters.getBookmarksData)
     },
     checkCohortName(bookmarkName, suffix = '') {
@@ -586,7 +598,10 @@ export default {
       return uniqueName
     },
     reset() {
-      this.resetChart()
+      // Return the promise so callers can await the full reset (setIFRState +
+      // setupChartDefaults). Without this, `await this.reset()` resolves
+      // immediately and any baseline captured right after reflects pre-reset state.
+      return this.resetChart()
     },
     isMScohort(bookmarkDisplay) {
       // MS cohort only contains a cohort definition
