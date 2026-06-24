@@ -496,9 +496,12 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
-      // Empty string is the conceptSetId placeholder when creating a new concept set
+      // When creating a new concept set there is no id yet. Use "0" (a
+      // never-existing id) as the exclusion sentinel: the backend route param
+      // schema rejects an empty segment ("/conceptset//exists" -> 400), and
+      // "0" still surfaces same-name duplicates across both stores.
       const isNameUsed = await checkIfConceptSetExists(
-        conceptSetId || "",
+        conceptSetId || "0",
         conceptSet.name,
         activeDatasetId,
       );

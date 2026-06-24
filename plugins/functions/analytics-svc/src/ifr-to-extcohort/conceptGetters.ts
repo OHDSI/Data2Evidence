@@ -89,7 +89,8 @@ export const getConceptsFromConceptSet = async ({
             req,
             "POST",
             `conceptset/included-concepts`,
-            { conceptSetIds: [formatConceptSetRef(ref)], datasetId }
+            { conceptSetIds: [formatConceptSetRef(ref)], datasetId },
+            datasetId
         );
 
         return concepts.length

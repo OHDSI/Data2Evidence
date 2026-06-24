@@ -14,7 +14,8 @@ export const d2eWebapiRequest = async (
     req: IMRIRequest,
     method: SUPPORTED_HTTP_METHODS,
     path: string = "",
-    payload: null | any
+    payload: null | any,
+    datasetId?: string
 ): Promise<any> => {
     const d2eWebapi = Trex.tokioChannel("d2e-functions/d2e-webapi");
     log.addRequestCorrelationID(req);
@@ -29,6 +30,12 @@ export const d2eWebapiRequest = async (
 
     const sourceOrigin = req.headers["x-source-origin"];
 
+    // d2e-webapi routes require the dataset to be supplied via the `datasetid`
+    // request header (see d2e-webapi datasetRoutes preHandler). Fall back to the
+    // header already present on the inbound request when no explicit id is given.
+    const resolvedDatasetId =
+        datasetId ?? (req.headers["datasetid"] as string | undefined);
+
     const options = {
         headers: {
             "Content-Type": "application/json",
@@ -36,6 +43,7 @@ export const d2eWebapiRequest = async (
             "user-agent": "ALP Service",
             "x-source-origin": sourceOrigin,
             "x-req-correlation-id": reqCorrelationId,
+            ...(resolvedDatasetId ? { datasetid: resolvedDatasetId } : {}),
         },
     };
 
