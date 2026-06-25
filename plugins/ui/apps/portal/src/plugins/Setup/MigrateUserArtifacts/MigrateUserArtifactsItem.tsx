@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useState } from "react";
 import { Button, CheckmarkIcon, CloseIcon } from "@portal/components";
 import { IMigrateCohortDefinitionResponse } from "../../../axios/d2e-webapi";
+import { useTranslation } from "../../../contexts";
 import "./MigrateUserArtifactsItem.scss";
 
 interface MigrateUserArtifactsItemProps {
@@ -16,6 +17,7 @@ export const MigrateUserArtifactsItem: FC<MigrateUserArtifactsItemProps> = ({
   errorMessage,
   onClick,
 }) => {
+  const { getText, i18nKeys } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleClick = useCallback(async () => {
@@ -38,13 +40,15 @@ export const MigrateUserArtifactsItem: FC<MigrateUserArtifactsItemProps> = ({
                 (result.totalMigrations === 0 ? (
                   <div className="migrate-user-artifacts-item__progress-step">
                     <CheckmarkIcon />
-                    No atlas cohort definitions user artifacts to migrate
+                    {getText(i18nKeys.MIGRATE_USER_ARTIFACTS__NO_ITEMS)}
                   </div>
                 ) : (
                   <div className="migrate-user-artifacts-item__progress-step">
                     <CheckmarkIcon />
-                    Successfully migrated {result.successfulMigrations}/{result.totalMigrations} atlas cohort
-                    definitions
+                    {getText(i18nKeys.MIGRATE_USER_ARTIFACTS__SUCCESS, [
+                      `${result.successfulMigrations}`,
+                      `${result.totalMigrations}`,
+                    ])}
                   </div>
                 ))}
               {errorMessage && (
@@ -59,7 +63,7 @@ export const MigrateUserArtifactsItem: FC<MigrateUserArtifactsItemProps> = ({
       </div>
       {onClick && (
         <div className="migrate-user-artifacts-item__action">
-          <Button text="Migrate" onClick={handleClick} loading={loading} />
+          <Button text={getText(i18nKeys.MIGRATE_USER_ARTIFACTS__RUN)} onClick={handleClick} loading={loading} />
         </div>
       )}
     </div>
