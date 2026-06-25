@@ -348,8 +348,7 @@ jobs:
       - name: Collect Prefect diagnostics on flow run failure
         if: failure() && env.PREFECT_FLOW_RUN_ID != ''
         env:
-          PREFECT_BASE: https://localhost:41100/d2e/jobplugins/prefect
-          PORTAL_BASE: https://localhost:41100/d2e/portal/systemadmin/jobs
+          PREFECT_BASE: https://localhost:41100/d2e/prefect
         run: |
           sudo apt-get install -y jq 2>/dev/null || true
           mkdir -p ./prefect-diagnostics
@@ -359,7 +358,7 @@ jobs:
           echo "## Prefect Flow Run Diagnostics" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Flow Run ID:** \`${FLOW_RUN_ID}\`" >> $GITHUB_STEP_SUMMARY
-          echo "**UI:** ${PORTAL_BASE}/runs/flow-run/${FLOW_RUN_ID}" >> $GITHUB_STEP_SUMMARY
+          echo "**UI:** ${PREFECT_BASE}/runs/flow-run/${FLOW_RUN_ID}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           # Get sub-flow runs
@@ -397,14 +396,14 @@ jobs:
           echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
           while IFS=$'\t' read -r artifact_id artifact_key; do
             [ -z "${artifact_id}" ] && continue
-            echo "- **${artifact_key}** (\`${artifact_id}\`): ${PORTAL_BASE}/artifacts/artifact/${artifact_id}" >> $GITHUB_STEP_SUMMARY
+            echo "- **${artifact_key}** (\`${artifact_id}\`): ${PREFECT_BASE}/artifacts/artifact/${artifact_id}" >> $GITHUB_STEP_SUMMARY
           done < <(echo "${ARTIFACTS_JSON}" | jq -r '.[] | [.id, (.key // .type // "artifact")] | @tsv' 2>/dev/null)
           echo "" >> $GITHUB_STEP_SUMMARY
 
           echo "### Sub-Flow Runs" >> $GITHUB_STEP_SUMMARY
           while IFS=$'\t' read -r sub_id sub_name sub_state; do
             [ -z "${sub_id}" ] && continue
-            echo "- **${sub_name}** \`${sub_state}\`: ${PORTAL_BASE}/runs/flow-run/${sub_id}" >> $GITHUB_STEP_SUMMARY
+            echo "- **${sub_name}** \`${sub_state}\`: ${PREFECT_BASE}/runs/flow-run/${sub_id}" >> $GITHUB_STEP_SUMMARY
           done < <(echo "${SUB_RUNS_JSON}" | jq -r '.[] | [.id, (.name // "sub-run"), (.state_type // "UNKNOWN")] | @tsv' 2>/dev/null)
 
       - name: Upload Prefect diagnostics
