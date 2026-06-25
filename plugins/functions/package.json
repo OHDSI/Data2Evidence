@@ -2987,7 +2987,7 @@
           ]
         },
         {
-          "path": "^/d2e-webapi/cohortdefinition/migrate",
+          "path": "^/d2e-webapi/migrate/cohortdefinition",
           "scopes": [
             "d2e.webapi.admin"
           ]

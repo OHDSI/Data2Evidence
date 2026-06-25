@@ -170,7 +170,7 @@ export const getConceptSetUsage = async (
 
   // Fetches all cohorts/bookmarks and filters in-memory; may need optimized APIs for large datasets.
   const [cohortDefinitions, bookmarksData] = await Promise.all([
-    portalServerApi.getAtlasCohortDefinitionList(datasetId).catch((_error) => {
+    portalServerApi.getAtlasCohortDefinitionList().catch((_error) => {
       // Wrap external API errors to avoid leaking internal implementation details
       throw new Error(
         "Failed to check cohort definitions for concept set usage"
