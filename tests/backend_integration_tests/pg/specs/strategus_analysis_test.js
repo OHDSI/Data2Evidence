@@ -110,8 +110,15 @@ describe('-- STRATEGUS ANALYSIS TESTS --', function () {
         var flowRunId = body.flowrunId
         var pollCount = 0
 
+        function writeToGithubEnv(key, value) {
+          if (process.env.GITHUB_ENV) {
+            fs.appendFileSync(process.env.GITHUB_ENV, key + '=' + value + '\n')
+          }
+        }
+
         function pollState() {
           if (pollCount >= MAX_POLLS) {
+            writeToGithubEnv('PREFECT_FLOW_RUN_ID', flowRunId)
             return done(new Error('Flow run did not complete within the expected time'))
           }
           pollCount++
@@ -130,12 +137,14 @@ describe('-- STRATEGUS ANALYSIS TESTS --', function () {
             try {
               specUtils.assertIsValidResponse(stateErr, stateResponse.statusCode)
             } catch (assertErr) {
+              writeToGithubEnv('PREFECT_FLOW_RUN_ID', flowRunId)
               return done(assertErr)
             }
 
             if (stateBody.state_type === 'COMPLETED') {
               return done()
             } else if (stateBody.state_type === 'FAILED' || stateBody.state_type === 'CRASHED') {
+              writeToGithubEnv('PREFECT_FLOW_RUN_ID', flowRunId)
               return done(new Error('Flow run ended with state: ' + stateBody.state_type))
             } else {
               setTimeout(pollState, POLL_INTERVAL_MS)

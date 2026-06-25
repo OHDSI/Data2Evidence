@@ -379,6 +379,76 @@ jobs:
           echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
           yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=^(?!strategus_analysis_test).*_test\.js$'
 
+      - name: Collect Prefect diagnostics on flow run failure
+        if: failure() && env.PREFECT_FLOW_RUN_ID != ''
+        env:
+          PREFECT_BASE: https://localhost:41100/d2e/jobplugins/prefect
+          PORTAL_BASE: https://localhost:41100/d2e/portal/systemadmin/jobs
+        run: |
+          sudo apt-get install -y jq 2>/dev/null || true
+          mkdir -p ./prefect-diagnostics
+
+          FLOW_RUN_ID="${PREFECT_FLOW_RUN_ID}"
+
+          echo "## Prefect Flow Run Diagnostics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Flow Run ID:** \`${FLOW_RUN_ID}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**UI:** ${PORTAL_BASE}/runs/flow-run/${FLOW_RUN_ID}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get sub-flow runs
+          SUB_RUNS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/flow_runs/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"flow_runs\":{\"parent_flow_run_id\":{\"any_\":[\"${FLOW_RUN_ID}\"]}}}")
+          echo "${SUB_RUNS_JSON}" > ./prefect-diagnostics/sub_flow_runs.json
+
+          # Build JSON array of all run IDs (parent + sub)
+          SUB_RUN_IDS=$(echo "${SUB_RUNS_JSON}" | jq -r '.[].id' 2>/dev/null | tr '\n' ' ')
+          ALL_IDS_JSON=$(printf '%s\n' "${FLOW_RUN_ID}" ${SUB_RUN_IDS} | jq -Rn '[inputs]')
+
+          # Fetch logs (ERROR level = 40+)
+          LOGS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/logs/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"logs\":{\"flow_run_id\":{\"any_\":${ALL_IDS_JSON}}},\"sort\":\"TIMESTAMP_ASC\"}")
+          echo "${LOGS_JSON}" > ./prefect-diagnostics/logs.json
+
+          echo "### Error Logs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${LOGS_JSON}" | jq -r '.[] | select(.level >= 40) | "[" + .timestamp + "] " + .message' \
+            2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "(failed to parse logs)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Fetch artifacts
+          ARTIFACTS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/artifacts/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"artifacts\":{\"flow_run_id\":{\"any_\":${ALL_IDS_JSON}}}}")
+          echo "${ARTIFACTS_JSON}" > ./prefect-diagnostics/artifacts.json
+
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          while IFS=$'\t' read -r artifact_id artifact_key; do
+            [ -z "${artifact_id}" ] && continue
+            echo "- **${artifact_key}** (\`${artifact_id}\`): ${PORTAL_BASE}/artifacts/artifact/${artifact_id}" >> $GITHUB_STEP_SUMMARY
+          done < <(echo "${ARTIFACTS_JSON}" | jq -r '.[] | [.id, (.key // .type // "artifact")] | @tsv' 2>/dev/null)
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Sub-Flow Runs" >> $GITHUB_STEP_SUMMARY
+          while IFS=$'\t' read -r sub_id sub_name sub_state; do
+            [ -z "${sub_id}" ] && continue
+            echo "- **${sub_name}** \`${sub_state}\`: ${PORTAL_BASE}/runs/flow-run/${sub_id}" >> $GITHUB_STEP_SUMMARY
+          done < <(echo "${SUB_RUNS_JSON}" | jq -r '.[] | [.id, (.name // "sub-run"), (.state_type // "UNKNOWN")] | @tsv' 2>/dev/null)
+
+      - name: Upload Prefect diagnostics
+        if: failure() && env.PREFECT_FLOW_RUN_ID != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: prefect-diagnostics-${{ inputs.attempt }}
+          path: ./prefect-diagnostics/
+          if-no-files-found: ignore
+
       - name: Mark HTTP duckdb attempt success
         if: success()
         run: |
