@@ -1,5 +1,5 @@
 import { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
-import { CohortDefinitionMigrateResponseDto } from "../dto/cohortdefinition.ts";
+import { CohortDefinitionMigrateResponseDto } from "../dto/migrate.ts";
 import { migrateCohortDefinitions } from "../services/migrate.service.ts";
 
 // deno-lint-ignore require-await

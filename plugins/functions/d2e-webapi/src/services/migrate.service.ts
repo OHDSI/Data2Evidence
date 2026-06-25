@@ -1,7 +1,7 @@
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { WebAPIAPI } from "../api/WebAPIAPI.ts";
+import { ICohortDefinitionMigrateResponseDto } from "../dto/migrate.ts";
 import {
-  ICohortDefinitionMigrateResponseDto,
   UserArtifactAtlasCohortDefinitionDto,
   IUserArtifactAtlasCohortDefinitionDto,
 } from "../dto/cohortdefinition.ts";
