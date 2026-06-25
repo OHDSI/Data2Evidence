@@ -238,6 +238,9 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     entity: result.entity,
                     rowCount: rowCount,
                 };
+                // Drop the DuckDB backing table now that the stream has been
+                // fully consumed. No-op for HANA.
+                await result.cleanup?.();
                 res.status(200).send(response);
             } else {
                 result.data.on("readable", () => {
@@ -254,7 +257,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     }
                 });
 
-                result.data.on("end", () => {
+                result.data.on("end", async () => {
                     log.debug(
                         `total number of rows for ${result.entity}: ${rowCount}`
                     );
@@ -262,6 +265,9 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                         entity: result.entity,
                         rowCount: rowCount,
                     };
+                    // Drop the DuckDB backing table now that the stream has
+                    // been fully consumed. No-op for HANA.
+                    await result.cleanup?.();
                     res.status(200).send(response);
                 });
             }
@@ -486,13 +492,24 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             );
             res.setHeader("Content-Type", "text/plain");
 
-            result.data
-                .pipe(parquetTransform)
-                .pipe(res)
-                .on("finish", async () => {
-                    await result.cleanup?.();
-                    return res.status(200);
-                });
+            res.on("error", (err) => {
+                log.error(`${req.fileName}==========res error=========`);
+                log.error(err);
+            });
+
+            pipeline(result.data, parquetTransform, res, async (err) => {
+                // Drop the DuckDB backing table now that all data has been
+                // written (or the pipeline has failed). No-op for HANA.
+                await result.cleanup?.();
+                if (err) {
+                    log.error(
+                        `${req.fileName}==========parquet pipeline error=========`
+                    );
+                    log.error(err);
+                } else {
+                    res.end();
+                }
+            });
         }
     };
 

@@ -288,7 +288,10 @@ const actions = {
             return { filename: `${el}.csv`, response }
           })
           .catch(err => {
-            throw err?.response
+            if (err?.response) {
+              throw err.response
+            }
+            throw err
           })
       })
 
