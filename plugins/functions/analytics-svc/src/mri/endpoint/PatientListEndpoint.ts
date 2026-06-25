@@ -146,74 +146,68 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                 let cdmConfigMetaData: any = queryResponse.cdmConfigMetaData;
                 let ifrRequest = queryResponse.ifrRequest;
 
-                nql.executeQuery(this.connection, (err, result) => {
+                nql.executeQuery(this.connection, async (err, result) => {
                     if (err) {
                         reject(err);
                         return;
                     }
-                    result.measures = measures;
-                    result.categories = categories;
+                    try {
+                        result.measures = measures;
+                        result.categories = categories;
 
-                    if (
-                        !ifrRequest.axes ||
-                        (ifrRequest.axes && ifrRequest.axes.length === 0)
-                    ) {
-                        //If no columns are selected in the patient list front end
-                        result.data = [];
-                        result.categories = [];
-                        result.measures = [];
-                    } else if (result.data.length === 0) {
-                        result.noDataReason =
-                            "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
-                        result.totalPatientCount = 0;
-                    } else {
-                        result.data.forEach((row) => {
-                            Object.keys(row).forEach((column) => {
-                                if (typeof row[column] === "string") {
-                                    row[column] = row[column]
-                                        .split(utilsLib.uniqueSeparatorString)
-                                        .filter((value, index, self) => {
-                                            return (
-                                                self.indexOf(value) === index
-                                            );
-                                        });
-                                }
+                        if (
+                            !ifrRequest.axes ||
+                            (ifrRequest.axes && ifrRequest.axes.length === 0)
+                        ) {
+                            //If no columns are selected in the patient list front end
+                            result.data = [];
+                            result.categories = [];
+                            result.measures = [];
+                        } else if (result.data.length === 0) {
+                            result.noDataReason =
+                                "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
+                            result.totalPatientCount = 0;
+                        } else {
+                            result.data.forEach((row) => {
+                                Object.keys(row).forEach((column) => {
+                                    if (typeof row[column] === "string") {
+                                        row[column] = row[column]
+                                            .split(
+                                                utilsLib.uniqueSeparatorString
+                                            )
+                                            .filter((value, index, self) => {
+                                                return (
+                                                    self.indexOf(value) ===
+                                                    index
+                                                );
+                                            });
+                                    }
+                                });
                             });
+                            result.totalPatientCount =
+                                result.data[0].totalpcount;
+                        }
+                        await AuditLogger.getAuditLogger({})
+                            .withCDMConfigMetaData(cdmConfigMetaData)
+                            .log(
+                                "patient.attributes.pid",
+                                auditLogChannel,
+                                result.data,
+                                true,
+                                ["totalpcount"],
+                                undefined,
+                                fileName
+                                    ? { id: fileName, name: fileName }
+                                    : undefined
+                            );
+                        this.responseDbgInfo(result, {
+                            FAST: fast.statement,
+                            nql,
                         });
-                        result.totalPatientCount = result.data[0].totalpcount;
+                        resolve(result);
+                    } catch (err) {
+                        reject(err);
                     }
-                    /*             AuditLogger.getAuditLogger().log(
-                                    "patient.attributes.pid",
-                                    AUDITLOG_CHANNEL_PLUGIN_SERVICES,
-                                    pList,
-                                    true,
-                                    resultcb,
-                                    undefined,
-                                    selectedAttributes); */
-                    AuditLogger.getAuditLogger({})
-                        .withCDMConfigMetaData(cdmConfigMetaData)
-                        .log(
-                            "patient.attributes.pid",
-                            auditLogChannel,
-                            result.data,
-                            true,
-                            (err) => {
-                                if (err) {
-                                    reject(err);
-                                } else {
-                                    this.responseDbgInfo(result, {
-                                        FAST: fast.statement,
-                                        nql,
-                                    });
-                                    resolve(result);
-                                }
-                            },
-                            ["totalpcount"],
-                            undefined,
-                            fileName
-                                ? { id: fileName, name: fileName }
-                                : undefined
-                        );
                 });
             } catch (err) {
                 reject(err);

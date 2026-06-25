@@ -322,45 +322,43 @@ export class PluginEndpoint {
                             (dataset) => dataset.entity === "patient"
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
-                        const resultcb = (logErr) => {
-                            if (logErr) {
-                                return errHandler(new Error("Auditlog error"));
+
+                        try {
+                            await AuditLogger.getAuditLogger({})
+                                .withCDMConfigMetaData(this.cdmConfigMetaData)
+                                .log(
+                                    "patient.attributes.pid",
+                                    auditLogChannelName,
+                                    pList,
+                                    true,
+                                    undefined,
+                                    this.selectedAttributes
+                                );
+                        } catch (_err) {
+                            return errHandler(new Error("Auditlog error"));
+                        }
+
+                        if (mode === MODE.CSV) {
+                            endpointResult.selectedAttributes =
+                                this.selectedAttributes;
+                            endpointResult.noValue =
+                                connLib.DBValues.NOVALUE;
+                            if (metadataType) {
+                                const meta = this.MD
+                                    ? JSON.stringify(this.MD)
+                                    : "Metadata Type not supported";
+                                serviceResponse.metadata = meta;
                             }
+                        }
 
-                            if (mode === MODE.CSV) {
-                                endpointResult.selectedAttributes =
-                                    this.selectedAttributes;
-                                endpointResult.noValue =
-                                    connLib.DBValues.NOVALUE;
-                                if (metadataType) {
-                                    const meta = this.MD
-                                        ? JSON.stringify(this.MD)
-                                        : "Metadata Type not supported";
-                                    serviceResponse.metadata = meta;
-                                }
-                            }
+                        endpointResult.data = serviceResponse;
 
-                            endpointResult.data = serviceResponse;
+                        if (endpointResult.data.length === 0) {
+                            endpointResult.noDataReason =
+                                "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
+                        }
 
-                            if (endpointResult.data.length === 0) {
-                                endpointResult.noDataReason =
-                                    "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
-                            }
-
-                            return resolve(endpointResult);
-                        };
-
-                        AuditLogger.getAuditLogger({})
-                            .withCDMConfigMetaData(this.cdmConfigMetaData)
-                            .log(
-                                "patient.attributes.pid",
-                                auditLogChannelName,
-                                pList,
-                                true,
-                                resultcb,
-                                undefined,
-                                this.selectedAttributes
-                            );
+                        return resolve(endpointResult);
                     };
 
                     // const tempTableCreateTime = process.hrtime();
