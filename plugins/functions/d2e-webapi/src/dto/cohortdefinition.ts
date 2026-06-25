@@ -140,6 +140,14 @@ export type ICohortDefinitionCheckV2ResponseDto = z.infer<
   typeof CohortDefinitionCheckV2ResponseDto
 >;
 
+export const CohortDefinitionMigrateResponseDto = z.object({
+  successfulMigrations: z.number(),
+  totalMigrations: z.number(),
+});
+export type ICohortDefinitionMigrateResponseDto = z.infer<
+  typeof CohortDefinitionMigrateResponseDto
+>;
+
 export const GenerateCohortResponseDto = z.object({
   status: z.string(),
   startDate: z.string().nullable(),

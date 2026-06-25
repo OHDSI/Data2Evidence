@@ -796,7 +796,8 @@
           "strategus.results.admin.upload",
           "strategus.results.admin.delete",
           "mlflow",
-          "d2e.container.logs.read"
+          "d2e.container.logs.read",
+          "d2e.webapi.admin"
         ],
         "ALP_DASHBOARD_VIEWER": [],
         "TENANT_VIEWER": [
@@ -2983,6 +2984,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi/cohortdefinition/migrate",
+          "scopes": [
+            "d2e.webapi.admin"
           ]
         },
         {

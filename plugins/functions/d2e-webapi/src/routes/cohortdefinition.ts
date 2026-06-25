@@ -8,8 +8,7 @@ import {
   CohortDefinitionIdInfoResponseDto,
   AtlasCohortDefinitionDto,
   CohortDefinitionCheckV2ResponseDto,
-  CohortDefinitionCreateResponseDto,
-  CohortDefinitionResponseDto,
+  CohortDefinitionMigrateResponseDto,
   WebAPICohortDefinitionResponseDto,
   GenerateCohortResponseDto,
   ICohortDefinitionIdInfoResponseDto,
@@ -24,6 +23,7 @@ import {
   copyCohortDefinition,
   checkIfAtlasCohortDefinitionExists,
   checkV2,
+  migrateCohortDefinitions,
 } from "../services/cohortdefinition.service.ts";
 
 // deno-lint-ignore require-await
@@ -80,6 +80,27 @@ export const cohortdefinition: FastifyPluginAsyncZod = async function (app) {
         req.datasetId,
         req.body,
       );
+      res.send(result);
+    },
+  );
+
+  app.post(
+    "/migrate",
+    {
+      schema: {
+        description: "Migrates atlas cohort definitions from Portal to WebAPI.",
+        tags: ["cohortdefinition"],
+        response: { 200: CohortDefinitionMigrateResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const result = await migrateCohortDefinitions(req.token, req.datasetId);
       res.send(result);
     },
   );

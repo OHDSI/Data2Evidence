@@ -18,9 +18,16 @@ import {
   AtlasCohortDefinitionDto,
   IGenerateCohortResponseDto,
   ICohortDefinitionCheckV2ResponseDto,
+  ICohortDefinitionMigrateResponseDto,
+  IUserArtifactAtlasCohortDefinitionDto,
+  UserArtifactAtlasCohortDefinitionDto,
   IWebAPICohortDefinitionResponseDto,
 } from "../dto/cohortdefinition.ts";
-import { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
+import {
+  IWebAPICohortDefinition,
+  IWebAPICohortDefinitionExpressionType,
+  IWebAPICohortDefinitionPayload,
+} from "../api/WebAPIAPI.ts";
 import { BookmarksSchema } from "../api/types.ts";
 import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
@@ -105,6 +112,32 @@ const normalizeCohortDefinitionExpression = (
   ...cohortDefinition,
   expression: parseExpressionToJson(cohortDefinition.expression),
 });
+
+const mapUserArtifactToWebApiPayload = (
+  cohortDefinition: IUserArtifactAtlasCohortDefinitionDto,
+): IWebAPICohortDefinitionPayload => {
+  const toWebApiExpressionType = (
+    value: string,
+  ): IWebAPICohortDefinitionExpressionType => {
+    if (
+      value === "SIMPLE_EXPRESSION" ||
+      value === "CUSTOM_SQL" ||
+      value === "EXTERNAL_SOURCED"
+    ) {
+      return value;
+    } else {
+      // For migration, if expressionType does not match, default to EXTERNAL_SOURCED
+      return "EXTERNAL_SOURCED";
+    }
+  };
+
+  return {
+    name: cohortDefinition.name,
+    description: cohortDefinition.description ?? "",
+    expressionType: toWebApiExpressionType(cohortDefinition.expressionType),
+    expression: cohortDefinition.expression,
+  };
+};
 
 export const generateCohort = async (
   token: string,
@@ -515,6 +548,61 @@ export const checkV2 = async (
   const warnings =
     await trexDao.validateCohortJsonExpression(cohortJsonExpression);
   return warnings;
+};
+
+export const migrateCohortDefinitions = async (
+  token: string,
+  datasetId: string,
+): Promise<ICohortDefinitionMigrateResponseDto> => {
+  const portalServerApi = new PortalServerAPI(token);
+  const webApiApi = new WebAPIAPI(token);
+
+  const sourceCohortDefinitions =
+    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+  const totalMigrations = sourceCohortDefinitions.length;
+  let successfulMigrations = 0;
+
+  for (const sourceCohortDefinition of sourceCohortDefinitions) {
+    const sourceParse = UserArtifactAtlasCohortDefinitionDto.safeParse(
+      sourceCohortDefinition,
+    );
+    if (!sourceParse.success) {
+      console.error(
+        "Migration skipped due to invalid Portal cohort definition shape:",
+        sourceParse.error,
+      );
+      continue;
+    }
+    const createPayload = mapUserArtifactToWebApiPayload(sourceParse.data);
+    const sourceCohortDefinitionId = sourceParse.data.id;
+
+    try {
+      await webApiApi.createCohortDefinition(createPayload);
+    } catch (error) {
+      console.error(
+        "Migration create step failed for atlas cohort definition:",
+        sourceCohortDefinitionId,
+        error,
+      );
+      continue;
+    }
+
+    try {
+      await portalServerApi.deleteAtlasCohortDefinition(
+        datasetId,
+        sourceCohortDefinitionId,
+      );
+      successfulMigrations++;
+    } catch (error) {
+      console.error(
+        "Migration delete step failed for atlas cohort definition:",
+        sourceCohortDefinitionId,
+        error,
+      );
+    }
+  }
+
+  return { successfulMigrations, totalMigrations };
 };
 
 const _formatMaterializedCohort = (

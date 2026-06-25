@@ -53,18 +53,12 @@ export interface IWebAPICohortDefinition {
 
 export interface IWebAPICohortDefinitionPayload {
   [key: string]: unknown;
-  id?: number;
-  name?: string;
-  description?: string | null;
-  expressionType?: string;
-  expression?: ICohortExpression;
-  createdBy?: string | null;
-  createdDate?: number | null;
-  modifiedBy?: string | null;
-  modifiedDate?: number | null;
-  tags?: string[];
+  name: string;
+  description: string;
+  expressionType: IWebAPICohortDefinitionExpressionType;
+  expression: ICohortExpression | string;
+  tags?: IWebAPICohortDefinitionTag[];
 }
-
 export class WebAPIAPI {
   private readonly baseURL: string;
   private readonly token: string;
