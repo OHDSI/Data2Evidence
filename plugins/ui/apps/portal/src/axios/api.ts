@@ -11,6 +11,7 @@ import { Demo } from "./demo";
 import { StrategusResults } from "./strategus-results";
 import { StrategusAnalysis } from "./strategus-analysis";
 import { PublicWebapiProxyAPI } from "./public-webapi-proxy";
+import { D2EWebApi } from "./d2e-webapi";
 
 export const api = {
   userMgmt: new UserMgmt(),
@@ -26,4 +27,5 @@ export const api = {
   strategusAnalysis: new StrategusAnalysis(),
   publicWebapiProxyAPI: new PublicWebapiProxyAPI(),
   fhirGateway: new FhirGateway(),
+  d2eWebApi: new D2EWebApi(),
 };
