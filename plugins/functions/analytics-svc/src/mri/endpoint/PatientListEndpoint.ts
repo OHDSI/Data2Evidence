@@ -187,19 +187,21 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                             result.totalPatientCount =
                                 result.data[0].totalpcount;
                         }
-                        await AuditLogger.getAuditLogger({})
-                            .withCDMConfigMetaData(cdmConfigMetaData)
-                            .log(
-                                "patient.attributes.pid",
-                                auditLogChannel,
-                                result.data,
-                                true,
-                                ["totalpcount"],
-                                undefined,
-                                fileName
-                                    ? { id: fileName, name: fileName }
-                                    : undefined
-                            );
+                        const auditLogger = AuditLogger.create({
+                            cdmConfigMetaData,
+                            request: httpReq,
+                        });
+                        await auditLogger.log(
+                            "patient.attributes.pid",
+                            auditLogChannel,
+                            result.data,
+                            true,
+                            ["totalpcount"],
+                            undefined,
+                            fileName
+                                ? { id: fileName, name: fileName }
+                                : undefined
+                        );
                         this.responseDbgInfo(result, {
                             FAST: fast.statement,
                             nql,

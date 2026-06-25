@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { AuditLogger } from "./AuditLogger.ts";
+import { AuditLogger, getAuditUserIdFromRequest } from "./AuditLogger.ts";
 import { env } from "../env.ts";
 
 type AuditAttribute = {
@@ -87,9 +87,22 @@ function createAuditLogMock() {
 }
 
 function createLogger(auditLog: unknown) {
-    return AuditLogger.getAuditLogger({ auditLog })
-        .withCDMConfigMetaData({ id: "test-config", version: "v1" })
-        .setUser("test-user");
+    return AuditLogger.create({
+        auditLog,
+        cdmConfigMetaData: { id: "test-config", version: "v1" },
+        user: "test-user",
+    });
+}
+
+function encodeBase64Url(value: Record<string, unknown>): string {
+    return btoa(JSON.stringify(value))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+function createUnsignedJwt(payload: Record<string, unknown>): string {
+    return `${encodeBase64Url({ alg: "none", typ: "JWT" })}.${encodeBase64Url(payload)}.`;
 }
 
 function logAsync(
@@ -129,6 +142,7 @@ Deno.test(
 
             assert.equal(result, null);
             assert.equal(messages.length, 1);
+            assert.equal(messages[0].user, "test-user");
             assert.deepEqual(messages[0].readObject, {
                 type: "Patient",
                 id: { key: "patient-1" },
@@ -175,6 +189,86 @@ Deno.test(
         });
     }
 );
+
+Deno.test("getAuditUserIdFromRequest returns stable user id from JWT", () => {
+    const token = createUnsignedJwt({
+        sub: "subject-user",
+        oid: "object-user",
+        name: "Demo User",
+    });
+
+    const userId = getAuditUserIdFromRequest({
+        headers: {
+            authorization: `Bearer ${token}`,
+        },
+    });
+
+    assert.equal(userId, "object-user");
+});
+
+Deno.test("AuditLogger create derives user from request", async () => {
+    await withMutedConsole(async () => {
+        env.IS_AUDIT_LOG_ENABLED = "true";
+        const token = createUnsignedJwt({
+            sub: "subject-user",
+            oid: "object-user",
+        });
+        const { auditLog, messages } = createAuditLogMock();
+
+        const result = await logAsync(
+            AuditLogger.create({
+                auditLog,
+                cdmConfigMetaData: { id: "test-config", version: "v1" },
+                request: {
+                    headers: {
+                        authorization: `Bearer ${token}`,
+                    },
+                },
+            }),
+            [{ pid: "patient-1", age: 42 }]
+        );
+
+        assert.equal(result, null);
+        assert.equal(messages[0].user, "object-user");
+    });
+});
+
+Deno.test(
+    "getAuditUserIdFromRequest returns undefined for missing or invalid auth",
+    () => {
+        assert.equal(getAuditUserIdFromRequest(), undefined);
+        assert.equal(
+            getAuditUserIdFromRequest({
+                headers: {
+                    authorization: "Bearer dummy jwt",
+                },
+            }),
+            undefined
+        );
+    }
+);
+
+Deno.test("AuditLogger create scopes user to a new instance", async () => {
+    await withMutedConsole(async () => {
+        env.IS_AUDIT_LOG_ENABLED = "true";
+        const { auditLog, messages } = createAuditLogMock();
+
+        await logAsync(createLogger(auditLog), [
+            { pid: "patient-1", age: 42 },
+        ]);
+        const result = await logAsync(
+            AuditLogger.create({
+                auditLog,
+                cdmConfigMetaData: { id: "test-config", version: "v1" },
+            }),
+            [{ pid: "patient-2", age: 43 }]
+        );
+
+        assert.equal(result, null);
+        assert.equal(messages[0].user, "test-user");
+        assert.equal(messages[1].user, undefined);
+    });
+});
 
 Deno.test("AuditLogger log resolves after all chunks complete", async () => {
     await withMutedConsole(async () => {

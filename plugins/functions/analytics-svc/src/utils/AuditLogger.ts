@@ -1,4 +1,4 @@
-import { Logger } from "@alp/alp-base-utils";
+import { Logger, getUser } from "@alp/alp-base-utils";
 import type { CDMConfigMetaDataType } from "../types";
 import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
@@ -11,6 +11,14 @@ type AuditPatientRef = { type: "Patient"; id: { key: string } };
 type AuditRow = Record<string, unknown>;
 type AuditSelectedAttribute = { id: string };
 type AuditDataAccessAttribute = { name: string; successful: boolean };
+type AuditLoggerCreateOptions = {
+    auditLog?: AuditLogLike;
+    auditCredentials?: AuditCredentials;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    ip?: string;
+    request?: unknown;
+    user?: string;
+};
 type AuditLogLike = Partial<{
     read(ref: AuditPatientRef): AuditDataAccessMessage;
 }>;
@@ -47,34 +55,52 @@ const emptyResult: QueryObjectResult = {
     totalPatientCount: 0,
 };
 
+function getRequestHeaders(req?: unknown): Record<string, unknown> | undefined {
+    if (!req || typeof req !== "object" || !("headers" in req)) {
+        return undefined;
+    }
+
+    const headers = (req as { headers?: unknown }).headers;
+    if (!headers || typeof headers !== "object") {
+        return undefined;
+    }
+
+    return headers as Record<string, unknown>;
+}
+
+export function getAuditUserIdFromRequest(req?: unknown): string | undefined {
+    const headers = getRequestHeaders(req);
+    if (!headers?.authorization) {
+        return undefined;
+    }
+
+    try {
+        return getUser({ headers } as never).getUser();
+    } catch (_err) {
+        return undefined;
+    }
+}
+
 export class AuditLogger {
     private _isConsoleMode?: boolean = false;
-    private static _instance: AuditLogger;
-    private _cdmConfigMetaData: CDMConfigMetaDataType;
+    private _auditLog: AuditLogLike;
+    private _cdmConfigMetaData?: CDMConfigMetaDataType;
+    private _ip?: string;
+    private _user?: string;
 
-    private constructor(
-        private _auditLog: AuditLogLike,
-        private _ip?: string,
-        private _user?: string
-    ) {
-        //nothing to see here
-    }
-
-    public withCDMConfigMetaData(cdmConfigMetaData: CDMConfigMetaDataType) {
+    private constructor({
+        auditLog = {},
+        auditCredentials,
+        cdmConfigMetaData,
+        ip,
+        request,
+        user,
+    }: AuditLoggerCreateOptions) {
+        this._auditLog = auditLog;
+        this._isConsoleMode = auditCredentials?.logToConsole;
         this._cdmConfigMetaData = cdmConfigMetaData;
-        return this;
-    }
-
-    public setIP(ip: string) {
-        // console.log("Client IP: " + ip);
         this._ip = ip;
-        return this;
-    }
-
-    public setUser(user: string) {
-        // console.log("User: " + user);
-        this._user = user;
-        return this;
+        this._user = user ?? getAuditUserIdFromRequest(request);
     }
 
     private _isEnabled() {
@@ -240,7 +266,7 @@ export class AuditLogger {
         logAttributes.forEach((logAttribute) => {
             if (logAttribute) {
                 try {
-                    const logMsg = `${logAttribute.id} (Configuration: ${this._cdmConfigMetaData.id}, Version: ${this._cdmConfigMetaData.version})`;
+                    const logMsg = `${logAttribute.id} (Configuration: ${this._cdmConfigMetaData?.id}, Version: ${this._cdmConfigMetaData?.version})`;
                     dataAccessMessage.attribute({
                         name: logMsg,
                         successful: success,
@@ -272,23 +298,8 @@ export class AuditLogger {
         return { attributesToLog, attributeExistsForLog };
     }
 
-    public static getAuditLogger({
-        auditLog,
-        auditCredentials,
-    }: {
-        auditLog?: AuditLogLike;
-        auditCredentials?: AuditCredentials;
-    }): AuditLogger {
-        if (auditLog) {
-            this._instance = new AuditLogger(auditLog);
-        } else if (!this._instance) {
-            this._instance = new AuditLogger({});
-        }
-
-        if (auditCredentials) {
-            this._instance._isConsoleMode = auditCredentials.logToConsole;
-        }
-        return this._instance;
+    public static create(options: AuditLoggerCreateOptions = {}): AuditLogger {
+        return new AuditLogger(options);
     }
 
     /**

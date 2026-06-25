@@ -259,7 +259,6 @@ export class PluginEndpoint {
                         });
 
                     const qeExecuteUpdateCallback = async (err, result) => {
-                        let resultSet = [];
                         let serviceResponse;
 
                         if (err) {
@@ -302,11 +301,7 @@ export class PluginEndpoint {
                                     );
                             }
 
-                            qeDeleteTempTablesCallback(
-                                null,
-                                resultSet,
-                                serviceResponse
-                            );
+                            qeDeleteTempTablesCallback(serviceResponse);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -314,26 +309,26 @@ export class PluginEndpoint {
 
                     /**teardown resource setup, returns response */
                     const qeDeleteTempTablesCallback = async (
-                        err,
-                        queryResult,
                         serviceResponse
                     ) => {
-                        const patientEntity = queryResult.filter(
+                        const patientEntity = serviceResponse.filter(
                             (dataset) => dataset.entity === "patient"
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
 
                         try {
-                            await AuditLogger.getAuditLogger({})
-                                .withCDMConfigMetaData(this.cdmConfigMetaData)
-                                .log(
-                                    "patient.attributes.pid",
-                                    auditLogChannelName,
-                                    pList,
-                                    true,
-                                    undefined,
-                                    this.selectedAttributes
-                                );
+                            const auditLogger = AuditLogger.create({
+                                cdmConfigMetaData: this.cdmConfigMetaData,
+                                request: this.request,
+                            });
+                            await auditLogger.log(
+                                "patient.attributes.pid",
+                                auditLogChannelName,
+                                pList,
+                                true,
+                                undefined,
+                                this.selectedAttributes
+                            );
                         } catch (_err) {
                             return errHandler(new Error("Auditlog error"));
                         }
@@ -341,8 +336,7 @@ export class PluginEndpoint {
                         if (mode === MODE.CSV) {
                             endpointResult.selectedAttributes =
                                 this.selectedAttributes;
-                            endpointResult.noValue =
-                                connLib.DBValues.NOVALUE;
+                            endpointResult.noValue = connLib.DBValues.NOVALUE;
                             if (metadataType) {
                                 const meta = this.MD
                                     ? JSON.stringify(this.MD)
