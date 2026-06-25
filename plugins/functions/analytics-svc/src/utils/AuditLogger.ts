@@ -1,8 +1,6 @@
-import * as async from "async";
-import { Logger, Connection as connLib } from "@alp/alp-base-utils";
-import ConnectionInterface = connLib.ConnectionInterface;
+import { Logger } from "@alp/alp-base-utils";
 import { CDMConfigMetaDataType } from "../types";
-import {env} from "../env"
+import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
 const AUDITLOG_REQ_CHUNK_SIZE = 10;
 
@@ -75,48 +73,16 @@ export class AuditLogger {
         // let st = new Date().getTime();
         // console.log(`# of patients: ${data.length}`);
         // console.log(`Splitting data...`);
-        if (Object.keys(this.auditLog).length === 0) {
-            alpAuditLogger.warn(
-                "AuditLogger.ts: Warning: call to auditlog.log function - audit log disabled."
-            );
-            return callback(null, "auditlog disabled");
-        }
-        let chunkArr = this._splitResultByChunkSize(data);
-        let tasks = [];
-        for (let i in chunkArr) {
-            let res = ((i) => {
-                let chunk = chunkArr[i];
-                tasks.push((callback) => {
-                    this.writeFineGrained(
-                        objectIdAttribute,
-                        channel,
-                        chunk,
-                        true,
-                        (err, data) => {
-                            if (err) {
-                                callback(err, null);
-                            } else {
-                                // console.log(`Completed chunk[${i}] ...`);
-                                callback(null, data);
-                            }
-                        },
-                        excludeAttributes,
-                        selectedAttributes,
-                        attachment
-                    );
-                });
-            })(i);
-        }
-        // console.log(`# of tasks: ${tasks.length}`);
-        async.series(tasks, (err, data) => {
-            if (err) {
-                callback(err, null);
-            } else {
-                // let et = new Date().getTime();
-                // console.log(`Audit logging completed. Time taken: ${(et - st) / 1000}s`);
-                callback(null, null);
-            }
-        });
+        this.logChunks(
+            objectIdAttribute,
+            channel,
+            data,
+            excludeAttributes,
+            selectedAttributes,
+            attachment
+        )
+            .then((result) => callback(null, result))
+            .catch((err) => callback(err, null));
     }
 
     /**
@@ -140,98 +106,171 @@ export class AuditLogger {
         selectedAttributes?: any[],
         attachment?: { id: string; name: string }
     ) {
-        let dataAccessMessage;
-        let object_id;
-        let dataLength = data.length;
-        let attributeExistsForLog: boolean = false;
-
-        let writeLog = (data, idx, attachment?) => {
-            object_id = (
-                data[objectIdAttribute] instanceof Array
-                    ? data[objectIdAttribute][0]
-                    : data[objectIdAttribute]
-            ).toString();
-            const defaultSelectedAttributes = [];
-            Object.keys(data).forEach((el) => {
-                defaultSelectedAttributes.push({
-                    id: el,
-                });
-            });
-            selectedAttributes =
-                !selectedAttributes || selectedAttributes.length === 0
-                    ? defaultSelectedAttributes
-                    : selectedAttributes;
-            dataAccessMessage = this.auditLog
-                .read({ type: "Patient", id: { key: object_id } })
-                .dataSubject({ type: "Patient", id: { key: object_id } })
-                .accessChannel(channel)
-                .by(this.user);
-
-            if (attachment) {
-                //if it is a attachment download
-                dataAccessMessage.attachment(attachment);
-            }
-
-            selectedAttributes
-                .filter((attribute) => {
-                    return !(
-                        attribute.id === objectIdAttribute ||
-                        (excludeAttributes
-                            ? excludeAttributes.indexOf(attribute.id) >= 0
-                            : false)
-                    );
-                })
-                .forEach((logAttribute, attrIdx) => {
-                    if (logAttribute) {
-                        try {
-                            let logMsg = `${logAttribute.id} (Configuration: ${this.cdmConfigMetaData.id}, Version: ${this.cdmConfigMetaData.version})`;
-                            dataAccessMessage.attribute({
-                                name: logMsg,
-                                successful: success,
-                            });
-                            attributeExistsForLog = true;
-                        } catch (e) {
-                            emptyResult.messageKey =
-                                "MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE";
-                            emptyResult.messageLevel = "Warning";
-                            alpAuditLogger.error(
-                                `SECURITY INCIDENT <AuditLogger>! Failed while logging attribute: ${logAttribute.id}; ${e.message}`
-                            );
-                            callback(
-                                new Error(
-                                    "ERROR: Please contact your system administrator"
-                                ),
-                                emptyResult
-                            );
-                        }
-                    }
-                });
-
-            if (attributeExistsForLog) {
-                //only if a single patient attribute is present in the the data, then it makes sense to log else skip
-                alpAuditLogger.audit(dataAccessMessage._content, this.user);
-                if (idx === dataLength - 1) {
-                    alpAuditLogger.info("Logged patients in Audit log...");
-                    callback(null, emptyResult);
-                }
-            } else {
-                callback(null, emptyResult);
-            }
-        };
-
         try {
-            const isLoggingEnabled = this.isEnabled();
-
-            if (!isLoggingEnabled) {
-                return callback(null, emptyResult);
-            }
-
-            data.forEach((row, idx) => {
-                writeLog(row, idx, attachment);
-            });
+            const result = await this.writeFineGrainedInternal(
+                objectIdAttribute,
+                channel,
+                data,
+                success,
+                excludeAttributes,
+                selectedAttributes,
+                attachment
+            );
+            callback(null, result);
+            return result;
         } catch (err) {
-            return callback(err);
+            callback(err);
+            throw err;
         }
+    }
+
+    private async logChunks(
+        objectIdAttribute: string,
+        channel: string,
+        data: any[],
+        excludeAttributes?: string[],
+        selectedAttributes?: any[],
+        attachment?: { id: string; name: string }
+    ) {
+        if (Object.keys(this.auditLog).length === 0) {
+            alpAuditLogger.warn(
+                "AuditLogger.ts: Warning: call to auditlog.log function - audit log disabled."
+            );
+            return "auditlog disabled";
+        }
+
+        const chunkArr = this._splitResultByChunkSize(data);
+        for (const chunk of chunkArr) {
+            await this.writeFineGrainedInternal(
+                objectIdAttribute,
+                channel,
+                chunk,
+                true,
+                excludeAttributes,
+                selectedAttributes,
+                attachment
+            );
+        }
+
+        // let et = new Date().getTime();
+        // console.log(`Audit logging completed. Time taken: ${(et - st) / 1000}s`);
+        return null;
+    }
+
+    private writeFineGrainedInternal(
+        objectIdAttribute: string,
+        channel: string,
+        data: any[],
+        success: boolean,
+        excludeAttributes?: string[],
+        selectedAttributes?: any[],
+        attachment?: { id: string; name: string }
+    ) {
+        const isLoggingEnabled = this.isEnabled();
+
+        if (!isLoggingEnabled) {
+            return emptyResult;
+        }
+
+        let attributeExistsForLog = false;
+        let attributesToLog = selectedAttributes;
+        for (const row of data) {
+            const logResult = this.writeLog(
+                objectIdAttribute,
+                channel,
+                row,
+                success,
+                excludeAttributes,
+                attributesToLog,
+                attachment,
+                attributeExistsForLog
+            );
+            attributesToLog = logResult.attributesToLog;
+            attributeExistsForLog = logResult.attributeExistsForLog;
+        }
+
+        if (attributeExistsForLog) {
+            alpAuditLogger.info("Logged patients in Audit log...");
+        }
+
+        return emptyResult;
+    }
+
+    private writeLog(
+        objectIdAttribute: string,
+        channel: string,
+        data: any,
+        success: boolean,
+        excludeAttributes?: string[],
+        selectedAttributes?: any[],
+        attachment?: { id: string; name: string },
+        attributeExistsForLog: boolean = false
+    ) {
+        const object_id = (
+            data[objectIdAttribute] instanceof Array
+                ? data[objectIdAttribute][0]
+                : data[objectIdAttribute]
+        ).toString();
+        const defaultSelectedAttributes = [];
+        Object.keys(data).forEach((el) => {
+            defaultSelectedAttributes.push({
+                id: el,
+            });
+        });
+        const attributesToLog =
+            !selectedAttributes || selectedAttributes.length === 0
+                ? defaultSelectedAttributes
+                : selectedAttributes;
+        const dataAccessMessage = this.auditLog
+            .read({ type: "Patient", id: { key: object_id } })
+            .dataSubject({ type: "Patient", id: { key: object_id } })
+            .accessChannel(channel)
+            .by(this.user);
+
+        if (attachment) {
+            //if it is a attachment download
+            dataAccessMessage.attachment(attachment);
+        }
+
+        const logAttributes = attributesToLog.filter((attribute) => {
+            return !(
+                attribute.id === objectIdAttribute ||
+                (excludeAttributes
+                    ? excludeAttributes.indexOf(attribute.id) >= 0
+                    : false)
+            );
+        });
+
+        logAttributes.forEach((logAttribute) => {
+            if (logAttribute) {
+                try {
+                    let logMsg = `${logAttribute.id} (Configuration: ${this.cdmConfigMetaData.id}, Version: ${this.cdmConfigMetaData.version})`;
+                    dataAccessMessage.attribute({
+                        name: logMsg,
+                        successful: success,
+                    });
+                    attributeExistsForLog = true;
+                } catch (e) {
+                    emptyResult.messageKey =
+                        "MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE";
+                    emptyResult.messageLevel = "Warning";
+                    alpAuditLogger.error(
+                        `SECURITY INCIDENT <AuditLogger>! Failed while logging attribute: ${logAttribute.id}; ${e.message}`
+                    );
+                    throw new Error(
+                        "ERROR: Please contact your system administrator"
+                    );
+                }
+            }
+        });
+
+        if (logAttributes.length > 0) {
+            //only if a single patient attribute is present in the the data, then it makes sense to log else skip
+            alpAuditLogger.audit(dataAccessMessage._content, this.user);
+            return { attributesToLog, attributeExistsForLog };
+        }
+
+        return { attributesToLog, attributeExistsForLog };
     }
 
     public static getAuditLogger({
