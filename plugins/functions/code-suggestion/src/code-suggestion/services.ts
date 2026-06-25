@@ -1,10 +1,34 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
-import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  HumanMessage,
+  SystemMessage,
+} from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
 import { createMcpClient } from "../mcp/client";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
-import { getRolePrompting } from "./prompts";
+import { getRolePrompting, getCohortPrompting } from "./prompts";
+
+// The single tool the cohort builder agent is allowed to call.
+const COHORT_BUILDER_TOOL = "build_d2e_cohort_deeplink";
+// The deep-link path the tool returns; captured deterministically so the LLM
+// never has to relay the (long, easily-placeholdered) URL itself.
+const COHORT_URL_RE = /\/portal\/researcher\/cohort\?[^\s")']+/;
+
+/** Pull the deep-link URL out of whatever shape the tool result arrives in. */
+function extractCohortUrl(toolResult: unknown): string | undefined {
+  let text: string;
+  if (typeof toolResult === "string") {
+    text = toolResult;
+  } else if (typeof (toolResult as any)?.content === "string") {
+    text = (toolResult as any).content;
+  } else {
+    text = JSON.stringify(toolResult ?? "");
+  }
+  const match = text.match(COHORT_URL_RE);
+  return match ? match[0] : undefined;
+}
 
 export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
   const context = `
@@ -50,7 +74,7 @@ export const getCodeSuggestion = async (uiCode: IUICodeSnippet) => {
     throw new Error(
       `Failed to generate code suggestion with model ${uiCode.model}: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
     );
   }
 };
@@ -102,7 +126,93 @@ export const getChatResponse = async (req: any) => {
     throw new Error(
       `Failed to get chat response with model ${uiChat.model}${datasetId}: ${
         error instanceof Error ? error.message : String(error)
-      }`
+      }`,
+    );
+  }
+};
+
+/**
+ * Cohort builder chat: a separate single-tool agent that turns a natural
+ * language age/gender description into a PA cohort deep link.
+ *
+ * Mirrors getChatResponse's streaming plumbing, but (1) filters the MCP tools
+ * down to just build_d2e_cohort_deeplink so the narrow job calls reliably, and
+ * (2) uses the dedicated cohort system prompt. See DATA-2305 design, Piece 2.
+ */
+export const getCohortResponse = async (req: any) => {
+  const uiChat: IChatSnippet = req.body;
+  const token = req.headers.authorization;
+  const datasetId = req.query.datasetId; // datasetId is passed as a query parameter
+  const model = await getModels(uiChat.model);
+
+  try {
+    const chatStart = performance.now();
+    const mcpClient = createMcpClient(token, datasetId);
+    const allTools = await mcpClient.getTools();
+    // Single-tool agent: fewer tools means more reliable tool calls for a
+    // narrow job (design decision 6).
+    const tools = allTools.filter((t: any) => t.name === COHORT_BUILDER_TOOL);
+    if (tools.length === 0) {
+      throw new Error(
+        `Cohort builder tool '${COHORT_BUILDER_TOOL}' not found on the MCP server`,
+      );
+    }
+
+    // Intercept the tool at its invoke boundary so we capture the REAL URL the
+    // tool returned, regardless of how the model later phrases (or mangles) it.
+    // linkRef is filled while the route consumes the stream (when the agent
+    // actually calls the tool); the route reads it after the stream ends.
+    const linkRef: { url: string } = { url: "" };
+    const cohortTool: any = tools[0];
+    const originalInvoke = cohortTool.invoke.bind(cohortTool);
+    cohortTool.invoke = async (input: any, config: any) => {
+      const out = await originalInvoke(input, config);
+      const url = extractCohortUrl(out);
+      if (url) linkRef.url = url;
+      return out;
+    };
+
+    const agent = createAgent({
+      model: model,
+      tools: tools,
+    });
+    console.log(
+      `[MCP-TIMING] [cohort-builder] MCP tools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
+    );
+    // Map prior conversation turns to LangChain message objects so the agent
+    // has full multi-turn context (oldest first, capped at 20 turns to bound
+    // token/payload size).
+    const MAX_HISTORY = 20;
+    const historyMessages = (uiChat.history ?? [])
+      .slice(-MAX_HISTORY)
+      .filter((m) => m.content?.trim())
+      .map((m) =>
+        m.role === "assistant"
+          ? new AIMessage(m.content)
+          : new HumanMessage(m.content),
+      );
+
+    const messages = [
+      new SystemMessage(getCohortPrompting(uiChat.userInput)),
+      ...historyMessages,
+      new HumanMessage(uiChat.userInput),
+    ];
+
+    const streamStart = performance.now();
+    const stream = await agent.stream(
+      { messages: messages },
+      { streamMode: "messages" },
+    );
+    console.log(
+      `[MCP-TIMING] [cohort-builder] agent.stream() initiated in ${(performance.now() - streamStart).toFixed(1)}ms`,
+    );
+    return { stream, linkRef };
+  } catch (error) {
+    console.error("Error in getCohortResponse:", error);
+    throw new Error(
+      `Failed to get cohort response with model ${uiChat.model}${datasetId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 };
