@@ -277,6 +277,11 @@ services:
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
       PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
+      # Gates the alp-dataflow-gen-init function (waitforEnvVar: PREFECT_HEALTH_CHECK)
+      # so trex waits for the Prefect API to be reachable before seeding its
+      # variables/blocks/workpool. Without it the init runs at boot before Prefect
+      # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
+      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api/health}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
