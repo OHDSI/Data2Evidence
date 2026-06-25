@@ -109,6 +109,13 @@ export function transformDBCredentials(
   dbCredentialsArray: DBCredentials[]
 ): TransformedDBCredentials[] {
   return dbCredentialsArray.map((dbCredentials) => {
+    // The trex core's getDatabaseCredentials() may return a credential without
+    // a `db_extra` object. Default it so the `db_extra.*` reads below don't throw
+    // "Cannot read properties of undefined (reading 'encrypt')" and crash the
+    // alp-dataflow-gen-init worker at module-eval (which would leave Prefect
+    // unseeded and make DQD flow runs fail).
+    dbCredentials.db_extra = dbCredentials.db_extra ?? {};
+
     // Extract read and admin credentials based on their type
     const readCredential = dbCredentials.credentials.find(
       (cred) => cred.userScope === UserScope.READ
