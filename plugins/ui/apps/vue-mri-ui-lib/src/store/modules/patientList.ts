@@ -224,6 +224,7 @@ const getInitialPatientListSortConfigPath = (
 }
 
 const applyDefaultSort = (patientListConfig, currentResultDefinition: IResultDefinition) => {
+  // Return early if there already is a sorted_attributes
   if (currentResultDefinition.sorted_attributes) {
     return currentResultDefinition
   }
