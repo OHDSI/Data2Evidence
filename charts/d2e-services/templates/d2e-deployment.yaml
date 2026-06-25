@@ -743,7 +743,7 @@ spec:
             - name: TREX_EXTENSIONS_PATH
               value: /usr/src/node_modules/@trex
             - name: TREX_POOL_SIZE
-              value: "64"
+              value: "1024"
             - name: TREXSQL_ENABLED
               value: "true"
             - name: SWARM_NODE
@@ -770,7 +770,7 @@ spec:
                         },
                         {
                           "name": "pgwire",
-                          "config": { "host": "0.0.0.0", "port": 5433 }
+                          "config": { "host": "0.0.0.0", "port": 5433, "password": "dummy" }
                         }
                       ]
                     }
@@ -924,6 +924,12 @@ spec:
               value: "dummy"
             - name: TREX_SQL_PASSWORD
               value: "$(TREX__SQL__PASSWORD)"
+            - name: JASYPT_ENCRYPTOR_ENABLED
+              value: "false"
+            - name: JASYPT_ENCRYPTOR_PASSWORD
+              value: ""
+            - name: JASYPT_ENCRYPTOR_ALGORITHM
+              value: "PBEWITHSHA256AND256BITAES-CBC-BC"
             - name: TPM_USE_NODE_MODULES
               value: "false"
             - name: USE_PUBLIC_WEBAPI_PROXY
