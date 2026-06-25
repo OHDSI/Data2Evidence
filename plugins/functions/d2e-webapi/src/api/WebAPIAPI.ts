@@ -138,7 +138,7 @@ export class WebAPIAPI {
   }
 
   async updateCohortDefinition(
-    cohortDefinition: IWebAPICohortDefinitionPayload,
+    cohortDefinition: IWebAPICohortDefinitionPayload & { id: number },
   ): Promise<IWebAPICohortDefinition> {
     const cohortDefinitionId = cohortDefinition.id;
     if (typeof cohortDefinitionId !== "number") {
