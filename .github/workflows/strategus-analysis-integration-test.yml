@@ -348,7 +348,7 @@ jobs:
       - name: Collect Prefect diagnostics on flow run failure
         if: failure() && env.PREFECT_FLOW_RUN_ID != ''
         env:
-          PREFECT_BASE: https://localhost:41100/d2e/prefect
+          PREFECT_BASE: https://localhost:41100/d2e/prefect/d2e/api
         run: |
           sudo apt-get install -y jq 2>/dev/null || true
           mkdir -p ./prefect-diagnostics
