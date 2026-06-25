@@ -194,6 +194,58 @@ const getters = {
   getColumnWidths: (state: IPatientListState) => state.columnWidths,
 }
 
+const getPidSortConfigPath = (patientListConfig, selectedAttributes: Record<string, number | string>) => {
+  const selectedAttributePaths = new Set(Object.keys(selectedAttributes))
+  const basicDataCols = patientListConfig.getBasicDataCols()
+  const basicAttributes = basicDataCols && Array.isArray(basicDataCols.attributes) ? basicDataCols.attributes : []
+  const personIdAttribute = basicAttributes.find(attribute => {
+    const configPath = attribute.getConfigPath()
+    const attributeKey = typeof configPath === 'string' ? configPath.split('.').pop() : ''
+    return attributeKey === 'pid' && selectedAttributePaths.has(configPath)
+  })
+  return personIdAttribute ? personIdAttribute.getConfigPath() : ''
+}
+
+const getInitialPatientListSortConfigPath = (
+  patientListConfig,
+  selectedAttributes: Record<string, number | string>
+) => {
+  const selectedAttributePaths = Object.keys(selectedAttributes)
+  const allAttributes = patientListConfig.getAllAttributes()
+  const initialPatientListAttributePaths = new Set(
+    Array.isArray(allAttributes)
+      ? allAttributes
+          .filter(attribute => attribute.isInitialInPatientList && attribute.isInitialInPatientList() === true)
+          .map(attribute => attribute.getConfigPath())
+      : []
+  )
+  // Returns first matching entry
+  return selectedAttributePaths.find(configPath => initialPatientListAttributePaths.has(configPath)) || ''
+}
+
+const applyDefaultSort = (patientListConfig, currentResultDefinition: IResultDefinition) => {
+  if (currentResultDefinition.sorted_attributes) {
+    return currentResultDefinition
+  }
+
+  const personIdSortConfigPath = getPidSortConfigPath(patientListConfig, currentResultDefinition.selected_attributes)
+  const fallbackSortConfigPath = getInitialPatientListSortConfigPath(
+    patientListConfig,
+    currentResultDefinition.selected_attributes
+  )
+  const defaultSortConfigPath = personIdSortConfigPath || fallbackSortConfigPath
+
+  if (!defaultSortConfigPath) {
+    return currentResultDefinition
+  }
+
+  return {
+    ...currentResultDefinition,
+    sorted_attributes: defaultSortConfigPath,
+    sorting_directions: 'A',
+  }
+}
+
 const actions = {
   sortAttribute({ commit, state, dispatch }, { configPath, sortOrder }) {
     commit(types.PL_UPDATE_SORT_ATTRIBUTE, {
@@ -393,6 +445,8 @@ const actions = {
       defaultResultDefinition = { ...state.dataModel.resultDefinition }
     }
 
+    defaultResultDefinition = applyDefaultSort(patientListConfig, defaultResultDefinition)
+
     commit(types.PL_INIT_DATAMODEL, {
       pageSize,
       currentPage: 1,
@@ -417,6 +471,7 @@ const actions = {
       sorting_directions,
       sorted_attributes,
     }
+    defaultResultDefinition = applyDefaultSort(patientListConfig, defaultResultDefinition)
 
     const pageSize = patientListConfig.getDefaultPageSize()
     const request = {
