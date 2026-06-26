@@ -4,12 +4,13 @@ import {
   type NotebookData,
   type NotebookHandle,
   type NotebookTheme,
-  WebRKernel,
+  buildKernelAssetUrls,
   createEmptyNotebook,
   serializeIpynb,
-} from "react-notebook/src/index";
+} from "@trex/notebook/src/index";
 import * as notebookApi from "../api/notebook-api";
 import { PyqeReadyPyodideKernel } from "../kernels/pyqeReadyPyodideKernel";
+import { RD2EReadyWebRKernel } from "../kernels/rD2EReadyWebRKernel";
 import type { NotebookRecord } from "../types";
 import { parseNotebookContent } from "../utils/starboard";
 import { CodingAssistant } from "./CodingAssistant";
@@ -21,14 +22,15 @@ import "./NotebookManager.scss";
 import { RenameDialog } from "./RenameDialog";
 import { Snackbar } from "./Snackbar";
 
-// __PYODIDE_VERSION__ is injected by Vite at build time (see vite.config.ts).
-// Matches the resolved version of the `pyodide` npm package the submodule
-// depends on, so the CDN URL we pass to loadPyodide cannot drift.
+// __PYODIDE_VERSION__ and __KERNEL_ASSET_BASE__ are injected by Vite at build
+// time (see vite.config.ts). In a production build all kernel runtimes load
+// from the app's own origin (air-gapped); in dev they fall back to CDNs.
 declare const __PYODIDE_VERSION__: string;
-const pyodideIndexUrl =
-  typeof __PYODIDE_VERSION__ !== "undefined"
-    ? `https://cdn.jsdelivr.net/pyodide/v${__PYODIDE_VERSION__}/full/`
-    : undefined;
+declare const __KERNEL_ASSET_BASE__: string;
+const kernelAssetUrls = buildKernelAssetUrls(
+  typeof __KERNEL_ASSET_BASE__ !== "undefined" ? __KERNEL_ASSET_BASE__ : "",
+  typeof __PYODIDE_VERSION__ !== "undefined" ? __PYODIDE_VERSION__ : "0.29.0",
+);
 
 const portalTheme: NotebookTheme = {
   primary: "#000080",
@@ -74,7 +76,7 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
   // on every mount; the cleanup terminates the old worker so reconnect actually
   // produces fresh state.
   const [pyodideKernel] = useState(() => new PyqeReadyPyodideKernel());
-  const [webRKernel] = useState(() => new WebRKernel());
+  const [webRKernel] = useState(() => new RD2EReadyWebRKernel());
   const kernels = useMemo(
     () => [pyodideKernel, webRKernel],
     [pyodideKernel, webRKernel],
@@ -142,8 +144,17 @@ export function NotebookManager({ datasetId, userId, getToken }: NotebookManager
       webREnvVars.TREX__AUTHORIZATION_TOKEN = token;
     }
     return [
-      { type: "pyodide" as const, envVars, indexUrl: pyodideIndexUrl },
-      { type: "webr" as const, envVars: webREnvVars },
+      {
+        type: "pyodide" as const,
+        envVars,
+        indexUrl: kernelAssetUrls.pyodideIndexUrl,
+      },
+      {
+        type: "webr" as const,
+        envVars: webREnvVars,
+        baseUrl: kernelAssetUrls.webrBaseUrl,
+        repoUrl: kernelAssetUrls.webrRepoUrl,
+      },
     ];
   }, [token, datasetId]);
 
