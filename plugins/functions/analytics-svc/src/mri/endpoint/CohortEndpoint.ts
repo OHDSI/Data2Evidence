@@ -16,6 +16,33 @@ import { env } from "../../env";
 
 const logger = CreateLogger("analytics-log");
 
+declare const Trex: any;
+
+function buildHanaConnectionUrl(dbCredential: any): string {
+    const host = dbCredential.host;
+    const port = Number(dbCredential.port);
+    const user = encodeURIComponent(dbCredential.user);
+    const password = encodeURIComponent(dbCredential.password);
+    const db = dbCredential.databaseName;
+    const useTLS =
+        (dbCredential.useTLS ?? dbCredential.encrypt ?? "true").toString() ===
+        "true";
+    const scheme = useTLS ? "hdbsqls" : "hdbsql";
+    const opts = useTLS ? "?insecure_omit_server_certificate_check" : "";
+    return `${scheme}://${user}:${password}@${host}:${port}/${db}${opts}`;
+}
+
+function extractSessionVars(dbCredential: any): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const key of Object.keys(dbCredential || {})) {
+        if (key.startsWith("SESSIONVARIABLE:")) {
+            const name = key.substring("SESSIONVARIABLE:".length);
+            out[name] = String(dbCredential[key]);
+        }
+    }
+    return out;
+}
+
 export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
