@@ -40,31 +40,29 @@ def data_characterization_plugin(options: DCOptionsType):
     logger.info(f"These analysis IDs will be excluded from Achilles run: {exclude_analysis_ids}")
 
     flow_run_id = runtime.flow_run.id
-
-    db_parameters = {
-        'database_code': options.databaseCode,
-        'cache_id': options.cacheId,
-    }
-    dbdao = DBDao(**db_parameters)
     
-    if dbdao.dialect != SupportedDatabaseDialects.HANA:
-        # Recreate the dbdao with the correct dialect for TREX connections
-        dbdao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+    # Resolve the real source dialect (dialect=None infers it from the dataset's
+    # database). HANA datasets are served through trex pgwire's HANA passthrough, so
+    # we keep use_trex_connection and only shape the cdm_source SQL for HANA (2-part,
+    # no DuckDB catalog prefix).
+    is_hana = (
+        DBDao(
+            dialect=None,
             database_code=options.databaseCode,
             cache_id=options.cacheId,
-        )
-    # If HANA dialect is used, substitute the cacheId with datasetId for PA/CDM config resolution
-    else:
-        dbdao.cache_id = options.datasetId if options.datasetId else options.cacheId
-
-    # Todo: Update implementation if Hana uses trex
-    # If the actual dialect is HANA, force use_trex_connection to False
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
+        ).dialect
+        == SupportedDatabaseDialects.HANA
     )
+    
+    dbdao = DBDao(
+        dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
+        database_code=options.databaseCode,
+        cache_id=options.cacheId,
+    )
+
+    dbdao.cache_id = options.datasetId if is_hana else options.cacheId
+
+    use_trex_connection = options.use_trex_connection
 
     cdm_source = get_cdm_source(
         dbdao,
