@@ -3,6 +3,11 @@
 @use './mixins' as *;
 @import 'vue-multiselect/dist/vue-multiselect.min.css';
 
+// Single CSS token for scoped component styles that can't read the SCSS var.
+:root {
+  --app-font-family: #{$font-family-sans-serif};
+}
+
 .mri-app-vue-container {
   @import './mri-bootstrap';
   @include mriBaseStyle;
