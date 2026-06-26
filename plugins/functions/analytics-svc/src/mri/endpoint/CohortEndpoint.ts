@@ -9,8 +9,6 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
-import { env } from "../../env";
-
 const logger = CreateLogger("analytics-log");
 
 declare const Trex: any;
@@ -590,7 +588,7 @@ export class CohortEndpoint {
                 { duckdb: (sql: string) => sql }
             );
             try {
-                const qo = QueryObject.format(
+                const materializeQuery = QueryObject.format(
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
                     url,
                     translatedSql,
@@ -599,7 +597,7 @@ export class CohortEndpoint {
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
                 );
-                const result = await qo.executeQuery<{ processed_rows: number }>(
+                const result = await materializeQuery.executeQuery<{ processed_rows: number }>(
                     memConn
                 );
                 return result?.data?.[0]?.processed_rows;
