@@ -153,7 +153,12 @@ export function transformDBCredentials(
       readRole: dbCredentials.db_extra.readRole
         ? dbCredentials.db_extra.readRole
         : "",
-      authMode: dbCredentials.authentication_mode,
+      // The trex core's getDatabaseCredentials() doesn't return authentication_mode,
+      // so it arrives undefined and JSON.stringify drops it from the Prefect
+      // database-credentials block — the flow's Pydantic DBCredentialsType then
+      // rejects the missing `authMode` and the datamodel/cache flows fail. The d2e
+      // stack authenticates with username/password, so default to Password.
+      authMode: dbCredentials.authentication_mode ?? AuthMode.PASSWORD,
       type: dbCredentials.db_extra.type 
         ? dbCredentials.db_extra.type 
         : "",
