@@ -25,6 +25,7 @@
     "vite-plugin-css-injected-by-js": "^3.5.1"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@data2evidence/d2e-starboard-wrap": "https://github.com/data2evidence/d2e-starboard-wrap.git#develop",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",

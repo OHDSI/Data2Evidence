@@ -17,6 +17,7 @@
     "prettier": "prettier --write \"**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@axa-fr/react-oidc": "6.10.9",
     "@babel/runtime": "^7.18.9",
     "@d4l/web-components-library": "^3.20.2",

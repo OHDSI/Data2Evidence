@@ -1,3 +1,4 @@
+import "@fontsource-variable/ibm-plex-sans";
 import { SystemAdminPagePlugin } from "@portal/plugin";
 import { App } from "./App";
 

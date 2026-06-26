@@ -24,8 +24,7 @@ $alp-alert-severities: (
   align-items: center; // single-row default; --multiline top-aligns instead
   gap: 12px;
   padding: 12px 16px;
-  // Fallback chain keeps a sans-serif where GT-America isn't loaded (e.g. Storybook).
-  font-family: var(--font-family-secondary, "GT-America", Helvetica, Arial, sans-serif);
+  font-family: var(--font-family-secondary, "GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", Helvetica, Arial, sans-serif);
   font-size: 16px;
   line-height: 1.4;
   box-sizing: border-box;
