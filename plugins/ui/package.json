@@ -471,7 +471,7 @@
             "pluginPath": "plugins/SystemAdmin/D2ELogs/module",
             "visible": true,
             "featureFlag": "d2eLogs",
-            "defaultEnabled": true,
+            "defaultEnabled": false,
             "route": "docker-logs"
           },
           {
