@@ -817,6 +817,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Manage dashboard' }).click()
     await page.getByText('Dashboard', { exact: true }).click()
     await page.getByRole('option', { name: 'Cohort' }).click()
+    await expect(page.getByText('cross-sectional-demographics').first()).toBeVisible()
 
     // build shiny assets
     await page.getByRole('button', { name: 'Build Shiny assets' }).click()
