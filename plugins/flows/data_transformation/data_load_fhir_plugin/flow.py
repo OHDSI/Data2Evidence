@@ -8,6 +8,8 @@ from prefect.variables import Variable
 from .types import DataloadOptions, FileType
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.FhirAPI import FhirAPI
+from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
+from _shared_flow_utils.types import SupportedDatabaseDialects
 
 if TYPE_CHECKING:
     from _shared_flow_utils.dao.daobase import DaoBase
@@ -21,8 +23,11 @@ def data_load_fhir_plugin(options: DataloadOptions):
     dataset_token = options.dataset_token
     try:
         fhir_database_code = Variable.get("fhir_database_code")
-        dbdao = DBDao(database_code=fhir_database_code,
-                      cache_id=options.cache_id)
+        dbdao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=fhir_database_code)   
+        fhir_dataset_schema = None
+        if truncate_tables:
+            portal_server_api = PortalServerAPI()
+            fhir_dataset_schema = get_fhir_dataset_schema(dataset_token, portal_server_api, logger)
         fhir_tables_all = set()
         for incoming_file in files:
             if(truncate_tables):
@@ -31,13 +36,19 @@ def data_load_fhir_plugin(options: DataloadOptions):
                 # Only truncate tables not already truncated
                 tables_to_truncate = [table for table in fhir_tables if table not in fhir_tables_all]
                 if tables_to_truncate:
-                    truncate_fhir_tables(tables_to_truncate, "fhir", dbdao, logger)
+                    truncate_fhir_tables(tables_to_truncate, fhir_dataset_schema, dbdao, logger)
                 # Add only new tables to the set
                 fhir_tables_all.update(tables_to_truncate)
             load_data(dataset_token, incoming_file, logger)
     except Exception as e:
         logger.error(f"Error connecting to trex fhir database: {e}")
         raise e
+
+
+def get_fhir_dataset_schema(dataset_token: str, portal_server_api: PortalServerAPI, logger) -> str:
+    dataset = portal_server_api.get_dataset_by_token(dataset_token)
+    fhir_dataset_id = dataset.get("schemaName")
+    return fhir_dataset_id
         
 @task(log_prints=True)
 def truncate_fhir_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):   
@@ -60,6 +71,7 @@ def post_fhir_resource(resource, idx, json_file, fhir_api: FhirAPI, logger, stud
         logger.info(f"Posted resource {resource_type} for index {idx}: {response}")
     except Exception as e:
         logger.error(f"Error posting resource for index {idx}: {e}")
+        raise e
 
 @task(log_prints=True)
 def load_data(dataset_token, json_file, logger):
