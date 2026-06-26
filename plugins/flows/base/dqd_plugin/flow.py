@@ -10,6 +10,7 @@ from prefect.logging import get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
 from .types import DqdOptionsType, DqdParams
+from .utils import collect_dqd_diagnostics
 
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.api.AnalyticsSvcAPI import AnalyticsSvcAPI
@@ -91,60 +92,84 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatab
     set_trex_env_string = set_trex_env_var(dqd_params.use_trex_connection)
     logger.debug(f"set_trex_env_string is {set_trex_env_string}")
     r_script_path = os.path.join(os.path.dirname(__file__), "execute_dqd.R")
-    with robjects.conversion.localconverter(robjects.default_converter):
-        robjects.r(f"source('{r_script_path}')")
-        r_execute_dqd = robjects.r['execute_dqd']
-        # For HANA the Database/Schemas are represented differently and do not use a dotted database.schema form
-        if dialect == SupportedDatabaseDialects.HANA:
-            cdm_database_schema = dqd_params.schemaName
-            vocab_database_schema = dqd_params.vocabSchemaName
-            cdm_source_name = dqd_params.schemaName
-        else:
-            # Qualify reads against the cache catalog (populated CDM tables) instead of the live source.
-            # When cacheId is not supplied (e.g. a Prefect Custom Run that hands us only datasetId),
-            # mirror the BeforeInsert default on the dataset entity (UUID → sanitized identifier)
-            # so the catalog still resolves to the cache alias trex attaches.
-            catalog = dqd_params.cacheId or _default_cache_id_from_dataset_id(dqd_params.datasetId) or dqd_params.databaseCode
-            cdm_database_schema = f"{catalog}.{dqd_params.schemaName}"
-            vocab_database_schema = f"{catalog}.{dqd_params.vocabSchemaName}"
-            cdm_source_name = f"{catalog}.{dqd_params.schemaName}"
+    try:
+        with robjects.conversion.localconverter(robjects.default_converter):
+            robjects.r(f"source('{r_script_path}')")
+            r_execute_dqd = robjects.r['execute_dqd']
+            # For HANA the Database/Schemas are represented differently and do not use a dotted database.schema form
+            if dialect == SupportedDatabaseDialects.HANA:
+                cdm_database_schema = dqd_params.schemaName
+                vocab_database_schema = dqd_params.vocabSchemaName
+                cdm_source_name = dqd_params.schemaName
+            else:
+                # Qualify reads against the cache catalog (populated CDM tables) instead of the live source.
+                # When cacheId is not supplied (e.g. a Prefect Custom Run that hands us only datasetId),
+                # mirror the BeforeInsert default on the dataset entity (UUID → sanitized identifier)
+                # so the catalog still resolves to the cache alias trex attaches.
+                catalog = dqd_params.cacheId or _default_cache_id_from_dataset_id(dqd_params.datasetId) or dqd_params.databaseCode
+                cdm_database_schema = f"{catalog}.{dqd_params.schemaName}"
+                vocab_database_schema = f"{catalog}.{dqd_params.vocabSchemaName}"
+                cdm_source_name = f"{catalog}.{dqd_params.schemaName}"
 
-        r_execute_dqd(
-            set_trex_env_string=set_trex_env_string,
-            setDBDriverEnv=dqd_params.setDBDriverEnv,
-            connectionDetailsString=dqd_params.connectionDetails,
-            cdmDatabaseSchema = cdm_database_schema,
-            vocabDatabaseSchema = vocab_database_schema,
-            resultsDatabaseSchema = dqd_params.resultsSchemaName,
-            cdmSourceName = cdm_source_name,
-            numThreads = dqd_params.numThreads,
-            sqlOnly = dqd_params.sqlOnly,
-            outputFolder = dqd_params.outputFolder,
-            outputFile = dqd_params.outputFile,
-            writeToTable = dqd_params.writeToTable,
-            verboseMode = dqd_params.verboseMode,
-            checkLevels = robjects.StrVector(dqd_params.checkLevels),
-            checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
-            cohortDefinitionId = convert_to_int_vector(dqd_params.cohortDefinitionId),
-            cdmVersion = dqd_params.cdmVersionNumber,
-            cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
-            cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
-        )   
-        
-    # Read the result from the output file
-    with open(f"{dqd_params.outputFolder}/{dqd_params.outputFile}", "rt") as f:
-        result_data = json.loads(f.read())
+            r_execute_dqd(
+                set_trex_env_string=set_trex_env_string,
+                setDBDriverEnv=dqd_params.setDBDriverEnv,
+                connectionDetailsString=dqd_params.connectionDetails,
+                cdmDatabaseSchema = cdm_database_schema,
+                vocabDatabaseSchema = vocab_database_schema,
+                resultsDatabaseSchema = dqd_params.resultsSchemaName,
+                cdmSourceName = cdm_source_name,
+                numThreads = dqd_params.numThreads,
+                sqlOnly = dqd_params.sqlOnly,
+                outputFolder = dqd_params.outputFolder,
+                outputFile = dqd_params.outputFile,
+                writeToTable = dqd_params.writeToTable,
+                verboseMode = dqd_params.verboseMode,
+                checkLevels = robjects.StrVector(dqd_params.checkLevels),
+                checkNames = robjects.StrVector(dqd_params.checkNames) if dqd_params.checkNames else robjects.NULL,
+                cohortDefinitionId = convert_to_int_vector(dqd_params.cohortDefinitionId),
+                cdmVersion = dqd_params.cdmVersionNumber,
+                cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
+                cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
+            )
 
-    # Create a markdown artifact with the result data
-    artifact_key = f"{flow_run_id}-dqd-output"
+        # Read the result from the output file
+        with open(f"{dqd_params.outputFolder}/{dqd_params.outputFile}", "rt") as f:
+            result_data = json.loads(f.read())
 
-    create_markdown_artifact(
-        key=artifact_key,
-        markdown=json.dumps(result_data),
-        description="DQD output stored as JSON",
-    )
+        # Create a markdown artifact with the result data
+        artifact_key = f"{flow_run_id}-dqd-output"
 
-    return result_data
+        create_markdown_artifact(
+            key=artifact_key,
+            markdown=json.dumps(result_data),
+            description="DQD output stored as JSON",
+        )
+
+        return result_data
+
+    except Exception as e:
+        logger.error(f"DQD run failed: {e}")
+
+        diagnostics = collect_dqd_diagnostics(
+            dqd_params.outputFolder,
+            output_file=dqd_params.outputFile,
+        )
+        error_result = {
+            "flow_run_id": flow_run_id,
+            "result": {},
+            "error": True,
+            "error_message": str(e),
+            "diagnostics": diagnostics,
+        }
+
+        create_markdown_artifact(
+            key=f"{flow_run_id}-dqd-error",
+            markdown=json.dumps(error_result),
+            description="DQD failure diagnostics",
+        )
+
+        raise
 
 
 @task(log_prints=True, task_run_name="get_cohort_database_schema_{dataset_id}")
