@@ -30,7 +30,7 @@ def is_safe_schema_name(schema: str) -> bool:
 
 def get_cdm_source(
     dbdao, schema: str, *, use_trex_connection: bool = False, is_hana: bool = False
-) -> str:
+) -> str | None:
     """
     Get the cdm_source_abbreviation from the cdm_source table.
     """
