@@ -796,10 +796,9 @@ test(TEST_NAME, async ({ page }) => {
     app = App(app_ui, app_server)`
     )
 
-    await page.getByRole('button', { name: 'Save' }).click()
-    await expect(page.getByText('Code saved successfully')).toBeVisible()
     await page.getByRole('button', { name: 'Add query' }).click()
     const queryName = page.getByRole('textbox', { name: 'Query name' })
+    await queryName.scrollIntoViewIfNeeded()
     await expect(queryName).toBeVisible()
     await queryName.fill('cross-sectional-demographics')
     const sql = page.getByRole('textbox', { name: 'SQL' })
@@ -810,7 +809,14 @@ test(TEST_NAME, async ({ page }) => {
     )
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Code saved successfully')).toBeVisible()
+
+    // Incase after saving, the Dashboard reloads and the "+ New" option is visible, we need to select the "cross-sectional-demographics" option again.
+    if (await page.getByText('+ New').isVisible()) {
+      await page.getByRole('combobox').filter({ hasText: '+ New' }).click()
+      await page.getByRole('option', { name: 'cross-sectional-demographics' }).click()
+    }
     await page.getByRole('button', { name: 'Build Shiny assets' }).click()
+
     await expect(page.getByText('Shiny assets build triggered successfully.')).toBeVisible()
     await page.getByTestId('dialog-close').click()
     await page.getByRole('link', { name: 'Jobs' }).click()
