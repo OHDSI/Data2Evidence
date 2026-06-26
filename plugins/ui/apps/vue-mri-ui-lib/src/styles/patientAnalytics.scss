@@ -4,6 +4,12 @@
   .fullHeight {
     height: 100%;
     display: flex;
+    min-height: 0;
+    overflow: hidden;
+
+    .splitpanes {
+      min-height: 0;
+    }
   }
   .hidden {
     display: none;
@@ -48,6 +54,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    height: 100%;
 
     .pane-left-content {
       display: flex;
@@ -58,10 +65,11 @@
     }
   }
   #pane-right {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
     position: relative;
+    height: 100%;
 
     .pane-right-content {
       position: inherit;

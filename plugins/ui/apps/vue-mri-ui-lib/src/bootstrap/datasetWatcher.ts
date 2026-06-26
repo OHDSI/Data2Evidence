@@ -23,6 +23,9 @@ export function installDatasetChangeWatcher(portalContext: PortalContextLike, vu
     const requestId = latestRequestId
 
     vuexStore.commit(SET_DATASET_RELOAD_IN_PROGRESS, { datasetReloadInProgress: true })
+    // Clear the active bookmark so the cohort tab does not remain open with
+    // stale data after a dataset/release switch.
+    vuexStore.commit('SET_ACTIVE_BOOKMARK', null)
 
     const isStale = () => requestId !== latestRequestId
 
