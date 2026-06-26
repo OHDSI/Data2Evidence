@@ -1,4 +1,4 @@
-import { Logger, getUser } from "@alp/alp-base-utils";
+import { getUser, Logger } from "@alp/alp-base-utils";
 import type { CDMConfigMetaDataType } from "../types";
 import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
@@ -7,29 +7,49 @@ const AUDITLOG_REQ_CHUNK_SIZE = 10;
 type AuditAttachment = { id: string; name: string };
 type AuditLogResult = QueryObjectResult | "auditlog disabled" | null;
 type AuditCredentials = { logToConsole?: boolean };
-type AuditPatientRef = { type: "Patient"; id: { key: string } };
 type AuditRow = Record<string, unknown>;
 type AuditSelectedAttribute = { id: string };
-type AuditDataAccessAttribute = { name: string; successful: boolean };
-type AuditLoggerCreateOptions = {
-    auditLog?: AuditLogLike;
+type AuditConfigMetaData = { id: string; version: string };
+type AuditConfigs = {
+    cohortBuilder?: AuditConfigMetaData;
+    cdm?: AuditConfigMetaData;
+};
+type AuditTransport = {
+    audit(message: unknown, user: string): void | Promise<void>;
+};
+type AuditLoggerCreateOptionsBase = {
+    auditTransport?: AuditTransport;
     auditCredentials?: AuditCredentials;
+    cohortBuilderConfigMetaData?: AuditConfigMetaData;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    ip?: string;
+};
+type AuditLoggerCreateOptions =
+    | (AuditLoggerCreateOptionsBase & {
+          request: unknown;
+          user?: string;
+      })
+    | (AuditLoggerCreateOptionsBase & {
+          request?: unknown;
+          user: string;
+      });
+type AuditDataAccessMessage = {
+    action: "read";
+    personId: string;
+    accessChannel: string;
+    successful: boolean;
+    configs?: AuditConfigs;
+    attachment?: AuditAttachment;
+    attributes: string[];
+};
+type AuditLoggerConstructorOptions = {
+    auditTransport: AuditTransport;
+    auditCredentials?: AuditCredentials;
+    cohortBuilderConfigMetaData?: AuditConfigMetaData;
     cdmConfigMetaData?: CDMConfigMetaDataType;
     ip?: string;
     request?: unknown;
     user?: string;
-};
-type AuditLogLike = Partial<{
-    read(ref: AuditPatientRef): AuditDataAccessMessage;
-}>;
-
-type AuditDataAccessMessage = {
-    _content: unknown;
-    dataSubject(ref: AuditPatientRef): AuditDataAccessMessage;
-    accessChannel(channel: string): AuditDataAccessMessage;
-    by(user?: string): AuditDataAccessMessage;
-    attachment(attachment: AuditAttachment): AuditDataAccessMessage;
-    attribute(attribute: AuditDataAccessAttribute): AuditDataAccessMessage;
 };
 
 type QueryObjectResult = {
@@ -83,31 +103,38 @@ export function getAuditUserIdFromRequest(req?: unknown): string | undefined {
 
 export class AuditLogger {
     private _isConsoleMode?: boolean = false;
-    private _auditLog: AuditLogLike;
+    private _auditTransport: AuditTransport;
+    private _cohortBuilderConfigMetaData?: AuditConfigMetaData;
     private _cdmConfigMetaData?: CDMConfigMetaDataType;
     private _ip?: string;
-    private _user?: string;
+    private _user: string;
 
     private constructor({
-        auditLog = {},
+        auditTransport,
         auditCredentials,
+        cohortBuilderConfigMetaData,
         cdmConfigMetaData,
         ip,
         request,
         user,
-    }: AuditLoggerCreateOptions) {
-        this._auditLog = auditLog;
+    }: AuditLoggerConstructorOptions) {
+        const auditUser = user ?? getAuditUserIdFromRequest(request);
+        if (!auditUser) {
+            throw new Error(
+                "AuditLogger requires a user or a request with a valid authorization header"
+            );
+        }
+
+        this._auditTransport = auditTransport;
         this._isConsoleMode = auditCredentials?.logToConsole;
+        this._cohortBuilderConfigMetaData = cohortBuilderConfigMetaData;
         this._cdmConfigMetaData = cdmConfigMetaData;
         this._ip = ip;
-        this._user = user ?? getAuditUserIdFromRequest(request);
+        this._user = auditUser;
     }
 
     private _isEnabled() {
-        return env.IS_AUDIT_LOG_ENABLED &&
-            env.IS_AUDIT_LOG_ENABLED.toLowerCase() === "true"
-            ? true
-            : false;
+        return env.IS_AUDIT_LOG_ENABLED?.toLowerCase() === "true";
     }
 
     /**
@@ -150,13 +177,6 @@ export class AuditLogger {
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment
     ): Promise<AuditLogResult> {
-        if (Object.keys(this._auditLog).length === 0) {
-            alpAuditLogger.warn(
-                "AuditLogger.ts: Warning: call to auditlog.log function - audit log disabled."
-            );
-            return "auditlog disabled";
-        }
-
         const chunkArr = this._splitResultByChunkSize(data);
         for (const chunk of chunkArr) {
             await this._writeRows(
@@ -175,7 +195,7 @@ export class AuditLogger {
         return null;
     }
 
-    private _writeRows(
+    private async _writeRows(
         objectIdAttribute: string,
         channel: string,
         data: AuditRow[],
@@ -184,16 +204,14 @@ export class AuditLogger {
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment
     ) {
-        const isLoggingEnabled = this._isEnabled();
-
-        if (!isLoggingEnabled) {
+        if (!this._isEnabled()) {
             return emptyResult;
         }
 
         let attributeExistsForLog = false;
         let attributesToLog = selectedAttributes;
         for (const row of data) {
-            const logResult = this._writeLog(
+            const logResult = await this._writeLog(
                 objectIdAttribute,
                 channel,
                 row,
@@ -214,7 +232,7 @@ export class AuditLogger {
         return emptyResult;
     }
 
-    private _writeLog(
+    private async _writeLog(
         objectIdAttribute: string,
         channel: string,
         data: AuditRow,
@@ -223,7 +241,7 @@ export class AuditLogger {
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment,
         attributeExistsForLog: boolean = false
-    ): WriteLogResult {
+    ): Promise<WriteLogResult> {
         const object_id = (
             (data[objectIdAttribute] instanceof Array
                 ? data[objectIdAttribute][0]
@@ -239,19 +257,21 @@ export class AuditLogger {
             !selectedAttributes || selectedAttributes.length === 0
                 ? defaultSelectedAttributes
                 : selectedAttributes;
-        const dataAccessMessage = (
-            this._auditLog as {
-                read(ref: AuditPatientRef): AuditDataAccessMessage;
-            }
-        )
-            .read({ type: "Patient", id: { key: object_id } })
-            .dataSubject({ type: "Patient", id: { key: object_id } })
-            .accessChannel(channel)
-            .by(this._user);
+        const dataAccessMessage: AuditDataAccessMessage = {
+            action: "read",
+            personId: object_id,
+            accessChannel: channel,
+            successful: success,
+            attributes: [],
+        };
+        const configs = this._getConfigs();
+        if (Object.keys(configs).length > 0) {
+            dataAccessMessage.configs = configs;
+        }
 
         if (attachment) {
             //if it is a attachment download
-            dataAccessMessage.attachment(attachment);
+            dataAccessMessage.attachment = attachment;
         }
 
         const logAttributes = attributesToLog.filter((attribute) => {
@@ -266,11 +286,7 @@ export class AuditLogger {
         logAttributes.forEach((logAttribute) => {
             if (logAttribute) {
                 try {
-                    const logMsg = `${logAttribute.id} (Configuration: ${this._cdmConfigMetaData?.id}, Version: ${this._cdmConfigMetaData?.version})`;
-                    dataAccessMessage.attribute({
-                        name: logMsg,
-                        successful: success,
-                    });
+                    dataAccessMessage.attributes.push(logAttribute.id);
                     attributeExistsForLog = true;
                 } catch (e) {
                     emptyResult.messageKey =
@@ -288,18 +304,29 @@ export class AuditLogger {
 
         if (logAttributes.length > 0) {
             //only if a single patient attribute is present in the the data, then it makes sense to log else skip
-            alpAuditLogger.audit(
-                dataAccessMessage._content as string | Error,
-                this._user
-            );
+            await this._auditTransport.audit(dataAccessMessage, this._user);
             return { attributesToLog, attributeExistsForLog };
         }
 
         return { attributesToLog, attributeExistsForLog };
     }
 
-    public static create(options: AuditLoggerCreateOptions = {}): AuditLogger {
-        return new AuditLogger(options);
+    private _getConfigs(): AuditConfigs {
+        const configs: AuditConfigs = {};
+        if (this._cohortBuilderConfigMetaData) {
+            configs.cohortBuilder = this._cohortBuilderConfigMetaData;
+        }
+        if (this._cdmConfigMetaData) {
+            configs.cdm = this._cdmConfigMetaData;
+        }
+        return configs;
+    }
+
+    public static create(options: AuditLoggerCreateOptions): AuditLogger {
+        return new AuditLogger({
+            ...options,
+            auditTransport: options.auditTransport ?? alpAuditLogger,
+        });
     }
 
     /**

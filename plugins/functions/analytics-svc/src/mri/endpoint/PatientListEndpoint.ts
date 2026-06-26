@@ -10,9 +10,9 @@ import * as utilsLib from "@alp/alp-base-utils";
 import { AuditLogger } from "../../utils/AuditLogger";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
 import {
-    QuerySvcResultType,
-    MRIEndpointResultMeasureType,
     MRIEndpointResultCategoryType,
+    MRIEndpointResultMeasureType,
+    QuerySvcResultType,
 } from "../../types";
 
 // Max length of the channel is 16 (limitation in audit server), hence we use abbreviations to shorten it.
@@ -188,6 +188,10 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                                 result.data[0].totalpcount;
                         }
                         const auditLogger = AuditLogger.create({
+                            cohortBuilderConfigMetaData: {
+                                id: configId,
+                                version: configVersion,
+                            },
                             cdmConfigMetaData,
                             request: httpReq,
                         });

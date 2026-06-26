@@ -1,23 +1,23 @@
 import crypto from "crypto";
 import { Readable } from "stream";
 import * as utilsLib from "@alp/alp-base-utils";
-import { QueryObject as qo, Connection as connLib } from "@alp/alp-base-utils";
+import { Connection as connLib, QueryObject as qo } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
 import ConnectionInterface = connLib.ConnectionInterface;
 import { Settings } from "../../qe/settings/Settings";
 import {
+    BackendConfigWithCDMConfigMetaDataType,
+    CohortDefinitionType,
+    ExtensionMetadata,
+    FilterType,
+    IMRIRequest,
+    MRIEndpointResultCategoryType,
+    MRIEndpointResultMeasureType,
+    PluginEndpointFormatType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
-    ExtensionMetadata,
-    CohortDefinitionType,
-    PluginEndpointFormatType,
-    FilterType,
-    BackendConfigWithCDMConfigMetaDataType,
-    QuerySvcResultType,
-    IMRIRequest,
-    MRIEndpointResultMeasureType,
-    MRIEndpointResultCategoryType,
     PluginSelectedAttributeType,
+    QuerySvcResultType,
 } from "../../types";
 import { AuditLogger } from "../../utils/AuditLogger";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
@@ -318,6 +318,8 @@ export class PluginEndpoint {
 
                         try {
                             const auditLogger = AuditLogger.create({
+                                cohortBuilderConfigMetaData:
+                                    this.paConfigMetaData,
                                 cdmConfigMetaData: this.cdmConfigMetaData,
                                 request: this.request,
                             });
@@ -330,6 +332,7 @@ export class PluginEndpoint {
                                 this.selectedAttributes
                             );
                         } catch (_err) {
+                            console.error(_err);
                             return errHandler(new Error("Auditlog error"));
                         }
 
@@ -458,6 +461,7 @@ export class PluginEndpoint {
                     const endpointResult: PluginEndpointStreamResultType = {
                         entity: "",
                         data: Readable.from(""),
+                        auditLogChannelName,
                     };
 
                     let { query, pCountQuery, noDataReason } =
@@ -466,6 +470,22 @@ export class PluginEndpoint {
                             datasetId: datasetId,
                             language: "",
                         });
+                    log.info(
+                        `[codex-debug-retrieveDataStream] ${JSON.stringify({
+                            stage: "buildTempTableQuery",
+                            hasQuery: Boolean(query),
+                            hasPCountQuery: Boolean(pCountQuery),
+                            noDataReason: noDataReason ?? null,
+                            selectedAttributeIds:
+                                this.selectedAttributes?.map(
+                                    (attribute) => attribute.id
+                                ) ?? [],
+                            entityQueryMapLength:
+                                this.entityQueryMap?.length ?? 0,
+                            cdmConfigId: this.cdmConfigMetaData?.id,
+                            cdmConfigVersion: this.cdmConfigMetaData?.version,
+                        })}`
+                    );
                     if (!query) {
                         if (noDataReason) {
                             endpointResult.noDataReason = noDataReason;
@@ -505,10 +525,10 @@ export class PluginEndpoint {
                     //3
 
                     const streamQuery = async (
-                        entity,
+                        entity: string,
                         query: QueryObject
                     ): Promise<{
-                        entity: any;
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }> => {
                         try {
@@ -569,11 +589,23 @@ export class PluginEndpoint {
                                 entityObj.query.parameterPlaceholders,
                                 entityObj.query.sqlReturnOn
                             );
+                            log.info(
+                                `[codex-debug-retrieveDataStream] ${JSON.stringify(
+                                    {
+                                        stage: "beforeStreamQuery",
+                                        entity: entityObj.entity,
+                                        selectedAttributeIds:
+                                            this.selectedAttributes?.map(
+                                                (attribute) => attribute.id
+                                            ) ?? [],
+                                    }
+                                )}`
+                            );
                             const dataStream = await streamQuery(
                                 entityObj.entity,
                                 qo
                             );
-                            await qePrepareDataStream(dataStream);
+                            qePrepareDataStream(dataStream);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -581,23 +613,32 @@ export class PluginEndpoint {
 
                     // Setup data stream events and return response
                     //4
-                    const qePrepareDataStream = async (dataStream: {
-                        entity: any;
+                    const qePrepareDataStream = (dataStream: {
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }) => {
-                        let rows = [];
                         const CHUNK_SIZE = 10;
-                        const auditLogger = AuditLogger.getAuditLogger(
-                            {}
-                        ).withCDMConfigMetaData(this.cdmConfigMetaData);
                         let rowCount = 0;
 
-                        const resultcb = (logErr) => {
-                            if (logErr) {
-                                log.error(logErr);
-                                return errHandler(new Error("Auditlog error"));
-                            }
-                        };
+                        log.info(
+                            `[codex-debug-retrieveDataStream] ${JSON.stringify({
+                                stage: "prepareDataStream",
+                                entity: dataStream.entity,
+                                streamConstructor:
+                                    dataStream.data?.constructor?.name,
+                                streamPrototype:
+                                    dataStream.data?.constructor?.prototype?.toString?.(),
+                                isWebReadableStream:
+                                    dataStream.data instanceof ReadableStream,
+                                selectedAttributeIds:
+                                    this.selectedAttributes?.map(
+                                        (attribute) => attribute.id
+                                    ) ?? [],
+                                hasAuditLogger: true,
+                                pendingAuditRows: 0,
+                                auditChunkSize: CHUNK_SIZE,
+                            })}`
+                        );
 
                         //Exception for duckdb
                         if (
@@ -608,6 +649,15 @@ export class PluginEndpoint {
                             dataStream.data.on("end", () => {
                                 log.debug(
                                     `total streamed rows for ${dataStream.entity}: ${rowCount}`
+                                );
+                                log.info(
+                                    `[codex-debug-retrieveDataStream] ${JSON.stringify(
+                                        {
+                                            stage: "nodeStreamEnd",
+                                            entity: dataStream.entity,
+                                            rowCount,
+                                        }
+                                    )}`
                                 );
                             });
 
@@ -620,6 +670,10 @@ export class PluginEndpoint {
                             entity: dataStream.entity,
                             data: dataStream.data,
                             rowCount: rowCount,
+                            selectedAttributes: this.selectedAttributes,
+                            cohortBuilderConfigMetaData: this.paConfigMetaData,
+                            cdmConfigMetaData: this.cdmConfigMetaData,
+                            auditLogChannelName,
                         });
                     };
 

@@ -38,6 +38,7 @@ let emptyResult: PluginEndpointResultType = {
 const emptyStreamResult: PluginEndpointStreamResultType = {
     entity: "",
     data: undefined,
+    auditLogChannelName: "MRI Pt. List Stream",
 };
 
 async function retrieveDataset(
@@ -566,7 +567,7 @@ function formatQueryParams(boolContainers) {
                                 0
                         ) {
                             const name = attributes.content[iii].configPath;
-                            const visibleConstraints = [];
+                            const visibleConstraints: string[] = [];
                             const constraints =
                                 attributes.content[iii].constraints;
                             for (
@@ -582,7 +583,11 @@ function formatQueryParams(boolContainers) {
                                         v += 1
                                     ) {
                                         visibleConstraints.push(
-                                            `${constraints.content[iv].content[v].operator}${constraints.content[iv].content[v].value}`
+                                            `${constraints.content[iv].content[v].operator}${
+                                                constraints.content[iv].content[
+                                                    v
+                                                ].value
+                                            }`
                                         );
                                     }
                                 } else if (
@@ -611,7 +616,9 @@ function formatQueryParams(boolContainers) {
                                     }
                                 } else {
                                     visibleConstraints.push(
-                                        `${constraints.content[iv].operator}${constraints.content[iv].value}`
+                                        `${constraints.content[iv].operator}${
+                                            constraints.content[iv].value
+                                        }`
                                     );
                                 }
                             }
@@ -652,7 +659,6 @@ function encryptData(data) {
 }
 
 /**
- *
  * Retrieves patient data
  * @export
  * @param {any} req
