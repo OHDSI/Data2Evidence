@@ -105,6 +105,9 @@ export class PostgresService implements OnAppBootstrap, OnAppClose {
   async onAppClose() {
     if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
+      // Reset so a re-bootstrap (warm worker reuse) re-initialises the singleton
+      // instead of handing back this now-destroyed DataSource.
+      _initPromise = null;
     }
 
     if (this.client?.connected) {
