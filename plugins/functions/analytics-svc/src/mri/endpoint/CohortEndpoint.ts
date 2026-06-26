@@ -9,9 +9,6 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
-import axios from "npm:axios";
-import https from "node:https";
-import fs from "node:fs";
 import { env } from "../../env";
 
 const logger = CreateLogger("analytics-log");
@@ -578,33 +575,39 @@ export class CohortEndpoint {
                 preparedQuery.sql
             );
 
-            const result = await axios.post(
-                `${env.SERVICE_ROUTES.materializeCohorts}/api/stream/run-all`,
-                {
-                    datasetId: metadata.datasetId,
-                    query: translatedSql,
-                    sqlQueryParameters: preparedQuery.placeholders,
-                    cohortDefinitionId,
-                    resultsSchema: this.schemaName,
-                    databaseCode: metadata.dbCredential.code,
-                    dbCredential: metadata.dbCredential,
-                },
-                {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": metadata.token,
-                    },
-                    httpsAgent: new https.Agent({
-                        keepAlive: true,
-                        cert: fs.readFileSync("/usr/src/cert/client.crt"),
-                        key: fs.readFileSync("/usr/src/cert/client.key"),
-                        ca: fs.readFileSync("/usr/src/cert/ca.crt"),
-                        rejectUnauthorized: true,
-                    }),
-                }
-            );
+            const url = buildHanaConnectionUrl(metadata.dbCredential);
+            const sessionVars = extractSessionVars(metadata.dbCredential);
 
-            return result.data.processedRows;
+            // The hana extension's trex_hana_materialize_cohort is registered on the
+            // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
+            // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
+            // numeric literal so DuckDB parses it as BIGINT, not a coerced DOUBLE).
+            const memConn = (Trex as any).databaseManager().getConnection(
+                "memory",
+                "",
+                "",
+                "",
+                { duckdb: (sql: string) => sql }
+            );
+            try {
+                const qo = QueryObject.format(
+                    "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
+                    url,
+                    translatedSql,
+                    JSON.stringify(preparedQuery.placeholders ?? []),
+                    this.schemaName,
+                    Number(cohortDefinitionId),
+                    JSON.stringify(sessionVars)
+                );
+                const result = await qo.executeQuery<{ processed_rows: number }>(
+                    memConn
+                );
+                return result?.data?.[0]?.processed_rows;
+            } finally {
+                if (typeof memConn?.close === "function") {
+                    memConn.close();
+                }
+            }
         } catch (err) {
             logger.error(
                 `Failed to insert cohort with data: ${JSON.stringify(cohort)}`
