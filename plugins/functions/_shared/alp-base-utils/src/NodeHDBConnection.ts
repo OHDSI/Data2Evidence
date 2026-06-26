@@ -29,6 +29,14 @@ export class NodeHDBConnection implements ConnectionInterface {
       return;
     }
     const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName, resultsSchemaName);
+    // When no schema is configured (e.g. a database-level connection such as the
+    // schema-exists pre-check that runs before a dataset/schema exists), fall back
+    // to the connection user's default schema instead of emitting
+    // SET SCHEMA "undefined", which HANA rejects ("invalid schema name: undefined").
+    if (!schemaName) {
+      callback(null, conn);
+      return;
+    }
     const sql = 'SET SCHEMA "' + schemaName + '"';
     conn.execute(sql, [], (err, data) => {
       if (err) {

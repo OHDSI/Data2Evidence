@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 
 from string import Template
 from functools import partial
@@ -41,31 +42,31 @@ def data_characterization_plugin(options: DCOptionsType):
 
     flow_run_id = runtime.flow_run.id
 
+    # Resolve the real source dialect (dialect=None infers it from the dataset's
+    # database). HANA datasets are served through trex pgwire's HANA passthrough, so
+    # we keep use_trex_connection and only shape the cdm_source SQL for HANA (2-part,
+    # no DuckDB catalog prefix).
+    is_hana = (
+        DBDao(
+            dialect=None,
+            database_code=options.databaseCode,
+            cache_id=options.cacheId,
+        ).dialect
+        == SupportedDatabaseDialects.HANA
+    )
+
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
-    
-    if dbdao.dialect != SupportedDatabaseDialects.HANA:
-        dbdao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-            database_code=options.databaseCode,
-            cache_id=options.cacheId,
-        )
-
-    # Todo: Update implementation if Hana uses trex
-    # If the actual dialect is HANA, force use_trex_connection to False
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
-    )
+    use_trex_connection = options.use_trex_connection
 
     cdm_source = get_cdm_source(
         dbdao,
         schema=options.schemaName,
-        use_trex_connection=use_trex_connection,
+        use_trex_connection=options.use_trex_connection,
+        is_hana=is_hana,
     )
 
     r_connection_string = dbdao.get_r_database_connector_connection_string(
@@ -87,7 +88,7 @@ def data_characterization_plugin(options: DCOptionsType):
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
     # For TREX connections, set vocabSchemaName to schemaName
-    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+    if not is_hana and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
         catalog = options.cacheId or options.databaseCode
         achilles_params.schemaName = f"{catalog}.{options.schemaName}"
@@ -97,7 +98,7 @@ def data_characterization_plugin(options: DCOptionsType):
         achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
     )
 
-    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+    if not is_hana and use_trex_connection:
         if hasattr(dbdao, "clear_pg_cache"):
             dbdao.clear_pg_cache()
 
@@ -127,6 +128,13 @@ def data_characterization_plugin(options: DCOptionsType):
                 achilles_params.vocabSchemaName,
                 dbdao,
                 logger,
+            )
+        else:
+            logger.warning(
+                "Skipping concept record count step (executeConceptRecordCount="
+                f"{options.executeConceptRecordCount!r}): achilles_result_concept_count "
+                "will NOT be created, so conceptRecordCount queries return empty for "
+                f"results schema '{achilles_params.resultsSchema}'."
             )
 
         # Todo: Update implementation if Hana uses trex
@@ -209,14 +217,22 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
         )
 
     except Exception as e:
+        logger.error(f"create_results_schema failed for '{results_schema}': {e}")
+        logger.error(traceback.format_exc())
         raise
     else:
         return True
 
 
 def execute_sql_script(sql_script: str, dbdao):
+    logger = get_run_logger()
     if dbdao.dialect == SupportedDatabaseDialects.TREX:
-        dbdao.execute_sql(sql_script)
+        try:
+            dbdao.execute_sql(sql_script)
+        except Exception as e:
+            logger.error(f"execute_sql_script (trex/pgwire) failed: {e}")
+            logger.error(f"Failing script (first 1000 chars): {sql_script.strip()[:1000]}")
+            raise
     else:
         with dbdao.engine.begin() as conn:
             try:
@@ -229,12 +245,16 @@ def execute_sql_script(sql_script: str, dbdao):
                                 dbdao.dialect == SupportedDatabaseDialects.HANA
                                 and "index already exists" in str(stmt_e).lower()
                             ):
+                                logger.debug(
+                                    "Ignoring 'index already exists' for statement: "
+                                    f"{statement.strip()[:200]}"
+                                )
                                 continue
+                            logger.error(
+                                f"SQL statement failed ({dbdao.dialect}): {stmt_e}"
+                            )
+                            logger.error(f"Failing statement: {statement.strip()[:500]}")
                             raise
-            except Exception as e:
-                raise
-            else:
-                conn.commit()
             finally:
                 conn.close()
 
@@ -434,20 +454,46 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
             )
 
     except Exception as e:
-        logger.error("execute_export_to_ares task failed")
+        logger.error(f"execute_export_to_ares task failed: {e}")
+        logger.error(traceback.format_exc())
         error_file_name = "errorReportSql.txt"
 
-        # Get name of folder created by at {output_folder/cdm_source_abbreviation}
-        ares_output_path = get_export_to_ares_output_path(
-            achilles_params.outputFolder, cdm_source
-        )
+        # Resolving the ARES output path itself iterates the output dir and can throw
+        # (e.g. when the per-source folder was never created because export failed
+        # early). Guard it so the real failure isn't masked by a secondary error.
+        try:
+            ares_output_path = get_export_to_ares_output_path(
+                achilles_params.outputFolder, cdm_source
+            )
+        except Exception as path_e:
+            ares_output_path = achilles_params.outputFolder
+            logger.error(
+                f"Could not resolve ARES output path (cdm_source={cdm_source!r}): {path_e}"
+            )
 
         error_message = (
             get_error_message(error_file_name, ares_output_path)
             or get_error_message(error_file_name)
             or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
         )
-        logger.error(error_message)
+        logger.error(f"ARES export error detail: {error_message}")
+
+        # Surface the failure as an artifact so it's visible in the Prefect UI.
+        # Non-fatal by design: the Achilles results schema is valid even when the
+        # downstream ARES export fails, so we do NOT re-raise (which would trigger
+        # the drop-schema hook and discard good results).
+        create_markdown_artifact(
+            key="export-to-ares-error",
+            markdown=json.dumps(
+                {
+                    "error": True,
+                    "schema": achilles_params.resultsSchema,
+                    "exception": str(e),
+                    "error_message": error_message,
+                }
+            ),
+            description="Export to Ares FAILED (non-fatal; Achilles results retained)",
+        )
     else:
         ares_output_path = get_export_to_ares_output_path(
             achilles_params.outputFolder, cdm_source
@@ -490,6 +536,11 @@ def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, 
         logger.info(f"Concept record counts successfully created!")
 
     except Exception as e:
+        logger.error(
+            f"execute_concept_record_count failed for '{results_schema}' "
+            f"(dialect={dbdao.dialect}): {e}"
+        )
+        logger.error(traceback.format_exc())
         raise
     else:
         return True

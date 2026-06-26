@@ -28,13 +28,21 @@ def is_safe_schema_name(schema: str) -> bool:
     return match(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$", schema) is not None
 
 
-def get_cdm_source(dbdao, schema: str, *, use_trex_connection: bool = False) -> str:
+def get_cdm_source(
+    dbdao, schema: str, *, use_trex_connection: bool = False, is_hana: bool = False
+) -> str:
     """
     Get the cdm_source_abbreviation from the cdm_source table.
     """
     if use_trex_connection:
-        catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
-        sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
+        if is_hana:
+            # HANA datasets go through trex pgwire's HANA passthrough, which ships the
+            # literal query to HANA. Reference the table 2-part as "<schema>"."cdm_source";
+            # a DuckDB catalog prefix (cache_id/database_code) is meaningless to HANA.
+            sql = f'SELECT cdm_source_abbreviation FROM "{schema}"."cdm_source"'
+        else:
+            catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
+            sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
         value = dbdao.execute_sql(
             sql,
             fetch=True,
