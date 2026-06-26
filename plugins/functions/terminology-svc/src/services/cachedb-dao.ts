@@ -63,6 +63,31 @@ export class CachedbDAO {
   private readonly avgDlSynonym = 65.1; // measured average document length over concept_synonym_name in omop concept_synonym table (June 2025)
   private readonly synonymBm25Scale = this.avgDlSynonym / this.avgDlConcept; // rescale synonym BM25 scores to be comparable with concept BM25 scores, based on average document lengths
 
+  // ---------------------------------------------------------------------------
+  // Scoring constants
+  //
+  // Concept-name exact-match tiers (mutually exclusive, highest priority).
+  // These form the primary ranking signal. Maintain a gap of ≥ 200 between
+  // each tier so that no combination of additive boosts below can bridge tiers.
+  //   Allowed range: any positive integers with consecutive gaps ≥ 200.
+  private readonly scoreConceptNameEquals = 1000;
+  private readonly scoreConceptNamePrefix = 800;
+  private readonly scoreConceptNameContains = 600;
+
+  // Standard-concept tiebreaker (additive within a tier).
+  // Must be < inter-tier gap (200) so it never bumps a row into the next tier.
+  //   Allowed range: (0, 200)
+  private readonly scoreStandardBoost = 100;
+
+  // Synonym exact-match boosts (additive, applied on top of the concept-name tier).
+  // Must be < inter-tier gap (200) − scoreStandardBoost (100) = < 100 so that
+  // no synonym boost can push a lower-tier name match above a higher-tier one,
+  // even when the standard-concept boost also applies.
+  //   Allowed range: scoreSynonymPrefix < scoreSynonymEquals < 100
+  private readonly scoreSynonymEquals = 80;
+  private readonly scoreSynonymPrefix = 40;
+  // ---------------------------------------------------------------------------
+
   constructor(
     vocabSchemaName: string,
     semanticRatio: number,
@@ -87,16 +112,16 @@ export class CachedbDAO {
   private readonly escapeLike = (s: string): string =>
     s.replace(/[%_\\]/g, "\\$&");
 
-  //   syn_exact_score: 700 if a synonym equals the query,
-  //                    500 on prefix, else 0.
+  //   syn_exact_score: scoreSynonymEquals if a synonym equals the query,
+  //                    scoreSynonymPrefix on prefix, else 0.
   //   syn_bm25:        BM25 from the synonym FTS index.
   private readonly getSynonymScoresCTE = (): string => `
     synonym_scores as (
       select
         cs.concept_id,
         MAX(CASE
-          WHEN LOWER(cs.concept_synonym_name) = LOWER($1) THEN 700
-          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN 500
+          WHEN LOWER(cs.concept_synonym_name) = LOWER($1) THEN ${this.scoreSynonymEquals}
+          WHEN LOWER(cs.concept_synonym_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreSynonymPrefix}
           ELSE 0
         END) as syn_exact_score,
         MAX(cs.raw_bm25) as syn_bm25
@@ -504,9 +529,9 @@ export class CachedbDAO {
    * Build the SQL used by the /concept search endpoint.
    *
    *   score = relevance + exact_match_score + syn_exact_score + standard_boost
-   *   exact_match_score (concept_name): 1000 equals / 800 prefix / 600 contains
-   *   syn_exact_score   (concept_synonym, max over rows): 700 equals / 500 prefix
-   *   standard_boost                                    : 100 if standard_concept = 'S'
+   *   exact_match_score (concept_name): scoreConceptNameEquals / scoreConceptNamePrefix / scoreConceptNameContains
+   *   syn_exact_score   (concept_synonym, max over rows): scoreSynonymEquals / scoreSynonymPrefix
+   *   standard_boost                                    : scoreStandardBoost if standard_concept = 'S'
    *
    * Relevance term:
    *   fts_score = GREATEST(concept_bm25, syn_bm25)
@@ -575,14 +600,14 @@ export class CachedbDAO {
             ${columnsToSelect}${columns.length === 0 ? ", " : ""}
             -- Exact match scoring (highest priority)
             CASE
-              WHEN LOWER(concept_name) = LOWER($1) THEN 1000
-              WHEN LOWER(concept_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN 800
-              WHEN LOWER(concept_name) LIKE '%' || LOWER($2) || '%' ESCAPE '\\' THEN 600
+              WHEN LOWER(concept_name) = LOWER($1) THEN ${this.scoreConceptNameEquals}
+              WHEN LOWER(concept_name) LIKE LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreConceptNamePrefix}
+              WHEN LOWER(concept_name) LIKE '%' || LOWER($2) || '%' ESCAPE '\\' THEN ${this.scoreConceptNameContains}
               ELSE 0
             END as exact_match_score,
             -- Standard concept boost
             CASE
-              WHEN standard_concept = 'S' THEN 100
+              WHEN standard_concept = 'S' THEN ${this.scoreStandardBoost}
               ELSE 0
             END as standard_boost
           from
