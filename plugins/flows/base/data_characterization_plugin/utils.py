@@ -37,9 +37,10 @@ def get_cdm_source(
     if use_trex_connection:
         if is_hana:
             # HANA datasets go through trex pgwire's HANA passthrough, which ships the
-            # literal query to HANA. Reference the table 2-part as "<schema>"."cdm_source";
-            # a DuckDB catalog prefix (cache_id/database_code) is meaningless to HANA.
-            sql = f'SELECT cdm_source_abbreviation FROM "{schema}"."cdm_source"'
+            # literal query to HANA. HANA folds unquoted identifiers to UPPER-CASE, so the
+            # table must be referenced UNQUOTED (quoted "cdm_source" would not match the
+            # actual CDM_SOURCE table). No DuckDB catalog prefix — meaningless to HANA.
+            sql = f'SELECT cdm_source_abbreviation FROM "{schema}".cdm_source'
         else:
             catalog = getattr(dbdao, "cache_id", None) or dbdao.database_code
             sql = f'SELECT cdm_source_abbreviation FROM "{catalog}"."{schema}"."cdm_source"'
