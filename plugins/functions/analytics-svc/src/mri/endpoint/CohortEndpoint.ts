@@ -578,8 +578,43 @@ export class CohortEndpoint {
                 preparedQuery.sql
             );
 
-            const url = buildHanaConnectionUrl(metadata.dbCredential);
-            const sessionVars = extractSessionVars(metadata.dbCredential);
+            // Materializing a cohort WRITES to the source HANA, so it must authenticate as
+            // the admin/write user. metadata.dbCredential is the read-scope analytics
+            // credential (TENANT_READ_USER) used for patient-data reads — using it here
+            // fails HANA authentication. Resolve the source's Admin credential from trex
+            // (the same one HanaDB uses for source writes) and swap in its user/password.
+            let writeCredential = metadata.dbCredential;
+            try {
+                const sourceCreds =
+                    (Trex as any).databaseManager().getDatabaseCredentials() || [];
+                const source = sourceCreds.find(
+                    (s: any) =>
+                        s.id === metadata.dbCredential.code ||
+                        s.code === metadata.dbCredential.code
+                );
+                const admin = source?.credentials?.find(
+                    (c: any) => c.userScope === "Admin"
+                );
+                if (admin?.username && admin?.password) {
+                    writeCredential = {
+                        ...metadata.dbCredential,
+                        user: admin.username,
+                        password: admin.password,
+                    };
+                } else {
+                    logger.warn(
+                        `No admin credential found for source '${metadata.dbCredential?.code}'; cohort materialization will use the analytics credential`
+                    );
+                }
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                logger.warn(
+                    `Failed to resolve admin credential for cohort materialization: ${msg}`
+                );
+            }
+
+            const url = buildHanaConnectionUrl(writeCredential);
+            const sessionVars = extractSessionVars(writeCredential);
 
             // The hana extension's trex_hana_materialize_cohort is registered on the
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
