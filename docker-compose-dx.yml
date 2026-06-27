@@ -1,0 +1,215 @@
+# DevX override — layered LAST on docker-compose.yml (+ docker-compose-local.yml).
+#
+# Adds a SELF-CONTAINED trex DevX stack alongside the normal d2e stack, without
+# touching d2e's own `trex` service. The DevX editor runs as trex's own
+# data+server node from the `-with-dx` image (trexsql-dx base: devx code-editor
+# plugin + devx_ext extension baked in), with its own Postgres + PostgREST +
+# secrets, exactly like trex's standalone docker-compose.dx.yml.
+#
+# Why a dedicated node (not a second trexas inside d2e's container): trex's core
+# better-auth schema (trexdb.kek_wrapped_dek, the `authenticator` role, the
+# better-auth tables) is created by trex's `SCHEMA_DIR` migrations, which only a
+# *data node* runs — and that migration is Postgres PL/pgSQL that d2e's node
+# can't execute. A dedicated trex data node provisions trexdb the way trex
+# expects, so DevX's DEK/better-auth/PostgREST all come up cleanly.
+#
+# Run via the CLI scripts (they append this file with `-c`):
+#   npm run build:dx     # build the -with-dx image (used by trex-dx)
+#   npm run start:dx     # bring up the d2e stack + the DevX stack
+#   npm run stop:dx
+#
+# Editor: http://localhost:9001/trex/
+#
+# Back up ./secrets/root.env — losing it invalidates every DevX-issued JWT/secret.
+
+volumes:
+  trex-dx-pgdata:
+  devx-workspaces:
+  trex-dx-claude-config:
+  trex-dx-gh-config:
+
+services:
+  # Generates ./secrets/{root,derived}.env on first boot (TREX_ROOT_KEY + the
+  # derived JWT/crypto keys better-auth and PostgREST need). Idempotent.
+  trex-dx-init:
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx
+    container_name: ${PROJECT_NAME:-d2e}-trex-dx-init
+    entrypoint: /usr/local/bin/trex-init
+    environment:
+      TREX_SECRETS_DIR: /shared
+    volumes:
+      - ./secrets:/shared
+    restart: "no"
+    networks:
+      - alp
+
+  # Dedicated Postgres for trex's better-auth/PostgREST schema — kept separate
+  # from alp-minerva-postgres so trex's migrations never touch d2e's database.
+  trex-dx-postgres:
+    image: postgres:16
+    container_name: ${PROJECT_NAME:-d2e}-trex-dx-postgres
+    command:
+      - postgres
+      - -c
+      - wal_level=logical
+      - -c
+      - max_connections=1200
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${TREX_DX_POSTGRES_PASSWORD:-mypass}
+      # MUST be "testdb": trex's core schema V1__initial_schema.sql hardcodes
+      # `GRANT ALL PRIVILEGES ON DATABASE testdb TO supabase_admin`, so the DB
+      # name has to match or the migration fails ("database testdb does not exist").
+      POSTGRES_DB: testdb
+    volumes:
+      - trex-dx-pgdata:/var/lib/postgresql/data
+    ports:
+      - "65434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - alp
+
+  # devx-workspaces is created root-owned by Docker; trex-dx runs as uid 1000
+  # (`node`) and would hit EACCES on first mkdir inside it. This one-shot chowns it.
+  devx-workspaces-init:
+    image: alpine
+    container_name: ${PROJECT_NAME:-d2e}-devx-workspaces-init
+    volumes:
+      - devx-workspaces:/work
+    command: ["sh", "-c", "chown 1000:1000 /work && echo '[devx-workspaces-init] done'"]
+    restart: "no"
+
+  # trex's own data+server node serving the DevX editor. Single node: data_node
+  # (Local DuckDB pool, runs SCHEMA_DIR migrations) + trexas (UI/API) + pgwire.
+  # Uses trex's original entrypoint (generates a self-signed cert at
+  # /usr/src/server.{crt,key} and gates on TREX_ROOT_KEY) instead of d2e's CMD.
+  trex-dx:
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx
+    container_name: ${PROJECT_NAME:-d2e}-trex-dx
+    platform: ${TREX_PLATFORM:-linux/amd64}
+    build:
+      context: ./services/trex
+      dockerfile: ./Dockerfile.v2
+      args:
+        # trexsql-dx:fixed = the published trexsql-dx with the current
+        # @trex/migration overlaid (see ~/code/trex/Dockerfile.migration-fix).
+        # The published sha-2f0e… baked a stale migration extension that can't
+        # apply the core-schema V1 → DevX DEK init fatals. Build it first:
+        #   docker build --platform linux/amd64 \
+        #     -f Dockerfile.migration-fix -t trexsql-dx:fixed ~/code/trex
+        BASE_IMAGE: trexsql-dx:fixed
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow}
+    entrypoint: ["/usr/src/entrypoint.sh"]
+    command: []
+    depends_on:
+      trex-dx-init:
+        condition: service_completed_successfully
+      trex-dx-postgres:
+        condition: service_healthy
+      devx-workspaces-init:
+        condition: service_completed_successfully
+    env_file:
+      - path: ./secrets/root.env
+        required: false
+      - path: ./secrets/derived.env
+        required: false
+    ports:
+      - "9001:8001"   # DevX editor — HTTP
+      - "9000:8000"   # DevX editor — TLS
+    volumes:
+      - trex-dx-claude-config:/home/node/.claude
+      - trex-dx-gh-config:/home/node/.config/gh
+      - devx-workspaces:/tmp/devx-workspaces
+    environment:
+      # The d2e image runs as root (HOME=/root), but devx's claude-code/gh
+      # configs are mounted at /home/node/.claude and /home/node/.config/gh.
+      # Point HOME there so claude-code/gh find their config.
+      HOME: /home/node
+      SWARM_NODE: trex-dx
+      # Single data+server node: trexas serves trex's core (DevX) on 8001.
+      SWARM_CONFIG: |-
+        {
+          "cluster_id": "trex-dx",
+          "nodes": {
+            "trex-dx": {
+              "gossip_addr": "trex-dx:4200",
+              "data_node": true,
+              "extensions": [
+                { "name": "flight", "config": { "host": "0.0.0.0", "port": 50051 } },
+                {
+                  "name": "trexas",
+                  "config": {
+                    "host": "0.0.0.0",
+                    "port": 8001,
+                    "main_service_path": "/usr/src/trex-core/server",
+                    "event_worker_path": "/usr/src/trex-core/event",
+                    "tls_port": 8000,
+                    "tls_cert_path": "/usr/src/server.crt",
+                    "tls_key_path": "/usr/src/server.key"
+                  }
+                },
+                { "name": "pgwire", "config": { "host": "0.0.0.0", "port": 5432 } }
+              ]
+            }
+          }
+        }
+      DATABASE_URL: postgres://postgres:${TREX_DX_POSTGRES_PASSWORD:-mypass}@trex-dx-postgres:5432/testdb
+      # data_node runs the core schema migrations (creates authenticator role etc.).
+      SCHEMA_DIR: /usr/src/trex-core/schema
+      TREX_PRODUCTION_MODE: ${TREX_PRODUCTION_MODE:-0}
+      TREX_POOL_SIZE: ${TREX_DX_POOL_SIZE:-256}
+      TREX_PG_CONNECTION_LIMIT: ${TREX_DX_PG_CONNECTION_LIMIT:-256}
+      TREX_POOL_LEASE_TIMEOUT_MS: ${TREX_DX_POOL_LEASE_TIMEOUT_MS:-30000}
+      BASE_PATH: /trex
+      BETTER_AUTH_URL: http://localhost:9001/trex
+      POSTGREST_HOST: trex-dx-postgrest
+      POSTGREST_PORT: "3000"
+      # DevX plugin lives in plugins-dev in the dx image.
+      PLUGINS_PATH: /usr/src/plugins
+      PLUGINS_DEV_PATH: /usr/src/plugins-dev
+      # Surface DevX in trex's web shell top nav.
+      TREX_WEB_NAV_EXTRA: '[{"path":"/devx","label":"DevX","plugin":"devx"}]'
+      # GitHub device-flow OAuth (DevX → Connect GitHub). Optional; bundled default used if unset.
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      # AES-256 key (64 hex) for DevX integration-token storage. Optional.
+      DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
+    healthcheck:
+      # /trex/api/ready returns 200 only after auth keys are written to the DB.
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://localhost:8001/trex/api/ready'').then(r => { if (r.status !== 200) throw new Error(r.status) })"'
+      interval: 10s
+      timeout: 5s
+      retries: 40
+      start_period: 90s
+    networks:
+      - alp
+
+  # PostgREST for DevX's /rest API. Connects as the `authenticator` role created
+  # by trex-dx's schema migrations (gate on trex-dx healthy so the role exists).
+  trex-dx-postgrest:
+    image: postgrest/postgrest:v12.2.3
+    container_name: ${PROJECT_NAME:-d2e}-trex-dx-postgrest
+    restart: unless-stopped
+    depends_on:
+      trex-dx-postgres:
+        condition: service_healthy
+      trex-dx:
+        condition: service_healthy
+    env_file:
+      - path: ./secrets/derived.env
+        required: false
+    environment:
+      PGRST_DB_URI: postgres://authenticator:authenticator_pass@trex-dx-postgres:5432/testdb
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      # PGRST_JWT_SECRET comes from ./secrets/derived.env (see env_file above).
+      PGRST_DB_PRE_REQUEST: public.postgrest_pre_request
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_OPENAPI_SERVER_PROXY_URI: http://localhost:9001/trex/rest/v1
+    networks:
+      - alp

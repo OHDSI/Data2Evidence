@@ -4,7 +4,13 @@
 # (started by core/server with SELECT webapi_start()), not as a separate Java
 # process. Overlays d2e's core, plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-bdedf8d9cc826b7815af1830d4a1c05ad7baf5db@sha256:b3f0e1142ba661e2b98d614b1e753d5920458e04c871399c5451038aa5443863 AS base
+# BASE_IMAGE selects the trex base. Default is the plain trexsql image; the
+# "-with-dx" build passes the trexsql-dx image, which additionally ships the
+# devx code-editor plugin, the devx_ext DuckDB extension, and claude-code/gh.
+# Declared before the first FROM so it is usable in the FROM line.
+ARG BASE_IMAGE=ghcr.io/ohdsi/trexsql:sha-bdedf8d9cc826b7815af1830d4a1c05ad7baf5db@sha256:b3f0e1142ba661e2b98d614b1e753d5920458e04c871399c5451038aa5443863
+
+FROM ${BASE_IMAGE} AS base
 
 USER root
 WORKDIR /usr/src
@@ -90,17 +96,30 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 
 # d2e core overlays the base's /usr/src/core; trex bundle takes positional args.
-RUN rm -rf /usr/src/core
+# The base's own core (which serves trex's main service, e.g. the devx code
+# editor in the trexsql-dx base) is preserved at /usr/src/trex-core so the dx
+# compose can run it as a SECOND trexas main service on a separate port. For the
+# plain trexsql base this is just an unused copy.
+RUN mv /usr/src/core /usr/src/trex-core
 COPY ./core ./core
 RUN trex bundle ./core/server/index.ts ./core/server/index.eszip && \
     trex bundle ./core/event/index.ts ./core/event/index.eszip
+
+# trex's secrets generator (/usr/local/bin/trex-init → scripts/derive-secrets.ts)
+# hard-imports /usr/src/core/server/auth/keys.ts, which moved with the core above.
+# keys.ts is self-contained, and d2e's core/server/auth has no keys.ts to shadow,
+# so a compatibility symlink restores trex-init without touching the d2e runtime
+# (the d2e main service runs from the already-bundled index.eszip).
+RUN mkdir -p /usr/src/core/server/auth && \
+    ln -sf /usr/src/trex-core/server/auth/keys.ts /usr/src/core/server/auth/keys.ts
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
 
 # WebAPI, trexas HTTP/TLS, pgwire, gossip, FHIR.
-EXPOSE 8080 33001 33000 5433 5432 4200 8094
+# 8001/8000: the trex-core main service + TLS (dx builds, second trexas).
+EXPOSE 8080 33001 33000 5433 5432 4200 8094 8001 8000
 
 # Write the internal TLS cert from env, then run the engine. ENTRYPOINT is
 # cleared because the base one gates on TREX_ROOT_KEY, which d2e doesn't use.

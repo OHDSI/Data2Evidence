@@ -76,3 +76,6 @@ scripts/dist/
 scripts/docker-compose-embed.ts
 scripts/create_users.mjs
 *.bun-build
+# DevX (docker-compose-dx.yml) generated artifacts
+/secrets/
+.playwright-mcp/
