@@ -498,6 +498,32 @@ jobs:
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
 
+      # The "-with-dx" variant: same Dockerfile, but based on trexsql-dx, which
+      # adds the devx code-editor plugin + devx_ext extension. Only built on
+      # publish/release/dispatch to avoid doubling PR build time.
+      - name: Build and Push trex with-dx image
+        if: |
+          needs.setup.outputs.is_publish_push == 'true' ||
+          contains(github.base_ref, 'release/') ||
+          github.event_name == 'workflow_dispatch'
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./services/trex
+          file: ./services/trex/Dockerfile.v2
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REG_URL }}/d2e-trex:${{ env.RUN_TAG }}-with-dx
+          provenance: false
+          sbom: false
+          build-args: |
+            BASE_IMAGE=ghcr.io/ohdsi/trexsql-dx:sha-2f0e2d899e76c40dd6af2c7d5f351ab66a572930
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
+            PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
+          secrets: |
+            "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
+
       - name: Prune system
         if: always()
         run: docker system prune -af
