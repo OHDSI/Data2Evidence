@@ -152,12 +152,34 @@ class TrexDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(self._split_catalog_schema(schema)[-1])
+        if self.is_hana:
+            # HANA has no 'CREATE SCHEMA IF NOT EXISTS' (it silently falls back to DuckDB
+            # via the passthrough). Callers guard existence with check_schema_exists.
+            sql = pg_sql.SQL("CREATE SCHEMA {}").format(self._schema_ident(schema))
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
             .format(self._schema_ident(schema))
-            
+
         self.execute_sql(sql)
 
     def create_table(self, schema: str, table: str, columns: dict) -> None:
+        if self.is_hana:
+            # HANA: no 'IF NOT EXISTS'; reference identifiers upper-case (unquoted DDL
+            # folds to upper-case) so later unquoted references resolve.
+            columns_with_types = [
+                pg_sql.SQL("{col_name} {col_type}").format(
+                    col_name=pg_sql.Identifier(col_name.upper()),
+                    col_type=pg_sql.SQL(col_type),
+                ) for col_name, col_type in columns.items()
+            ]
+            create_table_query = pg_sql.SQL("CREATE TABLE {schema}.{table} ({columns_with_types});").format(
+                schema=self._schema_ident(schema),
+                table=pg_sql.Identifier(table.upper()),
+                columns_with_types=pg_sql.SQL(", ").join(columns_with_types),
+            )
+            self.execute_sql(create_table_query)
+            return
         columns_with_types = [
             pg_sql.SQL("{col_name} {col_type}").format(
                 col_name = pg_sql.Identifier(col_name),
@@ -391,6 +413,18 @@ class TrexDao(DaoBase):
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
+        if self.is_hana:
+            # HANA has no 'DROP SCHEMA IF EXISTS' (falls back to DuckDB via the
+            # passthrough), and plain DROP errors on a missing schema — so guard with an
+            # existence check (used by the best-effort on-failure cleanup hook).
+            if not self.check_schema_exists(schema):
+                return
+            sql = pg_sql.SQL("DROP SCHEMA {schema} {cond};").format(
+                schema=self._schema_ident(schema),
+                cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT'),
+            )
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
             schema=self._schema_ident(schema),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')

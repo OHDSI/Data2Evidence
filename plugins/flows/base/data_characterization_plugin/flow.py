@@ -133,6 +133,7 @@ def data_characterization_plugin(options: DCOptionsType):
                 achilles_params.vocabSchemaName,
                 dbdao,
                 logger,
+                is_hana,
             )
         else:
             logger.warning(
@@ -523,7 +524,7 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
 
 
 @task(log_prints=True)
-def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, logger):
+def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
     try:
         # concept count tables
         schema_params = {
@@ -535,7 +536,9 @@ def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, 
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
-        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_record_count.sql"
+        # HANA-via-trex: use the HANA-dialect SQL (no DuckDB 'IF EXISTS'/'CREATE TEMP TABLE').
+        sql_dialect = SupportedDatabaseDialects.HANA if is_hana else dbdao.dialect
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_record_count.sql"
 
         with open(migration_script_filepath, "r") as f:
             sql_template = Template(f.read())
