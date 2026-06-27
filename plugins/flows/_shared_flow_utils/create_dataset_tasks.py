@@ -53,6 +53,18 @@ def enable_and_create_audit_policies_task(dbdao: DaoBase, schema: str):
 @task(log_prints=True)
 def create_and_assign_roles_task(dbdao: DaoBase, schema: str):
     logger = get_run_logger()
+    # HANA served through the trex pgwire passthrough reports dialect 'trex', and role/user
+    # DDL is not handled by the passthrough. Reuse the original (pre-trex) behaviour: run
+    # the role/grant statements against a direct HANA connection (the same SqlAlchemyDao
+    # implementation used before HANA datasets were routed through trex).
+    if getattr(dbdao, "is_hana", False):
+        from _shared_flow_utils.dao.DBDao import DBDao
+
+        dbdao = DBDao(
+            dialect=None,
+            database_code=dbdao.database_code,
+            cache_id=dbdao.cache_id,
+        )
     if (
         dbdao.dialect != SupportedDatabaseDialects.HANA
         and dbdao.dialect != SupportedDatabaseDialects.POSTGRES
