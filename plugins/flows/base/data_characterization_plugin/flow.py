@@ -60,6 +60,10 @@ def data_characterization_plugin(options: DCOptionsType):
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
+    # The TrexDao reports dialect 'trex' (it connects to pgwire), so it can't tell the
+    # underlying source is HANA. Tag it so schema/table introspection and DROPs use
+    # HANA-aware SQL (SYS.* catalogs, upper-case identifiers) instead of DuckDB's.
+    dbdao.is_hana = is_hana
     use_trex_connection = options.use_trex_connection
 
     cdm_source = get_cdm_source(
@@ -84,6 +88,7 @@ def data_characterization_plugin(options: DCOptionsType):
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
+        is_hana=is_hana,
     )
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
@@ -95,7 +100,7 @@ def data_characterization_plugin(options: DCOptionsType):
         achilles_params.vocabSchemaName = achilles_params.schemaName
 
     dc_schema = create_results_schema(
-        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
+        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger, is_hana=is_hana
     )
 
     if not is_hana and use_trex_connection:
@@ -151,7 +156,7 @@ def data_characterization_plugin(options: DCOptionsType):
             execute_export_to_ares_wo(achilles_params, cdm_source)
 
 
-def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
+def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
     try:
         # create results schema
         existing_schema = dbdao.check_schema_exists(results_schema)
@@ -174,7 +179,11 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
-        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
+        # HANA datasets run through the trex pgwire passthrough (dbdao.dialect == 'trex'),
+        # but the passthrough ships literal SQL to HANA — so we must use the HANA-dialect
+        # DDL (valid HANA syntax: plain CREATE TABLE, no DuckDB 'IF NOT EXISTS').
+        sql_dialect = SupportedDatabaseDialects.HANA if is_hana else dbdao.dialect
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_hierarchy.sql"
 
         with open(migration_script_filepath, "r") as f:
             sql_template = Template(f.read())
@@ -309,6 +318,9 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
                 cacheId=achilles_params.cacheId or "",
+                # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
+                # the R side overrides the connection's `dbms` attribute to this value.
+                translateDialect="hana" if achilles_params.is_hana else "",
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder

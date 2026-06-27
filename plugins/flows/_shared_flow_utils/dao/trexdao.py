@@ -24,6 +24,11 @@ class TrexDao(DaoBase):
         cache_id: Optional[str] = None,
     ):
         super().__init__(database_code, user_type, cache_id=cache_id)
+        # Set by the caller when the underlying source is HANA served via the pgwire
+        # passthrough. The TrexDao always reports dialect 'trex', so this is the only
+        # signal that introspection/DDL must target HANA (SYS.* catalogs, upper-case
+        # identifiers) rather than DuckDB's information_schema.
+        self.is_hana: bool = False
 
     @property
     def dialect(self):
@@ -170,6 +175,15 @@ class TrexDao(DaoBase):
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
+            if self.is_hana:
+                # HANA has no information_schema; query SYS.SCHEMAS via the passthrough.
+                # HANA folds unquoted identifiers to upper-case, so compare case-insensitively.
+                _, schema_only = self._split_catalog_schema(schema)
+                sql = pg_sql.SQL(
+                    "SELECT SCHEMA_NAME FROM SYS.SCHEMAS WHERE UPPER(SCHEMA_NAME) = UPPER({schema})"
+                ).format(schema=pg_sql.Literal(schema_only))
+                result = self.execute_sql(sql, fetch=True)
+                return len(result) > 0
             sql = '''
                 SELECT schema_name FROM information_schema.schemata
                 WHERE catalog_name = current_database();
@@ -198,6 +212,18 @@ class TrexDao(DaoBase):
     def check_table_exists(self, schema: str, table: str) -> bool:
         try:
             catalog, schema_only = self._split_catalog_schema(schema)
+            if self.is_hana:
+                # HANA has no information_schema; query SYS.TABLES via the passthrough,
+                # comparing case-insensitively (HANA stores unquoted names upper-cased).
+                sql_query = pg_sql.SQL(
+                    "SELECT TABLE_NAME FROM SYS.TABLES "
+                    "WHERE UPPER(SCHEMA_NAME) = UPPER({schema}) AND UPPER(TABLE_NAME) = UPPER({table})"
+                ).format(
+                    schema=pg_sql.Literal(schema_only),
+                    table=pg_sql.Literal(table),
+                )
+                result = self.execute_sql(sql_query, fetch=True)
+                return len(result) > 0
             if catalog is not None:
                 sql_query = pg_sql.SQL("""
                     SELECT table_name FROM information_schema.tables
@@ -372,6 +398,18 @@ class TrexDao(DaoBase):
         self.execute_sql(sql)
 
     def drop_table(self, schema: str, table: str, cascade: bool = False):
+        if self.is_hana:
+            # HANA stores unquoted DDL identifiers upper-cased, so reference them
+            # upper-case (quoted) to match. Callers guard with check_table_exists, so
+            # we skip 'IF EXISTS' (not portable across HANA versions).
+            _, schema_only = self._split_catalog_schema(schema)
+            sql = pg_sql.SQL("DROP TABLE {schema}.{table} {cond};").format(
+                schema=pg_sql.Identifier(schema_only.upper()),
+                table=pg_sql.Identifier(table.upper()),
+                cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT'),
+            )
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
             schema=self._schema_ident(schema),
             table=pg_sql.Identifier(table),

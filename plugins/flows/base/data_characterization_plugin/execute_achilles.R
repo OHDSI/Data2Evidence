@@ -33,31 +33,46 @@ execute_achilles <- function(
         verboseMode,
         excludeAnalysisIds,
         createIndices,
-        cacheId = NULL) {
+        cacheId = NULL,
+        translateDialect = NULL) {
 
     # Set TREX and DB driver environment variables and create connection details
     eval(parse(text = set_trex_env_string))
     eval(parse(text = setDBDriverEnv))
     eval(parse(text = connectionDetailsString))
 
-    # Force each pooled JDBC connection onto the cache catalog (Achilles opens many).
-    if (!is.null(cacheId) && nzchar(cacheId)) {
+    .has_cache <- !is.null(cacheId) && nzchar(cacheId)
+    .has_dialect <- !is.null(translateDialect) && nzchar(translateDialect)
+
+    # Patch DatabaseConnector::connect (Achilles opens many pooled connections) to:
+    #  1. Force each connection onto the cache catalog via USE (trex DuckDB), and
+    #  2. Decouple the SqlRender dialect from the JDBC driver: HANA datasets connect
+    #     with the postgres driver (to trex pgwire) but must render HANA SQL. dbms() in
+    #     DatabaseConnector reads attr(connection, "dbms"), so overriding it makes
+    #     renderTranslateExecuteSql translate to `translateDialect` while the wire stays
+    #     postgres/pgwire (passthrough ships the HANA SQL to HANA). No direct HANA driver.
+    if (.has_cache || .has_dialect) {
         .ns <- asNamespace("DatabaseConnector")
         .original_connect <- get("connect", envir = .ns)
-        .use_sql <- sprintf('USE "%s"', gsub('"', '""', cacheId, fixed = TRUE))
+        .use_sql <- if (.has_cache) sprintf('USE "%s"', gsub('"', '""', cacheId, fixed = TRUE)) else NULL
         .patched_connect <- function(...) {
             conn <- .original_connect(...)
-            tryCatch(
-                DatabaseConnector::executeSql(
-                    connection = conn,
-                    sql = .use_sql,
-                    progressBar = FALSE,
-                    reportOverallTime = FALSE
-                ),
-                error = function(e) {
-                    message(sprintf("[execute_achilles] USE \"%s\" failed: %s", cacheId, conditionMessage(e)))
-                }
-            )
+            if (.has_dialect) {
+                attr(conn, "dbms") <- translateDialect
+            }
+            if (!is.null(.use_sql)) {
+                tryCatch(
+                    DatabaseConnector::executeSql(
+                        connection = conn,
+                        sql = .use_sql,
+                        progressBar = FALSE,
+                        reportOverallTime = FALSE
+                    ),
+                    error = function(e) {
+                        message(sprintf("[execute_achilles] USE \"%s\" failed: %s", cacheId, conditionMessage(e)))
+                    }
+                )
+            }
             conn
         }
         assignInNamespace("connect", .patched_connect, ns = "DatabaseConnector")
