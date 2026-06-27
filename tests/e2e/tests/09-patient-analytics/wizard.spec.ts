@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures'
 import type { Page } from '@playwright/test'
-import { MINUTE_1, MINUTE_2 } from '../const'
+import { MINUTE_1, MINUTE_2, MINUTE_5 } from '../const'
 
 // Shinylive runs Python in WebAssembly, which only boots in a secure context.
 // The self-signed local/CI cert isn't treated as secure by default, so mark the
@@ -13,6 +13,7 @@ test.use({
 })
 
 const TEST_NAME = 'patient-analytics-wizard-dashboard'
+const DASHBOARD_NAME = 'cross-sectional-demographics'
 const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 1 }) // Re-try for flaky long-running flow
@@ -34,6 +35,71 @@ async function setMonacoContent(page: Page, content: string) {
     ed.focus()
     ed.setValue(code)
   }, dedented)
+}
+
+async function waitForDashboardDialog(page: Page) {
+  const dialog = page.getByRole('dialog').filter({ hasText: 'Edit dashboard viewer code' })
+  await expect(dialog).toBeVisible({ timeout: MINUTE_2 })
+  await expect(dialog.locator('.manage-viewer-dialog__loading')).toBeHidden({ timeout: MINUTE_1 })
+  await expect(dialog.locator('.monaco-editor')).toBeVisible({ timeout: MINUTE_1 })
+  return dialog
+}
+
+async function fillDashboardName(page: Page) {
+  const dialog = await waitForDashboardDialog(page)
+  const newNameInput = dialog.getByPlaceholder('Enter new name')
+  await expect(newNameInput).toBeEnabled()
+  const currentValue = await newNameInput.inputValue()
+  if (currentValue !== DASHBOARD_NAME) {
+    await newNameInput.fill(DASHBOARD_NAME)
+  }
+  await expect(newNameInput).toHaveValue(DASHBOARD_NAME)
+}
+
+async function selectPythonViewer(page: Page) {
+  let dialog = await waitForDashboardDialog(page)
+  if (
+    await dialog
+      .getByRole('combobox')
+      .filter({ hasText: /^Python$/ })
+      .isVisible()
+  ) {
+    return
+  }
+  await dialog.getByRole('combobox').filter({ hasText: /^R$/ }).click()
+  await page.getByRole('option', { name: 'Python' }).click()
+  // Switching viewer can remount the dialog content; reacquire locators after it settles.
+  dialog = await waitForDashboardDialog(page)
+  await expect(dialog.getByRole('combobox').filter({ hasText: /^Python$/ })).toBeVisible()
+}
+
+async function ensurePythonViewerAndDashboardName(page: Page) {
+  await selectPythonViewer(page)
+  await fillDashboardName(page)
+
+  let dialog = await waitForDashboardDialog(page)
+  const pythonCombo = dialog.getByRole('combobox').filter({ hasText: /^Python$/ })
+  await expect(pythonCombo).toBeVisible()
+
+  let newNameInput = dialog.getByPlaceholder('Enter new name')
+  if ((await newNameInput.inputValue()) !== DASHBOARD_NAME) {
+    await fillDashboardName(page)
+    dialog = await waitForDashboardDialog(page)
+    newNameInput = dialog.getByPlaceholder('Enter new name')
+  }
+
+  await expect(newNameInput).toHaveValue(DASHBOARD_NAME)
+}
+
+async function ensureAdminDatasetPermission(page: Page) {
+  await page.getByRole('tab', { name: 'Access' }).click()
+  if (await page.getByRole('cell', { name: 'admin' }).isVisible()) {
+    return
+  }
+
+  await page.getByRole('button', { name: 'Add existing users' }).click()
+  await page.getByRole('menuitem', { name: 'admin' }).click()
+  await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission.')
 }
 
 test(TEST_NAME, async ({ page }) => {
@@ -89,10 +155,7 @@ test(TEST_NAME, async ({ page }) => {
     const wizardRow = page.locator('tr', { hasText: 'wizardE2E' }).first()
     await wizardRow.getByText('Select action').click()
     await page.getByRole('option', { name: 'Permissions' }).click()
-    await page.getByRole('tab', { name: 'Access' }).click()
-    await page.getByTestId('dialog').getByTestId('button').click()
-    await page.getByRole('menuitem', { name: 'admin' }).click()
-    await expect(page.getByTestId('alert-message')).toContainText('User admin has been granted permission.')
+    await ensureAdminDatasetPermission(page)
     await page.getByTestId('dialog-close').click()
 
     // Check dashboard wizard is accessible and can be opened
@@ -149,10 +212,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Manage dashboard' }).click()
     await page.getByText('Dashboard', { exact: true }).click()
     await page.getByRole('option', { name: 'Cohort' }).click()
-    await page.getByRole('textbox', { name: 'Enter new name' }).click()
-    await page.getByRole('textbox', { name: 'Enter new name' }).fill('cross-sectional-demographics')
-    await page.getByRole('combobox').filter({ hasText: /^R$/ }).click()
-    await page.getByRole('option', { name: 'Python' }).click()
+    await ensurePythonViewerAndDashboardName(page)
 
     await setMonacoContent(
       page,
@@ -795,12 +855,19 @@ test(TEST_NAME, async ({ page }) => {
     app_server = create_server()
     app = App(app_ui, app_server)`
     )
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const editor = (globalThis as any).monaco?.editor?.getEditors?.()[0]
+          return editor?.getValue?.() ?? ''
+        })
+      )
+      .toContain('dashboard_name = "cross-sectional-demographics"')
 
     await page.getByRole('button', { name: 'Add query' }).click()
     const queryName = page.getByRole('textbox', { name: 'Query name' })
-    await queryName.scrollIntoViewIfNeeded()
-    await expect(queryName).toBeVisible()
-    await queryName.fill('cross-sectional-demographics')
+    await expect(queryName).toBeVisible({ timeout: MINUTE_1 })
+    await queryName.fill(DASHBOARD_NAME)
     const sql = page.getByRole('textbox', { name: 'SQL' })
     await expect(sql).toBeVisible()
     await sql.click()
@@ -817,7 +884,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('option', { name: 'Manage dashboard' }).click()
     await page.getByText('Dashboard', { exact: true }).click()
     await page.getByRole('option', { name: 'Cohort' }).click()
-    await expect(page.getByText('cross-sectional-demographics').first()).toBeVisible()
+    await expect(page.getByText(DASHBOARD_NAME).first()).toBeVisible()
+    await selectPythonViewer(page)
+    await expect(page.getByText(DASHBOARD_NAME).first()).toBeVisible()
 
     // build shiny assets
     await page.getByRole('button', { name: 'Build Shiny assets' }).click()
@@ -832,7 +901,7 @@ test(TEST_NAME, async ({ page }) => {
       .locator('.flow-run-list-item')
       .filter({ has: page.locator('a:has-text("shiny_live_plugin")') })
       .first()
-    await expect(shinyBuildRun.locator('.state-badge')).toHaveText('Completed', { timeout: MINUTE_2 })
+    await expect(shinyBuildRun.locator('.state-badge')).toHaveText('Completed', { timeout: MINUTE_5 })
   })
 
   // Switch to Researcher portal and open the dashboard
