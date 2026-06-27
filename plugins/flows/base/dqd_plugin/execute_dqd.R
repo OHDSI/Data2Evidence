@@ -43,13 +43,30 @@ execute_dqd <- function(
         cohortDefinitionId,
         cdmVersion,
         cohortDatabaseSchema,
-        cohortTableName) {
+        cohortTableName,
+        translateDialect = NULL) {
 
     # Set TREX and DB driver environment variables and create connection details
     eval(parse(text = set_trex_env_string))
     eval(parse(text = setDBDriverEnv))
     eval(parse(text = connectionDetailsString))
-    
+
+    # Decouple the SqlRender dialect from the JDBC driver: HANA datasets connect with the
+    # postgres driver (to trex pgwire) but must render HANA SQL. dbms() in DatabaseConnector
+    # reads attr(connection, "dbms"), so overriding it on every connection DQD opens makes
+    # SqlRender translate to `translateDialect` while the wire stays postgres/pgwire (the
+    # passthrough ships the HANA SQL to HANA). No direct HANA driver, no pgt.
+    if (!is.null(translateDialect) && nzchar(translateDialect)) {
+        .ns <- asNamespace("DatabaseConnector")
+        .original_connect <- get("connect", envir = .ns)
+        .patched_connect <- function(...) {
+            conn <- .original_connect(...)
+            attr(conn, "dbms") <- translateDialect
+            conn
+        }
+        assignInNamespace("connect", .patched_connect, ns = "DatabaseConnector")
+    }
+
     # Run executeDqChecks
     DataQualityDashboard::executeDqChecks(
         connectionDetails = connectionDetails,
