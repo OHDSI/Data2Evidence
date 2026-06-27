@@ -16,8 +16,13 @@ declare const Trex: any;
 function buildHanaConnectionUrl(dbCredential: any): string {
     const host = dbCredential.host;
     const port = Number(dbCredential.port);
-    const user = encodeURIComponent(dbCredential.user);
-    const password = encodeURIComponent(dbCredential.password);
+    // Pass user/password RAW (no encodeURIComponent): trex's parse_hana_url takes the
+    // password as a literal substring and never percent-decodes it, so encoding it would
+    // ship the percent-encoded form to HANA and fail auth. This matches every other HANA
+    // path (the nodehdb `hdb.createClient`, the old materialize-cohorts service, and the
+    // pgwire passthrough all use the raw password).
+    const user = dbCredential.user;
+    const password = dbCredential.password;
     const db = dbCredential.databaseName;
     const useTLS =
         (dbCredential.useTLS ?? dbCredential.encrypt ?? "true").toString() ===
