@@ -583,7 +583,9 @@ export class CohortEndpoint {
                 const sourceCreds =
                     (Trex as any).databaseManager().getDatabaseCredentials() || [];
                 const source = sourceCreds.find(
-                    (s: any) => s.id === metadata.dbCredential.code
+                    (s: any) =>
+                        s.id === metadata.dbCredential.code ||
+                        s.code === metadata.dbCredential.code
                 );
                 const admin = source?.credentials?.find(
                     (c: any) => c.userScope === "Admin"
@@ -600,8 +602,9 @@ export class CohortEndpoint {
                     );
                 }
             } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
                 logger.warn(
-                    `Failed to resolve admin credential for cohort materialization: ${e}`
+                    `Failed to resolve admin credential for cohort materialization: ${msg}`
                 );
             }
 
