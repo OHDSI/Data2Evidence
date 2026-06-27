@@ -183,7 +183,9 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger,
         # HANA datasets run through the trex pgwire passthrough (dbdao.dialect == 'trex'),
         # but the passthrough ships literal SQL to HANA — so we must use the HANA-dialect
         # DDL (valid HANA syntax: plain CREATE TABLE, no DuckDB 'IF NOT EXISTS').
-        sql_dialect = SupportedDatabaseDialects.HANA if is_hana else dbdao.dialect
+        # .value because dbdao.dialect is a plain string; an Enum member would interpolate
+        # as "SupportedDatabaseDialects.HANA" (Py3.11+), breaking the migration path.
+        sql_dialect = SupportedDatabaseDialects.HANA.value if is_hana else dbdao.dialect
         migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_hierarchy.sql"
 
         with open(migration_script_filepath, "r") as f:
@@ -537,7 +539,9 @@ def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, 
                 raise ValueError(f"Unsafe schema name: {v}")
 
         # HANA-via-trex: use the HANA-dialect SQL (no DuckDB 'IF EXISTS'/'CREATE TEMP TABLE').
-        sql_dialect = SupportedDatabaseDialects.HANA if is_hana else dbdao.dialect
+        # .value because dbdao.dialect is a plain string; an Enum member would interpolate
+        # as "SupportedDatabaseDialects.HANA" (Py3.11+), breaking the migration path.
+        sql_dialect = SupportedDatabaseDialects.HANA.value if is_hana else dbdao.dialect
         migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_record_count.sql"
 
         with open(migration_script_filepath, "r") as f:

@@ -65,6 +65,12 @@ execute_dqd <- function(
             conn
         }
         assignInNamespace("connect", .patched_connect, ns = "DatabaseConnector")
+        # rpy2 keeps the R session alive across Prefect tasks; restore the original on exit
+        # so the dbms override doesn't leak into later runs in the same worker process.
+        on.exit(
+            assignInNamespace("connect", .original_connect, ns = "DatabaseConnector"),
+            add = TRUE
+        )
     }
 
     # Run executeDqChecks
