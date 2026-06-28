@@ -82,7 +82,7 @@ export const StudyPage: FC<StudyPageProps> = () => {
           name: study.notebookName || study.studyId,
           strategus_json: study.analysisSpec,
           type: StrategusStudyType.LOCAL,
-          viewerCode: study.viewerCode ?? RESULT_VIEWER_TEMPLATE,
+          viewerCode: study.viewerCode?.trim() || RESULT_VIEWER_TEMPLATE,
           tokenDatasetCode: study.tokenStudyCode ?? undefined,
         }));
         setStrategusStudies(convertedStudies);

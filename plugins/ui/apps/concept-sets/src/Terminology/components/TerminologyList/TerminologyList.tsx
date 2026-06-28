@@ -68,6 +68,7 @@ interface TerminologyListProps {
     | "CONCEPT_SEARCH"
     | "CONCEPT_MULTI_SELECT";
   isAtlas: boolean;
+  showConceptRecordCounts?: boolean;
 }
 
 const mapFilterOptions = (options: {
@@ -103,6 +104,13 @@ const MRT_COLUMN_TO_SORT_BY: Record<string, string> = {
   descendantPersonCount: "descendantPersonCount",
 };
 
+const COUNT_COLUMN_IDS = new Set([
+  "recordCount",
+  "descendantRecordCount",
+  "personCount",
+  "descendantPersonCount",
+]);
+
 const TerminologyList: FC<TerminologyListProps> = ({
   userId,
   onConceptClick,
@@ -120,6 +128,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   defaultFilters,
   mode = "CONCEPT_SEARCH",
   isAtlas,
+  showConceptRecordCounts = true,
 }) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -246,7 +255,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
       )?.value || []) as string[];
 
       // Resolve sort params for server-side search (non-Atlas SEARCH tab only)
-      const activeSortColumn = !isAtlas && sorting.length > 0 ? sorting[0] : null;
+      const activeSortColumn =
+        !isAtlas &&
+        sorting.length > 0 &&
+        (showConceptRecordCounts || !COUNT_COLUMN_IDS.has(sorting[0].id))
+          ? sorting[0]
+          : null;
       const sortByParam = activeSortColumn
         ? MRT_COLUMN_TO_SORT_BY[activeSortColumn.id]
         : undefined;
@@ -307,9 +321,11 @@ const TerminologyList: FC<TerminologyListProps> = ({
           ]);
         }
 
-        // Transform concepts and fetch record counts (non-Atlas only)
+        // Transform concepts and fetch record counts only when enabled.
         let mappedConcepts;
-        if (!isAtlas) {
+        const shouldFetchConceptRecordCounts =
+          showConceptRecordCounts && !isAtlas && concepts.length > 0;
+        if (shouldFetchConceptRecordCounts) {
           const conceptRecordCounts =
             await api.d2eWebapi.getConceptRecordCounts(
               datasetId,
@@ -426,6 +442,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     getText,
     isAtlas,
     sorting,
+    showConceptRecordCounts,
   ]);
 
   // clean up abort controller on unmount
@@ -601,6 +618,16 @@ const TerminologyList: FC<TerminologyListProps> = ({
     columns: MRT_ColumnDef<FhirValueSetExpansionContainsWithExt>[];
     columnOrder: string[];
   }>(() => {
+    const hasRecordCount =
+      showConceptRecordCounts && listData.some((d) => d.recordCount);
+    const hasDescendantRecordCount =
+      showConceptRecordCounts &&
+      listData.some((d) => d.descendantRecordCount);
+    const hasPersonCount =
+      showConceptRecordCounts && listData.some((d) => d.personCount);
+    const hasDescendantPersonCount =
+      showConceptRecordCounts &&
+      listData.some((d) => d.descendantPersonCount);
     const basicColumnOrder = [
       "conceptId",
       "conceptCode",
@@ -611,12 +638,12 @@ const TerminologyList: FC<TerminologyListProps> = ({
       "domainId",
       "conceptClassId",
       "validity",
-      ...(listData.some((d) => d.recordCount) ? ["recordCount"] : []),
-      ...(listData.some((d) => d.descendantRecordCount)
+      ...(hasRecordCount ? ["recordCount"] : []),
+      ...(hasDescendantRecordCount
         ? ["descendantRecordCount"]
         : []),
-      ...(listData.some((d) => d.personCount) ? ["personCount"] : []),
-      ...(listData.some((d) => d.descendantPersonCount)
+      ...(hasPersonCount ? ["personCount"] : []),
+      ...(hasDescendantPersonCount
         ? ["descendantPersonCount"]
         : []),
     ];
@@ -709,13 +736,15 @@ const TerminologyList: FC<TerminologyListProps> = ({
           grow: true,
           size: 150,
         },
-        ...(listData.some((d) => d.recordCount)
+        ...(hasRecordCount
           ? [
               {
                 accessorKey: "recordCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT),
                 muiTableHeadCellProps: {
-                  title: getText(i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT_TOOLTIP),
+                  title: getText(
+                    i18nKeys.TERMINOLOGY_LIST__RECORD_COUNT_TOOLTIP,
+                  ),
                 },
                 sortDescFirst: true,
                 grow: true,
@@ -723,7 +752,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               },
             ]
           : []),
-        ...(listData.some((d) => d.descendantRecordCount)
+        ...(hasDescendantRecordCount
           ? [
               {
                 accessorKey: "descendantRecordCount",
@@ -731,7 +760,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT,
                 ),
                 muiTableHeadCellProps: {
-                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT_TOOLTIP),
+                  title: getText(
+                    i18nKeys.TERMINOLOGY_LIST__DESCENDANT_RECORD_COUNT_TOOLTIP,
+                  ),
                 },
                 sortDescFirst: true,
                 grow: true,
@@ -739,13 +770,15 @@ const TerminologyList: FC<TerminologyListProps> = ({
               },
             ]
           : []),
-        ...(listData.some((d) => d.personCount)
+        ...(hasPersonCount
           ? [
               {
                 accessorKey: "personCount",
                 header: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT),
                 muiTableHeadCellProps: {
-                  title: getText(i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT_TOOLTIP),
+                  title: getText(
+                    i18nKeys.TERMINOLOGY_LIST__PERSON_COUNT_TOOLTIP,
+                  ),
                 },
                 sortDescFirst: true,
                 grow: true,
@@ -753,7 +786,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
               },
             ]
           : []),
-        ...(listData.some((d) => d.descendantPersonCount)
+        ...(hasDescendantPersonCount
           ? [
               {
                 accessorKey: "descendantPersonCount",
@@ -761,7 +794,9 @@ const TerminologyList: FC<TerminologyListProps> = ({
                   i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT,
                 ),
                 muiTableHeadCellProps: {
-                  title: getText(i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT_TOOLTIP),
+                  title: getText(
+                    i18nKeys.TERMINOLOGY_LIST__DESCENDANT_PERSON_COUNT_TOOLTIP,
+                  ),
                 },
                 sortDescFirst: true,
                 grow: true,

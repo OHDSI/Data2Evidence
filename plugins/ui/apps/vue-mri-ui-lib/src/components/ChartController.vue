@@ -67,7 +67,7 @@
         </div>
       </div>
       <div class="chartContainer">
-        <loadingAnimation v-if="chartBusy"></loadingAnimation>
+        <loadingAnimation v-if="showChartLoadingAnimation"></loadingAnimation>
         <stackBarChart
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
@@ -196,10 +196,14 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getActiveBookmark',
+      'getDatasetReloadInProgress',
       'getBarChartType',
       'getColorAxisIndex',
       'getCurrentPatientCount',
     ]),
+    showChartLoadingAnimation() {
+      return this.chartBusy && !this.getDatasetReloadInProgress
+    },
     minCohortSize() {
       return this.getAllChartConfigs?.minCohortSize
     },

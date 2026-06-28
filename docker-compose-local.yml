@@ -32,7 +32,8 @@ services:
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core  # live trex core for local dev
+      # IMAGE-BASED TEST: no core source-mount — trex's main (now vendored into
+      # services/trex/core) is bundled into the image's eszip by Dockerfile.v2.
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -41,7 +42,8 @@ services:
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       # Bind-mounted source plugins win over bundled ones with the same package name.
-      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
+      # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
+      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       # PhysioNet auto-provision / entitlements sync are OFF by default for local
       # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
@@ -64,8 +66,8 @@ services:
                   "config": {
                     "host": "0.0.0.0",
                     "port": 33001,
-                    "main_service_path": "/usr/src/core/server",
-                    "event_worker_path": "/usr/src/core/event",
+                    "main_service_path": "/usr/src/core/server/index.eszip",
+                    "event_worker_path": "/usr/src/core/event/index.eszip",
                     "tls_port": 33000,
                     "tls_cert_path": "/usr/src/cert/cert.pem",
                     "tls_key_path": "/usr/src/cert/key.pem",
@@ -74,7 +76,7 @@ services:
                 },
                 {
                   "name": "pgwire",
-                  "config": { "host": "0.0.0.0", "port": 5433 }
+                  "config": { "host": "0.0.0.0", "port": 5433, "password": "${TREX__SQL__PASSWORD:-pencil}" }
                 }
               ]
             }

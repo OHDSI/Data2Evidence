@@ -96,11 +96,21 @@ services:
     ports:
       - "8090:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:33001/_internal/health || exit 1"]
+      # trex's main mounts built-in routes under BASE_PATH (=/trex), so the
+      # internal health endpoint is /trex/_internal/health. (D2E_COMPAT routes
+      # like /WebAPI and /portal are mounted at root, separately.)
+      test: ["CMD-SHELL", "curl -fk https://localhost:33000/trex/_internal/health || curl -f http://localhost:33001/trex/_internal/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 30
       start_period: 120s
+    entrypoint: ["/bin/sh","-c"]
+    command:
+      - |
+        mkdir -p /usr/src/cert
+        printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        exec /usr/src/entrypoint.sh
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -115,6 +125,9 @@ services:
       DATASOURCE_USERNAME: postgres
       DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       DATASOURCE_OHDSI_SCHEMA: webapi
+      JASYPT_ENCRYPTOR_ENABLED: ${JASYPT_ENCRYPTOR_ENABLED:-false}
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:-}
+      JASYPT_ENCRYPTOR_ALGORITHM: ${JASYPT_ENCRYPTOR_ALGORITHM:-PBEWITHSHA256AND256BITAES-CBC-BC}
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: webapi
       SPRING_BATCH_REPOSITORY_TABLEPREFIX: webapi.batch_
       # Flyway migration settings
@@ -189,7 +202,7 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
-      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
+      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-1024}
       TREXSQL_ENABLED: "true"
       SWARM_NODE: d2e
       SWARM_CONFIG: |-
@@ -213,7 +226,7 @@ services:
                 },
                 {
                   "name": "pgwire",
-                  "config": { "host": "0.0.0.0", "port": 5433 }
+                  "config": { "host": "0.0.0.0", "port": 5433, "password": "${TREX__SQL__PASSWORD:-pencil}" }
                 }
               ]
             }
@@ -264,6 +277,19 @@ services:
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
       PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
+      # Gates the alp-dataflow-gen-init function (waitforEnvVar: PREFECT_HEALTH_CHECK)
+      # so trex waits for the Prefect API to be reachable before seeding its
+      # variables/blocks/workpool. Without it the init runs at boot before Prefect
+      # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
+      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api/health}
+      # The trex core auto-deploys flow plugins to Prefect (core/server/plugin/flow.ts):
+      # it waits for a worker pool named PREFECT_POOL (default "default") before
+      # registering deployments and sets work_pool_name to it. d2e's worker pool is
+      # `docker-pool`, so without this the auto-deploy loops forever on "pool is not
+      # found", no flow deployments (dqd_plugin, etc.) are ever registered, and DQD
+      # flow runs fail with `deployment ... Not Found`. Must match the worker pool
+      # created by the dataflow-gen-worker (WORKPOOL_NAME=docker-pool).
+      PREFECT_POOL: ${PREFECT_POOL:-docker-pool}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -382,6 +408,18 @@ services:
       ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
       # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       # RUST_LOG: ${RUST_LOG:-info}
+      # --- trex main (FROM trexsql) requirements ---
+      # trexsql entrypoint refuses to start without TREX_ROOT_KEY (>=40 chars).
+      TREX_ROOT_KEY: ${TREX_ROOT_KEY}
+      # trex main connects to Postgres for trexdb schema, auth keys, event_log.
+      DATABASE_URL: postgres://postgres:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-${TREX_ROOT_KEY}}
+      BETTER_AUTH_URL: "http://localhost:33001/trex"
+      BASE_PATH: /trex
+      SCHEMA_DIR: /usr/src/core/schema
+      PLUGINS_DEV_PATH: /usr/src/plugins-dev
+      # Phase 0: keep d2e behaviors OFF until Phase 1 lands.
+      D2E_COMPAT: "true"
 
 
   alp-minerva-pg-mgmt-init:

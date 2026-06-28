@@ -48,7 +48,12 @@ export async function loadBookmarks(
             "Content-Type": "application/json",
             "authorization": req.headers.authorization,
             "user-agent": "ALP Service",
-            "x-source-origin": sourceOrigin,
+            // Only forward x-source-origin when present. Node's http client throws
+            // ERR_HTTP_INVALID_HEADER_VALUE on an `undefined` header value, which
+            // 500'd cohort-compare: its query-gen flow resolves the cohort bookmarks
+            // through this proxy, and that request path arrives without the header.
+            // The header is a pass-through correlation hint, so omitting it is safe.
+            ...(sourceOrigin != null ? { "x-source-origin": sourceOrigin } : {}),
         }
     };
 

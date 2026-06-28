@@ -189,3 +189,11 @@ export const getStandardConceptsBody = z.object({
 export const getStandardConcepts = z.object({
   body: getStandardConceptsBody,
 });
+
+export const checkConceptCoverageBody = z.object({
+  datasetId: z.string().uuid(),
+  conceptIds: z.array(z.number()),
+});
+export const checkConceptCoverage = z.object({
+  body: checkConceptCoverageBody,
+});
