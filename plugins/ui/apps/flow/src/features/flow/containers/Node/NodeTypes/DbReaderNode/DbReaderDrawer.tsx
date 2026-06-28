@@ -25,7 +25,6 @@ import { NodeState } from "~/features/flow/types";
 import { isDuplicateNodeName } from "~/features/flow/utils";
 import { RootState, dispatch } from "~/store";
 import { isValid2dArray } from "~/utils";
-import { useGetDatabasesQuery } from "~/features/flow/slices";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { NodeChoiceMap } from "../../NodeTypes";
 import { DbReaderNodeData } from "./DbReaderNode";
@@ -63,8 +62,7 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
 }) => {
   const { formData, setFormData, onFormDataChange } =
     useFormData<FormData>(EMPTY_FORM_DATA);
-  const { data: databases = [], isLoading: isLoadingDatabases } =
-    useGetDatabasesQuery();
+  const databases = useSelector((state: RootState) => state.flow.databases);
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id),
   );
@@ -148,14 +146,25 @@ export const DbReaderDrawer: FC<DbReaderDrawerProps> = ({
             onChange={(e: SelectChangeEvent<string>) =>
               onFormDataChange({ database: e.target.value })
             }
-            disabled={isLoadingDatabases}
+            disabled={databases.length === 0}
           >
-            {databases.map((db) => (
-              <MenuItem key={db.code} value={db.code}>
-                {db.code} - {db.dialect}
+            {databases.length === 0 ? (
+              <MenuItem value="" disabled>
+                No databases configured — add them in Variables
               </MenuItem>
-            ))}
+            ) : (
+              databases.map((db) => (
+                <MenuItem key={db.name} value={db.name}>
+                  {db.name} ({db.code})
+                </MenuItem>
+              ))
+            )}
           </Select>
+          {databases.length === 0 && (
+            <FormHelperText>
+              Configure database variables in the Variables panel first.
+            </FormHelperText>
+          )}
         </FormControl>
       </Box>
       <Editor

@@ -1,11 +1,12 @@
 <template>
   <button
     @click="clicked"
-    v-bind:class="{ active: active, disabled: disabled }"
+    v-bind:class="{ active: active }"
     v-bind:title="title"
     class="chartButton"
     tabindex="0"
     :disabled="disabled"
+    :data-testid="`pa-chart-btn-${name}`"
   >
     <span class="icon" v-bind:style="'font-family:' + iconGroup">{{ icon }}</span>
   </button>

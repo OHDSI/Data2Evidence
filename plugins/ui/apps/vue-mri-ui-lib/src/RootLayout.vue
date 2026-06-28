@@ -51,21 +51,36 @@ export default {
 }
 
 .root-layout {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
 
   > main {
-    height: calc(100% - 56px);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 }
 
 .app-container {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   width: 100%;
   height: 100%;
   max-width: 100%;
 }
 
 #default-content, #component-content {
-  min-height: 500px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 </style>

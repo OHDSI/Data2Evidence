@@ -31,26 +31,26 @@ def dqd_plugin(options: DqdOptionsType):
     logger.info(f"Flow parameters received: {options.json()}")
     flow_run_id = runtime.flow_run.id
 
+    # Probe the real underlying dialect (dialect=None infers it from the credentials,
+    # no live connection). The TrexDao reports dialect 'trex', so this is the only way
+    # to recognise a HANA dataset served through the trex pgwire passthrough.
+    is_hana = (
+        DBDao(
+            dialect=None,
+            database_code=options.databaseCode,
+            cache_id=options.cacheId,
+        ).dialect
+        == SupportedDatabaseDialects.HANA
+    )
+
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
         cache_id=options.cacheId,
     )
-    
-    if dbdao.dialect != SupportedDatabaseDialects.HANA:
-        dbdao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-            database_code=options.databaseCode,
-            cache_id=options.cacheId,
-        )
-    
-    # Todo: Update implementation if Hana uses trex
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
-    )
-    
+    dbdao.is_hana = is_hana
+    use_trex_connection = options.use_trex_connection
+
     r_connection_string = dbdao.get_r_database_connector_connection_string(
         user_type=UserType.READ_USER, release_date=options.releaseDate
     )
@@ -64,13 +64,13 @@ def dqd_plugin(options: DqdOptionsType):
         connectionDetails=r_connection_string,
         use_trex_connection=use_trex_connection,
     )
-    # For TREX connections, set vocabSchemaName to schemaName
-    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+    # For non-HANA TREX connections, set vocabSchemaName to schemaName
+    if not is_hana and use_trex_connection:
         dqd_parameters.vocabSchemaName = options.schemaName
 
     if (
         options.cohortDefinitionId
-        and dbdao.dialect == SupportedDatabaseDialects.HANA
+        and is_hana
         and dbdao.tenant_configs.authMode == AuthMode.JWT
     ):
         # For Hana JWT mode, fetch the materialized cohort schema and assign to DQD parameters
@@ -78,11 +78,11 @@ def dqd_plugin(options: DqdOptionsType):
         if schema_from_api:
             dqd_parameters.materializedCohortDatabaseSchema = schema_from_api
 
-    execute_dqd(dqd_parameters, flow_run_id, dbdao.dialect)
+    execute_dqd(dqd_parameters, flow_run_id, is_hana)
 
 
 @task(log_prints=True, task_run_name="execute_dqd_{dqd_params.schemaName}")
-def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatabaseDialects):
+def execute_dqd(dqd_params: DqdParams, flow_run_id: str, is_hana: bool):
     logger = get_run_logger()
 
     logger.info("Running DQD with input parameters:")
@@ -95,7 +95,7 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatab
         robjects.r(f"source('{r_script_path}')")
         r_execute_dqd = robjects.r['execute_dqd']
         # For HANA the Database/Schemas are represented differently and do not use a dotted database.schema form
-        if dialect == SupportedDatabaseDialects.HANA:
+        if is_hana:
             cdm_database_schema = dqd_params.schemaName
             vocab_database_schema = dqd_params.vocabSchemaName
             cdm_source_name = dqd_params.schemaName
@@ -129,7 +129,10 @@ def execute_dqd(dqd_params: DqdParams, flow_run_id: str, dialect: SupportedDatab
             cdmVersion = dqd_params.cdmVersionNumber,
             cohortDatabaseSchema = dqd_params.cohortDatabaseSchemaR,
             cohortTableName = dqd_params.cohortTableName if dqd_params.cohortTableName else "",
-        )   
+            # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
+            # the R side overrides the connection's `dbms` attribute to this value.
+            translateDialect = "hana" if is_hana else "",
+        )
         
     # Read the result from the output file
     with open(f"{dqd_params.outputFolder}/{dqd_params.outputFile}", "rt") as f:

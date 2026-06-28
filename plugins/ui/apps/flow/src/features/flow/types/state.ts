@@ -7,7 +7,7 @@ import {
 } from "./node.state";
 import { FlowStatus, SaveFlowDialogState } from "./dataflow.state";
 import { FlowRunState } from "./flow-run.state";
-import { KeyValue } from "./common";
+import { DatabaseVariable, SchemaVariable, KeyValue } from "./common";
 
 export interface FlowRootState {
   dataflowId: string;
@@ -24,4 +24,6 @@ export interface FlowRootState {
   edges: EntityState<EdgeState>;
   variables: KeyValue[];
   importLibs: string[];
+  databases: DatabaseVariable[];
+  schemas: SchemaVariable[];
 }

@@ -322,6 +322,22 @@ export class TrexDAO {
       const result = await this.conn.query(sql);
       return result as IConceptRecordCount[];
     } catch (error) {
+      // Degrade gracefully when the Data Characterization concept-count table
+      // hasn't been built (DC not run, or run without executeConceptRecordCount):
+      // return empty so the caller fills zero counts instead of 500-ing concept
+      // browsing. Only swallow the specific "table absent" error.
+      const msg = String((error as { message?: string })?.message ?? error);
+      if (
+        /achilles_result_concept_count/i.test(msg) &&
+        /(could not find table|does not exist|invalid table name|not found)/i.test(
+          msg,
+        )
+      ) {
+        console.warn(
+          `getConceptRecordCount: ${dcResultsSchemaName}.achilles_result_concept_count not found; returning empty (DC record counts not generated)`,
+        );
+        return [];
+      }
       console.error(error);
       throw error;
     }

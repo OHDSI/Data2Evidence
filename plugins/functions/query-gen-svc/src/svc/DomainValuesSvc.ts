@@ -391,11 +391,12 @@ const AND_SEPARATOR = " AND ";
 
 /**
  * Removes empty search query conditions from SQL string.
- * Finds the EMPTY_SEARCH_PLACEHOLDER and removes the entire AND clause containing it.
+ * Finds the EMPTY_SEARCH_PLACEHOLDER and removes the entire condition containing it.
  *
  * Examples of patterns removed:
  * - AND (@REF.CONCEPT_NAME) LIKE_REGEXPR '__EMPTY_SEARCH__' FLAG 'i'
  * - AND JARO_SIMILARITY(lower(R.CONCEPT_NAME), lower('__EMPTY_SEARCH__')) >= 0.65
+ * - WHERE CONTAINS (RCD.cohort_definition_name, '%__EMPTY_SEARCH__%', FUZZY (0.5))
  */
 function removeEmptySearchCondition(sql: string): string {
     const placeholderIndex = sql.indexOf(EMPTY_SEARCH_PLACEHOLDER);
@@ -404,38 +405,59 @@ function removeEmptySearchCondition(sql: string): string {
         return sql;
     }
 
-    // Find the preceding "AND" (case-insensitive)
-    const beforePlaceholder = sql.substring(0, placeholderIndex);
-    const andIndex = beforePlaceholder.toUpperCase().lastIndexOf(AND_SEPARATOR);
+    const upperSql = sql.toUpperCase();
+    const beforePlaceholder = upperSql.substring(0, placeholderIndex);
+    const andIndex = beforePlaceholder.lastIndexOf(AND_SEPARATOR);
+    const whereIndex = beforePlaceholder.lastIndexOf(" WHERE ");
 
-    if (andIndex === -1) {
-        return sql;
+    if (andIndex !== -1 && (whereIndex === -1 || andIndex > whereIndex)) {
+        // Placeholder is in an AND clause; remove from that AND to the next terminator
+        const afterAnd = sql.substring(andIndex + AND_SEPARATOR.length);
+        const upperAfterAnd = afterAnd.toUpperCase();
+
+        const nextAndIndex = upperAfterAnd.indexOf(AND_SEPARATOR);
+        const orderByIndex = upperAfterAnd.indexOf(" ORDER BY");
+        const groupByIndex = upperAfterAnd.indexOf(" GROUP BY");
+
+        const terminators = [nextAndIndex, orderByIndex, groupByIndex]
+            .filter(i => i !== -1);
+
+        const endOffset: number = terminators.length === 0
+            ? afterAnd.length
+            : Math.min(...terminators);
+
+        const endIndex = andIndex + AND_SEPARATOR.length + endOffset;
+        return sql.substring(0, andIndex) + sql.substring(endIndex);
     }
 
-    // Find the end of the condition: next " AND " or end of WHERE clause
-    const afterAnd = sql.substring(andIndex + AND_SEPARATOR.length);
-    const upperAfterAnd = afterAnd.toUpperCase();
+    if (whereIndex !== -1) {
+        // Placeholder is the first (or only) WHERE predicate
+        const afterWhere = sql.substring(whereIndex + " WHERE ".length);
+        const upperAfterWhere = afterWhere.toUpperCase();
 
-    // Look for next AND, ORDER BY, GROUP BY, or end of string
-    const nextAndIndex = upperAfterAnd.indexOf(AND_SEPARATOR);
-    const orderByIndex = upperAfterAnd.indexOf(" ORDER BY");
-    const groupByIndex = upperAfterAnd.indexOf(" GROUP BY");
+        const nextAndIndex = upperAfterWhere.indexOf(AND_SEPARATOR);
+        const orderByIndex = upperAfterWhere.indexOf(" ORDER BY");
+        const groupByIndex = upperAfterWhere.indexOf(" GROUP BY");
 
-    // Find the earliest terminator
-    const terminators = [nextAndIndex, orderByIndex, groupByIndex]
-        .filter(i => i !== -1);
+        const terminators = [nextAndIndex, orderByIndex, groupByIndex]
+            .filter(i => i !== -1);
 
-    let endOffset: number;
-    if (terminators.length === 0) {
-        // No terminator found, remove to end
-        endOffset = afterAnd.length;
-    } else {
-        endOffset = Math.min(...terminators);
+        const endOffset: number = terminators.length === 0
+            ? afterWhere.length
+            : Math.min(...terminators);
+
+        if (nextAndIndex !== -1 && endOffset === nextAndIndex) {
+            // First predicate is the placeholder; drop it and keep the rest after WHERE
+            const endIndex = whereIndex + " WHERE ".length + nextAndIndex + AND_SEPARATOR.length;
+            return sql.substring(0, whereIndex) + " WHERE " + sql.substring(endIndex);
+        }
+
+        // Only predicate is the placeholder; remove the entire WHERE clause
+        const endIndex = whereIndex + " WHERE ".length + endOffset;
+        return sql.substring(0, whereIndex) + sql.substring(endIndex);
     }
 
-    // Remove from "AND" to the end of the condition
-    const endIndex = andIndex + AND_SEPARATOR.length + endOffset;
-    return sql.substring(0, andIndex) + sql.substring(endIndex);
+    return sql;
 }
 
 function getDistinctValuesFromReference(
@@ -487,8 +509,10 @@ function getDistinctValuesFromReference(
         aliasedRefFilter
     );
 
-    // Remove empty search query conditions when searchQuery is empty
-    // The placeholder __EMPTY_SEARCH__ is used to identify the AND clause to remove
+    // Remove empty search query conditions when searchQuery is empty.
+    // removeEmptySearchCondition() strips either an AND clause containing the
+    // placeholder or a lone/leading WHERE predicate, so scoping predicates like
+    // DOMAIN_ID = 'Gender' are preserved.
     if (!searchQuery) {
         sQuery.queryString = removeEmptySearchCondition(sQuery.queryString);
     }

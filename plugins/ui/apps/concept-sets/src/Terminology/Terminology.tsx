@@ -36,6 +36,7 @@ import { i18nKeys } from "../context/state";
 import "./Terminology.scss";
 
 const FEATURE_ADMIN_ONLY_SHARING = "adminOnlySharing";
+const FEATURE_CONCEPT_RECORD_COUNTS = "conceptRecordCounts";
 
 export interface TerminologyProps {
   onConceptIdSelect?: (
@@ -368,6 +369,10 @@ export const Terminology: FC<TerminologyProps> = ({
     features?.find((f) => f.feature === FEATURE_ADMIN_ONLY_SHARING)
       ?.isEnabled ?? false;
   const canShare = featuresLoading ? false : !adminOnlySharingEnabled;
+  const showConceptRecordCounts = featuresLoading
+    ? true
+    : features?.find((f) => f.feature === FEATURE_CONCEPT_RECORD_COUNTS)
+        ?.isEnabled ?? true;
   const isConceptMultiSelect = mode === "CONCEPT_MULTI_SELECT";
 
   // Show simplified interface for multi-select mode
@@ -858,6 +863,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   defaultFilters={defaultFilters}
                   mode={mode}
                   isAtlas={isAtlas}
+                  showConceptRecordCounts={showConceptRecordCounts}
                 />
               )}
             </div>

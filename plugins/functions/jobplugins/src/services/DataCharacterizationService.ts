@@ -166,6 +166,11 @@ export class DataCharacterizationService {
         excludeAnalysisIds,
         releaseId,
         releaseDate,
+        // Build the concept record-count table by default; the conceptRecordCount
+        // endpoint reads it. Omitting it left the flow param null, which the flow
+        // treated as "skip" while the read side still expected the table -> 500.
+        executeConceptRecordCount:
+          dataCharacterizationFlowRunDto.executeConceptRecordCount ?? true,
       },
     };
 

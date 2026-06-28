@@ -15,7 +15,7 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260618090542-6f6ed84",
+    "@ohdsi/atlas3": "0.1.0-20260621142339-0a13950",
     "@ohdsi/jobs-plugin": "^0.1.0",
     "@ohdsi/network-plugin": "^0.1.0",
     "@ohdsi/notebook-plugin": "^0.1.0",

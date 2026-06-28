@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from './usePortalContext'
 
 const FEATURE_ADMIN_ONLY_SHARING = 'adminOnlySharing'
 
@@ -7,16 +7,16 @@ const FEATURE_ADMIN_ONLY_SHARING = 'adminOnlySharing'
  * Composable for managing sharing permissions based on feature flag
  */
 export function useUserRole() {
-  const portalAPI = getPortalAPI()
+  const portalContext = usePortalContext()
 
   // Check if features are still loading
   const featuresLoading = computed(() => {
-    return portalAPI?.featuresLoading ?? true
+    return portalContext.featuresLoading
   })
 
   // Check if adminOnlySharing feature is enabled
   const adminOnlySharingEnabled = computed(() => {
-    const features = portalAPI?.features ?? []
+    const features = portalContext.features
     const feature = features.find(f => f.feature === FEATURE_ADMIN_ONLY_SHARING)
     return feature?.isEnabled ?? false
   })

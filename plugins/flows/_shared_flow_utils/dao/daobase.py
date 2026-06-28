@@ -446,8 +446,11 @@ class DaoBase(ABC):
                 SupportedDatabaseDialects.POSTGRES | SupportedDatabaseDialects.BIGQUERY
             ):
                 database_credentials.readRole = "postgres_tenant_read_role"
+            case SupportedDatabaseDialects.TREX:
+                # Trex pgwire has a single sql user; no separate read role.
+                database_credentials.readRole = ""
             case _:
-                dialect_err = f"Dialect {self.values['dialect']} not supported. Unable to find corresponding dialect read role."
+                dialect_err = f"Dialect {database_credentials.dialect} not supported. Unable to find corresponding dialect read role."
                 raise ValueError(dialect_err)
         return database_credentials
 

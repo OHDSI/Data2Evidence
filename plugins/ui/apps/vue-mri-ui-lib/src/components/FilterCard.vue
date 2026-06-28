@@ -2,6 +2,7 @@
   <div
     v-bind:class="['FilterCard', cssClass, this.isNew && !this.isBasic ? 'MriPaFilterCardNew' : '']"
     @click="onFiltercardClick"
+    :data-testid="testId"
   >
     <!--Filtercard rename messageBox-->
     <messageBox messageType="custom" @close="cancel" :busy="busy" v-if="renameModal.show">
@@ -61,6 +62,7 @@
               class="btn-filtercard-menu"
               no-caret
               align="right"
+              trigger-testid="filter-card-menu-trigger"
               @show="onDropdownShow"
             >
               <template v-slot:button-content>
@@ -247,7 +249,7 @@ export default {
           this.displayAdvanceTime = false
           this.clearFilterCardTimeFilter({ filterCardId: this.id })
         }
-      }
+      },
     },
   },
   computed: {
@@ -357,7 +359,7 @@ export default {
       const totalFilterCards = this.getFilterCardCount({
         excludeBasicCard: true,
         excludedOnly: false,
-        matchType: 'matchall'
+        matchType: 'matchall',
       })
       if (!this.isExcluded && !this.isBasic && totalFilterCards > 1) {
         menu.push({
@@ -423,11 +425,14 @@ export default {
     displayShowCohortEntryExit() {
       return this.getMriFrontendConfig._internalConfig.panelOptions.cohortEntryExit
     },
+    testId() {
+      return `pa-filter-card-${this.id.replace(/\./g, '-')}`
+    },
     totalFilterCardCount() {
       return this.getFilterCardCount({
         excludeBasicCard: true,
         excludedOnly: false,
-        matchType: 'matchall'
+        matchType: 'matchall',
       })
     },
   },
