@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useState } from "react";
+import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from "react";
 import Divider from "@mui/material/Divider";
 import { Button, Dialog, Checkbox } from "@portal/components";
 import { UserWithRolesInfoExt, Feedback, CloseDialogType } from "../../../../types";
@@ -33,19 +33,24 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
   const [newDataAdminRoles, setNewDataAdminRoles] = useState<string[]>([]);
   const [newAlpRoles, setNewAlpRoles] = useState<string[]>([]);
 
-  // Initialise the editable role selection when the dialog opens for a user.
-  // Deliberately keyed on open/userId rather than the role arrays: a background
-  // refresh of the user list hands down new array references for these props,
-  // and re-seeding on every such change would discard the admin's in-progress
-  // selection (leaving Save permanently disabled). hasChanges()/handleSave still
-  // read the latest props, so the comparison baseline stays current.
+  // Seed the editable role selection once each time the dialog opens for a user.
+  // A background refresh of the user list hands down new array references for
+  // these props; re-seeding on every such change would discard the admin's
+  // in-progress selection and leave Save permanently disabled. The ref guard
+  // ensures we only seed on open (or when switching user), while hasChanges()
+  // and handleSave keep reading the latest props so the baseline stays current.
+  const seededForUserId = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      seededForUserId.current = undefined;
+      return;
+    }
+    if (seededForUserId.current === user?.userId) return;
+    seededForUserId.current = user?.userId;
     setNewTenantRoles(user?.roles || []);
     setNewDataAdminRoles(dataAdminUserRoles || []);
     setNewAlpRoles(alpUserRoles || []);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, user?.userId]);
+  }, [open, user, dataAdminUserRoles, alpUserRoles]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
