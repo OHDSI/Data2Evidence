@@ -2,6 +2,10 @@ import { expect, test } from '../fixtures'
 
 const TEST_NAME = 'concept-sets'
 const SHOULD_SKIP = false
+
+// Tolerate minor anti-aliasing/render noise (dev runs differ by ~200px) while
+// still catching real content diffs (e.g. the ~20k-px unsettled-nav regression).
+const SCREENSHOT_OPTS = { maxDiffPixels: 1000 }
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 3 }) // Re-try up to 3 times for flaky tests
 
@@ -24,7 +28,7 @@ test(TEST_NAME, async ({ page }) => {
   // final state so it isn't captured mid-bootstrap.
   await expect(page.locator('.header__menu-group').getByText('Analysis', { exact: true })).toBeVisible()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
   // Concept set
@@ -111,7 +115,7 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.getByText('1,677 / 2,694')).toBeVisible()
   await page.getByText('✎').click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
-  await expect(page).toHaveScreenshot()
+  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
   await page.getByRole('textbox', { name: 'search terms' }).press('Enter')
@@ -151,5 +155,5 @@ test(TEST_NAME, async ({ page }) => {
   await page.waitForTimeout(3000)
   await expect(page.getByText('1,836 / 2,694')).toBeVisible()
 
-  await expect(page).toHaveScreenshot()
+  await expect(page).toHaveScreenshot(SCREENSHOT_OPTS)
 })
