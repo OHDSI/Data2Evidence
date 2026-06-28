@@ -16,14 +16,34 @@ const MRIComponent: FC<{ componentName: string; getToken?: () => Promise<string>
         }).placeAt(contentId);
       };
 
-      if (typeof sap !== "undefined") {
-        // sapui5 script already loaded
+      const reuseOrRecreateContainer = () => {
         const container = sap.ui.getCore().byId(containerId);
+
         if (!container) {
           initComponent();
-        } else {
-          container.placeAt(contentId);
+          return;
         }
+
+        if (typeof container.placeAt === "function") {
+          container.placeAt(contentId);
+          return;
+        }
+
+        if (typeof container.destroy === "function") {
+          container.destroy();
+        }
+
+        initComponent();
+      };
+
+      const isRealUi5Loaded =
+        typeof sap !== "undefined" &&
+        sap?.ui?.core?.ComponentContainer &&
+        typeof sap.ui.getCore === "function";
+
+      if (isRealUi5Loaded) {
+        // sapui5 script already loaded
+        reuseOrRecreateContainer();
         return;
       }
 

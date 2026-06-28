@@ -1,14 +1,14 @@
 import axios from 'axios'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 export const client = axios.create()
 
 client.interceptors.request.use(
   async config => {
-    const portalAPI = getPortalAPI()
+    const portalContext = usePortalContext()
 
     // Add Bearer token
-    const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+    const bearerToken = await portalContext.getToken()
     if (bearerToken && config.headers) {
       config.headers.Authorization = `Bearer ${bearerToken}`
     }

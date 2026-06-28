@@ -36,7 +36,7 @@ export class FilesManagerRouter {
           if (!user) {
             return res
               .status(404)
-              .send(`userDataId ${userDataId} does not exist`);
+              .send("userDataId does not exist");
           }
 
           const result = await this.filesManagerService.getFile(userDataId);
@@ -94,7 +94,7 @@ export class FilesManagerRouter {
           if (!user) {
             return res
               .status(404)
-              .send(`userDataId ${userDataId} does not exist`);
+              .send("userDataId does not exist");
           }
 
           await this.filesManagerService.deleteData(userDataId);
@@ -121,7 +121,7 @@ export class FilesManagerRouter {
           if (!user) {
             return res
               .status(404)
-              .send(`userDataId ${userDataId} does not exist`);
+              .send("userDataId does not exist");
           }
 
           res.status(200).send(user);

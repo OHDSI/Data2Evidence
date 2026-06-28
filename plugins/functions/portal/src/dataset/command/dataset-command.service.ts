@@ -224,10 +224,8 @@ export class DatasetCommandService {
   }
 
   async offboardDataset(id: string) {
-    const existing = await this.datasetRepo.getDataset(id);
-    const tokenDatasetCode = existing?.tokenDatasetCode;
-
     const dataset = await this.datasetRepo.getDataset(id);
+    const tokenDatasetCode = dataset?.tokenDatasetCode;
 
     const deleteDatasetFn = async (entityMgr: EntityManager, id: string) => {
       const result = await entityMgr.getRepository(Dataset).delete(id);

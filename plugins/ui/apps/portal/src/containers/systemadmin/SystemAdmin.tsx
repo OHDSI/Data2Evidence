@@ -1,8 +1,8 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { Snackbar, ErrorBoundary } from "@portal/components";
+import { ErrorBoundary } from "@portal/components";
 import { Header } from "../../components";
-import { useFeedback } from "../../contexts";
+import { FeedbackToast } from "../shared/FeedbackToast/FeedbackToast";
 import { useFeatures } from "../../hooks";
 import { IPluginItem, Plugins } from "../../types";
 import { loadPlugins, sortPluginsByType, getPluginChildPathPattern } from "../../utils";
@@ -27,8 +27,6 @@ const CURRENT_SYSTEM = env.REACT_APP_CURRENT_SYSTEM;
 
 const SystemAdmin: FC = () => {
   const location = useLocation();
-  const { clearFeedback, getFeedback } = useFeedback();
-  const feedback = getFeedback();
   const [systemFeatures] = useSystemFeatures();
   const [systemAdminPlugins, setSystemAdminPlugins] = useState<Plugins[]>([]);
   const [features] = useFeatures();
@@ -123,23 +121,13 @@ const SystemAdmin: FC = () => {
     updateSystemAdminPlugins();
   }, [systemFeatures, setupFeatureFlag]);
 
-  useEffect(() => {
-    if ((feedback?.autoClose || 0) > 0) setTimeout(() => clearFeedback(), feedback?.autoClose);
-  }, [feedback, clearFeedback]);
-
   const sortedPlugins = useMemo(() => sortPluginsByType(systemAdminPlugins), [systemAdminPlugins]);
 
   return (
     <div className="systemadmin__container">
       <Header portalType="systemadmin" systemAdminPlugins={sortedPlugins} />
       <main>
-        <Snackbar
-          type={feedback?.type}
-          handleClose={clearFeedback}
-          message={feedback?.message}
-          description={feedback?.description}
-          visible={feedback?.message != null}
-        />
+        <FeedbackToast />
         {singleSpaApps.map((item: IPluginItem) => {
           const isActiveRoute = location.pathname.includes(`/systemadmin/${item.route}`);
           return (

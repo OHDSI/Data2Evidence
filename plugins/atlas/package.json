@@ -1,9 +1,12 @@
 {
   "name": "@data2evidence/atlas",
   "version": "0.0.1",
-  "description": "Atlas Lite UI plugin for Trex",
+  "description": "OHDSI Atlas3 UI plugin for Trex (served at /atlas, connected to WebAPI via d2e)",
   "type": "module",
   "license": "Apache-2.0",
+  "files": [
+    "resources"
+  ],
   "scripts": {
     "postinstall": "node scripts/postinstall.js",
     "build": "vite build && vite build --config vite.portal.config.mjs",
@@ -12,7 +15,8 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@data2evidence/d2e-atlas": "^0.13.0",
+    "@ohdsi/atlas3": "0.1.0-20260621142339-0a13950",
+    "@ohdsi/pythia-plugin": "0.1.0-develop.2.g8edf28a",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "single-spa-react": "^6.0.0",
@@ -37,6 +41,10 @@
         {
           "source": "/atlas-portal",
           "target": "/resources/portal"
+        },
+        {
+          "source": "/atlas-login",
+          "target": "/resources/login"
         }
       ],
       "uiplugins": {

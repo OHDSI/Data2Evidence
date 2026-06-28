@@ -177,3 +177,35 @@ export const CohortIdNameOutput = z.object({
   cohortName: z.string(),
   cohortDescription: z.string(),
 });
+
+// ==================== Concept Set Tool Schemas ====================
+
+const ConceptItemSchema = z.object({
+  id: z.number().describe("OMOP concept ID"),
+  useDescendants: z.boolean().describe("Include all descendant concepts"),
+  useMapped: z.boolean().describe("Include mapped concepts"),
+  isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
+});
+
+export const ListConceptSetsInput = {};
+
+export const GetConceptSetInput = {
+  conceptSetId: z.number().describe("The concept set ID to retrieve"),
+};
+
+export const CreateConceptSetInput = {
+  name: z
+    .string()
+    .min(1)
+    .describe("Unique name for the concept set within this dataset"),
+  concepts: z
+    .array(ConceptItemSchema)
+    .describe("List of OMOP concept items that define the set"),
+};
+
+export const CheckConceptCoverageInput = {
+  conceptIds: z
+    .array(z.number())
+    .describe("List of OMOP concept IDs to check against this dataset's vocabulary cache"),
+};
+

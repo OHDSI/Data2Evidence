@@ -1,5 +1,99 @@
 export type CleanupCallback = () => void;
 
+// --- CSS scoping -----------------------------------------------------------
+// vue-mri bundles its own Vuetify whose global/`:root`/component rules collide
+// with Atlas3 (also Vuetify). To contain it without an iframe, we rewrite every
+// vue-mri rule so it only matches inside vue-mri's mount (`.vue-main`):
+//  - `:root` / `html` / `body` / `*` (root targets)  ->  the scope selector
+//  - everything else  ->  `<scope> <selector>`
+// @keyframes/@font-face/@import are left global (harmless / required).
+const ROOT_SELECTOR_TOKENS = /^(:root|html|body|\*)\b/i;
+
+function scopeSelectorText(selectorText: string, scope: string): string {
+  return selectorText
+    .split(',')
+    .map((raw) => {
+      const sel = raw.trim();
+      if (!sel) return raw;
+      const exact = sel.toLowerCase();
+      if (exact === ':root' || exact === 'html' || exact === 'body' || exact === '*') {
+        return scope;
+      }
+      const m = sel.match(ROOT_SELECTOR_TOKENS);
+      if (m) {
+        // e.g. `body .foo` -> `.vue-main .foo`, `html.dark` -> `.vue-main.dark`
+        return scope + sel.slice(m[0].length);
+      }
+      return `${scope} ${sel}`;
+    })
+    .join(', ');
+}
+
+export function scopeCssRules(rules: CSSRuleList, scope: string): string {
+  let out = '';
+  for (const rule of Array.from(rules) as CSSRule[]) {
+    if (rule.type === 1 /* STYLE_RULE */) {
+      const r = rule as CSSStyleRule;
+      out += `${scopeSelectorText(r.selectorText, scope)}{${r.style.cssText}}`;
+    } else if (rule.type === 4 /* MEDIA_RULE */) {
+      const r = rule as CSSMediaRule;
+      out += `@media ${r.media.mediaText}{${scopeCssRules(r.cssRules, scope)}}`;
+    } else if (rule.type === 12 /* SUPPORTS_RULE */) {
+      const r = rule as CSSSupportsRule;
+      out += `@supports ${r.conditionText}{${scopeCssRules(r.cssRules, scope)}}`;
+    } else {
+      // @keyframes (7), @font-face (5), @import (3), etc. — keep global.
+      out += rule.cssText;
+    }
+  }
+  return out;
+}
+
+export function scopeCssText(cssText: string, scope: string): string {
+  try {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync(cssText);
+    return scopeCssRules(sheet.cssRules, scope);
+  } catch {
+    return cssText; // parsing failed — fall back to unscoped
+  }
+}
+
+// Rewrite an already-injected <style> in place so its rules are scoped.
+export function scopeStyleElement(styleEl: HTMLStyleElement, scope: string): void {
+  if (styleEl.dataset.mriScoped) return;
+  styleEl.dataset.mriScoped = '1';
+  try {
+    const rules = styleEl.sheet?.cssRules;
+    if (rules && rules.length) {
+      styleEl.textContent = scopeCssRules(rules, scope);
+    }
+  } catch {
+    /* sheet not accessible/ready */
+  }
+}
+
+// Fetch a stylesheet, scope it, and inject it as a <style> (so a vue-mri CSS
+// file can't restyle the Atlas3 host).
+export async function loadScopedStyleSheet(href: string, scope: string): Promise<CleanupCallback> {
+  let css = '';
+  try {
+    const resp = await fetch(href);
+    css = await resp.text();
+  } catch {
+    /* leave empty */
+  }
+  const style = document.createElement('style');
+  style.dataset.mriScoped = '1';
+  style.setAttribute('data-href', href);
+  style.textContent = scopeCssText(css, scope);
+  document.head.appendChild(style);
+  return () => {
+    if (style.parentNode) style.parentNode.removeChild(style);
+  };
+}
+
+
 // Load script via fetch (uses intercepted fetch with auth) then inject as inline script
 // We prepend __webpack_public_path__ to ensure webpack loads chunks from the right location
 export async function loadScriptWithAuth(src: string, onload?: () => void, attrs?: Record<string, string>): Promise<CleanupCallback> {
@@ -55,6 +149,14 @@ export async function loadScriptWithAuth(src: string, onload?: () => void, attrs
       document.head.removeChild(script);
     }
   };
+}
+
+// Load a script as an ES module (type="module"). Required for vue-mri's
+// Vite-built bundle, which uses import.meta and must run as a module.
+// Static assets under /d2e/mri/ are served without auth, so no auth header
+// is needed (and a real src — not a blob — lets SAP UI5 self-locate).
+export function loadEsModuleScript(src: string, onload?: () => void): CleanupCallback {
+  return loadScript(src, onload, { type: 'module' });
 }
 
 // Original loadScript for external URLs (CDN) that don't need auth
@@ -138,14 +240,19 @@ export function loadStyleSheet(href: string): CleanupCallback {
   };
 }
 
+// Mirror the d2e portal's SAP UI5 bootstrap (apps/portal/src/utils/loadScript.ts).
+// baseUrl is the d2e prefix incl. trailing slash, e.g. `${origin}/d2e/`.
 export function loadSapScript(sapCoreUrl: string, onload: () => void, baseUrl: string): CleanupCallback {
   return loadScript(sapCoreUrl, onload, {
     id: 'sap-ui-bootstrap',
     'data-sap-ui-theme': 'sap_belize',
     'data-sap-ui-libs': 'sap.m',
+    'data-sap-ui-compatVersion': 'edge',
+    'data-sap-ui-preload': 'async',
     'data-sap-ui-resourceroots': JSON.stringify({
       hc: `${baseUrl}hc`,
       'hc.hph': `${baseUrl}hc/hph`,
+      'hc.hph.cdw.config': `${baseUrl}hc/hph/cdw/config`,
       'hc.mri.pa.config': `${baseUrl}hc/mri/pa/config`,
     }),
   });

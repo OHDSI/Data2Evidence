@@ -7,203 +7,75 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue';
 import PluginContainer from './PluginContainer.vue';
-import { loadScript, loadScriptWithAuth, loadStyleSheetWithAuth, injectInlineScript, type CleanupCallback } from '../utils/scriptLoader';
+import { loadEsModuleScript, loadScopedStyleSheet, loadSapScript, type CleanupCallback } from '../utils/scriptLoader';
 
-// Vue MRI assets are served via /d2e prefix which routes through WebAPI to trex
-const BASE_URL = '/d2e';
-const ASSETS_URL = `${BASE_URL}/mri/assets.json`;
-const SAP_CORE_URL = `${BASE_URL}/ui/sap-ui-core.js`;
-const VUE_COMPAT_URL = 'https://cdn.jsdelivr.net/npm/@vue/compat@3.5.17/dist/vue.global.prod.js';
+// vue-mri mounts into `.vue-main`; scope all its CSS under that so it can't
+// restyle the Atlas3 host (Atlas3 is also a Vuetify app sharing class names).
+const MRI_SCOPE = '.vue-main';
+
+// vue-mri (Patient Analytics) is served by d2e under /d2e/mri/ and its SAP UI5
+// runtime under /d2e/ui/. We load it the way the d2e portal does
+// (apps/portal/src/plugins/mri/utils/PAPlugin.tsx): bootstrap SAP UI5, then the
+// app's CSS, then its ES-module JS.
+const ORIGIN = window.location.origin;
+const D2E_BASE = `${ORIGIN}/d2e/`;
+const ASSETS_URL = `${D2E_BASE}mri/assets.json`;
+const SAP_CORE_URL = `${D2E_BASE}ui/sap-ui-core.js`;
+
+// The @d4l web-components library is normally registered by the d2e portal at
+// boot; in Atlas3 nobody loads it, so vue-mri's stencil loader 404s on its
+// entry chunk. We register d4l ourselves from the copy served at /atlas/d4l-ui/.
+// d4l-ui.esm.js auto-detects its resourcesUrl from import.meta.url, so its lazy
+// chunks load from /atlas/d4l-ui/. Loading it first means vue-mri's own
+// defineCustomElements() finds the elements already defined and skips them.
+const D4L_LOADER = `${ORIGIN}/atlas/d4l-ui/d4l-ui.esm.js`;
 
 let cleanupCallbacks: CleanupCallback[] = [];
 
+function loadModule(src: string): Promise<void> {
+  return new Promise((resolve) => {
+    cleanupCallbacks.push(loadEsModuleScript(src, () => resolve()));
+  });
+}
+
 onMounted(async () => {
   try {
-    // vue-mri dependencies (like vuedraggable) expect window.Vue with Vue 2 APIs
-    // Save the current window.Vue (Atlas3's Vue 3) and restore it later
-    const originalVue = (window as any).Vue;
+    // 1. Register d4l web components before vue-mri runs.
+    await loadModule(D4L_LOADER).catch((e) => console.error('[VueMriLoader] d4l load failed:', e));
 
-    // Wait for portalAPI to be set on the plugin-container element
-    // vue-mri's getPortalAPI() looks for this
-    const waitForPortalAPI = () => {
-      return new Promise<void>((resolve, reject) => {
-        console.log('[VueMRI Loader] Waiting for portalAPI...');
-        let attempts = 0;
-        const maxAttempts = 100; // 5 seconds max wait
+    const response = await fetch(ASSETS_URL);
+    if (!response.ok) {
+      throw new Error(`Failed to load vue-mri assets manifest (${response.status})`);
+    }
+    const { css, js } = await response.json();
 
-        const checkInterval = setInterval(() => {
-          attempts++;
-          const containers = document.getElementsByClassName('plugin-container');
-
-          // Find the container that has portalAPI (there may be multiple containers)
-          let containerWithAPI = null;
-          for (let i = 0; i < containers.length; i++) {
-            if ((containers[i] as any).portalAPI) {
-              containerWithAPI = containers[i];
-              break;
-            }
-          }
-
-          if (attempts === 1 || attempts % 20 === 0) {
-            console.log(`[VueMRI Loader] Attempt ${attempts}: found ${containers.length} containers, portalAPI found: ${!!containerWithAPI}`);
-          }
-
-          if (containerWithAPI) {
-            console.log('[VueMRI Loader] portalAPI found on container:', (containerWithAPI as any).portalAPI);
-            clearInterval(checkInterval);
-            resolve();
-          } else if (attempts >= maxAttempts) {
-            clearInterval(checkInterval);
-            reject(new Error('Timeout waiting for portalAPI'));
-          }
-        }, 50);
-      });
+    const loadMriAssets = () => {
+      // Load vue-mri's CSS scoped under .vue-main so it can't restyle Atlas3.
+      for (const href of css || []) {
+        loadScopedStyleSheet(href, MRI_SCOPE).then((cleanup) => cleanupCallbacks.push(cleanup));
+      }
+      const cacheKey = `${localStorage.getItem('selectedVocabulary') || 'default'}_${new Date().getTime()}`;
+      for (const src of js || []) {
+        cleanupCallbacks.push(loadEsModuleScript(`${src}?v=${cacheKey}`, () => {}));
+      }
     };
 
-    console.log('[VueMRI Loader] Starting load process...');
-    await waitForPortalAPI();
-    console.log('[VueMRI Loader] portalAPI ready, loading Vue compat...');
-
-    // Get the portalAPI from our container and copy it to ALL plugin-container elements
-    // This is needed because vue-mri's getPortalAPI() checks if there's exactly 1 container,
-    // but we have 2 (Atlas3's container and our plugin's container)
-    const containers = document.getElementsByClassName('plugin-container');
-    let portalAPI = null;
-    for (let i = 0; i < containers.length; i++) {
-      if ((containers[i] as any).portalAPI) {
-        portalAPI = (containers[i] as any).portalAPI;
-        break;
-      }
-    }
-
-    // Set portalAPI on ALL plugin-container elements
-    if (portalAPI) {
-      console.log('[VueMRI Loader] Found portalAPI, copying to all', containers.length, 'containers');
-      for (let i = 0; i < containers.length; i++) {
-        if (!(containers[i] as any).portalAPI) {
-          (containers[i] as any).portalAPI = portalAPI;
-          console.log('[VueMRI Loader] Copied portalAPI to container', i);
-        } else {
-          console.log('[VueMRI Loader] Container', i, 'already has portalAPI');
-        }
-      }
+    // 2. Bootstrap SAP UI5 once. SAP UI5 cannot be re-bootstrapped — if the
+    // plugin is re-mounted (navigating away and back), reloading sap-ui-core.js
+    // throws "found in negative cache: Core.js". So if SAP is already present,
+    // reuse it and don't reload (and never remove it on unmount).
+    if ((window as any).sap?.ui) {
+      loadMriAssets();
     } else {
-      console.error('[VueMRI Loader] No portalAPI found to copy!');
+      loadSapScript(SAP_CORE_URL, loadMriAssets, D2E_BASE);
     }
-
-    // Load Vue compat globally first - this provides Vue 2 APIs for vue-mri dependencies
-    const vueCompatCleanup = loadScript(VUE_COMPAT_URL, async () => {
-      console.log('[VueMRI Loader] Vue compat loaded, window.Vue:', !!(window as any).Vue);
-
-      // Fetch the assets manifest
-      const response = await fetch(ASSETS_URL);
-      if (!response.ok) {
-        throw new Error('Failed to load vue-mri assets manifest');
-      }
-
-      const { css, js } = await response.json();
-
-      console.log('[VueMRI Loader] Loading assets:', { css, js });
-
-      // Load SAP UI5 core via fetch with auth
-      const sapCleanup = await loadScriptWithAuth(SAP_CORE_URL);
-      console.log('[VueMRI Loader] SAP UI5 loaded');
-      cleanupCallbacks.push(sapCleanup);
-
-      // Verify portalAPI is still on all containers before loading vue-mri scripts
-      const containersNow = document.getElementsByClassName('plugin-container');
-      console.log('[VueMRI Loader] Before loading vue-mri scripts, checking', containersNow.length, 'containers:');
-      for (let i = 0; i < containersNow.length; i++) {
-        console.log(`  Container ${i}: has portalAPI =`, !!(containersNow[i] as any).portalAPI);
-        if ((containersNow[i] as any).portalAPI) {
-          console.log(`    portalAPI content:`, (containersNow[i] as any).portalAPI);
-        }
-      }
-
-      // Re-verify right before loading each script
-      console.log('[VueMRI Loader] About to load stylesheets and scripts');
-
-      // Patch getElementsByClassName to intercept vue-mri's getPortalAPI() call
-      // This is a workaround for when there are multiple plugin-container elements
-      const patchScript = injectInlineScript(`
-        console.log('[Patch Script] Installing interceptors');
-
-        // Save the original getElementsByClassName
-        const originalGetElementsByClassName = Document.prototype.getElementsByClassName;
-
-        // Override getElementsByClassName to handle the special case for 'plugin-container'
-        Document.prototype.getElementsByClassName = function(className) {
-          const result = originalGetElementsByClassName.call(this, className);
-
-          // If this is being called for 'plugin-container', check if we're in the context
-          // of getPortalAPI (by checking the call stack or just always applying the fix)
-          if (className === 'plugin-container') {
-            console.log('[Patch] getElementsByClassName("plugin-container") called, found', result.length, 'elements');
-
-            // If there are multiple containers, temporarily report only one with portalAPI
-            if (result.length > 1) {
-              // Find the container with portalAPI
-              for (let i = 0; i < result.length; i++) {
-                if (result[i].portalAPI) {
-                  console.log('[Patch] Multiple containers detected, returning only the one with portalAPI (index', i, ')');
-                  // Return a fake HTMLCollection with just this one element
-                  const fakeCollection = [result[i]];
-                  fakeCollection.item = function(index) { return this[index] || null; };
-                  Object.defineProperty(fakeCollection, 'length', { value: 1, writable: false });
-                  return fakeCollection;
-                }
-              }
-            }
-          }
-
-          return result;
-        };
-
-        // Set webpack public path to load chunks from the correct location
-        // Vue-mri chunks are served from /d2e/mri/js/, not from the plugin's location
-        window.__webpack_public_path__ = '/d2e/mri/';
-
-        console.log('[Patch Script] Set __webpack_public_path__ to /d2e/mri/');
-        console.log('[Patch Script] Interceptors installed');
-      `, 'portal-api-patch');
-      cleanupCallbacks.push(patchScript);
-
-      // Load stylesheets with auth
-      for (const href of css) {
-        console.log('[VueMRI Loader] Loading stylesheet:', href);
-        const styleCleanup = await loadStyleSheetWithAuth(href);
-        cleanupCallbacks.push(styleCleanup);
-      }
-
-      // Load scripts with auth (sequentially to maintain order)
-      for (const src of js) {
-        const check = document.getElementsByClassName('plugin-container');
-        console.log(`[VueMRI Loader] Loading script ${src}:`, check.length, 'containers, first has portalAPI:', !!(check[0] as any).portalAPI);
-        const scriptCleanup = await loadScriptWithAuth(src);
-        console.log('[VueMRI Loader] Loaded script:', src);
-        cleanupCallbacks.push(scriptCleanup);
-      }
-    });
-
-    cleanupCallbacks.push(vueCompatCleanup);
-
-    // Cleanup: restore original Vue when unmounting
-    cleanupCallbacks.push(() => {
-      if (originalVue) {
-        (window as any).Vue = originalVue;
-      } else {
-        delete (window as any).Vue;
-      }
-    });
-
   } catch (error) {
-    console.error('[VueMRI Loader] Failed to load vue-mri:', error);
+    console.error('[VueMriLoader] Failed to load vue-mri:', error);
   }
 });
 
 onUnmounted(() => {
-  // Cleanup all loaded scripts and stylesheets
-  cleanupCallbacks.forEach(cleanup => cleanup());
+  cleanupCallbacks.forEach((cleanup) => cleanup());
   cleanupCallbacks = [];
 });
 </script>

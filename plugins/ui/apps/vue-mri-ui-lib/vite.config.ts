@@ -1,17 +1,20 @@
 /// <reference types="vitest/config" />
 import { defineConfig, loadEnv } from 'vite'
-import type { PluginOption, UserConfig } from 'vite'
+import type { PluginOption } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
 import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ command, mode }): UserConfig => {
+export default defineConfig(({ command, mode }) => {
   // Load env files with VITE_ prefix (Vite's default behavior)
   const env = loadEnv(mode, process.cwd(), '')
   const isProduction = mode === 'production'
   const isBuild = command === 'build'
+  const isServe = command === 'serve'
+  const isPreview = process.argv.includes('preview')
 
   // Parse navigation items for client routes (matching webpack config)
   const navigationItems = JSON.parse(env.VITE_NAVIGATION_ITEMS || '[]')
@@ -29,12 +32,56 @@ export default defineConfig(({ command, mode }): UserConfig => {
     console.log('VITE_REDIRECT_URL:', env.VITE_REDIRECT_URL)
   }
 
+  const backendTarget = env.VITE_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100'
+
+  const rootProxyConfig = {
+    target: backendTarget,
+    changeOrigin: true,
+    secure: false,
+    ws: false,
+    bypass: (req, _res, _options) => {
+      const url = req.url || ''
+      const path = url.split('?')[0] || ''
+      const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
+
+      if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
+        return url
+      }
+
+      if (path === '/' || path === '' || path === '/index.html') {
+        return url
+      }
+
+      if (isAtlasAsset) {
+        return null
+      }
+
+      if (
+        url.endsWith('.ico') ||
+        (url.endsWith('.js') && !url.includes('/d2e/') && !url.includes('/api/')) ||
+        url.endsWith('.css') ||
+        url.endsWith('.png') ||
+        url.endsWith('.svg') ||
+        (url.endsWith('.json') && url.startsWith('/assets'))
+      ) {
+        return url
+      }
+
+      if (clientRoutes.some((route: string) => path.startsWith(route))) {
+        return url
+      }
+
+      return null
+    },
+  }
+
   return {
     // Base path for assets (empty string matches webpack publicPath: '')
     base: '',
     logLevel: 'info',
 
     plugins: [
+      isBuild && cssInjectedByJsPlugin(),
       vue({
         template: {
           transformAssetUrls,
@@ -58,8 +105,6 @@ export default defineConfig(({ command, mode }): UserConfig => {
         }),
       // Replace %VITE_*% placeholders in HTML with env values
       htmlEnvPlugin(env),
-      // Generate assets.json plugin (matching HtmlWebpackPlugin behavior)
-      generateAssetsJsonPlugin(env.VITE_HOST || ''),
     ] as PluginOption[],
 
     // Expose VITE_ prefixed env variables to the client
@@ -123,21 +168,24 @@ export default defineConfig(({ command, mode }): UserConfig => {
       minify: isProduction,
       // Copy public folder contents to outDir
       copyPublicDir: true,
+      ...(isBuild
+        ? {
+            lib: {
+              entry: path.resolve(__dirname, 'src/lifecycles.ts'),
+              fileName: () => 'lifecycles.js',
+              formats: ['system'] as const,
+            },
+          }
+        : {}),
       rollupOptions: {
         // import-map-overrides is provided by portal, don't bundle it
         external: ['import-map-overrides'],
-        // Use main.ts as entry point instead of index.html
-        // This prevents Vite from inlining scripts from index.html that assume DOM elements exist
-        // index.html is only used for local development, portal provides its own container
-        input: {
-          main: path.resolve(__dirname, 'src/main.ts'),
-        },
         output: {
           // Map externals to global variables
           globals: {
             'import-map-overrides': 'importMapOverrides',
           },
-          entryFileNames: 'js/[name]-[hash].js',
+          entryFileNames: isBuild ? 'lifecycles.js' : 'js/[name]-[hash].js',
           chunkFileNames: 'js/[name]-[hash].js',
           assetFileNames: assetInfo => {
             const name = assetInfo.names?.[0] || assetInfo.name || ''
@@ -161,52 +209,16 @@ export default defineConfig(({ command, mode }): UserConfig => {
       },
       proxy: {
         // Proxy configuration (matching webpack devServer.proxy)
-        '/': {
-          target: env.VITE_STANDALONE_ATLAS === 'true' ? 'http://localhost:3131' : 'https://localhost:41100',
-          changeOrigin: true,
-          secure: false,
-          ws: false, // Disable WS proxying so HMR works directly with Vite
-          bypass: (req, _res, _options) => {
-            const url = req.url || ''
-            // Strip query string for path matching
-            const path = url.split('?')[0] || ''
-
-            // Serve Vite's client scripts directly
-            if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
-              return url
-            }
-
-            // Let Vite handle index.html natively (don't route through proxy)
-            if (path === '/' || path === '' || path === '/index.html') {
-              return url
-            }
-
-            // Serve static assets from public folder
-            if (
-              url.endsWith('.ico') ||
-              (url.endsWith('.js') && !url.includes('/d2e/') && !url.includes('/api/')) ||
-              url.endsWith('.css') ||
-              url.endsWith('.png') ||
-              url.endsWith('.svg') ||
-              (url.endsWith('.json') && url.startsWith('/assets'))
-            ) {
-              return url
-            }
-
-            // Return original URL for client routes to trigger SPA fallback
-            if (clientRoutes.some((route: string) => path.startsWith(route))) {
-              return url
-            }
-
-            // Let other requests pass through to proxy
-            return null
-          },
-        },
+        '/': rootProxyConfig,
       },
     },
 
     preview: {
-      port: 8081,
+      port: 8085,
+      ...(isPreview ? { https: false as any } : {}),
+      proxy: {
+        '/': rootProxyConfig,
+      },
     },
 
     optimizeDeps: {
@@ -241,46 +253,6 @@ function htmlEnvPlugin(env: Record<string, string>): PluginOption {
       return html.replace(/%VITE_([A-Z_]+)%/g, (_match, envName) => {
         const value = env[`VITE_${envName}`] || ''
         return value
-      })
-    },
-  }
-}
-
-/**
- * Plugin to generate assets.json file during build
- * This replicates the HtmlWebpackPlugin behavior from the webpack config
- */
-function generateAssetsJsonPlugin(hostUrl: string): PluginOption {
-  return {
-    name: 'generate-assets-json',
-    apply: 'build',
-    generateBundle(_options, bundle) {
-      const assets: { js: string[]; css: string[] } = {
-        js: [],
-        css: [],
-      }
-
-      // Always include /d2e/mri/ prefix so assets resolve correctly when loaded from portal
-      const basePath = hostUrl ? `${hostUrl}/d2e/mri/` : '/d2e/mri/'
-
-      // Iterate over the bundle to find JS and CSS assets
-      for (const [filename, file] of Object.entries(bundle)) {
-        if (file.type === 'asset' && /\.css$/.test(filename)) {
-          assets.css.push(`${basePath}${filename}`)
-        } else if (file.type === 'chunk' && /\.js$/.test(filename)) {
-          // For ES modules, only include entry points - dependencies are loaded via import
-          // This prevents loading chunks that have side effects before DOM is ready
-          if (file.isEntry) {
-            assets.js.push(`${basePath}${filename}`)
-          }
-        }
-      }
-
-      // Emit assets.json file
-      this.emitFile({
-        type: 'asset',
-        fileName: 'assets.json',
-        source: JSON.stringify(assets, null, 2),
       })
     },
   }

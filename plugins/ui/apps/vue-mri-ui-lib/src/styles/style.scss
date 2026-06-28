@@ -7,6 +7,11 @@
   @import './mri-bootstrap';
   @include mriBaseStyle;
   height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   // For alignment of the loading splash screen within PA wrapper
   position: relative;
 

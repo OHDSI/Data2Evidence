@@ -37,7 +37,7 @@ const RequestPanel: FC<RequestPanelProps> = ({ approvedReqs, rejectedReqs, handl
           </colgroup>
           <TableHead>
             <TableRow>
-              <TableCell>{getText(i18nKeys.REQUEST_PANEL__EMAIL)}</TableCell>
+              <TableCell>{getText(i18nKeys.REQUEST_PANEL__NAME)}</TableCell>
               <TableCell>{getText(i18nKeys.REQUEST_PANEL__REQUESTED)}</TableCell>
               <TableCell></TableCell>
             </TableRow>

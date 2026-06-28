@@ -1,13 +1,40 @@
 {
   "version": "1.0",
-  "plugins": [],
+  "plugins": [
+    {
+      "id": "pythia-plugin",
+      "name": "Pythia",
+      "version": "0.1.0",
+      "entryPoint": "pythia-plugin/index.system.js",
+      "menuItems": [],
+      "fabMounts": [
+        {
+          "id": "pythia.fab",
+          "label": "Pythia — design assistant",
+          "icon": "mdi-chat-processing-outline",
+          "color": "primary",
+          "position": "bottom-right"
+        }
+      ],
+      "metadata": {
+        "author": "Atlas Team",
+        "description": "Pythia — AI-assisted cohort design advisor for ATLAS v3.0"
+      }
+    }
+  ],
   "settings": {
     "enableHotReload": false,
     "loadTimeout": 30000,
     "showLoadingIndicators": true,
+    "theme": {
+      "primaryColor": "#000080",
+      "logoUrl": "/atlas/config/d2e2.svg",
+      "logoNavigateTo": "/"
+    },
     "header": {
+      "showNavBar": true,
       "showFeedbackButton": false,
-      "showLanguageSelector": false,
+      "showLanguageSelector": true,
       "showConfigButton": true,
       "showUserMenu": true
     }

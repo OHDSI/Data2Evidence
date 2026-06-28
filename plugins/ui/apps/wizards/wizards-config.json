@@ -759,6 +759,14 @@
           ]
         }
       ]
+    },
+    {
+      "id": "table1",
+      "name": "Table 1",
+      "description": "Generate a Table 1 summary using selected covariate concept sets.",
+      "surfaces": ["cohortBuilder"],
+      "flow": "table1-config",
+      "fields": []
     }
   ]
 }

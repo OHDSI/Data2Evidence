@@ -19,6 +19,7 @@
         v-bind:title="axisDisplay.axisSelectionTooltip"
         :disabled="isDisabled"
         tabindex="0"
+        :data-testid="`pa-axis-menu-btn-${axisName}`"
       >
         <span class="axisMenuText" :class="[axisDisplay.isEmpty ? 'axisTextPlaceholder' : '']">{{
           axisDisplay.axisSelectionFilterText
@@ -34,6 +35,7 @@
         :subMenu="axismenuData"
         :opened="axisMenuVisible"
         :openParam="axisMenuOpenParam"
+        :testId="`pa-dropdown-menu-${axisName}`"
         @clickEv="handleClick"
         @closeEv="closeAxisMenu"
       ></dropDownMenu>
@@ -44,6 +46,7 @@
         :parentBottom="parentBottomLocation"
         @updateBinningEv="setBinSize"
         :title="getText('MRI_PA_BINNING_SIZE')"
+        :testId="`pa-binning-btn-${axisName}`"
       ></binningButton>
     </div>
   </div>
@@ -195,6 +198,10 @@ export default {
         return this.$el.parentElement.getBoundingClientRect().bottom
       }
       return 0
+    },
+    axisName() {
+      const names = ['x1', 'x2', 'x3', 'stack', 'y']
+      return names[this.dimensionIndex] || `axis-${this.dimensionIndex}`
     },
   },
   methods: {
