@@ -877,6 +877,20 @@ jobs:
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
 
+      # demodb (postgres:16-alpine, docker-compose.yml) is behind the demodb profile and
+      # is otherwise pulled from Docker Hub lazily inside Setupdemo, where a transient
+      # registry timeout aborts the whole demo setup. Pre-pull it with retries so the
+      # image is cached before Setupdemo runs.
+      - name: Pre-pull demo db image
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
+
       - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
@@ -884,7 +898,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 2
+          max_attempts: 3
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
