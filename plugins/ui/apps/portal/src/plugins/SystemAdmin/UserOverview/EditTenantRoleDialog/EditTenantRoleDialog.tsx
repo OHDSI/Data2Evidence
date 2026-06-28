@@ -33,17 +33,19 @@ const EditTenantRoleDialog: FC<EditTenantRoleDialogProps> = ({
   const [newDataAdminRoles, setNewDataAdminRoles] = useState<string[]>([]);
   const [newAlpRoles, setNewAlpRoles] = useState<string[]>([]);
 
+  // Initialise the editable role selection when the dialog opens for a user.
+  // Deliberately keyed on open/userId rather than the role arrays: a background
+  // refresh of the user list hands down new array references for these props,
+  // and re-seeding on every such change would discard the admin's in-progress
+  // selection (leaving Save permanently disabled). hasChanges()/handleSave still
+  // read the latest props, so the comparison baseline stays current.
   useEffect(() => {
+    if (!open) return;
     setNewTenantRoles(user?.roles || []);
-  }, [user]);
-
-  useEffect(() => {
     setNewDataAdminRoles(dataAdminUserRoles || []);
-  }, [dataAdminUserRoles]);
-
-  useEffect(() => {
     setNewAlpRoles(alpUserRoles || []);
-  }, [alpUserRoles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user?.userId]);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
