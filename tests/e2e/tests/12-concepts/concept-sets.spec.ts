@@ -19,6 +19,11 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByText('Demo dataset').first().click()
   await page.getByRole('link', { name: 'Concepts' }).click()
   await expect(page.getByText('-25 of 444')).toBeVisible()
+  // Feature-gated nav items (e.g. Analysis) only settle once enabled-feature flags
+  // and their single-spa plugins finish loading; wait for the header to reach its
+  // final state so it isn't captured mid-bootstrap.
+  await expect(page.locator('.header__menu-group').getByText('Analysis', { exact: true })).toBeVisible()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
   await page.getByRole('tab', { name: 'Concept Sets' }).click()
 
@@ -105,6 +110,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByPlaceholder('Enter search term').press('Enter')
   await expect(page.getByText('1,677 / 2,694')).toBeVisible()
   await page.getByText('✎').click()
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
   await page.getByRole('textbox', { name: 'search terms' }).click()
   await page.getByRole('textbox', { name: 'search terms' }).fill('Ulcerative colitis')
