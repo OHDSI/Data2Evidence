@@ -1,5 +1,5 @@
 <template>
-  <div class="patientlist-container" ref="patientlistContainer">
+  <div class="patientlist-container" ref="patientlistContainer" data-testid="pa-patient-list-table">
     <template v-if="errorMessage">
       <chartErrorMessage :errorMessage="errorMessage"></chartErrorMessage>
     </template>

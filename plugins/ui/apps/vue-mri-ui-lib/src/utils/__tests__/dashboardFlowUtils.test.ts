@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseNumericInput, validateRequiredFields } from '../dashboardFlowUtils'
+import { getWizardFlow, isWizardVisibleOnSurface, parseNumericInput, validateRequiredFields } from '../dashboardFlowUtils'
 
 const createExpression = (operator: string, value: string | number) => ({
   type: 'Expression' as const,
@@ -193,5 +193,24 @@ describe('parseNumericInput', () => {
 
   it('returns empty array for invalid input', () => {
     expect(parseNumericInput('abc')).toEqual([])
+  })
+})
+
+describe('wizard metadata helpers', () => {
+  it('shows deployed configs without surfaces on all wizard-aware surfaces', () => {
+    expect(isWizardVisibleOnSurface({}, 'wizardApp')).toBe(true)
+    expect(isWizardVisibleOnSurface({}, 'cohortBuilder')).toBe(true)
+  })
+
+  it('respects explicit surface lists', () => {
+    const wizard = { surfaces: ['cohortBuilder' as const] }
+
+    expect(isWizardVisibleOnSurface(wizard, 'wizardApp')).toBe(false)
+    expect(isWizardVisibleOnSurface(wizard, 'cohortBuilder')).toBe(true)
+  })
+
+  it('defaults missing flow to required-fields', () => {
+    expect(getWizardFlow({})).toBe('required-fields')
+    expect(getWizardFlow({ flow: 'table1-config' })).toBe('table1-config')
   })
 })

@@ -80,7 +80,7 @@ export class WhiteRabbitController {
       res.send(result);
     } catch (error) {
       console.error(`Error creating white rabbit flow run: ${error}`);
-      res.status(500).send(`Error: ${error}`);
+      res.status(500).send("Error creating white rabbit flow run");
     }
   }
 
@@ -98,7 +98,7 @@ export class WhiteRabbitController {
       res.send(stateInfo);
     } catch (error) {
       console.error(`Error getting white-rabbit results: ${error}`);
-      res.status(500).send(`Error: ${error}`);
+      res.status(500).send("Error getting white-rabbit results");
     }
   }
 
@@ -118,7 +118,7 @@ export class WhiteRabbitController {
       res.send(scanIdResponse);
     } catch (error) {
       console.error(`Error getting white-rabbit flow run artifacts: ${error}`);
-      res.status(500).send(`Error: ${error}`);
+      res.status(500).send("Error getting white-rabbit flow run artifacts");
     }
   }
 
@@ -147,7 +147,7 @@ export class WhiteRabbitController {
       res.end(buffer);
     } catch (error) {
       console.error(`Error getting white-rabbit flow run artifacts: ${error}`);
-      res.status(500).send(`Error: ${error}`);
+      res.status(500).send("Error getting white-rabbit flow run artifacts");
     }
   }
 }

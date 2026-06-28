@@ -76,7 +76,6 @@ services:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex
     hostname: ${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}
-    platform: linux/amd64
     extra_hosts:
       - "${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:host-gateway"
     depends_on:
@@ -97,11 +96,21 @@ services:
     ports:
       - "8090:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:33001/_internal/health || exit 1"]
+      # trex's main mounts built-in routes under BASE_PATH (=/trex), so the
+      # internal health endpoint is /trex/_internal/health. (D2E_COMPAT routes
+      # like /WebAPI and /portal are mounted at root, separately.)
+      test: ["CMD-SHELL", "curl -fk https://localhost:33000/trex/_internal/health || curl -f http://localhost:33001/trex/_internal/health || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 30
       start_period: 120s
+    entrypoint: ["/bin/sh","-c"]
+    command:
+      - |
+        mkdir -p /usr/src/cert
+        printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        exec /usr/src/entrypoint.sh
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -116,6 +125,9 @@ services:
       DATASOURCE_USERNAME: postgres
       DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       DATASOURCE_OHDSI_SCHEMA: webapi
+      JASYPT_ENCRYPTOR_ENABLED: ${JASYPT_ENCRYPTOR_ENABLED:-false}
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:-}
+      JASYPT_ENCRYPTOR_ALGORITHM: ${JASYPT_ENCRYPTOR_ALGORITHM:-PBEWITHSHA256AND256BITAES-CBC-BC}
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: webapi
       SPRING_BATCH_REPOSITORY_TABLEPREFIX: webapi.batch_
       # Flyway migration settings
@@ -190,7 +202,7 @@ services:
       TREX__ENDPOINT_URL: "http://localhost:33001"
       TREX_ROUTES: '{"d2e":"http://localhost:33001"}'
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
-      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-64}
+      TREX_POOL_SIZE: ${TREX_POOL_SIZE:-1024}
       TREXSQL_ENABLED: "true"
       SWARM_NODE: d2e
       SWARM_CONFIG: |-
@@ -214,7 +226,7 @@ services:
                 },
                 {
                   "name": "pgwire",
-                  "config": { "host": "0.0.0.0", "port": 5433 }
+                  "config": { "host": "0.0.0.0", "port": 5433, "password": "${TREX__SQL__PASSWORD:-pencil}" }
                 }
               ]
             }
@@ -265,6 +277,19 @@ services:
       PG_USER: ${PG_WRITE_USER:-alp_pg_write_user}
       PORTAL__LOG_DISCLAIMER: ${PORTAL__LOG_DISCLAIMER:-false}
       PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
+      # Gates the alp-dataflow-gen-init function (waitforEnvVar: PREFECT_HEALTH_CHECK)
+      # so trex waits for the Prefect API to be reachable before seeding its
+      # variables/blocks/workpool. Without it the init runs at boot before Prefect
+      # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
+      PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api/health}
+      # The trex core auto-deploys flow plugins to Prefect (core/server/plugin/flow.ts):
+      # it waits for a worker pool named PREFECT_POOL (default "default") before
+      # registering deployments and sets work_pool_name to it. d2e's worker pool is
+      # `docker-pool`, so without this the auto-deploy loops forever on "pool is not
+      # found", no flow deployments (dqd_plugin, etc.) are ever registered, and DQD
+      # flow runs fail with `deployment ... Not Found`. Must match the worker pool
+      # created by the dataflow-gen-worker (WORKPOOL_NAME=docker-pool).
+      PREFECT_POOL: ${PREFECT_POOL:-docker-pool}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -353,6 +378,10 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
+      # Pythia agent (Amazon Bedrock). AWS_BEARER_TOKEN_BEDROCK from the deploy env.
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      BAO_AGENT_MODEL: ${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}
+      AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:-}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
       D2E_DUCKDB_MEMORY_LIMIT: ${D2E_DUCKDB_MEMORY_LIMIT:-15GB}
@@ -361,6 +390,17 @@ services:
       AUTO_GRANT_RESEARCHER_BY_DATASET_CODES: ${AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-${AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES:-}}
       IDP__AUTO_PROVISION_USERS: ${IDP__AUTO_PROVISION_USERS:-false}
       USER_MGMT__ROLE_SOURCE: ${USER_MGMT__ROLE_SOURCE:-logto}
+      USERMGMT__AUTO_PROVISION_ENABLED: ${USERMGMT__AUTO_PROVISION_ENABLED:-false}
+      USERMGMT__AUTO_PROVISION_CONNECTORS: ${USERMGMT__AUTO_PROVISION_CONNECTORS:-}
+      USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID: ${USERMGMT__AUTO_PROVISION_DEFAULT_TENANT_ID:-}
+      USERMGMT__AUTO_PROVISION_ROLE_HOOK_URL: ${USERMGMT__AUTO_PROVISION_ROLE_HOOK_URL:-}
+      USERMGMT__AUTO_PROVISION_ROLE_HOOK_SECRET: ${USERMGMT__AUTO_PROVISION_ROLE_HOOK_SECRET:-}
+      USERMGMT__AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS: ${USERMGMT__AUTO_PROVISION_ROLE_HOOK_TIMEOUT_MS:-5000}
+      USERMGMT__ENTITLEMENTS_SYNC_ENABLED: ${USERMGMT__ENTITLEMENTS_SYNC_ENABLED:-false}
+      USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL: ${USERMGMT__ENTITLEMENTS_PHYSIONET_BASE_URL:-}
+      USERMGMT__ENTITLEMENTS_TIMEOUT_MS: ${USERMGMT__ENTITLEMENTS_TIMEOUT_MS:-10000}
+      USERMGMT__ENTITLEMENTS_TOKEN_CLAIM: ${USERMGMT__ENTITLEMENTS_TOKEN_CLAIM:-physionet_access_token}
+      USERMGMT__ENTITLEMENTS_DATASET_MAPPING: ${USERMGMT__ENTITLEMENTS_DATASET_MAPPING:-}
       CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
@@ -368,6 +408,18 @@ services:
       ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
       # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       # RUST_LOG: ${RUST_LOG:-info}
+      # --- trex main (FROM trexsql) requirements ---
+      # trexsql entrypoint refuses to start without TREX_ROOT_KEY (>=40 chars).
+      TREX_ROOT_KEY: ${TREX_ROOT_KEY}
+      # trex main connects to Postgres for trexdb schema, auth keys, event_log.
+      DATABASE_URL: postgres://postgres:${PG_SUPER_PASSWORD}@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-${TREX_ROOT_KEY}}
+      BETTER_AUTH_URL: "http://localhost:33001/trex"
+      BASE_PATH: /trex
+      SCHEMA_DIR: /usr/src/core/schema
+      PLUGINS_DEV_PATH: /usr/src/plugins-dev
+      # Phase 0: keep d2e behaviors OFF until Phase 1 lands.
+      D2E_COMPAT: "true"
 
 
   alp-minerva-pg-mgmt-init:
@@ -795,14 +847,17 @@ services:
       PG__USER: ${PG__LOGTO_MANAGER_USER:-logto_postgres}
       PG__SSL: ${PG__SSL:-false}
       PG__SCHEMA: logto
+      LOGTO__CONNECTOR_CONFIG: ${LOGTO__CONNECTOR_CONFIG:-}
+      LOGTO__ENABLE_REGISTRATION: ${LOGTO__ENABLE_REGISTRATION:-false}
+      LOGTO__DISABLE_BASIC_AUTH: ${LOGTO__DISABLE_BASIC_AUTH:-false}
+      LOGTO__SOCIAL_SIGNIN_TARGETS: ${LOGTO__SOCIAL_SIGNIN_TARGETS:-}
       # LOGTO__CONNECTOR_CONFIG: '{ "id": "y9nq6f91yeg19kwt1x6xz","connectorId": "azuread-alp", "config": { "clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}", "cloudInstance": "https://login.microsoftonline.com", "scopes": "openid,profile,email,offline_access"}, "syncProfile": true}'
       # LOGTO__CONNECTOR_CONFIG: '{ "id": "9mf50ajua2ye7pydd2nxk", "connectorId": "entra-external-id-alp", "config": { "clientId": "${ENTRA_EXTID__CLIENT_ID}", "clientSecret": "${ENTRA_EXTID__CLIENT_SECRET}", "tenantSubdomain": "${ENTRA_EXTID__TENANT_SUBDOMAIN}", "tenantId": "${ENTRA_EXTID__TENANT_ID}", "scopes": "openid,profile,email,offline_access"}, "syncProfile": true}'
-      # LOGTO__DISABLE_BASIC_AUTH: ${LOGTO__DISABLE_BASIC_AUTH:-true}
       # LOGTO__CUSTOM_JWT: '{"environmentVariables": {"clientId": "${ENTRA__CLIENT_ID}", "tenantId": "${ENTRA__TENANT_ID}", "clientSecret": "${ENTRA__CLIENT_SECRET}"}, "script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  const clientId = environmentVariables?.clientId || \"\";\n  const clientSecret = environmentVariables?.clientSecret || \"\";\n  const tenantId = environmentVariables?.tenantId || \"\";\n  const refreshToken = extra.thirdPartyRefreshToken || \"\";\n\n  const tokenEndpoint = `https://login.microsoftonline.com/$${tenantId}/oauth2/v2.0/token`;\n\n  const params =\n    `client_id=$${encodeURIComponent(clientId)}` +\n    `&client_secret=$${encodeURIComponent(clientSecret)}` +\n    `&refresh_token=$${encodeURIComponent(refreshToken)}` +\n    `&grant_type=refresh_token` +\n    `&scope=openid`;\n\n  let thirdPartyToken = extra.thirdPartyToken;\n  let thirdPartyRefreshToken = refreshToken;\n  try {\n    const response = await fetch(tokenEndpoint, {\n      method: \"POST\",\n      headers: { \"Content-Type\": \"application/x-www-form-urlencoded\" },\n      body: params,\n    });\n\n    if (!response.ok) {\n      const responseBody = await response.text();\n      throw new Error(`Error refreshing token: $${response.statusText}: $${responseBody}: $${params}`);\n    }\n\n    const data = await response.json();\n    thirdPartyToken = data.id_token;\n    thirdPartyRefreshToken = data.refresh_token;\n  } catch (error) {}\n\n  const email = context.user?.primaryEmail || \"\";\n\n  const scopes = [];\n\n  for (const role of context.user.roles || []) {\n    for (const scope of role.scopes || []) {\n      scopes.push(scope.name);\n    }\n  }\n\n  return { thirdPartyToken, thirdPartyRefreshToken, email, roles: scopes };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}}'
-      LOGTO__CUSTOM_JWT: '{"script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  let rewrites = [];\n  try {\n    const raw = environmentVariables && environmentVariables.scopeRewrites;\n    if (raw) {\n      const parsed = JSON.parse(raw);\n      if (Array.isArray(parsed)) rewrites = parsed;\n    }\n  } catch (e) {}\n\n  const applyRewrites = (name) => {\n    for (let i = 0; i < rewrites.length; i++) {\n      const rule = rewrites[i];\n      if (!rule || !rule.pattern) continue;\n      const re = new RegExp(rule.pattern);\n      if (re.test(name)) return name.replace(re, rule.replacement || \"\");\n    }\n    return name;\n  };\n\n  const scopes = [];\n\n  for (const role of context.user.roles || []) {\n    for (const scope of role.scopes || []) {\n      scopes.push(applyRewrites(scope.name));\n    }\n  }\n\n  return { roles: scopes };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}, "environmentVariables": {}}'
+      LOGTO__CUSTOM_JWT: '{"script": "/**\n* This function is called during the access token generation process to get custom claims for the JWT token.\n* Limit custom claims to under 50KB.\n*\n* @param {Object} payload - The input payload of the function.\n* @param {AccessTokenPayload} payload.token -The JWT token.\n* @param {Context} payload.context - Logto internal data that can be used to pass additional information\n* @param {EnvironmentVariables} [payload.environmentVariables] - The environment variables.\n*\n* @returns The custom claims.\n*/\n\n// @ts-ignore\nconst getCustomJwtClaims = async ({ token, context, environmentVariables, extra }) => {\n  let rewrites = [];\n  try {\n    const raw = environmentVariables && environmentVariables.scopeRewrites;\n    if (raw) {\n      const parsed = JSON.parse(raw);\n      if (Array.isArray(parsed)) rewrites = parsed;\n    }\n  } catch (e) {}\n\n  const applyRewrites = (name) => {\n    for (let i = 0; i < rewrites.length; i++) {\n      const rule = rewrites[i];\n      if (!rule || !rule.pattern) continue;\n      const re = new RegExp(rule.pattern);\n      if (re.test(name)) return name.replace(re, rule.replacement || \"\");\n    }\n    return name;\n  };\n\n  const scopes = [];\n\n  for (const role of context.user.roles || []) {\n    for (const scope of role.scopes || []) {\n      scopes.push(applyRewrites(scope.name));\n    }\n  }\n\n  // Expose the human username on the access token so downstream consumers\n  // (OHDSI WebAPI / Atlas3) display the real login instead of the opaque `sub`.\n  const username = context.user?.username || \"\";\n  const name = context.user?.name || \"\";\n  const email = context.user?.primaryEmail || \"\";\n\n  return { roles: scopes, physionet_access_token: extra?.thirdPartyToken || null, physionet_refresh_token: extra?.thirdPartyRefreshToken || null, username, name: name || username, preferred_username: username || name, email };\n};\n", "tokenSample": {"aud": "http://localhost:3000/api/test", "gty": "authorization_code", "jti": "f1d3d2d1-1f2d-3d4e-5d6f-7d8a9d0e1d2", "kind": "AccessToken", "scope": "read write", "grantId": "grant_123", "clientId": "my_app", "accountId": "uid_123"}, "contextSample": {"user": {"id": "123", "name": "Foo Bar", "roles": [], "avatar": "https://example.com/avatar.png", "profile": {}, "username": "foo", "customData": {}, "identities": {}, "hasPassword": false, "primaryEmail": "foo@logto.io", "primaryPhone": "+1234567890", "applicationId": "my-app", "organizations": [], "ssoIdentities": [], "organizationRoles": [], "mfaVerificationFactors": []}}, "environmentVariables": {}}'
       # Rewrite Logto scope names to canonical WebAPI sec_role names
       LOGTO__JWT_SCOPE_REWRITES: '[{"pattern":"^cohort-reader$","replacement":"cohort reader"},{"pattern":"^cohort-creator$","replacement":"cohort creator"},{"pattern":"^concept-set-creator$","replacement":"concept set creator"},{"pattern":"^source-user-(.+)$","replacement":"Source user ($$1)"}]'
-      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}", "secret": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}", "secret": "${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}", "secret": "${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/WebAPI/user/oauth/callback/openid","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+      LOGTO__CLIENT_APPS: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "${LOGTO__D2E_SVC__CLIENT_ID:-${LOGTO__ALP_SVC__CLIENT_ID}}", "secret": "${LOGTO__D2E_SVC__CLIENT_SECRET:-${LOGTO__ALP_SVC__CLIENT_SECRET}}"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "${LOGTO__D2E_DATA__CLIENT_ID:-${LOGTO__ALP_DATA__CLIENT_ID}}", "secret": "${LOGTO__D2E_DATA__CLIENT_SECRET:-${LOGTO__ALP_DATA__CLIENT_SECRET}}"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "${LOGTO__D2E_APP__CLIENT_ID:-${LOGTO__ALP_APP__CLIENT_ID}}", "secret": "${LOGTO__D2E_APP__CLIENT_SECRET:-${LOGTO__ALP_APP__CLIENT_SECRET}}", "oidcClientMetadata":{"redirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal/login-callback","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/ui/gateway/dashboard","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/WebAPI/user/oauth/callback/openid","https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/atlas-login/","https://localhost:4000/d2e/portal/login-callback","https://localhost:8081"],"postLogoutRedirectUris":["https://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}${PORT:+:${PORT:-443}}/d2e/portal","https://localhost:4000/d2e/portal","https://localhost:8081"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
       LOGTO__RESOURCE: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
       LOGTO__USER: '{"username":"admin","initialPassword":"Updatepassword12345"}'
       # Logto roles are mapped to scopes by name via LOGTO__ROLES_SCOPES below

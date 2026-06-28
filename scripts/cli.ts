@@ -205,6 +205,14 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      // Root encryption key for trex's KEK/DEK wrapping and JWT signing. The
+      // trexsql entrypoint refuses to start without it (must be valid base64 of
+      // >=32 bytes, i.e. >=40 chars); 32 random bytes -> 44-char base64.
+      TREX_ROOT_KEY: crypto.randomBytes(32).toString("base64"),
+      JASYPT_ENCRYPTOR_ENABLED: `true`,
+      JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
+        this.DEFAULT_PASSWORD_LENGTH,
+      )}`,
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: `${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}`,
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
@@ -396,8 +404,8 @@ class D2ECli {
       : Buffer.from(str).toString("base64");
     return base64
       .replace(/=/g, "") // Remove '=' padding
-      .replace(/\+/g, "_") // Replace '+' with '_'
-      .replace(/\//g, "-") // Replace '/' with '-'
+      .replace(/\+/g, "-") // Replace '+' with '-'
+      .replace(/\//g, "_") // Replace '/' with '_'
       .replace(/\n/g, ""); // Remove newlines
   }
 

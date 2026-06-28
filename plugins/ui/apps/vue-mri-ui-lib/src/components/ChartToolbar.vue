@@ -59,6 +59,7 @@
           v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
           :disabled="!drilldownEnabled"
           @click="drillDownClicked"
+          data-testid="pa-drilldown-btn"
         >
           <span class="icon" style="font-family: app-icons"></span>
         </button>
@@ -69,6 +70,7 @@
           class="actionButton"
           @click="showFilterCardSummary"
           :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
+          data-testid="pa-filter-summary-btn"
         >
           <icon icon="summaryDoc" />
         </button>
@@ -119,6 +121,17 @@
   </Teleport>
 
   <Teleport to="#app">
+    <ConfigureTable1Dialog
+      :is-open="dashboardFlow.showTable1ConfigModal"
+      :dataset-id="getSelectedDataset?.id || ''"
+      :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
+      @cancel="dashboardFlow.handleTable1ConfigCancel"
+      @close="dashboardFlow.closeDashboardFlow"
+      @confirm="dashboardFlow.handleTable1ConfigConfirm"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
     <ShinyDashboardModal
       v-if="dashboardFlow.showDashboardModal"
       :is-open="dashboardFlow.showDashboardModal"
@@ -138,6 +151,7 @@
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
+      @close="dashboardFlow.closeDashboardFlow"
     />
   </Teleport>
 
@@ -145,13 +159,21 @@
     <VDialog
       :model-value="showInclusionReportModal"
       @update:modelValue="showInclusionReportModal = $event"
+      @keydown.esc="closeInclusionReportModal"
       max-width="90%"
       persistent
     >
-      <div class="inclusion-report-dialog">
+      <div class="inclusion-report-dialog" data-testid="pa-inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
-          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">
+            Attrition Plot
+          </div>
+          <button
+            class="inclusion-report-dialog__close-btn"
+            @click="closeInclusionReportModal"
+            :title="'Close'"
+            data-testid="pa-inclusion-report-dialog-close-btn"
+          >
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
         </div>
@@ -188,9 +210,10 @@ import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
 import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
+import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
 import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 
 function getBookmarkKey(bookmark) {
   if (!bookmark) {
@@ -227,6 +250,7 @@ export default {
     const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
 
     return {
+      portalContext: usePortalContext(),
       chartConfig: [],
       disableCensoring: true,
       unHideIcon: '',
@@ -320,11 +344,10 @@ export default {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isWizardFeatureEnabled() {
-      const portalAPI = getPortalAPI()
-      if (!portalAPI?.features) {
+      if (!this.portalContext?.features) {
         return false
       }
-      return portalAPI.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
+      return this.portalContext.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
     },
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
@@ -550,6 +573,7 @@ export default {
     SaveCohortModal,
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
+    ConfigureTable1Dialog,
     Button,
     VButton,
     VDialog,

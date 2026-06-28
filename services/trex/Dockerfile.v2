@@ -2,13 +2,15 @@
 #
 # d2e-trex: trexsql base with WebAPI running in-engine via webapi.trex
 # (started by core/server with SELECT webapi_start()), not as a separate Java
-# process. Overlays d2e's core, plugins, CDW data, logto, ONNX and DuckDB extensions.
+# process. The base image already ships trex's canonical main/event core with the
+# env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
+# this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
 # BASE_IMAGE selects the trex base. Default is the plain trexsql image; the
 # "-with-dx" build passes the trexsql-dx image, which additionally ships the
 # devx code-editor plugin, the devx_ext DuckDB extension, and claude-code/gh.
 # Declared before the first FROM so it is usable in the FROM line.
-ARG BASE_IMAGE=ghcr.io/ohdsi/trexsql:sha-bdedf8d9cc826b7815af1830d4a1c05ad7baf5db@sha256:b3f0e1142ba661e2b98d614b1e753d5920458e04c871399c5451038aa5443863
+ARG BASE_IMAGE=ghcr.io/ohdsi/trexsql:sha-6d83b7e7a5bfbba36b2f20c9c7abec52be4adc2d@sha256:0dafd8d78713687e76475b2952afe8c3bc55b76b0c54cefeba462b1c617d06aa
 
 FROM ${BASE_IMAGE} AS base
 
@@ -71,7 +73,7 @@ ARG PLUGINS_FEED=d2e
 # @data2evidence/* packages to pull from the feed. Empty in CI (uses
 # plugin-artifacts/); local builds set it via docker-compose-local.yml.
 ARG PLUGINS_FROM_REGISTRY=""
-RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
+RUN --mount=type=secret,id=PLUGINS_REGISTRY --mount=type=secret,id=github_token set -eu; \
     REG="https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/${PLUGINS_FEED}/npm/registry/"; \
     if [ -f /run/secrets/PLUGINS_REGISTRY ]; then \
       SECRET_REG="$(cat /run/secrets/PLUGINS_REGISTRY)"; \
@@ -79,43 +81,54 @@ RUN --mount=type=secret,id=PLUGINS_REGISTRY set -eu; \
         REG="$SECRET_REG"; \
       fi; \
     fi; \
+    # Keep npm auth (incl. the @ohdsi GitHub Packages token) in a throwaway
+    # userconfig that is deleted when this layer's shell exits, so it is never
+    # written to a persistent .npmrc baked into the image.
+    NPMRC="$(mktemp)"; export NPM_CONFIG_USERCONFIG="$NPMRC"; \
+    trap 'rm -f "$NPMRC"' EXIT; \
     npm config set @data2evidence:registry "$REG"; \
+    if [ -s /run/secrets/github_token ]; then \
+      npm config set @ohdsi:registry "https://npm.pkg.github.com"; \
+      npm config set //npm.pkg.github.com/:_authToken "$(cat /run/secrets/github_token)"; \
+    fi; \
     sh /scripts/fetch-external-plugins.sh /scripts/external-plugins.txt /usr/src/bundled-plugins; \
     if [ -n "$PLUGINS_FROM_REGISTRY" ]; then \
       printf '%s' "$PLUGINS_FROM_REGISTRY" | tr ', ' '\n\n' > /tmp/registry-plugins.txt; \
       sh /scripts/fetch-external-plugins.sh /tmp/registry-plugins.txt /usr/src/bundled-plugins; \
       rm -f /tmp/registry-plugins.txt; \
-    fi; \
-    WORK="$(mktemp -d)"; \
-    cd "$WORK" && npm init -y >/dev/null 2>&1; \
-    echo "@data2evidence:registry=$REG" > .npmrc; \
-    npm install @data2evidence/d2e-atlas --no-save; \
-    mv "node_modules/@data2evidence/d2e-atlas" /usr/src/bundled-plugins/d2e-atlas; \
-    rm -rf "$WORK"
+    fi
+# NOTE: The legacy @data2evidence/d2e-atlas ("Atlas Lite") is no longer bundled.
+# Atlas3 (@ohdsi/atlas3) is shipped by the local plugins/atlas plugin, which owns
+# the /atlas route. Re-adding a d2e-atlas bundle here would reclaim /atlas (it
+# declares source:/atlas) and shadow Atlas3.
 
 ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 
-# d2e core overlays the base's /usr/src/core; trex bundle takes positional args.
-# The base's own core (which serves trex's main service, e.g. the devx code
-# editor in the trexsql-dx base) is preserved at /usr/src/trex-core so the dx
-# compose can run it as a SECOND trexas main service on a separate port. For the
+# NOTE: the core (main + event, with D2E_COMPAT) is NOT vendored — it is provided
+# by the base trexsql image at /usr/src/core (index.eszip already bundled there).
+# D2E_COMPAT is activated at runtime via the D2E_COMPAT=true env (set in compose),
+# which makes /usr/src/core serve the d2e main service.
+#
+# The dx compose also runs trex's canonical core (the devx code editor in the
+# trexsql-dx base) as a SECOND trexas main service on a separate port, reading
+# from /usr/src/trex-core. Since the base core IS that canonical core, duplicate
+# it there rather than moving it (d2e-main still needs /usr/src/core). For the
 # plain trexsql base this is just an unused copy.
-RUN mv /usr/src/core /usr/src/trex-core
-COPY ./core ./core
-RUN trex bundle ./core/server/index.ts ./core/server/index.eszip && \
-    trex bundle ./core/event/index.ts ./core/event/index.eszip
-
-# trex's secrets generator (/usr/local/bin/trex-init → scripts/derive-secrets.ts)
-# hard-imports /usr/src/core/server/auth/keys.ts, which moved with the core above.
-# keys.ts is self-contained, and d2e's core/server/auth has no keys.ts to shadow,
-# so a compatibility symlink restores trex-init without touching the d2e runtime
-# (the d2e main service runs from the already-bundled index.eszip).
-RUN mkdir -p /usr/src/core/server/auth && \
-    ln -sf /usr/src/trex-core/server/auth/keys.ts /usr/src/core/server/auth/keys.ts
+RUN cp -a /usr/src/core /usr/src/trex-core
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
+
+# Seed DuckDB's default per-user extension path so trex's main `LOAD <ext>`
+# (icu/fts) resolves — the base installs to DUCKDB_EXTENSION_DIRECTORY
+# (/usr/share/trexsql/extensions) but worker connections look in ~/.duckdb.
+# This image runs as root, so /root/.duckdb. (Belt-and-suspenders for node too.)
+RUN for HOME_DIR in /root /home/node; do \
+      mkdir -p "$HOME_DIR/.duckdb/extensions" && \
+      cp -r /usr/share/trexsql/extensions/* "$HOME_DIR/.duckdb/extensions/" 2>/dev/null || true; \
+    done; \
+    chown -R node:node /home/node/.duckdb 2>/dev/null || true
 
 # WebAPI, trexas HTTP/TLS, pgwire, gossip, FHIR.
 # 8001/8000: the trex-core main service + TLS (dx builds, second trexas).

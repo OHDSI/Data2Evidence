@@ -33,6 +33,30 @@ const main = () => {
     }
   });
 
+  // Tolerate an empty body on application/json requests. Bodyless DELETEs (e.g. the
+  // PA UI's `DELETE /cohortdefinition/:id`) arrive with `Content-Type: application/json`
+  // once forwarded through the trex gateway, so they bypass the wildcard parser above
+  // and hit Fastify's built-in JSON parser, which rejects an empty body with
+  // FST_ERR_CTP_EMPTY_JSON_BODY (400) — leaving the cohort undeleted (breaks the PA
+  // bookmark e2e). Override that parser to treat an empty body as no payload while
+  // still parsing real JSON bodies.
+  app.addContentTypeParser(
+    "application/json",
+    { parseAs: "string" },
+    (_req, body: string, done) => {
+      if (body === undefined || body === null || body.trim() === "") {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body));
+      } catch (err: any) {
+        err.statusCode = 400;
+        done(err, undefined);
+      }
+    }
+  );
+
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
 

@@ -1,7 +1,7 @@
 /**
  * API service for concept set operations
  */
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import { d2eWebapiService } from './D2eWebapiService'
 import type {
   ConceptSetItemDisplay,
@@ -14,10 +14,10 @@ import type {
 } from '../types/ConceptSetTypes'
 
 const buildApiHeaders = async (datasetId?: string): Promise<Record<string, string>> => {
-  const portalAPI = getPortalAPI()
+  const portalContext = usePortalContext()
   const headers: Record<string, string> = {}
 
-  const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+  const bearerToken = await portalContext.getToken()
   if (bearerToken != null) {
     headers['Authorization'] = `Bearer ${bearerToken}`
   }
@@ -58,7 +58,10 @@ export const clearConceptSetExpressionCache = () => {
   conceptSetExpressionCache.clear()
 }
 
-export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDomainValues> => {
+export const loadConceptSets = async (
+  datasetId: string,
+  options: { throwOnError?: boolean } = {}
+): Promise<ConceptSetDomainValues> => {
   if (!datasetId) {
     console.warn('Missing datasetId for concept set API call')
     return {
@@ -90,6 +93,9 @@ export const loadConceptSets = async (datasetId: string): Promise<ConceptSetDoma
     }
   } catch (error) {
     console.error('Error loading concept sets:', error)
+    if (options.throwOnError) {
+      throw error
+    }
     return {
       values: [],
       isLoading: false,

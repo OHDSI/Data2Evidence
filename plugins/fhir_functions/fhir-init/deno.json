@@ -1,0 +1,21 @@
+{
+  "workspace": [],
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": [
+      "deno.window"
+    ],
+    "strict": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "imports": {
+    "axios": "npm:axios@1.7.7",
+    "./src/seed": "./src/seed.ts",
+    "./src/env": "./src/env.ts",
+    "./src/api/DbCredentialsAPI": "./src/api/DbCredentialsAPI.ts",
+    "./src/utils/credentialProcessor": "./src/utils/credentialProcessor.ts",
+    "./src/utils/type": "./src/utils/type.ts",
+    "./src/utils/request-util": "./src/utils/request-util.ts"
+  }
+}
