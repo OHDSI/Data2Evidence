@@ -19,7 +19,11 @@ import {
 } from "@alp/alp-base-utils";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import TrexCsvStreamWriter from "../../utils/TrexCsvStreamWriter";
-import { AuditLogger, AUDITLOG_REQ_CHUNK_SIZE } from "../../utils/AuditLogger";
+import {
+    AUDIT_CHANNELS,
+    AuditLogger,
+    AUDITLOG_REQ_CHUNK_SIZE,
+} from "../../utils/AuditLogger";
 import csvWriter from "csv-write-stream";
 import * as crypto from "crypto";
 import * as parquet from "parquetjs";
@@ -68,7 +72,7 @@ let emptyResult: PluginEndpointResultType = {
 const emptyStreamResult: PluginEndpointStreamResultType = {
     entity: "",
     data: undefined,
-    auditLogChannelName: "D2E Pt Ls Stream",
+    auditLogChannelName: AUDIT_CHANNELS.PATIENT_LIST_STREAM,
 };
 
 async function retrieveDataset(
@@ -105,8 +109,8 @@ async function retrieveDataset(
                     patientId: patientId,
                     auditLogChannelName:
                         req.usage === "EXPORT"
-                            ? "D2E Pt Ls Export"
-                            : "D2E Pt Ls",
+                            ? AUDIT_CHANNELS.PATIENT_LIST_EXPORT
+                            : AUDIT_CHANNELS.PATIENT_LIST,
                 });
 
                 callback(null, pluginResult);
@@ -137,7 +141,7 @@ async function streamDataset(req: IMRIRequest, callback: CallBackInterface) {
                 pluginEndpoint.setRequest(req);
                 const pluginResult = await pluginEndpoint.retrieveDataStream({
                     cohortDefinition,
-                    auditLogChannelName: "D2E Pt Ls Stream",
+                    auditLogChannelName: AUDIT_CHANNELS.PATIENT_LIST_STREAM,
                     datasetId,
                 });
 
@@ -900,7 +904,7 @@ export async function getSinglePatient({
                     language: lang,
                     dataFormat: dataFormat,
                     patientId: patientId,
-                    auditLogChannelName: "D2E Pt Summary",
+                    auditLogChannelName: AUDIT_CHANNELS.PATIENT_SUMMARY,
                 });
                 return resolve(pluginResult);
             } else {

@@ -7,15 +7,13 @@ import { BaseQueryEngineEndpoint } from "./BaseQueryEngineEndpoint";
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import * as utilsLib from "@alp/alp-base-utils";
-import { AuditLogger } from "../../utils/AuditLogger";
+import { AUDIT_CHANNELS, AuditLogger } from "../../utils/AuditLogger";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
 import {
     MRIEndpointResultCategoryType,
     MRIEndpointResultMeasureType,
     QuerySvcResultType,
 } from "../../types";
-
-const AUDITLOG_CHANNEL_PATIENTLIST = "D2E Pt Ls";
 
 export class PatientListEndpoint extends BaseQueryEngineEndpoint {
     constructor(
@@ -114,7 +112,7 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
 
                 auditLogChannel =
                     !auditLogChannel || auditLogChannel === ""
-                        ? AUDITLOG_CHANNEL_PATIENTLIST
+                        ? AUDIT_CHANNELS.PATIENT_LIST
                         : auditLogChannel;
 
                 const querySvcParams = {

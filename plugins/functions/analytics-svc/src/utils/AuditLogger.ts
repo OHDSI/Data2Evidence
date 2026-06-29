@@ -3,6 +3,12 @@ import type { CDMConfigMetaDataType } from "../types";
 import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
 export const AUDITLOG_REQ_CHUNK_SIZE = 10;
+export const AUDIT_CHANNELS = {
+    PATIENT_LIST: "D2E Pt Ls",
+    PATIENT_LIST_EXPORT: "D2E Pt Ls Export",
+    PATIENT_LIST_STREAM: "D2E Pt Ls Stream",
+    PATIENT_SUMMARY: "D2E Pt Summary",
+} as const;
 
 type AuditAttachment = { id: string; name: string };
 type AuditLogResult = QueryObjectResult | "auditlog disabled" | null;
