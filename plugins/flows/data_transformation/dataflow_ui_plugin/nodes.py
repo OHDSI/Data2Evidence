@@ -462,8 +462,8 @@ class TransformFhirDataNode(Node):
         target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
 
         fhir_resource = None
-        if "content" in input_fhir_df.columns:
-            content_list = input_fhir_df["content"].tolist()
+        if "_raw" in input_fhir_df.columns:
+            content_list = input_fhir_df["_raw"].tolist()
             fhir_resource = content_list if content_list else None
 
         transformed_omop = []
