@@ -2,3 +2,12 @@ services:
   trex:
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
+      # Overlay the e2e-patched MRI/PA seed config onto the image-bundled
+      # mri-pg-config, whose init seeds the PA config. patch-seed-for-e2e.js sets
+      # the attrition chart's default attribute to monthOfBirth (Age categories
+      # shift yearly and break the cohort-builder screenshot baseline). It patches
+      # the checkout source, but on the trex stack the init runs from the bundled
+      # copy at /usr/src/bundled-plugins/... (the `-d ./plugins/functions` checkout
+      # mount is not what gets seeded), so without this overlay the unpatched
+      # (Age-default) config is used. Single-file bind mount over the bundled seed.
+      - ./plugins/functions/mri-pg-config/src/db/seeds/03_Config.ts:/usr/src/bundled-plugins/d2e-functions/mri-pg-config/src/db/seeds/03_Config.ts
