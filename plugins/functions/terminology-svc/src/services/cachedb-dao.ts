@@ -67,23 +67,23 @@ export class CachedbDAO {
   // Scoring constants
   //
   // Concept-name exact-match tiers (mutually exclusive, highest priority).
-  // These form the primary ranking signal. Maintain a gap of ≥ 200 between
-  // each tier so that no combination of additive boosts below can bridge tiers.
-  //   Allowed range: any positive integers with consecutive gaps ≥ 200.
+  // Keep gaps of ≥ 200 so (standard_boost + syn_exact_score) cannot bridge tiers;
+  // relevance (BM25 / hybrid_score) is still additive and may reorder tiers.
+  // Allowed range: any positive integers with consecutive gaps ≥ 200.
   private readonly scoreConceptNameEquals = 1000;
   private readonly scoreConceptNamePrefix = 800;
   private readonly scoreConceptNameContains = 600;
 
   // Standard-concept tiebreaker (additive within a tier).
   // Must be < inter-tier gap (200) so it never bumps a row into the next tier.
-  //   Allowed range: (0, 200)
+  // Allowed range: (0, 200)
   private readonly scoreStandardBoost = 100;
 
   // Synonym exact-match boosts (additive, applied on top of the concept-name tier).
-  // Must be < inter-tier gap (200) − scoreStandardBoost (100) = < 100 so that
-  // no synonym boost can push a lower-tier name match above a higher-tier one,
-  // even when the standard-concept boost also applies.
-  //   Allowed range: scoreSynonymPrefix < scoreSynonymEquals < 100
+  // Must be < (inter-tier gap (200) - scoreStandardBoost (100)) (= 100) so that
+  // (standard_boost + syn_exact_score) cannot bridge name-match tiers.
+  // This ensures a lower-tier name match cannot outrank a higher-tier one due to boosts.
+  // Allowed range: scoreSynonymPrefix < scoreSynonymEquals < 100
   private readonly scoreSynonymEquals = 80;
   private readonly scoreSynonymPrefix = 40;
   // ---------------------------------------------------------------------------
