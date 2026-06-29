@@ -115,6 +115,9 @@ services:
       DATASOURCE_USERNAME: postgres
       DATASOURCE_PASSWORD: ${PG_SUPER_PASSWORD}
       DATASOURCE_OHDSI_SCHEMA: webapi
+      JASYPT_ENCRYPTOR_ENABLED: ${JASYPT_ENCRYPTOR_ENABLED:-false}
+      JASYPT_ENCRYPTOR_PASSWORD: ${JASYPT_ENCRYPTOR_PASSWORD:-}
+      JASYPT_ENCRYPTOR_ALGORITHM: ${JASYPT_ENCRYPTOR_ALGORITHM:-PBEWITHSHA256AND256BITAES-CBC-BC}
       SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: webapi
       SPRING_BATCH_REPOSITORY_TABLEPREFIX: webapi.batch_
       # Flyway migration settings
@@ -213,7 +216,7 @@ services:
                 },
                 {
                   "name": "pgwire",
-                  "config": { "host": "0.0.0.0", "port": 5433 }
+                  "config": { "host": "0.0.0.0", "port": 5433, "password": "${TREX__SQL__PASSWORD:-pencil}" }
                 }
               ]
             }

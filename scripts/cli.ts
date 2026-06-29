@@ -205,6 +205,10 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      JASYPT_ENCRYPTOR_ENABLED: `true`,
+      JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
+        this.DEFAULT_PASSWORD_LENGTH,
+      )}`,
       LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: `${LOGTO__CLIENTID_PASSWORD__BASIC_AUTH}`,
       PG__LOGTO_MANAGER_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
