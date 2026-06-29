@@ -83,8 +83,7 @@ function postBuildPatchPlugin(): Plugin {
   }
 }
 
-/**
- * Strips the external Google Fonts @import that @nlux/themes/nova.css injects */
+// Strips the external Google Fonts @import that @nlux/themes/nova.css injects
 function stripRemoteFontImportPlugin(): Plugin {
   return {
     name: 'strip-remote-font-import',
