@@ -35,7 +35,6 @@ import { PluginEndpoint } from "../../mri/endpoint/PluginEndpoint";
 
 let log = CreateLogger("analytics-log");
 
-type StreamAuditRow = Record<string, unknown>;
 type StreamRow = Record<string, unknown>;
 type TrexWebStreamChunk = Uint8Array | string;
 
@@ -293,32 +292,31 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 cdmConfigMetaData: result.cdmConfigMetaData,
                 request: req,
             });
-            const attributeIdByStreamAlias = new Map(
-                result.selectedAttributes?.flatMap((attribute) => {
-                    const alias = attribute.id.split(".").pop()?.toLowerCase();
-                    return alias ? [[alias, attribute.id]] : [];
-                }) ?? []
-            );
+            const auditObjectIdAttribute = "patient.attributes.pid";
+            const auditObjectIdStreamAlias = auditObjectIdAttribute
+                .split(".")
+                .pop()
+                ?.toLowerCase();
             const toAuditRows = (streamRows: StreamRow[]) => {
-                return streamRows
-                    .map((streamRow) => {
-                        return Object.entries(streamRow).reduce(
-                            (auditRow, [streamAlias, value]) => {
-                                const attributeId =
-                                    attributeIdByStreamAlias.get(
-                                        streamAlias.toLowerCase()
-                                    );
-                                if (attributeId) {
-                                    auditRow[attributeId] = value;
-                                }
-                                return auditRow;
-                            },
-                            {} as StreamAuditRow
-                        );
-                    })
-                    .filter((auditRow) => {
-                        return Boolean(auditRow["patient.attributes.pid"]);
-                    });
+                return streamRows.flatMap((streamRow) => {
+                    const pidEntry = Object.entries(streamRow).find(
+                        ([streamAlias]) => {
+                            return (
+                                streamAlias.toLowerCase() ===
+                                auditObjectIdStreamAlias
+                            );
+                        }
+                    );
+                    const pid = pidEntry?.[1];
+                    if (!pid) {
+                        return [];
+                    }
+                    return [
+                        {
+                            [auditObjectIdAttribute]: pid,
+                        },
+                    ];
+                });
             };
             const auditStreamRows = async (streamRows: StreamRow[]) => {
                 const auditRows = toAuditRows(streamRows);
@@ -327,7 +325,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 }
 
                 await auditLogger.log(
-                    "patient.attributes.pid",
+                    auditObjectIdAttribute,
                     result.auditLogChannelName,
                     auditRows,
                     undefined,
