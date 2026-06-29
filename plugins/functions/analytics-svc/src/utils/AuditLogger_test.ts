@@ -98,7 +98,6 @@ function logAsync(
         "pid",
         "patient list",
         data,
-        true,
         undefined,
         selectedAttributes
     );

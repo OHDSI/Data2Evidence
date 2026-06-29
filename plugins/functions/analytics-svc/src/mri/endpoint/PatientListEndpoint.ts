@@ -196,7 +196,6 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                             "patient.attributes.pid",
                             auditLogChannel,
                             result.data,
-                            true,
                             ["totalpcount"],
                             undefined,
                             fileName

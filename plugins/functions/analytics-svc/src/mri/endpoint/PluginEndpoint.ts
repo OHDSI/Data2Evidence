@@ -338,7 +338,6 @@ export class PluginEndpoint {
                                 "patient.attributes.pid",
                                 auditLogChannelName,
                                 pList,
-                                true,
                                 undefined,
                                 this.selectedAttributes
                             );

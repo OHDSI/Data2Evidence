@@ -150,7 +150,6 @@ export class AuditLogger {
      * @param objectIdAttribute Name of the Id attribute
      * @param channel Denotes the usecase
      * @param data Actual data
-     * @param success Flag which indicates whether to log or not
      * @param excludeAttributes List of attributes to be excluded
      * @param selectedAttributes List of attributes displayed, which will be logged. Only used by Extension usecase.
      */
@@ -158,7 +157,6 @@ export class AuditLogger {
         objectIdAttribute: string,
         channel: string,
         data: AuditRow[],
-        _success: boolean,
         excludeAttributes?: string[],
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment
@@ -190,7 +188,6 @@ export class AuditLogger {
                 objectIdAttribute,
                 channel,
                 chunk,
-                true,
                 excludeAttributes,
                 selectedAttributes,
                 attachment
@@ -206,7 +203,6 @@ export class AuditLogger {
         objectIdAttribute: string,
         channel: string,
         data: AuditRow[],
-        success: boolean,
         excludeAttributes?: string[],
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment
@@ -222,7 +218,6 @@ export class AuditLogger {
                 objectIdAttribute,
                 channel,
                 row,
-                success,
                 excludeAttributes,
                 attributesToLog,
                 attachment,
@@ -243,7 +238,6 @@ export class AuditLogger {
         objectIdAttribute: string,
         channel: string,
         data: AuditRow,
-        success: boolean,
         excludeAttributes?: string[],
         selectedAttributes?: AuditSelectedAttribute[],
         attachment?: AuditAttachment,
@@ -269,7 +263,7 @@ export class AuditLogger {
             occurredAt: new Date().toISOString(),
             personId: object_id,
             accessChannel: channel,
-            successful: success,
+            successful: true,
             attributes: [],
         };
         const configs = this._getConfigs();

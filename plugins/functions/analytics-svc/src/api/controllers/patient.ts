@@ -331,7 +331,6 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     "patient.attributes.pid",
                     result.auditLogChannelName,
                     auditRows,
-                    true,
                     undefined,
                     result.selectedAttributes
                 );
