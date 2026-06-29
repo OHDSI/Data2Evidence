@@ -23,7 +23,7 @@ import { AuditLogger } from "../../utils/AuditLogger";
 import csvWriter from "csv-write-stream";
 import * as crypto from "crypto";
 import * as parquet from "parquetjs";
-import { pipeline, Readable } from "stream";
+import { pipeline, Readable, Transform } from "stream";
 import { Buffer } from "node:buffer";
 import PortalServerAPI from "../PortalServerAPI";
 import PsConfigServerAPI from "../PsConfigServerAPI";
@@ -302,7 +302,77 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             );
             res.setHeader("Content-Type", "text/csv");
 
-            let csvStreamTransform;
+            const auditLogger = AuditLogger.create({
+                cohortBuilderConfigMetaData: result.cohortBuilderConfigMetaData,
+                cdmConfigMetaData: result.cdmConfigMetaData,
+                request: req,
+            });
+            const attributeIdByStreamAlias = new Map(
+                result.selectedAttributes?.flatMap((attribute) => {
+                    const alias = attribute.id.split(".").pop()?.toLowerCase();
+                    return alias ? [[alias, attribute.id]] : [];
+                }) ?? []
+            );
+            let auditRowCount = 0;
+            const toAuditRows = (streamRows: StreamRow[]) => {
+                return streamRows
+                    .map((streamRow) => {
+                        return Object.entries(streamRow).reduce(
+                            (auditRow, [streamAlias, value]) => {
+                                const attributeId =
+                                    attributeIdByStreamAlias.get(
+                                        streamAlias.toLowerCase()
+                                    );
+                                if (attributeId) {
+                                    auditRow[attributeId] = value;
+                                }
+                                return auditRow;
+                            },
+                            {} as StreamAuditRow
+                        );
+                    })
+                    .filter((auditRow) => {
+                        return Boolean(auditRow["patient.attributes.pid"]);
+                    });
+            };
+            const auditStreamRows = async (
+                streamRows: StreamRow[],
+                source: string
+            ) => {
+                const auditRows = toAuditRows(streamRows);
+                if (auditRows.length === 0) {
+                    log.info(
+                        `[codex-debug-retrieveDataStream] ${JSON.stringify({
+                            stage: "csvAuditRowsSkipped",
+                            entity: result.entity,
+                            source,
+                            streamRowCount: streamRows.length,
+                            rowCount: 0,
+                        })}`
+                    );
+                    return;
+                }
+
+                await auditLogger.log(
+                    "patient.attributes.pid",
+                    result.auditLogChannelName,
+                    auditRows,
+                    true,
+                    undefined,
+                    result.selectedAttributes
+                );
+                auditRowCount += auditRows.length;
+                log.info(
+                    `[codex-debug-retrieveDataStream] ${JSON.stringify({
+                        stage: "auditRows",
+                        source,
+                        entity: result.entity,
+                        rowCount: auditRows.length,
+                        totalRowCount: auditRowCount,
+                    })}`
+                );
+            };
+            let csvStreamTransforms: NodeJS.ReadWriteStream[];
             let responseData = result.data;
             if (result.data instanceof ReadableStream) {
                 // Trex connection returns stream results as a ReadableStream
@@ -310,77 +380,11 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     result.data as unknown as ReadableStream<TrexWebStreamChunk>,
                     result.entity
                 );
-                const auditLogger = AuditLogger.create({
-                    cohortBuilderConfigMetaData:
-                        result.cohortBuilderConfigMetaData,
-                    cdmConfigMetaData: result.cdmConfigMetaData,
-                    request: req,
-                });
-                const attributeIdByStreamAlias = new Map(
-                    result.selectedAttributes?.flatMap((attribute) => {
-                        const alias = attribute.id
-                            .split(".")
-                            .pop()
-                            ?.toLowerCase();
-                        return alias ? [[alias, attribute.id]] : [];
-                    }) ?? []
-                );
-                let auditRowCount = 0;
-                const toAuditRows = (streamRows: StreamRow[]) => {
-                    return streamRows
-                        .map((streamRow) => {
-                            return Object.entries(streamRow).reduce(
-                                (auditRow, [streamAlias, value]) => {
-                                    const attributeId =
-                                        attributeIdByStreamAlias.get(
-                                            streamAlias.toLowerCase()
-                                        );
-                                    if (attributeId) {
-                                        auditRow[attributeId] = value;
-                                    }
-                                    return auditRow;
-                                },
-                                {} as StreamAuditRow
-                            );
-                        })
-                        .filter((auditRow) => {
-                            return Boolean(auditRow["patient.attributes.pid"]);
-                        });
-                };
                 const trexCsvStreamWriter = new TrexCsvStreamWriter({
                     onRows: async (streamRows) => {
-                        const auditRows = toAuditRows(streamRows);
-                        if (auditRows.length === 0) {
-                            log.info(
-                                `[codex-debug-retrieveDataStream] ${JSON.stringify(
-                                    {
-                                        stage: "csvAuditRowsSkipped",
-                                        entity: result.entity,
-                                        streamRowCount: streamRows.length,
-                                        rowCount: 0,
-                                    }
-                                )}`
-                            );
-                            return;
-                        }
-
-                        await auditLogger.log(
-                            "patient.attributes.pid",
-                            result.auditLogChannelName,
-                            auditRows,
-                            true,
-                            undefined,
-                            result.selectedAttributes
-                        );
-                        auditRowCount += auditRows.length;
-                        log.info(
-                            `[codex-debug-retrieveDataStream] ${JSON.stringify({
-                                stage: "auditRows",
-                                source: "TrexCsvStreamWriter",
-                                entity: result.entity,
-                                rowCount: auditRows.length,
-                                totalRowCount: auditRowCount,
-                            })}`
+                        await auditStreamRows(
+                            streamRows,
+                            "TrexCsvStreamWriter"
                         );
                     },
                 });
@@ -393,9 +397,32 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                         })}`
                     );
                 });
-                csvStreamTransform = trexCsvStreamWriter;
+                csvStreamTransforms = [trexCsvStreamWriter];
             } else {
                 // Streaming for HANA
+                const auditNodeStreamTransform = new Transform({
+                    objectMode: true,
+                    async transform(row, _encoding, callback) {
+                        try {
+                            await auditStreamRows(
+                                [row as StreamRow],
+                                "NodeObjectStream"
+                            );
+                            callback(null, row);
+                        } catch (err) {
+                            callback(err as Error);
+                        }
+                    },
+                });
+                auditNodeStreamTransform.on("finish", () => {
+                    log.info(
+                        `[codex-debug-retrieveDataStream] ${JSON.stringify({
+                            stage: "csvAuditEnd",
+                            entity: result.entity,
+                            rowCount: auditRowCount,
+                        })}`
+                    );
+                });
                 const csvStreamWriter: NodeJS.ReadWriteStream = csvWriter();
                 csvStreamWriter.on("drain", () => {
                     log.debug("DRAIN csvStreamWriter");
@@ -406,7 +433,10 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     );
                     log.error(err);
                 });
-                csvStreamTransform = csvStreamWriter;
+                csvStreamTransforms = [
+                    auditNodeStreamTransform,
+                    csvStreamWriter,
+                ];
             }
 
             //Exception for duckdb
@@ -428,7 +458,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 log.error(err);
             });
 
-            pipeline(responseData, csvStreamTransform, res, async (err) => {
+            pipeline(responseData, ...csvStreamTransforms, res, (err) => {
                 if (
                     result.data.constructor.prototype.toString() ===
                     "[object AsyncGenerator]"
