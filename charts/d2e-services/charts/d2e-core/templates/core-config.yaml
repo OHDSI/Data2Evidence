@@ -7,6 +7,9 @@ data:
   Caddyfile: |
     {
     	debug
+        servers {
+            protocols h1
+        }
     	pki {
             ca local {
                 name "ALP Local CA"
@@ -18,6 +21,14 @@ data:
                 intermediate_cn "ALP Internal CA - ECC Intermediate"
             }
     	}
+    }
+
+    (proxy_headers_default) {
+          header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+          header_up X-Forwarded-Host {$CADDY__D2E__PUBLIC_FQDN}
+          header_up X-Forwarded-Port {$CADDY__D2E__PUBLIC_FQDN}
+          header_up X-Forwarded-Proto https
+          header_up X-Forwarded-For {remote}
     }
 
     (portal) {
@@ -55,6 +66,12 @@ data:
             }
         }
 
+        # Redirect uppercase /Atlas to lowercase /atlas
+        @atlas_uppercase {
+            path_regexp atlas_case ^/Atlas(.*)$$
+        }
+        redir @atlas_uppercase /atlas{re.atlas_case.1} 301
+
         @portalpath {
             path /d2e/portal/researcher/*
             path /d2e/portal/systemadmin/*
@@ -75,6 +92,7 @@ data:
         handle {
             reverse_proxy https://{$TREX__D2E__INTERNAL_FQDN} {
                 header_up Host {$CADDY__D2E__PUBLIC_FQDN}
+                import proxy_headers_default
             	transport http {
                     tls
                     tls_insecure_skip_verify
@@ -103,8 +121,17 @@ data:
     }
 
     :8080 {
-        handle /check-liveness {
+        @oidc {
+            path /oidc/*
+        }
+        handle @oidc {
+            reverse_proxy http://idp.d2e.svc.cluster.local
+        }
+        handle /check-liveness* {
             respond "OK-HTTP"
+        }
+        handle {
+            respond 404
         }
     }
 
@@ -130,8 +157,7 @@ metadata:
 data:
   CADDY__D2E__INTERNAL_FQDN: "{{ .Values.global.config.CADDY__D2E__INTERNAL_FQDN }}"
   CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
-  CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL: "{{ printf "https://%s" .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
+  CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL: "https://{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
   LOGTO_ROLES_AZ_GROUPS_MAPPING: {{ .Values.global.idp.LOGTO_ROLES_AZ_GROUPS_MAPPING | quote }}
-
 
 

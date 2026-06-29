@@ -314,9 +314,6 @@ export async function authz(c: Context, next: any) {
               bearerToken = cookie.split("=")[1];
               bearerToken = `Bearer ${bearerToken}`;
               break;
-            } else if (cookie.startsWith("fhirtoken=")) {
-              bearerToken = cookie.split("=")[1];
-              break;
             }
           }
         }
