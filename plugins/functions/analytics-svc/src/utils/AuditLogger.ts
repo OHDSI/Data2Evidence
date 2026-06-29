@@ -35,6 +35,7 @@ type AuditLoggerCreateOptions =
       });
 type AuditDataAccessMessage = {
     action: "read";
+    occurredAt: string;
     personId: string;
     accessChannel: string;
     successful: boolean;
@@ -259,6 +260,7 @@ export class AuditLogger {
                 : selectedAttributes;
         const dataAccessMessage: AuditDataAccessMessage = {
             action: "read",
+            occurredAt: new Date().toISOString(),
             personId: object_id,
             accessChannel: channel,
             successful: success,

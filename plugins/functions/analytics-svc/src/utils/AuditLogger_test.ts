@@ -9,6 +9,7 @@ type AuditAttribute = {
 
 type AuditMessageContent = {
     action: "read";
+    occurredAt: string;
     personId: string;
     accessChannel?: string;
     successful: boolean;
@@ -103,6 +104,14 @@ function logAsync(
     );
 }
 
+function assertIsoTimestamp(value: string) {
+    assert.match(
+        value,
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+    );
+    assert.ok(!Number.isNaN(Date.parse(value)));
+}
+
 Deno.test(
     "AuditLogger logs selected attribute names without values or pid",
     async () => {
@@ -126,6 +135,7 @@ Deno.test(
             assert.equal(result, null);
             assert.equal(messages.length, 1);
             assert.equal(messages[0].auditUser, "test-user");
+            assertIsoTimestamp(messages[0].occurredAt);
             assert.equal(messages[0].personId, "patient-1");
             assert.equal(messages[0].accessChannel, "patient list");
             assert.equal(messages[0].successful, true);
