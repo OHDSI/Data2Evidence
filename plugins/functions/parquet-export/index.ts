@@ -124,7 +124,7 @@ function substituteTemplateParams(
     resultsSchema: string;
   },
   additionalParams: Record<string, string>,
-  conceptIds: number[],
+  conceptIds?: number[],
 ): string {
   if (!isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
@@ -224,7 +224,7 @@ function substituteTemplateParams(
     )
     .replace(
       /\{\{CONCEPT_IDS\}\}/g,
-      conceptIds.join(","),
+      conceptIds ? conceptIds.join(",") : "",
     );
 
   const remainingPlaceholders = extractPlaceholders(result);
@@ -480,11 +480,14 @@ router.post("/", async (req: Request, res: Response) => {
     }
 
     const conceptIds = req.body.conceptIds as unknown | undefined;
-    if (!isValidConceptIdArray(conceptIds)) {
-      return res.status(400).json({
-        error: "Invalid parameter",
-        message: "conceptIds must be an array of positive integers",
-      });
+    // Check if template requires CONCEPT_IDS
+    if (template.sqlText.includes("{{CONCEPT_IDS}}")) {
+      if (!isValidConceptIdArray(conceptIds)) {
+        return res.status(400).json({
+          error: "Missing or invalid parameter",
+          message: "conceptIds must be a non-empty array of positive integers",
+        });
+      }
     }
 
     const reservedBodyParams = new Set([
@@ -628,3 +631,4 @@ router.post("/", async (req: Request, res: Response) => {
 
 app.use("/parquet-export", router);
 app.listen(8000);
+  
