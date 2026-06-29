@@ -481,22 +481,6 @@ export class PluginEndpoint {
                             datasetId: datasetId,
                             language: "",
                         });
-                    log.info(
-                        `[codex-debug-retrieveDataStream] ${JSON.stringify({
-                            stage: "buildTempTableQuery",
-                            hasQuery: Boolean(query),
-                            hasPCountQuery: Boolean(pCountQuery),
-                            noDataReason: noDataReason ?? null,
-                            selectedAttributeIds:
-                                this.selectedAttributes?.map(
-                                    (attribute) => attribute.id
-                                ) ?? [],
-                            entityQueryMapLength:
-                                this.entityQueryMap?.length ?? 0,
-                            cdmConfigId: this.cdmConfigMetaData?.id,
-                            cdmConfigVersion: this.cdmConfigMetaData?.version,
-                        })}`
-                    );
                     if (!query) {
                         if (noDataReason) {
                             endpointResult.noDataReason = noDataReason;
@@ -600,18 +584,6 @@ export class PluginEndpoint {
                                 entityObj.query.parameterPlaceholders,
                                 entityObj.query.sqlReturnOn
                             );
-                            log.info(
-                                `[codex-debug-retrieveDataStream] ${JSON.stringify(
-                                    {
-                                        stage: "beforeStreamQuery",
-                                        entity: entityObj.entity,
-                                        selectedAttributeIds:
-                                            this.selectedAttributes?.map(
-                                                (attribute) => attribute.id
-                                            ) ?? [],
-                                    }
-                                )}`
-                            );
                             const dataStream = await streamQuery(
                                 entityObj.entity,
                                 qo
@@ -628,28 +600,7 @@ export class PluginEndpoint {
                         entity: string;
                         data: NodeJS.ReadableStream;
                     }) => {
-                        const CHUNK_SIZE = 10;
                         let rowCount = 0;
-
-                        log.info(
-                            `[codex-debug-retrieveDataStream] ${JSON.stringify({
-                                stage: "prepareDataStream",
-                                entity: dataStream.entity,
-                                streamConstructor:
-                                    dataStream.data?.constructor?.name,
-                                streamPrototype:
-                                    dataStream.data?.constructor?.prototype?.toString?.(),
-                                isWebReadableStream:
-                                    dataStream.data instanceof ReadableStream,
-                                selectedAttributeIds:
-                                    this.selectedAttributes?.map(
-                                        (attribute) => attribute.id
-                                    ) ?? [],
-                                hasAuditLogger: true,
-                                pendingAuditRows: 0,
-                                auditChunkSize: CHUNK_SIZE,
-                            })}`
-                        );
 
                         //Exception for duckdb
                         if (
@@ -660,15 +611,6 @@ export class PluginEndpoint {
                             dataStream.data.on("end", () => {
                                 log.debug(
                                     `total streamed rows for ${dataStream.entity}: ${rowCount}`
-                                );
-                                log.info(
-                                    `[codex-debug-retrieveDataStream] ${JSON.stringify(
-                                        {
-                                            stage: "nodeStreamEnd",
-                                            entity: dataStream.entity,
-                                            rowCount,
-                                        }
-                                    )}`
                                 );
                             });
 

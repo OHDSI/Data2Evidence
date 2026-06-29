@@ -2,7 +2,7 @@ import { getUser, Logger } from "@alp/alp-base-utils";
 import type { CDMConfigMetaDataType } from "../types";
 import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
-const AUDITLOG_REQ_CHUNK_SIZE = 10;
+export const AUDITLOG_REQ_CHUNK_SIZE = 10;
 
 type AuditAttachment = { id: string; name: string };
 type AuditLogResult = QueryObjectResult | "auditlog disabled" | null;
