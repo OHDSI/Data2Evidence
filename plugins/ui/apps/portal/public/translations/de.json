@@ -9,7 +9,7 @@
   "ACCESS_PANEL__NO_USERS": "Keine verfügbaren Benutzer zum Hinzufügen",
   "ACCESS_PANEL__REVOKE": "Widerrufen",
   "ACCESS_PANEL__ROLE": "Rolle",
-  "ACCESS_PANEL__SUCCESS": "Benutzer {0} wurde die Berechtigung erteilt. Er muss sich erneut anmelden, um auf den Datensatz zuzugreifen.",
+  "ACCESS_PANEL__SUCCESS": "Benutzer {0} wurde die Berechtigung erteilt. Weisen Sie den Benutzer darauf hin, dass er sich erneut anmelden muss, um auf den Datensatz zuzugreifen.",
   "ACCESS_PANEL__SUCCESS_REVOKE": "Benutzer {0} wurde die Berechtigung entzogen. Er muss sich erneut anmelden, damit die Änderung wirksam wird.",
   "ACCOUNT_BUTTON__ACCOUNT": "Konto",
   "ACCOUNT_BUTTON__LOGIN": "Login",
