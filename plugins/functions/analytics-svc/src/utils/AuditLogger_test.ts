@@ -104,10 +104,7 @@ function logAsync(
 }
 
 function assertIsoTimestamp(value: string) {
-    assert.match(
-        value,
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-    );
+    assert.match(value, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     assert.ok(!Number.isNaN(Date.parse(value)));
 }
 
@@ -169,6 +166,38 @@ Deno.test(
 
             assert.equal(result, null);
             assert.deepEqual(messages[0].attributes, ["age", "gender"]);
+        });
+    }
+);
+
+Deno.test(
+    "AuditLogger logs selected attributes when audit row only contains pid",
+    async () => {
+        await withMutedConsole(async () => {
+            env.IS_AUDIT_LOG_ENABLED = "true";
+            const { auditTransport, messages } = createAuditTransportMock();
+            const logger = createLogger(auditTransport);
+
+            const result = await logger.log(
+                "patient.attributes.pid",
+                "patient stream",
+                [{ "patient.attributes.pid": "patient-1" }],
+                undefined,
+                [
+                    { id: "patient.attributes.pid" },
+                    { id: "patient.attributes.Age" },
+                    { id: "patient.attributes.Gender_concept_name" },
+                ]
+            );
+
+            assert.equal(result, null);
+            assert.equal(messages.length, 1);
+            assert.equal(messages[0].personId, "patient-1");
+            assert.equal(messages[0].accessChannel, "patient stream");
+            assert.deepEqual(messages[0].attributes, [
+                "patient.attributes.Age",
+                "patient.attributes.Gender_concept_name",
+            ]);
         });
     }
 );
