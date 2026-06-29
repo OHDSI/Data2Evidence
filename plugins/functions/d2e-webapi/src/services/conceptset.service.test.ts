@@ -27,7 +27,10 @@ if (!Deno.env.get("SERVICE_ROUTES")) {
 const {
   getConceptSet,
   getConceptSetExpression,
+  getConceptSetUsage,
   getIncludedConcepts,
+  getConceptSets,
+  checkIfConceptSetExists,
   mapLegacyConceptSetToWebApiConceptSet,
   mapWebApiConceptSetToFacadeConceptSet,
 } = await import("./conceptset.service.ts");
@@ -37,8 +40,15 @@ const { ConceptSetExpressionError } = await import(
 );
 const { WebApiConceptSetAPI } = await import("../api/WebApiConceptSetAPI.ts");
 const { PortalServerAPI } = await import("../api/PortalServerAPI.ts");
+const { BookmarksAPI } = await import("../api/BookmarksAPI.ts");
 const { TerminologySvcAPI } = await import("../api/TerminologySvcAPI.ts");
 const { TrexDAO } = await import("../dao/trex.dao.ts");
+
+type IBookmarks = import("../api/types.ts").IBookmarks;
+type ITerminologyConceptSet = import("../api/types.ts").ITerminologyConceptSet;
+type IUserArtifactAtlasCohortDefinitionDto = import(
+  "../dto/cohortdefinition.ts"
+).IUserArtifactAtlasCohortDefinitionDto;
 
 Deno.test("legacy concept sets remain writable in facade responses", () => {
   const conceptSet = mapLegacyConceptSetToWebApiConceptSet({
@@ -448,7 +458,7 @@ Deno.test("getIncludedConcepts resolves webapi concept sets through WebAPI", asy
           CONCEPT_CLASS_ID: "Clinical Finding",
           VALID_START_DATE: "2020-01-01",
           VALID_END_DATE: "2099-12-31",
-        }))
+        }) as unknown as import("../api/WebApiConceptSetAPI.ts").IWebApiConcept)
       );
     };
 
@@ -592,5 +602,282 @@ Deno.test("getIncludedConcepts deduplicates concepts across mixed sources", asyn
     WebApiConceptSetAPI.prototype.resolveConceptSetExpression =
       originalResolveConceptSetExpressionWeb;
     WebApiConceptSetAPI.prototype.lookupIdentifiers = originalLookupIdentifiers;
+  }
+});
+
+Deno.test("getConceptSetUsage detects cohort usage via ConceptSets[].conceptSetId", async () => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([
+        {
+          id: 1,
+          name: "Cohort using legacy:7",
+          description: null,
+          expressionType: "type",
+          expression: {
+            ConceptSets: [
+              { id: 0, name: "Set", expression: { items: [] }, conceptSetId: "legacy:7" },
+            ],
+            PrimaryCriteria: {
+              CriteriaList: [{ ConditionOccurrence: { CodesetId: 0 } }],
+            },
+          },
+          createdBy: null,
+          createdDate: null,
+          modifiedBy: null,
+          modifiedDate: null,
+          tags: [],
+        },
+      ] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({ bookmarks: [], schemaName: "test" } as unknown as IBookmarks);
+
+    const result = await getConceptSetUsage("token", "dataset-1", "legacy:7");
+
+    assertEquals(result.inUse, true);
+    assertEquals(result.cohortDefinitions.length, 1);
+    assertEquals(result.cohortDefinitions[0].name, "Cohort using legacy:7");
+    assertEquals(result.bookmarks.length, 0);
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+});
+
+Deno.test("getConceptSetUsage detects webapi concept set in cohort by compound id", async () => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([
+        {
+          id: 2,
+          name: "Cohort using webapi:7",
+          description: null,
+          expressionType: "type",
+          expression: {
+            ConceptSets: [
+              { id: 0, name: "Set", expression: { items: [] }, conceptSetId: "webapi:7" },
+            ],
+            PrimaryCriteria: {
+              CriteriaList: [{ ConditionOccurrence: { CodesetId: 0 } }],
+            },
+          },
+          createdBy: null,
+          createdDate: null,
+          modifiedBy: null,
+          modifiedDate: null,
+          tags: [],
+        },
+      ] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({ bookmarks: [], schemaName: "test" } as unknown as IBookmarks);
+
+    const result = await getConceptSetUsage("token", "dataset-1", "webapi:7");
+
+    assertEquals(result.inUse, true);
+    assertEquals(result.cohortDefinitions.length, 1);
+    assertEquals(result.bookmarks.length, 0);
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+});
+
+Deno.test("getConceptSetUsage detects bookmark usage by exact value match", async () => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({
+        bookmarks: [
+          {
+            bmkId: "b1",
+            bookmarkname: "Bookmark using legacy:7",
+            bookmark: JSON.stringify({
+              filter: {
+                cards: {
+                  content: [
+                    {
+                      attributes: [
+                        {
+                          value: [{ value: "legacy:7", display_value: "Set" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            }),
+            viewname: null,
+            modified: "2026-01-01",
+            version: 1,
+            user_id: "u1",
+            shared: false,
+          },
+        ],
+        schemaName: "test",
+      } as unknown as IBookmarks);
+
+    const result = await getConceptSetUsage("token", "dataset-1", "legacy:7");
+
+    assertEquals(result.inUse, true);
+    assertEquals(result.cohortDefinitions.length, 0);
+    assertEquals(result.bookmarks.length, 1);
+    assertEquals(result.bookmarks[0].name, "Bookmark using legacy:7");
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+});
+
+Deno.test("getConceptSetUsage does not false-positive on substring bookmark values", async () => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({
+        bookmarks: [
+          {
+            bmkId: "b1",
+            bookmarkname: "Bookmark using legacy:70",
+            bookmark: JSON.stringify({
+              filter: {
+                cards: {
+                  content: [
+                    {
+                      attributes: [
+                        {
+                          value: [{ value: "legacy:70", display_value: "Set" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              },
+            }),
+            viewname: null,
+            modified: "2026-01-01",
+            version: 1,
+            user_id: "u1",
+            shared: false,
+          },
+        ],
+        schemaName: "test",
+      } as unknown as IBookmarks);
+
+    const result = await getConceptSetUsage("token", "dataset-1", "legacy:7");
+
+    assertEquals(result.inUse, false);
+    assertEquals(result.cohortDefinitions.length, 0);
+    assertEquals(result.bookmarks.length, 0);
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+});
+
+Deno.test("getConceptSetUsage does not confuse legacy and webapi concept sets with the same external id", async () => {
+  const originalGetAtlasCohortDefinitionList =
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList;
+  const originalGetAllBookmarks = BookmarksAPI.prototype.getAllBookmarks;
+
+  try {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList = () =>
+      Promise.resolve([
+        {
+          id: 3,
+          name: "Cohort using legacy:7",
+          description: null,
+          expressionType: "type",
+          expression: {
+            ConceptSets: [
+              { id: 0, name: "Set", expression: { items: [] }, conceptSetId: "legacy:7" },
+            ],
+            PrimaryCriteria: {
+              CriteriaList: [{ ConditionOccurrence: { CodesetId: 0 } }],
+            },
+          },
+          createdBy: null,
+          createdDate: null,
+          modifiedBy: null,
+          modifiedDate: null,
+          tags: [],
+        },
+      ] as unknown as IUserArtifactAtlasCohortDefinitionDto[]);
+    BookmarksAPI.prototype.getAllBookmarks = () =>
+      Promise.resolve({ bookmarks: [], schemaName: "test" } as unknown as IBookmarks);
+
+    const result = await getConceptSetUsage("token", "dataset-1", "webapi:7");
+
+    assertEquals(result.inUse, false);
+    assertEquals(result.cohortDefinitions.length, 0);
+    assertEquals(result.bookmarks.length, 0);
+  } finally {
+    PortalServerAPI.prototype.getAtlasCohortDefinitionList =
+      originalGetAtlasCohortDefinitionList;
+    BookmarksAPI.prototype.getAllBookmarks = originalGetAllBookmarks;
+  }
+});
+
+Deno.test("getConceptSets propagates WebAPI errors instead of returning silent empty list", async () => {
+  const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
+  const originalGetConceptSetsWeb = WebApiConceptSetAPI.prototype.getConceptSets;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSets = () =>
+      Promise.resolve([] as unknown as ITerminologyConceptSet[]);
+    WebApiConceptSetAPI.prototype.getConceptSets = () =>
+      Promise.reject(new Error("WebAPI unavailable"));
+
+    await assertRejects(
+      () => getConceptSets("token", "dataset-1"),
+      Error,
+      "WebAPI unavailable",
+    );
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSets = originalGetConceptSetsTerm;
+    WebApiConceptSetAPI.prototype.getConceptSets = originalGetConceptSetsWeb;
+  }
+});
+
+Deno.test("checkIfConceptSetExists propagates WebAPI errors instead of returning silent zero", async () => {
+  const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
+  const originalCheckIfConceptSetExists =
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSets = () =>
+      Promise.resolve([] as unknown as ITerminologyConceptSet[]);
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists = () =>
+      Promise.reject(new Error("WebAPI unavailable"));
+
+    await assertRejects(
+      () => checkIfConceptSetExists("token", "dataset-1", "webapi:7", "Name"),
+      Error,
+      "WebAPI unavailable",
+    );
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSets = originalGetConceptSetsTerm;
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists =
+      originalCheckIfConceptSetExists;
   }
 });

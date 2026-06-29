@@ -27,10 +27,56 @@ import {
 import { resolveSourceKey } from "./source.service.ts";
 import { getConceptsFromIdentifiers } from "./vocabulary.service.ts";
 import {
+  ConceptSetRef,
+  CONCEPT_SET_LEGACY_OFFSET_BOUNDARY,
   formatConceptSetRef,
   parseConceptSetRef,
 } from "../utils/conceptSetRef.ts";
 import { IIncludedConcept } from "../dto/conceptset.ts";
+
+const buildConceptSetIdValues = (
+  ref: ConceptSetRef,
+): Set<string | number> => {
+  const values = new Set<string | number>();
+  values.add(formatConceptSetRef(ref));
+  if (ref.source === "legacy") {
+    values.add(ref.externalId);
+    values.add(String(ref.externalId));
+  } else {
+    const offsetId = ref.externalId + CONCEPT_SET_LEGACY_OFFSET_BOUNDARY;
+    values.add(offsetId);
+    values.add(String(offsetId));
+  }
+  return values;
+};
+
+const bookmarkUsesConceptSet = (
+  bookmark: unknown,
+  matchingValues: Set<string | number>,
+): boolean => {
+  if (typeof bookmark !== "object" || bookmark === null) {
+    return false;
+  }
+
+  if (Array.isArray(bookmark)) {
+    return bookmark.some((item) =>
+      bookmarkUsesConceptSet(item, matchingValues)
+    );
+  }
+
+  for (const [key, value] of Object.entries(bookmark)) {
+    if (key === "value" && matchingValues.has(value)) {
+      return true;
+    }
+    if (typeof value === "object" && value !== null) {
+      if (bookmarkUsesConceptSet(value, matchingValues)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
 
 const mapItemsToTerminologyConcepts = (
   conceptSetItemList: IConceptSetItemListDto,
@@ -76,7 +122,7 @@ export const getConceptSets = async (
 
   const [terminologyConceptSets, webApiConceptSets] = await Promise.all([
     terminologySvcApi.getConceptSets(datasetId),
-    webApiConceptSetApi.getConceptSets().catch(() => []),
+    webApiConceptSetApi.getConceptSets(),
   ]);
 
   const merged = [
@@ -183,11 +229,9 @@ export const getConceptSetUsage = async (
   bookmarks: Array<{ id: string; name: string }>;
 }> => {
   // Parse the input via the shared parser; accept compound or bare numeric.
-  // The parser guarantees a non-negative integer externalId, which is what
-  // the JSON pattern matchers below need.
-  let externalId: number;
+  let ref: ConceptSetRef;
   try {
-    externalId = parseConceptSetRef(conceptSetId).externalId;
+    ref = parseConceptSetRef(conceptSetId);
   } catch (error) {
     // The parser's own message already embeds the raw input via JSON.stringify,
     // so we rethrow it as-is rather than prefixing a second copy of the input.
@@ -196,14 +240,16 @@ export const getConceptSetUsage = async (
     );
   }
 
-  // Defence against CodesetId:0 false-positives in the JSON pattern matcher below.
+  // Defence against conceptSetId 0 false-positives in the matchers below.
   // (parseConceptSetRef already enforces non-negative integer; this rejects the legitimate
   //  parsed-but-unusable id 0 specifically.)
-  if (externalId <= 0) {
+  if (ref.externalId <= 0) {
     throw new ConceptSetValidationError(
       `Invalid concept set ID: ${String(conceptSetId)}. Concept set ID 0 is reserved.`,
     );
   }
+
+  const matchingValues = buildConceptSetIdValues(ref);
 
   const portalServerApi = new PortalServerAPI(token);
   const bookmarksApi = new BookmarksAPI(token);
@@ -222,34 +268,30 @@ export const getConceptSetUsage = async (
     }),
   ]);
 
-  // externalId is guaranteed a non-negative integer; safe for string matching.
-  const conceptSetIdStr = String(externalId);
-
   const usingCohorts = cohortDefinitions.filter((cohort) => {
-    const json = JSON.stringify(cohort.expression);
-    // Check for CodesetId references in OHDSI Atlas JSON format
-    // Matches "CodesetId":123} or "CodesetId":123, (with optional space after colon)
-    // prevents 12 matching 123
-    const patterns = [
-      `"CodesetId":${conceptSetIdStr}}`,
-      `"CodesetId":${conceptSetIdStr},`,
-      `"CodesetId": ${conceptSetIdStr}}`,
-      `"CodesetId": ${conceptSetIdStr},`,
-    ];
-    return patterns.some((pattern) => json.includes(pattern));
+    const conceptSets =
+      (cohort.expression as Record<string, unknown>)?.ConceptSets;
+    if (!Array.isArray(conceptSets)) {
+      return false;
+    }
+    return conceptSets.some((conceptSet) => {
+      const id = (conceptSet as Record<string, unknown>)?.conceptSetId;
+      return matchingValues.has(id as string | number) ||
+        matchingValues.has(String(id));
+    });
   });
 
-  // Check Bookmarks (D2E filters) using string matching
+  // Check Bookmarks (D2E filters) using exact value comparison
   const bookmarks = bookmarksData.bookmarks || [];
 
   const usingBookmarks = bookmarks.filter((bookmark) => {
-    const bookmarkJson = bookmark.bookmark;
-    // Concept set ID is stored as "value":"869" in bookmark constraint expressions
-    const patterns = [
-      `"value":"${conceptSetIdStr}"`,
-      `"value": "${conceptSetIdStr}"`,
-    ];
-    return patterns.some((pattern) => bookmarkJson.includes(pattern));
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(bookmark.bookmark);
+    } catch {
+      return false;
+    }
+    return bookmarkUsesConceptSet(parsed, matchingValues);
   });
 
   return {
@@ -395,9 +437,7 @@ export const checkIfConceptSetExists = async (
 
   const [terminologyConceptSets, webApiExistsCount] = await Promise.all([
     terminologySvcApi.getConceptSets(datasetId),
-    webApiConceptSetApi
-      .checkIfConceptSetExists(webApiExcludeId, conceptSetName)
-      .catch(() => 0),
+    webApiConceptSetApi.checkIfConceptSetExists(webApiExcludeId, conceptSetName),
   ]);
 
   // For legacy refs we must exclude the same legacy row by id; for webapi
