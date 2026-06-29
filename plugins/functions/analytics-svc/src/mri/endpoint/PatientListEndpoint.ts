@@ -15,8 +15,7 @@ import {
     QuerySvcResultType,
 } from "../../types";
 
-// Max length of the channel is 16 (limitation in audit server), hence we use abbreviations to shorten it.
-const AUDITLOG_CHANNEL_PATIENTLIST = "MRI Pt. List";
+const AUDITLOG_CHANNEL_PATIENTLIST = "D2E Pt. List";
 
 export class PatientListEndpoint extends BaseQueryEngineEndpoint {
     constructor(

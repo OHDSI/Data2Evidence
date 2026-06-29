@@ -68,7 +68,7 @@ let emptyResult: PluginEndpointResultType = {
 const emptyStreamResult: PluginEndpointStreamResultType = {
     entity: "",
     data: undefined,
-    auditLogChannelName: "MRI Pt. List Stream",
+    auditLogChannelName: "D2E Pt. List Download",
 };
 
 async function retrieveDataset(
@@ -105,8 +105,8 @@ async function retrieveDataset(
                     patientId: patientId,
                     auditLogChannelName:
                         req.usage === "EXPORT"
-                            ? "MRI Pt. List Exp"
-                            : "MRI Pt. List",
+                            ? "D2E Pt. List Export"
+                            : "D2E Pt. List",
                 });
 
                 callback(null, pluginResult);
@@ -137,7 +137,7 @@ async function streamDataset(req: IMRIRequest, callback: CallBackInterface) {
                 pluginEndpoint.setRequest(req);
                 const pluginResult = await pluginEndpoint.retrieveDataStream({
                     cohortDefinition,
-                    auditLogChannelName: "MRI Pt. List Stream",
+                    auditLogChannelName: "D2E Pt. List Download",
                     datasetId,
                 });
 
@@ -900,7 +900,7 @@ export async function getSinglePatient({
                     language: lang,
                     dataFormat: dataFormat,
                     patientId: patientId,
-                    auditLogChannelName: "Patient Summary",
+                    auditLogChannelName: "D2E Pt. Summary",
                 });
                 return resolve(pluginResult);
             } else {
