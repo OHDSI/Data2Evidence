@@ -55,10 +55,14 @@ export class PluginEndpoint {
         public connection: ConnectionInterface,
         private schemaName: string
     ) {
-        //double quotes surround intentional to preserve lowercase naming in hana table
-        this.uniquePatientTempTableName = `"#MRI_PLUGIN_${crypto
-            .randomBytes(24)
-            .toString("hex")}"`;
+        const hex = crypto.randomBytes(24).toString("hex");
+        if (connection.dialect !== "hana") {
+            // Dropped explicitly via dropFn / cleanup() after use.
+            this.uniquePatientTempTableName = `memory.main."MRI_PLUGIN_${hex}"`;
+        } else {
+            //double quotes surround intentional to preserve lowercase naming in hana table
+            this.uniquePatientTempTableName = `"#MRI_PLUGIN_${hex}"`;
+        }
     }
 
     public setRequest(request: IMRIRequest) {
@@ -119,9 +123,16 @@ export class PluginEndpoint {
     }
 
     private genLocalTempTableCreationQuery(existingPatientTable): string {
-        const query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS 
-                                            (select * from ${existingPatientTable} where 1=0)`;
-        log.debug(`Generated Create Local Temp Table Query ${query}`);
+        let query: string;
+        if (this.connection.dialect !== "hana") {
+            // Trex/DuckDB path: plain CREATE TABLE so the table lands
+            // in memory.main where the streaming connection can see it.
+            // Dropped explicitly via dropFn / cleanup().
+            query = `CREATE TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        } else {
+            query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        }
+        log.debug(`Generated Temp Table Query ${query}`);
         return query;
     }
 
