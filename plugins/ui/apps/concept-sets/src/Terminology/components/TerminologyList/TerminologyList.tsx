@@ -111,6 +111,12 @@ const COUNT_COLUMN_IDS = new Set([
   "descendantPersonCount",
 ]);
 
+// The terminology drawer renders at zIndex 11000/11001 (see WithDrawer in
+// Terminology.tsx). MUI Select menus default to zIndex 1300, so any dropdown
+// opened inside the drawer renders behind it and is invisible. Lift in-drawer
+// menus above the drawer paper. See issue #2790.
+const ABOVE_DRAWER_Z_INDEX = 11100;
+
 const TerminologyList: FC<TerminologyListProps> = ({
   userId,
   onConceptClick,
@@ -1061,6 +1067,15 @@ const TerminologyList: FC<TerminologyListProps> = ({
         color: "var(--color-primary, #000080)",
       },
     },
+    // Lift the column filter dropdowns above the terminology drawer (#2790).
+    muiFilterTextFieldProps: {
+      SelectProps: {
+        MenuProps: {
+          disableScrollLock: true,
+          sx: { zIndex: ABOVE_DRAWER_Z_INDEX },
+        },
+      },
+    },
     enableTopToolbar: false,
   });
   return (
@@ -1094,6 +1109,13 @@ const TerminologyList: FC<TerminologyListProps> = ({
               (match) => Number(match).toLocaleString()
             )
           }
+          // Lift the rows-per-page dropdown above the terminology drawer (#2790).
+          SelectProps={{
+            MenuProps: {
+              disableScrollLock: true,
+              sx: { zIndex: ABOVE_DRAWER_Z_INDEX },
+            },
+          }}
           sx={{
             overflow: "visible",
             height: "52px",
