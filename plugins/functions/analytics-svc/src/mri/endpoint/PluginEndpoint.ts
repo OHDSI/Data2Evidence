@@ -327,23 +327,25 @@ export class PluginEndpoint {
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
 
-                        try {
-                            const auditLogger = AuditLogger.create({
-                                cohortBuilderConfigMetaData:
-                                    this.paConfigMetaData,
-                                cdmConfigMetaData: this.cdmConfigMetaData,
-                                request: this.request,
-                            });
-                            await auditLogger.log(
-                                "patient.attributes.pid",
-                                auditLogChannelName,
-                                pList,
-                                undefined,
-                                this.selectedAttributes
-                            );
-                        } catch (_err) {
-                            console.error(_err);
-                            return errHandler(new Error("Auditlog error"));
+                        if (AuditLogger.isEnabled()) {
+                            try {
+                                const auditLogger = AuditLogger.create({
+                                    cohortBuilderConfigMetaData:
+                                        this.paConfigMetaData,
+                                    cdmConfigMetaData: this.cdmConfigMetaData,
+                                    request: this.request,
+                                });
+                                await auditLogger.log(
+                                    "patient.attributes.pid",
+                                    auditLogChannelName,
+                                    pList,
+                                    undefined,
+                                    this.selectedAttributes
+                                );
+                            } catch (_err) {
+                                console.error(_err);
+                                return errHandler(new Error("Auditlog error"));
+                            }
                         }
 
                         if (mode === MODE.CSV) {

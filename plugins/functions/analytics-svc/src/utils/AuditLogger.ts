@@ -140,8 +140,12 @@ export class AuditLogger {
         this._user = auditUser;
     }
 
-    private _isEnabled() {
+    public static isEnabled() {
         return env.IS_AUDIT_LOG_ENABLED?.toLowerCase() === "true";
+    }
+
+    private _isEnabled() {
+        return AuditLogger.isEnabled();
     }
 
     /**

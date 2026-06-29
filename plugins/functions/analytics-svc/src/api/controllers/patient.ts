@@ -336,56 +336,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             };
             let csvStreamTransforms: NodeJS.ReadWriteStream[];
             let responseData = result.data;
-            if (result.data instanceof ReadableStream) {
-                // Trex connection returns stream results as a ReadableStream
-                responseData = createNodeReadableFromWebStream(
-                    result.data as unknown as ReadableStream<TrexWebStreamChunk>
-                );
-                const trexCsvStreamWriter = new TrexCsvStreamWriter({
-                    onRows: async (streamRows) => {
-                        await auditStreamRows(streamRows);
-                    },
-                });
-                csvStreamTransforms = [trexCsvStreamWriter];
-            } else {
-                // Streaming for HANA
-                const auditBuffer: StreamRow[] = [];
-                const flushAuditBuffer = async (stream: Transform) => {
-                    if (auditBuffer.length === 0) {
-                        return;
-                    }
-
-                    const rows = auditBuffer.splice(0, auditBuffer.length);
-                    await auditStreamRows(rows);
-                    for (const row of rows) {
-                        stream.push(row);
-                    }
-                };
-                const auditNodeStreamTransform = new Transform({
-                    objectMode: true,
-                    async transform(this: Transform, row, _encoding, callback) {
-                        try {
-                            auditBuffer.push(row as StreamRow);
-                            if (auditBuffer.length < AUDITLOG_REQ_CHUNK_SIZE) {
-                                callback();
-                                return;
-                            }
-
-                            await flushAuditBuffer(this);
-                            callback();
-                        } catch (err) {
-                            callback(err as Error);
-                        }
-                    },
-                    async flush(this: Transform, callback) {
-                        try {
-                            await flushAuditBuffer(this);
-                            callback();
-                        } catch (err) {
-                            callback(err as Error);
-                        }
-                    },
-                });
+            const createCsvStreamWriter = (): NodeJS.ReadWriteStream => {
                 const csvStreamWriter: NodeJS.ReadWriteStream = csvWriter();
                 csvStreamWriter.on("drain", () => {
                     log.debug("DRAIN csvStreamWriter");
@@ -396,10 +347,78 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     );
                     log.error(err);
                 });
-                csvStreamTransforms = [
-                    auditNodeStreamTransform,
-                    csvStreamWriter,
-                ];
+                return csvStreamWriter;
+            };
+            if (result.data instanceof ReadableStream) {
+                // Trex connection returns stream results as a ReadableStream
+                responseData = createNodeReadableFromWebStream(
+                    result.data as unknown as ReadableStream<TrexWebStreamChunk>
+                );
+                const trexCsvStreamWriter = new TrexCsvStreamWriter(
+                    AuditLogger.isEnabled()
+                        ? {
+                              onRows: async (streamRows) => {
+                                  await auditStreamRows(streamRows);
+                              },
+                          }
+                        : undefined
+                );
+                csvStreamTransforms = [trexCsvStreamWriter];
+            } else {
+                // Streaming for HANA
+                const csvStreamWriter = createCsvStreamWriter();
+                if (AuditLogger.isEnabled()) {
+                    const auditBuffer: StreamRow[] = [];
+                    const flushAuditBuffer = async (stream: Transform) => {
+                        if (auditBuffer.length === 0) {
+                            return;
+                        }
+
+                        const rows = auditBuffer.splice(0, auditBuffer.length);
+                        await auditStreamRows(rows);
+                        for (const row of rows) {
+                            stream.push(row);
+                        }
+                    };
+                    const auditNodeStreamTransform = new Transform({
+                        objectMode: true,
+                        async transform(
+                            this: Transform,
+                            row,
+                            _encoding,
+                            callback
+                        ) {
+                            try {
+                                auditBuffer.push(row as StreamRow);
+                                if (
+                                    auditBuffer.length < AUDITLOG_REQ_CHUNK_SIZE
+                                ) {
+                                    callback();
+                                    return;
+                                }
+
+                                await flushAuditBuffer(this);
+                                callback();
+                            } catch (err) {
+                                callback(err as Error);
+                            }
+                        },
+                        async flush(this: Transform, callback) {
+                            try {
+                                await flushAuditBuffer(this);
+                                callback();
+                            } catch (err) {
+                                callback(err as Error);
+                            }
+                        },
+                    });
+                    csvStreamTransforms = [
+                        auditNodeStreamTransform,
+                        csvStreamWriter,
+                    ];
+                } else {
+                    csvStreamTransforms = [csvStreamWriter];
+                }
             }
 
             //Exception for duckdb

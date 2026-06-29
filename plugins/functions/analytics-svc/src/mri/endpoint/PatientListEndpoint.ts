@@ -184,24 +184,26 @@ export class PatientListEndpoint extends BaseQueryEngineEndpoint {
                             result.totalPatientCount =
                                 result.data[0].totalpcount;
                         }
-                        const auditLogger = AuditLogger.create({
-                            cohortBuilderConfigMetaData: {
-                                id: configId,
-                                version: configVersion,
-                            },
-                            cdmConfigMetaData,
-                            request: httpReq,
-                        });
-                        await auditLogger.log(
-                            "patient.attributes.pid",
-                            auditLogChannel,
-                            result.data,
-                            ["totalpcount"],
-                            undefined,
-                            fileName
-                                ? { id: fileName, name: fileName }
-                                : undefined
-                        );
+                        if (AuditLogger.isEnabled()) {
+                            const auditLogger = AuditLogger.create({
+                                cohortBuilderConfigMetaData: {
+                                    id: configId,
+                                    version: configVersion,
+                                },
+                                cdmConfigMetaData,
+                                request: httpReq,
+                            });
+                            await auditLogger.log(
+                                "patient.attributes.pid",
+                                auditLogChannel,
+                                result.data,
+                                ["totalpcount"],
+                                undefined,
+                                fileName
+                                    ? { id: fileName, name: fileName }
+                                    : undefined
+                            );
+                        }
                         this.responseDbgInfo(result, {
                             FAST: fast.statement,
                             nql,

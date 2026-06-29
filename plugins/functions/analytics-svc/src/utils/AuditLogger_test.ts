@@ -326,6 +326,14 @@ Deno.test(
     }
 );
 
+Deno.test("AuditLogger isEnabled reflects audit flag", () => {
+    env.IS_AUDIT_LOG_ENABLED = "true";
+    assert.equal(AuditLogger.isEnabled(), true);
+
+    env.IS_AUDIT_LOG_ENABLED = "false";
+    assert.equal(AuditLogger.isEnabled(), false);
+});
+
 Deno.test("AuditLogger create requires an audit user", () => {
     const { auditTransport } = createAuditTransportMock();
 
