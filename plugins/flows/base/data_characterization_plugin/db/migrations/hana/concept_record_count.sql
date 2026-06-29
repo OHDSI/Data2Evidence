@@ -7,7 +7,7 @@ CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.achilles_result_concept_count
   descendant_person_count bigint
 );
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts
 AS(
 WITH counts AS (
    SELECT stratum_1 AS concept_id, MAX (count_value) AS agg_count_value
@@ -28,7 +28,7 @@ FROM
 counts
 );
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts_person
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person
 AS(
 WITH counts_person AS (
    SELECT stratum_1 AS concept_id, MAX (count_value) AS agg_count_value
@@ -42,16 +42,16 @@ concept_id,
 FROM
 counts_person);
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_concepts
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_concepts
 AS(
 WITH concepts AS (
    SELECT concept_id AS ancestor_id, IFNULL(CAST(ca.descendant_concept_id AS varchar(50)), concept_id) AS descendant_id
   FROM (
-    SELECT concept_id FROM ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts
+    SELECT concept_id FROM ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts
       UNION
     -- include any ancestor concept that has a descendant in counts
     SELECT DISTINCT CAST(ancestor_concept_id AS varchar(50)) concept_id
-    FROM ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts c
+    FROM ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts c
     JOIN ${VOCAB_SCHEMA}.concept_ancestor ca ON CAST(ca.descendant_concept_id AS varchar(50)) = c.concept_id
   ) c
   LEFT JOIN ${VOCAB_SCHEMA}.concept_ancestor ca ON c.concept_id = CAST(ca.ancestor_concept_id AS varchar(50))
@@ -77,14 +77,24 @@ SELECT
 	IFNULL(max(c3.agg_count_value), 0) AS person_count,
 	IFNULL(sum(c4.agg_count_value), 0) AS descendant_person_count
 FROM
-	${DATA_CHARACTERIZATION_SCHEMA}.#tmp_concepts concepts
-LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts c1 ON
+	${DATA_CHARACTERIZATION_SCHEMA}.tmp_concepts concepts
+LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts c1 ON
 	concepts.ancestor_id = c1.concept_id
-LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts c2 ON
+LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts c2 ON
 	concepts.descendant_id = c2.concept_id
-LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts_person c3 ON
+LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person c3 ON
 	concepts.ancestor_id = c3.concept_id
-LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.#tmp_counts_person c4 ON
+LEFT JOIN ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person c4 ON
 	concepts.descendant_id = c4.concept_id
 GROUP BY
 	concepts.ancestor_id;
+
+
+-- Drop the working tables. Formerly HANA #-prefixed LOCAL TEMPORARY tables, but the
+-- trex pgwire passthrough's parser rejects '#', so they are plain schema-qualified
+-- tables that must be cleaned up explicitly (this is the final DC step).
+DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_concepts;
+
+DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts;
+
+DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.tmp_counts_person;
