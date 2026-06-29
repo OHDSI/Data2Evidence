@@ -142,6 +142,7 @@
   "AZURE_AD__TITLE": "Azure AD 集成",
   "BAR_CHART__NO_DATA": "没有数据",
   "BIG_QUERY_FORM__DATASET": "数据集",
+  "BIG_QUERY_FORM__DATASET_HELPER": "可选 — 留空以连接整个项目（所有数据集）",
   "BIG_QUERY_FORM__PROJECT": "项目",
   "BOX_PLOT_CHART__NO_DATA": "没有数据",
   "CDM_DOWNLOAD_DIALOG__ERROR_DOWNLOAD": "下载患者数据时出错。如果需要报告错误，请发送电子邮件至 help@data4life.care",

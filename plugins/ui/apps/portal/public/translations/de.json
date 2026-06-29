@@ -142,6 +142,7 @@
   "AZURE_AD__TITLE": "Azure AD-Integration",
   "BAR_CHART__NO_DATA": "Keine Daten",
   "BIG_QUERY_FORM__DATASET": "Datensatz",
+  "BIG_QUERY_FORM__DATASET_HELPER": "Optional – leer lassen, um sich mit dem gesamten Projekt (alle Datensätze) zu verbinden",
   "BIG_QUERY_FORM__PROJECT": "Projekt",
   "BOX_PLOT_CHART__NO_DATA": "Keine Daten",
   "CDM_DOWNLOAD_DIALOG__ERROR_DOWNLOAD": "Fehler beim Herunterladen der Patientendaten. Um den Fehler zu melden, senden Sie eine E-Mail an help@data4life.care",
