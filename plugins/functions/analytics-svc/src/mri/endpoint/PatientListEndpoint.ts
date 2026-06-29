@@ -15,7 +15,7 @@ import {
     QuerySvcResultType,
 } from "../../types";
 
-const AUDITLOG_CHANNEL_PATIENTLIST = "D2E Pt. List";
+const AUDITLOG_CHANNEL_PATIENTLIST = "D2E Pt Ls";
 
 export class PatientListEndpoint extends BaseQueryEngineEndpoint {
     constructor(
