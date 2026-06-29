@@ -599,8 +599,6 @@ export class PluginEndpoint {
                         entity: string;
                         data: NodeJS.ReadableStream;
                     }) => {
-                        let rowCount = 0;
-
                         //Exception for duckdb
                         if (
                             dataStream.data.constructor.prototype.toString() !==
@@ -609,7 +607,7 @@ export class PluginEndpoint {
                         ) {
                             dataStream.data.on("end", () => {
                                 log.debug(
-                                    `total streamed rows for ${dataStream.entity}: ${rowCount}`
+                                    `finished streaming rows for ${dataStream.entity}`
                                 );
                             });
 
@@ -621,7 +619,6 @@ export class PluginEndpoint {
                         return resolve({
                             entity: dataStream.entity,
                             data: dataStream.data,
-                            rowCount: rowCount,
                             selectedAttributes: this.selectedAttributes,
                             cohortBuilderConfigMetaData: this.paConfigMetaData,
                             cdmConfigMetaData: this.cdmConfigMetaData,

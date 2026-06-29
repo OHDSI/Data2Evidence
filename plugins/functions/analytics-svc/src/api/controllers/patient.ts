@@ -40,8 +40,7 @@ type StreamRow = Record<string, unknown>;
 type TrexWebStreamChunk = Uint8Array | string;
 
 function createNodeReadableFromWebStream(
-    stream: ReadableStream<TrexWebStreamChunk>,
-    entity: string
+    stream: ReadableStream<TrexWebStreamChunk>
 ): NodeJS.ReadableStream {
     const reader = stream.getReader();
     return new Readable({
@@ -340,8 +339,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             if (result.data instanceof ReadableStream) {
                 // Trex connection returns stream results as a ReadableStream
                 responseData = createNodeReadableFromWebStream(
-                    result.data as unknown as ReadableStream<TrexWebStreamChunk>,
-                    result.entity
+                    result.data as unknown as ReadableStream<TrexWebStreamChunk>
                 );
                 const trexCsvStreamWriter = new TrexCsvStreamWriter({
                     onRows: async (streamRows) => {
