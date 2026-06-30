@@ -205,6 +205,9 @@ export interface DataCharacterizationFlowRunDto {
   comment?: string;
   releaseId?: string;
   excludeAnalysisIds?: string;
+  // Whether DC should build the achilles_result_concept_count table.
+  // Enabled by default; the concept record-count endpoint depends on it.
+  executeConceptRecordCount?: boolean;
 }
 
 export interface SearchEmbeddingFlowRunDto {

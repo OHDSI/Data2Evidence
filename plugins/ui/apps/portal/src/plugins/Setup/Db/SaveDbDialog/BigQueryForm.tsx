@@ -34,6 +34,7 @@ export const BigQueryForm: FC<BigQueryFormProps> = ({ data, onChange, renderExtr
           sx={{ flex: 1 }}
           value={data.name}
           onChange={(event) => onChange({ name: event.target?.value })}
+          helperText={getText(i18nKeys.BIG_QUERY_FORM__DATASET_HELPER)}
         />
       </div>
       {renderExtra && (
