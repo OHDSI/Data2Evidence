@@ -24,6 +24,11 @@ class TrexDao(DaoBase):
         cache_id: Optional[str] = None,
     ):
         super().__init__(database_code, user_type, cache_id=cache_id)
+        # Set by the caller when the underlying source is HANA served via the pgwire
+        # passthrough. The TrexDao always reports dialect 'trex', so this is the only
+        # signal that introspection/DDL must target HANA (SYS.* catalogs, upper-case
+        # identifiers) rather than DuckDB's information_schema.
+        self.is_hana: bool = False
 
     @property
     def dialect(self):
@@ -147,12 +152,34 @@ class TrexDao(DaoBase):
     # --- Create methods ---
     def create_schema(self, schema: str) -> None:
         self.validate_schema_name(self._split_catalog_schema(schema)[-1])
+        if self.is_hana:
+            # HANA has no 'CREATE SCHEMA IF NOT EXISTS' (it silently falls back to DuckDB
+            # via the passthrough). Callers guard existence with check_schema_exists.
+            sql = pg_sql.SQL("CREATE SCHEMA {}").format(self._schema_ident(schema))
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("CREATE SCHEMA IF NOT EXISTS {}") \
             .format(self._schema_ident(schema))
-            
+
         self.execute_sql(sql)
 
     def create_table(self, schema: str, table: str, columns: dict) -> None:
+        if self.is_hana:
+            # HANA: no 'IF NOT EXISTS'; reference identifiers upper-case (unquoted DDL
+            # folds to upper-case) so later unquoted references resolve.
+            columns_with_types = [
+                pg_sql.SQL("{col_name} {col_type}").format(
+                    col_name=pg_sql.Identifier(col_name.upper()),
+                    col_type=pg_sql.SQL(col_type),
+                ) for col_name, col_type in columns.items()
+            ]
+            create_table_query = pg_sql.SQL("CREATE TABLE {schema}.{table} ({columns_with_types});").format(
+                schema=self._schema_ident(schema),
+                table=pg_sql.Identifier(table.upper()),
+                columns_with_types=pg_sql.SQL(", ").join(columns_with_types),
+            )
+            self.execute_sql(create_table_query)
+            return
         columns_with_types = [
             pg_sql.SQL("{col_name} {col_type}").format(
                 col_name = pg_sql.Identifier(col_name),
@@ -170,6 +197,15 @@ class TrexDao(DaoBase):
 
     def check_schema_exists(self, schema: str) -> bool:
         try:
+            if self.is_hana:
+                # HANA has no information_schema; query SYS.SCHEMAS via the passthrough.
+                # HANA folds unquoted identifiers to upper-case, so compare case-insensitively.
+                _, schema_only = self._split_catalog_schema(schema)
+                sql = pg_sql.SQL(
+                    "SELECT SCHEMA_NAME FROM SYS.SCHEMAS WHERE UPPER(SCHEMA_NAME) = UPPER({schema})"
+                ).format(schema=pg_sql.Literal(schema_only))
+                result = self.execute_sql(sql, fetch=True)
+                return len(result) > 0
             sql = '''
                 SELECT schema_name FROM information_schema.schemata
                 WHERE catalog_name = current_database();
@@ -198,6 +234,18 @@ class TrexDao(DaoBase):
     def check_table_exists(self, schema: str, table: str) -> bool:
         try:
             catalog, schema_only = self._split_catalog_schema(schema)
+            if self.is_hana:
+                # HANA has no information_schema; query SYS.TABLES via the passthrough,
+                # comparing case-insensitively (HANA stores unquoted names upper-cased).
+                sql_query = pg_sql.SQL(
+                    "SELECT TABLE_NAME FROM SYS.TABLES "
+                    "WHERE UPPER(SCHEMA_NAME) = UPPER({schema}) AND UPPER(TABLE_NAME) = UPPER({table})"
+                ).format(
+                    schema=pg_sql.Literal(schema_only),
+                    table=pg_sql.Literal(table),
+                )
+                result = self.execute_sql(sql_query, fetch=True)
+                return len(result) > 0
             if catalog is not None:
                 sql_query = pg_sql.SQL("""
                     SELECT table_name FROM information_schema.tables
@@ -365,6 +413,18 @@ class TrexDao(DaoBase):
 
     # --- Delete methods ---
     def drop_schema(self, schema: str, cascade: bool = False):
+        if self.is_hana:
+            # HANA has no 'DROP SCHEMA IF EXISTS' (falls back to DuckDB via the
+            # passthrough), and plain DROP errors on a missing schema — so guard with an
+            # existence check (used by the best-effort on-failure cleanup hook).
+            if not self.check_schema_exists(schema):
+                return
+            sql = pg_sql.SQL("DROP SCHEMA {schema} {cond};").format(
+                schema=self._schema_ident(schema),
+                cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT'),
+            )
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("DROP SCHEMA IF EXISTS {schema} {cond};").format(
             schema=self._schema_ident(schema),
             cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT')
@@ -372,6 +432,18 @@ class TrexDao(DaoBase):
         self.execute_sql(sql)
 
     def drop_table(self, schema: str, table: str, cascade: bool = False):
+        if self.is_hana:
+            # HANA stores unquoted DDL identifiers upper-cased, so reference them
+            # upper-case (quoted) to match. Callers guard with check_table_exists, so
+            # we skip 'IF EXISTS' (not portable across HANA versions).
+            _, schema_only = self._split_catalog_schema(schema)
+            sql = pg_sql.SQL("DROP TABLE {schema}.{table} {cond};").format(
+                schema=pg_sql.Identifier(schema_only.upper()),
+                table=pg_sql.Identifier(table.upper()),
+                cond=pg_sql.SQL('CASCADE' if cascade else 'RESTRICT'),
+            )
+            self.execute_sql(sql)
+            return
         sql = pg_sql.SQL("DROP TABLE IF EXISTS {schema}.{table} {cond};").format(
             schema=self._schema_ident(schema),
             table=pg_sql.Identifier(table),
