@@ -47,8 +47,25 @@ def data_load_fhir_plugin(options: DataloadOptions):
 
 def get_fhir_dataset_schema(dataset_token: str, portal_server_api: PortalServerAPI, logger) -> str:
     dataset = portal_server_api.get_dataset_by_token(dataset_token)
-    fhir_dataset_id = dataset.get("schemaName")
-    return fhir_dataset_id
+
+    if not isinstance(dataset, dict):
+        raise ValueError(
+            f"Invalid dataset response type for token '{dataset_token}': {type(dataset).__name__}"
+        )
+
+    schema_name = dataset.get("schemaName")
+    fhir_dataset_id = dataset.get("fhirDatasetId")
+    schema_identifier = schema_name if isinstance(schema_name, str) and schema_name.strip() else fhir_dataset_id
+
+    if not isinstance(schema_identifier, str) or not schema_identifier.strip():
+        raise ValueError(
+            f"Invalid dataset response for token '{dataset_token}': expected non-empty 'schemaName' or 'fhirDatasetId'"
+        )
+
+    logger.info(
+        f"Resolved FHIR dataset schema '{schema_identifier}' for dataset token '{dataset_token}'"
+    )
+    return schema_identifier
         
 @task(log_prints=True)
 def truncate_fhir_tables(table_list: list[str], schema: str, dbdao: DaoBase, logger):   
