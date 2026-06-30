@@ -14,6 +14,7 @@ interface CodeNameSelectProps {
   supportsMultipleCodes: boolean;
   error?: boolean;
   helperText?: string;
+  disabled?: boolean;
 }
 
 export const CodeNameSelect: FC<CodeNameSelectProps> = ({
@@ -25,6 +26,7 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
   supportsMultipleCodes,
   error,
   helperText,
+  disabled,
 }) => {
   const { getText } = useTranslation();
 
@@ -40,6 +42,7 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
           placeholder={getText(i18nKeys.CODE_NAME_SELECT__ENTER_NEW_NAME)}
           error={error}
           helperText={helperText}
+          disabled={disabled}
         />
       </div>
     );
@@ -54,6 +57,7 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
           variant="standard"
           value={isNewName ? "__new__" : name}
           onChange={(event) => onNameChange(event.target.value)}
+          disabled={disabled}
         >
           {savedCodes.map((code) => (
             <MenuItem key={code.name} value={code.name}>
@@ -76,6 +80,7 @@ export const CodeNameSelect: FC<CodeNameSelectProps> = ({
             placeholder={getText(i18nKeys.CODE_NAME_SELECT__ENTER_NEW_NAME)}
             error={error}
             helperText={helperText}
+            disabled={disabled}
           />
         </div>
       )}
