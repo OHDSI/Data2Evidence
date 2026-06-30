@@ -43,6 +43,7 @@ describe('bootstrap/datasetWatcher', () => {
     await vi.waitFor(() => {
       expect(calls).toEqual([
         `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
+        'commit:SET_ACTIVE_BOOKMARK',
         'dispatch:setDataset',
         'dispatch:setDatasetReleaseId',
         'commit:RESET_DATASET_CACHE',
@@ -230,7 +231,8 @@ describe('bootstrap/datasetWatcher', () => {
 
     await vi.waitFor(() => {
       const reloadFinishCalls = commit.mock.calls.filter(
-        ([mutation, payload]) => mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
+        ([mutation, payload]) =>
+          mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
       )
       expect(reloadFinishCalls.length).toBe(1)
     })
@@ -276,7 +278,8 @@ describe('bootstrap/datasetWatcher', () => {
 
     await vi.waitFor(() => {
       const finishCalls = commit.mock.calls.filter(
-        ([mutation, payload]) => mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
+        ([mutation, payload]) =>
+          mutation === SET_DATASET_RELOAD_IN_PROGRESS && payload?.datasetReloadInProgress === false
       )
       expect(finishCalls.length).toBe(1)
     })

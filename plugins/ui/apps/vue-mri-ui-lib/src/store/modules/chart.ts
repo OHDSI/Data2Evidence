@@ -53,6 +53,9 @@ const state = {
   previousXAxisAttributeId: null,
   // index into getAllAxes for the axis used to color bars (0 = x1, 1 = x2, null = none)
   colorAxisIndex: null as number | null,
+  // true when colorAxisIndex was set by automatic default-selection (not by the
+  // user or a restored bookmark). Used to avoid false-positive unsaved-changes.
+  isColorAxisAutoDefaulted: false,
 }
 
 // Cancel tokens
@@ -106,6 +109,7 @@ const getters = {
   getBarChartType: modulestate => modulestate.barDisplayMode,
   getShowDistributionOverlay: modulestate => modulestate.showDistributionOverlay,
   getColorAxisIndex: modulestate => modulestate.colorAxisIndex,
+  getIsColorAxisAutoDefaulted: modulestate => modulestate.isColorAxisAutoDefaulted,
 }
 
 // actions
@@ -361,6 +365,11 @@ const actions = {
   },
   setColorAxisIndex({ commit }, index: number | null) {
     commit(types.SET_COLOR_AXIS_INDEX, index)
+    commit(types.SET_COLOR_AXIS_AUTO_DEFAULTED, false)
+  },
+  setDefaultColorAxisIndex({ commit }, index: number | null) {
+    commit(types.SET_COLOR_AXIS_INDEX, index)
+    commit(types.SET_COLOR_AXIS_AUTO_DEFAULTED, true)
   },
   holdFireRequest({ commit }) {
     commit(types.CHART_HOLD_FIRE_REQUEST)
@@ -371,8 +380,7 @@ const actions = {
   resetChart({ dispatch, getters }) {
     dispatch('resetChartProperties')
     const initialIFR = getters.getMriFrontendConfig.getInitialIFR()
-    dispatch('setIFRState', { ifr: initialIFR })
-    dispatch('setupChartDefaults')
+    return dispatch('setIFRState', { ifr: initialIFR }).then(() => dispatch('setupChartDefaults'))
   },
   setBarChartType({ commit, dispatch, state, rootGetters }, modeId: string) {
     const previousMode = state.barDisplayMode
@@ -554,6 +562,9 @@ const mutations = {
   },
   [types.SET_COLOR_AXIS_INDEX](modulestate, index: number | null) {
     modulestate.colorAxisIndex = index
+  },
+  [types.SET_COLOR_AXIS_AUTO_DEFAULTED](modulestate, value: boolean) {
+    modulestate.isColorAxisAutoDefaulted = value
   },
 }
 

@@ -49,6 +49,7 @@ describe('bootstrap/datasetPropagation', () => {
     await vi.waitFor(() => {
       expect(calls).toEqual([
         `commit:${SET_DATASET_RELOAD_IN_PROGRESS}`,
+        'commit:SET_ACTIVE_BOOKMARK',
         'dispatch:setDataset',
         'dispatch:setDatasetReleaseId',
         'commit:RESET_DATASET_CACHE',
