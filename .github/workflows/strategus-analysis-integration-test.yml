@@ -74,8 +74,24 @@ jobs:
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
           grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
 
-      - name: Pre-pull flow-hades image
-        run: docker pull "${REG_URL}/d2e/flow-hades:${DOCKER_TAG_NAME}"
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build flow-hades image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./plugins/flows
+          file: ./plugins/flows/hades/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ env.REG_URL }}/d2e/flow-hades:${{ env.DOCKER_TAG_NAME }}
+          provenance: false
+          sbom: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
 
       - name: Pull docker compose images
         if: success() || failure()
