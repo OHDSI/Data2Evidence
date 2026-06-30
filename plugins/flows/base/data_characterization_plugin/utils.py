@@ -16,11 +16,11 @@ def get_failed_analysis_ids(output_folder: str) -> list[int] | None:
     return sorted_failed_ids if sorted_failed_ids else None
 
 
-def _analysis_id_from_error_file(file_path: Path) -> int:
+def _analysis_id_from_error_file(file_path: Path) -> float:
     try:
         return int(file_path.stem.split("_")[-1])
     except ValueError:
-        return 0
+        return float("inf")
 
 
 def collect_achilles_diagnostics(
@@ -29,13 +29,6 @@ def collect_achilles_diagnostics(
     max_log_files: int = 3,
     max_chars_per_file: int = 4000,
 ) -> dict:
-    """
-    Collect bounded Achilles diagnostic files for failure artifacts.
-
-    Achilles can fail while parsing its own log files, which hides the original
-    SQL error. Capturing generated achillesError/log files lets users debug
-    failed runs without direct database access.
-    """
     return collect_bounded_diagnostics(
         output_folder=output_folder,
         include_files=["errorReportR.txt", "errorReportSql.txt"],

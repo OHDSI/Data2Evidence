@@ -304,7 +304,7 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             )
         
 
-    except (RRuntimeError, Exception) as e:
+    except Exception as e:
         logger.error(f"Achilles run failed: {e}")
 
         diagnostics = collect_achilles_diagnostics(achilles_params.outputFolder)
