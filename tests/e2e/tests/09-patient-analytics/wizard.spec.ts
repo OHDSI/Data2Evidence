@@ -18,6 +18,18 @@ const SHOULD_SKIP = false
 test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
 test.describe.configure({ retries: 1 }) // Re-try for flaky long-running flow
 
+async function getDialogMonacoValue(page: Page) {
+  return page.evaluate(() => {
+    const dialog = document.querySelector('.manage-viewer-dialog')
+    const editors = (globalThis as any).monaco?.editor?.getEditors?.() ?? []
+    const editor = editors.find((ed: any) => {
+      const node = ed?.getDomNode?.()
+      return !!node && !!dialog && dialog.contains(node) && node.offsetParent !== null
+    })
+    return editor?.getValue?.() ?? ''
+  })
+}
+
 // Helper function to set Monaco Editor content, with intelligent dedentation of the input code string.
 async function setMonacoContent(page: Page, content: string) {
   // The Python below is indented to align with the surrounding test code. Strip the
@@ -27,14 +39,32 @@ async function setMonacoContent(page: Page, content: string) {
   const widths = lines.filter((l: string) => l.trim().length).map((l: string) => l.match(/^ */)?.[0].length ?? 0)
   const minIndent = widths.length ? Math.min(...widths) : 0
   const dedented = lines.map((l: string) => l.slice(minIndent)).join('\n')
-  // Wait for the editor to mount before setting its value.
-  await page.locator('.monaco-editor').first().waitFor()
-  await page.waitForFunction(() => !!(globalThis as any).monaco?.editor?.getEditors?.().length)
+
+  await waitForDashboardDialog(page)
+  await page.waitForFunction(() => {
+    const dialog = document.querySelector('.manage-viewer-dialog')
+    const editors = (globalThis as any).monaco?.editor?.getEditors?.() ?? []
+    return editors.some((ed: any) => {
+      const node = ed?.getDomNode?.()
+      return !!node && !!dialog && dialog.contains(node) && node.offsetParent !== null
+    })
+  })
+
   await page.evaluate((code: string) => {
-    const ed = (globalThis as any).monaco.editor.getEditors()[0]
+    const dialog = document.querySelector('.manage-viewer-dialog')
+    const editors = (globalThis as any).monaco?.editor?.getEditors?.() ?? []
+    const ed = editors.find((editor: any) => {
+      const node = editor?.getDomNode?.()
+      return !!node && !!dialog && dialog.contains(node) && node.offsetParent !== null
+    })
+    if (!ed) {
+      throw new Error('No active Monaco editor found in dashboard dialog')
+    }
     ed.focus()
     ed.setValue(code)
   }, dedented)
+
+  await expect.poll(() => getDialogMonacoValue(page), { timeout: MINUTE_1 }).toBe(dedented)
 }
 
 async function waitForDashboardDialog(page: Page) {
@@ -119,6 +149,9 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('link', { name: 'Datasets' }).click()
     await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
     const datasetRow = page.locator('tr', { hasText: 'wizardE2E' }).first()
+    // To ensure the datasets are loaded.
+    await expect(page.locator('tr', { hasText: 'Demo dataset' }).first()).toBeVisible()
+    // If the wizardE2E exists, delete it. If not, skip this step.
     if (await datasetRow.isVisible()) {
       await datasetRow.scrollIntoViewIfNeeded()
       await datasetRow.getByText('Select action').click()
@@ -855,14 +888,7 @@ test(TEST_NAME, async ({ page }) => {
     app_server = create_server()
     app = App(app_ui, app_server)`
     )
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const editor = (globalThis as any).monaco?.editor?.getEditors?.()[0]
-          return editor?.getValue?.() ?? ''
-        })
-      )
-      .toContain('dashboard_name = "cross-sectional-demographics"')
+    await expect.poll(() => getDialogMonacoValue(page)).toContain('dashboard_name = "cross-sectional-demographics"')
 
     await page.getByRole('button', { name: 'Add query' }).click()
     const queryName = page.getByRole('textbox', { name: 'Query name' })
