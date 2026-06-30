@@ -126,7 +126,7 @@ class PortalServerAPI(BaseAPI):
             f"?basePath={base_path}&parallel={str(parallel).lower()}&concurrencyLimit={concurrency_limit}"
         )
 
-        headers = self.headers.copy()
+        headers = self.get_options().copy()
         headers.pop("Content-Type", None)
 
         if not os.path.isdir(folder_path):
