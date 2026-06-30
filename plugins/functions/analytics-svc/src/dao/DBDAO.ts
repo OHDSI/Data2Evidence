@@ -108,9 +108,15 @@ export class DBDAO {
                 where
                     catalog_name =?
                     and schema_name =?`;
-                // Use direct_connection_suffix instead of databaseName as checking if schema exists is only used in the context of the source database
+                // HANA schemas are registered in Trex as catalog=databaseCode (no __srcdb suffix,
+                // per create_cachedb_hana_plugin). All other source DBs use the __srcdb alias.
                 sqlParams = [
-                    { value: `${databaseName}__srcdb` },
+                    {
+                        value:
+                            dialect === ANALYTICS_DB_DIALECTS.HANA
+                                ? databaseName
+                                : `${databaseName}__srcdb`,
+                    },
                     { value: schemaName },
                 ];
             } else {

@@ -96,8 +96,12 @@ export class DatasetCommandService {
         this.swapVariables<Dataset>(dataset, SWAP_TO.DATASET),
       );
       // insertDataset bypasses @BeforeInsert (TypeORM .insert() skips hooks); mirror Dataset.applyCacheIdDefault explicitly.
-      if (entity.cacheId == null && entity.id) {
-        entity.cacheId = sanitizeIdForCacheId(entity.id);
+      if (entity.cacheId == null) {
+        if (entity.dialect === 'hana') {
+          entity.cacheId = entity.databaseCode;
+        } else if (entity.id) {
+          entity.cacheId = sanitizeIdForCacheId(entity.id);
+        }
       }
       const result = await this.datasetRepo.insertDataset(
         entityMgr,
