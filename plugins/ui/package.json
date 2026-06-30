@@ -485,5 +485,8 @@
         ]
       }
     }
+  },
+  "patchedDependencies": {
+    "@nlux/themes@2.17.1": "patches/@nlux%2Fthemes@2.17.1.patch"
   }
 }

@@ -1,28 +1,8 @@
 import path from "path";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 import basicSsl from "@vitejs/plugin-basic-ssl";
-
-// Strips the external Google Fonts @import that @nlux/themes/nova.css injects
-function stripRemoteFontImportPlugin(): Plugin {
-  return {
-    name: "strip-remote-font-import",
-    enforce: "pre",
-    transform(code, id) {
-      if (!id.endsWith(".css") || !code.includes("fonts.googleapis.com")) {
-        return null;
-      }
-      return {
-        code: code.replace(
-          /@import\s+url\((['"]?)https?:\/\/fonts\.googleapis\.com[^)]*\1\);?/g,
-          ""
-        ),
-        map: null,
-      };
-    },
-  };
-}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -45,7 +25,6 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     plugins: [
-      stripRemoteFontImportPlugin(),
       cssInjectedByJsPlugin(),
       react(),
       basicSsl({

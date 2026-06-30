@@ -83,26 +83,6 @@ function postBuildPatchPlugin(): Plugin {
   }
 }
 
-// Strips the external Google Fonts @import that @nlux/themes/nova.css injects
-function stripRemoteFontImportPlugin(): Plugin {
-  return {
-    name: 'strip-remote-font-import',
-    enforce: 'pre',
-    transform(code, id) {
-      if (!id.endsWith('.css') || !code.includes('fonts.googleapis.com')) {
-        return null
-      }
-      return {
-        code: code.replace(
-          /@import\s+url\((['"]?)https?:\/\/fonts\.googleapis\.com[^)]*\1\);?/g,
-          ''
-        ),
-        map: null,
-      }
-    },
-  }
-}
-
 /**
  * Build-only plugin: fetch/copy the offline kernel runtimes into publicDir so
  * Vite copies them into the build output. Skipped in dev (apply: 'build').
@@ -119,7 +99,6 @@ function offlineAssetsPlugin(): Plugin {
 
 export default defineConfig(({ command }) => ({
   plugins: [
-      stripRemoteFontImportPlugin(),
       react(),
       tailwindcss(),
       cssInjectedByJsPlugin(),
