@@ -1249,11 +1249,6 @@ def get_strategus_node(options):
     return StrategusNode({"id": str(uuid.uuid4()), "type": "strategus_node", "flowOptions": options})
 
 
-def qualify_schema_name(schema_name: str, cache_id: str | None = None) -> str:
-    if not cache_id or "." in schema_name:
-        return schema_name
-    return f"{cache_id}.{schema_name}"
-
 @flow(name="execute-r-strategus",
       log_prints=True)
 def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
@@ -1453,14 +1448,10 @@ def getRCdmExecutionSettings(settings) -> str:
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rCohortGenerator = importr('CohortGenerator')
-            qualified_schema_name = qualify_schema_name(
-                settings['schemaName'],
-                settings.get('cacheId'),
-            )
 
             rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                workDatabaseSchema = qualified_schema_name,
-                cdmDatabaseSchema = qualified_schema_name,
+                workDatabaseSchema = settings['schemaName'],
+                cdmDatabaseSchema = settings['schemaName'],
                 cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],
