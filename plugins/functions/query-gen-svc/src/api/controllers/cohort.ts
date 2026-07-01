@@ -29,8 +29,14 @@ export async function generateQuery(req: IMRIRequest, res, next) {
         const queryParams = body.queryParams;
         // log.debug(`Input params:\n${JSON.stringify(queryParams)}`);
 
-        const { configId, configVersion, datasetId, queryType, insert, stream } =
-            body.queryParams;
+        const {
+            configId,
+            configVersion,
+            datasetId,
+            queryType,
+            insert,
+            stream,
+        } = body.queryParams;
         const dialect = body.dialect;
         let ifrRequest = queryParams.ifrRequest;
         const language = "en"; //(queryParams.language) ?  queryParams.language : "en";
@@ -89,7 +95,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
             userSpecificSettings,
             placeholderMap,
             pluginOptionalParams,
-            censoringThreshold,
+            censoringThreshold
         ).generateQuery();
 
         let queryString;
@@ -112,7 +118,7 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                             cohortdata
                         `;
             if (!stream) {
-                    queryString = `
+                queryString = `
                         INSERT
                             INTO 
                             ${placeholderMap["@COHORT"]} (COHORT_DEFINITION_ID,
@@ -121,9 +127,11 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                             COHORT_END_DATE)
                         ${queryString}`;
             } else {
-                queryString = appendDialectSpecificQueries(queryString, dialect); //Currently the hint is applied to Hana and is applied only in streaming use cases.
+                queryString = appendDialectSpecificQueries(
+                    queryString,
+                    dialect
+                ); //Currently the hint is applied to Hana and is applied only in streaming use cases.
             }
-
         } else {
             queryString = `
                 WITH cohortdata AS (
@@ -140,18 +148,18 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                         ${placeholderMap["@OBSPER"]} op
                 )
                 SELECT
-                    COHORT_DEFINITION_ID,
-                    SUBJECT_ID,
-                    COHORT_START_DATE,
-                    COHORT_END_DATE
+                    cohortdata.COHORT_DEFINITION_ID,
+                    cohortdata.SUBJECT_ID,
+                    COALESCE(obsdata.COHORT_START_DATE, '1900-01-01') AS COHORT_START_DATE,
+                    COALESCE(obsdata.COHORT_END_DATE, '2099-12-31') AS COHORT_END_DATE
                 FROM
                     cohortdata
-                JOIN
+                LEFT JOIN
                     obsdata ON cohortdata.SUBJECT_ID = obsdata.PATIENT_ID
                 `;
 
-                if (!stream) {
-                    queryString = `
+            if (!stream) {
+                queryString = `
                         INSERT
                             INTO
                             ${placeholderMap["@COHORT"]} (COHORT_DEFINITION_ID,
@@ -159,9 +167,12 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                             COHORT_START_DATE,
                             COHORT_END_DATE)
                         ${queryString}`;
-                } else {
-                    queryString = appendDialectSpecificQueries(queryString, dialect); //Currently the hint is applied to Hana and is applied only in streaming use cases.
-                }
+            } else {
+                queryString = appendDialectSpecificQueries(
+                    queryString,
+                    dialect
+                ); //Currently the hint is applied to Hana and is applied only in streaming use cases.
+            }
         }
 
         //TODO: Split the parameterPlaceholders accordingly
@@ -192,16 +203,16 @@ export async function generateQuery(req: IMRIRequest, res, next) {
 }
 
 function appendDialectSpecificQueries(query: string, dialect: string): string {
-        switch (dialect) {
-            case "hana":
-                if (env.HANA_HINT) {
-                    query = `${query} WITH HINT(${env.HANA_HINT})`;
-                }
-                break;
-            default:
-        }
-        return query;
+    switch (dialect) {
+        case "hana":
+            if (env.HANA_HINT) {
+                query = `${query} WITH HINT(${env.HANA_HINT})`;
+            }
+            break;
+        default:
     }
+    return query;
+}
 
 function getCensoringThreshold(config: any): string {
     // TODO: discuss where the censoring threshold should be stored
