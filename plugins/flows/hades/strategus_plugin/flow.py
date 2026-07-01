@@ -301,7 +301,7 @@ def drop_strategus_results(options):
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
-        # 'cache_id': options.get('cacheId', None), # TODO: uncomment when cache_id is added to flowOptions
+        'cache_id': options.get('cacheId', None),
         'token_study_code': token_study_code
     })
 

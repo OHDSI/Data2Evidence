@@ -1281,10 +1281,6 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
-                # user='postgres', # TODO: remove
-                # password='agbUVe', # TODO: remove
-                # connectionString='jdbc:postgresql://alp-demodb:5432/postgres', # TODO: remove
-
                 pathToDriver=databaseConnectorJarFolder
             )
 
@@ -1442,7 +1438,7 @@ def drop_strategus_results_schema(dbSettings):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
         database_code=database_code,
-        # cache_id=dbSettings.get('cache_id', None) # TODO: uncomment when cache_id is added to flowOptions
+        cache_id=dbSettings.get('cache_id', None)
     )
 
     if(dbdao.check_schema_exists(results_schema)):
