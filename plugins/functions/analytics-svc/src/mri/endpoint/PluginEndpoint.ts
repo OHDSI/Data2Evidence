@@ -55,10 +55,14 @@ export class PluginEndpoint {
         public connection: ConnectionInterface,
         private schemaName: string
     ) {
-        //double quotes surround intentional to preserve lowercase naming in hana table
-        this.uniquePatientTempTableName = `"#MRI_PLUGIN_${crypto
-            .randomBytes(24)
-            .toString("hex")}"`;
+        const hex = crypto.randomBytes(24).toString("hex");
+        if (connection.dialect !== "hana") {
+            // Dropped explicitly via dropFn / cleanup() after use.
+            this.uniquePatientTempTableName = `memory.main."MRI_PLUGIN_${hex}"`;
+        } else {
+            //double quotes surround intentional to preserve lowercase naming in hana table
+            this.uniquePatientTempTableName = `"#MRI_PLUGIN_${hex}"`;
+        }
     }
 
     public setRequest(request: IMRIRequest) {
@@ -119,9 +123,16 @@ export class PluginEndpoint {
     }
 
     private genLocalTempTableCreationQuery(existingPatientTable): string {
-        const query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS 
-                                            (select * from ${existingPatientTable} where 1=0)`;
-        log.debug(`Generated Create Local Temp Table Query ${query}`);
+        let query: string;
+        if (this.connection.dialect !== "hana") {
+            // Trex/DuckDB path: plain CREATE TABLE so the table lands
+            // in memory.main where the streaming connection can see it.
+            // Dropped explicitly via dropFn / cleanup().
+            query = `CREATE TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        } else {
+            query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        }
+        log.debug(`Generated Temp Table Query ${query}`);
         return query;
     }
 
@@ -166,9 +177,30 @@ export class PluginEndpoint {
     }): Promise<NodeJS.ReadWriteStream | PluginEndpointResultType> {
         return new Promise<NodeJS.ReadWriteStream | PluginEndpointResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main; it must be dropped explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -322,7 +354,7 @@ export class PluginEndpoint {
                             (dataset) => dataset.entity === "patient"
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
-                        const resultcb = (logErr) => {
+                        const resultcb = async (logErr) => {
                             if (logErr) {
                                 return errHandler(new Error("Auditlog error"));
                             }
@@ -347,6 +379,9 @@ export class PluginEndpoint {
                                     "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
                             }
 
+                            // Drop the regular DuckDB table now that the full
+                            // result set has been materialised.
+                            await dropFn();
                             return resolve(endpointResult);
                         };
 
@@ -453,9 +488,31 @@ export class PluginEndpoint {
     }): Promise<PluginEndpointStreamResultType> {
         return new Promise<PluginEndpointStreamResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main so the separate Trex streaming connection
+                // can see it. Drop it explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -566,6 +623,7 @@ export class PluginEndpoint {
                             endpointResult.noDataReason =
                                 "Detected extension service - Data streaming from a single FAST object failed. " +
                                 "Detect more than 1 FAST object based on associated attributes in the request.";
+                            await dropFn();
                             return resolve(endpointResult);
                         }
 
@@ -628,6 +686,9 @@ export class PluginEndpoint {
                             entity: dataStream.entity,
                             data: dataStream.data,
                             rowCount: rowCount,
+                            // patient.ts calls cleanup() after the pipeline
+                            // finishes to drop the DuckDB regular table.
+                            cleanup: dropFn,
                         });
                     };
 

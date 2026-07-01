@@ -25,14 +25,14 @@
     <downloadCSVDialog v-if="csvShow" @closeEv="onCsvClosed"></downloadCSVDialog>
     <imageExport v-if="imageShow" @closeEv="onImageExported"></imageExport>
     <VSnackbar
-      v-model="snackbar"
+      v-model="snackbarVisible"
       location="top right"
-      color="var(--color-mri-success-bg)"
-      :timeout="3000"
+      :color="snackbarColor"
+      :timeout="snackbarTimeout"
       rounded="16px"
     >
-      <span style="color: rgba(0, 0, 0, 0.87); display: inline-flex; align-items: center">
-        <appIcon icon="successCheck" style="margin-right: 8px; color: #00855f" />
+      <span class="snackbar-content">
+        <appIcon :icon="snackbarIcon" :class="snackbarIconClass" />
         {{ snackbarText }}
       </span>
     </VSnackbar>
@@ -47,6 +47,7 @@ import bsDropdownItem from '../lib/ui/bs-dropdown-item.vue'
 import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
+import Constants from '../utils/Constants'
 
 export default {
   name: 'downloadMenu',
@@ -54,9 +55,13 @@ export default {
     return {
       csvShow: false,
       imageShow: false,
-      snackbar: false,
-      snackbarText: '',
+      snackbar: { visible: false, type: 'success', text: '' },
       pendingDownload: null,
+      fileTypeKeyMap: {
+        csv: 'MRI_PA_EXPORT_FILE_CSV',
+        image: 'MRI_PA_EXPORT_FILE_PNG',
+        zip: 'MRI_PA_EXPORT_FILE_ZIP',
+      },
     }
   },
   computed: {
@@ -65,7 +70,9 @@ export default {
       'getAllChartConfigs',
       'getActiveChart',
       'getCurrentPatientCount',
+      'getCSVDownloadError',
       'getZIPDownloadCompleted',
+      'getZIPDownloadError',
     ]),
     isDownloadDisabled() {
       const minCohortSize = this.getAllChartConfigs.minCohortSize
@@ -76,6 +83,29 @@ export default {
       // The maxPatientsExport limit only applies to the patient list view.
       if (this.exceedsExportLimit) return true
       return false
+    },
+    snackbarVisible: {
+      get() {
+        return this.snackbar.visible
+      },
+      set(val) {
+        this.snackbar.visible = val
+      },
+    },
+    snackbarColor() {
+      return this.snackbar.type === 'success' ? 'var(--color-mri-success-bg)' : '#FDEDED'
+    },
+    snackbarIcon() {
+      return this.snackbar.type === 'success' ? 'successCheck' : 'alertCircle'
+    },
+    snackbarIconClass() {
+      return this.snackbar.type === 'success' ? 'snackbar-success-icon' : 'snackbar-error-icon'
+    },
+    snackbarText() {
+      return this.snackbar.text
+    },
+    snackbarTimeout() {
+      return Constants.SnackbarTimeout
     },
     minCohortSize() {
       return this.getAllChartConfigs?.minCohortSize
@@ -134,7 +164,17 @@ export default {
   watch: {
     getZIPDownloadCompleted(val) {
       if (val && this.pendingDownload === 'zip') {
-        this.showExportToast('MRI_PA_EXPORT_FILE_ZIP')
+        this.showExportSuccessToast('MRI_PA_EXPORT_FILE_ZIP')
+      }
+    },
+    getZIPDownloadError(val) {
+      if (val && this.pendingDownload === 'zip') {
+        this.showExportErrorToast()
+      }
+    },
+    getCSVDownloadError(val) {
+      if (val && this.pendingDownload === 'csv') {
+        this.showExportErrorToast()
       }
     },
   },
@@ -158,20 +198,30 @@ export default {
     },
     onCsvClosed(payload) {
       this.csvShow = false
-      if (payload && payload.success && this.pendingDownload === 'csv') {
-        this.showExportToast('MRI_PA_EXPORT_FILE_CSV')
+      if (payload && payload.success && this.pendingDownload === 'csv' && !this.getCSVDownloadError) {
+        this.showExportSuccessToast('MRI_PA_EXPORT_FILE_CSV')
       }
     },
-    onImageExported() {
+    onImageExported(payload) {
       this.imageShow = false
       if (this.pendingDownload === 'image') {
-        this.showExportToast('MRI_PA_EXPORT_FILE_PNG')
+        if (payload && payload.success) {
+          this.showExportSuccessToast('MRI_PA_EXPORT_FILE_PNG')
+        } else {
+          this.showExportErrorToast(this.fileTypeKeyMap['image'])
+        }
       }
     },
-    showExportToast(fileTypeKey) {
-      this.snackbarText = this.getText('MRI_PA_EXPORT_SUCCESS', this.getText(fileTypeKey))
-      this.snackbar = true
+    _showExportToast(type, fileTypeKey) {
+      const textKey = type === 'success' ? 'MRI_PA_EXPORT_SUCCESS' : 'MRI_PA_EXPORT_FAILED'
+      this.snackbar = { visible: true, type, text: this.getText(textKey, this.getText(fileTypeKey)) }
       this.pendingDownload = null
+    },
+    showExportSuccessToast(fileTypeKey) {
+      this._showExportToast('success', fileTypeKey)
+    },
+    showExportErrorToast(fileTypeKey) {
+      this._showExportToast('error', fileTypeKey ?? this.fileTypeKeyMap[this.pendingDownload])
     },
   },
   components: {
@@ -185,3 +235,21 @@ export default {
   },
 }
 </script>
+
+<style scoped>
+.snackbar-content {
+  color: rgba(0, 0, 0, 0.87);
+  display: inline-flex;
+  align-items: center;
+}
+
+.snackbar-success-icon {
+  margin-right: 12px;
+  color: #00855f;
+}
+
+.snackbar-error-icon {
+  margin-right: 12px;
+  color: var(--color-feedback-alarm);
+}
+</style>
