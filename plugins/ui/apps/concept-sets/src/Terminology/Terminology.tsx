@@ -46,7 +46,7 @@ export interface TerminologyProps {
   userId?: string;
   open?: boolean;
   onClose?: (values: OnCloseReturnValues) => void;
-  selectedConceptSetId?: number;
+  selectedConceptSetId?: string;
   mode?:
     | "CONCEPT_MAPPING"
     | "CONCEPT_SET"
@@ -109,7 +109,7 @@ const NameSection = ({
   isUserConceptSet: boolean;
   saveConceptSet(): void;
   isLoading: boolean;
-  conceptSetId: number | null;
+  conceptSetId: string | null;
   onClickClose(): void;
   errorMsg: string;
   canShare: boolean;
@@ -144,7 +144,7 @@ const NameSection = ({
           value={conceptSetName}
           onChange={(e) => setConceptSetName(e.target.value)}
           onBlur={(e) => setConceptSetName(e.target.value.trim())}
-          disabled={isLoading}
+          disabled={isLoading || !isUserConceptSet}
         />
         <Box
           sx={{
@@ -350,7 +350,7 @@ export const Terminology: FC<TerminologyProps> = ({
   >(initialSelectedConcepts || []);
   const [tab, setTab] = useState<TabName>(tabNames.SEARCH);
   const [conceptSetName, setConceptSetName] = useState("");
-  const [conceptSetId, setConceptSetId] = useState<number | null>(null);
+  const [conceptSetId, setConceptSetId] = useState<string | null>(null);
   const [conceptSetShared, setConceptSetShared] = useState(false);
   const [isUserConceptSet, setIsUserConceptSet] = useState(false);
   const [isConceptSetLoading, setIsConceptSetLoading] = useState(false);
@@ -423,7 +423,7 @@ export const Terminology: FC<TerminologyProps> = ({
   );
 
   const checkIfConceptSetExists = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetName: string,
     datasetId: string,
   ): Promise<number> => {
@@ -435,10 +435,13 @@ export const Terminology: FC<TerminologyProps> = ({
     return Number(result);
   };
 
+  type ConceptSetDraft = Pick<ConceptSet, "concepts" | "name" | "shared"> &
+    Partial<Pick<ConceptSet, "userName">>;
+
   const createConceptSet = async (
-    conceptSet: Omit<ConceptSet, "id">,
+    conceptSet: ConceptSetDraft,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     const conceptSetId = await api.d2eWebapi.createConceptSet(
       conceptSet.name,
       datasetId,
@@ -456,16 +459,12 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const updateConceptSet = async (
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSet: Partial<ConceptSet>,
     datasetId: string,
-  ): Promise<number> => {
+  ): Promise<string> => {
     // Update concept set
-    await api.d2eWebapi.updateConceptSet(
-      conceptSetId,
-      { id: Number(conceptSetId), ...conceptSet },
-      datasetId,
-    );
+    await api.d2eWebapi.updateConceptSet(conceptSetId, conceptSet, datasetId);
     // Update concept set items
     const conceptSetItems = conceptSet.concepts ? conceptSet.concepts : [];
     await api.d2eWebapi.updateConceptSetItems(
@@ -473,7 +472,7 @@ export const Terminology: FC<TerminologyProps> = ({
       conceptSetItems,
       datasetId,
     );
-    return Number(conceptSetId);
+    return conceptSetId;
   };
 
   const saveConceptSet = useCallback(async () => {
@@ -497,9 +496,12 @@ export const Terminology: FC<TerminologyProps> = ({
     };
     setIsConceptSetLoading(true);
     try {
-      // 0 is the conceptSetId placeholder when creating a new concept set
+      // When creating a new concept set there is no id yet. Use "0" (a
+      // never-existing id) as the exclusion sentinel: the backend route param
+      // schema rejects an empty segment ("/conceptset//exists" -> 400), and
+      // "0" still surfaces same-name duplicates across both stores.
       const isNameUsed = await checkIfConceptSetExists(
-        conceptSetId || 0,
+        conceptSetId || "0",
         conceptSet.name,
         activeDatasetId,
       );
@@ -514,14 +516,16 @@ export const Terminology: FC<TerminologyProps> = ({
       }
 
       const updatedConceptSetId = conceptSetId
-        ? await updateConceptSet(
-            conceptSetId,
-            { id: Number(conceptSetId), ...conceptSet },
-            activeDatasetId,
-          )
+        ? await updateConceptSet(conceptSetId, conceptSet, activeDatasetId)
         : await createConceptSet(conceptSet, activeDatasetId);
       setErrorMsg("");
-      setCurrentConceptSet({ ...conceptSet, id: updatedConceptSetId });
+      // Refetch the persisted concept set so currentConceptSet carries
+      // server-controlled fields (externalId, source, access flags).
+      const savedConceptSet = await getConceptSetWithConceptDetails(
+        updatedConceptSetId,
+        activeDatasetId,
+      );
+      setCurrentConceptSet(savedConceptSet);
       setConceptSetId(updatedConceptSetId);
       return;
     } catch {
@@ -544,7 +548,7 @@ export const Terminology: FC<TerminologyProps> = ({
   ]);
 
   const getConceptSetWithConceptDetails = async (
-    conceptSetId: number,
+    conceptSetId: string,
     activeDatasetId: string,
   ): Promise<ConceptSetWithConceptDetails> => {
     const [conceptSet, conceptSetExpression] = await Promise.all([
@@ -570,7 +574,7 @@ export const Terminology: FC<TerminologyProps> = ({
   };
 
   const getConceptSet = useCallback(
-    async (conceptSetId: number) => {
+    async (conceptSetId: string) => {
       if (!activeDatasetId) {
         return;
       }
@@ -584,7 +588,8 @@ export const Terminology: FC<TerminologyProps> = ({
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(conceptSet.createdBy === userName);
+        setIsUserConceptSet(!!conceptSet.hasWriteAccess);
+        setErrorMsg("");
         return;
       } finally {
         setIsConceptSetLoading(false);
@@ -613,6 +618,10 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const onSelectConceptId = useCallback(
     (concept: FhirValueSetExpansionContainsWithExt) => {
+      if (isConceptSet && !isUserConceptSet) {
+        return;
+      }
+
       if (isConceptSet || isConceptMultiSelect) {
         const selectedConceptsCopy = JSON.parse(
           JSON.stringify(selectedConcepts),
@@ -646,6 +655,7 @@ export const Terminology: FC<TerminologyProps> = ({
     [
       isConceptSet,
       isConceptMultiSelect,
+      isUserConceptSet,
       onConceptIdSelect,
       resetState,
       selectedConcepts,
@@ -655,6 +665,10 @@ export const Terminology: FC<TerminologyProps> = ({
 
   const toggleDescendantsAndMapped = useCallback(
     (conceptId: number, type: "DESCENDANTS" | "MAPPED" | "EXCLUDE") => {
+      if (!isUserConceptSet) {
+        return;
+      }
+
       const selectedConceptsCopy = JSON.parse(
         JSON.stringify(selectedConcepts),
       ) as FhirValueSetExpansionContainsWithExt[];
@@ -671,12 +685,12 @@ export const Terminology: FC<TerminologyProps> = ({
       });
       sortAndSetSelectedConcepts(selectedConceptsCopy);
     },
-    [selectedConcepts, sortAndSetSelectedConcepts],
+    [isUserConceptSet, selectedConcepts, sortAndSetSelectedConcepts],
   );
 
   const showAddIcon = !!(
     onConceptIdSelect ||
-    isConceptSet ||
+    (isConceptSet && isUserConceptSet) ||
     isConceptMultiSelect
   );
 
@@ -719,12 +733,7 @@ export const Terminology: FC<TerminologyProps> = ({
     } else if (isConceptSet) {
       // Return concept set for concept set mode
       const onCloseReturnValues: OnCloseReturnValues = {
-        currentConceptSet: currentConceptSet
-          ? {
-              ...currentConceptSet,
-              id: currentConceptSet.id.toString(),
-            }
-          : currentConceptSet,
+        currentConceptSet: currentConceptSet,
       };
       onClose(onCloseReturnValues);
     } else {

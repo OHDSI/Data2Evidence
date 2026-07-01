@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import SearchBar from "../components/SearchBar/SearchBar";
 import {
   MaterialReactTable,
@@ -8,6 +8,7 @@ import {
 } from "material-react-table";
 import {
   Button,
+  Chip,
   EditIcon,
   IconButton,
   VisibilityOnIcon,
@@ -21,15 +22,13 @@ import "./ConceptSets.scss";
 interface ConceptSetsTableProps {
   data: ConceptSet[];
   isLoading: boolean;
-  userName: string | undefined;
-  onAddEdit: (conceptSetId?: number) => void;
+  onAddEdit: (conceptSetId?: string) => void;
   onDelete: (conceptSet: ConceptSet) => void;
 }
 
 export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   data,
   isLoading,
-  userName,
   onAddEdit,
   onDelete,
 }) => {
@@ -48,7 +47,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   const columns = useMemo<MRT_ColumnDef<ConceptSet>[]>(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "externalId",
         header: getText(i18nKeys.CONCEPT_SETS__ID),
         size: 80,
         sortDescFirst: false,
@@ -63,6 +62,24 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
             {row.original.shared
               ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
               : ""}
+            {row.original.source === "legacy" && (
+              <Chip
+                label={getText(i18nKeys.CONCEPT_SETS__LEGACY)}
+                size="small"
+                color="warning"
+                sx={{ ml: 1, fontSize: "0.7rem" }}
+                title={getText(i18nKeys.CONCEPT_SETS__LEGACY_TOOLTIP)}
+              />
+            )}
+            {row.original.source === "webapi" && (
+              <Chip
+                label={getText(i18nKeys.CONCEPT_SETS__WEBAPI)}
+                size="small"
+                color="success"
+                sx={{ ml: 1, fontSize: "0.7rem" }}
+                title={getText(i18nKeys.CONCEPT_SETS__WEBAPI_TOOLTIP)}
+              />
+            )}
           </>
         ),
       },
@@ -103,7 +120,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
           <>
             <IconButton
               startIcon={
-                row.original.createdBy === userName ? (
+                row.original.hasWriteAccess ? (
                   <EditIcon />
                 ) : (
                   <VisibilityOnIcon />
@@ -111,7 +128,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
               }
               onClick={() => onAddEdit(row.original.id)}
             />
-            {row.original.createdBy === userName && (
+            {row.original.hasWriteAccess && (
               <IconButton
                 startIcon={<DeleteIcon />}
                 onClick={() => onDelete(row.original)}
@@ -121,7 +138,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         ),
       },
     ],
-    [getText, userName, onAddEdit, onDelete],
+    [getText, onAddEdit, onDelete],
   );
 
   const table = useMaterialReactTable({

@@ -185,7 +185,7 @@ const convertConceptSetItemToSelected = (item: ConceptSetItemDisplay): SelectedC
   if (!item.value || !item.text) return null
 
   return {
-    value: parseInt(item.value),
+    value: item.value,
     text: item.text,
     display_value: item.display_value || item.text,
     conceptIds: item.conceptIds || [],

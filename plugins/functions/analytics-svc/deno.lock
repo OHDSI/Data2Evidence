@@ -1,7 +1,9 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/encoding@*": "1.0.10",
+    "jsr:@std/internal@^1.0.12": "1.0.13",
     "npm:@godaddy/terminus@^4.4.1": "4.12.1",
     "npm:@sap/textbundle@4.2.0": "4.2.0",
     "npm:@sap/xsenv@^3.3.2": "3.4.0",
@@ -43,8 +45,17 @@
     "npm:zod@3.20.6": "3.20.6"
   },
   "jsr": {
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/encoding@1.0.10": {
       "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/internal@1.0.13": {
+      "integrity": "2f9546691d4ac2d32859c82dff284aaeac980ddeca38430d07941e7e288725c0"
     }
   },
   "npm": {
@@ -1984,6 +1995,7 @@
     },
     "uuid@10.0.0": {
       "integrity": "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==",
+      "deprecated": true,
       "bin": true
     },
     "v8-compile-cache-lib@3.0.1": {
@@ -2109,6 +2121,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
       "jsr:@std/encoding@*",
       "npm:@godaddy/terminus@^4.4.1",
       "npm:@sap/textbundle@4.2.0",

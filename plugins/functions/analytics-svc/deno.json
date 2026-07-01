@@ -2,6 +2,9 @@
     "workspace": [],
     "nodeModulesDir": "auto",
     "allowScripts": [],
+    "tasks": {
+        "test": "deno test --allow-read --allow-env --no-check"
+    },
     "compilerOptions": {
         "lib": ["deno.window"],
         "strict": false,
@@ -9,6 +12,7 @@
         "emitDecoratorMetadata": true
     },
     "imports": {
+        "@std/assert": "jsr:@std/assert@1",
         "@alp/alp-base-utils": "../_shared/alp-base-utils/src/index.ts",
         "@alp/alp-config-utils": "../_shared/alp-config-utils/src/index.ts",
         "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
@@ -87,6 +91,7 @@
         "./src/ifr-to-extcohort/conceptGetters": "./src/ifr-to-extcohort/conceptGetters.ts",
         "./src/dao/DBDAO": "./src/dao/DBDAO.ts",
         "./src/utils/TerminologySvcProxy": "./src/utils/TerminologySvcProxy.ts",
+        "./src/utils/conceptSetRef": "./src/utils/conceptSetRef.ts",
         "./src/utils/dataset-filter/query-builder": "./src/utils/dataset-filter/query-builder.ts",
         "./src/utils/dataset-filter/filter-scope-query-builder": "./src/utils/dataset-filter/filter-scope-query-builder.ts",
         "./src/utils/AuditLogger": "./src/utils/AuditLogger.ts",

@@ -1,7 +1,9 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/encoding@1.0.10": "1.0.10",
+    "jsr:@std/internal@^1.0.12": "1.0.13",
     "npm:@sap/textbundle@4.2.0": "4.2.0",
     "npm:@sap/xsenv@^3.4.0": "3.4.0",
     "npm:@types/bcryptjs@^2.4.6": "2.4.6",
@@ -28,8 +30,17 @@
     "npm:zod@3.17.10": "3.17.10"
   },
   "jsr": {
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/encoding@1.0.10": {
       "integrity": "8783c6384a2d13abd5e9e87a7ae0520a30e9f56aeeaa3bdf910a3eaaf5c811a1"
+    },
+    "@std/internal@1.0.13": {
+      "integrity": "2f9546691d4ac2d32859c82dff284aaeac980ddeca38430d07941e7e288725c0"
     }
   },
   "npm": {
@@ -896,6 +907,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
       "jsr:@std/encoding@1.0.10",
       "npm:@sap/textbundle@4.2.0",
       "npm:@sap/xsenv@^3.4.0",

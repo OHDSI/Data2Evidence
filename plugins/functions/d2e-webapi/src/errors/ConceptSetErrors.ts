@@ -27,3 +27,14 @@ export class ConceptSetValidationError extends Error {
     this.name = "ConceptSetValidationError";
   }
 }
+
+/**
+ * Thrown when fetching a concept set expression fails, typically due to
+ * missing source configuration in WebAPI.
+ */
+export class ConceptSetExpressionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConceptSetExpressionError";
+  }
+}

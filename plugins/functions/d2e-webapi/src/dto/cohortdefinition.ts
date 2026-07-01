@@ -84,6 +84,10 @@ export const CohortDefinitionCheckV2ResponseDto = z.object({
       type: z.string().optional(),
       severity: z.string(),
       message: z.string(),
+      // Local Circe id within the cohort expression's `ConceptSets[]` array
+      // (1..N per cohort), NOT a global concept-set reference. Do NOT migrate
+      // this to the compound "legacy:N" / "webapi:N" form — the cohort
+      // validator does not know the global id.
       conceptSetId: z.number().optional(),
     })
   ),

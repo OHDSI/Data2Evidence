@@ -6,7 +6,7 @@ import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
-import { terminologyRequest } from "../../utils/TerminologySvcProxy";
+import { d2eWebapiRequest } from "../../utils/D2eWebapiProxy";
 
 const log = Logger.CreateLogger("analytics-log");
 
@@ -23,11 +23,16 @@ export async function processRequest(
             'The request must contain a property "attributePath"'
         );
         if (domainValuesRequest.attributeType === "conceptSet") {
-            const conceptSets = await terminologyRequest(
+            // Route through the d2e-webapi facade so the list includes BOTH
+            // legacy (terminology-svc) and WebAPI-backed concept sets. The
+            // facade returns compound ids ("legacy:N" / "webapi:N") which the
+            // downstream query-filter and concept resolution already expect.
+            const conceptSets = await d2eWebapiRequest(
                 req,
                 "GET",
-                `concept-set?datasetId=${domainValuesRequest.configParams.datasetId}`,
-                null
+                `conceptset`,
+                null,
+                domainValuesRequest.configParams.datasetId
             );
             callback(null, {
                 results: {

@@ -146,7 +146,7 @@ const handleConceptSetChange = async (values: ConceptSetItemDisplay[]) => {
 // Handle concept set selection
 const handleConceptSetSelected = async (conceptSet: ConceptSetItemDisplay) => {
   const selectedConceptSet: SelectedConceptSet = {
-    value: parseInt(conceptSet.value),
+    value: conceptSet.value,
     text: conceptSet.text || '',
     display_value: conceptSet.display_value || '',
     conceptIds: conceptSet.conceptIds || [],
@@ -365,7 +365,7 @@ const tagInputModel = computed(() => {
       value: eventData.value.selectedConceptSet
         ? [
             {
-              value: String(eventData.value.selectedConceptSet.value),
+              value: eventData.value.selectedConceptSet.value,
               text: eventData.value.selectedConceptSet.text,
               display_value: eventData.value.selectedConceptSet.display_value,
               conceptIds: eventData.value.selectedConceptSet.conceptIds,
@@ -386,7 +386,7 @@ const getTagInputValue = () => {
   const result = eventData.value.selectedConceptSet
     ? [
         {
-          value: String(eventData.value.selectedConceptSet.value),
+          value: eventData.value.selectedConceptSet.value,
           text: eventData.value.selectedConceptSet.text,
           display_value: eventData.value.selectedConceptSet.display_value,
           conceptIds: eventData.value.selectedConceptSet.conceptIds,
@@ -433,7 +433,7 @@ const getConceptSetDisplayName = (): string => {
     return (
       eventData.value.selectedConceptSet.text ||
       eventData.value.selectedConceptSet.display_value ||
-      String(eventData.value.selectedConceptSet.value) ||
+      eventData.value.selectedConceptSet.value ||
       'Unknown Concept Set'
     )
   }

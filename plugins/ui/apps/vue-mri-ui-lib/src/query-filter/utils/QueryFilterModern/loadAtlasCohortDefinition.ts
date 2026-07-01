@@ -148,7 +148,7 @@ export const loadAtlasCohortDefinition = async (
         if (!event.selectedConceptSet) {
           // Convert ConceptSetItem to SelectedConceptSet
           event.selectedConceptSet = {
-            value: parseInt(conceptSet.value) || 0,
+            value: conceptSet.value,
             text: conceptSet.text || '',
             display_value: conceptSet.display_value || conceptSet.text || '',
             conceptIds: conceptSet.conceptIds || [],
@@ -262,7 +262,7 @@ export const loadAtlasCohortDefinition = async (
   }
 
   const handleConceptSetFromAtlas = async (
-    atlasConceptSet: ConceptSet & { conceptSetId?: number }
+    atlasConceptSet: ConceptSet
   ): Promise<ConceptSetItemDisplay | null> => {
     const datasetId = getDatasetId()
     if (!datasetId) {
@@ -291,7 +291,7 @@ export const loadAtlasCohortDefinition = async (
       })
       if (existingConceptSetByName) {
         // Set conceptSetId for Atlas conversion mapping
-        atlasConceptSet.conceptSetId = parseInt(existingConceptSetByName.value, 10)
+        atlasConceptSet.conceptSetId = existingConceptSetByName.value
         return existingConceptSetByName
       }
     }
@@ -402,21 +402,23 @@ export const loadAtlasCohortDefinition = async (
 
     // Get concept set IDs referenced in the Atlas JSON
     // If we have ConceptSets with conceptSetId, use those instead of CodesetIds from criteria
-    let referencedConceptSetIds: Set<number>
+    let referencedConceptSetIds: Set<string>
     if (atlasExpression.ConceptSets && Array.isArray(atlasExpression.ConceptSets)) {
-      referencedConceptSetIds = new Set<number>()
+      referencedConceptSetIds = new Set<string>()
       atlasExpression.ConceptSets.forEach(cs => {
         if (cs.conceptSetId) {
           referencedConceptSetIds.add(cs.conceptSetId)
         }
       })
     } else {
-      referencedConceptSetIds = extractConceptSetIds(atlasExpression)
+      referencedConceptSetIds = new Set<string>(
+        Array.from(extractConceptSetIds(atlasExpression)).map(id => id.toString())
+      )
     }
 
     // Check if referenced concept sets exist locally
     for (const conceptSetId of referencedConceptSetIds) {
-      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId.toString())
+      const existingConceptSet = allConceptSets.value.find(cs => cs.value === conceptSetId)
       if (!existingConceptSet) {
         console.error(
           `Referenced concept set ${conceptSetId} not found locally and no ConceptSets definition provided in Atlas JSON`
@@ -442,7 +444,7 @@ export const loadAtlasCohortDefinition = async (
 
             // Use sequential ID starting from 0 for Atlas JSON
             const sequentialId = index
-            const systemConceptSetId = parseInt(handledConceptSet.value)
+            const systemConceptSetId = handledConceptSet.value
 
             // Update Atlas concept set with system concept set ID (ID will be updated later by updateCodesetIdReferences)
             atlasConceptSet.conceptSetId = systemConceptSetId

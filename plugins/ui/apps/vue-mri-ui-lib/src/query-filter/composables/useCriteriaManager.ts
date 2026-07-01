@@ -49,7 +49,7 @@ export function useCriteriaManager(
             console.warn(`Concept set ${event.conceptSetId} not found in allConceptSets, using fallback`)
             // Convert SelectedConceptSet to ConceptSetItem
             const convertedConceptSet: ConceptSetItemDisplay = {
-              value: event.selectedConceptSet.value?.toString() || event.conceptSetId,
+              value: event.selectedConceptSet.value || event.conceptSetId,
               text: event.selectedConceptSet.text,
               display_value: event.selectedConceptSet.display_value,
               conceptIds: event.selectedConceptSet.conceptIds,
@@ -363,7 +363,7 @@ export function useCriteriaManager(
           ...event,
           conceptSetId: conceptSet.value.toString(),
           selectedConceptSet: {
-            value: Number(conceptSet.value),
+            value: conceptSet.value,
             text: conceptSet.text || '',
             display_value: conceptSet.display_value || '',
             conceptIds: conceptSet.conceptIds || [],
@@ -389,7 +389,7 @@ export function useCriteriaManager(
                 // Direct assignment since nestedEvent is already reactive
                 nestedEvent.conceptSetId = conceptSet.value.toString()
                 nestedEvent.selectedConceptSet = {
-                  value: Number(conceptSet.value),
+                  value: conceptSet.value,
                   text: conceptSet.text || '',
                   display_value: conceptSet.display_value || '',
                   conceptIds: conceptSet.conceptIds || [],
@@ -419,7 +419,7 @@ export function useCriteriaManager(
         event.conceptSetId = conceptSet.value.toString()
         // Store a minimal concept set reference
         event.selectedConceptSet = {
-          value: Number(conceptSet.value),
+          value: conceptSet.value,
           text: conceptSet.text || '',
           display_value: conceptSet.display_value || '',
           conceptIds: conceptSet.conceptIds || [],
@@ -445,7 +445,7 @@ export function useCriteriaManager(
                 nestedEvent.conceptSetId = conceptSet.value.toString()
                 // Store a minimal concept set reference
                 nestedEvent.selectedConceptSet = {
-                  value: Number(conceptSet.value),
+                  value: conceptSet.value,
                   text: conceptSet.text || '',
                   display_value: conceptSet.display_value || '',
                   conceptIds: conceptSet.conceptIds || [],

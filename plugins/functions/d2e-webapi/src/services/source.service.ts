@@ -2,6 +2,16 @@ import { ISourceDto, IDaimonPriorityResponseDto } from "../dto/source.ts";
 
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 
+export const resolveSourceKey = async (
+  token: string,
+  datasetId: string,
+): Promise<string> => {
+  const portalServerApi = new PortalServerAPI(token);
+  const dataset = await portalServerApi.getStudy(datasetId);
+
+  return dataset.sourceStudyId || datasetId;
+};
+
 export const getSources = async (token: string): Promise<ISourceDto[]> => {
   // Get researcher datasets
   const portalServerApi = new PortalServerAPI(token);

@@ -1,7 +1,9 @@
 import _ from "lodash";
 import { ExtCohortConcept } from "./types";
 import { terminologyRequest } from "../utils/TerminologySvcProxy";
+import { d2eWebapiRequest } from "../utils/D2eWebapiProxy";
 import { IMRIRequest } from "../types";
+import { parseConceptSetRef, formatConceptSetRef } from "../utils/conceptSetRef";
 
 function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
     const result = {};
@@ -81,10 +83,37 @@ export const getConceptsFromConceptSet = async ({
     req: IMRIRequest;
     datasetId: string;
 }): Promise<ExtCohortConcept[] | null> => {
+    const ref = parseConceptSetRef(conceptSetId);
+    if (ref.source === "webapi") {
+        const concepts = await d2eWebapiRequest(
+            req,
+            "POST",
+            `conceptset/included-concepts`,
+            { conceptSetIds: [formatConceptSetRef(ref)], datasetId },
+            datasetId
+        );
+
+        return concepts.length
+            ? concepts.map((concept: any) => ({
+                  CONCEPT_ID: concept.CONCEPT_ID,
+                  CONCEPT_NAME: concept.CONCEPT_NAME,
+                  DOMAIN_ID: concept.DOMAIN_ID,
+                  VOCABULARY_ID: concept.VOCABULARY_ID,
+                  CONCEPT_CLASS_ID: concept.CONCEPT_CLASS_ID,
+                  STANDARD_CONCEPT: concept.STANDARD_CONCEPT,
+                  CONCEPT_CODE: concept.CONCEPT_CODE,
+                  VALID_START_DATE: concept.VALID_START_DATE,
+                  VALID_END_DATE: concept.VALID_END_DATE,
+                  INVALID_REASON: concept.INVALID_REASON,
+                  USEMAPPED: concept.USEMAPPED,
+                  USEDESCENDANTS: concept.USEDESCENDANTS,
+              }))
+            : null;
+    }
     const { concepts } = await terminologyRequest(
         req,
         "GET",
-        `concept-set/${conceptSetId}?datasetId=${datasetId}`,
+        `concept-set/${ref.externalId}?datasetId=${datasetId}`,
         null
     );
 

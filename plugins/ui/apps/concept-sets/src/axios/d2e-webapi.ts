@@ -84,26 +84,28 @@ export class D2eWebapi {
     }
   }
 
-  public getConceptSet(conceptSetId: number, datasetId: string) {
+  public getConceptSet(conceptSetId: string, datasetId: string) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.getConceptSet(conceptSetId);
     } else {
       return request<IWebapiConceptSet>({
         baseURL: D2E_WEBAPI_BASE_URL,
-        url: `/conceptset/${conceptSetId}`,
+        url: `/conceptset/${encodeURIComponent(conceptSetId)}`,
         method: "GET",
         headers: { datasetid: datasetId },
       });
     }
   }
 
-  public getConceptSetExpression(conceptSetId: number, datasetId: string) {
+  public getConceptSetExpression(conceptSetId: string, datasetId: string) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.getConceptSetExpression(conceptSetId);
     } else {
       return request<IWebapiConceptSetExpression>({
         baseURL: D2E_WEBAPI_BASE_URL,
-        url: `/conceptset/${conceptSetId}/expression?datasetId=${datasetId}`,
+        url: `/conceptset/${encodeURIComponent(
+          conceptSetId,
+        )}/expression?datasetId=${datasetId}`,
         method: "GET",
         headers: { datasetid: datasetId },
       });
@@ -111,7 +113,7 @@ export class D2eWebapi {
   }
 
   public checkIfConceptSetExists(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetName: string,
     datasetId: string,
   ) {
@@ -124,9 +126,9 @@ export class D2eWebapi {
 
     return request({
       baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/exists?name=${encodeURIComponent(
-        conceptSetName,
-      )}`,
+      url: `/conceptset/${encodeURIComponent(
+        conceptSetId,
+      )}/exists?name=${encodeURIComponent(conceptSetName)}`,
       method: "GET",
       headers: { datasetid: datasetId },
     });
@@ -136,14 +138,14 @@ export class D2eWebapi {
     name: string,
     datasetId: string,
     shared?: boolean,
-  ): Promise<number> {
+  ): Promise<string> {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       const conceptSetId = await api.publicWebapiProxyAPI.createConceptSet(
         name,
       );
       return conceptSetId;
     } else {
-      const conceptSet = await request({
+      const conceptSet = await request<IWebapiConceptSet>({
         baseURL: D2E_WEBAPI_BASE_URL,
         url: `/conceptset`,
         method: "POST",
@@ -156,7 +158,7 @@ export class D2eWebapi {
   }
 
   public updateConceptSet(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSet: Partial<ConceptSet>,
     datasetId: string,
   ) {
@@ -168,7 +170,7 @@ export class D2eWebapi {
     } else {
       return request<number | { statusCode: number }>({
         baseURL: D2E_WEBAPI_BASE_URL,
-        url: `/conceptset/${conceptSetId}`,
+        url: `/conceptset/${encodeURIComponent(conceptSetId)}`,
         method: "PUT",
         headers: { datasetid: datasetId },
         data: conceptSet,
@@ -177,7 +179,7 @@ export class D2eWebapi {
   }
 
   public updateConceptSetItems(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptSetConcepts: ConceptSetConcept[],
     datasetId: string,
   ) {
@@ -195,7 +197,7 @@ export class D2eWebapi {
       }));
       return request<number | { statusCode: number }>({
         baseURL: D2E_WEBAPI_BASE_URL,
-        url: `/conceptset/${conceptSetId}/items`,
+        url: `/conceptset/${encodeURIComponent(conceptSetId)}/items`,
         method: "PUT",
         headers: { datasetid: datasetId },
         data,
@@ -203,13 +205,13 @@ export class D2eWebapi {
     }
   }
 
-  public deleteConceptSet(conceptSetId: number, datasetId: string) {
+  public deleteConceptSet(conceptSetId: string, datasetId: string) {
     if (getPortalAPI()?.REACT_APP_USE_PUBLIC_WEBAPI_PROXY === "true") {
       return api.publicWebapiProxyAPI.deleteConceptSet(conceptSetId);
     } else {
       return request<number>({
         baseURL: D2E_WEBAPI_BASE_URL,
-        url: `/conceptset/${conceptSetId}`,
+        url: `/conceptset/${encodeURIComponent(conceptSetId)}`,
         method: "DELETE",
         headers: { datasetid: datasetId },
       });
