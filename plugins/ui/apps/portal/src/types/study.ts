@@ -19,7 +19,15 @@ export enum WebApiDatasetType {
   WEBAPI = "webapi",
 }
 
-export type DatasetType = SourceDatasetType | CacheDatasetType | WebApiDatasetType;
+export enum StandaloneDatasetType {
+  I2B2 = "i2b2",
+}
+
+export type DatasetType =
+  | SourceDatasetType
+  | CacheDatasetType
+  | WebApiDatasetType
+  | StandaloneDatasetType;
 
 export type ActionValue =
   | "info"

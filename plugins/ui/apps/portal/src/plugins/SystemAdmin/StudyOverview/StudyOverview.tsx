@@ -383,7 +383,14 @@ const StudyOverview: FC = () => {
           // This is a parent or standalone FHIR dataset
           fhir.push(dataset);
         }
-      } else if (type === "source" || type === "omop" || type === "hana__omop" || type === "hana__non_omop" || type === "webapi") {
+      } else if (
+        type === "source" ||
+        type === "omop" ||
+        type === "hana__omop" ||
+        type === "hana__non_omop" ||
+        type === "webapi" ||
+        type === "i2b2"
+      ) {
         const sourceIdAttribute = dataset.attributes?.find((attr) => attr.attributeId === "source_dataset_id");
 
         if (sourceIdAttribute && sourceIdAttribute.value) {
