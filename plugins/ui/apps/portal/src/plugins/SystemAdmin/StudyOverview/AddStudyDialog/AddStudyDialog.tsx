@@ -1051,14 +1051,23 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <Select
                 sx={styles}
                 value={formData.dataModel}
-                onChange={(event: SelectChangeEvent<string>) =>
-                  handleFormDataChange({
-                    dataModel: event.target.value,
-                    ...(formData.dialect !== "hana"
-                      ? { type: resolveSourceDatasetType(event.target.value) }
-                      : {}),
-                  })
-                }
+                onChange={(event: SelectChangeEvent<string>) => {
+                  const dataModel = event.target.value;
+                  // HANA uses its own type dropdown — don't derive type from the data model.
+                  if (formData.dialect === "hana") {
+                    handleFormDataChange({ dataModel });
+                    return;
+                  }
+                  const type = resolveSourceDatasetType(dataModel);
+                  const changes: Partial<FormData> = { dataModel, type };
+                  // i2b2 is standalone: always source-managed with no cache. Clear any cache
+                  if (type === StandaloneDatasetType.I2B2) {
+                    changes.managementMode = "source";
+                    changes.cacheDatasetName = "";
+                    changes.cacheDatasetType = CacheDatasetType.OMOP;
+                  }
+                  handleFormDataChange(changes);
+                }}
                 inputProps={{
                   name: "dataModelOption",
                   id: "data-model-option",
