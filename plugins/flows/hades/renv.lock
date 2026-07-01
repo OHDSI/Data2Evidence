@@ -934,7 +934,7 @@
       "RemoteHost": "api.github.com",
       "RemoteUsername": "data2evidence",
       "RemoteRepo": "d2e-DatabaseConnector",
-      "RemoteRef": "v6.3.2-0.0.1"
+      "RemoteRef": "alp-dqd"
     },
     "DeepPatientLevelPrediction": {
       "Package": "DeepPatientLevelPrediction",

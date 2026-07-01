@@ -15,6 +15,7 @@
 [![Commuity](https://img.shields.io/badge/Community-Slack-d9dbec)](https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/m/ohdsi/d2e?label=Commit%20activty&logo=github&color=d9dbec)](https://github.com/ohdsi/d2e/graphs/contributors)
 [![D2E CLI Version](https://img.shields.io/npm/v/d2e?label=D2E%20installer&logo=npm&color=d9dbec)](https://www.npmjs.com/package/d2e)
+[![Strategus Analysis Tests](https://github.com/ohdsi/d2e/actions/workflows/strategus-analysis-integration-test.yml/badge.svg?branch=develop)](https://github.com/ohdsi/d2e/actions/workflows/strategus-analysis-integration-test.yml)
 
 ## Overview  
 

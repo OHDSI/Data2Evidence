@@ -96,6 +96,7 @@ def strategus_plugin(json_graph, options):
         if(upload_results):
             result_db_settings = {
                 'database_code': databaseCode,
+                'cache_id': options.get('cacheId', None),
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
             }
@@ -215,6 +216,7 @@ def runStrategus(json_graph, options):
     token_study_code = options.get('tokenStudyCode', None)
     datasetId = options.get('datasetId', None)
     database_code = options.get('databaseCode', None)
+    cache_id = options.get('cacheId', None)
     schema_name = options.get('schemaName', None)
     upload_results = options.get('uploadResults', False)
     update_results_schema = options.get('updateResultsSchema', True)
@@ -228,7 +230,7 @@ def runStrategus(json_graph, options):
     if(not schema_name):
        raise Exception('Schema name is missing')
     
-    dbSettings = { "database_code": database_code, "schema_name": schema_name, "dataset_id": datasetId, "token_study_code": token_study_code }
+    dbSettings = { "database_code": database_code, "cache_id": cache_id, "schema_name": schema_name, "dataset_id": datasetId, "token_study_code": token_study_code }
     base_path = f'/tmp/{flow_run_id}'
     work_folder = f'{base_path}/work'
     path_to_results = f'{base_path}/results'
@@ -243,6 +245,7 @@ def runStrategus(json_graph, options):
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
+        "cacheId": cache_id,
         "schemaName": schema_name,
         "workFolder": work_folder,
         "resultsFolder": path_to_results
@@ -257,6 +260,7 @@ def runStrategus(json_graph, options):
     if(upload_results):
         result_db_settings = {
             'database_code': database_code,
+            'cache_id': cache_id,
             "dataset_id": datasetId,
             "token_study_code": token_study_code
         }
@@ -297,6 +301,7 @@ def drop_strategus_results(options):
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
+        'cache_id': options.get('cacheId', None),
         'token_study_code': token_study_code
     })
 

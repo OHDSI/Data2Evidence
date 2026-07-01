@@ -1,52 +1,37 @@
-name: _test-http-duckdb (reusable)
+name: Strategus Analysis Integration Test
 
 on:
-  workflow_call:
-    inputs:
-      attempt:
-        required: true
-        type: string
-      runner:
-        required: true
-        type: string
-      run_tag:
-        required: true
-        type: string
-      changes_ui:
-        required: true
-        type: string
-      reg_url:
-        required: true
-        type: string
-      prepull_flow_images:
-        required: true
-        type: string
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC on main branch
+  push:
+    branches:
+      - develop
+      - SantanM/add-e2e-tests-to-study-flow  # TODO: remove before merging to develop
+  workflow_dispatch:
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 env:
-  REG_URL: ${{ inputs.reg_url }}
-  PREPULL_FLOW_IMAGES: ${{ inputs.prepull_flow_images }}
+  VERSION: develop
+  DOCKER_TAG_NAME: develop
+  REG_URL: ghcr.io/ohdsi
+  PGUSER: postgres
+  PGPASSWORD: mypass
+  PGHOST: localhost
+  PGPORT: 15432
+  PGDATABASE: postgres
+  TESTSCHEMA: demo_cdm
+  isTestEnv: "true"
+  isHttpTestRun: "true"
+  HTTPTEST_DB_DIALECT: "duckdb"
 
 jobs:
-  test:
-    runs-on: ${{ inputs.runner }}
-    timeout-minutes: 80
-    env:
-      VERSION: develop
-      DOCKER_TAG_NAME: ${{ inputs.run_tag }}
-      PLUGINS_IMAGE_TAG: ${{ inputs.run_tag }}
-      PGUSER: postgres
-      PGPASSWORD: mypass
-      PGHOST: localhost
-      PGPORT: 15432
-      PGDATABASE: postgres
-      TESTSCHEMA: demo_cdm
-      isTestEnv: "true"
-      isHttpTestRun: "true"
-      HTTPTEST_DB_DIALECT: "duckdb"
+  strategus-analysis-integration-test:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -83,30 +68,30 @@ jobs:
         if: success() || failure()
         run: npm install
 
-      - name: Download UI package tarball
-        uses: actions/download-artifact@v4
-        with:
-          name: ui-tgz
-          path: ./plugins/ui
-
-      - name: Extract UI package
-        run: |
-          TGZ=$(ls ./plugins/ui/data2evidence-d2e-ui-*.tgz | head -1)
-          rm -rf ./plugins/ui-built
-          mkdir -p ./plugins/ui-built
-          tar -xzf "$TGZ" -C ./plugins/ui-built --strip-components=1
-
       - name: Initialise d2e
         if: success() || failure()
         run: |
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop init
           grep LOGTO__D2E_APP__CLIENT_ID .env | sed -e "s/'//g" >> $GITHUB_ENV
 
-      - name: Pre-pull flow images
-        run: |
-          for img in $PREPULL_FLOW_IMAGES; do
-            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
-          done
+      - uses: docker/setup-buildx-action@v3
+        id: builder
+
+      - name: Build flow-hades image
+        uses: docker/build-push-action@v6
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          context: ./plugins/flows
+          file: ./plugins/flows/hades/Dockerfile
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: ${{ env.REG_URL }}/d2e/flow-hades:${{ env.DOCKER_TAG_NAME }}
+          provenance: false
+          sbom: false
+          build-args: |
+            GIT_COMMIT_ARG=${{ github.sha }}
+            BUILD_TYPE=OSS
 
       - name: Pull docker compose images
         if: success() || failure()
@@ -124,7 +109,7 @@ jobs:
           max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions -c ./docker-compose-ci.yml start
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -137,7 +122,7 @@ jobs:
           echo RETRY_EXIT_CODE=${{ steps.start.outputs.exit_code }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_OUTCOME=${{ steps.start.outcome }} | tee -a $GITHUB_STEP_SUMMARY
           echo RETRY_TOTAL_ATTEMPTS=${{ steps.start.outputs.total_attempts }} | tee -a $GITHUB_STEP_SUMMARY
-          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE|| true)
+          DC_FAIL_COUNT=$(grep -icE "starting|unhealthy" $DOCKER_STATUS_FILE || true)
           echo DC_FAIL_COUNT=$DC_FAIL_COUNT | tee -a $GITHUB_STEP_SUMMARY
 
       - name: Logs
@@ -169,7 +154,7 @@ jobs:
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setuphttptestenv
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setuphttptestenv
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
@@ -184,7 +169,9 @@ jobs:
           export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
           echo "$resTrexDB"
           export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
+          export DATABASE_NAME=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select cache_id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
           echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV
+          echo "TESTSCHEMA=$TESTSCHEMA" >> $GITHUB_ENV
 
       - name: Logs
         if: success() || failure()
@@ -209,10 +196,6 @@ jobs:
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml -p 41100 start
-
-      - name: Wait for services to be ready to avoid mounting race condition
-        if: inputs.changes_ui == 'true' || contains(github.base_ref, 'release/')
-        run: sleep 10
 
       - name: Check status of docker containers
         run: docker ps -a
@@ -338,11 +321,32 @@ jobs:
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
 
-      - name: Setup Test DB
-        run: |
-          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-          yarn --prefer-offline
-          yarn inittestdb-pg
+      # - name: Setup Test DB
+      #   run: |
+      #     PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+      #     yarn --prefer-offline
+      #     yarn inittestdb-pg
+
+      # - name: Setupdemo
+      #   if: success() || failure()
+      #   uses: nick-fields/retry@v3
+      #   id: setupdemo
+      #   with:
+      #     timeout_seconds: 1800
+      #     retry_wait_seconds: 100
+      #     max_attempts: 2
+      #     retry_on: any
+      #     command: |
+      #       ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
+      #       DC_EXIT_CODE=$?
+      #       DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+      #       docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+      #       [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      # - name: Logs
+      #   if: success() || failure()
+      #   run: |
+      #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
 
       - name: Install dependencies in backend integration tests
         run: |
@@ -365,7 +369,7 @@ jobs:
           echo "isTestEnv=${isTestEnv:-false}" >> $GITHUB_ENV
           echo "HTTPTEST_DB_DIALECT=${HTTPTEST_DB_DIALECT:-duckdb}" >> $GITHUB_ENV
 
-      - name: Run HTTP tests
+      - name: Run strategus analysis integration test
         working-directory: ./tests/backend_integration_tests/pg
         run: |
           echo "HDIPORT: ${HDIPORT}"
@@ -377,21 +381,77 @@ jobs:
           echo "isTestEnv: ${isTestEnv:-false}"
           echo "TESTSCHEMA: ${TESTSCHEMA}"
           echo "HTTPTEST_DB_DIALECT: ${HTTPTEST_DB_DIALECT}"
-          yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=^(?!strategus_analysis_test).*_test\.js$'
+          echo "DATASET_ID: ${DATASET_ID}"
+          yarn test-specs --test_schema_name=$TESTSCHEMA '--file_pattern=strategus_analysis_test\.js$' '--mocha-timeout=400000'
 
-      - name: Mark HTTP duckdb attempt success
-        if: success()
+      - name: Collect Prefect diagnostics on flow run failure
+        if: failure() && env.PREFECT_FLOW_RUN_ID != ''
+        env:
+          PREFECT_BASE: https://localhost:41100/d2e/prefect/d2e/api
         run: |
-          mkdir -p ./_attempt
-          touch ./_attempt/success
+          sudo apt-get install -y jq 2>/dev/null || true
+          mkdir -p ./prefect-diagnostics
 
-      - name: Upload HTTP duckdb attempt outcome
-        if: always()
+          FLOW_RUN_ID="${PREFECT_FLOW_RUN_ID}"
+
+          echo "## Prefect Flow Run Diagnostics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Flow Run ID:** \`${FLOW_RUN_ID}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**UI:** ${PREFECT_BASE}/runs/flow-run/${FLOW_RUN_ID}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Get sub-flow runs
+          SUB_RUNS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/flow_runs/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"flow_runs\":{\"parent_flow_run_id\":{\"any_\":[\"${FLOW_RUN_ID}\"]}}}")
+          echo "${SUB_RUNS_JSON}" > ./prefect-diagnostics/sub_flow_runs.json
+
+          # Build JSON array of all run IDs (parent + sub)
+          SUB_RUN_IDS=$(echo "${SUB_RUNS_JSON}" | jq -r '.[].id' 2>/dev/null | tr '\n' ' ')
+          ALL_IDS_JSON=$(printf '%s\n' "${FLOW_RUN_ID}" ${SUB_RUN_IDS} | jq -Rn '[inputs]')
+
+          # Fetch logs (ERROR level = 40+)
+          LOGS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/logs/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"logs\":{\"flow_run_id\":{\"any_\":${ALL_IDS_JSON}}},\"sort\":\"TIMESTAMP_ASC\"}")
+          echo "${LOGS_JSON}" > ./prefect-diagnostics/logs.json
+
+          echo "### Error Logs" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "${LOGS_JSON}" | jq -r '.[] | select(.level >= 40) | "[" + .timestamp + "] " + .message' \
+            2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "(failed to parse logs)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Fetch artifacts
+          ARTIFACTS_JSON=$(curl -sk -X POST "${PREFECT_BASE}/artifacts/filter" \
+            -H "Authorization: Bearer ${BEARER_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-raw "{\"artifacts\":{\"flow_run_id\":{\"any_\":${ALL_IDS_JSON}}}}")
+          echo "${ARTIFACTS_JSON}" > ./prefect-diagnostics/artifacts.json
+
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          while IFS=$'\t' read -r artifact_id artifact_key; do
+            [ -z "${artifact_id}" ] && continue
+            echo "- **${artifact_key}** (\`${artifact_id}\`): ${PREFECT_BASE}/artifacts/artifact/${artifact_id}" >> $GITHUB_STEP_SUMMARY
+          done < <(echo "${ARTIFACTS_JSON}" | jq -r '.[] | [.id, (.key // .type // "artifact")] | @tsv' 2>/dev/null)
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Sub-Flow Runs" >> $GITHUB_STEP_SUMMARY
+          while IFS=$'\t' read -r sub_id sub_name sub_state; do
+            [ -z "${sub_id}" ] && continue
+            echo "- **${sub_name}** \`${sub_state}\`: ${PREFECT_BASE}/runs/flow-run/${sub_id}" >> $GITHUB_STEP_SUMMARY
+          done < <(echo "${SUB_RUNS_JSON}" | jq -r '.[] | [.id, (.name // "sub-run"), (.state_type // "UNKNOWN")] | @tsv' 2>/dev/null)
+
+      - name: Upload Prefect diagnostics
+        if: failure() && env.PREFECT_FLOW_RUN_ID != ''
         uses: actions/upload-artifact@v4
         with:
-          name: http-duckdb-attempt-${{ inputs.attempt }}
-          path: ./_attempt/
-          overwrite: true
+          name: prefect-diagnostics
+          path: ./prefect-diagnostics/
+          if-no-files-found: ignore
 
       - name: Logs
         if: success() || failure()

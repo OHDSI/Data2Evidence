@@ -240,7 +240,7 @@ export class PrefectService {
           {},
           {
             mode: "upload-results-from-storage",
-            databaseCode,
+            databaseCode: env.TREX__STRATEGUS_RESULTS_DB_NAME,
             cacheId,
             tokenStudyCode,
             datasetId,
@@ -301,7 +301,7 @@ export class PrefectService {
           {},
           {
             mode: "drop-results",
-            databaseCode,
+            databaseCode: env.TREX__STRATEGUS_RESULTS_DB_NAME,
             cacheId,
             tokenStudyCode,
             datasetId,
