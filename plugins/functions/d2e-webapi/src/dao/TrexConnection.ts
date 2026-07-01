@@ -57,7 +57,7 @@ export default class TrexConnection {
   }
 
   validateCohortJsonExpression(
-    cohortJsonExpression: ICohortExpression
+    cohortJsonExpression: ICohortExpression | string
   ): Promise<ICohortDefinitionCheckV2ResponseDto> {
     return new Promise((resolve, reject) => {
       this.conn.atlas_validate(

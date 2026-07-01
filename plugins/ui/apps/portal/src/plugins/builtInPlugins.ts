@@ -24,6 +24,7 @@ const moduleNames = [
   "Setup/OverviewDescription",
   "Setup/TrexPlugins",
   "Setup/DemoSetup",
+  "Setup/MigrateUserArtifacts",
   "Setup/HybridSearch",
   "Setup/GitConfig",
 ];
