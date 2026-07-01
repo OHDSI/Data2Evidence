@@ -2530,54 +2530,89 @@ CAST('HEALTHCARE_UTILIZATION' as VARCHAR(255)) as analysis_type
  FROM DUMMY;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#digits
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.digits
  AS(
 SELECT
-digits.n  
+digits.n
 FROM
 (
         SELECT 0  AS n  FROM DUMMY  UNION all SELECT 1   FROM DUMMY  UNION all SELECT 2   FROM DUMMY  UNION all SELECT 3   FROM DUMMY  UNION all SELECT 4   FROM DUMMY  UNION all SELECT 5   FROM DUMMY  UNION all SELECT 6   FROM DUMMY  UNION all SELECT 7   FROM DUMMY  UNION all SELECT 8   FROM DUMMY   UNION all select 9
-  FROM DUMMY ) digits);
+  FROM DUMMY ) digits) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.digits
+SELECT
+digits.n
+FROM
+(
+        SELECT 0  AS n  FROM DUMMY  UNION all SELECT 1   FROM DUMMY  UNION all SELECT 2   FROM DUMMY  UNION all SELECT 3   FROM DUMMY  UNION all SELECT 4   FROM DUMMY  UNION all SELECT 5   FROM DUMMY  UNION all SELECT 6   FROM DUMMY  UNION all SELECT 7   FROM DUMMY  UNION all SELECT 8   FROM DUMMY   UNION all select 9
+  FROM DUMMY ) digits;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
  AS(
 SELECT
 y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) AS d_years,
 	mths.n as d_months
 
 FROM
-${DATA_CHARACTERIZATION_SCHEMA}.#digits y1,
-${DATA_CHARACTERIZATION_SCHEMA}.#digits y10,
+${DATA_CHARACTERIZATION_SCHEMA}.digits y1,
+${DATA_CHARACTERIZATION_SCHEMA}.digits y10,
 (SELECT 0 n    FROM DUMMY  UNION all SELECT 1   FROM DUMMY   UNION all select 9    FROM DUMMY ) y100,
 (SELECT 1 n    FROM DUMMY  UNION all select 2    FROM DUMMY ) y1000,
 (SELECT 1 n   FROM DUMMY  UNION all SELECT 2   FROM DUMMY  UNION all SELECT 3   FROM DUMMY  UNION all SELECT 4   FROM DUMMY  UNION all SELECT 5   FROM DUMMY  UNION all SELECT 6   FROM DUMMY  UNION all SELECT 7   FROM DUMMY  UNION all SELECT 8   FROM DUMMY  UNION all SELECT 9   FROM DUMMY  UNION all SELECT 10   FROM DUMMY  UNION all SELECT 11   FROM DUMMY   UNION all select 12  FROM DUMMY ) mths
 	   WHERE y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) >= 1900 and y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) < 2100
-);
+) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
+SELECT
+y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) AS d_years,
+	mths.n as d_months
+
+FROM
+${DATA_CHARACTERIZATION_SCHEMA}.digits y1,
+${DATA_CHARACTERIZATION_SCHEMA}.digits y10,
+(SELECT 0 n    FROM DUMMY  UNION all SELECT 1   FROM DUMMY   UNION all select 9    FROM DUMMY ) y100,
+(SELECT 1 n    FROM DUMMY  UNION all select 2    FROM DUMMY ) y1000,
+(SELECT 1 n   FROM DUMMY  UNION all SELECT 2   FROM DUMMY  UNION all SELECT 3   FROM DUMMY  UNION all SELECT 4   FROM DUMMY  UNION all SELECT 5   FROM DUMMY  UNION all SELECT 6   FROM DUMMY  UNION all SELECT 7   FROM DUMMY  UNION all SELECT 8   FROM DUMMY  UNION all SELECT 9   FROM DUMMY  UNION all SELECT 10   FROM DUMMY  UNION all SELECT 11   FROM DUMMY   UNION all select 12  FROM DUMMY ) mths
+	   WHERE y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) >= 1900 and y1.n + (10*y10.n) + (100*y100.n) + (1000*y1000.n) < 2100
+;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#yearly_dates
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates
  AS(
 SELECT
 TO_DATE(d_years || '-' || d_months || '-' || 01, 'YYYY-MM-DD') as generated_date
 
 FROM
-${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
 where d_months = 1
-);
+) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates
+SELECT
+TO_DATE(d_years || '-' || d_months || '-' || 01, 'YYYY-MM-DD') as generated_date
+
+FROM
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
+where d_months = 1
+;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#monthly_dates
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates
  AS(
 SELECT
 TO_DATE(d_years || '-' || d_months || '-' || 01, 'YYYY-MM-DD') as generated_date
 
 FROM
-${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates
-);
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
+) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates
+SELECT
+TO_DATE(d_years || '-' || d_months || '-' || 01, 'YYYY-MM-DD') as generated_date
+
+FROM
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
+;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#weekly_dates
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates
  AS(
 SELECT
 ADD_DAYS(TO_DATE(TO_DATE(1900 || '-' || 1 || '-' || 7, 'YYYY-MM-DD')),(7 * seq.rn)) as generated_date -- first sunday in 1900
@@ -2585,23 +2620,40 @@ ADD_DAYS(TO_DATE(TO_DATE(1900 || '-' || 1 || '-' || 7, 'YYYY-MM-DD')),(7 * seq.r
 FROM
 (
 	 SELECT d1.n + (10 * d10.n) + (100 * d100.n) + (1000 * d1000.n)  AS rn
-	FROM ${DATA_CHARACTERIZATION_SCHEMA}.#digits d1, ${DATA_CHARACTERIZATION_SCHEMA}.#digits d10, ${DATA_CHARACTERIZATION_SCHEMA}.#digits d100, ${DATA_CHARACTERIZATION_SCHEMA}.#digits d1000
- ) seq);
+	FROM ${DATA_CHARACTERIZATION_SCHEMA}.digits d1, ${DATA_CHARACTERIZATION_SCHEMA}.digits d10, ${DATA_CHARACTERIZATION_SCHEMA}.digits d100, ${DATA_CHARACTERIZATION_SCHEMA}.digits d1000
+ ) seq) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates
+SELECT
+ADD_DAYS(TO_DATE(TO_DATE(1900 || '-' || 1 || '-' || 7, 'YYYY-MM-DD')),(7 * seq.rn)) as generated_date -- first sunday in 1900
+
+FROM
+(
+	 SELECT d1.n + (10 * d10.n) + (100 * d100.n) + (1000 * d1000.n)  AS rn
+	FROM ${DATA_CHARACTERIZATION_SCHEMA}.digits d1, ${DATA_CHARACTERIZATION_SCHEMA}.digits d10, ${DATA_CHARACTERIZATION_SCHEMA}.digits d100, ${DATA_CHARACTERIZATION_SCHEMA}.digits d1000
+ ) seq;
 
 
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#quarterly_dates
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates
 	 AS(
 SELECT
 TO_DATE(d_years || '-' || d_months || '-' || 1, 'YYYY-MM-DD') as generated_date
 
 FROM
-${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
 	where d_months in (1,4,7,10)
-);
+) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates
+SELECT
+TO_DATE(d_years || '-' || d_months || '-' || 1, 'YYYY-MM-DD') as generated_date
+
+FROM
+${DATA_CHARACTERIZATION_SCHEMA}.generate_dates
+	where d_months in (1,4,7,10)
+;
 
 
 -- monthly dates
-CREATE LOCAL TEMPORARY TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#temp_period
+CREATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.temp_period
  AS(
 SELECT
 *
@@ -2613,7 +2665,7 @@ FROM
   , CAST( 'mm' AS VARCHAR(50)) as period_type
   , md.generated_date as period_start_date
   , ADD_MONTHS(md.generated_date, 1) as period_end_date
-FROM ${DATA_CHARACTERIZATION_SCHEMA}.#monthly_dates md
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates md
 
   UNION ALL
  SELECT CAST('Weekly' AS VARCHAR(255))  AS period_name
@@ -2621,7 +2673,7 @@ FROM ${DATA_CHARACTERIZATION_SCHEMA}.#monthly_dates md
   , CAST('ww' AS VARCHAR(50)) as period_type
   , wd.generated_date as period_start_date
   , ADD_DAYS(TO_DATE(wd.generated_date),7) as period_end_date
-FROM ${DATA_CHARACTERIZATION_SCHEMA}.#weekly_dates wd
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates wd
 where wd.generated_date >= TO_DATE(1900 || '-' || 1 || '-' || 1, 'YYYY-MM-DD') and wd.generated_date < TO_DATE(2100 || '-' || 1 || '-' || 1, 'YYYY-MM-DD')
 
   UNION ALL
@@ -2630,7 +2682,7 @@ where wd.generated_date >= TO_DATE(1900 || '-' || 1 || '-' || 1, 'YYYY-MM-DD') a
   , CAST('qq' AS VARCHAR(50)) as period_type
   , qd.generated_date as period_start_date
   , ADD_MONTHS(qd.generated_date, 3) as period_end_date
-FROM ${DATA_CHARACTERIZATION_SCHEMA}.#quarterly_dates qd
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates qd
 
   UNION ALL
  SELECT CAST('Yearly' AS VARCHAR(255))  AS period_name
@@ -2638,10 +2690,50 @@ FROM ${DATA_CHARACTERIZATION_SCHEMA}.#quarterly_dates qd
   , CAST('yy' AS VARCHAR(50)) as period_type
   , yd.generated_date as period_start_date
   , ADD_YEARS(yd.generated_date, 1) as period_end_date
-FROM ${DATA_CHARACTERIZATION_SCHEMA}.#yearly_dates yd
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates yd
 
 -- ADD UNION ALLs for additional period definitions
-       ) monthlyDates);
+       ) monthlyDates) WITH NO DATA;
+INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.temp_period
+SELECT
+*
+
+FROM
+(
+ SELECT CAST('Monthly' AS VARCHAR(255))  AS period_name
+  , 1 as period_order
+  , CAST( 'mm' AS VARCHAR(50)) as period_type
+  , md.generated_date as period_start_date
+  , ADD_MONTHS(md.generated_date, 1) as period_end_date
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates md
+
+  UNION ALL
+ SELECT CAST('Weekly' AS VARCHAR(255))  AS period_name
+  , 2 as period_order
+  , CAST('ww' AS VARCHAR(50)) as period_type
+  , wd.generated_date as period_start_date
+  , ADD_DAYS(TO_DATE(wd.generated_date),7) as period_end_date
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates wd
+where wd.generated_date >= TO_DATE(1900 || '-' || 1 || '-' || 1, 'YYYY-MM-DD') and wd.generated_date < TO_DATE(2100 || '-' || 1 || '-' || 1, 'YYYY-MM-DD')
+
+  UNION ALL
+ SELECT CAST('Quarterly' AS VARCHAR(255))  AS period_name
+  , 3 as period_order
+  , CAST('qq' AS VARCHAR(50)) as period_type
+  , qd.generated_date as period_start_date
+  , ADD_MONTHS(qd.generated_date, 3) as period_end_date
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates qd
+
+  UNION ALL
+ SELECT CAST('Yearly' AS VARCHAR(255))  AS period_name
+  , 4 as period_order
+  , CAST('yy' AS VARCHAR(50)) as period_type
+  , yd.generated_date as period_start_date
+  , ADD_YEARS(yd.generated_date, 1) as period_end_date
+FROM ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates yd
+
+-- ADD UNION ALLs for additional period definitions
+       ) monthlyDates;
 
 
 TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods;
@@ -2650,42 +2742,42 @@ TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods;
 INSERT INTO ${DATA_CHARACTERIZATION_SCHEMA}.heracles_periods (period_id, period_name, period_order, period_type, period_start_date, period_end_date)
 select CAST(row_number() over (order by period_order, period_start_date) AS INT) as period_id
 			, period_name, period_order, period_type, period_start_date, period_end_date
-from ${DATA_CHARACTERIZATION_SCHEMA}.#temp_period;
+from ${DATA_CHARACTERIZATION_SCHEMA}.temp_period;
 
 
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#digits;
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.digits;
 
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#digits;
-
-
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates;
-
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#generate_dates;
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.digits;
 
 
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#yearly_dates;
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.generate_dates;
 
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#yearly_dates;
-
-
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#quarterly_dates;
-
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#quarterly_dates;
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.generate_dates;
 
 
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#monthly_dates;
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates;
 
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#monthly_dates;
-
-
-truncate table ${DATA_CHARACTERIZATION_SCHEMA}.#weekly_dates;
-
-drop table ${DATA_CHARACTERIZATION_SCHEMA}.#weekly_dates;
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.yearly_dates;
 
 
-TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#temp_period;
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates;
 
-DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.#temp_period;
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.quarterly_dates;
+
+
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates;
+
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.monthly_dates;
+
+
+truncate table ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates;
+
+drop table ${DATA_CHARACTERIZATION_SCHEMA}.weekly_dates;
+
+
+TRUNCATE TABLE ${DATA_CHARACTERIZATION_SCHEMA}.temp_period;
+
+DROP TABLE ${DATA_CHARACTERIZATION_SCHEMA}.temp_period;
 
 
 

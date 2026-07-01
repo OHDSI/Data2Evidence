@@ -80,7 +80,12 @@ export class Dataset extends Audit {
 
   @BeforeInsert()
   applyCacheIdDefault() {
-    if (this.cacheId == null && this.id) {
+    if (this.cacheId != null) return
+    // HANA datasets are queried directly, so the cacheId is the databaseCode
+    // rather than a sanitized per-dataset UUID.
+    if (this.dialect === 'hana') {
+      this.cacheId = this.databaseCode
+    } else if (this.id) {
       this.cacheId = sanitizeIdForCacheId(this.id)
     }
   }
