@@ -1257,11 +1257,19 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
+            # print db connection string
+            print(f"Connecting to database with connection string: {dbdao.get_database_connector_connection_string()}")
+            print(f"Connecting to database with DBMS: {dbdao.get_database_connector_dbms_val()}")
+
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms=dbdao.get_database_connector_dbms_val(), 
                 connectionString=dbdao.get_database_connector_connection_string(),
                 user=db_credentials.adminUser,
                 password=db_credentials.adminPassword.get_secret_value(),
+                # user='postgres', # TODO: remove
+                # password='agbUVe', # TODO: remove
+                # connectionString='jdbc:postgresql://alp-demodb:5432/postgres', # TODO: remove
+
                 pathToDriver=databaseConnectorJarFolder
             )
 
