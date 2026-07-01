@@ -11,6 +11,7 @@
     "preview": "tsc -b && vite build && vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "axios": "^1.7.3",
     "buffer": "^6.0.3",
     "classnames": "^2.5.1",

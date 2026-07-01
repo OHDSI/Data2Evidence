@@ -14,6 +14,7 @@
     "clean": "rimraf ./dist"
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@reduxjs/toolkit": "^1.9.5",
     "dayjs": "^1.11.7",
     "jsonata": "^2.0.3",

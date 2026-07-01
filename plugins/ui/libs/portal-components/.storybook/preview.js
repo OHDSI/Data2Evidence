@@ -1,3 +1,4 @@
+import "@fontsource-variable/ibm-plex-sans";
 import React from "react";
 import { ThemeProvider, createTheme } from "@mui/material";
 import { applyPolyfills, defineCustomElements } from "@d4l/web-components-library/dist/loader";
@@ -14,7 +15,7 @@ applyPolyfills().then(() => {
 const theme = createTheme({
   typography: {
     fontFamily:
-      'GT-America, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+      '"GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
   },
   palette: {
     text: { primary: "#000080" },

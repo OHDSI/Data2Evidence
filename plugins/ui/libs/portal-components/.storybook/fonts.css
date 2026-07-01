@@ -1,31 +1,12 @@
-/* Storybook-only GT-America faces (the library's Storybook doesn't load the app's
-   styles/_fonts.scss). Without these the alert text falls back to Helvetica/Arial,
-   whose 400/700 weights collapse the 300–600 distinctions. Dev-only. */
-@font-face {
-  font-family: "GT-America";
-  font-style: normal;
-  font-weight: 300;
-  font-display: swap;
-  src: url("./fonts/GT-America-Standard-Thin.woff2") format("woff2");
-}
-@font-face {
-  font-family: "GT-America";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("./fonts/GT-America-Standard-Regular.woff2") format("woff2");
-}
-@font-face {
-  font-family: "GT-America";
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("./fonts/GT-America-Standard-Medium.woff2") format("woff2");
-}
-@font-face {
-  font-family: "GT-America";
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("./fonts/GT-America-Standard-Bold.woff2") format("woff2");
+/* Storybook-only font loading. IBM Plex Sans is self-hosted via @fontsource-variable/ibm-plex-sans,
+   imported in preview.js. It replaces the previously bundled commercial faces
+   (removed for licensing compliance) and provides the 300-600 weights the
+   alert/dialog components rely on. */
+
+/* @d4l/web-components-library points --font-family-secondary at the removed
+   commercial font on :root; re-point it at IBM Plex Sans so components render correctly
+   in Storybook. Doubled :root:root specificity wins regardless of import order. */
+:root:root {
+  --font-family-secondary: "GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", Helvetica, Arial, sans-serif;
+  --font-family-primary: Georgia, "Times New Roman", "Roboto Slab", serif;
 }
