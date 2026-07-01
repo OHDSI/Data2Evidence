@@ -135,19 +135,53 @@ jobs:
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
 
-      - name: Setup HTTP Test Env
+      # - name: Setup HTTP Test Env
+      #   if: success() || failure()
+      #   uses: nick-fields/retry@v3
+      #   with:
+      #     timeout_seconds: 1800
+      #     retry_wait_seconds: 100
+      #     max_attempts: 1
+      #     retry_on: any
+      #     command: |
+      #       ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setuphttptestenv
+      #       DC_EXIT_CODE=$?
+      #       DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+      #       docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+      #       [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+      - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
+            DC_EXIT_CODE=$?
+            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
           max_attempts: 1
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setuphttptestenv
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
             DC_EXIT_CODE=$?
-            DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
-            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
 
       - name: Get dataset Id
