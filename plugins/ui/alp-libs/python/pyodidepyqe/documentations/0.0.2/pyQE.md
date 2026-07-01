@@ -1,6 +1,6 @@
 # pyQE library
 The pyQE library is hosted at ALP JupyterHub. We need to have the following prerequisites to run pyQE:
-- D4L Researcher Account with the study permissions (Please contact help@data4life.care if this is unavailable)
+- D4L Researcher Account with the study permissions (Please contact your administrator if this is unavailable)
 - Basic understanding of Python & JupyterHub
 
 The current latest version is 0.0.2 which has the following features:

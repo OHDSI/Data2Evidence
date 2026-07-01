@@ -38,7 +38,7 @@
           "IDP__ALP_DATA__CLIENT_SECRET": "${LOGTO__D2E_DATA__CLIENT_SECRET}"
         },
         "fhir-init": {
-          "FHIR_DATABASE_CODE": "${FHIR__DATABASE__CODE:-d2e_fhir}",
+          "FHIR_DATABASE_CODE": "${FHIR__DATABASE__CODE:-FHIR}",
           "FHIR__DB_NAME": "${FHIR__DB_NAME:-FHIR}",
           "TREX__SQL__HOST": "${PROJECT_NAME:-d2e}-trex",
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
