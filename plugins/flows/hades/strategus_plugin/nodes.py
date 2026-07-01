@@ -1248,13 +1248,15 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
+            cache_id = dbSettings.get('cache_id', None)
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
             databaseConnectorJarFolder = '/app/inst/drivers'
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                database_code=database_code
+                database_code=database_code,
+                cache_id=cache_id
             )
             db_credentials = dbdao.tenant_configs
             # print db connection string
