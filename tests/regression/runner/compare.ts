@@ -18,7 +18,8 @@ export type Baseline = Record<string, { p95Ms: number }>;
 export function compareToBaseline(result: TimingResult, baseline: Baseline): CompareResult {
   const entry = baseline[result.scenarioName];
 
-  if (!entry || typeof entry.p95Ms !== "number") {
+  const baselineP95Ms = entry?.p95Ms;
+  if (typeof baselineP95Ms !== "number" || !isFinite(baselineP95Ms) || baselineP95Ms <= 0) {
     return {
       scenarioName: result.scenarioName,
       status: "no-baseline",
@@ -30,7 +31,7 @@ export function compareToBaseline(result: TimingResult, baseline: Baseline): Com
     };
   }
 
-  const delta = (result.p95Ms - entry.p95Ms) / entry.p95Ms;
+  const delta = (result.p95Ms - baselineP95Ms) / baselineP95Ms;
   let status: CompareStatus = "pass";
   if (delta > config.failThreshold) status = "fail";
   else if (delta > config.warnThreshold) status = "warn";
@@ -39,7 +40,7 @@ export function compareToBaseline(result: TimingResult, baseline: Baseline): Com
     scenarioName: result.scenarioName,
     status,
     currentP95Ms: result.p95Ms,
-    baselineP95Ms: entry.p95Ms,
+    baselineP95Ms,
     deltaFraction: delta,
     minMs: result.minMs,
     maxMs: result.maxMs,

@@ -9,11 +9,10 @@ export const config = {
 
   bearerToken: process.env.BEARER_TOKEN ?? "",
 
-  // Replaces the host+port of every scenario URL.
-  // Set D2E_BASE_URL=localhost:41100 to point at a local instance.
+  // Substituted for {{D2E_BASE_URL}} tokens in scenario files (runner/substituteConfig.ts).
   D2E_BASE_URL: process.env.D2E_BASE_URL ?? "localhost:41100",
 
-  // Substituted into any query param or JSON body field named "datasetId".
+  // Substituted for {{DATASET_ID}} tokens in scenario files (runner/substituteConfig.ts).
   DATASET_ID: process.env.DATASET_ID ?? "",
 
   // PA_CONFIG_ID: process.env.PA_CONFIG_ID ?? "4321DCBAB",
