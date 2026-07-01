@@ -8,9 +8,9 @@
   },
   "license": "Apache-2.0",
   "scripts": {
-    "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,react-notebook && bun build-ui5 && bun build-starboard && bun build-wizards",
+    "build-all": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,@trex/notebook && bun build-ui5 && bun build-starboard && bun build-wizards",
     "build-docker": "docker build -f Dockerfile.build -t d2e-ui-builder . && docker run --rm -v \"$(pwd):/app\" d2e-ui-builder",
-    "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,react-notebook --skip-nx-cache && bun build-ui5",
+    "build-all-skip-cache": "bunx nx run-many --targets=build --projects=@portal/components,@portal/plugin --skip-nx-cache && bunx nx run-many --targets=build,build-mri --exclude @portal/components,@portal/plugin,@trex/notebook --skip-nx-cache && bun build-ui5",
     "build-ui5": "bunx ui5 build -a --clean-dest --dest ./resources/ui5",
     "build-starboard": "node scripts/build-starboard.js",
     "build-wizards": "cd apps/wizards && bun run test && bun run build",
@@ -28,6 +28,9 @@
     "@parcel/transformer-sass": "^2.9.2",
     "@ui5/cli": "^2.12.0",
     "nx": "^18.0.0"
+  },
+  "overrides": {
+    "vite": "6.4.2"
   },
   "trex": {
     "ui": {
@@ -482,5 +485,8 @@
         ]
       }
     }
+  },
+  "patchedDependencies": {
+    "@nlux/themes@2.17.1": "patches/@nlux%2Fthemes@2.17.1.patch"
   }
 }

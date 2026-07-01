@@ -6,12 +6,13 @@ export const i18nDefault = {
     ACCESS_PANEL__ERROR: "An error has occurred.",
     ACCESS_PANEL__ERROR_2: "User {0} cannot be added as they have not completed registration",
     ACCESS_PANEL__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     ACCESS_PANEL__NO_DATA: "No data available",
     ACCESS_PANEL__NO_USERS: "No available users to add",
     ACCESS_PANEL__REVOKE: "Revoke",
     ACCESS_PANEL__ROLE: "Role",
-    ACCESS_PANEL__SUCCESS: "User {0} has been granted permission. They must sign in again to access the dataset.",
+    ACCESS_PANEL__SUCCESS:
+      "User {0} has been granted permission. Notify the user they must sign in again to access the dataset.",
     ACCESS_PANEL__SUCCESS_REVOKE:
       "User {0} has had their permission revoked. They must sign in again for the change to take effect.",
     ACCOUNT_BUTTON__ACCOUNT: "Account",
@@ -53,7 +54,7 @@ export const i18nDefault = {
     ACTION_SELECTOR__TRANSFORM_TO_WEBAPI: "Convert to WebAPI",
     ACTION_SELECTOR__UPLOAD_STRATEGUS_RESULTS: "Upload strategus results",
     ADD_FLOW_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC: "Analysis specification (JSON)",
     ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_HELPER: "Enter a valid JSON analysis specification",
     ADD_STRATEGUS_STUDY_DIALOG__ANALYSIS_SPEC_INVALID: "Invalid JSON format for analysis specification",
@@ -119,7 +120,7 @@ export const i18nDefault = {
     ADD_USER_DIALOG__CANCEL: "Cancel",
     ADD_USER_DIALOG__ERROR: "An error has occurred.",
     ADD_USER_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     ADD_USER_DIALOG__GENERATE: "Generate",
     ADD_USER_DIALOG__HIDE_PASSWORD: "Hide password",
     ADD_USER_DIALOG__PASSWORD: "Password",
@@ -154,12 +155,13 @@ export const i18nDefault = {
     AZURE_AD__TITLE: "Azure AD integration",
     BAR_CHART__NO_DATA: "Results not available",
     BIG_QUERY_FORM__DATASET: "Dataset",
+    BIG_QUERY_FORM__DATASET_HELPER: "Optional — leave blank to connect to the whole project",
     BIG_QUERY_FORM__PROJECT: "Project",
     BOX_PLOT_CHART__NO_DATA: "Results not available",
     CDM_DOWNLOAD_DIALOG__ERROR_DOWNLOAD:
-      "Error occurred while downloading patient data. To report the error, please send an email to help@data4life.care",
+      "Error occurred while downloading patient data. To report the error, please send an email to your administrator",
     CDM_DOWNLOAD_DIALOG__ERROR_ZIP:
-      "Error occurred while retrieving ZIP from MRI. To report the error, please send an email to help@data4life.care",
+      "Error occurred while retrieving ZIP from MRI. To report the error, please send an email to your administrator",
     CDM_SUMMARY__NO_DATA: "Results not available",
     CDM_SUMMARY__NUMBER_OF_PERSONS: "Number of persons",
     CDM_SUMMARY__SOURCE_NAME: "Source name",
@@ -170,7 +172,7 @@ export const i18nDefault = {
     CHANGE_LANGUAGE_DIALOG__LANGUAGE: "Language",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED: "Language updated",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE: "An error has occurred.",
     CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_SUCCESS: "Language updated successfully",
     CHANGE_LANGUAGE_DIALOG__NO_CHANGES: "No language changes were made.",
@@ -187,13 +189,13 @@ export const i18nDefault = {
     CHANGE_MY_PASSWORD_DIALOG__OLD_PASSWORD_INCORRECT: "The current password is incorrect. Please check your input.",
     CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED: "Password updated",
     CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_MESSAGE: "An error has occurred.",
     CHANGE_USER_PASSWORD_DIALOG__CANCEL: "Cancel",
     CHANGE_USER_PASSWORD_DIALOG__CHANGE_USER_PASSWORD: "Change user password",
     CHANGE_USER_PASSWORD_DIALOG__ERROR: "An error has occurred.",
     CHANGE_USER_PASSWORD_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     CHANGE_USER_PASSWORD_DIALOG__GENERATE: "Generate",
     CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD: "Hide password",
     CHANGE_USER_PASSWORD_DIALOG__PASSWORD: "Password",
@@ -219,7 +221,7 @@ export const i18nDefault = {
     COHORT_DEFINITION_LIST__NAME: "Name",
     COHORT_DEFINITION_LIST__PATIENT_COUNT: "Patient count",
     COHORT_DEFINITION_LIST__TRY_AGAIN:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     COHORT_DELETE_DIALOG__ARE_YOU_SURE: "Are you sure you want to delete the following cohort",
     COHORT_DELETE_DIALOG__CANCEL: "Cancel",
     COHORT_DELETE_DIALOG__CONFIRM: "Yes, delete",
@@ -228,7 +230,7 @@ export const i18nDefault = {
     COHORT_DELETE_DIALOG__DESCRIPTION: "Description",
     COHORT_DELETE_DIALOG__ERROR_OCCURRED: "An error has occurred.",
     COHORT_DELETE_DIALOG__ERROR_OCCURRED_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     COHORT_DELETE_DIALOG__NAME: "Name",
     COHORT_FILTER__COHORT: "Cohort",
     COHORT_FILTER__LOADING: "Loading cohort definitions...",
@@ -243,7 +245,7 @@ export const i18nDefault = {
     COHORT_SURVIVAL__SELECT_OUTCOME_COHORT: "Outcome cohort",
     COHORT_SURVIVAL__SELECT_TARGET_COHORT: "Target cohort",
     COHORT_SURVIVAL__TITLE: "Kaplan-Meier survival analysis",
-    COHORT_SURVIVAL__TRY_AGAIN: "Please try again. To report the error, please send an email to help@data4life.care.",
+    COHORT_SURVIVAL__TRY_AGAIN: "Please try again. To report the error, please send an email to your administrator.",
     COHORT__MISSING_USER_ID: "Missing User Id and Dataset Id",
     CONCEPT_SETS__ADD_CONCEPT_SET: "Add concept set",
     CONCEPT_SETS__AUTHOR: "Author",
@@ -267,7 +269,7 @@ export const i18nDefault = {
     CONCEPT_SET_DELETE_DIALOG__ERROR_NOT_FOUND: "The concept set was not found. It may have already been deleted.",
     CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED: "An error has occurred.",
     CONCEPT_SET_DELETE_DIALOG__ERROR_OCCURRED_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     CONCEPT_SET_DELETE_DIALOG__ERROR_SERVER: "A server error occurred while deleting the concept set.",
     COPY_STUDY_DIALOG__CACHE_DATASET_TYPE: "Cache dataset type",
     COPY_STUDY_DIALOG__CANCEL: "Cancel",
@@ -322,7 +324,7 @@ export const i18nDefault = {
     DATASET_DELETE_RESOURCE_DIALOG__DELETE_FILE: "Delete file",
     DATASET_DELETE_RESOURCE_DIALOG__ERROR: "An error has occurred.",
     DATASET_DELETE_RESOURCE_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     DATASET_FILTERS__AGE_RANGE: "Age range",
     DATASET_FILTERS__DOMAIN_REQUIREMENT: "Domain requirement",
     DATASET_FILTERS__ENTER_RANGE: "Enter range:",
@@ -351,7 +353,7 @@ export const i18nDefault = {
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__CANCEL: "Cancel",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR: "An error has occurred.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__FILE: "File",
     DATASET_RESOURCE_UPLOAD_CONFIRM_DIALOG__UNTITLED: "Untitled",
     DATASET_SELECTOR__SELECT_STUDY: "Select study",
@@ -379,7 +381,7 @@ export const i18nDefault = {
     DATA_QUALITY_DIALOG__RUN_DATA_QUALITY: "Run data quality",
     DATA_QUALITY_HISTORY__DOMAIN_CONTINUITY: "Domain continuity",
     DATA_QUALITY_HISTORY__ERROR:
-      "Failed to retrieve data for charts. To report the error, please send an email to help@data4life.care.",
+      "Failed to retrieve data for charts. To report the error, please send an email to your administrator.",
     DB__ADD_DATABASE: "Add database",
     DB__DATABASES: "Databases",
     DB__DELETE: "Delete",
@@ -461,7 +463,7 @@ export const i18nDefault = {
     DELETE_USER_DIALOG__CONFIRM: "Are you sure you want to delete this account",
     DELETE_USER_DIALOG__DELETE_USER: "Delete user",
     DELETE_USER_DIALOG__DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     DELETE_USER_DIALOG__ERROR: "An error has occurred.",
     DELETE_USER_DIALOG__YES: "Yes, delete",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
@@ -470,7 +472,7 @@ export const i18nDefault = {
     DEMO_SETUP__SETUP_DEMO_TITLE: "Demo setup",
     DEMO_SETUP__SETUP_PHENOTYPE_DESCRIPTION: "Run standalone phenotype flow",
     DISCLAIMER_DIALOG_DIALOG__DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     DISCLAIMER_DIALOG_DIALOG__ERROR: "An error has occurred.",
     DISCLAIMER_DIALOG__ACCEPT: "Accept",
     DISCLAIMER_DIALOG__TITLE: "Disclaimer",
@@ -561,7 +563,7 @@ export const i18nDefault = {
     EDIT_DB_CREDENTIAL_DIALOG__EDIT_DATABASE_CREDENTIALS: "Edit database credentials",
     EDIT_DB_CREDENTIAL_DIALOG__ERROR: "An error has occurred.",
     EDIT_DB_CREDENTIAL_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     EDIT_DB_CREDENTIAL_DIALOG__PASSWORD: "Password",
     EDIT_DB_CREDENTIAL_DIALOG__PRIVILEGE: "Privilege",
     EDIT_DB_CREDENTIAL_DIALOG__SUCCESS: "Database {0} credentials updated",
@@ -581,7 +583,7 @@ export const i18nDefault = {
     EDIT_DB_DETAILS_DIALOG__DATABASE_NAME_REQUIRED: "Database name is required.",
     EDIT_DB_DETAILS_DIALOG__ERROR: "An error has occurred.",
     EDIT_DB_DETAILS_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     EDIT_DB_DETAILS_DIALOG__EXTRA: "Extra",
     EDIT_DB_DETAILS_DIALOG__FILL_REQUIRED_FIELDS: "Please fill in all required fields.",
     EDIT_DB_DETAILS_DIALOG__HOST: "Host",
@@ -601,7 +603,7 @@ export const i18nDefault = {
     EDIT_TENANT_ROLE_DIALOG__ROLES: "Roles",
     EDIT_TENANT_ROLE_DIALOG__SAVE: "Save",
     EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
     FEATURE__CDM_DOWNLOAD: "CDM download",
     FEATURE__CONCEPT_RECORD_COUNTS: "Concept record counts",
@@ -619,7 +621,7 @@ export const i18nDefault = {
     FEATURE__DATA_MAPPING_SUGGESTION: "Data mapping AI suggestion",
     FEATURE__DOCKER_LOGS: "D2E Logs",
     FEATURE__ERROR: "An error has occurred.",
-    FEATURE__ERROR_DESCRIPTION: "Please try again. To report the error, please send an email to help@data4life.care.",
+    FEATURE__ERROR_DESCRIPTION: "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ETL: "ETL",
     FEATURE__FEATURE_FLAGS: "Feature flags",
     FEATURE__FHIR_SERVER: "Fhir server",
@@ -706,7 +708,7 @@ export const i18nDefault = {
     HYBRID_SEARCH__ENABLE: "Enable hybrid search",
     HYBRID_SEARCH__ERROR: "An error has occurred.",
     HYBRID_SEARCH__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     HYBRID_SEARCH__SAVE: "Save",
     HYBRID_SEARCH__SEMANTIC_RATIO: "Semantic ratio",
     HYBRID_SEARCH__SEMANTIC_RATIO_ERROR: "Semantic ratio must have a value between 0 and 1",
@@ -717,7 +719,7 @@ export const i18nDefault = {
     INFORMATION__DOWNLOAD: "Download",
     INFORMATION__DOWNLOAD_FILE: "Download file",
     INFORMATION__FEEDBACK_ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     INFORMATION__FEEDBACK_ERROR_MESSAGE: "An error has occurred.",
     INFORMATION__FEEDBACK_MESSAGE: "Request has been sent",
     INFORMATION__FILENAME: "Filename",
@@ -742,7 +744,7 @@ export const i18nDefault = {
     JOB_DIALOG__COMMENT: "Comment",
     JOB_DIALOG__ERROR: "An error has occurred when trying to create a {0} Job",
     JOB_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     JOB_DIALOG__GENERATE: "Generate",
     JOB_DIALOG__GENERATE_DATA_CHARACTERIZATION: "Generate data characterization",
     JOB_DIALOG__GENERATE_DATA_QUALITY: "Generate data quality",
@@ -939,7 +941,7 @@ export const i18nDefault = {
     SAVE_DB_DIALOG__ENTER_VALID_JSON_INTERNAL: "Please enter a valid JSON value in Extra for Internal.",
     SAVE_DB_DIALOG__ERROR: "An error has occurred.",
     SAVE_DB_DIALOG__ERROR_MESSAGE:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     SAVE_DB_DIALOG__EXTRA: "Extra",
     SAVE_DB_DIALOG__EXTRA_INVALID_JSON:
       "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
@@ -1148,7 +1150,7 @@ export const i18nDefault = {
     TREX_PLUGINS__DESCRIPTION: "Description",
     TREX_PLUGINS__INSTALLING: "Installing...",
     TREX_PLUGINS__INSTALL_FAILED_ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     TREX_PLUGINS__INSTALL_FAILED_ERROR_MESSAGE: "Installation failed",
     TREX_PLUGINS__INSTALL_NEW_PLUGIN: "Install new plugin",
     TREX_PLUGINS__INSTALL_SUCCESS: "Installation successful",
@@ -1159,7 +1161,7 @@ export const i18nDefault = {
     TREX_PLUGINS__TITLE: "Plugins",
     TREX_PLUGINS__UNINSTALL: "Uninstall",
     TREX_PLUGINS__UPDATE_FAILED_ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     TREX_PLUGINS__UPDATE_FAILED_ERROR_MESSAGE: "Update failed",
     TREX_PLUGINS__UPDATE_SUCCESS: "Update successful",
     TREX_PLUGINS__URL: "URL",
@@ -1167,7 +1169,7 @@ export const i18nDefault = {
     TREX_PLUGIN_INSTALL_DIALOG__CANCEL: "Cancel",
     TREX_PLUGIN_INSTALL_DIALOG__ERROR: "Error while installing plugin",
     TREX_PLUGIN_INSTALL_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     TREX_PLUGIN_INSTALL_DIALOG__INSTALL: "Install",
     TREX_PLUGIN_INSTALL_DIALOG__NAME: "Name",
     TREX_PLUGIN_INSTALL_DIALOG__TITLE: "Install new plugin",
@@ -1183,7 +1185,7 @@ export const i18nDefault = {
       "Plugin {0} successfully uninstalled. Changes will be reflected upon system restart.",
     TREX_PLUGIN_UNINSTALL_DIALOG__UNINSTALL: "Uninstall plugin",
     TRIGGER_PLUGIN_UPLOAD_DIALOG__DESCRIPTION:
-      "Please try again. To report the error, please send an email to help@data4life.care.",
+      "Please try again. To report the error, please send an email to your administrator.",
     TRIGGER_PLUGIN_UPLOAD_DIALOG__TITLE: "Install default plugins",
     UI_PLUGIN_ANALYSIS: "Analysis",
     UI_PLUGIN_CDM_CONFIG: "CDM configuration",
