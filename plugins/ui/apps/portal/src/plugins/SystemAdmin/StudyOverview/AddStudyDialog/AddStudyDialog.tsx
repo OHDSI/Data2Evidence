@@ -21,8 +21,10 @@ import {
   IDatabase,
   NewStudyInput,
   SourceDatasetType,
+  StandaloneDatasetType,
   Study,
 } from "../../../../types";
+import { parseDatamodelOption, resolveSourceDatasetType } from "./datasetType";
 import "./AddStudyDialog.scss";
 
 interface AddStudyDialogProps {
@@ -311,13 +313,16 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
 
   const displayCacheConfiguration = useMemo(() => {
     return (
-      formData.dialect !== "hana" && formData.managementMode === "source" && formData.type !== SourceDatasetType.FHIR
+      formData.dialect !== "hana" &&
+      formData.managementMode === "source" &&
+      formData.type !== SourceDatasetType.FHIR &&
+      formData.type !== StandaloneDatasetType.I2B2
     );
   }, [formData.dialect, formData.managementMode, formData.type]);
 
   const displayManagementMode = useMemo(() => {
-    return formData.dialect !== "hana";
-  }, [formData.dialect]);
+    return formData.dialect !== "hana" && formData.type !== StandaloneDatasetType.I2B2;
+  }, [formData.dialect, formData.type]);
 
   const isOmopDataModel = useCallback((dataModelOption: string) => {
     return dataModelOption.toLowerCase().startsWith("omop");
@@ -476,7 +481,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       !cacheDatasetName &&
       dialect !== "hana" &&
       formData.managementMode === "source" &&
-      type !== SourceDatasetType.FHIR
+      type !== SourceDatasetType.FHIR &&
+      type !== StandaloneDatasetType.I2B2
     ) {
       formError = { ...formError, cacheDatasetName: { required: true } };
     }
@@ -485,7 +491,8 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
       !cacheDatasetType &&
       dialect !== "hana" &&
       formData.managementMode === "source" &&
-      type !== SourceDatasetType.FHIR
+      type !== SourceDatasetType.FHIR &&
+      type !== StandaloneDatasetType.I2B2
     ) {
       formError = { ...formError, cacheDatasetType: { required: true } };
     }
@@ -497,14 +504,6 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     }
     return false;
   }, [formData, schemas, tokenIsValid]);
-
-  const parseDatamodelOption = useCallback((dataModelOption: string) => {
-    const parsedOption = dataModelOption.replace(/[[\]]/g, "").split(" ");
-    return {
-      dataModel: parsedOption[0],
-      plugin: parsedOption[1],
-    };
-  }, []);
 
   const handleSubmit = useCallback(async () => {
     console.log("Submitting form data:", formData);
@@ -587,7 +586,7 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
     } finally {
       setLoading(false);
     }
-  }, [formData, tenant, isFormError, setLoading, handleClose, parseDatamodelOption]);
+  }, [formData, tenant, isFormError, setLoading, handleClose]);
 
   if (createdDatasetName) {
     return (
@@ -1052,7 +1051,14 @@ const AddStudyDialog: FC<AddStudyDialogProps> = ({ open, onClose, loading, setLo
               <Select
                 sx={styles}
                 value={formData.dataModel}
-                onChange={(event: SelectChangeEvent<string>) => handleFormDataChange({ dataModel: event.target.value })}
+                onChange={(event: SelectChangeEvent<string>) =>
+                  handleFormDataChange({
+                    dataModel: event.target.value,
+                    ...(formData.dialect !== "hana"
+                      ? { type: resolveSourceDatasetType(event.target.value) }
+                      : {}),
+                  })
+                }
                 inputProps={{
                   name: "dataModelOption",
                   id: "data-model-option",
