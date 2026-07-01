@@ -874,7 +874,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1 && npm start
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.40.1 && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
