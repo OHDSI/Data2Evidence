@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { PortalProps } from "./types/portal";
 import { WizardProvider } from "./context/WizardContext";
 import { WizardShell } from "./components/WizardShell";
+import "./global.css";
 
 function AppContent() {
   return <WizardShell />;

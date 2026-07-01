@@ -616,7 +616,7 @@ export default {
   --save-cohort-brand: var(--color-mri-brand, #000080);
   --save-cohort-error: var(--color-feedback-error, #a3293d);
   --save-cohort-field-border: #acaba8;
-  --save-cohort-font: 'GT-America', sans-serif;
+  --save-cohort-font: var(--app-font-family);
   --save-cohort-muted-bg: #dedcda;
 
   background: #fff;
