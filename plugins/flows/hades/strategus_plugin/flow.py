@@ -96,7 +96,7 @@ def strategus_plugin(json_graph, options):
         if(upload_results):
             result_db_settings = {
                 'database_code': databaseCode,
-                # 'cache_id': options.get('cacheId', None), # TODO: uncomment when cache_id is added to flowOptions
+                'cache_id': options.get('cacheId', None),
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
             }
@@ -245,6 +245,7 @@ def runStrategus(json_graph, options):
 
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
+        "cacheId": cache_id,
         "schemaName": schema_name,
         "workFolder": work_folder,
         "resultsFolder": path_to_results
@@ -259,9 +260,9 @@ def runStrategus(json_graph, options):
     if(upload_results):
         result_db_settings = {
             'database_code': database_code,
+            'cache_id': cache_id,
             "dataset_id": datasetId,
-            "token_study_code": token_study_code,
-            "cache_id": cache_id
+            "token_study_code": token_study_code
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
 

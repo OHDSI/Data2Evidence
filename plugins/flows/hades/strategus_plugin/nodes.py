@@ -1186,11 +1186,16 @@ class StrategusNode(Node):
 
                 databaseConnectorJarFolder = '/app/inst/drivers'
                 os.environ['DATABASECONNECTOR_JAR_FOLDER'] = databaseConnectorJarFolder
-                dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
+                dbSettings = {
+                    "database_code": self.flowOptions["databaseCode"],
+                    "cache_id": self.flowOptions.get("cacheId"),
+                    "schema_name": self.flowOptions["schemaName"],
+                    "dataset_id": self.flowOptions["datasetId"],
+                }
                 dbdao = DBDao(
                     dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
                     database_code=dbSettings['database_code'],
-                    # cache_id=dbSettings.get('cache_id', None) # TODO: uncomment when cache_id is added to flowOptions
+                    cache_id=dbSettings.get('cache_id', None)
                 )
                 db_credentials = dbdao.tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
@@ -1208,6 +1213,7 @@ class StrategusNode(Node):
                 path_to_results = f'{base_path}/results'
 
                 executionSettings = getRCdmExecutionSettings({
+                    "cacheId": dbSettings.get("cache_id"),
                     "schemaName": dbSettings['schema_name'],
                     "workFolder": work_folder,
                     "resultsFolder": path_to_results
@@ -1241,6 +1247,12 @@ class StrategusNode(Node):
 
 def get_strategus_node(options):
     return StrategusNode({"id": str(uuid.uuid4()), "type": "strategus_node", "flowOptions": options})
+
+
+def qualify_schema_name(schema_name: str, cache_id: str | None = None) -> str:
+    if not cache_id or "." in schema_name:
+        return schema_name
+    return f"{cache_id}.{schema_name}"
 
 @flow(name="execute-r-strategus",
       log_prints=True)
@@ -1445,10 +1457,14 @@ def getRCdmExecutionSettings(settings) -> str:
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rCohortGenerator = importr('CohortGenerator')
+            qualified_schema_name = qualify_schema_name(
+                settings['schemaName'],
+                settings.get('cacheId'),
+            )
 
             rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                workDatabaseSchema = settings['schemaName'],
-                cdmDatabaseSchema = settings['schemaName'],
+                workDatabaseSchema = qualified_schema_name,
+                cdmDatabaseSchema = qualified_schema_name,
                 cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],
