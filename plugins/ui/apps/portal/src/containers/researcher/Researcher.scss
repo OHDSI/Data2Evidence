@@ -11,5 +11,6 @@
 
   main {
     flex: auto;
+    min-height: 0; // anchor: let flex resolve a definite height so embedded apps scroll internally
   }
 }

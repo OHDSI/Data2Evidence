@@ -37,6 +37,12 @@ export default {
     // Process deep link if present in URL
     this.processDeepLinkIfPresent()
   },
+  beforeUnmount() {
+    // Vuex module state is shared across single-spa remounts, so clear the
+    // active bookmark when the app unmounts to prevent the cohort tab from
+    // remaining open when the user navigates back.
+    this.$store.commit('SET_ACTIVE_BOOKMARK', null)
+  },
   computed: {
     ...mapGetters(['getConfigSelectionDialogState', 'getInitialLoad', 'getDatasetReloadInProgress']),
     showSplashScreen() {
