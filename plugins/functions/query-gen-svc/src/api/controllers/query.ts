@@ -270,6 +270,7 @@ function getCensoringThreshold(config: any): string {
         : "10";
 }
 
+
 function enrichConfigWithBasicDataInteraction(
     config: any,
     ifrRequest: any
