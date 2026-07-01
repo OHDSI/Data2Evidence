@@ -96,6 +96,7 @@ def strategus_plugin(json_graph, options):
         if(upload_results):
             result_db_settings = {
                 'database_code': databaseCode,
+                # 'cache_id': options.get('cacheId', None), # TODO: uncomment when cache_id is added to flowOptions
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
             }
@@ -259,7 +260,8 @@ def runStrategus(json_graph, options):
         result_db_settings = {
             'database_code': database_code,
             "dataset_id": datasetId,
-            "token_study_code": token_study_code
+            "token_study_code": token_study_code,
+            "cache_id": cache_id
         }
         upload_strategus_results(analysisSpec, path_to_results, result_db_settings)
 
@@ -298,6 +300,7 @@ def drop_strategus_results(options):
 
     drop_strategus_results_schema(dbSettings={
         'database_code': database_code,
+        # 'cache_id': options.get('cacheId', None), # TODO: uncomment when cache_id is added to flowOptions
         'token_study_code': token_study_code
     })
 

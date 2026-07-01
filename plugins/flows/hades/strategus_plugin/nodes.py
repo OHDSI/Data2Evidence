@@ -1189,7 +1189,8 @@ class StrategusNode(Node):
                 dbSettings = { "database_code": self.flowOptions["databaseCode"], "schema_name": self.flowOptions["schemaName"], "dataset_id": self.flowOptions["datasetId"] }
                 dbdao = DBDao(
                     dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                    database_code=dbSettings['database_code']
+                    database_code=dbSettings['database_code'],
+                    # cache_id=dbSettings.get('cache_id', None) # TODO: uncomment when cache_id is added to flowOptions
                 )
                 db_credentials = dbdao.tenant_configs
                 rDatabaseConnector = ro.packages.importr('DatabaseConnector')
@@ -1328,7 +1329,8 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                database_code=database_code
+                database_code=database_code,
+                cache_id=dbSettings.get('cache_id', None)
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
@@ -1427,7 +1429,8 @@ def drop_strategus_results_schema(dbSettings):
     results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-        database_code=database_code
+        database_code=database_code,
+        # cache_id=dbSettings.get('cache_id', None) # TODO: uncomment when cache_id is added to flowOptions
     )
 
     if(dbdao.check_schema_exists(results_schema)):

@@ -171,7 +171,7 @@ jobs:
           export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
           export DATABASE_NAME=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select cache_id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
           echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV
-          echo "TESTSCHEMA=$DATABASE_NAME.$TESTSCHEMA" >> $GITHUB_ENV
+          echo "TESTSCHEMA=$TESTSCHEMA" >> $GITHUB_ENV
 
       - name: Logs
         if: success() || failure()

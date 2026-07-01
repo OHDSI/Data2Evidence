@@ -369,7 +369,7 @@ class DaoBase(ABC):
         )
         host = self.tenant_configs.host
         port = self.tenant_configs.port
-        database_name = database_credentials.databaseName
+        database_name = self.cache_id or database_credentials.databaseName
         dialect = database_credentials.dialect
         release_date = None
 
