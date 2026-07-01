@@ -484,7 +484,9 @@ class TrexDao(DaoBase):
         host = self.tenant_configs.host
         port = self.tenant_configs.port
 
-        return f"{DialectDrivers.jdbc.trex}://{host}:{port}/{self.database_code}?preferQueryMode=simple&autocommit=true"
+        # Match Python's _get_connection: connect on cache_id so unqualified queries resolve there.
+        jdbc_dbname = self.cache_id or self.database_code
+        return f"{DialectDrivers.jdbc.trex}://{host}:{port}/{jdbc_dbname}?preferQueryMode=simple&autocommit=true"
 
     def get_database_connector_dbms_val(self) -> str:
         return DialectDrivers.database_connector.trex
