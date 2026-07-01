@@ -1,23 +1,23 @@
 import crypto from "crypto";
 import { Readable } from "stream";
 import * as utilsLib from "@alp/alp-base-utils";
-import { QueryObject as qo, Connection as connLib } from "@alp/alp-base-utils";
+import { Connection as connLib, QueryObject as qo } from "@alp/alp-base-utils";
 import QueryObject = qo.QueryObject;
 import ConnectionInterface = connLib.ConnectionInterface;
 import { Settings } from "../../qe/settings/Settings";
 import {
+    BackendConfigWithCDMConfigMetaDataType,
+    CohortDefinitionType,
+    ExtensionMetadata,
+    FilterType,
+    IMRIRequest,
+    MRIEndpointResultCategoryType,
+    MRIEndpointResultMeasureType,
+    PluginEndpointFormatType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
-    ExtensionMetadata,
-    CohortDefinitionType,
-    PluginEndpointFormatType,
-    FilterType,
-    BackendConfigWithCDMConfigMetaDataType,
-    QuerySvcResultType,
-    IMRIRequest,
-    MRIEndpointResultMeasureType,
-    MRIEndpointResultCategoryType,
     PluginSelectedAttributeType,
+    QuerySvcResultType,
 } from "../../types";
 import { AuditLogger } from "../../utils/AuditLogger";
 import { generateQuery } from "../../utils/QueryGenSvcProxy";
@@ -55,10 +55,14 @@ export class PluginEndpoint {
         public connection: ConnectionInterface,
         private schemaName: string
     ) {
-        //double quotes surround intentional to preserve lowercase naming in hana table
-        this.uniquePatientTempTableName = `"#MRI_PLUGIN_${crypto
-            .randomBytes(24)
-            .toString("hex")}"`;
+        const hex = crypto.randomBytes(24).toString("hex");
+        if (connection.dialect !== "hana") {
+            // Dropped explicitly via dropFn / cleanup() after use.
+            this.uniquePatientTempTableName = `memory.main."MRI_PLUGIN_${hex}"`;
+        } else {
+            //double quotes surround intentional to preserve lowercase naming in hana table
+            this.uniquePatientTempTableName = `"#MRI_PLUGIN_${hex}"`;
+        }
     }
 
     public setRequest(request: IMRIRequest) {
@@ -119,9 +123,16 @@ export class PluginEndpoint {
     }
 
     private genLocalTempTableCreationQuery(existingPatientTable): string {
-        const query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS 
-                                            (select * from ${existingPatientTable} where 1=0)`;
-        log.debug(`Generated Create Local Temp Table Query ${query}`);
+        let query: string;
+        if (this.connection.dialect !== "hana") {
+            // Trex/DuckDB path: plain CREATE TABLE so the table lands
+            // in memory.main where the streaming connection can see it.
+            // Dropped explicitly via dropFn / cleanup().
+            query = `CREATE TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        } else {
+            query = `CREATE LOCAL TEMPORARY COLUMN TABLE ${this.uniquePatientTempTableName} AS (select * from ${existingPatientTable} where 1=0)`;
+        }
+        log.debug(`Generated Temp Table Query ${query}`);
         return query;
     }
 
@@ -259,7 +270,6 @@ export class PluginEndpoint {
                         });
 
                     const qeExecuteUpdateCallback = async (err, result) => {
-                        let resultSet = [];
                         let serviceResponse;
 
                         if (err) {
@@ -302,11 +312,7 @@ export class PluginEndpoint {
                                     );
                             }
 
-                            qeDeleteTempTablesCallback(
-                                null,
-                                resultSet,
-                                serviceResponse
-                            );
+                            qeDeleteTempTablesCallback(serviceResponse);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -314,53 +320,54 @@ export class PluginEndpoint {
 
                     /**teardown resource setup, returns response */
                     const qeDeleteTempTablesCallback = async (
-                        err,
-                        queryResult,
                         serviceResponse
                     ) => {
-                        const patientEntity = queryResult.filter(
+                        const patientEntity = serviceResponse.filter(
                             (dataset) => dataset.entity === "patient"
                         )[0];
                         const pList = patientEntity ? patientEntity.data : [];
-                        const resultcb = (logErr) => {
-                            if (logErr) {
+
+                        if (AuditLogger.isEnabled()) {
+                            try {
+                                const auditLogger = AuditLogger.create({
+                                    cohortBuilderConfigMetaData:
+                                        this.paConfigMetaData,
+                                    cdmConfigMetaData: this.cdmConfigMetaData,
+                                    request: this.request,
+                                });
+                                await auditLogger.log(
+                                    "patient.attributes.pid",
+                                    auditLogChannelName,
+                                    pList,
+                                    undefined,
+                                    this.selectedAttributes
+                                );
+                            } catch (_err) {
+                                console.error(_err);
                                 return errHandler(new Error("Auditlog error"));
                             }
+                        }
 
-                            if (mode === MODE.CSV) {
-                                endpointResult.selectedAttributes =
-                                    this.selectedAttributes;
-                                endpointResult.noValue =
-                                    connLib.DBValues.NOVALUE;
-                                if (metadataType) {
-                                    const meta = this.MD
-                                        ? JSON.stringify(this.MD)
-                                        : "Metadata Type not supported";
-                                    serviceResponse.metadata = meta;
-                                }
+                        if (mode === MODE.CSV) {
+                            endpointResult.selectedAttributes =
+                                this.selectedAttributes;
+                            endpointResult.noValue = connLib.DBValues.NOVALUE;
+                            if (metadataType) {
+                                const meta = this.MD
+                                    ? JSON.stringify(this.MD)
+                                    : "Metadata Type not supported";
+                                serviceResponse.metadata = meta;
                             }
+                        }
 
-                            endpointResult.data = serviceResponse;
+                        endpointResult.data = serviceResponse;
 
-                            if (endpointResult.data.length === 0) {
-                                endpointResult.noDataReason =
-                                    "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
-                            }
+                        if (endpointResult.data.length === 0) {
+                            endpointResult.noDataReason =
+                                "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
+                        }
 
-                            return resolve(endpointResult);
-                        };
-
-                        AuditLogger.getAuditLogger({})
-                            .withCDMConfigMetaData(this.cdmConfigMetaData)
-                            .log(
-                                "patient.attributes.pid",
-                                auditLogChannelName,
-                                pList,
-                                true,
-                                resultcb,
-                                undefined,
-                                this.selectedAttributes
-                            );
+                        return resolve(endpointResult);
                     };
 
                     // const tempTableCreateTime = process.hrtime();
@@ -466,6 +473,7 @@ export class PluginEndpoint {
                     const endpointResult: PluginEndpointStreamResultType = {
                         entity: "",
                         data: Readable.from(""),
+                        auditLogChannelName,
                     };
 
                     let { query, pCountQuery, noDataReason } =
@@ -513,10 +521,10 @@ export class PluginEndpoint {
                     //3
 
                     const streamQuery = async (
-                        entity,
+                        entity: string,
                         query: QueryObject
                     ): Promise<{
-                        entity: any;
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }> => {
                         try {
@@ -581,7 +589,7 @@ export class PluginEndpoint {
                                 entityObj.entity,
                                 qo
                             );
-                            await qePrepareDataStream(dataStream);
+                            qePrepareDataStream(dataStream);
                         } catch (err) {
                             return errHandler(err);
                         }
@@ -589,24 +597,10 @@ export class PluginEndpoint {
 
                     // Setup data stream events and return response
                     //4
-                    const qePrepareDataStream = async (dataStream: {
-                        entity: any;
+                    const qePrepareDataStream = (dataStream: {
+                        entity: string;
                         data: NodeJS.ReadableStream;
                     }) => {
-                        let rows = [];
-                        const CHUNK_SIZE = 10;
-                        const auditLogger = AuditLogger.getAuditLogger(
-                            {}
-                        ).withCDMConfigMetaData(this.cdmConfigMetaData);
-                        let rowCount = 0;
-
-                        const resultcb = (logErr) => {
-                            if (logErr) {
-                                log.error(logErr);
-                                return errHandler(new Error("Auditlog error"));
-                            }
-                        };
-
                         //Exception for duckdb
                         if (
                             dataStream.data.constructor.prototype.toString() !==
@@ -615,7 +609,7 @@ export class PluginEndpoint {
                         ) {
                             dataStream.data.on("end", () => {
                                 log.debug(
-                                    `total streamed rows for ${dataStream.entity}: ${rowCount}`
+                                    `finished streaming rows for ${dataStream.entity}`
                                 );
                             });
 
@@ -627,7 +621,10 @@ export class PluginEndpoint {
                         return resolve({
                             entity: dataStream.entity,
                             data: dataStream.data,
-                            rowCount: rowCount,
+                            selectedAttributes: this.selectedAttributes,
+                            cohortBuilderConfigMetaData: this.paConfigMetaData,
+                            cdmConfigMetaData: this.cdmConfigMetaData,
+                            auditLogChannelName,
                         });
                     };
 

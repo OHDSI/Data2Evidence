@@ -1,12 +1,80 @@
-import * as async from "async";
-import { Logger, Connection as connLib } from "@alp/alp-base-utils";
-import ConnectionInterface = connLib.ConnectionInterface;
-import { CDMConfigMetaDataType } from "../types";
-import {env} from "../env"
+import { getUser, Logger } from "@alp/alp-base-utils";
+import type { CDMConfigMetaDataType } from "../types";
+import { env } from "../env";
 const alpAuditLogger = Logger.CreateLogger("analytics-log");
-const AUDITLOG_REQ_CHUNK_SIZE = 10;
+export const AUDITLOG_REQ_CHUNK_SIZE = 10;
+export const AUDIT_CHANNELS = {
+    PATIENT_LIST: "D2E Pt Ls",
+    PATIENT_LIST_EXPORT: "D2E Pt Ls Export",
+    PATIENT_LIST_STREAM: "D2E Pt Ls Stream",
+    PATIENT_SUMMARY: "D2E Pt Summary",
+} as const;
 
-let emptyResult: any = {
+type AuditAttachment = { id: string; name: string };
+type AuditLogResult = QueryObjectResult | "auditlog disabled" | null;
+type AuditCredentials = { logToConsole?: boolean };
+type AuditRow = Record<string, unknown>;
+type AuditSelectedAttribute = { id: string };
+type AuditConfigMetaData = { id: string; version: string };
+type AuditConfigs = {
+    cohortBuilder?: AuditConfigMetaData;
+    cdm?: AuditConfigMetaData;
+};
+type AuditTransport = {
+    audit(message: unknown, user: string): void | Promise<void>;
+};
+type AuditLoggerCreateOptionsBase = {
+    auditTransport?: AuditTransport;
+    auditCredentials?: AuditCredentials;
+    cohortBuilderConfigMetaData?: AuditConfigMetaData;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    ip?: string;
+};
+type AuditLoggerCreateOptions =
+    | (AuditLoggerCreateOptionsBase & {
+          request: unknown;
+          user?: string;
+      })
+    | (AuditLoggerCreateOptionsBase & {
+          request?: unknown;
+          user: string;
+      });
+type AuditDataAccessMessage = {
+    action: "read";
+    occurredAt: string;
+    personId: string;
+    accessChannel: string;
+    successful: boolean;
+    configs?: AuditConfigs;
+    attachment?: AuditAttachment;
+    attributes: string[];
+};
+type AuditLoggerConstructorOptions = {
+    auditTransport: AuditTransport;
+    auditCredentials?: AuditCredentials;
+    cohortBuilderConfigMetaData?: AuditConfigMetaData;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    ip?: string;
+    request?: unknown;
+    user?: string;
+};
+
+type QueryObjectResult = {
+    sql: string;
+    data: unknown[];
+    measures: unknown[];
+    categories: unknown[];
+    totalPatientCount: number;
+    messageKey?: string;
+    messageLevel?: "Warning";
+};
+
+type WriteLogResult = {
+    attributesToLog: AuditSelectedAttribute[];
+    attributeExistsForLog: boolean;
+};
+
+const emptyResult: QueryObjectResult = {
     sql: "",
     data: [],
     measures: [],
@@ -14,41 +82,70 @@ let emptyResult: any = {
     totalPatientCount: 0,
 };
 
+function getRequestHeaders(req?: unknown): Record<string, unknown> | undefined {
+    if (!req || typeof req !== "object" || !("headers" in req)) {
+        return undefined;
+    }
+
+    const headers = (req as { headers?: unknown }).headers;
+    if (!headers || typeof headers !== "object") {
+        return undefined;
+    }
+
+    return headers as Record<string, unknown>;
+}
+
+export function getAuditUserIdFromRequest(req?: unknown): string | undefined {
+    const headers = getRequestHeaders(req);
+    if (!headers?.authorization) {
+        return undefined;
+    }
+
+    try {
+        return getUser({ headers } as never).getUser();
+    } catch (_err) {
+        return undefined;
+    }
+}
+
 export class AuditLogger {
-    public isConsoleMode: boolean = false;
-    private static _instance: AuditLogger;
-    private cdmConfigMetaData: CDMConfigMetaDataType;
+    private _isConsoleMode?: boolean = false;
+    private _auditTransport: AuditTransport;
+    private _cohortBuilderConfigMetaData?: AuditConfigMetaData;
+    private _cdmConfigMetaData?: CDMConfigMetaDataType;
+    private _ip?: string;
+    private _user: string;
 
-    private constructor(
-        private auditLog: any,
-        private ip?: string,
-        private user?: string
-    ) {
-        //nothing to see here
+    private constructor({
+        auditTransport,
+        auditCredentials,
+        cohortBuilderConfigMetaData,
+        cdmConfigMetaData,
+        ip,
+        request,
+        user,
+    }: AuditLoggerConstructorOptions) {
+        const auditUser = user ?? getAuditUserIdFromRequest(request);
+        if (!auditUser) {
+            throw new Error(
+                "AuditLogger requires a user or a request with a valid authorization header"
+            );
+        }
+
+        this._auditTransport = auditTransport;
+        this._isConsoleMode = auditCredentials?.logToConsole;
+        this._cohortBuilderConfigMetaData = cohortBuilderConfigMetaData;
+        this._cdmConfigMetaData = cdmConfigMetaData;
+        this._ip = ip;
+        this._user = auditUser;
     }
 
-    public withCDMConfigMetaData(cdmConfigMetaData: CDMConfigMetaDataType) {
-        this.cdmConfigMetaData = cdmConfigMetaData;
-        return this;
+    public static isEnabled() {
+        return env.IS_AUDIT_LOG_ENABLED?.toLowerCase() === "true";
     }
 
-    public setIP(ip: string) {
-        // console.log("Client IP: " + ip);
-        this.ip = ip;
-        return this;
-    }
-
-    public setUser(user: string) {
-        // console.log("User: " + user);
-        this.user = user;
-        return this;
-    }
-
-    private isEnabled() {
-        return env.IS_AUDIT_LOG_ENABLED &&
-            env.IS_AUDIT_LOG_ENABLED.toLowerCase() === "true"
-            ? true
-            : false;
+    private _isEnabled() {
+        return AuditLogger.isEnabled();
     }
 
     /**
@@ -57,200 +154,185 @@ export class AuditLogger {
      * @param objectIdAttribute Name of the Id attribute
      * @param channel Denotes the usecase
      * @param data Actual data
-     * @param success Flag which indicates whether to log or not
-     * @param callback Callbak function
      * @param excludeAttributes List of attributes to be excluded
      * @param selectedAttributes List of attributes displayed, which will be logged. Only used by Extension usecase.
      */
-    public log(
+    public async log(
         objectIdAttribute: string,
         channel: string,
-        data: any[],
-        success: boolean,
-        callback,
+        data: AuditRow[],
         excludeAttributes?: string[],
-        selectedAttributes?: any[],
-        attachment?: { id: string; name: string }
-    ) {
+        selectedAttributes?: AuditSelectedAttribute[],
+        attachment?: AuditAttachment
+    ): Promise<AuditLogResult> {
         // let st = new Date().getTime();
         // console.log(`# of patients: ${data.length}`);
         // console.log(`Splitting data...`);
-        if (Object.keys(this.auditLog).length === 0) {
-            alpAuditLogger.warn(
-                "AuditLogger.ts: Warning: call to auditlog.log function - audit log disabled."
-            );
-            return callback(null, "auditlog disabled");
-        }
-        let chunkArr = this._splitResultByChunkSize(data);
-        let tasks = [];
-        for (let i in chunkArr) {
-            let res = ((i) => {
-                let chunk = chunkArr[i];
-                tasks.push((callback) => {
-                    this.writeFineGrained(
-                        objectIdAttribute,
-                        channel,
-                        chunk,
-                        true,
-                        (err, data) => {
-                            if (err) {
-                                callback(err, null);
-                            } else {
-                                // console.log(`Completed chunk[${i}] ...`);
-                                callback(null, data);
-                            }
-                        },
-                        excludeAttributes,
-                        selectedAttributes,
-                        attachment
-                    );
-                });
-            })(i);
-        }
-        // console.log(`# of tasks: ${tasks.length}`);
-        async.series(tasks, (err, data) => {
-            if (err) {
-                callback(err, null);
-            } else {
-                // let et = new Date().getTime();
-                // console.log(`Audit logging completed. Time taken: ${(et - st) / 1000}s`);
-                callback(null, null);
-            }
-        });
+        return await this._logChunks(
+            objectIdAttribute,
+            channel,
+            data,
+            excludeAttributes,
+            selectedAttributes,
+            attachment
+        );
     }
 
-    /**
-     * Logs data in each chunk.
-     *
-     * @param objectIdAttribute Name of the Id attribute
-     * @param channel Denotes the usecase
-     * @param data Actual data
-     * @param success Flag which indicates whether to log or not
-     * @param callback Callbak function
-     * @param excludeAttributes List of attributes to be excluded
-     * @param selectedAttributes List of attributes displayed, which will be logged. Only used by Extension usecase.
-     */
-    public async writeFineGrained(
+    private async _logChunks(
         objectIdAttribute: string,
         channel: string,
-        data: any[],
-        success: boolean,
-        callback,
+        data: AuditRow[],
         excludeAttributes?: string[],
-        selectedAttributes?: any[],
-        attachment?: { id: string; name: string }
-    ) {
-        let dataAccessMessage;
-        let object_id;
-        let dataLength = data.length;
-        let attributeExistsForLog: boolean = false;
-
-        let writeLog = (data, idx, attachment?) => {
-            object_id = (
-                data[objectIdAttribute] instanceof Array
-                    ? data[objectIdAttribute][0]
-                    : data[objectIdAttribute]
-            ).toString();
-            const defaultSelectedAttributes = [];
-            Object.keys(data).forEach((el) => {
-                defaultSelectedAttributes.push({
-                    id: el,
-                });
-            });
-            selectedAttributes =
-                !selectedAttributes || selectedAttributes.length === 0
-                    ? defaultSelectedAttributes
-                    : selectedAttributes;
-            dataAccessMessage = this.auditLog
-                .read({ type: "Patient", id: { key: object_id } })
-                .dataSubject({ type: "Patient", id: { key: object_id } })
-                .accessChannel(channel)
-                .by(this.user);
-
-            if (attachment) {
-                //if it is a attachment download
-                dataAccessMessage.attachment(attachment);
-            }
-
-            selectedAttributes
-                .filter((attribute) => {
-                    return !(
-                        attribute.id === objectIdAttribute ||
-                        (excludeAttributes
-                            ? excludeAttributes.indexOf(attribute.id) >= 0
-                            : false)
-                    );
-                })
-                .forEach((logAttribute, attrIdx) => {
-                    if (logAttribute) {
-                        try {
-                            let logMsg = `${logAttribute.id} (Configuration: ${this.cdmConfigMetaData.id}, Version: ${this.cdmConfigMetaData.version})`;
-                            dataAccessMessage.attribute({
-                                name: logMsg,
-                                successful: success,
-                            });
-                            attributeExistsForLog = true;
-                        } catch (e) {
-                            emptyResult.messageKey =
-                                "MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE";
-                            emptyResult.messageLevel = "Warning";
-                            alpAuditLogger.error(
-                                `SECURITY INCIDENT <AuditLogger>! Failed while logging attribute: ${logAttribute.id}; ${e.message}`
-                            );
-                            callback(
-                                new Error(
-                                    "ERROR: Please contact your system administrator"
-                                ),
-                                emptyResult
-                            );
-                        }
-                    }
-                });
-
-            if (attributeExistsForLog) {
-                //only if a single patient attribute is present in the the data, then it makes sense to log else skip
-                alpAuditLogger.audit(dataAccessMessage._content, this.user);
-                if (idx === dataLength - 1) {
-                    alpAuditLogger.info("Logged patients in Audit log...");
-                    callback(null, emptyResult);
-                }
-            } else {
-                callback(null, emptyResult);
-            }
-        };
-
-        try {
-            const isLoggingEnabled = this.isEnabled();
-
-            if (!isLoggingEnabled) {
-                return callback(null, emptyResult);
-            }
-
-            data.forEach((row, idx) => {
-                writeLog(row, idx, attachment);
-            });
-        } catch (err) {
-            return callback(err);
+        selectedAttributes?: AuditSelectedAttribute[],
+        attachment?: AuditAttachment
+    ): Promise<AuditLogResult> {
+        const chunkArr = this._splitResultByChunkSize(data);
+        for (const chunk of chunkArr) {
+            await this._writeRows(
+                objectIdAttribute,
+                channel,
+                chunk,
+                excludeAttributes,
+                selectedAttributes,
+                attachment
+            );
         }
+
+        // let et = new Date().getTime();
+        // console.log(`Audit logging completed. Time taken: ${(et - st) / 1000}s`);
+        return null;
     }
 
-    public static getAuditLogger({
-        auditLog,
-        auditCredentials,
-    }: {
-        auditLog?: any;
-        auditCredentials?: any;
-    }): AuditLogger {
-        if (auditLog) {
-            this._instance = new AuditLogger(auditLog);
-        } else if (!this._instance) {
-            this._instance = new AuditLogger({});
+    private async _writeRows(
+        objectIdAttribute: string,
+        channel: string,
+        data: AuditRow[],
+        excludeAttributes?: string[],
+        selectedAttributes?: AuditSelectedAttribute[],
+        attachment?: AuditAttachment
+    ) {
+        if (!this._isEnabled()) {
+            return emptyResult;
         }
 
-        if (auditCredentials) {
-            this._instance.isConsoleMode = auditCredentials.logToConsole;
+        let attributeExistsForLog = false;
+        let attributesToLog = selectedAttributes;
+        for (const row of data) {
+            const logResult = await this._writeLog(
+                objectIdAttribute,
+                channel,
+                row,
+                excludeAttributes,
+                attributesToLog,
+                attachment,
+                attributeExistsForLog
+            );
+            attributesToLog = logResult.attributesToLog;
+            attributeExistsForLog = logResult.attributeExistsForLog;
         }
-        return this._instance;
+
+        if (attributeExistsForLog) {
+            alpAuditLogger.info("Logged patients in Audit log...");
+        }
+
+        return emptyResult;
+    }
+
+    private async _writeLog(
+        objectIdAttribute: string,
+        channel: string,
+        data: AuditRow,
+        excludeAttributes?: string[],
+        selectedAttributes?: AuditSelectedAttribute[],
+        attachment?: AuditAttachment,
+        attributeExistsForLog: boolean = false
+    ): Promise<WriteLogResult> {
+        const object_id = (
+            (data[objectIdAttribute] instanceof Array
+                ? data[objectIdAttribute][0]
+                : data[objectIdAttribute]) as { toString(): string }
+        ).toString();
+        const defaultSelectedAttributes: AuditSelectedAttribute[] = [];
+        Object.keys(data).forEach((el) => {
+            defaultSelectedAttributes.push({
+                id: el,
+            });
+        });
+        const attributesToLog =
+            !selectedAttributes || selectedAttributes.length === 0
+                ? defaultSelectedAttributes
+                : selectedAttributes;
+        const dataAccessMessage: AuditDataAccessMessage = {
+            action: "read",
+            occurredAt: new Date().toISOString(),
+            personId: object_id,
+            accessChannel: channel,
+            successful: true,
+            attributes: [],
+        };
+        const configs = this._getConfigs();
+        if (Object.keys(configs).length > 0) {
+            dataAccessMessage.configs = configs;
+        }
+
+        if (attachment) {
+            //if it is a attachment download
+            dataAccessMessage.attachment = attachment;
+        }
+
+        const logAttributes = attributesToLog.filter((attribute) => {
+            return !(
+                attribute.id === objectIdAttribute ||
+                (excludeAttributes
+                    ? excludeAttributes.indexOf(attribute.id) >= 0
+                    : false)
+            );
+        });
+
+        logAttributes.forEach((logAttribute) => {
+            if (logAttribute) {
+                try {
+                    dataAccessMessage.attributes.push(logAttribute.id);
+                    attributeExistsForLog = true;
+                } catch (e) {
+                    emptyResult.messageKey =
+                        "MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE";
+                    emptyResult.messageLevel = "Warning";
+                    alpAuditLogger.error(
+                        `SECURITY INCIDENT <AuditLogger>! Failed while logging attribute: ${logAttribute.id}; ${e.message}`
+                    );
+                    throw new Error(
+                        "ERROR: Please contact your system administrator"
+                    );
+                }
+            }
+        });
+
+        if (logAttributes.length > 0) {
+            //only if a single patient attribute is present in the the data, then it makes sense to log else skip
+            await this._auditTransport.audit(dataAccessMessage, this._user);
+            return { attributesToLog, attributeExistsForLog };
+        }
+
+        return { attributesToLog, attributeExistsForLog };
+    }
+
+    private _getConfigs(): AuditConfigs {
+        const configs: AuditConfigs = {};
+        if (this._cohortBuilderConfigMetaData) {
+            configs.cohortBuilder = this._cohortBuilderConfigMetaData;
+        }
+        if (this._cdmConfigMetaData) {
+            configs.cdm = this._cdmConfigMetaData;
+        }
+        return configs;
+    }
+
+    public static create(options: AuditLoggerCreateOptions): AuditLogger {
+        return new AuditLogger({
+            ...options,
+            auditTransport: options.auditTransport ?? alpAuditLogger,
+        });
     }
 
     /**
@@ -258,14 +340,14 @@ export class AuditLogger {
      * @param arr Input array
      * @returns Array of chunks
      */
-    private _splitResultByChunkSize(arr) {
-        let chunkArr = [];
+    private _splitResultByChunkSize(arr: AuditRow[]): AuditRow[][] {
+        const chunkArr = [];
         for (
             let i = 0, len = arr.length;
             i < len;
             i += AUDITLOG_REQ_CHUNK_SIZE
         ) {
-            let tmp = arr.slice(i, i + AUDITLOG_REQ_CHUNK_SIZE);
+            const tmp = arr.slice(i, i + AUDITLOG_REQ_CHUNK_SIZE);
             // console.log(`chunk[${i}] size: ${tmp.length}`);
             chunkArr.push(tmp);
         }

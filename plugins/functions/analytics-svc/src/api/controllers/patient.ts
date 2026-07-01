@@ -1,33 +1,65 @@
 import { createEndpointFromRequest } from "../../mri/endpoint/CreatePluginEndpoint";
 import { Connection as connLib } from "@alp/alp-base-utils";
-import { Logger, getUser } from "@alp/alp-base-utils";
+import { getUser, Logger } from "@alp/alp-base-utils";
 import CreateLogger = Logger.CreateLogger;
 import CallBackInterface = connLib.CallBackInterface;
 import {
+    CohortDefinitionType,
+    IMRIRequest,
+    PluginEndpointFormatType,
+    PluginEndpointRequestType,
     PluginEndpointResultType,
     PluginEndpointStreamResultType,
-    PluginEndpointFormatType,
     RecontactPatientListRequestType,
-    IMRIRequest,
-    PluginEndpointRequestType,
-    CohortDefinitionType,
     StudyDbMetadata,
 } from "../../types";
 import {
-    getJsonWalkFunction,
     convertZlibBase64ToJson,
+    getJsonWalkFunction,
 } from "@alp/alp-base-utils";
 import MRIEndpointErrorHandler from "../../utils/MRIEndpointErrorHandler";
 import TrexCsvStreamWriter from "../../utils/TrexCsvStreamWriter";
+import {
+    AUDIT_CHANNELS,
+    AuditLogger,
+    AUDITLOG_REQ_CHUNK_SIZE,
+} from "../../utils/AuditLogger";
 import csvWriter from "csv-write-stream";
 import * as crypto from "crypto";
 import * as parquet from "parquetjs";
-import { pipeline } from "stream";
+import { pipeline, Readable, Transform } from "stream";
+import { Buffer } from "node:buffer";
 import PortalServerAPI from "../PortalServerAPI";
 import PsConfigServerAPI from "../PsConfigServerAPI";
 import { PluginEndpoint } from "../../mri/endpoint/PluginEndpoint";
 
 let log = CreateLogger("analytics-log");
+
+type StreamRow = Record<string, unknown>;
+type TrexWebStreamChunk = Uint8Array | string;
+
+function createNodeReadableFromWebStream(
+    stream: ReadableStream<TrexWebStreamChunk>
+): NodeJS.ReadableStream {
+    const reader = stream.getReader();
+    return new Readable({
+        async read() {
+            try {
+                const { done, value } = await reader.read();
+                if (done) {
+                    this.push(null);
+                    return;
+                }
+
+                const chunk =
+                    typeof value === "string" ? value : Buffer.from(value);
+                this.push(chunk);
+            } catch (err) {
+                this.destroy(err as Error);
+            }
+        },
+    });
+}
 
 let emptyResult: PluginEndpointResultType = {
     sql: "",
@@ -38,6 +70,7 @@ let emptyResult: PluginEndpointResultType = {
 const emptyStreamResult: PluginEndpointStreamResultType = {
     entity: "",
     data: undefined,
+    auditLogChannelName: AUDIT_CHANNELS.PATIENT_LIST_STREAM,
 };
 
 async function retrieveDataset(
@@ -74,8 +107,8 @@ async function retrieveDataset(
                     patientId: patientId,
                     auditLogChannelName:
                         req.usage === "EXPORT"
-                            ? "MRI Pt. List Exp"
-                            : "MRI Pt. List",
+                            ? AUDIT_CHANNELS.PATIENT_LIST_EXPORT
+                            : AUDIT_CHANNELS.PATIENT_LIST,
                 });
 
                 callback(null, pluginResult);
@@ -106,7 +139,7 @@ async function streamDataset(req: IMRIRequest, callback: CallBackInterface) {
                 pluginEndpoint.setRequest(req);
                 const pluginResult = await pluginEndpoint.retrieveDataStream({
                     cohortDefinition,
-                    auditLogChannelName: "MRI Pt. List Stream",
+                    auditLogChannelName: AUDIT_CHANNELS.PATIENT_LIST_STREAM,
                     datasetId,
                 });
 
@@ -254,12 +287,54 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             );
             res.setHeader("Content-Type", "text/csv");
 
-            let csvStreamTransform;
-            if (result.data instanceof ReadableStream) {
-                // Trex connection returns stream results as a ReadableStream
-                const trexCsvStreamWriter = new TrexCsvStreamWriter();
-                csvStreamTransform = trexCsvStreamWriter;
-            } else {
+            const auditLogger = AuditLogger.create({
+                cohortBuilderConfigMetaData: result.cohortBuilderConfigMetaData,
+                cdmConfigMetaData: result.cdmConfigMetaData,
+                request: req,
+            });
+            const auditObjectIdAttribute = "patient.attributes.pid";
+            const auditObjectIdStreamAlias = auditObjectIdAttribute
+                .split(".")
+                .pop()
+                ?.toLowerCase();
+            const toAuditRows = (streamRows: StreamRow[]) => {
+                return streamRows.flatMap((streamRow) => {
+                    const pidEntry = Object.entries(streamRow).find(
+                        ([streamAlias]) => {
+                            return (
+                                streamAlias.toLowerCase() ===
+                                auditObjectIdStreamAlias
+                            );
+                        }
+                    );
+                    const pid = pidEntry?.[1];
+                    if (!pid) {
+                        return [];
+                    }
+                    return [
+                        {
+                            [auditObjectIdAttribute]: pid,
+                        },
+                    ];
+                });
+            };
+            const auditStreamRows = async (streamRows: StreamRow[]) => {
+                const auditRows = toAuditRows(streamRows);
+                if (auditRows.length === 0) {
+                    return;
+                }
+
+                await auditLogger.log(
+                    auditObjectIdAttribute,
+                    result.auditLogChannelName,
+                    auditRows,
+                    undefined,
+                    result.selectedAttributes
+                );
+            };
+            let csvStreamTransforms: NodeJS.ReadWriteStream[];
+            let responseData = result.data;
+            const createCsvStreamWriter = (): NodeJS.ReadWriteStream => {
                 const csvStreamWriter: NodeJS.ReadWriteStream = csvWriter();
                 csvStreamWriter.on("drain", () => {
                     log.debug("DRAIN csvStreamWriter");
@@ -270,7 +345,78 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                     );
                     log.error(err);
                 });
-                csvStreamTransform = csvStreamWriter;
+                return csvStreamWriter;
+            };
+            if (result.data instanceof ReadableStream) {
+                // Trex connection returns stream results as a ReadableStream
+                responseData = createNodeReadableFromWebStream(
+                    result.data as unknown as ReadableStream<TrexWebStreamChunk>
+                );
+                const trexCsvStreamWriter = new TrexCsvStreamWriter(
+                    AuditLogger.isEnabled()
+                        ? {
+                              onRows: async (streamRows) => {
+                                  await auditStreamRows(streamRows);
+                              },
+                          }
+                        : undefined
+                );
+                csvStreamTransforms = [trexCsvStreamWriter];
+            } else {
+                // Streaming for HANA
+                const csvStreamWriter = createCsvStreamWriter();
+                if (AuditLogger.isEnabled()) {
+                    const auditBuffer: StreamRow[] = [];
+                    const flushAuditBuffer = async (stream: Transform) => {
+                        if (auditBuffer.length === 0) {
+                            return;
+                        }
+
+                        const rows = auditBuffer.splice(0, auditBuffer.length);
+                        await auditStreamRows(rows);
+                        for (const row of rows) {
+                            stream.push(row);
+                        }
+                    };
+                    const auditNodeStreamTransform = new Transform({
+                        objectMode: true,
+                        async transform(
+                            this: Transform,
+                            row,
+                            _encoding,
+                            callback
+                        ) {
+                            try {
+                                auditBuffer.push(row as StreamRow);
+                                if (
+                                    auditBuffer.length < AUDITLOG_REQ_CHUNK_SIZE
+                                ) {
+                                    callback();
+                                    return;
+                                }
+
+                                await flushAuditBuffer(this);
+                                callback();
+                            } catch (err) {
+                                callback(err as Error);
+                            }
+                        },
+                        async flush(this: Transform, callback) {
+                            try {
+                                await flushAuditBuffer(this);
+                                callback();
+                            } catch (err) {
+                                callback(err as Error);
+                            }
+                        },
+                    });
+                    csvStreamTransforms = [
+                        auditNodeStreamTransform,
+                        csvStreamWriter,
+                    ];
+                } else {
+                    csvStreamTransforms = [csvStreamWriter];
+                }
             }
 
             //Exception for duckdb
@@ -292,7 +438,7 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
                 log.error(err);
             });
 
-            pipeline(result.data, csvStreamTransform, res, async (err) => {
+            pipeline(responseData, ...csvStreamTransforms, res, (err) => {
                 if (
                     result.data.constructor.prototype.toString() ===
                     "[object AsyncGenerator]"
@@ -566,7 +712,7 @@ function formatQueryParams(boolContainers) {
                                 0
                         ) {
                             const name = attributes.content[iii].configPath;
-                            const visibleConstraints = [];
+                            const visibleConstraints: string[] = [];
                             const constraints =
                                 attributes.content[iii].constraints;
                             for (
@@ -582,7 +728,11 @@ function formatQueryParams(boolContainers) {
                                         v += 1
                                     ) {
                                         visibleConstraints.push(
-                                            `${constraints.content[iv].content[v].operator}${constraints.content[iv].content[v].value}`
+                                            `${constraints.content[iv].content[v].operator}${
+                                                constraints.content[iv].content[
+                                                    v
+                                                ].value
+                                            }`
                                         );
                                     }
                                 } else if (
@@ -611,7 +761,9 @@ function formatQueryParams(boolContainers) {
                                     }
                                 } else {
                                     visibleConstraints.push(
-                                        `${constraints.content[iv].operator}${constraints.content[iv].value}`
+                                        `${constraints.content[iv].operator}${
+                                            constraints.content[iv].value
+                                        }`
                                     );
                                 }
                             }
@@ -652,7 +804,6 @@ function encryptData(data) {
 }
 
 /**
- *
  * Retrieves patient data
  * @export
  * @param {any} req
@@ -767,7 +918,7 @@ export async function getSinglePatient({
                     language: lang,
                     dataFormat: dataFormat,
                     patientId: patientId,
-                    auditLogChannelName: "Patient Summary",
+                    auditLogChannelName: AUDIT_CHANNELS.PATIENT_SUMMARY,
                 });
                 return resolve(pluginResult);
             } else {
