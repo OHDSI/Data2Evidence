@@ -1,14 +1,16 @@
-import { useEffect } from 'react';
-import { useLocation, useSearchParams } from "react-router-dom";
 import { type SignIn, type ExperienceSocialConnector, AgreeToTermsPolicy } from '@logto/schemas';
+import { useEffect } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
 
-import LoadingLayer from '@/components/LoadingLayer';
 import IdentifierSignInForm from '@/components/IdentifierSignInForm';
 import PasswordSignInForm from '@/components/PasswordSignInForm';
 import SocialSignInList from '@/containers/SocialSignInList';
-import TermsAndPrivacyCheckbox from '@/containers/TermsAndPrivacyCheckbox';
 import useSocial from '@/containers/SocialSignInList/use-social';
+import TermsAndPrivacyCheckbox from '@/containers/TermsAndPrivacyCheckbox';
 import useTerms from '@/hooks/use-terms';
+import LoadingLayer from '@/shared/components/LoadingLayer';
+
+import useIdentifierSignInMethods from '../IdentifierSignIn/use-identifier-sign-in-methods';
 
 import styles from './index.module.scss';
 
@@ -19,25 +21,28 @@ type Props = {
 
 const Main = ({ signInMethods, socialConnectors }: Props) => {
   const { agreeToTermsPolicy } = useTerms();
+  const { isPasswordOnly } = useIdentifierSignInMethods();
   const { invokeSocialSignIn } = useSocial();
   const { pathname } = useLocation();
   const [searchParameters] = useSearchParams();
-  const isPreview = searchParameters.has("preview");
-  const isLogout = sessionStorage.getItem('is_logout') === '1'
+
+  const isPreview = searchParameters.has('preview');
+  const isLogout = sessionStorage.getItem('is_logout') === '1';
   const isRedirecting =
     !isLogout &&
-    pathname === "/sign-in" &&
+    pathname === '/sign-in' &&
     !isPreview &&
     signInMethods.length === 0 &&
     socialConnectors.length === 1;
 
   useEffect(() => {
-    if (isRedirecting) {
-      socialConnectors[0] && invokeSocialSignIn(socialConnectors[0]);
+    if (isRedirecting && socialConnectors[0]) {
+      void invokeSocialSignIn(socialConnectors[0]);
     }
     if (isLogout) {
-      sessionStorage.removeItem('is_logout')
+      sessionStorage.removeItem('is_logout');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRedirecting, isLogout]);
 
   if (isRedirecting) {
@@ -60,10 +65,6 @@ const Main = ({ signInMethods, socialConnectors }: Props) => {
       </>
     );
   }
-
-  const isPasswordOnly =
-    signInMethods.length > 0 &&
-    signInMethods.every(({ password, verificationCode }) => password && !verificationCode);
 
   if (isPasswordOnly) {
     return (
