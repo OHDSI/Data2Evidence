@@ -22,7 +22,6 @@
         {
           "name": "hana_load_plugin",
           "entrypoint": "flows.hana_load_plugin.flow.hana_load_plugin",
-          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -476,7 +475,6 @@
         {
           "name": "data_characterization_plugin",
           "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
-          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -551,7 +549,6 @@
         {
           "name": "dqd_plugin",
           "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
-          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -933,7 +930,6 @@
         {
           "name": "shiny_live_plugin",
           "entrypoint": "flows.shiny_live_plugin.flow.shiny_live_plugin",
-          "command": "bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'",
           "parameter_openapi_schema": {
             "type": "object",
             "title": "Parameters",
