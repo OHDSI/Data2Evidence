@@ -169,7 +169,9 @@ jobs:
           export resTrexDB=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -c "select * from trex.db" 2>/dev/null)
           echo "$resTrexDB"
           export DATASET_ID=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
+          export SCHEMA_NAME=$(docker exec d2e-minerva-postgres-1 psql -h localhost -U postgres -p 5432 -d alp -t -c "select cache_id from portal.dataset where type IN ('omop', 'webapi')" 2>/dev/null | head -1 | xargs)
           echo "DATASET_ID=$DATASET_ID" >> $GITHUB_ENV
+          echo "TESTSCHEMA=$SCHEMA_NAME" >> $GITHUB_ENV
 
       - name: Logs
         if: success() || failure()
@@ -319,11 +321,32 @@ jobs:
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
 
-      - name: Setup Test DB
-        run: |
-          PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-          yarn --prefer-offline
-          yarn inittestdb-pg
+      # - name: Setup Test DB
+      #   run: |
+      #     PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
+      #     yarn --prefer-offline
+      #     yarn inittestdb-pg
+
+      # - name: Setupdemo
+      #   if: success() || failure()
+      #   uses: nick-fields/retry@v3
+      #   id: setupdemo
+      #   with:
+      #     timeout_seconds: 1800
+      #     retry_wait_seconds: 100
+      #     max_attempts: 2
+      #     retry_on: any
+      #     command: |
+      #       ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
+      #       DC_EXIT_CODE=$?
+      #       DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
+      #       docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
+      #       [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      # - name: Logs
+      #   if: success() || failure()
+      #   run: |
+      #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
 
       - name: Install dependencies in backend integration tests
         run: |
