@@ -148,10 +148,10 @@ export async function generateQuery(req: IMRIRequest, res, next) {
                         ${placeholderMap["@OBSPER"]} op
                 )
                 SELECT
-                    COHORT_DEFINITION_ID,
-                    SUBJECT_ID,
-                    COALESCE(COHORT_START_DATE, '1900-01-01') AS COHORT_START_DATE,
-                    COALESCE(COHORT_END_DATE, '2099-12-31') AS COHORT_END_DATE
+                    cohortdata.COHORT_DEFINITION_ID,
+                    cohortdata.SUBJECT_ID,
+                    COALESCE(obsdata.COHORT_START_DATE, '1900-01-01') AS COHORT_START_DATE,
+                    COALESCE(obsdata.COHORT_END_DATE, '2099-12-31') AS COHORT_END_DATE
                 FROM
                     cohortdata
                 LEFT JOIN
