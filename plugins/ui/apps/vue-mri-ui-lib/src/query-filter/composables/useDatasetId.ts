@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 // Type definition for the Vuex store structure we need
 interface VuexStore {
@@ -16,6 +16,8 @@ interface VuexStore {
  * Handles getting dataset ID from store or portal API
  */
 export function useDatasetId(store: VuexStore) {
+  const portalContext = usePortalContext()
+
   // Computed property for reactive dataset ID
   const datasetId = computed(() => {
     const storeDatasetId = store?.state?.selectedDataset?.id
@@ -23,9 +25,8 @@ export function useDatasetId(store: VuexStore) {
       return storeDatasetId
     }
 
-    const portalAPI = getPortalAPI()
-    if (portalAPI?.studyId) {
-      return portalAPI.studyId
+    if (portalContext.datasetId) {
+      return portalContext.datasetId
     }
 
     return null

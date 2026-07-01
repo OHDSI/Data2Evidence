@@ -2,7 +2,7 @@
 import axios, { AxiosRequestConfig } from 'axios'
 import { jwtDecode } from 'jwt-decode'
 import { AUTHENTICATE, AUTHENTICATE_FAILURE, SET_JWT_TOKEN_VALUE } from '../mutation-types'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 const Ajax = axios.create({
   timeout: 300000,
@@ -63,18 +63,18 @@ const actions = {
       headers: overwriteHeaders,
     }: AxiosRequestConfig & { datasetId?: string }
   ) {
-    const portalAPI = getPortalAPI()
+    const portalContext = usePortalContext()
 
     // [Portal] Different host if on local, url remains the same otherwise
-    if (portalAPI.qeSvcUrl) {
-      url = `${portalAPI.qeSvcUrl}${url}`
+    if (portalContext.qeSvcUrl) {
+      url = `${portalContext.qeSvcUrl}${url}`
     } else {
       url = `${import.meta.env.VITE_HOST}${url}`
     }
     return new Promise(async (resolve, reject) => {
       await clearNotificationsViaPinia()
       let headers = {}
-      const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+      const bearerToken = await portalContext.getToken()
       if (bearerToken != null) {
         headers = { Authorization: `Bearer ${bearerToken}` }
       }
@@ -104,18 +104,18 @@ const actions = {
     })
   },
   ajaxFetchAuth({ state, getters, commit }, { url, options }: any) {
-    const portalAPI = getPortalAPI()
+    const portalContext = usePortalContext()
 
     // [Portal] Different host if on local, url remains the same otherwise
-    if (portalAPI.qeSvcUrl) {
-      url = `${portalAPI.qeSvcUrl}${url}`
+    if (portalContext.qeSvcUrl) {
+      url = `${portalContext.qeSvcUrl}${url}`
     } else {
       url = `${import.meta.env.VITE_HOST}${url}`
     }
 
     return new Promise(async (resolve, reject) => {
       await clearNotificationsViaPinia()
-      const bearerToken = portalAPI ? await portalAPI.getToken() : localStorage.getItem('msaltoken')
+      const bearerToken = await portalContext.getToken()
       if (bearerToken != null) {
         if (!options.headers) {
           options.headers = {}

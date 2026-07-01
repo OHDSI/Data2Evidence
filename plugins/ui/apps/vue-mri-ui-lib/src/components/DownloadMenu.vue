@@ -12,6 +12,7 @@
             :title="getText('MRI_PA_BUTTON_DOWNLOAD_TOOLTIP')"
             :disabled="isDownloadDisabled"
             v-bind:class="{ toolbarButtonDisabled: isDownloadDisabled }"
+            data-testid="pa-download-menu-btn"
           >
             <span class="icon" style="font-family: app-icons"></span>
           </button>

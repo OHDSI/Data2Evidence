@@ -152,12 +152,12 @@ export const Dialog: FC<DialogProps> = ({
           {description}
         </div>
       )}
-      {feedback && (feedback.message || feedback.description) && (
+      {feedback && (feedback.title || feedback.message || feedback.description) && (
         <Alert
           variant="banner"
           severity={feedback.type ?? "info"}
-          title={feedback.message}
-          message={feedback.description}
+          title={feedback.title}
+          message={feedback.message ?? feedback.description}
           actionLabel={feedback.actionLabel}
           onAction={feedback.onAction}
           dismissible={typeof onCloseFeedback === "function"}
