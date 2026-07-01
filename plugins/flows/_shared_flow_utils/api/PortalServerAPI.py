@@ -2,6 +2,7 @@ import requests
 import os
 
 from _shared_flow_utils.api.BaseAPI import BaseAPI
+from _shared_flow_utils.api.OpenIdAPI import OpenIdAPI
 
 
 class PortalServerAPI(BaseAPI):
@@ -10,12 +11,19 @@ class PortalServerAPI(BaseAPI):
         self.url = self.get_service_route("portalServer")
         self.datasets_url = self.url + 'dataset/list/systemadmin'
         self.dataset_attributes_url = self.url + 'dataset/attribute'
-        self.headers = self.get_options()
+
+    def _get_system_headers(self) -> dict:
+        """Headers using client credentials (OpenIdAPI) for system-admin endpoints."""
+        bearer_token = f"Bearer {OpenIdAPI().get_client_credential_token()}"
+        return {
+            "Content-Type": "application/json",
+            "Authorization": bearer_token,
+        }
 
     def get_datasets_from_portal(self):
         result = requests.get(
             self.datasets_url,
-            headers=self.headers,
+            headers=self._get_system_headers(),
             verify=self.get_verify_value()
         )
         if ((result.status_code >= 400) and (result.status_code < 600)):
@@ -25,10 +33,25 @@ class PortalServerAPI(BaseAPI):
             datasets_list = result.json()
             return datasets_list
 
+    def get_dataset_by_token(self, study_token: str) -> dict:
+        datasets_list = self.get_datasets_from_portal()
+        dataset = next(
+            (
+                dataset_item
+                for dataset_item in datasets_list
+                if dataset_item.get("tokenStudyCode") == study_token
+                or dataset_item.get("tokenDatasetCode") == study_token
+            ),
+            None,
+        )
+        if dataset is None:
+            raise ValueError(f"No dataset found for study token '{study_token}'")
+        return dataset
+
     def update_dataset_attributes_table(self, study_id: str, attribute_id: str, attribute_value: str | None):
         result = requests.put(
             self.dataset_attributes_url,
-            headers=self.headers,
+            headers=self.get_options(),
             verify=self.get_verify_value(),
             json={"studyId": str(
                 study_id), "attributeId": attribute_id, "value": attribute_value}
@@ -51,7 +74,7 @@ class PortalServerAPI(BaseAPI):
             dict: Response from the server
         """
         request_url = f"{self.url}dataset/resource?datasetId={datasetId}"
-        headers = self.headers.copy()
+        headers = self.get_options().copy()
         headers.pop("Content-Type", None)
 
         # Validate file exists
@@ -103,7 +126,7 @@ class PortalServerAPI(BaseAPI):
             f"?basePath={base_path}&parallel={str(parallel).lower()}&concurrencyLimit={concurrency_limit}"
         )
 
-        headers = self.headers.copy()
+        headers = self.get_options().copy()
         headers.pop("Content-Type", None)
 
         if not os.path.isdir(folder_path):

@@ -179,9 +179,12 @@ export class FhirRouter {
           return res.status(response.status).json(response.data);
         } catch (error: any) {
           console.error(`Error forwarding request:`, error);
-          res.status(500).json({
+          const statusCode = error.response?.status || error.status || 500;
+          const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
+          res.status(statusCode).json({
             error: true,
-            message: error.message,
+            message: errorMessage,
+            details: error.response?.data || null,
           });
         }
       },

@@ -1,5 +1,6 @@
 {
   "lockfileVersion": 1,
+  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@data2evidence/d2e-ui",
@@ -668,6 +669,9 @@
         "vitest": "^4.0.16",
       },
     },
+  },
+  "patchedDependencies": {
+    "@nlux/themes@2.17.1": "patches/@nlux%2Fthemes@2.17.1.patch",
   },
   "overrides": {
     "vite": "6.4.2",

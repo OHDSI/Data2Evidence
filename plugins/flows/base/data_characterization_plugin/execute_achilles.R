@@ -44,19 +44,36 @@ execute_achilles <- function(
     .has_cache <- !is.null(cacheId) && nzchar(cacheId)
     .has_dialect <- !is.null(translateDialect) && nzchar(translateDialect)
 
+    # Decouple the SqlRender dialect from the JDBC driver: HANA datasets connect with the
+    # postgres driver (to trex pgwire) but must render HANA SQL. Achilles renders its SQL
+    # with SqlRender::loadRenderTranslateSql(dbms = connectionDetails$dbms) (e.g.
+    # achilles_analysis_ddl.sql), NOT from the open connection, so the dialect override has
+    # to live on connectionDetails$dbms. .wire_dbms keeps the real (postgres/pgwire) dbms so
+    # .patched_connect can dial the postgres driver; the passthrough ships the HANA SQL to HANA.
+    .wire_dbms <- connectionDetails$dbms
+    if (.has_dialect) {
+        connectionDetails$dbms <- translateDialect
+    }
+
     # Patch DatabaseConnector::connect (Achilles opens many pooled connections) to:
     #  1. Force each connection onto the cache catalog via USE (trex DuckDB), and
-    #  2. Decouple the SqlRender dialect from the JDBC driver: HANA datasets connect
-    #     with the postgres driver (to trex pgwire) but must render HANA SQL. dbms() in
-    #     DatabaseConnector reads attr(connection, "dbms"), so overriding it makes
-    #     renderTranslateExecuteSql translate to `translateDialect` while the wire stays
-    #     postgres/pgwire (passthrough ships the HANA SQL to HANA). No direct HANA driver.
+    #  2. Restore the wire dbms for the actual JDBC connect (connectionDetails$dbms is the
+    #     OHDSI dialect now), then tag the connection's dbms attr so any dbms(connection)
+    #     consumers (renderTranslateExecuteSql) also translate to `translateDialect`.
     if (.has_cache || .has_dialect) {
         .ns <- asNamespace("DatabaseConnector")
         .original_connect <- get("connect", envir = .ns)
         .use_sql <- if (.has_cache) sprintf('USE "%s"', gsub('"', '""', cacheId, fixed = TRUE)) else NULL
         .patched_connect <- function(...) {
-            conn <- .original_connect(...)
+            args <- list(...)
+            if (.has_dialect) {
+                if (!is.null(args$connectionDetails)) {
+                    args$connectionDetails$dbms <- .wire_dbms
+                } else if (length(args) >= 1L && !is.null(args[[1]]$dbms)) {
+                    args[[1]]$dbms <- .wire_dbms
+                }
+            }
+            conn <- do.call(.original_connect, args)
             if (.has_dialect) {
                 attr(conn, "dbms") <- translateDialect
             }
@@ -82,6 +99,21 @@ execute_achilles <- function(
             assignInNamespace("connect", .original_connect, ns = "DatabaseConnector"),
             add = TRUE
         )
+
+        # HANA local temporary tables are session-scoped, but the trex pgwire passthrough
+        # opens a fresh HANA connection per statement, so Achilles' `#` scratch tables would
+        # vanish between statements. Achilles only switches scratchDatabaseSchema to "#" when
+        # .supportsTempTables() is TRUE; force it FALSE for HANA so scratch tables stay
+        # permanent in scratchDatabaseSchema (defaults to resultsDatabaseSchema).
+        if (.has_dialect) {
+            .ns_ach <- asNamespace("Achilles")
+            .original_supports <- get(".supportsTempTables", envir = .ns_ach)
+            assignInNamespace(".supportsTempTables", function(...) FALSE, ns = "Achilles")
+            on.exit(
+                assignInNamespace(".supportsTempTables", .original_supports, ns = "Achilles"),
+                add = TRUE
+            )
+        }
     }
 
     Achilles::achilles(
