@@ -93,6 +93,30 @@ class DaoBase(ABC):
     def tenant_configs(self) -> DBCredentialsType | CacheDBCredentialsType:
         return self.__extract_database_credentials()
 
+    @property
+    def pa_cdm_config(self) -> dict:
+        """
+        The dataset's PA/CDM config id/version
+        """
+        if getattr(self, "_pa_cdm_config", None) is None:
+            result = {}
+            if (
+                self.dialect == SupportedDatabaseDialects.HANA
+                and self.cache_id != self.database_code
+            ):
+                try:
+                    from _shared_flow_utils.api.PortalServerAPI import PortalServerAPI
+                    result = PortalServerAPI().pa_cdm_config_session_vars(self.cache_id)
+                except Exception as e:
+                    from _shared_flow_utils.logger.logger import Logger
+                    Logger().warning(
+                        f"Could not resolve PA/CDM config session variables for "
+                        f"dataset '{self.cache_id}'; proceeding without them: {e}"
+                    )
+                    result = {}
+            self._pa_cdm_config = result
+        return self._pa_cdm_config
+
     # --- Create methods ---
 
     @abstractmethod
@@ -243,6 +267,7 @@ class DaoBase(ABC):
         host: str = None,
         port: int = None,
         db_credentials: DBCredentialsType = None,
+        pa_cdm_config: dict = None,
     ) -> Tuple[str, dict]:
         connect_args = {}
         match dialect:
@@ -284,6 +309,8 @@ class DaoBase(ABC):
             token_user = build_user_from_token(token)
             hana_connect_args["sessionVariable:APPLICATION"] = app_name
             hana_connect_args["sessionVariable:APPLICATIONUSER"] = token_user.email if token_user.email else token_user.user_id
+            if pa_cdm_config:
+                hana_connect_args.update(pa_cdm_config)
             return base_url, hana_connect_args
 
         return base_url, connect_args
@@ -355,6 +382,8 @@ class DaoBase(ABC):
             app_name = f"d2e-{os.environ.get('plugin_name')}"
             token_user = build_user_from_token(token)
             conn_url_with_app = f"{conn_url}&sessionVariable:APPLICATION={app_name}&sessionVariable:APPLICATIONUSER={token_user.email if token_user.email else token_user.user_id}"
+            for session_key, value in self.pa_cdm_config.items():
+                conn_url_with_app += f"&{session_key}={value}"
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""

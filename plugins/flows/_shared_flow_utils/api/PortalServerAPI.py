@@ -33,6 +33,38 @@ class PortalServerAPI(BaseAPI):
             datasets_list = result.json()
             return datasets_list
 
+    def pa_cdm_config_session_vars(self, dataset_id: str) -> dict:
+        """
+        Resolve the dataset's PA and CDM config id/version as session variables
+        """
+        if not dataset_id:
+            raise Exception(
+                f"No cacheId/datasetId available; skipping PA/CDM config session variables")
+        try:
+            url = f"{self.url}dataset/pa-config/backend?datasetId={dataset_id}"
+            result = requests.get(
+                url,
+                headers=self.headers,
+                verify=self.get_verify_value()
+            )
+            if ((result.status_code >= 400) and (result.status_code < 600)):
+                raise Exception(
+                    f"[{result.status_code}] PortalServerAPI Failed to retrieve backend PA config for dataset '{dataset_id}'")
+
+            meta = result.json().get("meta", {})
+            dependent_config = meta.get("dependentConfig") or {}
+
+            candidates = {
+                "sessionVariable:PA_CONFIG_ID": meta.get("configId"),
+                "sessionVariable:PA_CONFIG_VERSION": meta.get("configVersion"),
+                "sessionVariable:CDM_CONFIG_ID": dependent_config.get("configId"),
+                "sessionVariable:CDM_CONFIG_VERSION": dependent_config.get("configVersion"),
+            }
+            return {k: str(v) for k, v in candidates.items() if v}
+        except Exception as e:
+            raise Exception(
+                f"Failed to resolve PA/CDM config for dataset '{dataset_id}': {e}")
+            
     def get_dataset_by_token(self, study_token: str) -> dict:
         datasets_list = self.get_datasets_from_portal()
         dataset = next(
