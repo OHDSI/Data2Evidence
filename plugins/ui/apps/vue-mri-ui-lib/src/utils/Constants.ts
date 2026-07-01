@@ -256,9 +256,14 @@ const ChartColorway = {
   YELLOW: '#fcd34b',
 }
 
+// Font stack for Plotly canvas text (Plotly needs a plain string, so it can't
+// read the --app-font-family CSS token). Kept in sync with the SCSS/CSS stack.
+export const FONT_FAMILY =
+  "'GT-America', 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif"
+
 const PlotlyFont = {
   color: '#000080',
-  family: "'GT-America', sans-serif",
+  family: FONT_FAMILY,
 }
 const PlotlyConsts = {
   layout: {

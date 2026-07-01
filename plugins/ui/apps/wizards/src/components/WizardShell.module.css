@@ -4,6 +4,7 @@
   height: calc(100vh - 56px);
   overflow-y: auto;
   background-color: rgb(242, 240, 241);
+  font-family: var(--wizard-font-family);
 }
 
 .content {
