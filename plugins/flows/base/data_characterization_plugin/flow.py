@@ -117,7 +117,7 @@ def data_characterization_plugin(options: DCOptionsType):
             ]
         )
 
-        execute_achilles_wo(achilles_params, flow_run_id)
+        partial_failure = execute_achilles_wo(achilles_params, flow_run_id)
 
         if options.executeConceptRecordCount:
             execute_concept_record_count_wo = execute_concept_record_count.with_options(
@@ -155,6 +155,14 @@ def data_characterization_plugin(options: DCOptionsType):
             )
 
             execute_export_to_ares_wo(achilles_params, cdm_source)
+
+        # Partial results were kept above; mark the flow failed without dropping them.
+        if partial_failure:
+            raise RuntimeError(
+                f"Data characterization for flow run {flow_run_id} completed with failed analyses; "
+                f"partial results kept in schema '{achilles_params.resultsSchema}'. "
+                f"Failed analysis IDs: \"{partial_failure}\""
+            )
 
 
 def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
@@ -286,6 +294,16 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
 
     failed_analysis_ids = []
 
+    def log_achilles_diagnostics() -> str | None:
+        """Log the per-analysis SQL errors and log tail, and return the grouped details for the artifact."""
+        analysis_error_details = get_analysis_error_details(achilles_params.outputFolder)
+        if analysis_error_details:
+            logger.error(f"Achilles analysis error details:\n{analysis_error_details}")
+        log_tail = get_achilles_log_tail(achilles_params.outputFolder)
+        if log_tail:
+            logger.error(f"Achilles execution log (log_achilles.txt) tail:\n{log_tail}")
+        return analysis_error_details
+
     try:
         logger.info(
             f"Running Achilles::achilles on thread count: {achilles_params.numThreads}"
@@ -330,14 +348,37 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
         )
-        
+
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
 
-        if error_message or failed_analysis_ids:
+        if error_message:
             raise RuntimeError(
-                f"Achilles run failed: Error report or analysis ID exists for flow run {flow_run_id}"
+                f"Achilles run failed: error report exists for flow run {flow_run_id}"
             )
-        
+
+        # Partial failure: keep the results Achilles did produce; the caller marks the flow failed.
+        if failed_analysis_ids:
+            failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
+            logger.warning(
+                f"Achilles completed with failed analyses; keeping partial results in schema "
+                f"'{achilles_params.resultsSchema}'. Failed analysis IDs: \"{failed_analysis_ids_str}\""
+            )
+            analysis_error_details = log_achilles_diagnostics()
+            create_markdown_artifact(
+                key="data-characterization-error",
+                markdown=json.dumps(
+                    {
+                        "flow_run_id": flow_run_id,
+                        "result": {},
+                        "error": True,
+                        "error_message": "Some Achilles analyses failed; partial results retained.",
+                        "failed_analysis_ids": failed_analysis_ids_str,
+                        "analysis_error_details": analysis_error_details or "",
+                    }
+                ),
+            )
+            return failed_analysis_ids_str
+
 
     except RRuntimeError as e:
         logger.error(f"RRuntimeError from Achilles: {e}")
@@ -358,12 +399,15 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
             logger.error(f"The following analysis IDs failed: \"{failed_analysis_ids_str}\"")
 
+        analysis_error_details = log_achilles_diagnostics()
+
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": error_message,
             "failed_analysis_ids": failed_analysis_ids_str,
+            "analysis_error_details": analysis_error_details or "",
         }
 
         create_markdown_artifact(
@@ -374,12 +418,15 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
     except Exception as e:
         logger.error(f"Unexpected error in Achilles run: {e}")
 
+        analysis_error_details = log_achilles_diagnostics()
+
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": e.__str__(),
-            "failed_analysis_ids": "",
+            "failed_analysis_ids": failed_analysis_ids_to_str(failed_analysis_ids) if failed_analysis_ids else "",
+            "analysis_error_details": analysis_error_details or "",
         }
 
         create_markdown_artifact(
