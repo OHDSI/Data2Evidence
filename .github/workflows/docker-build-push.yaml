@@ -344,6 +344,31 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Atlas3 sub-plugins (jobs/network/notebook/results-viewer/strategus) live in
+      # the trex-notebook submodule and are unpublished; build them from source so
+      # plugins/atlas's file: deps resolve during its install/postinstall.
+      - name: Build Atlas sub-plugins (trex-notebook submodule)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # results-viewer's shinylive export (scripts/build-atlas.sh) needs a full R +
+          # renv toolchain — renv.lock pins 132 packages, several with compiled deps
+          # (V8, Rcpp, RSQLite), which is too heavy/slow to provision on this shared,
+          # already disk-constrained matrix runner. Skip it here rather than flake the
+          # whole build_plugins job; SKIP_SHINYLIVE is the same escape hatch
+          # scripts/build-atlas.sh honors locally. Until a dedicated R-provisioned
+          # runner/step exists, the shinylive bundle (and thus
+          # /atlas/plugins/results-viewer/shinylive/) is absent from CI-built images.
+          SKIP_SHINYLIVE: "1"
+        run: |
+          SUB=plugins/ui/libs/react-notebook/plugins
+          # notebook-plugin bundles the notebook app's source, which imports webr.
+          ( cd "$SUB/notebook" && npm install )
+          for p in jobs network notebook-plugin results-viewer strategus; do
+            ( cd "$SUB/$p" && npm install && npm run build )
+          done
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
       # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
