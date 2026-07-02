@@ -49,6 +49,7 @@
 /plugins/ui/alp-libs                                         @data2evidence/analyze
 /plugins/ui/apps/mri-pa-ui                                   @data2evidence/analyze
 /plugins/ui/apps/vue-mri-ui-lib                              @data2evidence/analyze
+/plugins/ui/apps/portal/src/components/Charts                @data2evidence/analyze
 /plugins/ui/apps/portal/src/plugins/mri                      @data2evidence/analyze
 /plugins/ui/apps/portal/src/plugins/Researcher/ConceptSets   @data2evidence/analyze
 /plugins/ui/apps/portal/src/plugins/Researcher/Terminology   @data2evidence/analyze
