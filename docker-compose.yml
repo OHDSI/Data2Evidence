@@ -257,7 +257,7 @@ services:
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
         "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
-        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094/fhir-gateway"
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
