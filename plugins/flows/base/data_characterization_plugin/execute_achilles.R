@@ -106,6 +106,9 @@ execute_achilles <- function(
         # .supportsTempTables() is TRUE; force it FALSE for HANA so scratch tables stay
         # permanent in scratchDatabaseSchema (defaults to resultsDatabaseSchema).
         if (.has_dialect) {
+            # Index creation on the results tables fails through the HANA trex passthrough; indices only optimize queries.
+            createIndices <- FALSE
+
             .ns_ach <- asNamespace("Achilles")
             .original_supports <- get(".supportsTempTables", envir = .ns_ach)
             assignInNamespace(".supportsTempTables", function(...) FALSE, ns = "Achilles")
@@ -113,8 +116,47 @@ execute_achilles <- function(
                 assignInNamespace(".supportsTempTables", .original_supports, ns = "Achilles"),
                 add = TRUE
             )
+
+            # Emulate `#temp` tables as permanent; native HANA temp tables don't survive the trex passthrough.
+            .orig_temp_emulation <- getOption("sqlRenderTempEmulationSchema")
+            options(sqlRenderTempEmulationSchema = resultsDatabaseSchema)
+            on.exit(options(sqlRenderTempEmulationSchema = .orig_temp_emulation), add = TRUE)
         }
     }
+
+    # Parse the log leniently (all dialects): a failed analysis's error text can break its 6-column layout and crash .parseLogs.
+    .ns_achilles <- asNamespace("Achilles")
+    .orig_parse_logs <- get(".parseLogs", envir = .ns_achilles)
+    .fn_parse_id <- get(".parseAnalysisId", envir = .ns_achilles)
+    .fn_parse_rt <- get(".parseRunTime", envir = .ns_achilles)
+    assignInNamespace(".parseLogs", function(outputFolder) {
+        logs <- tryCatch(
+            utils::read.table(
+                file = file.path(outputFolder, "log_achilles.txt"),
+                header = FALSE, sep = "\t", stringsAsFactors = FALSE,
+                fill = TRUE, quote = "", comment.char = ""
+            ),
+            error = function(e) NULL
+        )
+        empty <- data.frame(
+            startTime = character(), thread = character(), logType = character(),
+            package = character(), packageFunction = character(), comment = character(),
+            analysisId = integer(), runTime = numeric(), stringsAsFactors = FALSE
+        )
+        if (is.null(logs) || ncol(logs) < 6) return(empty)
+        logs <- logs[, 1:6]
+        names(logs) <- c("startTime", "thread", "logType", "package", "packageFunction", "comment")
+        logs <- logs[grepl("COMPLETE", logs$comment), , drop = FALSE]
+        if (nrow(logs) == 0) return(empty)
+        logs$analysisId <- NA
+        logs$runTime <- NA
+        for (i in seq_len(nrow(logs))) {
+            logs[i, ]$analysisId <- .fn_parse_id(logs[i, ]$comment)
+            logs[i, ]$runTime <- .fn_parse_rt(logs[i, ]$comment)
+        }
+        logs
+    }, ns = "Achilles")
+    on.exit(assignInNamespace(".parseLogs", .orig_parse_logs, ns = "Achilles"), add = TRUE)
 
     Achilles::achilles(
         connectionDetail = connectionDetails,

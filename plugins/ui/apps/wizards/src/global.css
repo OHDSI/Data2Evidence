@@ -1,0 +1,13 @@
+/* Self-hosted IBM Plex Sans (same-origin, loads in every environment incl. the
+   e2e container). GT-America stays first (name only — not shipped) so clients
+   with it installed still render it; everyone else falls to IBM Plex Sans.
+   Kept in sync with the Analyze/Integrate font stack (PR #2791). */
+@import "@fontsource-variable/ibm-plex-sans";
+
+/* Variable only — applied on the wizard root (.shell), not body, so the font
+   never leaks into the portal shell when this app is mounted via single-spa. */
+:root {
+  --wizard-font-family: "GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+}
