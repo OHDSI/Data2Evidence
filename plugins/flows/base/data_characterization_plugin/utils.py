@@ -1,5 +1,5 @@
 import pandas as pd
-from re import match
+from re import match, sub
 from pathlib import Path
 
 
@@ -94,3 +94,60 @@ def get_error_message(error_file_name: str, error_path: str | None) -> str | Non
         with error_file.open("r") as f:
             return f.read()
     return None
+
+
+def _error_signature(content: str) -> str:
+    """Normalize an Achilles error report so the same failure across many analyses groups together."""
+    lines = content.splitlines()
+    message = next(
+        (lines[i + 1].strip() for i, line in enumerate(lines)
+         if line.strip() == "Error:" and i + 1 < len(lines) and lines[i + 1].strip()),
+        next((line.strip() for line in lines if line.strip()), "unknown error"),
+    )
+    message = sub(r"\(Query:.*", "", message)
+    return sub(r"\d+", "N", message)[:250]
+
+
+def get_analysis_error_details(
+    output_folder: str, max_groups: int = 8, sample_chars: int = 2000
+) -> str | None:
+    """Group the per-analysis Achilles error reports by root error for logging, with one sample each."""
+    error_files = sorted(
+        Path(output_folder).glob("achillesError_*.txt"),
+        key=lambda f: int(f.stem.split("_")[-1]),
+    )
+    if not error_files:
+        return None
+
+    groups: dict[str, dict] = {}
+    for error_file in error_files:
+        try:
+            content = error_file.read_text()
+        except OSError:
+            continue
+        analysis_id = error_file.stem.split("_")[-1]
+        group = groups.setdefault(_error_signature(content), {"ids": [], "sample": content})
+        group["ids"].append(analysis_id)
+
+    header = f"{len(error_files)} analysis error report(s), {len(groups)} distinct error(s):"
+    sections = [header]
+    for group in list(groups.values())[:max_groups]:
+        ids = ",".join(group["ids"])
+        sections.append(f"\n[analyses {ids}]\n{group['sample'].strip()[:sample_chars]}")
+    if len(groups) > max_groups:
+        sections.append(f"\n... and {len(groups) - max_groups} more distinct error group(s)")
+    return "\n".join(sections)
+
+
+def get_achilles_log_tail(output_folder: str, max_lines: int = 60) -> str | None:
+    """
+    Return the tail of Achilles' execution log (log_achilles.txt) for debugging context.
+    """
+    log_file = Path(output_folder) / "log_achilles.txt"
+    if not log_file.exists():
+        return None
+    try:
+        lines = log_file.read_text(errors="replace").splitlines()
+    except OSError:
+        return None
+    return "\n".join(lines[-max_lines:])
