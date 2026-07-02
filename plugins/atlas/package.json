@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@ohdsi/atlas3": "0.1.0-20260621142339-0a13950",
-    "@ohdsi/jobs-plugin": "file:../ui/libs/react-notebook/plugins/jobs",
     "@ohdsi/network-plugin": "file:../ui/libs/react-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:../ui/libs/react-notebook/plugins/notebook-plugin",
     "@ohdsi/pythia-plugin": "0.1.0-develop.2.g8edf28a",
