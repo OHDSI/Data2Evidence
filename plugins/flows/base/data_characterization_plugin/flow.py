@@ -58,7 +58,7 @@ def data_characterization_plugin(options: DCOptionsType):
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
-        cache_id=options.cacheId,
+        cache_id=options.cacheId if options.use_trex_connection else options.datasetId,  # Use datasetId for non-TREX connections to retrieve PA and CDM configs
     )
     # The TrexDao reports dialect 'trex' (it connects to pgwire), so it can't tell the
     # underlying source is HANA. Tag it so schema/table introspection and DROPs use
@@ -79,7 +79,6 @@ def data_characterization_plugin(options: DCOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
-    # Todo: Update implementation if Hana uses trex
     # Create Achilles parameters from DCOptions
     achilles_params = AchillesParams(
         **options.model_dump(),
@@ -143,7 +142,6 @@ def data_characterization_plugin(options: DCOptionsType):
                 f"results schema '{achilles_params.resultsSchema}'."
             )
 
-        # Todo: Update implementation if Hana uses trex
         if not use_trex_connection:
             execute_export_to_ares_wo = execute_export_to_ares.with_options(
                 on_failure=[

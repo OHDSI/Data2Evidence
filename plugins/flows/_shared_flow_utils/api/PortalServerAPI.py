@@ -44,7 +44,7 @@ class PortalServerAPI(BaseAPI):
             url = f"{self.url}dataset/pa-config/backend?datasetId={dataset_id}"
             result = requests.get(
                 url,
-                headers=self.headers,
+                headers=self.get_options(),
                 verify=self.get_verify_value()
             )
             if ((result.status_code >= 400) and (result.status_code < 600)):
