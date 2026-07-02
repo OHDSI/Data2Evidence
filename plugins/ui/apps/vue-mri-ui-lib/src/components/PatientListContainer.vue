@@ -10,8 +10,8 @@
         :menuData="getColumnSelectionMenu"
         @clickItem="addColumn"
       ></menuButton>
-      <div style="height: 14px"></div>
-      <div class="patientlist-control-wrapper" style="height: 90%; overflow: auto">
+      <div style="height: 14px; flex-shrink: 0"></div>
+      <div class="patientlist-control-wrapper" style="flex: 1; min-height: 0; overflow: auto">
         <patientListControl
           :columns="getSelectedAttributes"
           :rows="chartData.data"
