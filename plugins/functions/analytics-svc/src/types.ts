@@ -246,6 +246,10 @@ export type PluginEndpointStreamResultType = {
     debug?: any;
     noDataReason?: string;
     rowCount?: number;
+    selectedAttributes?: PluginSelectedAttributeType[];
+    cohortBuilderConfigMetaData?: CDMConfigMetaDataType;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    auditLogChannelName: string;
 };
 
 export type CohortDefinitionType = {
