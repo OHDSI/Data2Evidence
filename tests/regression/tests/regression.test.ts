@@ -7,6 +7,7 @@ import { parseCurl } from "../runner/curlParser.js";
 import { runScenario, warmupScenarios } from "../runner/httpClient.js";
 import { compareToBaseline } from "../runner/compare.js";
 import type { Baseline, CompareResult, CompareStatus } from "../runner/compare.js";
+import { writeHtmlReport } from "../runner/htmlReport.js";
 import type { Scenario } from "../runner/harParser.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -217,6 +218,8 @@ if (scenarios.length === 0) {
     afterAll(() => {
       if (results.some(r => r.status === "fail")) {
         writeDetailedReport(results);
+        const runDate = new Date().toISOString().split("T")[0];
+        writeHtmlReport(results, runDate);
       }
       printTable(groupResults(results));
     });
