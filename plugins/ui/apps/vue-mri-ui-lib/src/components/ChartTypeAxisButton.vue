@@ -44,6 +44,11 @@
         </template>
       </dropDownMenu>
     </div>
+    <ChartTypeChangeWarningDialog
+      :model-value="warningVisible"
+      @confirm="onConfirmChange"
+      @cancel="onCancelChange"
+    />
   </div>
 </template>
 
@@ -52,6 +57,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, useTemplateRef } f
 import { useStore } from 'vuex'
 import DropDownMenu from './DropDownMenu.vue'
 import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
+import ChartTypeChangeWarningDialog from './ChartTypeChangeWarningDialog.vue'
 import { modeOrder, isBarChartModeEnabled, getEffectiveBarChartMode } from './StackBarModes/modes'
 
 defineProps<{ parentContainer?: any }>()
@@ -59,6 +65,7 @@ defineProps<{ parentContainer?: any }>()
 const store = useStore()
 const getBarChartType = computed(() => store?.getters?.getBarChartType)
 const getShowDistributionOverlay = computed(() => store?.getters?.getShowDistributionOverlay)
+const getColorAxisIndex = computed(() => store?.getters?.getColorAxisIndex)
 const getMriFrontendConfig = computed(() => store?.getters?.getMriFrontendConfig)
 const getText = (key: string) => store?.getters?.getText?.(key) || key
 
@@ -66,6 +73,8 @@ const menuButtonWrapper = useTemplateRef<HTMLDivElement>('menuButtonWrapper')
 const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
 const menuButtonEl = ref<HTMLButtonElement | null>(null)
 const menuVisible = ref(false)
+const warningVisible = ref(false)
+const pendingModeId = ref<string | null>(null)
 
 const enabledModes = computed(() =>
   modeOrder.filter(mode => isBarChartModeEnabled(mode.id, getMriFrontendConfig.value))
@@ -139,13 +148,35 @@ function closeMenu() {
 function handleClick(arg: any) {
   if (!arg) return
   if (arg.toggleOverlay) return
-  if (arg.id) {
-    store.dispatch('setBarChartType', arg.id)
-    const next = modeOrder.find(m => m.id === arg.id)
-    if (!next?.hasDistributionOverlay && getShowDistributionOverlay.value) {
-      store.dispatch('setShowDistributionOverlay', false)
-    }
+  if (!arg.id) return
+  // Switching away from the stacked bar chart clears the "Colour by" (color axis) selection,
+  // which is only supported on the stacked bar chart. Warn before discarding it.
+  if (arg.id !== 'stack' && getColorAxisIndex.value !== null) {
+    pendingModeId.value = arg.id
+    warningVisible.value = true
+    return
   }
+  applyMode(arg.id)
+}
+
+function applyMode(id: string) {
+  store.dispatch('setBarChartType', id)
+  const next = modeOrder.find(m => m.id === id)
+  if (!next?.hasDistributionOverlay && getShowDistributionOverlay.value) {
+    store.dispatch('setShowDistributionOverlay', false)
+  }
+}
+
+function onConfirmChange() {
+  const id = pendingModeId.value
+  warningVisible.value = false
+  pendingModeId.value = null
+  if (id) applyMode(id)
+}
+
+function onCancelChange() {
+  warningVisible.value = false
+  pendingModeId.value = null
 }
 
 function onToggleOverlay(value: boolean) {
