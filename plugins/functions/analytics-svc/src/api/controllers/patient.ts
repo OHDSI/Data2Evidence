@@ -287,11 +287,14 @@ export function retrieveDatasetStream(req: IMRIRequest, res) {
             );
             res.setHeader("Content-Type", "text/csv");
 
-            const auditLogger = AuditLogger.create({
-                cohortBuilderConfigMetaData: result.cohortBuilderConfigMetaData,
-                cdmConfigMetaData: result.cdmConfigMetaData,
-                request: req,
-            });
+            const auditLogger = AuditLogger.isEnabled()
+                ? AuditLogger.create({
+                      cohortBuilderConfigMetaData:
+                          result.cohortBuilderConfigMetaData,
+                      cdmConfigMetaData: result.cdmConfigMetaData,
+                      request: req,
+                  })
+                : undefined;
             const auditObjectIdAttribute = "patient.attributes.pid";
             const auditObjectIdStreamAlias = auditObjectIdAttribute
                 .split(".")

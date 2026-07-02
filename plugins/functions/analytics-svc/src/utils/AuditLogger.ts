@@ -291,20 +291,8 @@ export class AuditLogger {
 
         logAttributes.forEach((logAttribute) => {
             if (logAttribute) {
-                try {
-                    dataAccessMessage.attributes.push(logAttribute.id);
-                    attributeExistsForLog = true;
-                } catch (e) {
-                    emptyResult.messageKey =
-                        "MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE";
-                    emptyResult.messageLevel = "Warning";
-                    alpAuditLogger.error(
-                        `SECURITY INCIDENT <AuditLogger>! Failed while logging attribute: ${logAttribute.id}; ${e.message}`
-                    );
-                    throw new Error(
-                        "ERROR: Please contact your system administrator"
-                    );
-                }
+                dataAccessMessage.attributes.push(logAttribute.id);
+                attributeExistsForLog = true;
             }
         });
 
