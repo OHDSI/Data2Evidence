@@ -148,6 +148,8 @@ export const Researcher: FC = () => {
                 display: isActiveRoute ? "block" : "none",
                 width: "100%",
                 height: "100%",
+                minHeight: 0,
+                overflow: "hidden",
               }}
             >
               <ErrorBoundary name={item.name}>
