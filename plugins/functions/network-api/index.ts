@@ -25,6 +25,15 @@ import { readRow, savePending, saveActive, readMachineCreds } from "./store.ts";
 
 const PREFIX = "/network-api";
 
+// Mirror hades-api's mount handling: strip up to and including the LAST
+// "/network-api" segment, so both a doubled "/plugins/network-api/network-api/studies"
+// and a bare "/network-api/studies" yield "/studies".
+export function stripPrefix(pathname: string): string {
+  const idx = pathname.lastIndexOf(PREFIX);
+  if (idx === -1) return pathname;
+  return pathname.slice(idx + PREFIX.length) || "/";
+}
+
 function env(name: string): string {
   return (Deno.env.get(name) ?? "").trim();
 }
@@ -83,13 +92,12 @@ async function getMachineToken(): Promise<string> {
 }
 
 Deno.serve(async (req: Request) => {
-  // 1. Compute the central sub-path: everything after `/network-api`.
+  // 1. Compute the central sub-path: everything after the last `/network-api`.
   const url = new URL(req.url);
-  const idx = url.pathname.indexOf(PREFIX);
-  if (idx === -1) {
+  if (url.pathname.lastIndexOf(PREFIX) === -1) {
     return json(404, "NOT_FOUND", "request did not match the network-api mount");
   }
-  const subPath = url.pathname.slice(idx + PREFIX.length) || "/";
+  const subPath = stripPrefix(url.pathname);
   const sp = subPath.replace(/\/+$/, "") || "/";
 
   // 2. Auth gate — trex injects x-user-id for authenticated callers. Only
