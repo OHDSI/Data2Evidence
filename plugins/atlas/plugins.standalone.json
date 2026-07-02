@@ -26,15 +26,7 @@
       "name": "Analysis Results",
       "version": "0.2.0",
       "entryPoint": "results-viewer/index.system.js",
-      "menuItems": [
-        {
-          "id": "results-viewer.main",
-          "name": "Results",
-          "route": "/plugins/results-viewer/",
-          "icon": "mdi-chart-box-outline",
-          "order": 70
-        }
-      ],
+      "menuItems": [],
       "metadata": {
         "author": "OHDSI",
         "description": "OHDSI HADES analysis results viewer — runs OhdsiShinyModules via WebR + DuckDB-WASM in-browser"
@@ -45,9 +37,7 @@
       "name": "Strategus",
       "version": "0.1.0",
       "entryPoint": "strategus-plugin/index.system.js",
-      "menuItems": [
-        { "id": "strategus.main", "name": "Strategus", "route": "/plugins/strategus-plugin/", "icon": "mdi-flask-outline", "order": 50 }
-      ],
+      "menuItems": [],
       "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
     },
     {
@@ -55,9 +45,7 @@
       "name": "Notebooks",
       "version": "0.1.0",
       "entryPoint": "notebook-plugin/index.system.js",
-      "menuItems": [
-        { "id": "notebook.main", "name": "Notebooks", "route": "/plugins/notebook-plugin/", "icon": "mdi-notebook-outline", "order": 52 }
-      ],
+      "menuItems": [],
       "metadata": { "author": "OHDSI", "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)" }
     },
     {
@@ -65,10 +53,18 @@
       "name": "Network",
       "version": "0.1.0",
       "entryPoint": "network-plugin/index.system.js",
-      "menuItems": [
-        { "id": "network.main", "name": "Network", "route": "/plugins/network-plugin/", "icon": "mdi-lan", "order": 60 }
-      ],
+      "menuItems": [],
       "metadata": { "author": "OHDSI", "description": "Federated network studies — site plugin. Loads inactive until NETWORK_* config is provided." }
+    },
+    {
+      "id": "studies-plugin",
+      "name": "Studies",
+      "version": "0.1.0",
+      "entryPoint": "studies-plugin/index.system.js",
+      "menuItems": [
+        { "id": "studies.main", "name": "Studies", "route": "/plugins/studies-plugin/", "icon": "mdi-flask-outline", "order": 40 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Studies shell: Local / Network / Results" }
     },
     {
       "id": "jobs-plugin",

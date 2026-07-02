@@ -21,7 +21,7 @@ ATLAS_DIR="plugins/atlas"
 ARTIFACTS_DIR="services/trex/plugin-artifacts"
 
 # Atlas3 sub-plugins built from the submodule (dir name under $PLUGIN_DIR).
-SUBPLUGINS=(jobs network notebook-plugin results-viewer strategus)
+SUBPLUGINS=(jobs network notebook-plugin results-viewer strategus studies)
 
 : "${GITHUB_TOKEN:=$(gh auth token 2>/dev/null || true)}"
 if [ -z "${GITHUB_TOKEN}" ]; then

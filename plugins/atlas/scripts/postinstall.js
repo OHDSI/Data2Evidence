@@ -189,6 +189,7 @@ const PLUGINS = [
   { pkg: '@ohdsi/notebook-plugin', id: 'notebook-plugin', repoints: [] },
   { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
   { pkg: '@ohdsi/jobs-plugin', id: 'jobs-plugin', repoints: [] },
+  { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
 ];
 
 for (const { pkg, id, repoints } of PLUGINS) {
