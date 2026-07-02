@@ -1,0 +1,6 @@
+# Local trex build artifacts overlaid during development; the published trexsql
+# base ships these natively, so they must never be committed here.
+libtrexsql_engine.so
+libwebapi-native.so
+trexas.trex
+webapi.trex

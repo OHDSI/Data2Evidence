@@ -89,9 +89,8 @@ test('pa-compare-cohorts', async ({ page }) => {
   const downloadPromise = page.waitForEvent('download')
   await page.locator('#pane-left').getByText('Export to PNG File').click()
   const download = await downloadPromise
-
-  // Verify the downloaded file is a PNG
-  expect(download.suggestedFilename()).toMatch(/MRI Chart\.png$/)
+  // the downloaded PNG should be prefixed with the active cohort and follows {cohortName}_{chartType}_{DD-MM-YYYY}.png format
+  expect(download.suggestedFilename()).toMatch(new RegExp(`^${cohortB}_.*\\d{2}-\\d{2}-\\d{4}\\.png$`))
 
   // ========================
   // CLEANUP SECTION

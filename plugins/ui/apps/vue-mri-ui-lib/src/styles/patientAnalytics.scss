@@ -4,6 +4,12 @@
   .fullHeight {
     height: 100%;
     display: flex;
+    min-height: 0;
+    overflow: hidden;
+
+    .splitpanes {
+      min-height: 0;
+    }
   }
   .hidden {
     display: none;
@@ -44,11 +50,26 @@
       }
     }
   }
-  #pane-right {
+  #pane-left {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    height: 100%;
+
+    .pane-left-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+  }
+  #pane-right {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     width: 100%;
     position: relative;
+    height: 100%;
 
     .pane-right-content {
       position: inherit;
@@ -68,10 +89,13 @@
 }
 
 .pa-component-wrapper {
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: hidden;
   box-sizing: border-box;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 
   @include wrapper-components;
 }

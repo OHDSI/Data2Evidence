@@ -62,3 +62,22 @@
     color: var(--color-mri-lightest-text);
   }
 }
+
+.chartButton.disabled,
+.chartButton:disabled {
+  color: var(--color-mri-disabled-text);
+  background: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.chartButton.disabled .icon,
+.chartButton:disabled .icon {
+  cursor: not-allowed;
+}
+
+.chartButton.disabled:hover,
+.chartButton:disabled:hover {
+  background: none;
+  color: var(--color-mri-disabled-text);
+}

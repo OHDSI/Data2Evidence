@@ -26,6 +26,9 @@ export class DBDAO {
     }
 
     public getCDMVersion = async (databaseCode: string, schemaName: string, dialect: string): Promise<string> => {
+        // A pooled Trex connection can miss schemas created after its ATTACH (e.g. a
+        // new dataset), so clear the cache first, mirroring checkIfSchemaExists.
+        await this._clearTrexSchemaCache(dialect);
         let sqlQuery;
         if (dialect === ANALYTICS_DB_DIALECTS.HANA)
             sqlQuery = `SELECT CDM_VERSION FROM ${schemaName}.CDM_SOURCE`;
@@ -54,16 +57,18 @@ export class DBDAO {
             if (this.connection.constructor.name === "TrexConnection") {
                 let sql;
                 switch (dialect) {
-                    case ANALYTICS_DB_DIALECTS.POSTGRES:
-                    case "postgres":
-                        sql = "CALL pg_clear_cache();";
-                        break;
                     case ANALYTICS_DB_DIALECTS.BIGQUERY:
                         sql = "CALL bigquery_clear_cache();";
                         break;
+                    case ANALYTICS_DB_DIALECTS.HANA:
+                        // HANA has no Trex ATTACH cache to clear.
+                        return resolve(true);
+                    case ANALYTICS_DB_DIALECTS.POSTGRES:
+                    case "postgres":
                     default:
-                        // do nothing
-                        resolve(true);
+                        // Trex is postgres-backed by default; clear that cache even for
+                        // an unknown/undefined dialect so new schemas become visible.
+                        sql = "CALL pg_clear_cache();";
                 }
 
                 this.connection.executeQuery(

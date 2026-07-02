@@ -56,7 +56,6 @@ import appLabel from '../lib/ui/app-label.vue'
 import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import appSkinnyDropdown from '../lib/ui/app-skinny-dropdown.vue'
 import * as types from '../store/mutation-types'
-import { getPortalAPI } from '../utils/PortalUtils'
 import messageBox from './MessageBox.vue'
 
 export default {

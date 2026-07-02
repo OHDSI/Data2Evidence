@@ -1,5 +1,5 @@
 <template>
-  <div class="patientlist-container" ref="patientlistContainer">
+  <div class="patientlist-container" ref="patientlistContainer" data-testid="pa-patient-list-table">
     <template v-if="errorMessage">
       <chartErrorMessage :errorMessage="errorMessage"></chartErrorMessage>
     </template>
@@ -10,8 +10,8 @@
         :menuData="getColumnSelectionMenu"
         @clickItem="addColumn"
       ></menuButton>
-      <div style="height: 14px"></div>
-      <div class="patientlist-control-wrapper" style="height: 90%; overflow: auto">
+      <div style="height: 14px; flex-shrink: 0"></div>
+      <div class="patientlist-control-wrapper" style="flex: 1; min-height: 0; overflow: auto">
         <patientListControl
           :columns="getSelectedAttributes"
           :rows="chartData.data"
@@ -131,6 +131,7 @@ export default {
           createZip(
             {
               responses,
+              cohortName: this.getActiveBookmark?.bookmarkname,
             },
             () => {
               this.completeDownloadZIP()
@@ -155,6 +156,7 @@ export default {
       'getSelectedAttributes',
       'getSelectedDataset',
       'translate',
+      'getActiveBookmark',
     ]),
     currentPage() {
       return this.getPLModel.currentPage

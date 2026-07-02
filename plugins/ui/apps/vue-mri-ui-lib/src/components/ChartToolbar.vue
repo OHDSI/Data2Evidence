@@ -35,14 +35,21 @@
       </div>
       <div class="d-flex iconActionButton">
         <template v-for="chart in chartConfig" :key="chart.name">
-          <chartButton
-            @clickEv="switchChart(chart)"
-            :name="chart.name"
-            :icon="chart.icon"
-            :iconGroup="chart.iconGroup"
-            :title="getText(chart.tooltip)"
-            :activeChart="getActiveChart"
-          />
+          <DisabledHoverPopover
+            :disabled="isBelowMinCohortSize"
+            :header="getText('MRI_PA_CHART_UNAVAILABLE', getText(chart.tooltip))"
+            :message="getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', String(minCohortSize))"
+          >
+            <chartButton
+              @clickEv="switchChart(chart)"
+              :name="chart.name"
+              :icon="chart.icon"
+              :iconGroup="chart.iconGroup"
+              :title="getText(chart.tooltip)"
+              :activeChart="getActiveChart"
+              :disabled="isBelowMinCohortSize"
+            />
+          </DisabledHoverPopover>
           <span class="separator"></span>
         </template>
 
@@ -52,6 +59,7 @@
           v-bind:class="{ toolbarButtonDisabled: !drilldownEnabled }"
           :disabled="!drilldownEnabled"
           @click="drillDownClicked"
+          data-testid="pa-drilldown-btn"
         >
           <span class="icon" style="font-family: app-icons"></span>
         </button>
@@ -62,6 +70,7 @@
           class="actionButton"
           @click="showFilterCardSummary"
           :title="getText('MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP')"
+          data-testid="pa-filter-summary-btn"
         >
           <icon icon="summaryDoc" />
         </button>
@@ -112,6 +121,17 @@
   </Teleport>
 
   <Teleport to="#app">
+    <ConfigureTable1Dialog
+      :is-open="dashboardFlow.showTable1ConfigModal"
+      :dataset-id="getSelectedDataset?.id || ''"
+      :initial-concept-sets="dashboardFlow.confirmedTable1ConceptSets"
+      @cancel="dashboardFlow.handleTable1ConfigCancel"
+      @close="dashboardFlow.closeDashboardFlow"
+      @confirm="dashboardFlow.handleTable1ConfigConfirm"
+    />
+  </Teleport>
+
+  <Teleport to="#app">
     <ShinyDashboardModal
       v-if="dashboardFlow.showDashboardModal"
       :is-open="dashboardFlow.showDashboardModal"
@@ -131,6 +151,7 @@
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       @success="dashboardFlow.handleSaveCohortSuccess"
       @cancel="dashboardFlow.handleCancelSaveCohort"
+      @close="dashboardFlow.closeDashboardFlow"
     />
   </Teleport>
 
@@ -138,13 +159,21 @@
     <VDialog
       :model-value="showInclusionReportModal"
       @update:modelValue="showInclusionReportModal = $event"
+      @keydown.esc="closeInclusionReportModal"
       max-width="90%"
       persistent
     >
-      <div class="inclusion-report-dialog">
+      <div class="inclusion-report-dialog" data-testid="pa-inclusion-report-dialog">
         <div class="inclusion-report-dialog__title">
-          <div class="inclusion-report-dialog__title-text">Attrition Plot</div>
-          <button class="inclusion-report-dialog__close-btn" @click="closeInclusionReportModal" :title="'Close'">
+          <div class="inclusion-report-dialog__title-text" data-testid="pa-inclusion-report-dialog-title">
+            Attrition Plot
+          </div>
+          <button
+            class="inclusion-report-dialog__close-btn"
+            @click="closeInclusionReportModal"
+            :title="'Close'"
+            data-testid="pa-inclusion-report-dialog-close-btn"
+          >
             <span class="icon" style="font-family: app-icons">&#x2715;</span>
           </button>
         </div>
@@ -172,6 +201,7 @@ import { mapActions, mapGetters } from 'vuex'
 import ChartButton from './ChartButton.vue'
 import DropDownMenu from './DropDownMenu.vue'
 import patientCount from './PatientCount.vue'
+import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import Constants from '../utils/Constants'
 import icon from '../lib/ui/app-icon.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -180,9 +210,10 @@ import ShinyDashboardModal from './ShinyViewer/ShinyDashboardModal.vue'
 import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
+import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
 import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 
 function getBookmarkKey(bookmark) {
   if (!bookmark) {
@@ -219,6 +250,7 @@ export default {
     const dashboardFlow = useDashboardFlow(store.dispatch, store.getters)
 
     return {
+      portalContext: usePortalContext(),
       chartConfig: [],
       disableCensoring: true,
       unHideIcon: '',
@@ -300,6 +332,7 @@ export default {
       'getBookmarkFromIFR',
       'getConstraint',
       'getCanDatasetMaterializeCohorts',
+      'getCurrentPatientCount',
     ]),
     chartSelection() {
       return this.getChartSelection()
@@ -311,11 +344,10 @@ export default {
       return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
     },
     isWizardFeatureEnabled() {
-      const portalAPI = getPortalAPI()
-      if (!portalAPI?.features) {
+      if (!this.portalContext?.features) {
         return false
       }
-      return portalAPI.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
+      return this.portalContext.features.some(f => f.feature === 'wizards' && f.isEnabled === true)
     },
     canOpenDashboard() {
       return this.getCanDatasetMaterializeCohorts && this.isWizardFeatureEnabled
@@ -340,6 +372,16 @@ export default {
     },
     enableIntersectViewInclusionReport() {
       return !!this.getMriFrontendConfig?._internalConfig?.panelOptions?.intersectViewInclusionReport
+    },
+    isBelowMinCohortSize() {
+      const minCohortSize = this.getAllChartConfigs?.minCohortSize
+      if (minCohortSize == null) return false
+      // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
+      const patientCount = Number(this.getCurrentPatientCount)
+      return Number.isNaN(patientCount) || patientCount < Number(minCohortSize)
+    },
+    minCohortSize() {
+      return this.getAllChartConfigs?.minCohortSize
     },
   },
   methods: {
@@ -524,12 +566,14 @@ export default {
     DropDownMenu,
     icon,
     patientCount,
+    DisabledHoverPopover,
     appIcon,
     DownloadMenu,
     ShinyDashboardModal,
     SaveCohortModal,
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
+    ConfigureTable1Dialog,
     Button,
     VButton,
     VDialog,

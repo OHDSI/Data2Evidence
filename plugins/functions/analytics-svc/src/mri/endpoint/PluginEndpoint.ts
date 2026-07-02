@@ -231,11 +231,8 @@ export class PluginEndpoint {
                                         this.logSqlTrace({
                                             outcome: "error",
                                             stage: "query_execute",
-                                            sql:
-                                                query?.queryString ??
-                                                null,
-                                            error:
-                                                err?.message ?? String(err),
+                                            sql: query?.queryString ?? null,
+                                            error: err?.message ?? String(err),
                                         });
                                         console.error(
                                             "Extension service - Interaction query failed",
@@ -390,11 +387,26 @@ export class PluginEndpoint {
                                         this.schemaName
                                     );
 
-                                if (patientCount.data.length === 1) {
-                                    endpointResult.totalPatientCount =
-                                        patientCount.data[0][
-                                            "patient.attributes.pcount"
-                                        ];
+                                const totalPatientCount =
+                                    patientCount.data.length === 1
+                                        ? patientCount.data[0][
+                                              "patient.attributes.pcount"
+                                          ]
+                                        : 0;
+                                endpointResult.totalPatientCount =
+                                    totalPatientCount;
+                                // Enforce minCohortSize before returning patient data
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
+                                if (
+                                    minCohortSize !== undefined &&
+                                    totalPatientCount < minCohortSize
+                                ) {
+                                    return errHandler(
+                                        new Error(
+                                            `Patient list blocked: patient count ${totalPatientCount} is below the minimum cohort size of ${minCohortSize}`
+                                        )
+                                    );
                                 }
                                 //Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
@@ -456,7 +468,7 @@ export class PluginEndpoint {
                         data: Readable.from(""),
                     };
 
-                    let { query, noDataReason } =
+                    let { query, pCountQuery, noDataReason } =
                         await this.buildTempTableQuery({
                             cohortDefinition,
                             datasetId: datasetId,
@@ -631,6 +643,56 @@ export class PluginEndpoint {
                                 return errHandler(err);
                             }
                             try {
+                                // Enforce patient list export limits before streaming the dataset
+                                const listExportConfig =
+                                    this.config?.chartOptions?.list;
+                                const minCohortSize =
+                                    this.config?.chartOptions?.minCohortSize;
+                                if (listExportConfig && pCountQuery) {
+                                    const { maxPatientsExport } =
+                                        listExportConfig;
+                                    const patientCount =
+                                        await pCountQuery.executeQuery<
+                                            {
+                                                "gr_cnt": number;
+                                                "patient.attributes.pcount": number;
+                                            }[]
+                                        >(
+                                            this.connection,
+                                            undefined,
+                                            this.schemaName
+                                        );
+                                    const totalPatientCount =
+                                        patientCount.data.length === 1
+                                            ? patientCount.data[0][
+                                                  "patient.attributes.pcount"
+                                              ]
+                                            : 0;
+                                    if (
+                                        (minCohortSize !== undefined &&
+                                            totalPatientCount <
+                                                minCohortSize) ||
+                                        (maxPatientsExport !== undefined &&
+                                            totalPatientCount >
+                                                maxPatientsExport)
+                                    ) {
+                                        const rangeDescription = [
+                                            minCohortSize !== undefined
+                                                ? `min ${minCohortSize}`
+                                                : null,
+                                            maxPatientsExport !== undefined
+                                                ? `max ${maxPatientsExport}`
+                                                : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(", ");
+                                        return errHandler(
+                                            new Error(
+                                                `Patient list export blocked: patient count ${totalPatientCount} is outside the allowed export range (${rangeDescription})`
+                                            )
+                                        );
+                                    }
+                                }
                                 // Execute query to select dataset, insert patient ids into temp table
                                 query.executeUpdate(
                                     this.connection,

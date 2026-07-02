@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getWizardDefinitions, getWizardById } from "../wizardDefinitions";
+import { getWizardDefinitions, getWizardById, isWizardVisibleOnSurface } from "../wizardDefinitions";
 
 // Mock cdwConfig - tests run in dev mode so they use hardcoded definitions
 vi.mock("../cdwConfig", () => ({
@@ -12,10 +12,10 @@ vi.mock("../cdwConfig", () => ({
 
 describe("wizardDefinitions", () => {
   describe("getWizardDefinitions", () => {
-    it("should return an array with exactly 4 wizards", async () => {
+    it("should return an array with exactly 5 wizards", async () => {
       const wizards = await getWizardDefinitions();
       expect(Array.isArray(wizards)).toBe(true);
-      expect(wizards.length).toBe(4);
+      expect(wizards.length).toBe(5);
     });
 
     it("should return wizards with required fields", async () => {
@@ -156,6 +156,20 @@ describe("wizardDefinitions", () => {
       expect(wizard?.steps[0].type).toBe("form");
     });
 
+    it("should have table1 wizard with config-only structure", async () => {
+      const wizard = await getWizardById("table1");
+
+      expect(wizard).toBeDefined();
+      expect(wizard?.id).toBe("table1");
+      expect(wizard?.name).toBe("Table 1");
+      expect(wizard?.description).toBe("Generate a Table 1 summary using selected covariate concept sets.");
+      expect(wizard?.surfaces).toEqual(["cohortBuilder"]);
+      expect(wizard?.flow).toBe("table1-config");
+      expect(wizard?.fields).toEqual([]);
+      expect(wizard?.steps).toHaveLength(1);
+      expect(wizard?.steps[0].type).toBe("form");
+    });
+
     it("should have all new wizards with age field mapped to config", async () => {
       const wizardIds = [
         "calculate-incidence",
@@ -194,6 +208,20 @@ describe("wizardDefinitions", () => {
         expect(heightField?.label).toBe("Height");
         expect(heightField?.configPath).toBe("patient.interactions.measurement.attributes.numval");
       }
+    });
+  });
+
+  describe("surface visibility", () => {
+    it("shows deployed configs without surfaces on all wizard-aware surfaces", () => {
+      expect(isWizardVisibleOnSurface({}, "wizardApp")).toBe(true);
+      expect(isWizardVisibleOnSurface({}, "cohortBuilder")).toBe(true);
+    });
+
+    it("hides cohort-builder-only configs from the standalone wizard app", () => {
+      const table1Config = { surfaces: ["cohortBuilder" as const] };
+
+      expect(isWizardVisibleOnSurface(table1Config, "wizardApp")).toBe(false);
+      expect(isWizardVisibleOnSurface(table1Config, "cohortBuilder")).toBe(true);
     });
   });
 });

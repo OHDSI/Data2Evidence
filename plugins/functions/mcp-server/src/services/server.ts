@@ -6,6 +6,7 @@ import { registerCohortInstructionTools } from "../tools/cohort-instruction.tool
 import { registerCohortValidationTools } from "../tools/cohort-validation.tools";
 import { registerCohortPrompts } from "../prompts/cohort.prompts";
 import { registerStrategusTools } from "../tools/strategus.tools";
+import { registerConceptSetManagementTools } from "../tools/concept-set-management.tools";
 
 export const server = new McpServer({
   name: MCP_SERVER_CONFIG.NAME,
@@ -20,6 +21,9 @@ registerCohortValidationTools(server);
 
 // Register Strategus tools
 registerStrategusTools(server);
+
+// Register concept set tools
+registerConceptSetManagementTools(server);
 
 // Register prompts
 registerCohortPrompts(server);

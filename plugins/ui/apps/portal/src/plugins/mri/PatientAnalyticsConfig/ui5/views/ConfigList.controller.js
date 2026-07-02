@@ -897,6 +897,10 @@ sap.ui.define([
             configId: oContext.getProperty("meta/configId"),
             configVersion: oContext.getProperty("meta/configVersion")
         };
+        var downloadFileName = ConfigUtils.buildConfigDownloadFileName("COHORT_BUILDER", [{
+            value: oContext.getProperty("meta/configName"),
+            fallback: "unknown"
+        }]);
 
         var url = this._getConfigDownloadLink(meta);
         ConfigUtils.ajax({
@@ -907,12 +911,12 @@ sap.ui.define([
             var configData = encodeURIComponent(mData);
             if(window.navigator.msSaveOrOpenBlob) {
                 var blob = new Blob([mData], {type: 'application/json'});
-                window.navigator.msSaveBlob(blob, "PatientAnalyticsConfig.json");
+                window.navigator.msSaveBlob(blob, downloadFileName);
             } else {
                 var xDocument = this.getView().getDomRef().ownerDocument;
                 var xDownloadLink = xDocument.createElement("a");
                 xDownloadLink.href = "data:application/json;charset=utf-8," + configData;
-                xDownloadLink.download = "PatientAnalyticsConfig.json";
+                xDownloadLink.download = downloadFileName;
                 xDocument.body.appendChild(xDownloadLink);
                 xDownloadLink.click();
                 xDocument.body.removeChild(xDownloadLink);

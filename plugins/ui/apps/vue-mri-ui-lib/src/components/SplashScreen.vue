@@ -1,5 +1,5 @@
 <template>
-  <div class="splash-container">
+  <div class="splash-container" :class="{ 'splash-container--overlay': overlay }">
     <div class="loadingDialog">
       <d4l-spinner />
     </div>
@@ -9,6 +9,12 @@
 <script lang="ts">
 export default {
   name: 'splashScreen',
+  props: {
+    overlay: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       splashDisplay: false,
@@ -30,5 +36,10 @@ export default {
   .loadingDialog {
     z-index: 10;
   }
+}
+
+.splash-container--overlay {
+  position: absolute;
+  inset: 0;
 }
 </style>

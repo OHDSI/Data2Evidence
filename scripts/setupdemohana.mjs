@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import dotenv from 'dotenv';
 import fs from "node:fs/promises";
-import { Agent } from "undici";
+import { Agent, fetch } from "undici";
 import * as crypto from 'crypto';
 
 // Helper functions

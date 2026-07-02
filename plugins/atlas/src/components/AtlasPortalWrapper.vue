@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, inject } from 'vue';
-import { sendAuth, sendDataset, sendLocale, listenToAtlas } from '../utils/portalBridge';
+import { sendDataset, sendLocale, listenToAtlas } from '../utils/portalBridge';
 import type { PluginProps } from '../types';
 
 const props = defineProps<{
@@ -9,74 +9,69 @@ const props = defineProps<{
 
 const pluginProps = inject<PluginProps>('pluginProps');
 
+// Atlas3 reads its auth token from localStorage under this key (see its bundle:
+// initializeFromStorage() -> localStorage.getItem('bearerToken') -> setToken()).
+const ATLAS_TOKEN_KEY = 'bearerToken';
+
 const atlasFrame = ref<HTMLIFrameElement | null>(null);
+// The iframe src is only set AFTER the token is written to localStorage, so
+// Atlas3 finds it on boot and never shows its own login screen.
+const atlasUrl = ref<string>('');
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 
-// Build the Atlas URL - use the standalone Atlas3 at /atlas/
-const atlasUrl = ref('/atlas/?embedded=true');
-
-// Cleanup function for message listener
 let cleanupListener: (() => void) | null = null;
+let tokenRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
 /**
- * Send auth credentials to the iframe
+ * Resolve the current portal (Logto) token.
+ * trex's authn middleware accepts this Logto token (Authorization header or
+ * `authtoken` cookie) on /WebAPI/* calls and exchanges it for a WebAPI token,
+ * so Atlas3 only ever needs to hold the Logto token.
  */
-async function syncAuth() {
-  if (!atlasFrame.value?.contentWindow) return;
-
-  try {
-    let token = '';
-
-    // Get token from pluginProps.getToken() if available
-    if (typeof pluginProps?.getToken === 'function') {
-      token = await pluginProps.getToken();
-    } else if (pluginProps?.authContext?.token) {
-      token = pluginProps.authContext.token;
-    }
-
-    if (token) {
-      sendAuth(atlasFrame.value, {
-        token,
-        username: pluginProps?.username,
-        idpUserId: pluginProps?.idpUserId,
-      });
-    }
-  } catch (err) {
-    console.error('[AtlasPortalWrapper] Failed to get token:', err);
+async function resolveToken(): Promise<string> {
+  if (typeof pluginProps?.getToken === 'function') {
+    return (await pluginProps.getToken()) || '';
   }
+  return pluginProps?.authContext?.token || '';
 }
 
 /**
- * Handle iframe load event
+ * Write the token into the shared (same-origin) localStorage so the embedded
+ * Atlas3 picks it up. /atlas-portal and /atlas are the same origin, so this
+ * localStorage is shared with the iframe.
  */
-function onFrameLoad() {
-  console.log('[AtlasPortalWrapper] Atlas iframe loaded');
+function storeToken(token: string): void {
+  if (!token) return;
+  try {
+    window.localStorage.setItem(ATLAS_TOKEN_KEY, token);
+  } catch (err) {
+    console.error('[AtlasPortalWrapper] Failed to store token:', err);
+  }
+}
+
+/** Refresh the stored token. */
+async function syncAuth(): Promise<void> {
+  const token = await resolveToken();
+  if (token) storeToken(token);
+}
+
+function onFrameLoad(): void {
   isLoading.value = false;
-
-  // Send auth immediately - don't wait, Atlas3 makes API calls right away
-  syncAuth();
-
-  // Send initial dataset if available
+  // Push initial dataset / locale context (these still use postMessage).
   if (pluginProps?.datasetId && atlasFrame.value) {
     sendDataset(atlasFrame.value, pluginProps.datasetId);
   }
-
-  // Send locale if available
   if (pluginProps?.locale && atlasFrame.value) {
     sendLocale(atlasFrame.value, pluginProps.locale);
   }
 }
 
-/**
- * Handle iframe error
- */
-function onFrameError() {
+function onFrameError(): void {
   error.value = 'Failed to load Atlas';
   isLoading.value = false;
 }
 
-// Watch for dataset changes
 watch(
   () => pluginProps?.datasetId,
   (newDatasetId) => {
@@ -86,7 +81,6 @@ watch(
   }
 );
 
-// Watch for locale changes
 watch(
   () => pluginProps?.locale,
   (newLocale) => {
@@ -96,32 +90,35 @@ watch(
   }
 );
 
-onMounted(() => {
-  // Listen for messages from Atlas3
-  cleanupListener = listenToAtlas((message) => {
-    console.log('[AtlasPortalWrapper] Received message from Atlas:', message);
+onMounted(async () => {
+  // 1. Seed the token BEFORE the iframe navigates so Atlas3 is authenticated on boot.
+  try {
+    const token = await resolveToken();
+    if (token) {
+      storeToken(token);
+    } else {
+      console.warn('[AtlasPortalWrapper] No portal token available; Atlas3 may prompt for login');
+    }
+  } catch (err) {
+    console.error('[AtlasPortalWrapper] Failed to resolve token before load:', err);
+  }
 
-    switch (message.type) {
-      case 'ready':
-      case 'request-auth':
-        // Atlas is ready or requesting auth, sync auth
-        syncAuth();
-        break;
-      // Handle other message types as needed
+  // 2. Now load Atlas3, deep-linked straight to the cohort definitions page
+  //    (hash route) rather than the Atlas home/welcome screen.
+  atlasUrl.value = '/atlas/?embedded=true#/cohorts';
+
+  // 3. Keep the token fresh; re-sync on request from Atlas (if it ever asks).
+  cleanupListener = listenToAtlas((message) => {
+    if (message.type === 'ready' || message.type === 'request-auth') {
+      void syncAuth();
     }
   });
-
-  // Periodically refresh token
-  const tokenRefreshInterval = setInterval(syncAuth, 5 * 60 * 1000); // Every 5 minutes
-
-  onUnmounted(() => {
-    cleanupListener?.();
-    clearInterval(tokenRefreshInterval);
-  });
+  tokenRefreshInterval = setInterval(() => void syncAuth(), 5 * 60 * 1000);
 });
 
 onUnmounted(() => {
   cleanupListener?.();
+  if (tokenRefreshInterval) clearInterval(tokenRefreshInterval);
 });
 </script>
 
@@ -137,6 +134,7 @@ onUnmounted(() => {
     </div>
 
     <iframe
+      v-if="atlasUrl"
       ref="atlasFrame"
       :src="atlasUrl"
       class="atlas-iframe"
@@ -183,7 +181,7 @@ onUnmounted(() => {
   width: 40px;
   height: 40px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #1976d2;
+  border-top: 4px solid #000080;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;

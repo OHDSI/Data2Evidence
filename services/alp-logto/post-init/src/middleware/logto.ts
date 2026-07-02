@@ -86,3 +86,13 @@ export async function get(path: string, headers: any): Promise<Response> {
   });
   return resp;
 }
+
+export async function del(path: string, headers: any): Promise<Response> {
+  const resp = await fetch(`${LOGTO__ADMIN_SERVER__FQDN_URL}/api/${path}`, {
+    method: "DELETE",
+    headers: Object.assign({}, headers, {
+      "Content-Type": "application/json",
+    }),
+  });
+  return resp;
+}

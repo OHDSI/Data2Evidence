@@ -1,6 +1,17 @@
 <template>
   <div class="chartController" v-bind:class="{ withoutAxis: withoutAxis, genomics: getActiveChart === 'vb' }">
     <div v-if="getChartCover" class="chartCover"></div>
+    <div v-if="isBelowMinCohortSize && !chartBusy" class="min-cohort-placeholder">
+      <CohortDefinitionIcon class="min-cohort-placeholder__icon" />
+      <div class="min-cohort-placeholder__title">{{ getText('MRI_PA_NOT_ENOUGH_DATA_TITLE') }}</div>
+      <div class="min-cohort-placeholder__message">
+        {{
+          minCohortSize != null
+            ? getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE', String(minCohortSize))
+            : getText('MRI_PA_NOT_ENOUGH_DATA_MESSAGE_NO_MIN')
+        }}
+      </div>
+    </div>
     <div class="chartControllerContent">
       <div class="axisContainer" ref="axisContainer">
         <!-- <div class="kaplanAxis-label" v-if="getActiveChart === 'vb'">{{ getText('MRI_PA_KAPLAN_AXIS_TITLE') }}</div> -->
@@ -56,7 +67,7 @@
         </div>
       </div>
       <div class="chartContainer">
-        <loadingAnimation v-if="chartBusy"></loadingAnimation>
+        <loadingAnimation v-if="showChartLoadingAnimation"></loadingAnimation>
         <stackBarChart
           v-if="getActiveChart === 'stacked'"
           @busyEv="setChartBusy"
@@ -111,6 +122,7 @@ import CohortEntryExit from './CohortEntryExit.vue'
 import StackBarChart from './StackBarChart.vue'
 import CohortsAppMenu from './CohortsAppMenu.vue'
 import patientCount from './PatientCount.vue'
+import CohortDefinitionIcon from './icons/CohortDefinitionIcon.vue'
 
 export default {
   name: 'chartController',
@@ -184,9 +196,23 @@ export default {
       'getChartSelection',
       'getKMDisplayInfo',
       'getActiveBookmark',
+      'getDatasetReloadInProgress',
       'getBarChartType',
       'getColorAxisIndex',
+      'getCurrentPatientCount',
     ]),
+    showChartLoadingAnimation() {
+      return this.chartBusy && !this.getDatasetReloadInProgress
+    },
+    minCohortSize() {
+      return this.getAllChartConfigs?.minCohortSize
+    },
+    isBelowMinCohortSize() {
+      const minCohortSize = this.minCohortSize ?? 0
+      // Non-numeric count (e.g. '--' when cohort is too small to display) is treated as below minimum.
+      const patientCount = Number(this.getCurrentPatientCount)
+      return Number.isNaN(patientCount) || patientCount < Number(minCohortSize)
+    },
     colorAxisIndex() {
       return this.getColorAxisIndex
     },
@@ -364,6 +390,7 @@ export default {
     appCheckbox,
     CohortsAppMenu,
     patientCount,
+    CohortDefinitionIcon,
   },
 }
 </script>

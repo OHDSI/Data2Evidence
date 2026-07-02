@@ -3,7 +3,7 @@ import { Container } from 'typedi'
 import { UserGroupService } from '../services'
 import { AlpTenantUserRoleMapType, IAppRequest } from '../types'
 import { createLogger } from '../Logger'
-import { ROLES } from '../const'
+import { ROLES, SERVICE_USER_ID } from '../const'
 import { getUserGroupsCached } from './request-cache.ts'
 import * as _ from 'lodash-es'
 
@@ -26,6 +26,19 @@ export const permittedTenantCheck =
     try {
       const { userId: ctxUserId } = req.user
       const userGroupService = Container.get(UserGroupService)
+
+      // Service / M2M tokens are tagged with the SERVICE_USER_ID sentinel and
+      // pass through; an end-user with no resolved usermgmt.user row (empty
+      // userId) is denied rather than bypassed, to prevent unprovisioned
+      // users from skipping tenant authorization.
+      if (ctxUserId === SERVICE_USER_ID) {
+        return next()
+      }
+      if (!ctxUserId) {
+        logger.warn(`SECURITY INCIDENT: unresolved user attempted to manage tenant (${tenantId})`)
+        return res.status(403).send('You do not have enough privileges to manage this tenant')
+      }
+
       const ctxUserGroups = await getUserGroupsCached(req, userGroupService, ctxUserId)
 
       if (ctxUserGroups.alp_role_user_admin) {

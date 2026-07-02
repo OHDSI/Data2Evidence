@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState, useEffect } from "react";
-import { UserWithRoles } from "../../../../../types";
-import { Button, Feedback, Loader, TableCell, TableRow, RejectIcon, IconButton } from "@portal/components";
+import { Feedback, UserWithRoles } from "../../../../../types";
+import { Button, Loader, TableCell, TableRow, RejectIcon, IconButton } from "@portal/components";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -204,7 +204,7 @@ const AcessPanel: FC<AcessPanelProps> = ({
             </colgroup>
             <TableHead>
               <TableRow>
-                <TableCell>{getText(i18nKeys.ACCESS_PANEL__EMAIL)}</TableCell>
+                <TableCell>{getText(i18nKeys.ACCESS_PANEL__NAME)}</TableCell>
                 <TableCell>{getText(i18nKeys.ACCESS_PANEL__ROLE)}</TableCell>
                 <TableCell></TableCell>
               </TableRow>

@@ -127,7 +127,7 @@ const TreeMapChart: FC<TreeMapChartProps> = ({ data, title, setSelectedConcept, 
     toolbox: {
       show: true,
       feature: {
-        dataView: { readOnly: false },
+        dataView: { readOnly: true },
         saveAsImage: {},
         restore: {},
       },

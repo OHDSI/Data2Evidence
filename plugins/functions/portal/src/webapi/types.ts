@@ -58,3 +58,11 @@ export interface IDbCredentials {
   username: string
   password: string
 }
+
+/**
+ * WebAPI security role (subset) returned by GET /role.
+ */
+export interface IRole {
+  id: number
+  name: string
+}

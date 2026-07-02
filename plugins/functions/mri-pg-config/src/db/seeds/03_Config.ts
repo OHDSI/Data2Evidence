@@ -8463,10 +8463,14 @@ export const cdwConfig = {
                                 "visible": true
                             }
                         ],
-                        "type": "num",
+                        "type": "text",
                         "expression": "@COHORT.cohort_definition_id",
+                        "referenceFilter": "CONTAINS (@RESULT_COHORT_DEF.cohort_definition_name, '%@SEARCH_QUERY%', FUZZY (0.5))",
+                        "referenceExpression": "@RESULT_COHORT_DEF.COHORT_DEFINITION_ID",
                         "order": 0,
                         "domainFilter": "",
+                        "includeDescendants": false,
+                        "includeDescendantsExpression": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "",
                         "conceptIdentifierType": "",
@@ -13334,7 +13338,8 @@ const paConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27204,7 +27209,8 @@ const paConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -27235,7 +27241,7 @@ const paConfigDuckdb = {
         "calcViewAccessPoint": true,
         "externalAccessPoints": true,
         "cohortEntryExit": false,
-        "atlasCohortDefinition": true,
+        "atlasCohortDefinition": false,
         "usePaAtlas": false,
         "inclusionReport": true,
         "intersectViewInclusionReport": false,
@@ -28836,6 +28842,7 @@ const paI2b2ConfigDuckdb = {
       collectionEnabled: true,
       beginVisible: true,
       pageSize: 20,
+      maxPatientsExport: 2000000,
     },
     vb: {
       visible: true,
@@ -34684,7 +34691,8 @@ const pajsonfhirConfigDuckdb = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,
@@ -38173,7 +38181,8 @@ const omopHanaLeanPAConfig = {
             "downloadEnabled": true,
             "collectionEnabled": true,
             "beginVisible": true,
-            "pageSize": 20
+            "pageSize": 20,
+            "maxPatientsExport": 2000000
         },
         "vb": {
             "visible": true,

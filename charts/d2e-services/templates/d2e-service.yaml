@@ -36,6 +36,20 @@ spec:
   selector:
     profile: d2e-functions
   type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: trex-sql
+spec:
+  ports:
+    - name: sql
+      port: 443
+      targetPort: 5433
+  selector:
+    profile: d2e-functions
+  type: ClusterIP
+
 {{- if .Values.local.extraServices }}
 ---
 apiVersion: v1

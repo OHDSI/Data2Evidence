@@ -8,6 +8,7 @@
           :title="getText('MRI_PA_TOOLTIP_RESET_FILTERS')"
           @click="openResetDialog"
           style="--border-radius-button: 9999px; margin-left: 8px; margin-right: 8px"
+          data-testid="pa-reset-filters-btn"
         />
       </div>
       <div class="d-flex justify-content-center align-items-center">
@@ -25,6 +26,7 @@
                   : getText('MRI_PA_TOOLTIP_CREATE_FILTERS')
               "
               :disabled="this.hasExceededMaxFilterCount"
+              data-testid="pa-add-filter-btn"
             />
             <d4l-button
               v-else
@@ -65,6 +67,7 @@
           :title="getText('MRI_PA_BUTTON_SAVE')"
           @click="openSaveBookmark"
           style="margin-left: 8px; margin-right: 8px"
+          data-testid="pa-save-cohort-btn"
         />
       </div>
     </div>
@@ -137,11 +140,13 @@
           :text="getText('MRI_PA_BUTTON_SAVE')"
           :tooltip="getText('MRI_PA_BUTTON_SAVE')"
           :disabled="this.hasExceededLength || getBookmarksLoading"
+          testId="pa-save-dialog-save-btn"
         ></appButton>
         <appButton
           :click="closeSaveBookmark"
           :text="getText('MRI_PA_BUTTON_CANCEL')"
           :tooltip="getText('MRI_PA_BUTTON_CANCEL')"
+          testId="pa-save-dialog-cancel-btn"
         ></appButton>
       </template>
     </messageBox>
@@ -180,7 +185,7 @@ import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
 import DialogBox from './DialogBox.vue'
 import messageBox from './MessageBox.vue'
-import { getPortalAPI } from '../utils/PortalUtils'
+import { usePortalContext } from '../composables/usePortalContext'
 import { useUserRole } from '../composables/useUserRole'
 
 export default {
@@ -194,8 +199,9 @@ export default {
   },
   setup() {
     const store = useStore()
+    const portalContext = usePortalContext()
     const { canShare } = useUserRole()
-    return { canShare }
+    return { canShare, portalContext }
   },
   data() {
     return {
@@ -251,7 +257,7 @@ export default {
       return filtercardCount >= this.maxFiltercardCount
     },
     isNotUserSharedBookmark() {
-      const username = getPortalAPI().username
+      const username = this.portalContext.username
       return this.getActiveBookmark.shared && username !== this.getActiveBookmark.user_id
     },
   },
@@ -301,7 +307,7 @@ export default {
           return
         }
 
-        const username = getPortalAPI().username
+        const username = this.portalContext.username
 
         // For updates without a new name, use the existing bookmark name
         const bookmarkName = this.cohortName.length > 0 ? this.cohortName : activeBookmark.bookmarkname

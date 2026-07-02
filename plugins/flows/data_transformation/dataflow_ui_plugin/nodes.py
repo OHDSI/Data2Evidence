@@ -23,10 +23,12 @@ from prefect import task, flow
 
 from .hooks import *
 from .flowutils import *
-from .types import (NodeType, 
-                    TableSourceType, 
-                    DataMappingType, 
+from .types import (NodeType,
+                    TableSourceType,
+                    DataMappingType,
                     ConceptMappingType)
+
+
 
 from .nodeutils.querygenerator import *
 from .nodeutils.csvutils import load_csv_from_storage
@@ -169,16 +171,33 @@ class Py2TableNode(Node):
         df = self.__create_dataframe(data)
         return df
     
+    def _check_input(self, _input: dict[str, Result], task_run_context) -> Result | None:
+        source_node = self.ui_map.get("source", "").split(".")[0]
+        upstream = _input.get(source_node)
+        if upstream is None or upstream.result is None:
+            return Result(True, f"No input data: no result received from '{source_node}'", self, task_run_context)
+        if upstream.error:
+            return Result(True, f"No input data: upstream node '{source_node}' failed, fix that node first", self, task_run_context)
+        if isinstance(upstream.result, (str, bytes, int, float, bool)):
+            return Result(True, f"No input data: result from '{source_node}' is not a table or object", self, task_run_context)
+        return None
+
     def test(self, _input: dict[str, Result], task_run_context):
         try:
+            no_input = self._check_input(_input, task_run_context)
+            if no_input:
+                return no_input
             table_df = self._exec(_input)
             return Result(False,  table_df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
-    
+
 
     def task(self, _input: dict[str, Result], task_run_context):
         try:
+            no_input = self._check_input(_input, task_run_context)
+            if no_input:
+                return no_input
             table_df = self._exec(_input)
             return Result(False,  table_df, self, task_run_context)
         except Exception as e:
@@ -242,21 +261,29 @@ class PythonNode(Node):
         self.source_code = _node["python_code"] + '\noutput = exec(myinput)'
         self.test_source_code = _node["python_code"]+'\noutput = test_exec(myinput)'
         
-    def test(self, _input: dict[str, Result], 
-             shared_variables: dict[str, str], 
-             importlibs: list[str], 
+    def test(self, _input: dict[str, Result],
+             shared_variables: dict[str, str],
+             importlibs: list[str],
              task_run_context):
         return self.task(_input, shared_variables, importlibs, task_run_context)
 
-    def task(self, _input: dict[str, Result], 
-             shared_variables: list[dict[str, str]], 
-             importlibs: list[str], 
-             task_run_context):
+    def task(self, _input: dict[str, Result],
+             shared_variables: list[dict[str, str]],
+             importlibs: list[str],
+             task_run_context,
+             databases: list[dict] = None,
+             schemas: list[dict] = None):
         params = {"myinput": _input, "output": {}}
         try:
             if shared_variables:
                 for item in shared_variables:
-                    params.update({item["key"]: item["value"]})
+                    params[item["key"]] = item["value"]
+            if databases:
+                for db in databases:
+                    params[db["name"]] = db["code"]
+            if schemas:
+                for s in schemas:
+                    params[s["name"]] = s["schema"]
             if importlibs:
                 exec("\n".join(importlibs), params)
             code = compile(self.source_code, '<string>', 'exec')
@@ -376,15 +403,28 @@ class TransformFhirDataNode(Node):
 
         return pd.DataFrame(expanded_rows)
         
-    def get_fhir_structure_definition(self, url: str) -> dict:
-        fhir_api = FhirAPI()
-        print("Getting source structure definition from FHIR server...")
-        print(f"URL: {url}")
-        query = f"?url={url}"
-        response = fhir_api.get(resource_type="StructureDefinition", query=query)
-        if response:
-            entries = response.get("entry", [])
-            return entries[0].get("resource", {}) if entries else {}
+    def get_fhir_structure_definition(self, folder: str, source_resource_name: str) -> dict:
+        # Previous implementation (kept for reference, do not remove):
+        # fhir_api = FhirAPI()
+        # print("Getting source structure definition from FHIR server...")
+        # print(f"URL: {url}")
+        # query = f"?url={url}"
+        # response = fhir_api.get(resource_type="StructureDefinition", query=query)
+        # if response:
+        #     entries = response.get("entry", [])
+        #     return entries[0].get("resource", {}) if entries else {}
+
+        print("Getting source structure definition from local folder...")
+        print(f"FHIR Resource: {source_resource_name}")
+
+        if not os.path.isdir(folder):
+            return {}
+
+        resource_file = os.path.join(folder, f"{source_resource_name}.json")
+        if os.path.isfile(resource_file):
+            with open(resource_file, "r", encoding="utf8") as f:
+                return json.load(f)
+
         return {}
     
     def get_omop_structure_definition_by_url(self, folder: str, incoming_url: str) -> dict:
@@ -427,7 +467,9 @@ class TransformFhirDataNode(Node):
         if omop_table_name is None:
             raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
 
-        source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
+        source_resource_name = source_structure_definition_url.rstrip("/").split("/")[-1]
+        folder = "/app/flows/dataflow_ui_plugin/fhirutils/fhir_structureDefinition"
+        source_structure_definition = self.get_fhir_structure_definition(folder, source_resource_name)
         if not source_structure_definition:
             raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
 
@@ -435,8 +477,8 @@ class TransformFhirDataNode(Node):
         target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
 
         fhir_resource = None
-        if "content" in input_fhir_df.columns:
-            content_list = input_fhir_df["content"].tolist()
+        if "_raw" in input_fhir_df.columns:
+            content_list = input_fhir_df["_raw"].tolist()
             fhir_resource = content_list if content_list else None
 
         transformed_omop = []
@@ -498,9 +540,16 @@ class TransformFhirDataNode(Node):
 
     def task(self, _input: dict[str, Result], task_run_context) -> Result:
         try:
-            df_to_write = _input[self.dataframe].result
-            if df_to_write is None:
-                raise Exception("Input dataframe is None")
+            upstream = _input.get(self.dataframe)
+            if upstream is None or upstream.result is None or len(upstream.result) == 0:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' is empty", self, task_run_context)
+            if upstream.error:
+                return Result(True, f"No input data: upstream node '{self.dataframe}' failed, fix that node first", self, task_run_context)
+            df_to_write = upstream.result
+            if not isinstance(df_to_write, pd.DataFrame):
+                return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
+            if "_raw" not in df_to_write.columns or df_to_write["_raw"].dropna().empty:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' has no FHIR resources in the '_raw' column", self, task_run_context)
             df = self.transform_fhir_data(df_to_write)
             if df is None:
                 raise Exception("Transformation resulted in empty dataframe")
@@ -555,12 +604,20 @@ class DbWriter(Node):
                 conn.execute(sql.text(f'TRUNCATE TABLE "{self.schema_name}"."{self.table_name}"'))
 
     def task(self, _input: dict[str, Result], task_run_context):
-        dbutils = DBDao(database_code=self.database)
-
-        dbconn = dbutils.engine
-
         try:
-            df_to_write = _input[self.dataframe].result
+            upstream = _input.get(self.dataframe)
+            if upstream is None or upstream.result is None or len(upstream.result) == 0:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' is empty", self, task_run_context)
+            if upstream.error:
+                return Result(True, f"No input data: upstream node '{self.dataframe}' failed, fix that node first", self, task_run_context)
+            if not isinstance(upstream.result, pd.DataFrame):
+                return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
+            df_to_write = upstream.result
+
+            dbutils = DBDao(database_code=self.database)
+            if dbutils.dialect == SupportedDatabaseDialects.TREX.value:
+                return Result(True, f"Writing to a trex database ('{self.database}') is not supported by the DB writer node", self, task_run_context)
+            dbconn = dbutils.engine
 
             if self.truncate:
                 self._truncate_table(dbconn, dbutils.dialect)
@@ -588,12 +645,12 @@ class DBReader(Node):
         return Result(False,  pd.read_json(json.dumps(self.testdata), orient="split"), self, task_run_context)
 
     def task(self, task_run_context) -> Result:
-        dbutils = DBDao(database_code=self.database) 
-        dbconn = dbutils.engine
-
         try:
-            df = pd.read_sql_query(
-                self.sqlquery, dbconn)
+            dbutils = DBDao(database_code=self.database)
+            if dbutils.dialect == SupportedDatabaseDialects.TREX.value:
+                df = dbutils.query_dataframe(self.sqlquery)
+            else:
+                df = pd.read_sql_query(self.sqlquery, dbutils.engine)
             return Result(False,  df, self, task_run_context)
         except Exception as e:
             return Result(True, tb.format_exc(), self, task_run_context)
@@ -965,9 +1022,9 @@ class FhirMappingNode(Node):
         try:
             mapping_schema = f"{self.database_code}_{self.schema_name}_fhir_mapping"
             # connect to source db to get omop_id and source_value pairs from the omop table, then connect to mapping db to upsert the lineage mapping
-            omop_dao = DBDao(use_cache_db=False, database_code=self.database_code)
+            omop_dao = DBDao(database_code=self.database_code)
             # mapping schema is in cache
-            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, use_cache_db=False, database_code=self.database_code)
+            mapping_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=self.database_code)
             self._ensure_mapping_schema(self.database_code, self.schema_name, mapping_dao)
 
             source_value_col = self.source_value_col

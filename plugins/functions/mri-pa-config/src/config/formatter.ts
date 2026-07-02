@@ -120,7 +120,12 @@ export class Formatter {
             zipDownloadEnabled: mriConfig.chartOptions.list.zipDownloadEnabled,
             collectionEnabled: mriConfig.chartOptions.list.collectionEnabled,
             beginVisible: mriConfig.chartOptions.list.beginVisible,
-            pageSize: mriConfig.chartOptions.list.pageSize,
+            pageSize:
+              mriConfig.chartOptions.list.pageSize ??
+              configDefaultValues.chartOptions.list.pageSize,
+            maxPatientsExport:
+              mriConfig.chartOptions.list.maxPatientsExport ??
+              configDefaultValues.chartOptions.list.maxPatientsExport,
             initialColumns,
           },
           vb: {
@@ -471,6 +476,14 @@ export class Formatter {
             paConfig.chartOptions.shared = defaultValues.chartOptions.shared;
         }
 
+        if (!paConfig.chartOptions.list.hasOwnProperty("maxPatientsExport")) {
+            paConfig.chartOptions.list.maxPatientsExport = defaultValues.chartOptions.list.maxPatientsExport;
+        }
+
+        if (!paConfig.chartOptions.list.hasOwnProperty("pageSize")) {
+            paConfig.chartOptions.list.pageSize = defaultValues.chartOptions.list.pageSize;
+        }
+
         return paConfig;
     }
 
@@ -623,6 +636,8 @@ export class Formatter {
             },
             list: {
                 enabled: paConfig.chartOptions.list.visible,
+                pageSize: paConfig.chartOptions.list.pageSize,
+                maxPatientsExport: paConfig.chartOptions.list.maxPatientsExport,
             },
             vb: {
                 enabled: paConfig.chartOptions.vb.visible,

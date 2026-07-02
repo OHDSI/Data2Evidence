@@ -1,11 +1,6 @@
-import React, { FC, useState, useCallback } from "react";
-import { Dialog, FormControl, Button, Select, MenuItem, SelectChangeEvent } from "@portal/components";
-import Divider from "@mui/material/Divider";
-import { Feedback } from "../../../../types";
-import { useTranslation } from "../../../../contexts";
-import { i18nKeys } from "../../../../contexts/app-context/states";
-
-import "./ChangeLanguageDialog.scss";
+import React, { FC, useState, useCallback, useRef } from "react";
+import { Dialog, FormControl, Button, Select, MenuItem, SelectChangeEvent, Feedback } from "@portal/components";
+import { useTranslation, useFeedback } from "../../../../contexts";
 
 interface ChangeLanguageDialogProps {
   open: boolean;
@@ -20,78 +15,97 @@ const SUPPORTED_LANGUAGES = [
 
 export const ChangeLanguageDialog: FC<ChangeLanguageDialogProps> = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>({});
-  const { getText, changeLocale, locale } = useTranslation();
-
-  const [language, setLangauge] = useState(locale);
+  const { setFeedback } = useFeedback();
+  const [dialogFeedback, setDialogFeedback] = useState<Feedback>({});
+  const { getText, getTextForLocale, changeLocale, locale, i18nKeys } = useTranslation();
+  const [language, setLanguage] = useState(locale);
 
   const handleClose = useCallback(() => {
-    setFeedback({});
+    setDialogFeedback({});
+    setLanguage(locale);
     typeof onClose === "function" && onClose();
-  }, [onClose]);
+  }, [onClose, locale]);
 
-  const handleUpdate = useCallback(() => {
+  const handleUpdateRef = useRef<() => void>(() => undefined);
+  const handleUpdate = useCallback(async () => {
+    if (language === locale) {
+      setDialogFeedback({ description: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__NO_CHANGES) });
+      return;
+    }
+
+    setDialogFeedback({});
+    setLoading(true);
     try {
-      setLoading(true);
-      changeLocale(language);
+      await changeLocale(language, { rethrow: true });
       setFeedback({
+        variant: "alert",
         type: "success",
-        message: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED),
+        message: getTextForLocale(language, i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_SUCCESS),
+        autoClose: 5000,
       });
+      typeof onClose === "function" && onClose();
     } catch {
-      setFeedback({
+      setDialogFeedback({
         type: "error",
-        message: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_MESSAGE),
-        description: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE_UPDATED_ERROR_DESCRIPTION),
+        description: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__UPDATE_FAILED),
+        actionLabel: getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__TRY_AGAIN),
+        onAction: () => handleUpdateRef.current(),
       });
     } finally {
       setLoading(false);
     }
-  }, [changeLocale, language, getText]);
+  }, [language, locale, changeLocale, getText, getTextForLocale, setFeedback, onClose, i18nKeys]);
+  handleUpdateRef.current = handleUpdate;
 
   const handleLanguageChange = useCallback((event: SelectChangeEvent) => {
-    setLangauge(event.target.value as string);
+    setDialogFeedback({});
+    setLanguage(event.target.value as string);
   }, []);
 
   return (
     <Dialog
-      className="change-language-dialog"
       title={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__DIALOG_TITLE)}
       closable
+      bodyPadded
       open={open}
       onClose={handleClose}
-      feedback={feedback}
+      feedback={dialogFeedback}
+      footerSlots={{
+        block: true,
+        secondary: (
+          <Button
+            text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_CANCEL)}
+            onClick={handleClose}
+            variant="outlined"
+            disabled={loading}
+          />
+        ),
+        primary: (
+          <Button
+            text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_UPDATE)}
+            onClick={handleUpdate}
+            loading={loading}
+          />
+        ),
+      }}
     >
-      <div className="change-language-dialog__content">
-        <div className="u-padding-vertical-normal">
-          <FormControl fullWidth>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <Select fullWidth value={language} label={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE)} onChange={handleLanguageChange}>
-                {SUPPORTED_LANGUAGES.map((language) => (
-                  <MenuItem key={language.name} value={language.value}>
-                    {language.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </div>
-          </FormControl>
-        </div>
-      </div>
-      <Divider />
-      <div className="button-group-actions">
-        <Button
-          text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_CANCEL)}
-          onClick={handleClose}
-          variant="outlined"
-          block
-          disabled={loading}
-        />
-        <Button
-          text={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__BUTTON_UPDATE)}
-          onClick={handleUpdate}
-          block
-          loading={loading}
-        />
+      <div>
+        <FormControl fullWidth>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <Select
+              fullWidth
+              value={language}
+              label={getText(i18nKeys.CHANGE_LANGUAGE_DIALOG__LANGUAGE)}
+              onChange={handleLanguageChange}
+            >
+              {SUPPORTED_LANGUAGES.map((language) => (
+                <MenuItem key={language.name} value={language.value}>
+                  {language.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </div>
+        </FormControl>
       </div>
     </Dialog>
   );

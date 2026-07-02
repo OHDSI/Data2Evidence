@@ -15,7 +15,7 @@
     "url": "https://github.com/OHDSI/d2e/issues"
   },
   "dependencies": {
-    "@synanetics/fhir-transform": "0.8.2"
+    "@synanetics/fhir-transform": "0.10.6"
   },
   "homepage": "https://github.com/OHDSI/d2e/flows#readme",
   "trex": {

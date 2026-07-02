@@ -157,6 +157,7 @@ import appLabel from '../lib/ui/app-label.vue'
 import Constants from '../utils/Constants'
 import DateUtils from '../utils/DateUtils'
 import processCSV from '../utils/ProcessCSV'
+import { generateDownloadFileName } from '../utils/generateDownloadFileName'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import ChartPopover from './ChartPopover.vue'
 import DialogBox from './DialogBox.vue'
@@ -302,6 +303,8 @@ export default {
       'getText',
       'getChartSize',
       'getCsvFireDownload',
+      'getActiveChart',
+      'getActiveBookmark',
       'getChartProperty',
       'getKMDisplayInfo',
       'getKMFirstLoad',
@@ -310,6 +313,9 @@ export default {
       'getBookmarksData',
       'translate',
     ]),
+    csvFileName() {
+      return generateDownloadFileName(this.getActiveBookmark?.bookmarkname, this.getActiveChart, 'csv')
+    },
     kmEndEventModel() {
       return this.getChartProperty(Constants.MRIChartProperties.KMEndEvent)
     },
@@ -398,7 +404,7 @@ export default {
         kmEventIdentifier,
         kmEndEventOccurence,
       })
-        .then(processCSV)
+        .then(response => processCSV(response, this.csvFileName))
         .catch(() => {
           // do nothing
         })
