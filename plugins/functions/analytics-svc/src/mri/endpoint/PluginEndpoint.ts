@@ -177,9 +177,30 @@ export class PluginEndpoint {
     }): Promise<NodeJS.ReadWriteStream | PluginEndpointResultType> {
         return new Promise<NodeJS.ReadWriteStream | PluginEndpointResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main; it must be dropped explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -367,6 +388,9 @@ export class PluginEndpoint {
                                 "MRI_PA_NO_MATCHING_PATIENTS_GUARDED";
                         }
 
+                        // Drop the regular DuckDB table now that the full
+                        // result set has been materialised.
+                        await dropFn();
                         return resolve(endpointResult);
                     };
 
@@ -460,9 +484,31 @@ export class PluginEndpoint {
     }): Promise<PluginEndpointStreamResultType> {
         return new Promise<PluginEndpointStreamResultType>(
             async (resolve, reject) => {
-                let dropFn = () => {
-                    return Promise.resolve({});
-                };
+                let dropFn: () => Promise<void> = () => Promise.resolve();
+
+                // For non-HANA (Trex/DuckDB) the backing table is a regular
+                // table in memory.main so the separate Trex streaming connection
+                // can see it. Drop it explicitly after use.
+                if (this.connection.dialect !== "hana") {
+                    dropFn = () =>
+                        new Promise<void>((res) => {
+                            QueryObject.format(
+                                `DROP TABLE IF EXISTS ${this.uniquePatientTempTableName}`
+                            ).executeUpdate(
+                                this.connection,
+                                (err) => {
+                                    if (err) {
+                                        log.error(
+                                            "Failed to drop DuckDB patient temp table:",
+                                            err
+                                        );
+                                    }
+                                    res();
+                                },
+                                this.schemaName
+                            );
+                        });
+                }
 
                 const errHandler = async (err) => {
                     await dropFn();
@@ -574,6 +620,7 @@ export class PluginEndpoint {
                             endpointResult.noDataReason =
                                 "Detected extension service - Data streaming from a single FAST object failed. " +
                                 "Detect more than 1 FAST object based on associated attributes in the request.";
+                            await dropFn();
                             return resolve(endpointResult);
                         }
 
@@ -625,6 +672,9 @@ export class PluginEndpoint {
                             cohortBuilderConfigMetaData: this.paConfigMetaData,
                             cdmConfigMetaData: this.cdmConfigMetaData,
                             auditLogChannelName,
+                            // patient.ts calls cleanup() after the pipeline
+                            // finishes to drop the DuckDB regular table.
+                            cleanup: dropFn,
                         });
                     };
 
