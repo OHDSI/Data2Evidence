@@ -1,5 +1,10 @@
 services:
   trex:
+    # Local R+HADES-enabled image (built with --build-arg WITH_R=true; see
+    # services/trex/Dockerfile.v2). `up` uses this tag directly if present
+    # locally; `docker compose build` re-tags it, so pass WITH_R=true there too
+    # or this override reverts to an R-less image.
+    image: d2e-trex:withr
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     build:
@@ -26,6 +31,10 @@ services:
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
+      # PLUGINS_DEV_PATH resolves /usr/src/bundled-plugins before /usr/src/plugins,
+      # so the registry-published d2e-functions there (no /hades-api route) wins
+      # over the d2ef mount above unless overlaid directly.
+      - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/bundled-plugins/d2e-functions
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
       # - ./plugins/chat_functions:/usr/src/plugins/chat

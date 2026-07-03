@@ -16,6 +16,7 @@ volumes:
   dicom-sqlite-storage:
   hana-data:
   supabase-storage-data:
+  hades-data:
 
 x-envs:
   env_converter: &x-converter
@@ -93,6 +94,7 @@ services:
     volumes:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
+      - hades-data:/data/hades
     ports:
       - "8090:8080"
     healthcheck:
@@ -207,6 +209,11 @@ services:
       TREX_EXTENSIONS_PATH: /usr/src/node_modules/@trex
       TREX_POOL_SIZE: ${TREX_POOL_SIZE:-1024}
       TREXSQL_ENABLED: "true"
+      # hades-api Run backend: R env cache + per-run output, both under the
+      # hades-data volume; work schema for staged cohort/analysis data.
+      HADES_ENVS_BASE_DIR: /data/hades/envs
+      HADES_OUTPUT_BASE_DIR: /data/hades/runs
+      HADES_WORK_SCHEMA: _config.work
       SWARM_NODE: d2e
       SWARM_CONFIG: |-
         {

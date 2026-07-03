@@ -29,14 +29,17 @@ RUN if [ "$WITH_R" = "true" ]; then \
       # JRE's server lib dir so DatabaseConnector (JDBC) can load at runtime.
       && echo "$(dirname "$(find /usr/lib/jvm -name libjvm.so | head -1)")" > /etc/ld.so.conf.d/rjava-jvm.conf \
       && ldconfig \
-      && rm -rf /var/lib/apt/lists/* \
       && mkdir -p /usr/local/jdbc \
       # DatabaseConnector (JDBC) needs a driver jar; it reads
       # DATABASECONNECTOR_JAR_FOLDER as the default pathToDriver. Provide the
       # PostgreSQL driver (hades connects to trex's pgwire, which speaks the
       # postgres protocol).
       && curl -fsSL -o /usr/local/jdbc/postgresql-42.7.4.jar \
-           https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar; \
+           https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar \
+      # hades_setup_env provisions per-analysis R libraries via renv; remotes
+      # is renv's own install dependency.
+      && R -e "install.packages(c('remotes','renv'), repos='https://cloud.r-project.org')" \
+      && rm -rf /var/lib/apt/lists/*; \
     fi
 ENV DATABASECONNECTOR_JAR_FOLDER=/usr/local/jdbc
 
