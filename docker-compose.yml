@@ -419,6 +419,14 @@ services:
       NETWORK_CLIENT_SECRET: ${NETWORK_CLIENT_SECRET:-}
       NETWORK_TOKEN_SCOPE: ${NETWORK_TOKEN_SCOPE:-}
       NETWORK_ENC_KEY: ${NETWORK_ENC_KEY:-}
+      # Coordinator-scoped auth for study publish (POST /studies, POST
+      # /studies/{id}/publish). Scaffold only — central has no path today for
+      # a client_credentials token to receive role=coordinator, so network-api
+      # keeps GET /coordinator/state reporting configured:false regardless of
+      # these being set. See plugins/functions/network-api/index.ts header.
+      NETWORK_COORDINATOR_CLIENT_ID: ${NETWORK_COORDINATOR_CLIENT_ID:-}
+      NETWORK_COORDINATOR_CLIENT_SECRET: ${NETWORK_COORDINATOR_CLIENT_SECRET:-}
+      NETWORK_COORDINATOR_TOKEN_SCOPE: ${NETWORK_COORDINATOR_TOKEN_SCOPE:-}
       CACHE_FLOW_LEVEL_CONCURRENCY: ${CACHE_FLOW_LEVEL_CONCURRENCY:-1}
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}

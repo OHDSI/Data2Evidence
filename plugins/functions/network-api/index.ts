@@ -16,12 +16,46 @@
 //   NETWORK_COGNITO_DOMAIN     e.g. https://<pool>.auth.<region>.amazoncognito.com (required)
 //   NETWORK_CENTRAL_API_URL    central API base, e.g. https://abc.execute-api...  (required)
 //   NETWORK_TOKEN_SCOPE        optional client-credentials scope
+//   NETWORK_COORDINATOR_CLIENT_ID      COORDINATOR-scoped confidential client id (optional, see below)
+//   NETWORK_COORDINATOR_CLIENT_SECRET  COORDINATOR-scoped confidential client secret (optional)
+//   NETWORK_COORDINATOR_TOKEN_SCOPE    optional client-credentials scope for the coordinator token
 //
 // NOTE: the machine client id is DISTINCT from the browser's human-login
 // client (NETWORK_CLIENT_ID = the shared public SitePluginClient). This worker
 // uses the per-site confidential client that carries a secret.
+//
+// --- Coordinator-scoped actions (POST /studies, POST /studies/{id}/publish) ---
+// Central's requireCoordinator() gate (central/api/src/handlers/studies.ts)
+// requires role === 'coordinator', and central's resolveRole()
+// (central/api/src/lib/auth.ts) only ever assigns that role to a token that
+// carries BOTH `cognito:groups: [...'coordinator'...]` AND a `sub` claim —
+// i.e. a human's Cognito Hosted-UI (PKCE) login placed in the CoordinatorGroup.
+// A client_credentials (M2M) token never carries `cognito:groups` (that claim
+// is Cognito user/group membership, not app-client membership), so it always
+// falls through to role === 'machine' and central 403s it on these two routes.
+//
+// Central today provisions exactly two Cognito app clients — both PKCE/
+// authorization-code only (CoordinationCenterClient, SitePluginClient) — and
+// its only client_credentials clients are per-site machine clients scoped to
+// the `network-api/site` resource-server scope (see central/template.yaml).
+// There is no coordinator resource-server scope and no Pre-Token-Generation
+// trigger (central/api/src/preTokenGen.ts) that stamps cognito:groups onto an
+// M2M token. So the coordinator token-mint code below is a scaffold for a
+// central-side change that does not exist yet, not a working path today.
+//
+// COORDINATOR_CENTRAL_SUPPORTED must stay `false` — and GET /coordinator/state
+// must keep reporting configured:false — until ONE of the following ships:
+//   (i)  central provisions a coordinator-scoped confidential/M2M app client
+//        whose Pre-Token-Generation trigger stamps cognito:groups=['coordinator']
+//        (plus a synthetic sub) onto that client's client_credentials tokens, or
+//   (ii) the editor gains a human coordinator PKCE login (Phase 4 option b)
+//        instead of proxying coordinator actions through this machine-token
+//        worker.
+// Flip the flag only after confirming (i) or (ii) is live in central.
 
 import { readRow, savePending, saveActive, readMachineCreds } from "./store.ts";
+
+const COORDINATOR_CENTRAL_SUPPORTED = false;
 
 const PREFIX = "/network-api";
 
@@ -91,6 +125,64 @@ async function getMachineToken(): Promise<string> {
   return token;
 }
 
+// --- coordinator token cache (module scope, per worker) -----------------------
+// See the file-header comment for why this token is never actually accepted
+// as coordinator by central today — this is a scaffold, gated separately by
+// COORDINATOR_CENTRAL_SUPPORTED for the UI-facing probe.
+let cachedCoordinatorToken: string | null = null;
+let cachedCoordinatorExpiryMs = 0;
+
+function haveCoordinatorCreds(): boolean {
+  return Boolean(env("NETWORK_COORDINATOR_CLIENT_ID") && env("NETWORK_COORDINATOR_CLIENT_SECRET"));
+}
+
+async function getCoordinatorToken(): Promise<string> {
+  const now = Date.now();
+  if (cachedCoordinatorToken && now < cachedCoordinatorExpiryMs) return cachedCoordinatorToken;
+
+  const domain = env("NETWORK_COGNITO_DOMAIN").replace(/\/+$/, "");
+  const clientId = env("NETWORK_COORDINATOR_CLIENT_ID");
+  const clientSecret = env("NETWORK_COORDINATOR_CLIENT_SECRET");
+  const scope = env("NETWORK_COORDINATOR_TOKEN_SCOPE");
+
+  const body = new URLSearchParams({ grant_type: "client_credentials" });
+  if (scope) body.set("scope", scope);
+
+  const basic = btoa(`${clientId}:${clientSecret}`);
+
+  const res = await fetch(`${domain}/oauth2/token`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      authorization: `Basic ${basic}`,
+    },
+    body,
+  });
+
+  if (!res.ok) {
+    throw new Error(`cognito token endpoint returned ${res.status}`);
+  }
+
+  const data = await res.json();
+  const token = data.access_token as string | undefined;
+  const expiresIn = Number(data.expires_in ?? 0);
+  if (!token) throw new Error("cognito response missing access_token");
+
+  cachedCoordinatorToken = token;
+  cachedCoordinatorExpiryMs = now + Math.max(30, expiresIn - 60) * 1000;
+  return token;
+}
+
+// Coordinator-scoped routes per central's requireCoordinator() gate
+// (central/api/src/handlers/studies.ts): creating a study and publishing it.
+// The presigned-URL PUTs happen client-side against S3 directly and never
+// hit this proxy.
+function isCoordinatorAction(method: string, path: string): boolean {
+  if (method === "POST" && path === "/studies") return true;
+  if (method === "POST" && /^\/studies\/[^/]+\/publish$/.test(path)) return true;
+  return false;
+}
+
 Deno.serve(async (req: Request) => {
   // 1. Compute the central sub-path: everything after the last `/network-api`.
   const url = new URL(req.url);
@@ -156,31 +248,50 @@ Deno.serve(async (req: Request) => {
     }
     return new Response(JSON.stringify({ status: data.status ?? "pending" }), { status: 200, headers: { "content-type": "application/json" } });
   }
+  if (sp === "/coordinator/state" && req.method === "GET") {
+    // Always false today — see the file-header comment. COORDINATOR_CENTRAL_SUPPORTED
+    // is the single switch that would make this reflect haveCoordinatorCreds()
+    // once central actually accepts a coordinator machine token.
+    return new Response(
+      JSON.stringify({ configured: COORDINATOR_CENTRAL_SUPPORTED && haveCoordinatorCreds() }),
+      { status: 200, headers: { "content-type": "application/json" } },
+    );
+  }
 
-  // 4. Machine-config gate for non-signup paths
+  // 4. Config gate for non-signup paths
   for (const v of ["NETWORK_COGNITO_DOMAIN", "NETWORK_CENTRAL_API_URL", "NETWORK_ENC_KEY"]) {
     if (!env(v)) return json(503, "NOT_CONFIGURED", `network-api is not configured (${v} unset)`);
   }
-  const haveStored = (await readMachineCreds().catch(() => null)) !== null;
-  if (!haveStored && (!env("NETWORK_MACHINE_CLIENT_ID") || !env("NETWORK_CLIENT_SECRET"))) {
-    return json(503, "NOT_REGISTERED", "site has no machine credentials yet — sign up first");
+  const coordinatorAction = isCoordinatorAction(req.method, sp);
+  if (coordinatorAction) {
+    // Coordinator actions NEVER fall back to the site machine token — that
+    // would just trade a clear 503 for a confusing 403 from central.
+    if (!haveCoordinatorCreds()) {
+      return json(503, "COORDINATOR_NOT_CONFIGURED", "coordinator credentials are not configured for this site");
+    }
+  } else {
+    const haveStored = (await readMachineCreds().catch(() => null)) !== null;
+    if (!haveStored && (!env("NETWORK_MACHINE_CLIENT_ID") || !env("NETWORK_CLIENT_SECRET"))) {
+      return json(503, "NOT_REGISTERED", "site has no machine credentials yet — sign up first");
+    }
   }
 
   // 5. Build target URL
   const base = env("NETWORK_CENTRAL_API_URL").replace(/\/+$/, "");
   const target = `${base}${subPath}${url.search}`;
 
-  // 6. Machine token
-  let machineToken: string;
+  // 6. Token — coordinator actions use the coordinator credential pair,
+  //    everything else uses the per-site machine token. Never mix the two.
+  let bearerToken: string;
   try {
-    machineToken = await getMachineToken();
+    bearerToken = coordinatorAction ? await getCoordinatorToken() : await getMachineToken();
   } catch (_e) {
-    return json(502, "TOKEN_EXCHANGE_FAILED", "could not obtain machine token");
+    return json(502, "TOKEN_EXCHANGE_FAILED", coordinatorAction ? "could not obtain coordinator token" : "could not obtain machine token");
   }
 
-  // 7. Proxy to central. Forward only a safe header subset; the machine token
+  // 7. Proxy to central. Forward only a safe header subset; the bearer token
   //    replaces any caller Authorization.
-  const fwdHeaders: Record<string, string> = { authorization: `Bearer ${machineToken}` };
+  const fwdHeaders: Record<string, string> = { authorization: `Bearer ${bearerToken}` };
   const ct = req.headers.get("content-type");
   if (ct) fwdHeaders["content-type"] = ct;
   const accept = req.headers.get("accept");
