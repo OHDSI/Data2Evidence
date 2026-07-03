@@ -573,9 +573,24 @@ export default {
       const colorway = Object.values(Constants.ChartColorway)
       const effectiveMode = getEffectiveBarChartMode(this.getBarChartType, this.getMriFrontendConfig)
       const modeApply = applyById[effectiveMode] || applyById.stack
+      // The per-bar "Colour by" markers set by applyXAxisColoring() are only valid on the
+      // stacked bar chart. The overlay/partial-overlay apply() functions spread ...trace.marker,
+      // so a stale per-bar marker.color would leak into those modes and mis-colour the bars.
+      // Strip it whenever colouring shouldn't apply (non-stack mode, or no colour axis selected)
+      // so each trace falls back to its per-series colorway colour.
+      const shouldClearBarColoring = effectiveMode !== 'stack' || this.colorAxisIndex == null
+      const inputTraces = shouldClearBarColoring
+        ? traces.map((trace: any) => {
+            if (trace.marker && 'color' in trace.marker) {
+              const { color, ...markerWithoutColor } = trace.marker
+              return { ...trace, marker: markerWithoutColor }
+            }
+            return trace
+          })
+        : traces
       // Each mode apply() is pure: it returns new trace objects/arrays without mutating its inputs.
       // This removes the need to JSON-clone this.chartData.traces before calling apply().
-      return modeApply(traces, layout, {
+      return modeApply(inputTraces, layout, {
         showDistributionOverlay: this.getShowDistributionOverlay,
         barGap: DEFAULT_BAR_GAP,
         colorway,
