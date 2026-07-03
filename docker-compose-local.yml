@@ -16,6 +16,10 @@ services:
       args:
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
         PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a}
+        # Keep in sync with the `docker build --build-arg WITH_R=true` used to
+        # produce the d2e-trex:withr tag above — `docker compose build trex`
+        # must also bake R or it silently reverts to an R-less image.
+        WITH_R: "true"
     extra_hosts:
       - "physionet-host:host-gateway"
     networks:
