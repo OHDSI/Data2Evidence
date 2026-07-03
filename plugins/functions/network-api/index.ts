@@ -177,10 +177,19 @@ async function getCoordinatorToken(): Promise<string> {
 // (central/api/src/handlers/studies.ts): creating a study and publishing it.
 // The presigned-URL PUTs happen client-side against S3 directly and never
 // hit this proxy.
-function isCoordinatorAction(method: string, path: string): boolean {
+export function isCoordinatorAction(method: string, path: string): boolean {
   if (method === "POST" && path === "/studies") return true;
   if (method === "POST" && /^\/studies\/[^/]+\/publish$/.test(path)) return true;
   return false;
+}
+
+// Single source of truth for whether a coordinator action may proceed. MUST
+// mirror the GET /coordinator/state predicate exactly, so an operator who
+// sets coordinator creds before central supports them (COORDINATOR_CENTRAL_SUPPORTED
+// still false) gets a clean 503 here rather than a confusing 403 from central,
+// AND the state endpoint and the route gate never disagree.
+export function coordinatorActionAllowed(supported: boolean, haveCreds: boolean): boolean {
+  return supported && haveCreds;
 }
 
 Deno.serve(async (req: Request) => {
@@ -253,7 +262,7 @@ Deno.serve(async (req: Request) => {
     // is the single switch that would make this reflect haveCoordinatorCreds()
     // once central actually accepts a coordinator machine token.
     return new Response(
-      JSON.stringify({ configured: COORDINATOR_CENTRAL_SUPPORTED && haveCoordinatorCreds() }),
+      JSON.stringify({ configured: coordinatorActionAllowed(COORDINATOR_CENTRAL_SUPPORTED, haveCoordinatorCreds()) }),
       { status: 200, headers: { "content-type": "application/json" } },
     );
   }
@@ -265,8 +274,11 @@ Deno.serve(async (req: Request) => {
   const coordinatorAction = isCoordinatorAction(req.method, sp);
   if (coordinatorAction) {
     // Coordinator actions NEVER fall back to the site machine token — that
-    // would just trade a clear 503 for a confusing 403 from central.
-    if (!haveCoordinatorCreds()) {
+    // would just trade a clear 503 for a confusing 403 from central. Gate on
+    // BOTH COORDINATOR_CENTRAL_SUPPORTED and the creds, matching
+    // GET /coordinator/state, so setting creds early (before central supports
+    // them) still 503s here instead of minting a token and forwarding a 403.
+    if (!coordinatorActionAllowed(COORDINATOR_CENTRAL_SUPPORTED, haveCoordinatorCreds())) {
       return json(503, "COORDINATOR_NOT_CONFIGURED", "coordinator credentials are not configured for this site");
     }
   } else {
