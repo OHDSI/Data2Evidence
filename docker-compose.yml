@@ -196,6 +196,9 @@ services:
       PG__DB_NAME: alp
       PG__HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
       PG__PORT: ${PG_PORT:-5432}
+      # Schemas PostGraphile introspects for /trex/graphql - `notebook` exposes
+      # the studies/notebooks tables from services/trex/migrations/notebook.
+      PG_SCHEMA: ${PG_SCHEMA:-trexdb,notebook}
       TREX_SQL_PASSWORD: ${TREX__SQL__PASSWORD:-pencil}
       TREX__SQL__PORT: ${TREX__SQL__PORT:-5433}
       TREX__SQL__DBNAME: postgres
@@ -997,6 +1000,30 @@ services:
         - *x-tls
       POSTGRES_DB: ${PG_DB_NAME:-alp}
       POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
+
+  # Applies the trex `notebook` schema migrations into the alp DB so
+  # PostGraphile can persist studies/notebooks. Idempotent (CREATE ... IF NOT
+  # EXISTS) so re-runs are safe.
+  notebook-migrate:
+    container_name: ${PROJECT_NAME:-d2e}-notebook-migrate
+    image: postgres:16
+    depends_on:
+      alp-minerva-postgres:
+        condition: service_healthy
+    networks:
+      alp:
+        priority: 20
+      data:
+        priority: 10
+    environment:
+      PGPASSWORD: ${PG_SUPER_PASSWORD}
+    volumes:
+      - ./services/trex/migrations/notebook:/migrations/notebook:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'for f in /migrations/notebook/V*.sql; do echo "applying $$f"; psql -h ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1} -U postgres -d alp -v ON_ERROR_STOP=1 -f "$$f"; done'
+    restart: "no"
 
   demodb:
     image: ohdsi/broadsea-atlasdb:2.3.0
