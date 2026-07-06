@@ -3,9 +3,11 @@ import {
   Connection as connLib,
   Constants,
   EnvVarUtils,
+  Logger,
 } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
+import { env } from "../../configs";
 import { isXS2, cloneJson } from "../../utils/utils";
 import { replacePlaceholderWithTables } from "../utils/queryutils";
 import { generateDefaultAttributes, getEmptyConfig } from "./DefaultAttributes";
@@ -14,6 +16,7 @@ let settings;
 let placeholder;
 let placeholderMap: PholderTableMapType;
 let QUERY;
+const log = Logger.CreateLogger("cdw-svc: configSuggestion");
 
 function initializeSettings(settingsObj: Settings) {
   settings = settingsObj.getSettings();
@@ -441,13 +444,55 @@ export function generateConfigWithDefaultAttributes(
   callback(null, suggestedConfig);
 }
 
-export function generateEmptyConfig(callback: CallBackInterface) {
-  callback(
-    null,
-    getEmptyConfig(
-      EnvVarUtils.getAnalyticsConnectionParameters({ tag: "cdw" })
-    )
+export function getCdwServiceCredentials(vcapServices = env.VCAP_SERVICES) {
+  const parsedVcapServices =
+    typeof vcapServices === "string" ? JSON.parse(vcapServices) : vcapServices;
+  const mridbServices = parsedVcapServices?.mridb || [];
+  const cdwServices = mridbServices.filter((service) =>
+    service.tags?.includes("cdw")
   );
+
+  if (cdwServices.length === 0) {
+    throw new Error("Found 0 matching CDW services");
+  }
+
+  if (cdwServices.length > 1) {
+    log.warn(
+      `Found ${cdwServices.length} matching CDW services for blank config defaults. ` +
+        `Using the first match as a best-effort fallback. ` +
+        `Matches: ${JSON.stringify(cdwServices.map(summarizeCdwService))}`
+    );
+  }
+
+  return cdwServices[0].credentials;
+}
+
+function summarizeCdwService(service, index) {
+  const credentials = service.credentials || {};
+  return {
+    index,
+    name: service.name,
+    tags: service.tags,
+    code: credentials.code,
+    dialect: credentials.dialect,
+    databaseName: credentials.databaseName,
+    schema: credentials.schema,
+    cdwSchema: credentials.cdwSchema,
+    vocabSchema: credentials.vocabSchema,
+    probeSchema: credentials.probeSchema,
+    resultsSchemaName: credentials.resultsSchemaName,
+  };
+}
+
+export function generateEmptyConfig(callback: CallBackInterface) {
+  try {
+    // configDefaults only seeds the blank UI skeleton. Without dataset context,
+    // the @REF vocab schema is a best-effort default; model-specific suggestions
+    // are handled by the explicit suggest action.
+    callback(null, getEmptyConfig(getCdwServiceCredentials()));
+  } catch (err) {
+    callback(err, null);
+  }
 }
 
 /**
