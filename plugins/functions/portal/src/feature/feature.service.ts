@@ -59,7 +59,7 @@ export class FeatureService {
     },
     {
       featureFlag: 'aiAssistant',
-      name: 'AI Assistant',
+      name: 'AI assistant',
       nameI18nKey: 'FEATURE__AI_ASSISTANT',
       defaultEnabled: false
     }
