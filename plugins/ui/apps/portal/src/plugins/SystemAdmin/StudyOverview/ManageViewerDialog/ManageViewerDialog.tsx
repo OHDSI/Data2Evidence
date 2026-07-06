@@ -314,6 +314,7 @@ const ManageViewerDialog: FC<ManageViewerDialogProps> = ({ config, open, onClose
             supportsMultipleCodes={strategy.supportsMultipleCodes}
             error={!!nameError}
             helperText={nameError || undefined}
+            disabled={initialLoading}
           />
 
           <TemplateSelect

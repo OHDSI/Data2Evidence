@@ -128,11 +128,11 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             requests:
-              cpu: 200m
-              memory: 200Mi
+              cpu: 50m
+              memory: 100Mi
             limits:
-              cpu: 500m
-              memory: 500Mi
+              cpu: 100m
+              memory: 200Mi
           ports:
             - containerPort: 41120
               protocol: TCP
@@ -272,10 +272,10 @@ spec:
               subPath: baseJobTemplate.json
           resources:
             requests:
-              cpu: 250m
+              cpu: 100m
               memory: 250Mi
             limits:
-              cpu: 1000m
+              cpu: 250m
               memory: 1000Mi
           livenessProbe:
             exec:
@@ -288,3 +288,4 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 30
+        

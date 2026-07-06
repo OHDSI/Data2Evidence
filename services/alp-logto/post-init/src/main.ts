@@ -485,7 +485,11 @@ async function main() {
       `a[aria-label="Powered By Logto"] { display: none; }
 img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
-    signInMode: "SignIn", //Disable user registration At Login screen
+    // Registration is opt-in via LOGTO__ENABLE_REGISTRATION so that connectors
+    // which don't want a self-service Register button (e.g. Entra / Entra
+    // External ID) keep a pure sign-in screen even when LOGTO__CONNECTOR_CONFIG
+    // is set. PhysioNet-style self-registration deployments set it to "true".
+    signInMode: process.env.LOGTO__ENABLE_REGISTRATION === "true" ? "SignInAndRegister" : "SignIn",
     unknownSessionRedirectUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal`,
     termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
     privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
@@ -556,7 +560,7 @@ button[name="submit"]{ background: #000080 !important; }`,
     const socialSignInConnectorTargets: string[] = [];
 
     for (const connectorEnvConfig of connectorEnvConfigs) {
-      const connectorTargetId = connectorEnvConfig.connectorId;
+      const connectorTargetId = connectorEnvConfig.metadata?.target || connectorEnvConfig.connectorId;
       socialSignInConnectorTargets.push(connectorTargetId);
 
       //Verify if existing connector exist
@@ -587,6 +591,15 @@ button[name="submit"]{ background: #000080 !important; }`,
     console.log(
       "*********************************** SIGN-IN EXPERIENCES **********************************************",
     );
+    // Prefer explicit env var (LOGTO__SOCIAL_SIGNIN_TARGETS, CSV) over
+    // the targets collected from connectorId/metadata above.
+    const envTargets = (process.env.LOGTO__SOCIAL_SIGNIN_TARGETS || "")
+      .split(",").map(s => s.trim()).filter(Boolean)
+    if (envTargets.length > 0) {
+      socialSignInConnectorTargets.length = 0
+      socialSignInConnectorTargets.push(...envTargets)
+    }
+
     const signinExperienceSocialConnector: {
       branding: Object;
       color: Object;
@@ -594,12 +607,15 @@ button[name="submit"]{ background: #000080 !important; }`,
       tenantId: string;
       id: string;
       signInMode: string;
+      socialSignIn: Object;
       signUp: Object;
       signIn: Object;
       socialSignInConnectorTargets: string[];
     } = {
       ...signinExperience,
-      signUp: { verify: false, password: true, identifiers: ["username"] },
+      signInMode: process.env.LOGTO__ENABLE_REGISTRATION === "true" ? "SignInAndRegister" : "SignIn",
+      socialSignIn: { automaticAccountLinking: true },
+      signUp: { verify: false, password: false, identifiers: [] },
       signIn: {
         methods: [
           {

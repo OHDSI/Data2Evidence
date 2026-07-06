@@ -20,7 +20,7 @@ import type {
 import type { AttributeOption } from '../utils/ConfigLoader'
 import { configLoader } from '../utils/ConfigLoader'
 import CardinalitySidebar from './CardinalitySidebar.vue'
-import { getPortalAPI } from '../../utils/PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 import TrashIcon from './icons/TrashIcon.vue'
 import { loadSingleConceptSetDetails } from '../services/ConceptSetApiService'
 import AttributeContainer from './attributes/AttributeContainer.vue'
@@ -62,6 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const store = useStore()
+const portalContext = usePortalContext()
 
 // Use the reactive prop directly instead of local copy
 const eventData = computed({
@@ -209,14 +210,13 @@ const getDatasetIdFromProps = (): string => {
     return datasetId
   }
 
-  // Final fallback to portalAPI studyId if neither prop nor store available
-  const portalAPI = getPortalAPI()
-  if (portalAPI?.studyId) {
-    return portalAPI.studyId
+  // Final fallback to portal context datasetId if neither prop nor store available
+  if (portalContext.datasetId) {
+    return portalContext.datasetId
   }
 
   // This should not happen in normal operation - indicates configuration issue
-  throw new Error('Dataset ID is required but not available from props, store or portalAPI')
+  throw new Error('Dataset ID is required but not available from props, store or portal context')
 }
 
 // Handle attribute selection

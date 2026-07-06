@@ -6,10 +6,11 @@ import { Study } from "../types";
 import { config } from "../config";
 
 /**
- * Custom hook to sync dataset from URL on mount
+ * Custom hook to sync dataset from captured deep-link params on mount
  *
- * This hook runs once on component mount and checks for a `datasetId` URL parameter.
- * If found and valid, it auto-selects that dataset in Portal and navigates to the information page.
+ * Portal startup captures deep-link URL params in sessionStorage before this hook runs.
+ * If a stored datasetId is found and valid, this hook auto-selects that dataset in Portal
+ * and navigates to the captured target path or information page.
  *
  * @param datasets - List of available datasets user has access to
  * @param loading - Whether datasets are still loading
@@ -35,7 +36,6 @@ export const useDeepLinkSync = (datasets: Study[], loading: boolean) => {
     hasProcessedRef.current = true;
 
     syncDatasetFromUrl({
-      url: window.location.href,
       availableDatasets: datasets,
       setActiveDatasetId,
       setFeedback,

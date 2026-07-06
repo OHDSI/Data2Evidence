@@ -1,0 +1,9 @@
+node_modules
+coverage
+*.log
+.DS_Store
+.eszip
+report.json
+# We intentionally CHECK IN lib/ so the alp-logto container can mount
+# it without a build step on every clone. Remove this comment + add lib/
+# here if you switch to a CI-built artifact.

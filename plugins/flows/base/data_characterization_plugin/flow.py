@@ -1,5 +1,6 @@
 import os
 import json
+import traceback
 
 from string import Template
 from functools import partial
@@ -41,31 +42,35 @@ def data_characterization_plugin(options: DCOptionsType):
 
     flow_run_id = runtime.flow_run.id
 
+    # Resolve the real source dialect (dialect=None infers it from the dataset's
+    # database). HANA datasets are served through trex pgwire's HANA passthrough, so
+    # we keep use_trex_connection and only shape the cdm_source SQL for HANA (2-part,
+    # no DuckDB catalog prefix).
+    is_hana = (
+        DBDao(
+            dialect=None,
+            database_code=options.databaseCode,
+            cache_id=options.cacheId,
+        ).dialect
+        == SupportedDatabaseDialects.HANA
+    )
+
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
         database_code=options.databaseCode,
-        cache_id=options.cacheId,
+        cache_id=options.cacheId if options.use_trex_connection else options.datasetId,  # Use datasetId for non-TREX connections to retrieve PA and CDM configs
     )
-    
-    if dbdao.dialect != SupportedDatabaseDialects.HANA:
-        dbdao = DBDao(
-            dialect=SupportedDatabaseDialects.TREX if options.use_trex_connection else None,
-            database_code=options.databaseCode,
-            cache_id=options.cacheId,
-        )
-
-    # Todo: Update implementation if Hana uses trex
-    # If the actual dialect is HANA, force use_trex_connection to False
-    use_trex_connection = (
-        False
-        if dbdao.dialect == SupportedDatabaseDialects.HANA
-        else options.use_trex_connection
-    )
+    # The TrexDao reports dialect 'trex' (it connects to pgwire), so it can't tell the
+    # underlying source is HANA. Tag it so schema/table introspection and DROPs use
+    # HANA-aware SQL (SYS.* catalogs, upper-case identifiers) instead of DuckDB's.
+    dbdao.is_hana = is_hana
+    use_trex_connection = options.use_trex_connection
 
     cdm_source = get_cdm_source(
         dbdao,
         schema=options.schemaName,
-        use_trex_connection=use_trex_connection,
+        use_trex_connection=options.use_trex_connection,
+        is_hana=is_hana,
     )
 
     r_connection_string = dbdao.get_r_database_connector_connection_string(
@@ -74,7 +79,6 @@ def data_characterization_plugin(options: DCOptionsType):
 
     db_driver_string = dbdao.set_db_driver_env()
 
-    # Todo: Update implementation if Hana uses trex
     # Create Achilles parameters from DCOptions
     achilles_params = AchillesParams(
         **options.model_dump(),
@@ -83,21 +87,22 @@ def data_characterization_plugin(options: DCOptionsType):
         connectionDetails=r_connection_string,
         excludeAnalysisIds=exclude_analysis_ids,
         use_trex_connection=use_trex_connection,
+        is_hana=is_hana,
     )
     # Resolve to absolute path so R uses the same directory regardless of its working directory
     achilles_params.outputFolder = os.path.abspath(achilles_params.outputFolder)
     # For TREX connections, set vocabSchemaName to schemaName
-    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+    if not is_hana and use_trex_connection:
         # Qualify reads against the cache catalog; resultsSchema stays unprefixed so dbdao.create_schema doesn't quote "catalog.schema" as one literal.
         catalog = options.cacheId or options.databaseCode
         achilles_params.schemaName = f"{catalog}.{options.schemaName}"
         achilles_params.vocabSchemaName = achilles_params.schemaName
 
     dc_schema = create_results_schema(
-        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger
+        achilles_params.resultsSchema, achilles_params.vocabSchemaName, dbdao, logger, is_hana=is_hana
     )
 
-    if dbdao.dialect != SupportedDatabaseDialects.HANA and use_trex_connection:
+    if not is_hana and use_trex_connection:
         if hasattr(dbdao, "clear_pg_cache"):
             dbdao.clear_pg_cache()
 
@@ -111,7 +116,7 @@ def data_characterization_plugin(options: DCOptionsType):
             ]
         )
 
-        execute_achilles_wo(achilles_params, flow_run_id)
+        partial_failure = execute_achilles_wo(achilles_params, flow_run_id)
 
         if options.executeConceptRecordCount:
             execute_concept_record_count_wo = execute_concept_record_count.with_options(
@@ -127,9 +132,16 @@ def data_characterization_plugin(options: DCOptionsType):
                 achilles_params.vocabSchemaName,
                 dbdao,
                 logger,
+                is_hana,
+            )
+        else:
+            logger.warning(
+                "Skipping concept record count step (executeConceptRecordCount="
+                f"{options.executeConceptRecordCount!r}): achilles_result_concept_count "
+                "will NOT be created, so conceptRecordCount queries return empty for "
+                f"results schema '{achilles_params.resultsSchema}'."
             )
 
-        # Todo: Update implementation if Hana uses trex
         if not use_trex_connection:
             execute_export_to_ares_wo = execute_export_to_ares.with_options(
                 on_failure=[
@@ -142,8 +154,16 @@ def data_characterization_plugin(options: DCOptionsType):
 
             execute_export_to_ares_wo(achilles_params, cdm_source)
 
+        # Partial results were kept above; mark the flow failed without dropping them.
+        if partial_failure:
+            raise RuntimeError(
+                f"Data characterization for flow run {flow_run_id} completed with failed analyses; "
+                f"partial results kept in schema '{achilles_params.resultsSchema}'. "
+                f"Failed analysis IDs: \"{partial_failure}\""
+            )
 
-def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger):
+
+def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
     try:
         # create results schema
         existing_schema = dbdao.check_schema_exists(results_schema)
@@ -166,7 +186,13 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
-        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_hierarchy.sql"
+        # HANA datasets run through the trex pgwire passthrough (dbdao.dialect == 'trex'),
+        # but the passthrough ships literal SQL to HANA — so we must use the HANA-dialect
+        # DDL (valid HANA syntax: plain CREATE TABLE, no DuckDB 'IF NOT EXISTS').
+        # .value because dbdao.dialect is a plain string; an Enum member would interpolate
+        # as "SupportedDatabaseDialects.HANA" (Py3.11+), breaking the migration path.
+        sql_dialect = SupportedDatabaseDialects.HANA.value if is_hana else dbdao.dialect
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_hierarchy.sql"
 
         with open(migration_script_filepath, "r") as f:
             sql_template = Template(f.read())
@@ -209,14 +235,22 @@ def create_results_schema(results_schema: str, vocab_schema: str, dbdao, logger)
         )
 
     except Exception as e:
+        logger.error(f"create_results_schema failed for '{results_schema}': {e}")
+        logger.error(traceback.format_exc())
         raise
     else:
         return True
 
 
 def execute_sql_script(sql_script: str, dbdao):
+    logger = get_run_logger()
     if dbdao.dialect == SupportedDatabaseDialects.TREX:
-        dbdao.execute_sql(sql_script)
+        try:
+            dbdao.execute_sql(sql_script)
+        except Exception as e:
+            logger.error(f"execute_sql_script (trex/pgwire) failed: {e}")
+            logger.error(f"Failing script (first 1000 chars): {sql_script.strip()[:1000]}")
+            raise
     else:
         with dbdao.engine.begin() as conn:
             try:
@@ -229,12 +263,16 @@ def execute_sql_script(sql_script: str, dbdao):
                                 dbdao.dialect == SupportedDatabaseDialects.HANA
                                 and "index already exists" in str(stmt_e).lower()
                             ):
+                                logger.debug(
+                                    "Ignoring 'index already exists' for statement: "
+                                    f"{statement.strip()[:200]}"
+                                )
                                 continue
+                            logger.error(
+                                f"SQL statement failed ({dbdao.dialect}): {stmt_e}"
+                            )
+                            logger.error(f"Failing statement: {statement.strip()[:500]}")
                             raise
-            except Exception as e:
-                raise
-            else:
-                conn.commit()
             finally:
                 conn.close()
 
@@ -253,6 +291,16 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
     logger.debug(f"set_trex_env_string is {set_trex_env_string}")
 
     failed_analysis_ids = []
+
+    def log_achilles_diagnostics() -> str | None:
+        """Log the per-analysis SQL errors and log tail, and return the grouped details for the artifact."""
+        analysis_error_details = get_analysis_error_details(achilles_params.outputFolder)
+        if analysis_error_details:
+            logger.error(f"Achilles analysis error details:\n{analysis_error_details}")
+        log_tail = get_achilles_log_tail(achilles_params.outputFolder)
+        if log_tail:
+            logger.error(f"Achilles execution log (log_achilles.txt) tail:\n{log_tail}")
+        return analysis_error_details
 
     try:
         logger.info(
@@ -289,20 +337,46 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
                 excludeAnalysisIds=convert_to_int_vector(achilles_params.excludeAnalysisIds),
                 createIndices=achilles_params.createIndices,
                 cacheId=achilles_params.cacheId or "",
+                # Render HANA-dialect SQL while keeping the postgres/pgwire JDBC driver:
+                # the R side overrides the connection's `dbms` attribute to this value.
+                translateDialect="hana" if achilles_params.is_hana else "",
             )
 
         # Task might succeed if there are failed analyses so need to check for error report or failed analyses inside output folder
         error_message = get_error_message(
             "errorReportR.txt", achilles_params.outputFolder
         )
-        
+
         failed_analysis_ids = get_failed_analysis_ids(achilles_params.outputFolder)
 
-        if error_message or failed_analysis_ids:
+        if error_message:
             raise RuntimeError(
-                f"Achilles run failed: Error report or analysis ID exists for flow run {flow_run_id}"
+                f"Achilles run failed: error report exists for flow run {flow_run_id}"
             )
-        
+
+        # Partial failure: keep the results Achilles did produce; the caller marks the flow failed.
+        if failed_analysis_ids:
+            failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
+            logger.warning(
+                f"Achilles completed with failed analyses; keeping partial results in schema "
+                f"'{achilles_params.resultsSchema}'. Failed analysis IDs: \"{failed_analysis_ids_str}\""
+            )
+            analysis_error_details = log_achilles_diagnostics()
+            create_markdown_artifact(
+                key="data-characterization-error",
+                markdown=json.dumps(
+                    {
+                        "flow_run_id": flow_run_id,
+                        "result": {},
+                        "error": True,
+                        "error_message": "Some Achilles analyses failed; partial results retained.",
+                        "failed_analysis_ids": failed_analysis_ids_str,
+                        "analysis_error_details": analysis_error_details or "",
+                    }
+                ),
+            )
+            return failed_analysis_ids_str
+
 
     except RRuntimeError as e:
         logger.error(f"RRuntimeError from Achilles: {e}")
@@ -323,12 +397,15 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
             failed_analysis_ids_str = failed_analysis_ids_to_str(failed_analysis_ids)
             logger.error(f"The following analysis IDs failed: \"{failed_analysis_ids_str}\"")
 
+        analysis_error_details = log_achilles_diagnostics()
+
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": error_message,
             "failed_analysis_ids": failed_analysis_ids_str,
+            "analysis_error_details": analysis_error_details or "",
         }
 
         create_markdown_artifact(
@@ -339,12 +416,15 @@ def execute_achilles(achilles_params: AchillesParams, flow_run_id: str):
     except Exception as e:
         logger.error(f"Unexpected error in Achilles run: {e}")
 
+        analysis_error_details = log_achilles_diagnostics()
+
         error_result = {
             "flow_run_id": flow_run_id,
             "result": {},
             "error": True,
             "error_message": e.__str__(),
-            "failed_analysis_ids": "",
+            "failed_analysis_ids": failed_analysis_ids_to_str(failed_analysis_ids) if failed_analysis_ids else "",
+            "analysis_error_details": analysis_error_details or "",
         }
 
         create_markdown_artifact(
@@ -434,20 +514,46 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
             )
 
     except Exception as e:
-        logger.error("execute_export_to_ares task failed")
+        logger.error(f"execute_export_to_ares task failed: {e}")
+        logger.error(traceback.format_exc())
         error_file_name = "errorReportSql.txt"
 
-        # Get name of folder created by at {output_folder/cdm_source_abbreviation}
-        ares_output_path = get_export_to_ares_output_path(
-            achilles_params.outputFolder, cdm_source
-        )
+        # Resolving the ARES output path itself iterates the output dir and can throw
+        # (e.g. when the per-source folder was never created because export failed
+        # early). Guard it so the real failure isn't masked by a secondary error.
+        try:
+            ares_output_path = get_export_to_ares_output_path(
+                achilles_params.outputFolder, cdm_source
+            )
+        except Exception as path_e:
+            ares_output_path = achilles_params.outputFolder
+            logger.error(
+                f"Could not resolve ARES output path (cdm_source={cdm_source!r}): {path_e}"
+            )
 
         error_message = (
             get_error_message(error_file_name, ares_output_path)
             or get_error_message(error_file_name)
             or f"{error_file_name} does not exist at {ares_output_path} or current working directory."
         )
-        logger.error(error_message)
+        logger.error(f"ARES export error detail: {error_message}")
+
+        # Surface the failure as an artifact so it's visible in the Prefect UI.
+        # Non-fatal by design: the Achilles results schema is valid even when the
+        # downstream ARES export fails, so we do NOT re-raise (which would trigger
+        # the drop-schema hook and discard good results).
+        create_markdown_artifact(
+            key="export-to-ares-error",
+            markdown=json.dumps(
+                {
+                    "error": True,
+                    "schema": achilles_params.resultsSchema,
+                    "exception": str(e),
+                    "error_message": error_message,
+                }
+            ),
+            description="Export to Ares FAILED (non-fatal; Achilles results retained)",
+        )
     else:
         ares_output_path = get_export_to_ares_output_path(
             achilles_params.outputFolder, cdm_source
@@ -465,7 +571,7 @@ def execute_export_to_ares(achilles_params: AchillesParams, cdm_source: str):
 
 
 @task(log_prints=True)
-def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, logger):
+def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, logger, is_hana: bool = False):
     try:
         # concept count tables
         schema_params = {
@@ -477,7 +583,11 @@ def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, 
             if not is_safe_schema_name(v):
                 raise ValueError(f"Unsafe schema name: {v}")
 
-        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{dbdao.dialect}/concept_record_count.sql"
+        # HANA-via-trex: use the HANA-dialect SQL (no DuckDB 'IF EXISTS'/'CREATE TEMP TABLE').
+        # .value because dbdao.dialect is a plain string; an Enum member would interpolate
+        # as "SupportedDatabaseDialects.HANA" (Py3.11+), breaking the migration path.
+        sql_dialect = SupportedDatabaseDialects.HANA.value if is_hana else dbdao.dialect
+        migration_script_filepath = f"flows/{os.environ.get('plugin_name')}/db/migrations/{sql_dialect}/concept_record_count.sql"
 
         with open(migration_script_filepath, "r") as f:
             sql_template = Template(f.read())
@@ -490,6 +600,11 @@ def execute_concept_record_count(results_schema: str, vocab_schema: str, dbdao, 
         logger.info(f"Concept record counts successfully created!")
 
     except Exception as e:
+        logger.error(
+            f"execute_concept_record_count failed for '{results_schema}' "
+            f"(dialect={dbdao.dialect}): {e}"
+        )
+        logger.error(traceback.format_exc())
         raise
     else:
         return True

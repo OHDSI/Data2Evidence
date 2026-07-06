@@ -2,7 +2,7 @@ import {
   PyodideKernel,
   type KernelConfig,
   type KernelOutput,
-} from 'react-notebook/src/index'
+} from '@trex/notebook/src/index'
 import { buildPyqeBootstrapCode } from './pyqeBootstrap'
 
 // PyodideKernel subclass that runs the d2e pyqe bootstrap as part of connect().

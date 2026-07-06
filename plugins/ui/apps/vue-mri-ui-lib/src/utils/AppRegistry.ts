@@ -1,7 +1,7 @@
 import { registerApplication, start, navigateToUrl } from 'single-spa'
 import { getNavigationConfig } from './config'
-import { getPortalAPI } from './PortalUtils'
 import { NavigationItem } from '@/types/navigation'
+import { getPortalContextBootstrap, resolveStandaloneAppCustomProps } from '@/bootstrap/portalContextBootstrap'
 
 // Setup all import maps
 function setupImportMaps() {
@@ -56,14 +56,16 @@ function registerNavigationApps() {
           app: () => window.System.import(item.appName).then((module: any) => module.default || module),
           activeWhen: location => item.autoMount || location.pathname === item.route,
           customProps: () => {
-            const portalAPI = getPortalAPI()
+            const searchParams = new URLSearchParams(window.location.search)
+            const bootstrap = getPortalContextBootstrap()
+            const contextProps = resolveStandaloneAppCustomProps(searchParams, import.meta.env, bootstrap)
             return {
               containerId: `single-spa-application:${item.appName}`,
-              getToken: portalAPI?.getToken,
-              username: portalAPI?.username,
-              datasetId: portalAPI?.studyId,
-              locale: portalAPI?.locale,
-              isAtlas: portalAPI?.isAtlas === true,
+              getToken: contextProps.getToken,
+              username: contextProps.username,
+              datasetId: contextProps.datasetId,
+              locale: contextProps.locale,
+              isAtlas: import.meta.env.VITE_STANDALONE_ATLAS === 'true',
               autoMount: item.autoMount,
               ...(item.customProps || {}),
             }

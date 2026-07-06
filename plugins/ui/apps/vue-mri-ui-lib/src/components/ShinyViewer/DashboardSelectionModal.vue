@@ -147,7 +147,7 @@ function handleDashboardSelect(dashboardId: string) {
   align-items: flex-start;
   color: var(--color-mri-brand, #000080);
   display: flex;
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 24px !important;
   font-weight: 500 !important;
   justify-content: space-between;
@@ -179,7 +179,7 @@ function handleDashboardSelect(dashboardId: string) {
 
 .description {
   color: #000;
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5;
@@ -231,7 +231,7 @@ function handleDashboardSelect(dashboardId: string) {
 
 .dashboard-name {
   color: var(--color-mri-brand, #000080);
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 18px !important;
   font-weight: 500 !important;
   line-height: 1.2 !important;
@@ -241,7 +241,7 @@ function handleDashboardSelect(dashboardId: string) {
 
 .dashboard-description {
   color: #595757;
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   font-size: 16px !important;
   font-weight: 400;
   line-height: 1.5;

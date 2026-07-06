@@ -13,6 +13,8 @@ import {
   replaceNodes,
   replaceVariables,
   replaceImportLibs,
+  replaceDatabases,
+  replaceSchemas,
   setAddNodeTypeDialog,
 } from "../reducers";
 import { useGetDataflowsQuery, useGetLatestDataflowByIdQuery } from "../slices";
@@ -66,6 +68,8 @@ export const FlowLayout: FC<FlowLayoutProps> = ({ isStandalone }) => {
       dispatch(replaceEdges(safeEdges));
       dispatch(replaceVariables(dataflow?.flow?.variables || []));
       dispatch(replaceImportLibs(dataflow?.flow?.importLibs || []));
+      dispatch(replaceDatabases(dataflow?.flow?.databases || []));
+      dispatch(replaceSchemas(dataflow?.flow?.schemas || []));
     }
   }, [dataflow, revisionId]);
 
