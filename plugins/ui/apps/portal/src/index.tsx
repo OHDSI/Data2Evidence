@@ -1,3 +1,4 @@
+import "@fontsource-variable/ibm-plex-sans";
 import React, { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";

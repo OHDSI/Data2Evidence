@@ -1,9 +1,15 @@
+import "@fontsource-variable/ibm-plex-sans";
 import { createTheme } from "@mui/material";
+
+// Single source of truth for the app font stack. GT-America stays first (name
+// only — we no longer ship it) so clients with it installed still render it;
+// everyone else falls to self-hosted IBM Plex Sans. Kept in sync with PR #2791.
+export const FONT_FAMILY =
+  '"GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif';
 
 export const theme_d2e = createTheme({
   typography: {
-    fontFamily:
-      'GT-America, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    fontFamily: FONT_FAMILY,
   },
   palette: {
     text: {
@@ -88,8 +94,7 @@ export const theme_d2e = createTheme({
 
 export const theme_atlas = createTheme({
   typography: {
-    fontFamily:
-      'GT-America, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    fontFamily: FONT_FAMILY,
   },
   palette: {
     text: {

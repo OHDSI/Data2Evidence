@@ -257,7 +257,7 @@ services:
         "mcp-server": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/mcp/chat",
         "materializeCohorts": "https://${PROJECT_NAME:-d2e}-materialize-cohorts:3333",
         "fhirServer": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094",
-        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:8094/fhir-gateway"
+        "fhirGateway": "http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/fhir-gateway"
         }
       PG_SUPER_PASSWORD: ${PG_SUPER_PASSWORD}
       PG_SUPER_USER: ${PG_SUPER_USER:-postgres}
@@ -382,6 +382,7 @@ services:
       CACHE_TABLE_LEVEL_CONCURRENCY: ${CACHE_TABLE_LEVEL_CONCURRENCY:-1}
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
       ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: '${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{"hana": 10000}}'
+      IS_AUDIT_LOG_ENABLED: ${IS_AUDIT_LOG_ENABLED:-false}
       ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
       # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       # RUST_LOG: ${RUST_LOG:-info}
