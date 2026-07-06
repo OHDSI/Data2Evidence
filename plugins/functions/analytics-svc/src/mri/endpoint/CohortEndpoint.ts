@@ -28,8 +28,14 @@ function buildHanaConnectionUrl(dbCredential: any): string {
         (dbCredential.useTLS ?? dbCredential.encrypt ?? "true").toString() ===
         "true";
     const scheme = useTLS ? "hdbsqls" : "hdbsql";
-    const opts = useTLS ? "?insecure_omit_server_certificate_check" : "";
-    return `${scheme}://${user}:${password}@${host}:${port}/${db}${opts}`;
+    // trex's hdbconnect driver resolves the MDC tenant database ONLY from the
+    // `db=` query parameter, never from the URL path. Without it, a connection to
+    // the SYSTEMDB port (e.g. 30013) authenticates against SYSTEMDB and a tenant
+    // user fails with "Authentication failed". Keep `/${db}` in the path too: trex's
+    // parse_hana_url validator requires a path segment.
+    const params = [`db=${db}`];
+    if (useTLS) params.push("insecure_omit_server_certificate_check");
+    return `${scheme}://${user}:${password}@${host}:${port}/${db}?${params.join("&")}`;
 }
 
 function extractSessionVars(dbCredential: any): Record<string, string> {
