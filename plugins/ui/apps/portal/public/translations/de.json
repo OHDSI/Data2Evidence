@@ -1212,6 +1212,7 @@
   "REFRESH_CACHE_DIALOG__CANCEL": "Abbrechen",
   "REFRESH_CACHE_DIALOG__STARTED": "Cache-Aktualisierung gestartet.",
   "REFRESH_CACHE_DIALOG__MISSING_DATASET_ID": "Datensatz-ID fehlt.",
+  "REFRESH_CACHE_DIALOG__ERROR": "Ein Fehler ist aufgetreten.",
   "SOURCE_INFORMATION_DIALOG__CACHE_SECTION": "Cache",
   "SOURCE_INFORMATION_DIALOG__CACHE_LAST_REFRESHED": "Zuletzt aktualisiert: {0}",
   "SOURCE_INFORMATION_DIALOG__CACHE_BUILDING": "Cache wird erstellt…",

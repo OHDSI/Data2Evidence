@@ -997,6 +997,7 @@ export const i18nDefault = {
     REFRESH_CACHE_DIALOG__CANCEL: "Cancel",
     REFRESH_CACHE_DIALOG__STARTED: "Cache refresh started.",
     REFRESH_CACHE_DIALOG__MISSING_DATASET_ID: "Dataset ID is missing.",
+    REFRESH_CACHE_DIALOG__ERROR: "An error has occurred.",
     SOURCE_INFORMATION_DIALOG__CACHE_SECTION: "Cache",
     SOURCE_INFORMATION_DIALOG__CACHE_LAST_REFRESHED: "Last refreshed: {0}",
     SOURCE_INFORMATION_DIALOG__CACHE_BUILDING: "Cache is being built…",

@@ -37,8 +37,12 @@ const RefreshCacheDialog: FC<RefreshCacheDialogProps> = ({ dataset, open, onClos
       await api.systemPortal.refreshWebApiCache(dataset.id);
       setFeedback({ type: "success", message: getText(i18nKeys.REFRESH_CACHE_DIALOG__STARTED) });
     } catch (err: any) {
-      setFeedback({ type: "error", message: err.data?.message || err.data });
-      console.error("err", err.data);
+      const message =
+        err?.data?.message ||
+        (typeof err === "string" ? err : err?.message) ||
+        getText(i18nKeys.REFRESH_CACHE_DIALOG__ERROR);
+      setFeedback({ type: "error", message });
+      console.error("err", err);
     } finally {
       setUpdating(false);
     }
