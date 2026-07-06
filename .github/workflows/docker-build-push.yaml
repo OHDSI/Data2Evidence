@@ -42,6 +42,7 @@ jobs:
       changes_ui: ${{ steps.file_changes.outputs.ui }}
       changes_flow_package_json: ${{ steps.file_changes.outputs.flow_package_json }}
       changes_e2e: ${{ steps.file_changes.outputs.e2e }}
+      changes_regression: ${{ steps.file_changes.outputs.regression }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
@@ -146,6 +147,9 @@ jobs:
             e2e:
               - "tests/e2e/**"
               - "services/trex/**"
+              - ".github/workflows/docker-build-push.yaml"
+            regression:
+              - "tests/regression/**"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
@@ -1244,6 +1248,41 @@ jobs:
       prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
+  test_regression:
+    needs: [setup, build_images, build_trex_image, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_regression == 'true' || needs.setup.outputs.changes_http_tests == 'true'))
+    uses: ./.github/workflows/_test-regression.yml
+    with:
+      attempt: "1"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_regression_gate:
+    needs: [test_regression]
+    if: always() && needs.test_regression.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: regression-attempt-*
+          path: ./_attempts
+      - name: Pass if regression attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "Regression performance test attempt succeeded."
+            exit 0
+          fi
+          echo "Regression performance test attempt failed."
+          exit 1
+
   test_demosetup_dev_gate:
     needs: [test_demosetup_dev]
     if: always() && needs.test_demosetup_dev.result != 'skipped'
@@ -1400,7 +1439,7 @@ jobs:
           delete-only-untagged-versions: "true"
 
   docker-success:
-    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1416,9 +1455,10 @@ jobs:
           R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
+          R_REGRESSION: ${{ needs.test_regression_gate.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA" "$R_REGRESSION"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;

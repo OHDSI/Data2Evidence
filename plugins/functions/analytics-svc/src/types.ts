@@ -254,6 +254,8 @@ export type PluginEndpointStreamResultType = {
     cohortBuilderConfigMetaData?: CDMConfigMetaDataType;
     cdmConfigMetaData?: CDMConfigMetaDataType;
     auditLogChannelName: string;
+    /** Called after all response data has been written; drops the backing table for DuckDB datasets. */
+    cleanup?: () => Promise<void>;
 };
 
 export type CohortDefinitionType = {

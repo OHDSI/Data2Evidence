@@ -138,8 +138,12 @@ export default {
             }
           )
         })
-        .catch(() => {
-          // do nothing
+        .catch(err => {
+          // A superseded/cancelled download is not a failure — don't surface an error toast
+          if (err?.name === 'AbortError') {
+            return
+          }
+          this.setZIPDownloadError(true)
         })
     },
   },
@@ -182,6 +186,7 @@ export default {
       'setFireRequest',
       'completeDownloadCSV',
       'completeDownloadZIP',
+      'setZIPDownloadError',
       'initPLModel',
       'setPLRequest',
       'changePage',
