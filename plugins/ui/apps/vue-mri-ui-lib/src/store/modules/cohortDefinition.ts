@@ -123,7 +123,6 @@ const actions = {
     return dispatch('ajaxAuth', {
       url,
       method: 'DELETE',
-      cancelToken,
     })
       .then(({ data }) => {
         useNotificationStore().setToastMessage({
@@ -145,7 +144,6 @@ const actions = {
     return dispatch('ajaxAuth', {
       url,
       method: 'DELETE',
-      cancelToken,
       datasetId,
     })
       .then(({ data }) => {
