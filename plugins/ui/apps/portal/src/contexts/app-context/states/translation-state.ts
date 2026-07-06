@@ -605,6 +605,7 @@ export const i18nDefault = {
     EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
+    FEATURE__AI_ASSISTANT: "AI Assistant",
     FEATURE__CDM_DOWNLOAD: "CDM download",
     FEATURE__CONCEPT_RECORD_COUNTS: "Concept record counts",
     FLOW_RUN_NOTIFICATION_DIALOG__CLOSE: "Close",
