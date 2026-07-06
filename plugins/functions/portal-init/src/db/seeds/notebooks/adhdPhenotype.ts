@@ -27,7 +27,7 @@ conceptSetQuery.show_concept_set_list()
 Use get_concepts_in_concept_set() method to see all concepts in a particular concept set with concept_set_id
 
 # %% [python]
-# conceptSetQuery.get_concepts_in_concept_set(44)
+# await conceptSetQuery.get_concepts_in_concept_set(44)
 
 # %% [python]
 # Patients who are diagnosed with ADHD conditions
