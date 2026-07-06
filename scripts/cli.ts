@@ -8,7 +8,7 @@ import * as fs from "fs";
 import * as readline from "readline";
 import { execSync } from "child_process";
 import { LibUtils } from "./lib";
-import { dockerComposeContent } from "./docker-compose-embed";
+import { dockerComposeContent, atlasDbInitScripts } from "./docker-compose-embed";
 import { setupDemo } from "./setupdemo";
 import { checkSetupDemoFlow } from "./check-setupdemo-flow";
 import { setupHTTPTestEnv as runSetupHTTPTestEnv } from "./setuphttptestenv";
@@ -83,6 +83,19 @@ class D2ECli {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
     if (!fs.existsSync(dest)) {
       fs.writeFileSync(dest, dockerComposeContent);
+    }
+    // Stage the atlas-db-init SQL scripts next to the compose file so the
+    // webapi-init service's `./services/atlas-db-init:/scripts` bind mount
+    // resolves. These live at repo root but aren't present where the
+    // distributed CLI runs, so we write the embedded copies here.
+    const atlasDbInitDir = path.join(
+      this.compose_dir,
+      "services",
+      "atlas-db-init"
+    );
+    fs.mkdirSync(atlasDbInitDir, { recursive: true });
+    for (const [name, content] of Object.entries(atlasDbInitScripts)) {
+      fs.writeFileSync(path.join(atlasDbInitDir, name), content);
     }
   }
 
