@@ -2,7 +2,7 @@ import React, { FC, useCallback, useState } from "react";
 import { Divider } from "@mui/material";
 import { Button, Dialog } from "@portal/components";
 import { api } from "../../../../axios/api";
-import { useTranslation } from "../../../../contexts";
+import { useTranslation, useFeedback } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
 import { CloseDialogType, Feedback, Study } from "../../../../types";
 import "./RefreshCacheDialog.scss";
@@ -15,58 +15,67 @@ interface RefreshCacheDialogProps {
 
 const RefreshCacheDialog: FC<RefreshCacheDialogProps> = ({ dataset, open, onClose }) => {
   const { getText } = useTranslation();
-  const [feedback, setFeedback] = useState<Feedback>({});
+  const { setFeedback } = useFeedback();
+  const [dialogFeedback, setDialogFeedback] = useState<Feedback>({});
   const [updating, setUpdating] = useState(false);
+
+  const datasetName = dataset?.studyDetail?.name || getText(i18nKeys.STUDY_OVERVIEW__UNTITLED);
 
   const handleClose = useCallback(
     (type: CloseDialogType) => {
-      setFeedback({});
+      setDialogFeedback({});
       typeof onClose === "function" && onClose(type);
     },
     [onClose]
   );
 
   const handleSubmit = useCallback(async () => {
-    setFeedback({});
+    setDialogFeedback({});
     if (!dataset?.id) {
-      setFeedback({ type: "error", message: getText(i18nKeys.REFRESH_CACHE_DIALOG__MISSING_DATASET_ID) });
+      setDialogFeedback({ type: "error", message: getText(i18nKeys.REFRESH_CACHE_DIALOG__MISSING_DATASET_ID) });
       return;
     }
     try {
       setUpdating(true);
       await api.systemPortal.refreshWebApiCache(dataset.id);
-      setFeedback({ type: "success", message: getText(i18nKeys.REFRESH_CACHE_DIALOG__STARTED) });
+      setFeedback({
+        variant: "alert",
+        type: "success",
+        message: getText(i18nKeys.REFRESH_CACHE_DIALOG__STARTED),
+        autoClose: 5000,
+      });
+      handleClose("success");
     } catch (err: any) {
       const message =
         err?.data?.message ||
         (typeof err === "string" ? err : err?.message) ||
         getText(i18nKeys.REFRESH_CACHE_DIALOG__ERROR);
-      setFeedback({ type: "error", message });
+      setDialogFeedback({ type: "error", message });
       console.error("err", err);
     } finally {
       setUpdating(false);
     }
-  }, [dataset, getText]);
+  }, [dataset, getText, setFeedback, handleClose]);
 
   return (
     <Dialog
       className="refresh-cache-dialog"
-      title={getText(i18nKeys.REFRESH_CACHE_DIALOG__TITLE, [String(dataset?.studyDetail?.name)])}
+      title={getText(i18nKeys.REFRESH_CACHE_DIALOG__TITLE, [datasetName])}
       open={open}
       onClose={() => handleClose("cancelled")}
-      feedback={feedback}
+      feedback={dialogFeedback}
       closable
       fullWidth
       maxWidth="sm"
     >
       <Divider />
       <div className="refresh-cache-dialog__content">
-        {getText(i18nKeys.REFRESH_CACHE_DIALOG__DESCRIPTION, [String(dataset?.studyDetail?.name)])}
+        {getText(i18nKeys.REFRESH_CACHE_DIALOG__DESCRIPTION, [datasetName])}
       </div>
       <div className="button-group-actions">
         <Button
           text={getText(i18nKeys.REFRESH_CACHE_DIALOG__CANCEL)}
-          onClick={() => handleClose(feedback.type === "success" ? "success" : "cancelled")}
+          onClick={() => handleClose("cancelled")}
           variant="outlined"
           block
           disabled={updating}
@@ -76,7 +85,6 @@ const RefreshCacheDialog: FC<RefreshCacheDialogProps> = ({ dataset, open, onClos
           block
           loading={updating}
           onClick={handleSubmit}
-          disabled={feedback.type === "success"}
         />
       </div>
     </Dialog>
