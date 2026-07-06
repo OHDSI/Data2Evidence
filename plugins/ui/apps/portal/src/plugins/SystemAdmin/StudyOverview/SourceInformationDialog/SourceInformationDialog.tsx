@@ -67,12 +67,12 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
 
   const cacheStatusText = cacheLoading
     ? "…"
+    : isCacheBuilding
+    ? getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_BUILDING)
     : cacheInfo?.cacheExists && cacheInfo?.lastModified
     ? getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_LAST_REFRESHED, [
         new Date(cacheInfo.lastModified).toLocaleString(),
       ])
-    : isCacheBuilding
-    ? getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_BUILDING)
     : getText(i18nKeys.SOURCE_INFORMATION_DIALOG__NO_CACHE);
 
   return (
