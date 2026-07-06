@@ -151,6 +151,7 @@
 <script lang="ts">
 import d3 from 'd3'
 import { mapActions, mapGetters } from 'vuex'
+import axios from 'axios'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
 import appLabel from '../lib/ui/app-label.vue'
@@ -236,6 +237,9 @@ export default {
       chartData: {},
       series: [],
       errorMessage: '',
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
       maxDataday: 0,
       maxDay: 0,
       minDay: 0,
@@ -294,6 +298,9 @@ export default {
     this.setFireRequest()
   },
   beforeUnmount() {
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
     window.removeEventListener('resize', this.renderChart)
   },
   computed: {
@@ -716,6 +723,42 @@ export default {
     },
     resetRangeSlider() {
       this.rangeSliderValue = [0, this.maxDataday]
+    },
+    startRequest(fire, onSuccess, onError) {
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
+      })
+
+      this.$emit('busyEv', true)
+
+      fire({ cancelToken })
+        .then(data => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onSuccess(data)
+        })
+        .catch(error => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onError(error)
+        })
+        .finally(() => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          this.requestCancel = null
+          this.$emit('busyEv', false)
+        })
+    },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
     },
     setupAxes() {
       this.disableAllAxesandProperties()
