@@ -19,6 +19,7 @@
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
+import axios from 'axios'
 
 export default {
   name: 'sacChart',
@@ -30,6 +31,9 @@ export default {
       activeChartUrl: '',
       chartNames: [],
       url: [],
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
     }
   },
   watch: {
@@ -59,6 +63,42 @@ export default {
   },
   methods: {
     ...mapActions(['disableAllAxesandProperties', 'fireQuery']),
+    startRequest(fire, onSuccess, onError) {
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
+      })
+
+      this.$emit('busyEv', true)
+
+      fire({ cancelToken })
+        .then(data => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onSuccess(data)
+        })
+        .catch(error => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onError(error)
+        })
+        .finally(() => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          this.requestCancel = null
+          this.$emit('busyEv', false)
+        })
+    },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+    },
     setupCharts() {
       // Get Config and initialize xmlviews into arrays
       const chartOptions = this.frontEndConfig._internalConfig.chartOptions
@@ -104,15 +144,23 @@ export default {
     },
     renderChart() {
       if (this.getBookmarksData && Object.keys(this.getBookmarksData).length > 0) {
-        this.fireQuery({
-          url: '/analytics-svc/api/services/calcview/updatepatientids',
-          params: this.getBookmarksData,
-        }).then(() => {
-          this.firstFrameLoad = true
-          this.$nextTick(() => {
-            this.$refs.SACframe.src = this.activeChartUrl
-          })
-        })
+        this.startRequest(
+          ({ cancelToken }) =>
+            this.fireQuery({
+              url: '/analytics-svc/api/services/calcview/updatepatientids',
+              params: this.getBookmarksData,
+              cancelToken,
+            }),
+          () => {
+            this.firstFrameLoad = true
+            this.$nextTick(() => {
+              ;(this.$refs.SACframe as HTMLIFrameElement).src = this.activeChartUrl
+            })
+          },
+          () => {
+            // Silently ignore SAC request failures (including cancellation).
+          }
+        )
       }
     },
   },
@@ -124,6 +172,9 @@ export default {
     this.setupCharts()
   },
   beforeUnmount() {
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
     // window.removeEventListener('resize', this.renderChart);
   },
 }
