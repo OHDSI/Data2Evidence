@@ -13,6 +13,18 @@ on:
       - develop
       - "release/*"
   workflow_dispatch:
+    inputs: 
+      release_tag:
+        description: Enter version for release
+        required: true
+        type: string
+      artifacttype:
+        type: choice
+        required: true
+        default: "OSS-develop"
+        options:
+          - "OSS-develop"
+          - "OSS-release"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}-${{ github.event_name }}
@@ -34,6 +46,7 @@ jobs:
       is_develop_push: ${{ steps.tag.outputs.is_develop_push }}
       is_release_push: ${{ steps.tag.outputs.is_release_push }}
       is_publish_push: ${{ steps.tag.outputs.is_publish_push }}
+      plugins_tag: ${{ steps.tag.outputs.plugins_tag }}
       is_pr_or_mg: ${{ steps.tag.outputs.is_pr_or_mg }}
       changes_src: ${{ steps.file_changes.outputs.src }}
       changes_rkernel: ${{ steps.file_changes.outputs.rkernel }}
@@ -72,9 +85,16 @@ jobs:
             REL_SLUG="${GITHUB_REF_NAME//\//-}"
             RUN_TAG="${REL_SLUG}-${SHORT_SHA}"
             IS_RELEASE_PUSH=true
-            CANONICAL_TAG="${REL_SLUG}"
+            CANONICAL_TAG=""
+            PLUGINS_TAG=""
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            RUN_TAG="${{ github.event.inputs.release_tag }}-beta"
+            IS_RELEASE_PUSH=true
+            CANONICAL_TAG="${{ github.event.inputs.release_tag }}"
+            PLUGINS_TAG="${{ github.event.inputs.release_tag }}"
           else
             RUN_TAG="dispatch-${SHORT_SHA}"
+            PLUGINS_TAG=""
           fi
           IS_PUBLISH_PUSH=false
           if [[ "$IS_DEVELOP_PUSH" == "true" || "$IS_RELEASE_PUSH" == "true" ]]; then
@@ -83,6 +103,7 @@ jobs:
           {
             echo "run_tag=${RUN_TAG}"
             echo "canonical_tag=${CANONICAL_TAG}"
+            echo "plugins_tag=${PLUGINS_TAG}"
             echo "is_pr_or_mg=${IS_PR_OR_MG}"
             echo "is_develop_push=${IS_DEVELOP_PUSH}"
             echo "is_release_push=${IS_RELEASE_PUSH}"
@@ -294,7 +315,7 @@ jobs:
             RUNNER: ubuntu-24.04
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
-      NPM_ARTIFACT_TYPE: OSS-develop
+      NPM_ARTIFACT_TYPE: ${{ github.event.inputs.artifacttype || 'OSS-develop'}}
     steps:
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -339,7 +360,12 @@ jobs:
       - name: Update version
         run: |
           cd ${{ matrix.PKGPATH }}
-          jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          if [[ $GITHUB_EVENT_NAME == 'workflow_dispatch' ]]; then
+            RELEASE_VERSION=${{ needs.setup.outputs.plugins_tag }}
+            jq --arg v $RELEASE_VERSION '.version=$v' package.json > tmppkg; mv tmppkg package.json
+          else
+            jq --arg v "-$(date +%s)-$GITHUB_SHA" '.version+=$v' package.json > tmppkg; mv tmppkg package.json
+          fi
       - name: Build
         if: ${{ !matrix.ATLAS }}
         run: |
@@ -378,9 +404,17 @@ jobs:
           npm run build
       - name: Use Node.js - OSS Develop
         uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-develop'
         with:
           node-version: ${{ matrix.NODE_VERSION || '18.x' }}
           registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/d2e/npm/registry/"
+          scope: "@data2evidence"
+      - name: Use Node.js - OSS Release
+        uses: actions/setup-node@v4
+        if: env.NPM_ARTIFACT_TYPE == 'OSS-release'
+        with:
+          node-version: "18.x"
+          registry-url: "https://pkgs.dev.azure.com/data2evidence/d2e/_packaging/stable/npm/registry/"
           scope: "@data2evidence"
       - name: Publish or Pack
         env:
@@ -617,6 +651,7 @@ jobs:
       packages: read
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      PLUGINS_TAG: ${{ needs.setup.outputs.plugins_tag }}
       CHART_DIR: charts/d2e-services
       CI_VALUES: charts/d2e-services/ci/test-values.yaml
       HELM_VERSION: v3.16.2
