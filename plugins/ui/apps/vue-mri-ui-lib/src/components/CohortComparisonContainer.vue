@@ -151,6 +151,13 @@ const props = withDefaults(defineProps<Props>(), {
   activeChart: 'stacked',
 })
 
+watch(
+  () => props.activeChart,
+  () => {
+    chartBusy.value = false
+  }
+)
+
 const store = useStore()
 
 const getText = (key: string) => store?.getters?.getText?.(key) || key
