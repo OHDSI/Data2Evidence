@@ -1,4 +1,4 @@
-import React, { FC, useCallback } from "react";
+import React, { FC, useCallback, useEffect, useState } from "react";
 import { CloseDialogType, Study } from "../../../../types";
 import { Dialog, Button } from "@portal/components";
 import Divider from "@mui/material/Divider";
@@ -6,6 +6,7 @@ import TextField from "@mui/material/TextField";
 import "./SourceInformationDialog.scss";
 import { useTranslation } from "../../../../contexts";
 import { i18nKeys } from "../../../../contexts/app-context/states";
+import { api } from "../../../../axios/api";
 
 interface SourceInformationDialogProps {
   dataset?: Study;
@@ -16,12 +17,63 @@ interface SourceInformationDialogProps {
 const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, open, onClose }) => {
   const { getText } = useTranslation();
 
+  const [cacheInfo, setCacheInfo] = useState<{
+    cacheExists: boolean;
+    lastModified: number | null;
+    activeJobStatus?: string | null;
+  } | null>(null);
+  const [cacheLoading, setCacheLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || dataset?.type !== "webapi" || !dataset?.id) {
+      setCacheInfo(null);
+      return;
+    }
+    let active = true;
+    setCacheLoading(true);
+    api.systemPortal
+      .getCacheStatus(dataset.id)
+      .then((status) => {
+        if (active)
+          setCacheInfo({
+            cacheExists: status.cacheExists,
+            lastModified: status.lastModified,
+            activeJobStatus: status.activeJobStatus,
+          });
+      })
+      .catch(() => {
+        if (active) setCacheInfo(null);
+      })
+      .finally(() => {
+        if (active) setCacheLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open, dataset?.id, dataset?.type]);
+
   const handleClose = useCallback(
     (type: CloseDialogType) => {
       typeof onClose === "function" && onClose(type);
     },
     [onClose]
   );
+
+  // A cache build (kicked off on dataset creation or via "Refresh cache") is in
+  // progress when there is an active job that has not reached a terminal state.
+  const TERMINAL_JOB_STATUSES = ["COMPLETED", "FAILED", "STOPPED", "ABANDONED"];
+  const isCacheBuilding =
+    !!cacheInfo?.activeJobStatus && !TERMINAL_JOB_STATUSES.includes(cacheInfo.activeJobStatus);
+
+  const cacheStatusText = cacheLoading
+    ? "…"
+    : cacheInfo?.cacheExists && cacheInfo?.lastModified
+    ? getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_LAST_REFRESHED, [
+        new Date(cacheInfo.lastModified).toLocaleString(),
+      ])
+    : isCacheBuilding
+    ? getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_BUILDING)
+    : getText(i18nKeys.SOURCE_INFORMATION_DIALOG__NO_CACHE);
 
   return (
     <Dialog
@@ -48,6 +100,17 @@ const SourceInformationDialog: FC<SourceInformationDialogProps> = ({ dataset, op
         <div style={{ marginBottom: "32px" }}>
           <TextField disabled fullWidth variant="standard" value={dataset?.tokenStudyCode} />
         </div>
+
+        {dataset?.type === "webapi" && (
+          <>
+            <div style={{ marginTop: "32px", fontWeight: "bold" }}>
+              {getText(i18nKeys.SOURCE_INFORMATION_DIALOG__CACHE_SECTION)}
+            </div>
+            <div style={{ marginBottom: "32px" }}>
+              <TextField disabled fullWidth variant="standard" value={cacheStatusText} />
+            </div>
+          </>
+        )}
       </div>
 
       <Divider />

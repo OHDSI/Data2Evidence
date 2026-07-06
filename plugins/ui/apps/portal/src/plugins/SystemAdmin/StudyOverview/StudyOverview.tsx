@@ -33,6 +33,7 @@ import UpdateStudyDialog from "./UpdateStudyDialog/UpdateStudyDialog";
 import UploadStrategusResultsDialog from "./UploadStrategusResultsDialog/UploadStrategusResultsDialog";
 import ManageViewerDialog from "./ManageViewerDialog/ManageViewerDialog";
 import TransformToWebApiDialog from "./TransformToWebApiDialog/TransformToWebApiDialog";
+import RefreshCacheDialog from "./RefreshCacheDialog/RefreshCacheDialog";
 
 import "./StudyOverview.scss";
 
@@ -73,6 +74,7 @@ const StudyOverview: FC = () => {
     useDialogHelper(false);
   const [showManageViewerDialog, openManageViewerDialog, closeManageViewerDialog] = useDialogHelper(false);
   const [showTransformDialog, openTransformDialog, closeTransformDialog] = useDialogHelper(false);
+  const [showRefreshCacheDialog, openRefreshCacheDialog, closeRefreshCacheDialog] = useDialogHelper(false);
   const [viewerDialogType, setViewerDialogType] = useState<"dashboard" | "strategus">("dashboard");
   const [showAddStrategusStudyDialog, openAddStrategusStudyDialog, closeAddStrategusStudyDialog] =
     useDialogHelper(false);
@@ -207,6 +209,14 @@ const StudyOverview: FC = () => {
       openTransformDialog();
     },
     [openTransformDialog]
+  );
+
+  const handleRefreshCache = useCallback(
+    (dataset: Study) => {
+      setActiveDataset(dataset);
+      openRefreshCacheDialog();
+    },
+    [openRefreshCacheDialog]
   );
 
   const handleCloseTransformDialog = useCallback(
@@ -700,6 +710,7 @@ const StudyOverview: FC = () => {
             handleSetupSemanticSearch={handleSetupSemanticSearch}
             handleManageDashboard={handleManageDashboard}
             handleTransformToWebApi={handleTransformToWebApi}
+            handleRefreshCache={handleRefreshCache}
           />
         </TableCell>
       </TableRow>
@@ -1019,6 +1030,14 @@ const StudyOverview: FC = () => {
 
           {showCreateCacheDialog && (
             <CreateCacheDialog dataset={activeDataset} open={showCreateCacheDialog} onClose={closeCreateCacheDialog} />
+          )}
+
+          {showRefreshCacheDialog && (
+            <RefreshCacheDialog
+              dataset={activeDataset}
+              open={showRefreshCacheDialog}
+              onClose={closeRefreshCacheDialog}
+            />
           )}
 
           {showSetupSemanticSearchDialog && (

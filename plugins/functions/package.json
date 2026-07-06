@@ -1515,6 +1515,24 @@
           ]
         },
         {
+          "path": "^/system-portal/dataset/(.*)/refresh-cache$",
+          "scopes": [
+            "portal.dataset.update"
+          ],
+          "httpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "path": "^/system-portal/dataset/(.*)/cache-status$",
+          "scopes": [
+            "portal.dataset.read"
+          ],
+          "httpMethods": [
+            "GET"
+          ]
+        },
+        {
           "path": "^/system-portal/dataset$",
           "scopes": [
             "portal.dataset.update"

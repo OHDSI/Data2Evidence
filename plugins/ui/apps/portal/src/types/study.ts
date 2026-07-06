@@ -43,7 +43,8 @@ export type ActionValue =
   | "release"
   | "create-cache"
   | "manage-dashboard"
-  | "transform-to-webapi";
+  | "transform-to-webapi"
+  | "refresh-cache";
 
 export enum DatasetInfoTab {
   DatasetInfo = "info",

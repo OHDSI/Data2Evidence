@@ -255,4 +255,18 @@ export class DatasetController {
     const authToken = this.requestContextService.getOriginalToken();
     return await this.webApiSourceService.getCacheStatus(id, authToken);
   }
+
+  @Post(":id/refresh-cache")
+  async refreshCache(@Param("id") id: string) {
+    const authToken = this.requestContextService.getOriginalToken();
+    const dataset = await this.datasetQueryService.getDataset({ id });
+    if (!dataset?.schemaName) {
+      throw new HttpException(400, "Dataset has no schema to cache");
+    }
+    return await this.webApiSourceService.refreshCache(
+      id,
+      dataset.schemaName,
+      authToken,
+    );
+  }
 }

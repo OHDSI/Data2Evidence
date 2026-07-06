@@ -1204,5 +1204,16 @@
   "USER_OVERVIEW__NO_DATA": "Keine Daten verfügbar",
   "USER_OVERVIEW__ROLE": "Rolle",
   "USER_OVERVIEW__USERNAME": "Nutzername",
-  "USER_OVERVIEW__USERS": "Benutzer"
+  "USER_OVERVIEW__USERS": "Benutzer",
+  "ACTION_SELECTOR__REFRESH_CACHE": "Cache aktualisieren",
+  "REFRESH_CACHE_DIALOG__TITLE": "Cache für {0} aktualisieren",
+  "REFRESH_CACHE_DIALOG__DESCRIPTION": "Dadurch wird der Cache für {0} aus dem aktuellen Datenmodell neu erstellt. Der Vorgang läuft im Hintergrund und kann einige Minuten dauern.",
+  "REFRESH_CACHE_DIALOG__CONFIRM": "Aktualisieren",
+  "REFRESH_CACHE_DIALOG__CANCEL": "Abbrechen",
+  "REFRESH_CACHE_DIALOG__STARTED": "Cache-Aktualisierung gestartet.",
+  "REFRESH_CACHE_DIALOG__MISSING_DATASET_ID": "Datensatz-ID fehlt.",
+  "SOURCE_INFORMATION_DIALOG__CACHE_SECTION": "Cache",
+  "SOURCE_INFORMATION_DIALOG__CACHE_LAST_REFRESHED": "Zuletzt aktualisiert: {0}",
+  "SOURCE_INFORMATION_DIALOG__CACHE_BUILDING": "Cache wird erstellt…",
+  "SOURCE_INFORMATION_DIALOG__NO_CACHE": "Noch kein Cache"
 }
