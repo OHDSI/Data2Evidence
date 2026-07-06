@@ -22,58 +22,75 @@ class _Api():
         self._load_environment_variables()
         self._session = requests
 
-    def _get(self, path: str, params=None, **kwargs) -> requests.Response:
+    def _get(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
         """Request HTTP GET method"""
-        
+
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'GET {url}')
 
+        request_headers = self._session.headers.copy()
+        if headers:
+            request_headers.update(headers)
+
         if os.getenv('PYQE_URL') in url:
             response = self._session.get(
-                url, params=params, timeout=self._timeout, verify=self._pyqe_tls_ca_cert_path, **kwargs)
+                url, params=params, timeout=self._timeout, verify=self._pyqe_tls_ca_cert_path, headers=request_headers, **kwargs)
         else:
-            response = self._session.get(url, params=params, timeout=self._timeout, **kwargs)
+            response = self._session.get(url, params=params, timeout=self._timeout, headers=request_headers, **kwargs)
 
         response.raise_for_status()
         return response
 
-    def _get_stream(self, path: str, params=None, **kwargs) -> requests.Response:
+    def _get_stream(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'GET {url}')
 
+        request_headers = self._session.headers.copy()
+        if headers:
+            request_headers.update(headers)
+
         if os.getenv('PYQE_URL') in url:
             return self._session.get(
-                url, params=params, timeout=self._timeout, verify=self._pyqe_tls_ca_cert_path, stream=True, **kwargs)
+                url, params=params, timeout=self._timeout, verify=self._pyqe_tls_ca_cert_path, stream=True, headers=request_headers, **kwargs)
         else:
             return self._session.get(
-                url, params=params, timeout=self._timeout, stream=True, **kwargs)
+                url, params=params, timeout=self._timeout, stream=True, headers=request_headers, **kwargs)
 
-    def _post(self, path: str, json=None, data=None, **kwargs) -> requests.Response:
+    def _post(self, path: str, json=None, data=None, headers=None, **kwargs) -> requests.Response:
         """Request HTTP POST method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'POST {url}')
+        request_headers = self._session.headers.copy()
+        if headers:
+            request_headers.update(headers)
         response = self._session.post(url, json=json, data=data,
-                                      timeout=self._timeout, **kwargs)
+                                      timeout=self._timeout, headers=request_headers, **kwargs)
         response.raise_for_status()
         return response
 
-    def _put(self, path: str, json=None, data=None) -> requests.Response:
+    def _put(self, path: str, json=None, data=None, headers=None) -> requests.Response:
         """Request HTTP PUT method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'PUT {url}')
-        response = self._session.put(url, json=json, data=data, timeout=self._timeout)
+        request_headers = self._session.headers.copy()
+        if headers:
+            request_headers.update(headers)
+        response = self._session.put(url, json=json, data=data, timeout=self._timeout, headers=request_headers)
         response.raise_for_status()
         return response
 
-    def _delete(self, path: str, **kwargs) -> requests.Response:
+    def _delete(self, path: str, headers=None, **kwargs) -> requests.Response:
         """Request HTTP DELETE method"""
 
         url = urljoin(str(self._base_url), str(path))
         logger.debug(f'DELETE {url}')
-        response = self._session.delete(url, timeout=self._timeout, **kwargs)
+        request_headers = self._session.headers.copy()
+        if headers:
+            request_headers.update(headers)
+        response = self._session.delete(url, timeout=self._timeout, headers=request_headers, **kwargs)
         response.raise_for_status()
         return response
 
@@ -152,40 +169,40 @@ class _AuthApi(_Api):
     def _create_authorization_header(self):
         return {'Authorization': f'{self.id_token}'}
     
-    def _get(self, path: str, params=None, **kwargs) -> requests.Response:
+    def _get(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._get(path, params=params, **kwargs)
+            response = super()._get(path, params=params, headers=headers, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
             return e.response
 
-    def _get_stream(self, path: str, params=None, **kwargs) -> requests.Response:
+    def _get_stream(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
         try:
-            return super()._get_stream(path, params=params, **kwargs)
+            return super()._get_stream(path, params=params, headers=headers, **kwargs)
         except requests.HTTPError as e:
             self._validate_response(e.response)
             return e.response
 
-    def _post(self, path: str, json=None, data=None, **kwargs) -> requests.Response:
+    def _post(self, path: str, json=None, data=None, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._post(path, json, data, **kwargs)
+            response = super()._post(path, json, data, headers=headers, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
             return e.response
 
-    def _put(self, path: str, json=None, data=None) -> requests.Response:
+    def _put(self, path: str, json=None, data=None, headers=None) -> requests.Response:
         try:
-            response = super()._put(path, json=json, data=data)
+            response = super()._put(path, json=json, data=data, headers=headers)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
             return e.response
 
-    def _delete(self, path: str, **kwargs) -> requests.Response:
+    def _delete(self, path: str, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._delete(path, **kwargs)
+            response = super()._delete(path, headers=headers, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
