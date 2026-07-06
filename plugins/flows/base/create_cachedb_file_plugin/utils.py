@@ -55,6 +55,7 @@ def check_supported_dialects(dialect: str):
     supported_dialects = [
         SupportedDatabaseDialects.POSTGRES.value,
         SupportedDatabaseDialects.BIGQUERY.value,
+        SupportedDatabaseDialects.SNOWFLAKE.value,
     ]
     if dialect not in supported_dialects:
         raise ValueError(

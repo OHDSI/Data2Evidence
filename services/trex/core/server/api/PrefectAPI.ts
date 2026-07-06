@@ -74,9 +74,21 @@ export function transformDBCredentials(
       client_x509_cert_url: dbCredentials.db_extra.client_x509_cert_url 
         ? dbCredentials.db_extra.client_x509_cert_url 
         : "",
-      universe_domain: dbCredentials.db_extra.universe_domain 
-        ? dbCredentials.db_extra.universe_domain 
+      universe_domain: dbCredentials.db_extra.universe_domain
+        ? dbCredentials.db_extra.universe_domain
         : "",
+      warehouse: dbCredentials.db_extra.warehouse
+        ? dbCredentials.db_extra.warehouse
+        : null,
+      snowflakeSchema: dbCredentials.db_extra.schema
+        ? dbCredentials.db_extra.schema
+        : null,
+      role: dbCredentials.db_extra.role
+        ? dbCredentials.db_extra.role
+        : null,
+      privateKeyPassphrase: dbCredentials.db_extra.privateKeyPassphrase
+        ? dbCredentials.db_extra.privateKeyPassphrase
+        : null,
     };
     return transformedCredentials;
   });

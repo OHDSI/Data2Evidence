@@ -157,6 +157,12 @@ export const i18nDefault = {
     BIG_QUERY_FORM__DATASET: "Dataset",
     BIG_QUERY_FORM__DATASET_HELPER: "Optional — leave blank to connect to the whole project",
     BIG_QUERY_FORM__PROJECT: "Project",
+    SNOWFLAKE_FORM__ACCOUNT: "Account identifier",
+    SNOWFLAKE_FORM__DATABASE: "Database",
+    SNOWFLAKE_FORM__WAREHOUSE: "Warehouse",
+    SNOWFLAKE_FORM__SCHEMA: "Schema",
+    SNOWFLAKE_FORM__ROLE: "Role",
+    SNOWFLAKE_FORM__PASSPHRASE: "Private key passphrase (optional)",
     BOX_PLOT_CHART__NO_DATA: "Results not available",
     CDM_DOWNLOAD_DIALOG__ERROR_DOWNLOAD:
       "Error occurred while downloading patient data. To report the error, please send an email to your administrator",

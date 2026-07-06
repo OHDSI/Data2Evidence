@@ -44,6 +44,7 @@ import { isValidJson } from "../../../../utils";
 import { DbCredentialProcessor } from "../CredentialProcessor";
 import { isValidDbCode, validateCredentials } from "../CredentialValidator";
 import { BigQueryForm } from "./BigQueryForm";
+import { SnowflakeForm } from "./SnowflakeForm";
 import "./SaveDbDialog.scss";
 
 interface SaveDbDialogProps {
@@ -74,6 +75,10 @@ interface FormData extends Omit<IDatabase, "id" | "credentials.id" | "publicatio
   publication: string;
   sslmode: string;
   ca: string;
+  warehouse?: string;
+  schema?: string;
+  role?: string;
+  privateKeyPassphrase?: string;
 }
 
 interface FormError {
@@ -142,6 +147,10 @@ const EMPTY_FORM_DATA: FormData = {
   publication: "",
   sslmode: "",
   ca: "",
+  warehouse: "",
+  schema: "",
+  role: "",
+  privateKeyPassphrase: "",
 };
 
 interface ITestingResult {
@@ -236,7 +245,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
 
       setFormError(EMPTY_FORM_ERROR);
 
-      if (formData.dialect === DB_DIALECTS.BIG_QUERY) {
+      if (formData.dialect === DB_DIALECTS.BIG_QUERY || formData.dialect === DB_DIALECTS.SNOWFLAKE) {
         formData.port = 0;
       }
 
@@ -300,6 +309,15 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       const publications: IDbPublication[] = [];
       if (formData.dialect === DB_DIALECTS.POSTGRES && formData.publication) {
         publications.push({ publication: formData.publication, slot: PUB_SLOT_NAME });
+      }
+
+      if (formData.dialect === DB_DIALECTS.SNOWFLAKE) {
+        if (!newExtra["Internal"]) newExtra["Internal"] = {};
+        const sf = newExtra["Internal"] as Record<string, any>;
+        if (formData.warehouse) sf.warehouse = formData.warehouse;
+        if (formData.schema) sf.schema = formData.schema;
+        if (formData.role) sf.role = formData.role;
+        if (formData.privateKeyPassphrase) sf.privateKeyPassphrase = formData.privateKeyPassphrase;
       }
 
       const params = omit(formData, "publication", "slot");
@@ -366,6 +384,15 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         if (formData.ca && formData.sslmode !== "disable") {
           extra.ca = formData.ca;
         }
+      }
+
+      // Merge Snowflake-specific fields for test connection
+      if (formData.dialect === DB_DIALECTS.SNOWFLAKE) {
+        extra = extra || {};
+        if (formData.warehouse) extra.warehouse = formData.warehouse;
+        if (formData.schema) extra.schema = formData.schema;
+        if (formData.role) extra.role = formData.role;
+        if (formData.privateKeyPassphrase) extra.privateKeyPassphrase = formData.privateKeyPassphrase;
       }
 
       const testResult: ITestingResult = {};
@@ -463,6 +490,11 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         </div>
         {formData.dialect === DB_DIALECTS.BIG_QUERY ? (
           <BigQueryForm data={pick(formData, "host", "name")} onChange={(changes) => handleFormDataChange(changes)} />
+        ) : formData.dialect === DB_DIALECTS.SNOWFLAKE ? (
+          <SnowflakeForm
+            data={pick(formData, "host", "name", "warehouse", "schema", "role", "privateKeyPassphrase")}
+            onChange={(changes) => handleFormDataChange(changes)}
+          />
         ) : (
           <>
             <div style={{ marginBottom: "32px", display: "flex", gap: "32px" }}>

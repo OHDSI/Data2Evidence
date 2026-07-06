@@ -51,12 +51,34 @@ export async function ensureCacheAttached(
 
 export interface SourceCredential {
   id: string;
-  dialect: "postgres" | "bigquery" | string;
+  dialect: "postgres" | "bigquery" | "snowflake" | string;
   host: string;
   port?: number;
   name: string;
   adminUsername: string;
   adminPassword: string;
+  // Snowflake key-pair extras (from db_extra). adminUsername = Snowflake user,
+  // adminPassword = PEM private key.
+  warehouse?: string;
+  schema?: string;
+  role?: string;
+  privateKeyPassphrase?: string;
+}
+
+// Pulls Snowflake-specific extras out of a decrypted trex.db row's db_extra (jsonb).
+// db_extra stores the Internal object's CONTENTS directly — dbm.ts persists
+// JSON.stringify(c.extra?.Internal), and PrefectAPI.ts reads db_extra.<field> directly.
+export function snowflakeExtrasFromRow(dbExtra: unknown): Pick<
+  SourceCredential,
+  "warehouse" | "schema" | "role" | "privateKeyPassphrase"
+> {
+  const extra = (dbExtra as any) ?? {};
+  return {
+    warehouse: extra.warehouse,
+    schema: extra.schema,
+    role: extra.role,
+    privateKeyPassphrase: extra.privateKeyPassphrase,
+  };
 }
 
 export async function ensureSourceAttached(
@@ -86,6 +108,37 @@ export async function ensureSourceAttached(
     const sql =
       `ATTACH IF NOT EXISTS 'project=${host}${datasetClause}' AS ${alias} (TYPE bigquery, READ_ONLY)`;
     await opts.exec(sql);
+    return;
+  }
+  if (c.dialect === "snowflake") {
+    // Confirmed against iqea-ai/duckdb-snowflake extension docs (community extension):
+    // key-pair auth requires AUTH_TYPE 'key_pair' explicitly; PRIVATE_KEY is the PEM
+    // key content (not a file path in this usage). ROLE is included as an optional
+    // parameter — not explicitly documented but accepted by the extension.
+    // adminPassword carries the PEM private key; adminUsername = Snowflake user.
+    if (!c.adminPassword) {
+      throw new Error(`snowflake key-pair auth requires a private key for ${c.id}`);
+    }
+    const account = sqlQuote(c.host);
+    const user = sqlQuote(c.adminUsername);
+    const privateKey = sqlQuote(c.adminPassword);
+    const secretName = `${alias}_secret`;
+    const parts = [
+      `TYPE snowflake`,
+      `ACCOUNT '${account}'`,
+      `USER '${user}'`,
+      `AUTH_TYPE 'key_pair'`,
+      `PRIVATE_KEY '${privateKey}'`,
+    ];
+    if (c.privateKeyPassphrase) parts.push(`PRIVATE_KEY_PASSPHRASE '${sqlQuote(c.privateKeyPassphrase)}'`);
+    if (c.warehouse) parts.push(`WAREHOUSE '${sqlQuote(c.warehouse)}'`);
+    if (c.name) parts.push(`DATABASE '${sqlQuote(c.name)}'`);
+    if (c.schema) parts.push(`SCHEMA '${sqlQuote(c.schema)}'`);
+    if (c.role) parts.push(`ROLE '${sqlQuote(c.role)}'`);
+    await opts.exec(`CREATE OR REPLACE SECRET ${secretName} (${parts.join(", ")})`);
+    await opts.exec(
+      `ATTACH IF NOT EXISTS '' AS ${alias} (TYPE snowflake, SECRET ${secretName}, READ_ONLY)`,
+    );
     return;
   }
   // Unsupported dialect: nothing to attach; skip silently.

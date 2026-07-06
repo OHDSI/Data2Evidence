@@ -5,7 +5,7 @@ import { Hono, Context } from "npm:hono";
 import { DatabaseManager } from '../lib/dbm.ts';
 import { isValidDbDto } from '../middleware/dbm.ts'
 import { logger } from '../env.ts';
-import { ensureAttached, type ExecFn, type SourceCredential } from "../lib/attach.ts";
+import { ensureAttached, snowflakeExtrasFromRow, type ExecFn, type SourceCredential } from "../lib/attach.ts";
 import * as _ from "npm:lodash-es";
 
 export function addRoutes(app: Hono) {
@@ -95,6 +95,7 @@ export function addRoutes(app: Hono) {
               logger.log(`[trex/attach] no Admin credential for ${id} — skipping`);
               continue;
             }
+            // TODO(snowflake): verify the DuckDB snowflake extension accepts an inline PEM private key (adminPassword) vs. requiring a .p8 file path — needs live-account validation.
             connections.push({
               id: row.id,
               dialect: row.dialect,
@@ -103,6 +104,7 @@ export function addRoutes(app: Hono) {
               name: row.name,
               adminUsername: adminCred.username,
               adminPassword: adminCred.password,
+              ...(row.dialect === "snowflake" ? snowflakeExtrasFromRow(row.db_extra) : {}),
             });
           }
         }

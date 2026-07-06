@@ -213,6 +213,38 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
             attach_query = f"ATTACH 'dbname={read_credentials.databaseName} user={read_credentials.readUser} password={read_credentials.readPassword.get_secret_value()} host={read_credentials.host} port={read_credentials.port}' AS {database_name} (TYPE postgres, READ_ONLY);"
         case SupportedDatabaseDialects.BIGQUERY.value:
             attach_query = f"ATTACH 'project={read_credentials.host}' AS {database_name} (TYPE bigquery, READ_ONLY);"
+        case SupportedDatabaseDialects.SNOWFLAKE.value:
+            # AUTH_TYPE 'key_pair' is required by the community snowflake extension for
+            # key-pair auth (matches the trex attach layer). The Snowflake user + PEM key
+            # come from the Admin credential (adminUser/adminPassword), same as trex.
+            # host carries the account identifier. Optional clauses are only emitted when
+            # set. Single quotes are escaped to keep the SECRET SQL well-formed.
+            def _sf_q(value):
+                return str(value).replace("'", "''")
+
+            secret_parts = [
+                "TYPE snowflake",
+                f"ACCOUNT '{_sf_q(read_credentials.host)}'",
+                f"USER '{_sf_q(read_credentials.adminUser)}'",
+                "AUTH_TYPE 'key_pair'",
+                f"PRIVATE_KEY '{_sf_q(read_credentials.adminPassword.get_secret_value())}'",
+                f"DATABASE '{_sf_q(read_credentials.databaseName)}'",
+            ]
+            if read_credentials.privateKeyPassphrase:
+                secret_parts.append(
+                    f"PRIVATE_KEY_PASSPHRASE '{_sf_q(read_credentials.privateKeyPassphrase.get_secret_value())}'"
+                )
+            if read_credentials.warehouse:
+                secret_parts.append(f"WAREHOUSE '{_sf_q(read_credentials.warehouse)}'")
+            if read_credentials.snowflakeSchema:
+                secret_parts.append(f"SCHEMA '{_sf_q(read_credentials.snowflakeSchema)}'")
+            if read_credentials.role:
+                secret_parts.append(f"ROLE '{_sf_q(read_credentials.role)}'")
+            execute_statement(
+                write_conn,
+                f"CREATE OR REPLACE SECRET {database_name}_secret ({', '.join(secret_parts)})",
+            )
+            attach_query = f"ATTACH '' AS {database_name} (TYPE snowflake, SECRET {database_name}_secret, READ_ONLY);"
         case _:
             raise ValueError(f"Unsupported dialect: {read_conn.dialect}")
 
@@ -242,6 +274,11 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
                 execute_statement(write_conn, "INSTALL bigquery FROM community;")
                 execute_statement(write_conn, "LOAD bigquery;")
                 logger.debug("BigQuery extensions loaded successfully.")
+            case SupportedDatabaseDialects.SNOWFLAKE.value:
+                logger.debug("Installing and loading Snowflake extensions for Trex SQL.")
+                execute_statement(write_conn, "INSTALL snowflake FROM community;")
+                execute_statement(write_conn, "LOAD snowflake;")
+                logger.debug("Snowflake extensions loaded successfully.")
             case _:
                 raise ValueError(f"Scan extension not supported for dialect: {dialect}")
     else:
@@ -261,6 +298,12 @@ def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
                 write_conn.install_extension("bigquery", repository="community")
                 write_conn.load_extension("bigquery")
                 logger.debug("BigQuery scan extension loaded successfully.")
+            case SupportedDatabaseDialects.SNOWFLAKE.value:
+                logger.debug("Installing and loading Snowflake scan extension.")
+                # Todo: Requires internet connection (community extension)
+                write_conn.install_extension("snowflake", repository="community")
+                write_conn.load_extension("snowflake")
+                logger.debug("Snowflake scan extension loaded successfully.")
             case _:
                 raise ValueError(f"Scan extension not supported for dialect: {dialect}")
 

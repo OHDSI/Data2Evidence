@@ -10,7 +10,7 @@ import { addRoutes as addPluginRoutes } from "./routes/plugin.ts"
 import { addRoutes as addPortalRoutes } from "./routes/portal.ts"
 import { addRoutes as addLogRoutes } from "./routes/log.ts"
 import { authn } from "./auth/authn.ts"
-import { ensureAttached, ensureCacheAttached, type ExecFn, type SourceCredential } from "./lib/attach.ts";
+import { ensureAttached, ensureCacheAttached, snowflakeExtrasFromRow, type ExecFn, type SourceCredential } from "./lib/attach.ts";
 
 export async function initTrex() {
     logger.log('🦖 TREX initializing 🦖');
@@ -131,6 +131,7 @@ export async function initTrex() {
           logger.log(`[attach-startup] no Admin credential for ${row.id} — skipping __srcdb attach`);
           continue;
         }
+        // TODO(snowflake): verify the DuckDB snowflake extension accepts an inline PEM private key (adminPassword) vs. requiring a .p8 file path — needs live-account validation.
         connections.push({
           id: row.id,
           dialect: row.dialect,
@@ -139,6 +140,7 @@ export async function initTrex() {
           name: row.name,
           adminUsername: adminCred.username,
           adminPassword: adminCred.password,
+          ...(row.dialect === "snowflake" ? snowflakeExtrasFromRow(row.db_extra) : {}),
         });
       }
 

@@ -1,6 +1,6 @@
 //deno test --no-check --allow-env --allow-read services/trex/core/server/lib/attach.test.ts
 import { assertEquals } from "https://deno.land/std@0.208.0/assert/mod.ts";
-import { ensureAttached, ensureCacheAttached, ensureSourceAttached, type ExecFn, isValidIdentifier, type SourceCredential } from "./attach.ts";
+import { ensureAttached, ensureCacheAttached, ensureSourceAttached, snowflakeExtrasFromRow, type ExecFn, isValidIdentifier, type SourceCredential } from "./attach.ts";
 
 Deno.test("isValidIdentifier — accepts plain identifiers", () => {
   assertEquals(isValidIdentifier("alp_db_svc"), true);
@@ -246,4 +246,77 @@ Deno.test("ensureAttached — empty input is a no-op", async () => {
   const exec: ExecFn = (sql) => { calls.push(sql); };
   await ensureAttached({}, { exec });
   assertEquals(calls.length, 0);
+});
+
+Deno.test("ensureSourceAttached — snowflake creates a SECRET then ATTACHes read-only", async () => {
+  const calls: string[] = [];
+  const exec: ExecFn = (sql) => { calls.push(sql); };
+  const c: SourceCredential = {
+    id: "sf_alpha",
+    dialect: "snowflake",
+    host: "myorg-myaccount",
+    name: "OMOP_DB",
+    adminUsername: "SVC_USER",
+    adminPassword: "-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----",
+    warehouse: "COMPUTE_WH",
+    schema: "CDM",
+    role: "D2E_READER",
+  };
+  await ensureSourceAttached(c, { exec });
+  assertEquals(calls.length, 2);
+  assertEquals(
+    calls[0],
+    "CREATE OR REPLACE SECRET sf_alpha__srcdb_secret (TYPE snowflake, ACCOUNT 'myorg-myaccount', USER 'SVC_USER', AUTH_TYPE 'key_pair', PRIVATE_KEY '-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----', WAREHOUSE 'COMPUTE_WH', DATABASE 'OMOP_DB', SCHEMA 'CDM', ROLE 'D2E_READER')",
+  );
+  assertEquals(
+    calls[1],
+    "ATTACH IF NOT EXISTS '' AS sf_alpha__srcdb (TYPE snowflake, SECRET sf_alpha__srcdb_secret, READ_ONLY)",
+  );
+});
+
+Deno.test("ensureSourceAttached — snowflake omits optional clauses when unset", async () => {
+  const calls: string[] = [];
+  const exec: ExecFn = (sql) => { calls.push(sql); };
+  const c: SourceCredential = {
+    id: "sf_min",
+    dialect: "snowflake",
+    host: "acct",
+    name: "DB",
+    adminUsername: "U",
+    adminPassword: "KEY",
+  };
+  await ensureSourceAttached(c, { exec });
+  assertEquals(calls.length, 2);
+  assertEquals(
+    calls[0],
+    "CREATE OR REPLACE SECRET sf_min__srcdb_secret (TYPE snowflake, ACCOUNT 'acct', USER 'U', AUTH_TYPE 'key_pair', PRIVATE_KEY 'KEY', DATABASE 'DB')",
+  );
+});
+
+Deno.test("ensureSourceAttached — snowflake without a private key throws a clear error", async () => {
+  const calls: string[] = [];
+  const exec: ExecFn = (sql) => { calls.push(sql); };
+  let threw = false;
+  try {
+    await ensureSourceAttached(
+      { id: "sf_bad", dialect: "snowflake", host: "acct", name: "DB", adminUsername: "U", adminPassword: "" },
+      { exec },
+    );
+  } catch (e) {
+    threw = true;
+    assertEquals((e as Error).message.includes("snowflake key-pair"), true);
+  }
+  assertEquals(threw, true);
+  assertEquals(calls.length, 0);
+});
+
+Deno.test("snowflakeExtrasFromRow — reads extras directly off db_extra, tolerates missing", () => {
+  assertEquals(
+    snowflakeExtrasFromRow({ warehouse: "WH", schema: "CDM", role: "R", privateKeyPassphrase: "pp" }),
+    { warehouse: "WH", schema: "CDM", role: "R", privateKeyPassphrase: "pp" },
+  );
+  assertEquals(
+    snowflakeExtrasFromRow(null),
+    { warehouse: undefined, schema: undefined, role: undefined, privateKeyPassphrase: undefined },
+  );
 });

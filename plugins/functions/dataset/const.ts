@@ -25,6 +25,7 @@ export enum DbDialect {
   Postgres = "postgres",
   Hana = "hana",
   Duckdb = "duckdb",
+  Snowflake = "snowflake",
 }
 
 export enum SourceDatasetType {

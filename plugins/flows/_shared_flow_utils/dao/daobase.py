@@ -478,6 +478,9 @@ class DaoBase(ABC):
             case SupportedDatabaseDialects.TREX:
                 # Trex pgwire has a single sql user; no separate read role.
                 database_credentials.readRole = ""
+            case SupportedDatabaseDialects.SNOWFLAKE:
+                # Snowflake key-pair auth has no separate read role.
+                database_credentials.readRole = ""
             case _:
                 dialect_err = f"Dialect {database_credentials.dialect} not supported. Unable to find corresponding dialect read role."
                 raise ValueError(dialect_err)
