@@ -56,6 +56,12 @@ export class FeatureService {
       name: 'Concept record counts',
       nameI18nKey: 'FEATURE__CONCEPT_RECORD_COUNTS',
       defaultEnabled: true
+    },
+    {
+      featureFlag: 'aiAssistant',
+      name: 'AI Assistant',
+      nameI18nKey: 'FEATURE__AI_ASSISTANT',
+      defaultEnabled: false
     }
   ]
 
