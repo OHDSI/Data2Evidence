@@ -50,6 +50,12 @@ export class FeatureService {
       name: 'Admin-only sharing',
       nameI18nKey: 'FEATURE__ADMIN_ONLY_SHARING',
       defaultEnabled: false
+    },
+    {
+      featureFlag: 'conceptRecordCounts',
+      name: 'Concept record counts',
+      nameI18nKey: 'FEATURE__CONCEPT_RECORD_COUNTS',
+      defaultEnabled: true
     }
   ]
 

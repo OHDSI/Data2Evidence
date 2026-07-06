@@ -11,6 +11,7 @@ class DCOptionsType(BaseModel):
     releaseDate: Optional[str] = None
     resultsSchema: str
     executeConceptRecordCount: Optional[bool] = True
+    datasetId: Optional[str] = None
 
     @property
     def use_trex_connection(self) -> bool:
@@ -33,3 +34,6 @@ class AchillesParams(DCOptionsType):
     createIndices: bool = True
     sqlOnly: bool = False
     verboseMode: bool = False
+    # True when the underlying dataset is HANA served via the trex pgwire passthrough.
+    # Used to render HANA-dialect SQL in Achilles while keeping the postgres/pgwire driver.
+    is_hana: bool = False

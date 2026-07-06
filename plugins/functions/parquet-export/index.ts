@@ -81,6 +81,11 @@ function isValidWildcardFlag(val: string): boolean {
   return Number(val) === 1 || Number(val) === 0;
 }
 
+function isValidConceptIdArray(arr: unknown): arr is number[] {
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  return arr.every((item) => typeof item === "number" && Number.isInteger(item) && item >= 0);
+}
+
 function sanitizeParamValue(value: string): string {
   return value.replace(/'/g, "''");
 }
@@ -107,6 +112,7 @@ const RESERVED_PLACEHOLDERS = new Set([
   "WILDCARD_FLAG3",
   "WILDCARD_FLAG4",
   "WILDCARD_FLAG5",
+  "CONCEPT_IDS",
 ]);
 
 function substituteTemplateParams(
@@ -118,6 +124,7 @@ function substituteTemplateParams(
     resultsSchema: string;
   },
   additionalParams: Record<string, string>,
+  conceptIds?: number[],
 ): string {
   if (!isValidCohortId(params.cohortId)) {
     throw new Error("Invalid cohortId");
@@ -214,6 +221,10 @@ function substituteTemplateParams(
     .replace(
       /\{\{WILDCARD_FLAG5\}\}/g,
       additionalParams["WILDCARD_FLAG5"] || "",
+    )
+    .replace(
+      /\{\{CONCEPT_IDS\}\}/g,
+      conceptIds ? conceptIds.join(",") : "",
     );
 
   const remainingPlaceholders = extractPlaceholders(result);
@@ -468,6 +479,17 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
+    const conceptIds = req.body.conceptIds as unknown | undefined;
+    // Check if template requires CONCEPT_IDS
+    if (template.sqlText.includes("{{CONCEPT_IDS}}")) {
+      if (!isValidConceptIdArray(conceptIds)) {
+        return res.status(400).json({
+          error: "Missing or invalid parameter",
+          message: "conceptIds must be a non-empty array of positive integers",
+        });
+      }
+    }
+
     const reservedBodyParams = new Set([
       "datasetId",
       "cohortId",
@@ -477,6 +499,7 @@ router.post("/", async (req: Request, res: Response) => {
       "type",
       "yearRange",
       "conditions",
+      "conceptIds",
     ]);
 
     const additionalParams: Record<string, string> = {};
@@ -515,6 +538,7 @@ router.post("/", async (req: Request, res: Response) => {
           resultsSchema: dataset.resultsSchemaName,
         },
         additionalParams,
+        conceptIds,
       );
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -607,3 +631,4 @@ router.post("/", async (req: Request, res: Response) => {
 
 app.use("/parquet-export", router);
 app.listen(8000);
+  

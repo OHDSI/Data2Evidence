@@ -30,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       return (
         <ErrorDetail
           title={`Something went wrong with ${this.props.name || `the page you're trying to access`}`}
-          subtitle="Please try again. To report the error, please send an email to help@data4life.care."
+          subtitle="Please try again. To report the error, please send an email to your administrator."
         />
       );
     }

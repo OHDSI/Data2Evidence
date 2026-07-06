@@ -20,6 +20,17 @@ export class NodeHDBConnection implements ConnectionInterface {
     resultsSchemaName = schemaName,
     callback,
   ) {
+    const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName, resultsSchemaName);
+    // When no schema is configured (e.g. a database-level connection such as the
+    // schema-exists pre-check that runs before a dataset/schema exists), fall back
+    // to the connection user's default schema instead of emitting
+    // SET SCHEMA "undefined", which HANA rejects ("invalid schema name: undefined").
+    // Checked BEFORE validateIdentifierForSchemaOrTableName, which throws on an
+    // empty string (and would silently accept the literal "undefined").
+    if (!schemaName) {
+      callback(null, conn);
+      return;
+    }
     try {
       validateIdentifierForSchemaOrTableName(schemaName);
       validateIdentifierForSchemaOrTableName(vocabSchemaName);
@@ -28,7 +39,6 @@ export class NodeHDBConnection implements ConnectionInterface {
       callback(new DBError(logger.error(error), error.message), null);
       return;
     }
-    const conn = new NodeHDBConnection(client, schemaName, vocabSchemaName, resultsSchemaName);
     const sql = 'SET SCHEMA "' + schemaName + '"';
     conn.execute(sql, [], (err, data) => {
       if (err) {

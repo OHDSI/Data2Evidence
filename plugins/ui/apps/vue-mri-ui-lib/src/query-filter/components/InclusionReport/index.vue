@@ -487,6 +487,7 @@ h4 {
     height: fit-content;
     border: 1px solid var(--color-ui-light-border, #ddd);
     border-radius: 4px;
+    margin-bottom: 2em;
   }
 
   .treemap-chart {

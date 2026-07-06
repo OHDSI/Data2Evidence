@@ -83,6 +83,38 @@ export class LogtoAPI extends BaseIDPAPI {
     return result.data
   }
 
+  /**
+   * Return the user's SSO identities keyed by connector target (e.g. "oidc",
+   * "azuread-alp", "physionet"). Used to gate auto-provisioning to a
+   * specific upstream IdP. A user with no SSO identities (password
+   * sign-up, etc.) gets an empty object.
+   */
+  async getUserSsoIdentities(idpUserId: string): Promise<Record<string, { details?: object }>> {
+    const options = await this.getRequestConfig('all', { resource: env.IDP_ALP_ADMIN_RESOURCE })
+    const url = `${this.baseUrl}/api/users/${idpUserId}/sso-identities`
+    try {
+      const result = await get<Record<string, { details?: object }>>(url, options)
+      return result.data || {}
+    } catch (err: any) {
+      if (err?.response?.status === 404) {
+        return {}
+      }
+      throw err
+    }
+  }
+
+  /**
+   * Return the user's social-connector identities keyed by connector target
+   * (e.g. "physionet" for the standard OIDC connector we register). Logto
+   * stores these on the user record itself; `getUser` returns the same
+   * object under `.identities`, so this is a thin wrapper that normalizes
+   * the empty case.
+   */
+  async getUserSocialIdentities(idpUserId: string): Promise<Record<string, { userId?: string; details?: object }>> {
+    const user = await this.getUser(idpUserId)
+    return ((user as unknown as { identities?: Record<string, { userId?: string; details?: object }> }).identities) || {}
+  }
+
   async createUser(username: string, password: string): Promise<ILogtoUserCreated> {
     this.logger.info(`Create user ${username}`)
 

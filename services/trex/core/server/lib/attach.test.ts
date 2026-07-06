@@ -161,6 +161,25 @@ Deno.test("ensureSourceAttached — bigquery builds the expected ATTACH SQL", as
   );
 });
 
+Deno.test("ensureSourceAttached — bigquery with empty name attaches the whole project", async () => {
+  const calls: string[] = [];
+  const exec: ExecFn = (sql) => { calls.push(sql); };
+  const c: SourceCredential = {
+    id: "bq_alpha",
+    dialect: "bigquery",
+    host: "my-project",
+    name: "",
+    adminUsername: "ignored",
+    adminPassword: "ignored",
+  };
+  await ensureSourceAttached(c, { exec });
+  assertEquals(calls.length, 1);
+  assertEquals(
+    calls[0],
+    "ATTACH IF NOT EXISTS 'project=my-project' AS bq_alpha__srcdb (TYPE bigquery, READ_ONLY)",
+  );
+});
+
 Deno.test("ensureSourceAttached — unsupported dialect skips silently", async () => {
   const calls: string[] = [];
   const exec: ExecFn = (sql) => { calls.push(sql); };

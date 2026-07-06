@@ -305,6 +305,21 @@ export async function authz(c: Context, next: any) {
 
     let bearerToken = c.req.raw.headers.get("authorization");
 
+    if (!bearerToken || bearerToken === "") {
+      if (c.req.header("cookie")) {
+        const cookies = c.req.header("cookie")?.split("; ");
+        if (cookies) {
+          for (const cookie of cookies) {
+            if (cookie.startsWith("authtoken=")) {
+              bearerToken = cookie.split("=")[1];
+              bearerToken = `Bearer ${bearerToken}`;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     if (PUBLIC_API_PATHS.some((path) => new RegExp(path).test(originalUrl))) {
       return next();
     } else if (!bearerToken) {

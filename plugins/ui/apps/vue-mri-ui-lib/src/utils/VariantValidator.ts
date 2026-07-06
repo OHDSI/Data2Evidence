@@ -1,4 +1,4 @@
-import { getPortalAPI } from './PortalUtils'
+import { usePortalContext } from '@/composables/usePortalContext'
 
 /**
  * Token types for variant constraint parsing
@@ -122,8 +122,8 @@ const locationCache: Map<string, ValidationResult> = new Map()
  * Get the analytics service URL
  */
 function getServiceUrl(): string {
-  const portalAPI = getPortalAPI()
-  const baseUrl = portalAPI?.qeSvcUrl || process.env.VUE_APP_API_BASE_URL || ''
+  const portalContext = usePortalContext()
+  const baseUrl = portalContext.qeSvcUrl || process.env.VUE_APP_API_BASE_URL || ''
   return `${baseUrl}/pa/services/analytics.xsjs?action=genomics_values_service`
 }
 
@@ -131,15 +131,15 @@ function getServiceUrl(): string {
  * Make authenticated API request
  */
 async function makeRequest(data: Record<string, any>): Promise<any> {
-  const portalAPI = getPortalAPI()
+  const portalContext = usePortalContext()
   const url = getServiceUrl()
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json;charset=utf-8',
   }
 
-  if (portalAPI) {
-    const token = await portalAPI.getToken()
+  if (portalContext?.getToken) {
+    const token = await portalContext.getToken()
     headers['Authorization'] = `Bearer ${token}`
   }
 

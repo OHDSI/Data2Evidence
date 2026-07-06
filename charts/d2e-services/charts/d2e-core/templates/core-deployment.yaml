@@ -325,10 +325,7 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: IDP__JDBC__URL
             - name: ENDPOINT
-              valueFrom:
-                configMapKeyRef:
-                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
-                  key: CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL
+              value: "http://gateway.d2e.svc.cluster.local"
             - name: LOGTO_API_M2M_CLIENT_ID
               valueFrom:
                 secretKeyRef:
