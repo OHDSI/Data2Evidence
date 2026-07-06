@@ -1,10 +1,8 @@
-import axios from 'axios'
 import * as types from '../mutation-types'
 import StringToBinary from '@/utils/StringToBinary'
 import QueryString from '@/utils/QueryString'
 import { useNotificationStore } from '../../stores/notifications'
 
-let cancel
 
 const state = {
   response: {},
@@ -18,18 +16,10 @@ const actions = {
   clearCohortDefinitionResponse({ commit }) {
     commit(types.COHORT_DEFINITION_RESPONSE_SET, { response: {} })
   },
-  cancelCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }) {
-    if (cancel) {
-      cancel('cancel')
-    }
+  cancelCohortDefinitionQuery() {
+    // Callers are responsible for cancelling their own requests via cancelToken.
   },
-  fireD2EToAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireD2EToAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { cancelToken } = {}) {
 
     const params = {
       datasetId: rootGetters.getSelectedDataset.id,
@@ -56,13 +46,7 @@ const actions = {
         throw error
       })
   },
-  fireCreateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { content }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireCreateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { cancelToken,  content }) {
 
     const params = JSON.stringify(content)
 
@@ -97,13 +81,7 @@ const actions = {
         throw error
       })
   },
-  fireRenameMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, { cohortDefinitionId, newName }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireRenameMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, { cancelToken,  cohortDefinitionId, newName }) {
 
     const params = {
       datasetId: rootGetters.getSelectedDataset.id,
@@ -130,12 +108,6 @@ const actions = {
       })
   },
   fireDeleteMaterializedCohortQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
 
     const datasetId = rootGetters.getSelectedDataset.id
 
@@ -165,12 +137,6 @@ const actions = {
       })
   },
   fireDeleteAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, atlasCohortDefinitionId) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
 
     const datasetId = rootGetters.getSelectedDataset.id
 
@@ -193,13 +159,7 @@ const actions = {
         })
       })
   },
-  fireUpdateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { content }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireUpdateAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { cancelToken,  content }) {
 
     const params = JSON.stringify(content)
     return dispatch('ajaxAuth', {
@@ -234,13 +194,7 @@ const actions = {
         throw error
       })
   },
-  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId, cancelToken) {
 
     return dispatch('ajaxAuth', {
       url: `/d2e-webapi/cohortdefinition/${cohortDefinitionId}`,
@@ -261,13 +215,7 @@ const actions = {
         throw error
       })
   },
-  fireCreateAtlasMaterializedCohortQuery({ state, commit, dispatch, rootGetters }, { url }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
+  fireCreateAtlasMaterializedCohortQuery({ state, commit, dispatch, rootGetters }, { url, cancelToken }) {
     return dispatch('ajaxAuth', {
       url,
       cancelToken,

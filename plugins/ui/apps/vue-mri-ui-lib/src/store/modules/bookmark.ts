@@ -14,7 +14,6 @@ import {
 import { getEffectiveBarChartMode, modeOrder } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
-let cancel
 // initial state
 const state = {
   bookmarks: [],
@@ -289,14 +288,8 @@ const actions = {
   setAddNewCohort({ commit }, { addNewCohort }) {
     commit(types.SET_ADD_NEW_COHORT, { addNewCohort })
   },
-  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId }) {
+  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
-    if (cancel) {
-      cancel()
-    }
-    const cancelToken = new CancelToken(c => {
-      cancel = c
-    })
     let url = ''
     if (params.cmd === 'loadAll') {
       url = `${webApiCohortDefinitionURL}?source=pa`

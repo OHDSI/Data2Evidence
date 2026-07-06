@@ -110,7 +110,6 @@ const initialChartProperties = [
     props: { active: false, value: {} },
   },
 ]
-let cancel
 let xSequence = 0
 let ySequence = 0
 const initAxes = []
@@ -1027,14 +1026,7 @@ const actions = {
         }
       })
   },
-  fireQuery({ commit, dispatch, getters, rootGetters }, { params, url }) {
-    if (cancel) {
-      cancel('cancel')
-    }
-    const cancelToken = new axios.CancelToken(c => {
-      cancel = c
-    })
-
+  fireQuery({ commit, dispatch, getters, rootGetters }, { params, url, cancelToken }) {
     const hasReleaseDate = !!rootGetters.getSelectedDatasetVersion?.releaseDate
 
     // Compress all keys except datasetId and ruleOrder
