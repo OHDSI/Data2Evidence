@@ -194,7 +194,7 @@ const actions = {
         throw error
       })
   },
-  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, cohortDefinitionId, cancelToken) {
+  fireGetAtlasCohortDefinitionQuery({ commit, dispatch, getters, rootGetters }, { cohortDefinitionId, cancelToken }) {
 
     return dispatch('ajaxAuth', {
       url: `/d2e-webapi/cohortdefinition/${cohortDefinitionId}`,

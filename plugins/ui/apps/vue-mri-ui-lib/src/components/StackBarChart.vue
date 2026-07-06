@@ -30,7 +30,7 @@ import { applyById, getEffectiveBarChartMode, OVERLAY_BAR_OPACITY, KDE_FILL_ALPH
 const DEFAULT_BAR_GAP = 0.3
 
 export default {
-  name: 'this.stackBarChart',
+  name: 'stackBarChart',
   components: {
     StackBarChartLegend,
   },
