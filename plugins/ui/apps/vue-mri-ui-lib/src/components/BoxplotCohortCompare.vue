@@ -51,9 +51,6 @@ const BOX_MAX_WIDTH = 24
 /** @constant {Array} List of translatable keys for the Boxplot values. */
 const VALUE_KEY_LIST = ['MRI_PA_MIN_VAL', 'MRI_PA_Q1', 'MRI_PA_MEDIAN', 'MRI_PA_Q3', 'MRI_PA_MAX_VAL']
 
-const CancelToken = axios.CancelToken
-let cancel: any
-
 interface Props {
   busyEv?: boolean
   bookmarkList?: any[]
@@ -99,17 +96,50 @@ const selectedAxis = ref<any>({
 })
 const boxPlotchart = ref<any>(null)
 const tooltipButtonPosition = ref<any>({})
+const requestId = ref(0)
+const requestCancel = ref<(() => void) | null>(null)
+const isUnmounted = ref(false)
 
 // Methods
 const ajaxAuth = (config: any) => store?.dispatch('ajaxAuth', config)
 
-const fireCompareRequest = () => {
-  const configMetadata = getMriFrontendConfig.value.getConfigMetadata()
+const cancelRequest = () => {
+  if (requestCancel.value) {
+    requestCancel.value()
+    requestCancel.value = null
+  }
+}
+
+const startRequest = (fire: any, onSuccess: any, onError: any) => {
+  requestId.value += 1
+  const currentRequestId = requestId.value
+
+  cancelRequest()
+
+  const cancelToken = new axios.CancelToken((c: any) => {
+    requestCancel.value = () => c('cancel')
+  })
 
   emit('busyEv', true)
-  const cancelToken = new CancelToken((c: any) => {
-    cancel = c
-  })
+
+  fire({ cancelToken })
+    .then((data: any) => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      onSuccess(data)
+    })
+    .catch((error: any) => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      onError(error)
+    })
+    .finally(() => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      requestCancel.value = null
+      emit('busyEv', false)
+    })
+}
+
+const fireCompareRequest = () => {
+  const configMetadata = getMriFrontendConfig.value.getConfigMetadata()
 
   const callback = (response: any) => {
     if (!response.noDataReason && !response.data.errorMessage) {
@@ -118,31 +148,29 @@ const fireCompareRequest = () => {
 
     chartData.value = response.data
     renderChart()
-    emit('busyEv', false)
   }
 
-  ajaxAuth({
-    method: 'get',
-    url:
-      '/analytics-svc/api/services/patient/cohorts/compare/boxplot?' +
-      'ids=' +
-      props.bookmarkList.map((e: any) => e.id).join(',') +
-      '&xaxis=' +
-      props.xAxes +
-      '&yaxis=' +
-      props.yAxis +
-      '&configId=' +
-      configMetadata.configId +
-      '&configVersion=' +
-      configMetadata.configVersion,
-    cancelToken,
-  })
-    .then(callback)
-    .catch(({ message, response }: any) => {
-      if (message !== 'cancel') {
-        emit('busyEv', false)
-      }
-      errorMessage.value = message
+  startRequest(
+    ({ cancelToken }: any) =>
+      ajaxAuth({
+        method: 'get',
+        url:
+          '/analytics-svc/api/services/patient/cohorts/compare/boxplot?' +
+          'ids=' +
+          props.bookmarkList.map((e: any) => e.id).join(',') +
+          '&xaxis=' +
+          props.xAxes +
+          '&yaxis=' +
+          props.yAxis +
+          '&configId=' +
+          configMetadata.configId +
+          '&configVersion=' +
+          configMetadata.configVersion,
+        cancelToken,
+      }),
+    callback,
+    ({ response }: any) => {
+      errorMessage.value = response?.data?.errorMessage || ''
       if (response && response.status === 500) {
         callback({
           data: [],
@@ -152,8 +180,8 @@ const fireCompareRequest = () => {
           noDataReason: response.data.errorMessage,
         })
       }
-    })
-  emit('busyEv', true)
+    }
+  )
 }
 
 const renderChart = () => {
@@ -751,6 +779,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  isUnmounted.value = true
+  cancelRequest()
+  emit('busyEv', false)
   window.removeEventListener('resize', renderChart)
 })
 </script>
