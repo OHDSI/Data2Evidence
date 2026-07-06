@@ -16,6 +16,7 @@ import { Information } from "./Information/Information";
 import { Account } from "../shared/Account/Account";
 import { ResearcherFeatureMap, ResearcherFeatures } from "../../constant";
 import "./Researcher.scss";
+import { AiAssistantButton } from "../../components/AiAssistant/AiAssistantButton";
 
 const plugins = loadPlugins();
 
@@ -137,6 +138,7 @@ export const Researcher: FC = () => {
       {!isHome && <Header portalType="researcher" plugins={sortedPlugins} />}
       <main>
         <FeedbackToast />
+        <AiAssistantButton />
         {/* Pre-render all single-spa app containers - visibility controlled by route matching */}
         {singleSpaApps.map((item: IPluginItem) => {
           const subFeatureFlags = item.featureFlag ? featureFlagsDict[item.featureFlag] : {};
