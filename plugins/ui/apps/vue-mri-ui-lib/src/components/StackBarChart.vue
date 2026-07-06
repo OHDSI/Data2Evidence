@@ -17,6 +17,7 @@
 
 <script lang="ts">
 import { mapActions, mapGetters } from 'vuex'
+import axios from 'axios'
 import { useNotificationStore } from '../stores/notifications'
 import Plotly from '../lib/CustomPlotly'
 import Constants from '../utils/Constants'
@@ -28,10 +29,8 @@ import { applyById, getEffectiveBarChartMode, OVERLAY_BAR_OPACITY, KDE_FILL_ALPH
 
 const DEFAULT_BAR_GAP = 0.3
 
-let stackBarChart
-
 export default {
-  name: 'stackBarChart',
+  name: 'this.stackBarChart',
   components: {
     StackBarChartLegend,
   },
@@ -49,6 +48,10 @@ export default {
       debounceId: 0,
       layout: { ...Constants.PlotlyConsts.layout, showlegend: false },
       resizeObserver: null,
+      stackBarChart: null as HTMLElement | null,
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
     }
   },
   created() {
@@ -80,10 +83,10 @@ export default {
   },
   mounted() {
     this.resizeObserver = new ResizeObserver(() => {
-      if (stackBarChart && this.chartData && Object.keys(this.chartData).length !== 0) {
+      if (this.stackBarChart && this.chartData && Object.keys(this.chartData).length !== 0) {
         clearTimeout(this.debounceId)
         this.debounceId = setTimeout(() => {
-          Plotly.Plots.resize(stackBarChart)
+          Plotly.Plots.resize(this.stackBarChart)
         }, 100)
       }
     })
@@ -150,73 +153,62 @@ export default {
         this.setupAxes()
       }
 
-      this.$emit('busyEv', true)
       const bookmark = this.getBookmarksData
       if (Object.keys(bookmark).length !== 0 && bookmark) {
-        const callback = response => {
-          const chartData = postProcessBarChartData(response)
-          this.chartData = this.processResponse(chartData)
-          this.setCurrentPatientCount({
-            currentPatientCount: this.chartData.totalPatientCount,
-          })
-          if (stackBarChart) {
-            Plotly.purge(stackBarChart)
-          }
-          this.setupPlotly()
-          this.$emit('busyEv', false)
-
-          if (this.chartData.hasOwnProperty('noDataReason')) {
+        this.startRequest(
+          ({ cancelToken }) =>
+            this.fireQuery({
+              url: '/analytics-svc/api/services/population/json/barchart',
+              params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getBookmarksData.datasetId },
+              cancelToken,
+            }),
+          response => {
+            const chartData = postProcessBarChartData(response)
+            this.chartData = this.processResponse(chartData)
             this.setCurrentPatientCount({
-              currentPatientCount: '--',
+              currentPatientCount: this.chartData.totalPatientCount,
             })
+            if (this.stackBarChart) {
+              Plotly.purge(this.stackBarChart)
+            }
+            this.setupPlotly()
 
-            if (this.chartData.noDataReason !== this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
-              this.notificationStore.setAlertMessage({
-                message: this.chartData.noDataReason,
+            if (this.chartData.hasOwnProperty('noDataReason')) {
+              this.setCurrentPatientCount({
+                currentPatientCount: '--',
               })
+
+              if (this.chartData.noDataReason !== this.getText('MRI_PA_NO_MATCHING_PATIENTS')) {
+                this.notificationStore.setAlertMessage({
+                  message: this.chartData.noDataReason,
+                })
+              }
+              return
             }
-            return
-          }
 
-          this.renderChart()
+            this.renderChart()
 
-          // Emit x-axis category counts for default color axis selection
-          const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
-          const allAxesForEmit = this.getAllAxes
-          const xAxisCategoryCounts = xAxes.map((cat, idx) => {
-            // Find the raw allAxes slot index for this filtered x-axis category
-            const rawSlot = allAxesForEmit ? allAxesForEmit.findIndex(a => a?.props?.attributeId === cat.id) : -1
-            return {
-              axisIndex: rawSlot >= 0 ? rawSlot : idx,
-              count: new Set(this.chartData.data.map(d => d[cat.id])).size,
-            }
-          })
-          this.$emit('chartDataReady', xAxisCategoryCounts)
-        }
-
-        this.fireQuery({
-          url: '/analytics-svc/api/services/population/json/barchart',
-          params: { mriquery: JSON.stringify(this.getBookmarksData), datasetId: this.getBookmarksData.datasetId },
-        })
-          .then(callback)
-          .catch(error => {
-            const { message, response, code } = error
-
-            if (message !== 'cancel') {
-              this.$emit('busyEv', false)
-            }
+            // Emit x-axis category counts for default color axis selection
+            const xAxes = this.chartData.categories?.filter(c => c.axis === Constants.AxisId.X) || []
+            const allAxesForEmit = this.getAllAxes
+            const xAxisCategoryCounts = xAxes.map((cat, idx) => {
+              // Find the raw allAxes slot index for this filtered x-axis category
+              const rawSlot = allAxesForEmit ? allAxesForEmit.findIndex(a => a?.props?.attributeId === cat.id) : -1
+              return {
+                axisIndex: rawSlot >= 0 ? rawSlot : idx,
+                count: new Set(this.chartData.data.map(d => d[cat.id])).size,
+              }
+            })
+            this.$emit('chartDataReady', xAxisCategoryCounts)
+          },
+          error => {
+            const { response, code } = error
 
             let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
             if (code === 'ECONNABORTED') {
               // Handle timeout explicitly
-              callback({
-                data: [],
-                measures: [],
-                categories: [],
-                totalPatientCount: 0,
-                noDataReason,
-              })
+              this.handleNoDataResponse(noDataReason)
               return
             }
 
@@ -229,21 +221,16 @@ export default {
                 }
               }
 
-              callback({
-                data: [],
-                measures: [],
-                categories: [],
-                totalPatientCount: 0,
-                noDataReason,
-              })
+              this.handleNoDataResponse(noDataReason)
             }
-          })
+          }
+        )
       }
     },
     shouldRerenderChart() {
       if (this.shouldRerenderChart) {
-        if (stackBarChart) {
-          Plotly.purge(stackBarChart)
+        if (this.stackBarChart) {
+          Plotly.purge(this.stackBarChart)
         }
         this.setupPlotly()
         this.renderChart()
@@ -260,16 +247,16 @@ export default {
       // using the canonical bar traces in chartData.traces, so a follow-up renderChart would
       // race Plotly.react against newPlot's internal staging (manifests as the xaxis2/scatter
       // overlays being dropped on the first overlay-curve toggle after a mode dance).
-      if (stackBarChart) {
-        Plotly.purge(stackBarChart)
+      if (this.stackBarChart) {
+        Plotly.purge(this.stackBarChart)
       }
       this.setupPlotly()
     },
     getShowDistributionOverlay() {
       // Toggling the overlay adds/removes xaxis2 and scatter traces; Plotly.react does not
       // pick up newly added layout axes reliably, so rebuild for the same reason as above.
-      if (stackBarChart) {
-        Plotly.purge(stackBarChart)
+      if (this.stackBarChart) {
+        Plotly.purge(this.stackBarChart)
       }
       this.setupPlotly()
     },
@@ -348,13 +335,18 @@ export default {
     },
   },
   beforeUnmount() {
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
+
     if (this.resizeObserver) {
       this.resizeObserver.disconnect()
       this.resizeObserver = null
     }
 
-    if (stackBarChart) {
-      Plotly.purge(stackBarChart)
+    if (this.stackBarChart) {
+      Plotly.purge(this.stackBarChart)
+      this.stackBarChart = null
     }
   },
   methods: {
@@ -393,7 +385,7 @@ export default {
       const ticktext: string[] = this.chartData.ticktext || tickvals
       const categoryCount = tickvals.length
       // Measure plot width from DOM element if available
-      const plotWidth = stackBarChart ? stackBarChart.clientWidth : 0
+      const plotWidth = this.stackBarChart ? this.stackBarChart.clientWidth : 0
       // Compute average label length from full labels
       const avgLabelLength = ticktextFull.reduce((sum, t) => sum + t.length, 0) / (ticktextFull.length || 1)
       const useTruncated = this.shouldTruncateXAxisLabels(plotWidth, categoryCount, avgLabelLength)
@@ -440,10 +432,10 @@ export default {
         return Array.isArray(selectedpoints) && selectedpoints.length > 0
       })
     },
-    clearSelectionState({ plotElement = stackBarChart, resetAxes = false } = {}) {
+    clearSelectionState({ plotElement = this.stackBarChart, resetAxes = false } = {}) {
       this.setChartSelection({ selection: [] })
 
-      const targetElement = plotElement || stackBarChart
+      const targetElement = plotElement || this.stackBarChart
       if (!targetElement) {
         return
       }
@@ -467,6 +459,57 @@ export default {
       }
 
       this.reactWithCurrentMode(targetElement, { resetAxes })
+    },
+    startRequest(fire, onSuccess, onError) {
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
+      })
+
+      this.$emit('busyEv', true)
+
+      fire({ cancelToken })
+        .then(data => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onSuccess(data)
+        })
+        .catch(error => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          onError(error)
+        })
+        .finally(() => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          this.requestCancel = null
+          this.$emit('busyEv', false)
+        })
+    },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+    },
+    handleNoDataResponse(noDataReason) {
+      if (this.stackBarChart) {
+        Plotly.purge(this.stackBarChart)
+      }
+      this.chartData = {
+        ...this.chartData,
+        data: [],
+        measures: [],
+        categories: [],
+        totalPatientCount: 0,
+        noDataReason,
+      }
+      this.setCurrentPatientCount({ currentPatientCount: '--' })
+      this.setupPlotly()
     },
     setupAxes() {
       this.disableAllAxesandProperties()
@@ -536,7 +579,7 @@ export default {
         colorway,
       })
     },
-    reactWithCurrentMode(targetElement = stackBarChart, { resetAxes = false } = {}) {
+    reactWithCurrentMode(targetElement = this.stackBarChart, { resetAxes = false } = {}) {
       if (!targetElement || !this.chartData?.traces) return
       const layout = this.buildPlotlyLayout(resetAxes)
       // applyChartType returns new traces/layout objects — no clone needed.
@@ -617,12 +660,12 @@ export default {
 
         // Resize chart after DOM updates to account for legend space
         this.$nextTick(() => {
-          Plotly.Plots.resize(stackBarChart)
+          Plotly.Plots.resize(this.stackBarChart)
         })
       }
     },
     setupPlotly() {
-      stackBarChart = this.$el.querySelector('.stackbar-container')
+      this.stackBarChart = this.$el.querySelector('.stackbar-container')
 
       const initialLayout = this.buildPlotlyLayout()
       // applyChartType returns new traces/layout — no clone needed.
@@ -630,11 +673,11 @@ export default {
         this.chartData.traces || [],
         initialLayout
       )
-      Plotly.newPlot(stackBarChart, initialTracesForPlotly, finalInitialLayout, this.config)
+      Plotly.newPlot(this.stackBarChart, initialTracesForPlotly, finalInitialLayout, this.config)
 
       // Resize chart after DOM updates to account for legend space
       this.$nextTick(() => {
-        Plotly.Plots.resize(stackBarChart)
+        Plotly.Plots.resize(this.stackBarChart)
       })
 
       const selectionUpdate = eventData => {
@@ -704,9 +747,9 @@ export default {
         this.clearSelectionState()
       }
 
-      stackBarChart.on('plotly_selected', selectionUpdate)
-      stackBarChart.on('plotly_deselect', deselectionUpdate)
-      this.setPlotlyElement({ element: stackBarChart })
+      this.stackBarChart.on('plotly_selected', selectionUpdate)
+      this.stackBarChart.on('plotly_deselect', deselectionUpdate)
+      this.setPlotlyElement({ element: this.stackBarChart })
     },
   },
 }

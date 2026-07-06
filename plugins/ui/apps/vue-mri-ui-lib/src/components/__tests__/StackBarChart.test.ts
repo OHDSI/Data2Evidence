@@ -418,3 +418,104 @@ describe('StackBarChart selection handling', () => {
     expect(layout.yaxis.title).toEqual({ text: '' })
   })
 })
+
+
+describe('StackBarChart busy-state lifecycle', () => {
+  const createDeferred = () => {
+    let resolve: (value: any) => void = () => {}
+    let reject: (error: any) => void = () => {}
+    const promise = new Promise((res, rej) => {
+      resolve = res
+      reject = rej
+    })
+    return { promise, resolve, reject }
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    ;(globalThis as any).ResizeObserver = class {
+      observe() {}
+      disconnect() {}
+    }
+  })
+
+  it('emits busy true then false on successful request', async () => {
+    const { promise, resolve } = createDeferred()
+    const fireQuery = vi.fn().mockReturnValue(promise)
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, fireQuery },
+      getters: { ...getters, getBookmarksData: () => ({ datasetId: '1', test: true }), getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(StackBarChart as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, shouldRerenderChart: false },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.emitted('busyEv')).toEqual([[true]])
+
+    resolve({ data: [], measures: [], categories: [], totalPatientCount: 0 })
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(wrapper.emitted('busyEv')).toEqual([[true], [false]])
+  })
+
+  it('cancels previous request when a new request starts', async () => {
+    const deferred1 = createDeferred()
+    const deferred2 = createDeferred()
+    let callIndex = 0
+    const fireQuery = vi.fn().mockImplementation(() => {
+      callIndex += 1
+      return callIndex === 1 ? deferred1.promise : deferred2.promise
+    })
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, fireQuery },
+      getters: { ...getters, getBookmarksData: () => ({ datasetId: '1', test: true }), getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(StackBarChart as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, shouldRerenderChart: false },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    expect(fireQuery).toHaveBeenCalledTimes(1)
+
+    // second request cancels the first and eventually resolves
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    expect(fireQuery).toHaveBeenCalledTimes(2)
+
+    deferred2.resolve({ data: [], measures: [], categories: [], totalPatientCount: 0 })
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(wrapper.emitted('busyEv')).toContainEqual([false])
+  })
+
+  it('emits busy false on unmount', async () => {
+    const { promise } = createDeferred()
+    const fireQuery = vi.fn().mockReturnValue(promise)
+    const store = createStore({
+      state: { fireRequest: false },
+      actions: { ...actions, fireQuery },
+      getters: { ...getters, getBookmarksData: () => ({ datasetId: '1', test: true }), getFireRequest: (state: any) => state.fireRequest },
+    })
+    const wrapper = shallowMount(StackBarChart as any, {
+      global: { plugins: [store, createPinia()] },
+      props: { busyEv: false, shouldRerenderChart: false },
+    })
+
+    store.state.fireRequest = !store.state.fireRequest
+    await wrapper.vm.$nextTick()
+
+    wrapper.unmount()
+
+    expect(wrapper.emitted('busyEv')).toContainEqual([false])
+  })
+})
