@@ -120,7 +120,7 @@ export function addRoutes(app: Hono) {
         }
         for (const cid of cacheIds) {
           try {
-            await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+            await ensureAttached({ cacheIds: [cid] }, { exec: attachExec, createDbFileIfMissing: true });
           } catch (e) {
             logger.log(`[trex/attach] cache ${cid} attach failed: ${(e as Error).message}`);
           }

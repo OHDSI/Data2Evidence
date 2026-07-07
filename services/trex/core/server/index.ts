@@ -158,7 +158,7 @@ export async function initTrex() {
       }
       for (const cid of cacheIds) {
         try {
-          await ensureAttached({ cacheIds: [cid] }, { exec: attachExec });
+          await ensureAttached({ cacheIds: [cid] }, { exec: attachExec, createDbFileIfMissing: true });
         } catch (e) {
           logger.log(`[attach-startup] cache ${cid} attach failed: ${(e as Error).message}`);
         }
