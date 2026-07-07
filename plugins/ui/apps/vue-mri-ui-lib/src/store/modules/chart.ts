@@ -446,41 +446,43 @@ const actions = {
 
     if (previousMode === 'stack' && modeId !== 'stack') {
       const allAxes = rootGetters.getAllAxes
+      const mriFrontendConfig = rootGetters.getMriFrontendConfig
       const x1Axis = allAxes?.[X1]
       const x2Axis = allAxes?.[X2]
-      const x1HasSelection = !!(x1Axis?.props?.filterCardId && x1Axis?.props?.key)
-      const x2HasSelection = !!(x2Axis?.props?.filterCardId && x2Axis?.props?.key)
-
-      let targetId: number | null = null
-      let needsClear = false
-
-      if (x1HasSelection && x2HasSelection) {
-        const mriFrontendConfig = rootGetters.getMriFrontendConfig
-        const x1Binnable = !!mriFrontendConfig?.getAttributeByPath(x1Axis.props.attributeId)?.isBinnable?.()
-        const x2Binnable = !!mriFrontendConfig?.getAttributeByPath(x2Axis.props.attributeId)?.isBinnable?.()
-        if (!x1Binnable && x2Binnable) {
-          targetId = X1
-        } else if (x1Binnable && !x2Binnable) {
-          targetId = X2
-        } else {
-          targetId = X1
-        }
-        needsClear = true
-      } else if (x1HasSelection && !x2HasSelection) {
-        targetId = X2
-      } else if (!x1HasSelection && x2HasSelection) {
-        targetId = X1
-      } else {
-        // When both X1 and X2 are empty, disable X2 by default
-        targetId = X2
+      const hasSelection = (axis: any) => !!(axis?.props?.filterCardId && axis?.props?.key)
+      const isContinuous = (axis: any) =>
+        hasSelection(axis) && !!mriFrontendConfig?.getAttributeByPath(axis.props.attributeId)?.isBinnable?.()
+      const disableAxis = (id: number) => dispatch('setAxisValue', { id, props: { disabled: true } })
+      const clearAndDisable = (id: number) => {
+        dispatch('clearAxisValue', id)
+        disableAxis(id)
       }
 
-      if (targetId !== null) {
-        if (needsClear) {
-          dispatch('clearAxisValue', targetId)
-          xAxisCleared = true
-        }
-        dispatch('setAxisValue', { id: targetId, props: { disabled: true } })
+      // Relocate X2 onto X1 when X2 is the only occupied slot, or when X2 holds
+      // the continuous attribute while X1 is categorical.
+      const relocateX2ToX1 =
+        hasSelection(x2Axis) && (!hasSelection(x1Axis) || (isContinuous(x2Axis) && !isContinuous(x1Axis)))
+
+      if (relocateX2ToX1) {
+        dispatch('setAxisValue', {
+          id: X1,
+          props: {
+            filterCardId: x2Axis.props.filterCardId,
+            key: x2Axis.props.key,
+            attributeId: x2Axis.props.attributeId,
+            binsize: x2Axis.props.binsize,
+          },
+        })
+        clearAndDisable(X2)
+        xAxisCleared = true
+      } else if (hasSelection(x1Axis) && hasSelection(x2Axis)) {
+        // Both slots occupied and no relocation needed – always keep X1, retire X2
+        // (the X2-continuous/X1-categorical case is already handled by relocateX2ToX1 above)
+        clearAndDisable(X2)
+        xAxisCleared = true
+      } else {
+        // X1 occupied or both empty – retire X2 by default
+        disableAxis(X2)
       }
     } else if (previousMode !== 'stack' && modeId === 'stack') {
       dispatch('setAxisValue', { id: X1, props: { disabled: false } })
