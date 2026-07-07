@@ -96,7 +96,7 @@ const getConnectionWithAttachGuard = async (
 
   if (readyDestinations.has(key)) {
     try {
-      return openTrexConnection(
+      return await openTrexConnection(
         dbm,
         databaseCode,
         schemaName,
@@ -113,7 +113,7 @@ const getConnectionWithAttachGuard = async (
   if (readyDestinations.has(key)) {
     releaseLock();
     try {
-      return openTrexConnection(
+      return await openTrexConnection(
         dbm,
         databaseCode,
         schemaName,
@@ -127,7 +127,7 @@ const getConnectionWithAttachGuard = async (
   }
 
   try {
-    const conn = openTrexConnection(
+    const conn = await openTrexConnection(
       dbm,
       databaseCode,
       schemaName,
