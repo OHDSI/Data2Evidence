@@ -84,7 +84,7 @@ export async function ensureSourceAttached(
     const host = sqlQuote(c.host);
     const datasetClause = c.name ? ` dataset=${sqlQuote(c.name)}` : "";
     const sql =
-      `ATTACH IF NOT EXISTS 'project=${host}${datasetClause}' AS ${alias} (TYPE bigquery, READ_ONLY)`;
+      `ATTACH IF NOT EXISTS 'project=${host}${datasetClause}' AS ${alias} (TYPE bigquery)`;
     await opts.exec(sql);
     return;
   }

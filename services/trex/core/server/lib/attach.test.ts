@@ -157,7 +157,7 @@ Deno.test("ensureSourceAttached — bigquery builds the expected ATTACH SQL", as
   assertEquals(calls.length, 1);
   assertEquals(
     calls[0],
-    "ATTACH IF NOT EXISTS 'project=my-project dataset=my_dataset' AS bq_alpha__srcdb (TYPE bigquery, READ_ONLY)",
+    "ATTACH IF NOT EXISTS 'project=my-project dataset=my_dataset' AS bq_alpha__srcdb (TYPE bigquery)",
   );
 });
 
@@ -176,7 +176,7 @@ Deno.test("ensureSourceAttached — bigquery with empty name attaches the whole 
   assertEquals(calls.length, 1);
   assertEquals(
     calls[0],
-    "ATTACH IF NOT EXISTS 'project=my-project' AS bq_alpha__srcdb (TYPE bigquery, READ_ONLY)",
+    "ATTACH IF NOT EXISTS 'project=my-project' AS bq_alpha__srcdb (TYPE bigquery)",
   );
 });
 
