@@ -182,10 +182,7 @@ export class CohortEndpoint {
         query: any,
         isWriteAction: boolean = false
     ) {
-        if (
-            this.connection.constructor.name === "TrexConnection" &&
-            this.dialect !== ANALYTICS_DB_DIALECTS.BIGQUERY // If bigquery, execute cohort queries on cache instead of sourcedb
-        ) {
+        if (this.connection.constructor.name === "TrexConnection") {
             // Special case for webapi, only needs to execute on source database and treats source database as default instead of cache
             if (this.datasetType === "webapi") {
                 query.queryString = query.queryString.replaceAll(
@@ -591,13 +588,11 @@ export class CohortEndpoint {
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
             // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
             // numeric literal so DuckDB parses it as BIGINT, not a coerced DOUBLE).
-            const memConn = (Trex as any).databaseManager().getConnection(
-                "memory",
-                "",
-                "",
-                "",
-                { duckdb: (sql: string) => sql }
-            );
+            const memConn = (Trex as any)
+                .databaseManager()
+                .getConnection("memory", "", "", "", {
+                    duckdb: (sql: string) => sql,
+                });
             try {
                 const materializeQuery = QueryObject.format(
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
@@ -608,9 +603,9 @@ export class CohortEndpoint {
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
                 );
-                const result = await materializeQuery.executeQuery<{ processed_rows: number }>(
-                    memConn
-                );
+                const result = await materializeQuery.executeQuery<{
+                    processed_rows: number;
+                }>(memConn);
                 return result?.data?.[0]?.processed_rows;
             } finally {
                 if (typeof memConn?.close === "function") {
