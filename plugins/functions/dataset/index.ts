@@ -39,6 +39,14 @@ export class DatasetRouter {
     this.registerRoutes();
   }
 
+  private deriveCacheId(datasetId: string, databaseCode: string, dialect: DbDialect) {
+    if (dialect === DbDialect.Hana) {
+      return databaseCode;
+    }
+    const cleaned = datasetId.replace(/-/g, "_");
+    return /^[0-9]/.test(cleaned) ? `_${cleaned}` : cleaned;
+  }
+
   private schemaCase(schemaName: string, dialect: DbDialect) {
     switch (dialect) {
       case DbDialect.Hana:
@@ -230,6 +238,11 @@ export class DatasetRouter {
                   options: {
                     flow_action_type: "create_datamodel",
                     database_code: databaseCode,
+                    cache_id: this.deriveCacheId(
+                      id,
+                      databaseCode,
+                      dialect as DbDialect,
+                    ),
                     data_model: dataModel,
                     schema_name: schemaName,
                     cache_schema_name: parsedNewCacheSchemaName,

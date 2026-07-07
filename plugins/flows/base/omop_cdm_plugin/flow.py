@@ -85,6 +85,7 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_c
             createCacheOptions = CreateCacheOptions(
                 flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
                 databaseCode=options.database_code,
+                cacheId=options.cache_id,
                 schemaName=options.schema_name,
                 snapshotSchemaName=options.cache_schema_name
             )
@@ -93,6 +94,7 @@ def create_omop_cdm_dataset_flow(options: OmopCDMPluginOptions, create_results_c
             resultsCacheOptions = CreateCacheOptions(
                 flowActionType=CacheFlowAction.CREATE_DATAMART_CACHE,
                 databaseCode=options.database_code,
+                cacheId=options.cache_id,
                 schemaName=options.results_schema,
                 snapshotSchemaName=options.results_schema
             )

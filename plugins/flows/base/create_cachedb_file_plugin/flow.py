@@ -66,9 +66,11 @@ def create_cache_flow(options: CreateCacheOptions):
         logger.info("Loading Google service account credentials for BigQuery access...")
         DaoBase.create_service_account_credentials_file(db_credentials)
 
+    cache_database = options.cache_id or options.database_code
+
     copy_params = CopyParameters(
         source_database=f"{options.database_code}__srcdb",
-        target_database=options.database_code,
+        target_database=cache_database,
         source_schema=options.schema_name,
         target_schema=options.target_schema_name,
         table_filter=options.snapshot_copy_config.table_config_to_dict() if options.snapshot_copy_config else None,
@@ -81,9 +83,9 @@ def create_cache_flow(options: CreateCacheOptions):
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
-        options.database_code, Variable.get("duckdb_data_folder")
+        cache_database, Variable.get("duckdb_data_folder")
     )
-    
+
     if not options.use_trex_connection:
         logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
 
