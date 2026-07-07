@@ -74,7 +74,8 @@ def create_cohort(dbdao, admin_user, schema_name: str, cohort_definition_id: int
     set_db_driver_env_string = dbdao.set_db_driver_env()
 
     set_connection_string = dbdao.get_r_database_connector_connection_string(
-        user_type=admin_user
+        user_type=admin_user,
+        results_schema_name=cohort_schema_name,
     )
     create_script_path = os.path.join(os.path.dirname(__file__), 'create_cohort.R')
     with robjects.conversion.localconverter(robjects.default_converter):

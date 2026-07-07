@@ -48,6 +48,7 @@ class DialectDrivers(BaseModel):
     class database_connector:
         postgres: str = "postgresql"
         hana: str = "hana"
+        bigquery: str = "bigquery"
         trex: str = "postgresql"
 
     class cachedb:
@@ -331,6 +332,7 @@ class DaoBase(ABC):
         self,
         user_type: UserType = UserType.READ_USER,
         release_date: str = None,
+        results_schema_name: Optional[str] = None,
     ):
         """
         Used for Database Connector package
@@ -361,6 +363,11 @@ class DaoBase(ABC):
                     else None
                 )
                 conn_url += extra_config
+            case SupportedDatabaseDialects.BIGQUERY:
+                conn_url = self.create_bigquery_database_connector_connection_string(
+                    database_credentials,
+                    results_schema_name=results_schema_name,
+                )
 
         match user_type:
             case UserType.ADMIN_USER:
@@ -385,6 +392,11 @@ class DaoBase(ABC):
             for session_key, value in self.pa_cdm_config.items():
                 conn_url_with_app += f"&{session_key}={value}"
             return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url_with_app}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
+
+        if dialect == SupportedDatabaseDialects.BIGQUERY:
+            bigquery_user = ""
+            bigquery_password = ""
+            return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{bigquery_user}', password = '{bigquery_password}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
         return f"""connectionDetails <- DatabaseConnector::createConnectionDetails(dbms = '{database_connector_dialect}', connectionString = '{conn_url}', user = '{user}', password = '{password.get_secret_value()}', pathToDriver = '{DaoBase.path_to_driver}')"""
 
@@ -417,6 +429,10 @@ class DaoBase(ABC):
                     else None
                 )
                 conn_url += extra_config
+            case SupportedDatabaseDialects.BIGQUERY:
+                conn_url = self.create_bigquery_database_connector_connection_string(
+                    database_credentials
+                )
         return conn_url
 
     def get_database_connector_dbms_val(self) -> str:
@@ -514,7 +530,32 @@ class DaoBase(ABC):
             return obj_name.casefold()
         else:
             return obj_name
-        
+
+    @staticmethod
+    def create_bigquery_database_connector_connection_string(
+        db_credentials: DBCredentialsType,
+        results_schema_name: Optional[str] = None,
+    ) -> str:
+        big_query_key_path = Secret.load("google-service-account-json").get()
+        DaoBase.create_service_account_credentials_file(db_credentials)
+
+        project_id = db_credentials.project_id or db_credentials.host
+        oauth_service_account_email = (
+            db_credentials.client_email
+            or db_credentials.adminUser
+            or db_credentials.readUser
+            or ""
+        )
+        dataset_name = results_schema_name or db_credentials.databaseName
+        return (
+            "jdbc:bigquery://www.googleapis.com:443/bigquery/v2;"
+            f"ProjectId={project_id};"
+            f"DefaultDataset={dataset_name};"
+            "OAuthType=0;"
+            f"OAuthServiceAcctEmail={oauth_service_account_email};"
+            f"OAuthPvtKeyPath={big_query_key_path}"
+        )
+
     def create_service_account_credentials_file(db_credentials: DBCredentialsType):
         """
         Write Google service account credentials to a JSON file and set the environment variable for BigQuery access.

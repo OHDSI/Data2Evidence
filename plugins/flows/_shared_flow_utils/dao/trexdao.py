@@ -459,7 +459,10 @@ class TrexDao(DaoBase):
         self.execute_sql(sql)
 
     def get_r_database_connector_connection_string(
-        self, user_type: UserType = UserType.ADMIN_USER, release_date: str = None
+        self,
+        user_type: UserType = UserType.ADMIN_USER,
+        release_date: str = None,
+        results_schema_name: Optional[str] = None,
     ) -> str:
         """
         Generate R DatabaseConnector connection string for Trex PostgreSQL database.
