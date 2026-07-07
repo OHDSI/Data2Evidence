@@ -85,7 +85,7 @@ jobs:
             REL_SLUG="${GITHUB_REF_NAME//\//-}"
             RUN_TAG="${REL_SLUG}-${SHORT_SHA}"
             IS_RELEASE_PUSH=true
-            CANONICAL_TAG=""
+            CANONICAL_TAG="${REL_SLUG}"
             PLUGINS_TAG=""
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             RUN_TAG="${{ github.event.inputs.release_tag }}-beta"
