@@ -94,6 +94,11 @@ const getConnectionWithAttachGuard = async (
     resultsSchemaName
   );
 
+  // Trex lazily attaches DuckDB aliases during the first connection for a
+  // destination. Cold parallel requests can race that attach and fail with
+  // "validation_schema already exists", so serialize the first successful open
+  // per destination in this worker. Once ready, skip the lock so later opens
+  // for the same destination can run in parallel on the normal fast path.
   if (readyDestinations.has(key)) {
     try {
       return await openTrexConnection(
