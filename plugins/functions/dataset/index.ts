@@ -39,14 +39,6 @@ export class DatasetRouter {
     this.registerRoutes();
   }
 
-  private deriveCacheId(datasetId: string, databaseCode: string, dialect: DbDialect) {
-    if (dialect === DbDialect.Hana) {
-      return databaseCode;
-    }
-    const cleaned = datasetId.replace(/-/g, "_");
-    return /^[0-9]/.test(cleaned) ? `_${cleaned}` : cleaned;
-  }
-
   private schemaCase(schemaName: string, dialect: DbDialect) {
     switch (dialect) {
       case DbDialect.Hana:
@@ -209,65 +201,10 @@ export class DatasetRouter {
           vocabSchema = fhirSchemaName;
           resultsSchemaName = fhirSchemaName;
         } else {
-          const newCacheSchemaName = schemaName
-            ? schemaName
-            : `CDM${id}`.replace(/-/g, "");
-
-          const parsedNewCacheSchemaName = this.schemaCase(
-            newCacheSchemaName,
-            dialect as DbDialect,
-          );
-
           vocabSchema = vocabSchemaValue ? vocabSchemaValue : schemaName;
           resultsSchemaName = resultsSchemaValue
             ? resultsSchemaValue
             : `${schemaName}_results`;
-
-          // Create CDM & Custom schemas
-          if (schemaOption != CDMSchemaTypes.NoCDM && schemaName) {
-            if (
-              schemaOption == CDMSchemaTypes.CreateCDM ||
-              schemaOption == CDMSchemaTypes.CustomCDM
-            ) {
-              try {
-                this.logger.info(
-                  `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
-                );
-
-                const options = {
-                  options: {
-                    flow_action_type: "create_datamodel",
-                    database_code: databaseCode,
-                    cache_id: this.deriveCacheId(
-                      id,
-                      databaseCode,
-                      dialect as DbDialect,
-                    ),
-                    data_model: dataModel,
-                    schema_name: schemaName,
-                    cache_schema_name: parsedNewCacheSchemaName,
-                    vocab_schema: vocabSchema,
-                    results_schema: resultsSchemaName,
-                    plugin: plugin,
-                  },
-                };
-                const datamodelFlowRunDto = {
-                  flowRunName: `datamodel-create-${schemaName}`,
-                  options: options,
-                };
-
-                flowRunId =
-                  await jobpluginsAPI.createDatamodelFlowRun(
-                    datamodelFlowRunDto,
-                  );
-              } catch (error) {
-                this.logger.error(
-                  `Error while creating new CDM schema! ${error}`,
-                );
-                return res.status(500).send("Error while creating CDM schema");
-              }
-            }
-          }
 
           if (schemaOption === CDMSchemaTypes.ExistingCDM) {
             const dbAPI = new DbCredentialsAPI(token);
@@ -350,6 +287,60 @@ export class DatasetRouter {
             return res
               .status(httpStatus)
               .json(responseData || { error: createError.message });
+          }
+
+          // Create CDM & Custom schemas. Runs after the portal dataset exists so the
+          // flow can target the portal-assigned cache_id (and trex has attached
+          // <cache_id>.db during dataset creation).
+          if (
+            !isFhirDataset &&
+            schemaName &&
+            (schemaOption == CDMSchemaTypes.CreateCDM ||
+              schemaOption == CDMSchemaTypes.CustomCDM)
+          ) {
+            try {
+              this.logger.info(
+                `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
+              );
+
+              const { cacheId } = (await portalAPI.getDataset(id)) as {
+                cacheId?: string;
+              };
+
+              const options = {
+                options: {
+                  flow_action_type: "create_datamodel",
+                  database_code: databaseCode,
+                  cache_id: cacheId ?? databaseCode,
+                  data_model: dataModel,
+                  schema_name: schemaName,
+                  cache_schema_name: this.schemaCase(
+                    schemaName,
+                    dialect as DbDialect,
+                  ),
+                  vocab_schema: vocabSchema,
+                  results_schema: resultsSchemaName,
+                  plugin: plugin,
+                },
+              };
+              const datamodelFlowRunDto = {
+                flowRunName: `datamodel-create-${schemaName}`,
+                options: options,
+              };
+
+              flowRunId =
+                await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
+            } catch (error) {
+              this.logger.error(`Error while creating new CDM schema! ${error}`);
+              try {
+                await portalAPI.deleteDataset(id);
+              } catch (deleteError) {
+                this.logger.error(
+                  `Failed to clean up dataset '${id}' after CDM schema flow failure! It must be manually deleted. ${deleteError}`,
+                );
+              }
+              return res.status(500).send("Error while creating CDM schema");
+            }
           }
 
           let newCacheDataset: any = {};
