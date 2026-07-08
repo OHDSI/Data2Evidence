@@ -7,6 +7,8 @@
   "use strict";
   var TARGET = "/d2e/portal/researcher/account";
   document.addEventListener("click", function (e) {
+    // Leave modified/non-primary clicks (open-in-new-tab gestures) alone.
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     var t = e.target;
     var user = t && t.closest ? t.closest(".nav-bar__user") : null;
     if (user) {

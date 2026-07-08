@@ -144,6 +144,10 @@ const landingImageSrc = join(rootDir, 'landing-page-illustration.svg');
 if (existsSync(landingImageSrc)) {
   mkdirSync(join(resourcesDir, 'config'), { recursive: true });
   copyFileSync(landingImageSrc, join(resourcesDir, 'config', 'landing-page-illustration.svg'));
+} else {
+  // The LandingView repoint above unconditionally points at this file, so a
+  // missing source means a broken landing image — surface it loudly.
+  console.warn('[postinstall] WARN: landing-page-illustration.svg missing at', landingImageSrc, '- landing image will 404');
 }
 
 // Helper scripts injected into Atlas3's index.html:
