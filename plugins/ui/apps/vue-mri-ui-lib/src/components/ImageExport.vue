@@ -18,6 +18,7 @@ export default {
     return {
       imageURL: '',
       busy: true,
+      exportSuccess: false,
     }
   },
   computed: {
@@ -42,13 +43,14 @@ export default {
     setTimeout(() => {
       this.busy = false
       this.setChartCover({ chartCover: false })
-      this.$emit('closeEv')
+      this.$emit('closeEv', { success: this.exportSuccess })
     }, 400)
   },
   methods: {
     ...mapActions(['setChartCover']),
     downloadImage() {
       this.busy = true
+      this.exportSuccess = false
       this.setChartCover({ chartCover: true })
       this.prepareImageChart()
       this.generatePdfCharts()
@@ -106,38 +108,44 @@ export default {
       const patientCount = response ? response.totalPatientCount : 0
 
       if (patientCount && patientCount > 0) {
-        let chartId = ''
-        if (this.compareChartType) {
-          chartId = '#' + this.compareChartType + '-chart'
-          chartType = this.compareChartType
-        } else {
-          chartId = `#${chartType}-chart`
+        try {
+          let chartId = ''
+          if (this.compareChartType) {
+            chartId = '#' + this.compareChartType + '-chart'
+            chartType = this.compareChartType
+          } else {
+            chartId = `#${chartType}-chart`
+          }
+
+          const kmLegendInput =
+            chartType.indexOf('km') > -1
+              ? {
+                  logRank: this.getText('MRI_PA_KAPLAN_LOG_RANK'),
+                  pValue: `${this.getText('MRI_PA_KAPLAN_LOG_RANK_P')} ${
+                    response.kaplanMeierStatistics.overallResult.pValue
+                  }`,
+                  title: response.categories
+                    .map(mCategory => {
+                      if (mCategory.id === 'dummy_category') {
+                        return this.getText('MRI_PA_DUMMY_CATEGORY')
+                      }
+                      return mCategory.name
+                    })
+                    .join(', '),
+                  data: this.getKMSeries,
+                }
+              : null
+
+          const chartCanvas = createChartCanvas(chartId, chartType, targetHeight, targetWidth, pdfConst, kmLegendInput)
+
+          this.imageURL = chartCanvas.toDataURL('image/png')
+          this.$refs.imgDownloadBtn.href = this.imageURL
+          this.$refs.imgDownloadBtn.click()
+          this.exportSuccess = true
+        } catch (e) {
+          this.exportSuccess = false
+          console.error('Image export failed:', e)
         }
-
-        const kmLegendInput =
-          chartType.indexOf('km') > -1
-            ? {
-                logRank: this.getText('MRI_PA_KAPLAN_LOG_RANK'),
-                pValue: `${this.getText('MRI_PA_KAPLAN_LOG_RANK_P')} ${
-                  response.kaplanMeierStatistics.overallResult.pValue
-                }`,
-                title: response.categories
-                  .map(mCategory => {
-                    if (mCategory.id === 'dummy_category') {
-                      return this.getText('MRI_PA_DUMMY_CATEGORY')
-                    }
-                    return mCategory.name
-                  })
-                  .join(', '),
-                data: this.getKMSeries,
-              }
-            : null
-
-        const chartCanvas = createChartCanvas(chartId, chartType, targetHeight, targetWidth, pdfConst, kmLegendInput)
-
-        this.imageURL = chartCanvas.toDataURL('image/png')
-        this.$refs.imgDownloadBtn.href = this.imageURL
-        this.$refs.imgDownloadBtn.click()
       }
     },
     cropCanvas(canvas, width, height, y = 0, x = 0) {

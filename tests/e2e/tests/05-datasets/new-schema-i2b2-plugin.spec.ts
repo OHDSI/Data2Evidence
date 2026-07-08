@@ -27,7 +27,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'Create new schema', exact: true }).click()
   await page.locator('#mui-component-select-databaseOption').click()
   await page.getByRole('option', { name: 'demo_database-postgres' }).click()
-  // Switch to source mode so non-OMOP data models are selectable and cache fields appear
+  // Switch to source mode so non-OMOP data models are selectable
   await page.locator('#mui-component-select-managementMode').click()
   await page.getByRole('option', { name: 'Source (with cache dataset)' }).click()
   // Uncheck the "Use default result schema name" checkbox to enable custom input
@@ -39,14 +39,13 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('option', { name: 'OMOP', exact: true }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).click()
   await page.getByRole('textbox', { name: 'Token dataset code' }).fill(randomString)
-  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).click()
-  await page.getByRole('textbox', { name: 'Cache Dataset Name' }).fill('Test Cache')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   // Close the "Dataset Created" notification dialog
   await page.getByRole('button', { name: 'Close', exact: true }).click({ timeout: MINUTE_2 })
   // Wait for datasets to appear in the table (with parent-child structure, use row locators)
   await expect(page.locator('tr', { hasText: 'Test Study' }).first()).toBeVisible({ timeout: MINUTE_2 })
-  await expect(page.locator('tr', { hasText: 'Test Cache' }).first()).toBeVisible({ timeout: MINUTE_2 })
+  // i2b2 is a standalone type — no cache dataset should be created
+  await expect(page.locator('tr', { hasText: 'Test Cache' })).toHaveCount(0)
   // Wait for job container to stabilize before navigating to Jobs page
   await page.waitForTimeout(20000)
   await page.getByRole('link', { name: 'Jobs' }).click()
@@ -61,20 +60,11 @@ test(TEST_NAME, async ({ page }) => {
   // Clean up - delete the created dataset
   await page.getByRole('link', { name: 'Datasets' }).click()
   await expect(page.locator('.studyoverview__list tbody tr').first()).toBeVisible()
-  // Find and delete the child dataset first (Test Cache)
-  const testCacheRow = page.locator('tr', { hasText: 'Test Cache' }).first()
-  await expect(testCacheRow).toBeVisible({ timeout: MINUTE_2 })
-  await testCacheRow.getByText('Select action').click()
-  await page.getByRole('option', { name: 'Delete dataset' }).click()
-  // Enter dataset name to confirm deletion
-  await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Cache')
-  await page.getByRole('button', { name: 'Yes, delete' }).click()
-  // Then delete the parent dataset (Test Study)
+  // Delete the standalone i2b2 dataset
   const testStudyDataset = page.locator('tr', { hasText: 'Test Study' }).first()
   await expect(testStudyDataset).toBeVisible({ timeout: MINUTE_2 })
   await testStudyDataset.getByText('Select action').click()
   await page.getByRole('option', { name: 'Delete dataset' }).click()
-  // Enter dataset name to confirm deletion
   await page.getByRole('textbox', { name: 'Enter dataset name to confirm' }).fill('Test Study')
   await page.getByRole('button', { name: 'Yes, delete' }).click()
 })
