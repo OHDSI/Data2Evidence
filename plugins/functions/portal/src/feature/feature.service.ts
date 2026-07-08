@@ -19,7 +19,7 @@ export class FeatureService {
       featureFlag: 'pythia',
       name: 'Pythia (Atlas AI assistant)',
       nameI18nKey: 'FEATURE__PYTHIA',
-      defaultEnabled: true
+      defaultEnabled: false
     },
     {
       featureFlag: 'datasetFilter',

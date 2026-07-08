@@ -19,6 +19,7 @@
   },
   "license": "ISC",
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "classnames": "^2.3.2"
   },
   "devDependencies": {

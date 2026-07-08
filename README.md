@@ -88,12 +88,6 @@ Data2Evidence supercharges the **OHDSI ecosystem**, combining familiar tools wit
 
 ### Installation  
 
-Install the Data2Evidence CLI
-
-```bash
-npm i -g d2e
-```
-
 Create folder for Data2Evidence
 
 ```bash
@@ -101,23 +95,47 @@ mkdir d2e
 cd d2e
 ```
 
-Generate `.env` file for Data2Evidence with random generated secretes and certificats
+Install the Data2Evidence CLI
+
+Pick the asset for your OS/architecture from the [GitHub Releases](https://github.com/OHDSI/Data2Evidence/releases) page, then download it as `d2e`.
+
+| OS      | x64                                 | arm64                            |
+| ------- | ----------------------------------- | -------------------------------- |
+| Linux   | `data2evidence-cli-linux-x64`       | `data2evidence-cli-linux-arm64`  |
+| macOS   | `data2evidence-cli-darwin-x64`      | `data2evidence-cli-darwin-arm64` |
+| Windows | `data2evidence-cli-windows-x64.exe` | —                                |
+
+**Linux / macOS** — set `VERSION` and `ASSET` for your platform (example uses macOS arm64):
+```bash
+VERSION="0.16.0"                            # e.g. latest release
+ASSET="data2evidence-cli-darwin-arm64"      # from the table above
+curl -L https://github.com/OHDSI/Data2Evidence/releases/download/v${VERSION}/${ASSET} -o d2e
+chmod +x d2e
+```
+
+**Windows (PowerShell)**:
+```powershell
+$VERSION = "0.16.0"
+curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-windows-x64.exe"
+```
+
+Generate `.env` file for Data2Evidence with random generated secrets and certificates
 
 ```bash
-d2e init
+./d2e init
 ```
 
 Start the Data2Evidence services
 
 ```bash
-d2e -e pull
-d2e -e start
+./d2e -e pull
+./d2e -e start
 ```
 
 Create and load demo dataset
 
 ```bash
-d2e setupdemo
+./d2e setupdemo
 ```
 
 Access via [https://localhost:443](https://localhost:443)  
