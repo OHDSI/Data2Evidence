@@ -859,6 +859,37 @@ Deno.test("getConceptSets propagates WebAPI errors instead of returning silent e
   }
 });
 
+Deno.test("checkIfConceptSetExists allows webapi exclude id 0 for new concept sets", async () => {
+  const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
+  const originalCheckIfConceptSetExists =
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists;
+
+  try {
+    TerminologySvcAPI.prototype.getConceptSets = () =>
+      Promise.resolve([] as unknown as ITerminologyConceptSet[]);
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists = (
+      id: number,
+      name: string,
+    ) => {
+      assertEquals(id, 0);
+      assertEquals(name, "Name");
+      return Promise.resolve(0);
+    };
+
+    const result = await checkIfConceptSetExists(
+      "token",
+      "dataset-1",
+      0,
+      "Name",
+    );
+    assertEquals(result, 0);
+  } finally {
+    TerminologySvcAPI.prototype.getConceptSets = originalGetConceptSetsTerm;
+    WebApiConceptSetAPI.prototype.checkIfConceptSetExists =
+      originalCheckIfConceptSetExists;
+  }
+});
+
 Deno.test("checkIfConceptSetExists propagates WebAPI errors instead of returning silent zero", async () => {
   const originalGetConceptSetsTerm = TerminologySvcAPI.prototype.getConceptSets;
   const originalCheckIfConceptSetExists =

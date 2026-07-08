@@ -62,6 +62,16 @@ export interface IWebApiConceptSetExpression {
 const SOURCE_KEY_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 const CONTROL_CHAR_REGEX = /[\x00-\x1F\x7F]/;
 
+const assertNonNegativeInteger = (value: unknown, field: string): number => {
+  if (
+    typeof value !== "number" || !Number.isInteger(value) || value < 0 ||
+    value > Number.MAX_SAFE_INTEGER
+  ) {
+    throw new Error(`Invalid ${field}: expected non-negative integer`);
+  }
+  return value;
+};
+
 const assertPositiveInteger = (value: unknown, field: string): number => {
   if (
     typeof value !== "number" || !Number.isInteger(value) || value <= 0 ||
@@ -344,7 +354,7 @@ export class WebApiConceptSetAPI {
   }
 
   async checkIfConceptSetExists(id: number, name: string): Promise<number> {
-    const validatedId = assertPositiveInteger(id, "id");
+    const validatedId = assertNonNegativeInteger(id, "id");
     const validatedName = assertName(name);
 
     const url = buildUrl(this.baseUrl, "conceptset", validatedId, "exists");
