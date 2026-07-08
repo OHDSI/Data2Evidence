@@ -171,7 +171,9 @@ class _AuthApi(_Api):
     
     def _get(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._get(path, params=params, headers=headers, **kwargs)
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = super()._get(path, params=params, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -179,14 +181,18 @@ class _AuthApi(_Api):
 
     def _get_stream(self, path: str, params=None, headers=None, **kwargs) -> requests.Response:
         try:
-            return super()._get_stream(path, params=params, headers=headers, **kwargs)
+            if headers is not None:
+                kwargs['headers'] = headers
+            return super()._get_stream(path, params=params, **kwargs)
         except requests.HTTPError as e:
             self._validate_response(e.response)
             return e.response
 
     def _post(self, path: str, json=None, data=None, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._post(path, json, data, headers=headers, **kwargs)
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = super()._post(path, json=json, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -194,7 +200,10 @@ class _AuthApi(_Api):
 
     def _put(self, path: str, json=None, data=None, headers=None) -> requests.Response:
         try:
-            response = super()._put(path, json=json, data=data, headers=headers)
+            kwargs = {}
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = super()._put(path, json=json, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -202,7 +211,9 @@ class _AuthApi(_Api):
 
     def _delete(self, path: str, headers=None, **kwargs) -> requests.Response:
         try:
-            response = super()._delete(path, headers=headers, **kwargs)
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = super()._delete(path, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)

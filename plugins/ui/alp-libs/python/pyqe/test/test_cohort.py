@@ -100,7 +100,7 @@ COHORT_DEFINITION = {'mriquery': 'eJxTSs7PyC8qCUotLE0tLlECAC2ABb0=',
                                 '"ERA"}, "CensoringCriteria": []}'}
 
 
-def _get_all_cohorts(auth_api, path, params):
+def _get_all_cohorts(auth_api, path, params, headers=None, **kwargs):
 
     assert params == PARAMS
     if path == GET_ALL_COHORTS_PATH:
@@ -109,7 +109,7 @@ def _get_all_cohorts(auth_api, path, params):
     return MockResponse(404, None)
 
 
-def _delete_cohort(auth_api, path):
+def _delete_cohort(auth_api, path, headers=None, **kwargs):
 
     if path == DELETE_COHORT_PATH:
         return MockResponse(200, 'Deleted 1 row from cohort 1')
@@ -117,7 +117,7 @@ def _delete_cohort(auth_api, path):
     return MockResponse(404, None)
 
 
-def _create_cohort(auth_api, path, json, data):
+def _create_cohort(auth_api, path, json, data, headers=None, **kwargs):
 
     if path == CREATE_COHORT_PATH:
         assert json == COHORT_DEFINITION

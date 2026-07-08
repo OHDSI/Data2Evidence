@@ -119,7 +119,7 @@ def test_raise_value_error_when_init_config_with_invalid_url(monkeypatch):
         Config('http://invalid.url', ConfigPath.URL)
 
 
-def _get_mock_response(auth_api, path):
+def _get_mock_response(auth_api, path, headers=None, **kwargs):
     payload = {
         "filtercards": [
             {

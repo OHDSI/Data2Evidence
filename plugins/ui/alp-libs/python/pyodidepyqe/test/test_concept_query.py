@@ -232,7 +232,7 @@ def test_init_concept_without_including_descendants():
     assert concept.include_descendants == False
 
 
-def get_mock_response(auth_api, path, params):
+def get_mock_response(auth_api, path, params, headers=None, **kwargs):
     if path == 'api/services/standard-concept-ids' and \
             params == {'conceptCode': '12345', 'vocabularyId': 'vocabulary_id'}:
         standard_concept_payload = {

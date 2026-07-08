@@ -59,6 +59,75 @@ export interface IWebApiConceptSetExpression {
   }>;
 }
 
+const SOURCE_KEY_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
+const CONTROL_CHAR_REGEX = /[\x00-\x1F\x7F]/;
+
+const assertPositiveInteger = (value: unknown, field: string): number => {
+  if (
+    typeof value !== "number" || !Number.isInteger(value) || value <= 0 ||
+    value > Number.MAX_SAFE_INTEGER
+  ) {
+    throw new Error(`Invalid ${field}: expected positive integer`);
+  }
+  return value;
+};
+
+const assertSourceKey = (value: string): string => {
+  if (typeof value !== "string" || !SOURCE_KEY_REGEX.test(value)) {
+    throw new Error(`Invalid sourceKey: ${value}`);
+  }
+  return value;
+};
+
+const assertName = (value: string): string => {
+  if (typeof value !== "string" || value.length === 0 || value.length > 255) {
+    throw new Error("Invalid concept set name");
+  }
+  if (CONTROL_CHAR_REGEX.test(value)) {
+    throw new Error("Invalid concept set name: control characters not allowed");
+  }
+  return value;
+};
+
+const assertOptionalDescription = (value: unknown): string | undefined => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  if (typeof value !== "string" || value.length > 2000) {
+    throw new Error("Invalid concept set description");
+  }
+  if (CONTROL_CHAR_REGEX.test(value)) {
+    throw new Error(
+      "Invalid concept set description: control characters not allowed",
+    );
+  }
+  return value;
+};
+
+const assertConceptIds = (values: number[]): number[] => {
+  if (!Array.isArray(values)) {
+    throw new Error("Invalid conceptIds: expected array");
+  }
+  return values.map((id) => assertPositiveInteger(id, "conceptId"));
+};
+
+const buildUrl = (baseUrl: string, ...segments: (string | number)[]): URL => {
+  const normalizedBase = baseUrl.replace(/\/?$/, "/");
+  const path = segments
+    .map((segment) => encodeURIComponent(String(segment)))
+    .join("/");
+  return new URL(path, normalizedBase);
+};
+
+const getWebApiBaseUrl = (): string => {
+  try {
+    const parsed = JSON.parse(Deno.env.get("SERVICE_ROUTES") ?? "{}");
+    return parsed.webapi ?? DEFAULT_WEBAPI_URL;
+  } catch {
+    return DEFAULT_WEBAPI_URL;
+  }
+};
+
 const buildHeaders = (token: string, contentType?: string) => {
   const headers: Record<string, string> = {
     Authorization: token.toLowerCase().startsWith("bearer ")
@@ -74,15 +143,6 @@ const buildHeaders = (token: string, contentType?: string) => {
   return headers;
 };
 
-const getWebApiBaseUrl = () => {
-  try {
-    const parsed = JSON.parse(Deno.env.get("SERVICE_ROUTES") ?? "{}");
-    return parsed.webapi ?? DEFAULT_WEBAPI_URL;
-  } catch {
-    return DEFAULT_WEBAPI_URL;
-  }
-};
-
 export class WebApiConceptSetAPI {
   private readonly baseUrl: string;
   private readonly token: string;
@@ -93,30 +153,50 @@ export class WebApiConceptSetAPI {
     }
 
     this.token = token;
-    this.baseUrl = getWebApiBaseUrl();
+
+    const baseUrl = getWebApiBaseUrl();
+    let parsed: URL;
+    try {
+      parsed = new URL(baseUrl);
+    } catch {
+      throw new Error(`Invalid WebAPI base URL: ${baseUrl}`);
+    }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error(`Invalid WebAPI base URL protocol: ${parsed.protocol}`);
+    }
+    this.baseUrl = baseUrl;
   }
 
   async getConceptSets(): Promise<IWebApiConceptSetHeader[]> {
-    const response = await fetch(`${this.baseUrl}/conceptset/`, {
+    const response = await fetch(buildUrl(this.baseUrl, "conceptset", ""), {
       method: "GET",
       headers: buildHeaders(this.token),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch WebAPI concept sets: ${response.status}`);
+      throw new Error(
+        `Failed to fetch WebAPI concept sets: ${response.status}`,
+      );
     }
 
     return response.json();
   }
 
   async getConceptSet(id: number): Promise<IWebApiConceptSetHeader> {
-    const response = await fetch(`${this.baseUrl}/conceptset/${id}`, {
-      method: "GET",
-      headers: buildHeaders(this.token),
-    });
+    const validatedId = assertPositiveInteger(id, "id");
+
+    const response = await fetch(
+      buildUrl(this.baseUrl, "conceptset", validatedId),
+      {
+        method: "GET",
+        headers: buildHeaders(this.token),
+      },
+    );
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch WebAPI concept set ${id}: ${response.status}`);
+      throw new Error(
+        `Failed to fetch WebAPI concept set ${validatedId}: ${response.status}`,
+      );
     }
 
     return response.json();
@@ -124,19 +204,28 @@ export class WebApiConceptSetAPI {
 
   async getConceptSetExpression(
     id: number,
-    sourceKey: string
+    sourceKey: string,
   ): Promise<IWebApiConceptSetExpression> {
+    const validatedId = assertPositiveInteger(id, "id");
+    const validatedSourceKey = assertSourceKey(sourceKey);
+
     const response = await fetch(
-      `${this.baseUrl}/conceptset/${id}/expression/${encodeURIComponent(sourceKey)}`,
+      buildUrl(
+        this.baseUrl,
+        "conceptset",
+        validatedId,
+        "expression",
+        validatedSourceKey,
+      ),
       {
         method: "GET",
         headers: buildHeaders(this.token),
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch WebAPI concept set expression ${id}: ${response.status}`
+        `Failed to fetch WebAPI concept set expression ${validatedId}: ${response.status}`,
       );
     }
 
@@ -147,14 +236,21 @@ export class WebApiConceptSetAPI {
     name: string;
     description?: string;
   }): Promise<IWebApiConceptSetHeader> {
-    const response = await fetch(`${this.baseUrl}/conceptset/`, {
+    const payload = {
+      name: assertName(input.name),
+      description: assertOptionalDescription(input.description),
+    };
+
+    const response = await fetch(buildUrl(this.baseUrl, "conceptset", ""), {
       method: "POST",
       headers: buildHeaders(this.token, "application/json"),
-      body: JSON.stringify(input),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create WebAPI concept set: ${response.status}`);
+      throw new Error(
+        `Failed to create WebAPI concept set: ${response.status}`,
+      );
     }
 
     const created = await response.json();
@@ -163,16 +259,33 @@ export class WebApiConceptSetAPI {
 
   async updateConceptSet(
     id: number,
-    input: { id: number; name: string; description?: string }
+    input: { id: number; name: string; description?: string },
   ): Promise<IWebApiConceptSetHeader> {
-    const response = await fetch(`${this.baseUrl}/conceptset/${id}`, {
-      method: "PUT",
-      headers: buildHeaders(this.token, "application/json"),
-      body: JSON.stringify(input),
-    });
+    const validatedId = assertPositiveInteger(id, "id");
+    const inputId = assertPositiveInteger(input.id, "input.id");
+    if (inputId !== validatedId) {
+      throw new Error("Concept set id mismatch");
+    }
+
+    const payload = {
+      id: validatedId,
+      name: assertName(input.name),
+      description: assertOptionalDescription(input.description),
+    };
+
+    const response = await fetch(
+      buildUrl(this.baseUrl, "conceptset", validatedId),
+      {
+        method: "PUT",
+        headers: buildHeaders(this.token, "application/json"),
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.ok) {
-      throw new Error(`Failed to update WebAPI concept set ${id}: ${response.status}`);
+      throw new Error(
+        `Failed to update WebAPI concept set ${validatedId}: ${response.status}`,
+      );
     }
 
     return response.json();
@@ -180,24 +293,32 @@ export class WebApiConceptSetAPI {
 
   async updateConceptSetItems(
     id: number,
-    items: IWebApiConceptSetItemWrite[]
+    items: IWebApiConceptSetItemWrite[],
   ): Promise<boolean> {
-    const payload: IWebApiConceptSetItem[] = items.map((item) => ({
-      conceptId: item.conceptId,
-      isExcluded: item.isExcluded ? 1 : 0,
-      includeDescendants: item.includeDescendants ? 1 : 0,
-      includeMapped: item.includeMapped ? 1 : 0,
-    }));
+    const validatedId = assertPositiveInteger(id, "id");
 
-    const response = await fetch(`${this.baseUrl}/conceptset/${id}/items`, {
-      method: "PUT",
-      headers: buildHeaders(this.token, "application/json"),
-      body: JSON.stringify(payload),
+    const payload: IWebApiConceptSetItem[] = items.map((item) => {
+      assertPositiveInteger(item.conceptId, "conceptId");
+      return {
+        conceptId: item.conceptId,
+        isExcluded: item.isExcluded ? 1 : 0,
+        includeDescendants: item.includeDescendants ? 1 : 0,
+        includeMapped: item.includeMapped ? 1 : 0,
+      };
     });
+
+    const response = await fetch(
+      buildUrl(this.baseUrl, "conceptset", validatedId, "items"),
+      {
+        method: "PUT",
+        headers: buildHeaders(this.token, "application/json"),
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
-        `Failed to update WebAPI concept set items ${id}: ${response.status}`
+        `Failed to update WebAPI concept set items ${validatedId}: ${response.status}`,
       );
     }
 
@@ -205,19 +326,29 @@ export class WebApiConceptSetAPI {
   }
 
   async deleteConceptSet(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/conceptset/${id}`, {
-      method: "DELETE",
-      headers: buildHeaders(this.token),
-    });
+    const validatedId = assertPositiveInteger(id, "id");
+
+    const response = await fetch(
+      buildUrl(this.baseUrl, "conceptset", validatedId),
+      {
+        method: "DELETE",
+        headers: buildHeaders(this.token),
+      },
+    );
 
     if (!response.ok) {
-      throw new Error(`Failed to delete WebAPI concept set ${id}: ${response.status}`);
+      throw new Error(
+        `Failed to delete WebAPI concept set ${validatedId}: ${response.status}`,
+      );
     }
   }
 
   async checkIfConceptSetExists(id: number, name: string): Promise<number> {
-    const url = new URL(`${this.baseUrl}/conceptset/${id}/exists`);
-    url.searchParams.set("name", name);
+    const validatedId = assertPositiveInteger(id, "id");
+    const validatedName = assertName(name);
+
+    const url = buildUrl(this.baseUrl, "conceptset", validatedId, "exists");
+    url.searchParams.set("name", validatedName);
 
     const response = await fetch(url, {
       method: "GET",
@@ -226,7 +357,7 @@ export class WebApiConceptSetAPI {
 
     if (!response.ok) {
       throw new Error(
-        `Failed to check WebAPI concept set existence for ${id}: ${response.status}`
+        `Failed to check WebAPI concept set existence for ${validatedId}: ${response.status}`,
       );
     }
 
@@ -235,20 +366,27 @@ export class WebApiConceptSetAPI {
 
   async resolveConceptSetExpression(
     sourceKey: string,
-    expression: IWebApiConceptSetExpression
+    expression: IWebApiConceptSetExpression,
   ): Promise<number[]> {
+    const validatedSourceKey = assertSourceKey(sourceKey);
+
     const response = await fetch(
-      `${this.baseUrl}/vocabulary/${encodeURIComponent(sourceKey)}/resolveConceptSetExpression`,
+      buildUrl(
+        this.baseUrl,
+        "vocabulary",
+        validatedSourceKey,
+        "resolveConceptSetExpression",
+      ),
       {
         method: "POST",
         headers: buildHeaders(this.token, "application/json"),
         body: JSON.stringify(expression),
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Failed to resolve WebAPI concept set expression for source ${sourceKey}: ${response.status}`
+        `Failed to resolve WebAPI concept set expression for source ${validatedSourceKey}: ${response.status}`,
       );
     }
 
@@ -257,20 +395,29 @@ export class WebApiConceptSetAPI {
 
   async lookupIdentifiers(
     sourceKey: string,
-    conceptIds: number[]
+    conceptIds: number[],
   ): Promise<IWebApiConcept[]> {
+    const validatedSourceKey = assertSourceKey(sourceKey);
+    const validatedConceptIds = assertConceptIds(conceptIds);
+
     const response = await fetch(
-      `${this.baseUrl}/vocabulary/${encodeURIComponent(sourceKey)}/lookup/identifiers`,
+      buildUrl(
+        this.baseUrl,
+        "vocabulary",
+        validatedSourceKey,
+        "lookup",
+        "identifiers",
+      ),
       {
         method: "POST",
         headers: buildHeaders(this.token, "application/json"),
-        body: JSON.stringify(conceptIds),
-      }
+        body: JSON.stringify(validatedConceptIds),
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Failed to lookup WebAPI identifiers for source ${sourceKey}: ${response.status}`
+        `Failed to lookup WebAPI identifiers for source ${validatedSourceKey}: ${response.status}`,
       );
     }
 

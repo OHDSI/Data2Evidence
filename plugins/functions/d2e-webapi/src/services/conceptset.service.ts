@@ -6,11 +6,11 @@ import {
   WebApiConceptSetAPI,
 } from "../api/WebApiConceptSetAPI.ts";
 import {
-  IConceptSetListResponseDto,
-  IConceptSetResponseDto,
   IConceptSetCreateDto,
   IConceptSetItemListDto,
   IConceptSetItemsResponseDto,
+  IConceptSetListResponseDto,
+  IConceptSetResponseDto,
 } from "../dto/conceptset.ts";
 import {
   ITerminologyConceptSet,
@@ -20,15 +20,15 @@ import { _getInvalidReasonFromCaption } from "./vocabulary.service.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
-  ConceptSetInUseError,
   ConceptSetExpressionError,
+  ConceptSetInUseError,
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
 import { resolveSourceKey } from "./source.service.ts";
 import { getConceptsFromIdentifiers } from "./vocabulary.service.ts";
 import {
-  ConceptSetRef,
   CONCEPT_SET_LEGACY_OFFSET_BOUNDARY,
+  ConceptSetRef,
   formatConceptSetRef,
   parseConceptSetRef,
 } from "../utils/conceptSetRef.ts";
@@ -245,7 +245,9 @@ export const getConceptSetUsage = async (
   //  parsed-but-unusable id 0 specifically.)
   if (ref.externalId <= 0) {
     throw new ConceptSetValidationError(
-      `Invalid concept set ID: ${String(conceptSetId)}. Concept set ID 0 is reserved.`,
+      `Invalid concept set ID: ${
+        String(conceptSetId)
+      }. Concept set ID 0 is reserved.`,
     );
   }
 
@@ -269,8 +271,8 @@ export const getConceptSetUsage = async (
   ]);
 
   const usingCohorts = cohortDefinitions.filter((cohort) => {
-    const conceptSets =
-      (cohort.expression as Record<string, unknown>)?.ConceptSets;
+    const conceptSets = (cohort.expression as Record<string, unknown>)
+      ?.ConceptSets;
     if (!Array.isArray(conceptSets)) {
       return false;
     }
@@ -359,7 +361,8 @@ export const getConceptSetExpression = async (
       sourceKey = await resolveSourceKey(token, datasetId);
     } catch (error) {
       console.error(
-        `[ConceptSetExpression] Failed to resolve source key for dataset ${datasetId}`,
+        "[ConceptSetExpression] Failed to resolve source key for dataset %s",
+        datasetId,
         error,
       );
       throw new ConceptSetExpressionError(
@@ -374,7 +377,9 @@ export const getConceptSetExpression = async (
       );
     } catch (error) {
       console.error(
-        `[ConceptSetExpression] Failed to fetch expression for WebAPI concept set ${ref.externalId} using source key ${sourceKey}`,
+        "[ConceptSetExpression] Failed to fetch expression for WebAPI concept set %s using source key %s",
+        ref.externalId,
+        sourceKey,
         error,
       );
       throw new ConceptSetExpressionError(
@@ -437,7 +442,10 @@ export const checkIfConceptSetExists = async (
 
   const [terminologyConceptSets, webApiExistsCount] = await Promise.all([
     terminologySvcApi.getConceptSets(datasetId),
-    webApiConceptSetApi.checkIfConceptSetExists(webApiExcludeId, conceptSetName),
+    webApiConceptSetApi.checkIfConceptSetExists(
+      webApiExcludeId,
+      conceptSetName,
+    ),
   ]);
 
   // For legacy refs we must exclude the same legacy row by id; for webapi
@@ -448,7 +456,7 @@ export const checkIfConceptSetExists = async (
     ref.source === "legacy"
       ? terminologyConceptSet.id !== ref.externalId &&
         terminologyConceptSet.name === conceptSetName
-      : terminologyConceptSet.name === conceptSetName,
+      : terminologyConceptSet.name === conceptSetName
   );
 
   return (result === undefined ? 0 : 1) + webApiExistsCount;
@@ -463,7 +471,7 @@ const parseDateValue = (value: string | number): number => {
 
 const mapWebApiConceptToIncludedConcept = (
   concept: IWebApiConcept,
-  flags: { useMapped: boolean; useDescendants: boolean }
+  flags: { useMapped: boolean; useDescendants: boolean },
 ): IIncludedConcept => ({
   CONCEPT_ID: concept.CONCEPT_ID,
   CONCEPT_NAME: concept.CONCEPT_NAME,
@@ -493,7 +501,7 @@ const mapLegacyConceptToIncludedConcept = (
     validity: string;
     useMapped: boolean;
     useDescendants: boolean;
-  }
+  },
 ): IIncludedConcept => ({
   CONCEPT_ID: concept.conceptId,
   CONCEPT_NAME: concept.display,
@@ -512,7 +520,7 @@ const mapLegacyConceptToIncludedConcept = (
 const getLegacyIncludedConcepts = async (
   token: string,
   datasetId: string,
-  externalIds: number[]
+  externalIds: number[],
 ): Promise<IIncludedConcept[]> => {
   if (externalIds.length === 0) {
     return [];
@@ -520,7 +528,7 @@ const getLegacyIncludedConcepts = async (
 
   const terminologySvcApi = new TerminologySvcAPI(token);
   const conceptSets = await Promise.all(
-    externalIds.map((id) => terminologySvcApi.getConceptSetById(datasetId, id))
+    externalIds.map((id) => terminologySvcApi.getConceptSetById(datasetId, id)),
   );
 
   const resolvedIds = await Promise.all(
@@ -532,9 +540,9 @@ const getLegacyIncludedConcepts = async (
           useMapped: concept.useMapped,
           useDescendants: concept.useDescendants,
           isExcluded: concept.isExcluded,
-        }))
+        })),
       )
-    )
+    ),
   );
 
   const allResolvedIds = Array.from(new Set(resolvedIds.flat()));
@@ -549,8 +557,11 @@ const getLegacyIncludedConcepts = async (
     const conceptFlagMap = new Map(
       conceptSet.concepts.map((concept) => [
         concept.id,
-        { useMapped: concept.useMapped, useDescendants: concept.useDescendants },
-      ])
+        {
+          useMapped: concept.useMapped,
+          useDescendants: concept.useDescendants,
+        },
+      ]),
     );
 
     for (const resolvedId of resolvedIds[conceptSets.indexOf(conceptSet)]) {
@@ -559,7 +570,9 @@ const getLegacyIncludedConcepts = async (
       }
       seen.add(resolvedId);
 
-      const directConcept = conceptSet.concepts.find((c) => c.id === resolvedId);
+      const directConcept = conceptSet.concepts.find((c) =>
+        c.id === resolvedId
+      );
       if (directConcept) {
         result.push(mapLegacyConceptToIncludedConcept(directConcept));
         continue;
@@ -584,7 +597,7 @@ const getLegacyIncludedConcepts = async (
 const getWebApiIncludedConcepts = async (
   token: string,
   datasetId: string,
-  externalIds: number[]
+  externalIds: number[],
 ): Promise<IIncludedConcept[]> => {
   if (externalIds.length === 0) {
     return [];
@@ -595,7 +608,8 @@ const getWebApiIncludedConcepts = async (
     sourceKey = await resolveSourceKey(token, datasetId);
   } catch (error) {
     console.error(
-      `[getIncludedConcepts] Failed to resolve source key for dataset ${datasetId}`,
+      "[getIncludedConcepts] Failed to resolve source key for dataset %s",
+      datasetId,
       error,
     );
     throw new ConceptSetExpressionError(
@@ -608,13 +622,13 @@ const getWebApiIncludedConcepts = async (
   const expressions = await Promise.all(
     externalIds.map((id) =>
       webApiConceptSetApi.getConceptSetExpression(id, sourceKey)
-    )
+    ),
   );
 
   const resolvedIds = await Promise.all(
     expressions.map((expression) =>
       webApiConceptSetApi.resolveConceptSetExpression(sourceKey, expression)
-    )
+    ),
   );
 
   const allResolvedIds = Array.from(new Set(resolvedIds.flat()));
@@ -629,8 +643,11 @@ const getWebApiIncludedConcepts = async (
     const expressionFlagMap = new Map(
       expression.items.map((item) => [
         item.concept.CONCEPT_ID,
-        { useMapped: item.includeMapped, useDescendants: item.includeDescendants },
-      ])
+        {
+          useMapped: item.includeMapped,
+          useDescendants: item.includeDescendants,
+        },
+      ]),
     );
 
     const resolvedIdList = resolvedIds[expressions.indexOf(expression)];
@@ -641,14 +658,14 @@ const getWebApiIncludedConcepts = async (
       seen.add(resolvedId);
 
       const expressionItem = expression.items.find(
-        (item) => item.concept.CONCEPT_ID === resolvedId
+        (item) => item.concept.CONCEPT_ID === resolvedId,
       );
       if (expressionItem) {
         result.push(
           mapWebApiConceptToIncludedConcept(expressionItem.concept, {
             useMapped: expressionItem.includeMapped,
             useDescendants: expressionItem.includeDescendants,
-          })
+          }),
         );
         continue;
       }

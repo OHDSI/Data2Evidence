@@ -179,8 +179,10 @@ class _AuthApi(_StarboardApi):
         else:
             return {'Authorization': f'Bearer {self.id_token}'}
 
-    async def _get(self, path: str, params=None, **kwargs):
+    async def _get(self, path: str, params=None, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._get(path, params=params, **kwargs)
             return response
         except requests.HTTPError as e:
@@ -190,8 +192,10 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _post(self, path: str, data=None, **kwargs):
+    async def _post(self, path: str, data=None, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._post(path, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
@@ -201,9 +205,12 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _put(self, path: str, data=None):
+    async def _put(self, path: str, data=None, headers=None):
         try:
-            response = await super()._put(path, data=data)
+            kwargs = {}
+            if headers is not None:
+                kwargs['headers'] = headers
+            response = await super()._put(path, data=data, **kwargs)
             return response
         except requests.HTTPError as e:
             self._validate_response(e.response)
@@ -212,8 +219,10 @@ class _AuthApi(_StarboardApi):
             print(e)
             raise
 
-    async def _delete(self, path: str, **kwargs):
+    async def _delete(self, path: str, headers=None, **kwargs):
         try:
+            if headers is not None:
+                kwargs['headers'] = headers
             response = await super()._delete(path, **kwargs)
             return response
         except requests.HTTPError as e:
