@@ -15,6 +15,7 @@ export const i18nDefault = {
     CONCEPT_SETS__Name: "Name",
     CONCEPT_SETS__REFERENCE_CONCEPTS: "Reference concepts from dataset",
     CONCEPT_SETS__SHARED: "Shared",
+    CONCEPT_SETS__SOURCE: "Source",
     CONCEPT_SETS__UPDATED: "Updated",
     CONCEPT_SETS__WEBAPI: "WebAPI",
     CONCEPT_SETS__WEBAPI_TOOLTIP: "Stored in OHDSI WebAPI",

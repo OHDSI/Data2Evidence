@@ -15,13 +15,14 @@ vi.mock("@portal/components", () => ({
     <button onClick={onClick}>{text}</button>
   ),
   EditIcon: () => <span>EditIcon</span>,
-  IconButton: ({ startIcon, onClick }: { startIcon: React.ReactNode; onClick: () => void }) => (
-    <button onClick={onClick}>{startIcon}</button>
-  ),
+  IconButton: ({
+    startIcon,
+    onClick,
+  }: {
+    startIcon: React.ReactNode;
+    onClick: () => void;
+  }) => <button onClick={onClick}>{startIcon}</button>,
   VisibilityOnIcon: () => <span>VisibilityOnIcon</span>,
-  Chip: ({ label, title }: { label: string; title?: string }) => (
-    <span data-testid={`chip-${label}`} title={title}>{label}</span>
-  ),
 }));
 
 vi.mock("material-react-table", () => ({
@@ -36,7 +37,9 @@ vi.mock("material-react-table", () => ({
           {table.columns
             .filter((column: any) => column.Cell)
             .map((column: any) => (
-              <div key={column.id || column.accessorKey}>{column.Cell({ row: { original: row } })}</div>
+              <div key={column.id || column.accessorKey}>
+                {column.Cell({ row: { original: row } })}
+              </div>
             ))}
         </div>
       ))}
@@ -131,7 +134,7 @@ describe("ConceptSetsTable", () => {
     );
   });
 
-  it("renders legacy badge for legacy concept sets", () => {
+  it("renders legacy source for legacy concept sets", () => {
     const onAddEdit = vi.fn();
     const onDelete = vi.fn();
 
@@ -157,11 +160,11 @@ describe("ConceptSetsTable", () => {
       />
     );
 
-    expect(screen.getByTestId("chip-CONCEPT_SETS__LEGACY")).toBeTruthy();
-    expect(screen.queryByTestId("chip-CONCEPT_SETS__WEBAPI")).toBeNull();
+    expect(screen.getByText("CONCEPT_SETS__LEGACY")).toBeTruthy();
+    expect(screen.queryByText("CONCEPT_SETS__WEBAPI")).toBeNull();
   });
 
-  it("renders WebAPI badge for native concept sets", () => {
+  it("renders WebAPI source for native concept sets", () => {
     const onAddEdit = vi.fn();
     const onDelete = vi.fn();
 
@@ -187,7 +190,7 @@ describe("ConceptSetsTable", () => {
       />
     );
 
-    expect(screen.getByTestId("chip-CONCEPT_SETS__WEBAPI")).toBeTruthy();
-    expect(screen.queryByTestId("chip-CONCEPT_SETS__LEGACY")).toBeNull();
+    expect(screen.getByText("CONCEPT_SETS__WEBAPI")).toBeTruthy();
+    expect(screen.queryByText("CONCEPT_SETS__LEGACY")).toBeNull();
   });
 });

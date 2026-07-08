@@ -8,7 +8,6 @@ import {
 } from "material-react-table";
 import {
   Button,
-  Chip,
   EditIcon,
   IconButton,
   VisibilityOnIcon,
@@ -39,9 +38,9 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   const filteredData = useMemo(
     () =>
       data.filter((row) =>
-        row.name.toLowerCase().includes(searchText.toLowerCase()),
+        row.name.toLowerCase().includes(searchText.toLowerCase())
       ),
-    [data, searchText],
+    [data, searchText]
   );
 
   const columns = useMemo<MRT_ColumnDef<ConceptSet>[]>(
@@ -53,6 +52,17 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         sortDescFirst: false,
       },
       {
+        accessorKey: "source",
+        header: getText(i18nKeys.CONCEPT_SETS__SOURCE),
+        size: 100,
+        Cell: ({ row }) => {
+          const source = row.original.source;
+          return source === "legacy"
+            ? getText(i18nKeys.CONCEPT_SETS__LEGACY)
+            : getText(i18nKeys.CONCEPT_SETS__WEBAPI);
+        },
+      },
+      {
         accessorKey: "name",
         header: getText(i18nKeys.CONCEPT_SETS__Name),
         size: 260,
@@ -62,24 +72,6 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
             {row.original.shared
               ? ` (${getText(i18nKeys.CONCEPT_SETS__SHARED)})`
               : ""}
-            {row.original.source === "legacy" && (
-              <Chip
-                label={getText(i18nKeys.CONCEPT_SETS__LEGACY)}
-                size="small"
-                color="warning"
-                sx={{ ml: 1, fontSize: "0.7rem" }}
-                title={getText(i18nKeys.CONCEPT_SETS__LEGACY_TOOLTIP)}
-              />
-            )}
-            {row.original.source === "webapi" && (
-              <Chip
-                label={getText(i18nKeys.CONCEPT_SETS__WEBAPI)}
-                size="small"
-                color="success"
-                sx={{ ml: 1, fontSize: "0.7rem" }}
-                title={getText(i18nKeys.CONCEPT_SETS__WEBAPI_TOOLTIP)}
-              />
-            )}
           </>
         ),
       },
@@ -138,7 +130,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         ),
       },
     ],
-    [getText, onAddEdit, onDelete],
+    [getText, onAddEdit, onDelete]
   );
 
   const table = useMaterialReactTable({
@@ -187,7 +179,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
       if (keyword === searchText) return;
       setSearchText(keyword);
     },
-    [searchText],
+    [searchText]
   );
 
   useEffect(() => {
