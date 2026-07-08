@@ -96,26 +96,20 @@ cd d2e
 
 Install the Data2Evidence CLI
 
-Pick the asset for your OS/architecture from the [GitHub Releases](https://github.com/OHDSI/Data2Evidence/releases) page, then download it as `d2e`.
+Set `VERSION` and your platform, then download it as `d2e`.
 
-| OS      | x64                                 | arm64                            |
-| ------- | ----------------------------------- | -------------------------------- |
-| Linux   | `data2evidence-cli-linux-x64`       | `data2evidence-cli-linux-arm64`  |
-| macOS   | `data2evidence-cli-darwin-x64`      | `data2evidence-cli-darwin-arm64` |
-| Windows | `data2evidence-cli-windows-x64.exe` | —                                |
-
-**Linux / macOS** — set `VERSION` and `ASSET` for your platform (example uses macOS arm64):
+**Linux / macOS** — `PLATFORM` is one of `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`:
 ```bash
-VERSION="0.16.0"                            # e.g. latest release
-ASSET="data2evidence-cli-darwin-arm64"      # from the table above
-curl -L https://github.com/OHDSI/Data2Evidence/releases/download/v${VERSION}/${ASSET} -o d2e
+VERSION="0.16.0-beta"        # any released version
+PLATFORM="darwin-arm64"      # your OS/arch
+curl -L "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e
 chmod +x d2e
 ```
 
 **Windows (PowerShell)**:
 ```powershell
-$VERSION = "0.16.0"
-curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-windows-x64.exe"
+$VERSION = "0.16.0-beta"     # any released version
+curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-windows-x64.exe"
 ```
 
 Generate `.env` file for Data2Evidence with random generated secrets and certificates
