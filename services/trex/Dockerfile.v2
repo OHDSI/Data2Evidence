@@ -6,19 +6,10 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-754542fb5aa32f36c2fe69dae8a2ed6acea83bbf@sha256:de715ee3cec640f3fd3d223ed8a6ce2ec19fa1bdb63a221d6b5e6c8679b72d3a AS base
+FROM ghcr.io/ohdsi/trexsql:sha-b291f72a2f29727a29a40bc5c2ef9ccc834acca3@sha256:2aee74f7c891760190b4445c12fd5832446848f65f2f938f139c172face5c978 AS base
 
 USER root
 WORKDIR /usr/src
-
-# Base sha-754542fb ships two core-schema migrations both numbered V4
-# (V4__postgrest_settings_read.sql from trex #117 and V4__drop_realtime_admin.sql
-# from #118), so the SCHEMA_DIR (/usr/src/core/schema) migration runner aborts with
-# "Duplicate version 4" and never creates trexdb.kek_wrapped_dek — trex then boots
-# FATAL at DEK init. Fixed upstream (renamed to V5); this overlay renames it in the
-# baked base so d2e boots on this pinned base. Remove once the base bumps past the fix.
-RUN mv /usr/src/core/schema/V4__drop_realtime_admin.sql \
-       /usr/src/core/schema/V5__drop_realtime_admin.sql
 
 # Selects arch-correct ONNX and DuckDB extension binaries (amd64/arm64).
 ARG TARGETARCH
