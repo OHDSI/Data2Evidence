@@ -1079,6 +1079,10 @@ jobs:
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+          # HANA data-model flows need the sqlalchemy-hana dialect. #2824 moved its
+          # install to the INSTALL_SQLALCHEMY workpool command (blank by default), so
+          # set that in this test's .env — the dev/DuckDB path doesn't need it.
+          echo "INSTALL_SQLALCHEMY=bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'" >> .env
         env:
           init_choice: y
 
