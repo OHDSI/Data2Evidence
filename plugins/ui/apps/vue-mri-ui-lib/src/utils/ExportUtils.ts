@@ -1,6 +1,5 @@
 import d3 from 'd3'
 import Canvg from 'canvg'
-import { max } from 'underscore'
 import Constants from './Constants'
 
 interface IKmLegendInput {
@@ -9,6 +8,117 @@ interface IKmLegendInput {
   title: string
   data: any
   overlapCanvas?: boolean
+}
+
+interface IBarLegendItem {
+  color: string
+  name: string
+  kind: 'bar' | 'curve'
+  opacity: number
+  borderColor: string
+}
+
+const BAR_LEGEND_BOX_SIZE = 12
+const BAR_LEGEND_ITEM_MARGIN = 4
+const BAR_LEGEND_ITEM_HEIGHT = BAR_LEGEND_BOX_SIZE + BAR_LEGEND_ITEM_MARGIN
+const BAR_LEGEND_PADDING = 12
+const BAR_LEGEND_BOX_TEXT_GAP = 8
+const BAR_LEGEND_TEXT_COLOR = '#000080'
+const BAR_LEGEND_FONT = '12px Arial'
+const BAR_LEGEND_DEFAULT_COLOR = '#cccccc'
+const BAR_LEGEND_DEFAULT_BORDER = 'transparent'
+
+/**
+ * Reads the rendered StackBarChartLegend entries from the DOM.
+ * The legend component is an HTML div outside the chart SVG so it must be
+ * captured separately at export time.
+ */
+const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
+  const container = document.querySelector('.stackbar-legend-container')
+  if (!container) return []
+
+  const items: IBarLegendItem[] = []
+  container.querySelectorAll('.stackbar-legend-entry').forEach((entry: Element) => {
+    const box = entry.querySelector('.stackbar-legend-entry-box') as HTMLElement | null
+    const line = entry.querySelector('.stackbar-legend-entry-line') as HTMLElement | null
+    const textEl = entry.querySelector('.stackbar-legend-entry-text')
+    const name = textEl?.textContent?.trim() || ''
+    if (!name) return
+
+    let color = BAR_LEGEND_DEFAULT_COLOR
+    let kind: 'bar' | 'curve' = 'bar'
+    let opacity = 1
+    let borderColor = BAR_LEGEND_DEFAULT_BORDER
+
+    const targetEl = box || line
+    if (targetEl) {
+      const style = window.getComputedStyle(targetEl)
+      color = style.backgroundColor || BAR_LEGEND_DEFAULT_COLOR
+      opacity = parseFloat(style.opacity || '1')
+      borderColor = style.borderTopColor || BAR_LEGEND_DEFAULT_BORDER // Using borderTopColor to capture the solid border if present
+      kind = box ? 'bar' : 'curve'
+    }
+
+    items.push({ color, name, kind, opacity, borderColor })
+  })
+  return items
+}
+
+/**
+ * Creates a canvas containing the bar/column chart legend (coloured swatches + names).
+ */
+const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
+  // Measure text widths to size the canvas correctly.
+  const tmpCanvas = document.createElement('canvas')
+  const tmpCtx = tmpCanvas.getContext('2d')!
+  tmpCtx.font = BAR_LEGEND_FONT
+  const maxTextWidth = items.reduce((m, item) => Math.max(m, tmpCtx.measureText(item.name).width), 0)
+
+  const canvasWidth = Math.ceil(BAR_LEGEND_PADDING * 2 + BAR_LEGEND_BOX_SIZE + BAR_LEGEND_BOX_TEXT_GAP + maxTextWidth)
+  const canvasHeight = Math.ceil(
+    BAR_LEGEND_PADDING * 2 + items.length * BAR_LEGEND_ITEM_HEIGHT - BAR_LEGEND_ITEM_MARGIN
+  )
+
+  const canvas = document.createElement('canvas')
+  canvas.width = canvasWidth
+  canvas.height = canvasHeight
+
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.font = BAR_LEGEND_FONT
+
+  items.forEach((item, i) => {
+    const y = BAR_LEGEND_PADDING + i * BAR_LEGEND_ITEM_HEIGHT
+
+    ctx.save()
+    ctx.globalAlpha = item.opacity
+
+    if (item.kind === 'bar') {
+      ctx.fillStyle = item.color
+      ctx.fillRect(BAR_LEGEND_PADDING, y, BAR_LEGEND_BOX_SIZE, BAR_LEGEND_BOX_SIZE)
+
+      if (item.borderColor !== BAR_LEGEND_DEFAULT_BORDER) {
+        ctx.strokeStyle = item.borderColor
+        ctx.lineWidth = 1
+        ctx.strokeRect(BAR_LEGEND_PADDING + 0.5, y + 0.5, BAR_LEGEND_BOX_SIZE - 1, BAR_LEGEND_BOX_SIZE - 1)
+      }
+    } else {
+      // Distribution curve: thin horizontal line centred vertically.
+      ctx.fillStyle = item.color
+      ctx.fillRect(BAR_LEGEND_PADDING, y + Math.floor(BAR_LEGEND_BOX_SIZE / 2) - 1, BAR_LEGEND_BOX_SIZE, 2)
+    }
+    ctx.restore()
+
+    ctx.fillStyle = BAR_LEGEND_TEXT_COLOR
+    ctx.fillText(
+      item.name,
+      BAR_LEGEND_PADDING + BAR_LEGEND_BOX_SIZE + BAR_LEGEND_BOX_TEXT_GAP,
+      y + BAR_LEGEND_BOX_SIZE - 1
+    )
+  })
+
+  return canvas
 }
 
 const duplicateStyle = (element, style, km: boolean) => {
@@ -23,10 +133,12 @@ const duplicateStyle = (element, style, km: boolean) => {
   element.style.display = style.display
   element.style['stroke-width'] = style['stroke-width'] ? '1px' : ''
   element.style['font-size'] = style['font-size']
+  element.style['font-family'] = style['font-family']
+  element.style['font-weight'] = style['font-weight']
   element.style['fill-opacity'] = style['fill-opacity']
   element.style['stroke-opacity'] = style['stroke-opacity']
+  element.style.opacity = style.opacity
   element.style['text-anchor'] = style['text-anchor']
-  element.style['font-weight'] = ''
 
   if (km) {
     let colorString
@@ -39,17 +151,16 @@ const duplicateStyle = (element, style, km: boolean) => {
   }
 }
 
-const svgApplyCSS = (svgOrigin, svgElement, km = false) => {
+const svgApplyCSS = (svgOrigin: any, svgElement: any, km = false) => {
+  if (svgElement.nodeType !== 1) {
+    return
+  }
   if (svgElement.childNodes && svgElement.childNodes.length > 0) {
     for (let i = 0; i < svgElement.childNodes.length; i += 1) {
-      if (svgElement.nodeType === 1) {
-        svgApplyCSS(svgOrigin.childNodes[i], svgElement.childNodes[i], km)
-      }
+      svgApplyCSS(svgOrigin.childNodes[i], svgElement.childNodes[i], km)
     }
   }
-  if (svgElement.nodeType === 1) {
-    duplicateStyle(svgElement, window.getComputedStyle(svgOrigin), km)
-  }
+  duplicateStyle(svgElement, window.getComputedStyle(svgOrigin as Element), km)
 }
 
 export const canvasWrapper = (ctx, text, maxWidth) => {
@@ -83,11 +194,12 @@ const cropCanvas = (canvas, width, height, y = 0, x = 0) => {
 
 const combineCanvas = (canvasA: HTMLCanvasElement, canvasB: HTMLCanvasElement, overlap = false): HTMLCanvasElement => {
   const combinedCanvas = document.createElement('canvas')
-  combinedCanvas.height = max([canvasA.height, canvasB.height])
+  combinedCanvas.height = Math.max(canvasA.height, canvasB.height)
   combinedCanvas.width = overlap ? canvasA.width : canvasA.width + canvasB.width
-  combinedCanvas.getContext('2d').fillStyle = '#ffffff'
-  combinedCanvas.getContext('2d').fillRect(0, 0, combinedCanvas.width, combinedCanvas.height)
+
   const combinedContext = combinedCanvas.getContext('2d')
+  combinedContext.fillStyle = '#ffffff'
+  combinedContext.fillRect(0, 0, combinedCanvas.width, combinedCanvas.height)
 
   const canvasList = [
     {
@@ -118,39 +230,37 @@ export const createKmLegendCanvas = (pdfConst: any, kmLegendInput: IKmLegendInpu
   const tmpLegendCanvas = document.createElement('canvas')
   tmpLegendCanvas.height = pdfConst.kmLegendMaxHeight
   tmpLegendCanvas.width = pdfConst.kmLegendWidth * mm
-  tmpLegendCanvas.getContext('2d').fillStyle = '#ffffff'
-  tmpLegendCanvas.getContext('2d').fillRect(0, 0, pdfConst.kmLegendWidth * mm, tmpLegendCanvas.height)
+
+  const ctx = tmpLegendCanvas.getContext('2d')
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, pdfConst.kmLegendWidth * mm, tmpLegendCanvas.height)
 
   let baseY = pdfConst.kmLegendMargin
 
-  tmpLegendCanvas.getContext('2d').fillStyle = pdfConst.kmLegendColor
-  tmpLegendCanvas.getContext('2d').font = pdfConst.kmLegendFont
-  tmpLegendCanvas.getContext('2d').fillText(kmLegendInput.logRank, 0, baseY + pdfConst.kmLegendBox)
+  ctx.fillStyle = pdfConst.kmLegendColor
+  ctx.font = pdfConst.kmLegendFont
+  ctx.fillText(kmLegendInput.logRank, 0, baseY + pdfConst.kmLegendBox)
 
   baseY += kmLegendRowHeight
   const pValue = kmLegendInput.pValue
-  tmpLegendCanvas.getContext('2d').fillText(pValue, 0, baseY + pdfConst.kmLegendBox)
+  ctx.fillText(pValue, 0, baseY + pdfConst.kmLegendBox)
 
   baseY += kmLegendRowHeight
 
-  tmpLegendCanvas.getContext('2d').fillStyle = pdfConst.kmLegendColor
-  tmpLegendCanvas.getContext('2d').font = `bold ${pdfConst.kmLegendFont}`
+  ctx.fillStyle = pdfConst.kmLegendColor
+  ctx.font = `bold ${pdfConst.kmLegendFont}`
 
   const kmTitle = kmLegendInput.title
 
-  let wrappedText = canvasWrapper(
-    tmpLegendCanvas.getContext('2d'),
-    kmTitle,
-    pdfConst.kmLegendWidth * mm - kmLegendRowHeight
-  )
+  let wrappedText = canvasWrapper(ctx, kmTitle, pdfConst.kmLegendWidth * mm - kmLegendRowHeight)
 
   for (let i = 0; i < wrappedText.length; i += 1) {
     if (i > 0) {
       baseY += pdfConst.kmLegendBox
     }
-    tmpLegendCanvas.getContext('2d').fillText(wrappedText[i], 0, baseY + pdfConst.kmLegendBox)
+    ctx.fillText(wrappedText[i], 0, baseY + pdfConst.kmLegendBox)
   }
-  tmpLegendCanvas.getContext('2d').font = pdfConst.kmLegendFont
+  ctx.font = pdfConst.kmLegendFont
 
   const kmLegendData = kmLegendInput.data
   for (let i = 0; i < kmLegendData.length; i += 1) {
@@ -159,28 +269,47 @@ export const createKmLegendCanvas = (pdfConst: any, kmLegendInput: IKmLegendInpu
     const legendColor = legendData.mColor
 
     baseY += kmLegendRowHeight
-    wrappedText = canvasWrapper(
-      tmpLegendCanvas.getContext('2d'),
-      legendText,
-      pdfConst.kmLegendWidth * mm - kmLegendRowHeight
-    )
+    wrappedText = canvasWrapper(ctx, legendText, pdfConst.kmLegendWidth * mm - kmLegendRowHeight)
 
-    tmpLegendCanvas.getContext('2d').fillStyle = legendColor
-    tmpLegendCanvas.getContext('2d').fillRect(0, baseY, pdfConst.kmLegendBox, pdfConst.kmLegendBox)
-    tmpLegendCanvas.getContext('2d').fillStyle = pdfConst.kmLegendColor
-    tmpLegendCanvas.getContext('2d').font = pdfConst.kmLegendFont
+    ctx.fillStyle = legendColor
+    ctx.fillRect(0, baseY, pdfConst.kmLegendBox, pdfConst.kmLegendBox)
+    ctx.fillStyle = pdfConst.kmLegendColor
+    ctx.font = pdfConst.kmLegendFont
 
     for (let ii = 0; ii < wrappedText.length; ii += 1) {
       if (ii > 0) {
         baseY += pdfConst.kmLegendBox
       }
-      tmpLegendCanvas
-        .getContext('2d')
-        .fillText(wrappedText[ii], kmLegendRowHeight, baseY + pdfConst.kmLegendBox - pdfConst.kmLegendTextMargin)
+      ctx.fillText(wrappedText[ii], kmLegendRowHeight, baseY + pdfConst.kmLegendBox - pdfConst.kmLegendTextMargin)
     }
   }
 
   return cropCanvas(tmpLegendCanvas, tmpLegendCanvas.width, baseY + kmLegendRowHeight)
+}
+
+/**
+ * CSS selectors for Plotly UI-only elements that must never be rasterised into an export:
+ *  - draglayer   transparent mouse-event rects (canvg renders their fill as an opaque overlay)
+ *  - modebar-*   toolbar buttons, including the custom "Reset view" button
+ *  - select-outline  active selection rectangle
+ */
+export const INTERACTIVE_SELECTORS = [
+  '.draglayer',
+  '.modebar-container',
+  '.modebar',
+  '.modebar-group',
+  '.modebar-btn',
+  '.select-outline',
+]
+
+/**
+ * Removes every interactive/UI-only child that matches INTERACTIVE_SELECTORS from `root`.
+ * Safe to call on axis-title subtrees: none of the selectors match g-xtitle / g-ytitle.
+ */
+export const stripInteractiveSVG = (root: Element): void => {
+  INTERACTIVE_SELECTORS.forEach(sel =>
+    root.querySelectorAll(sel).forEach(el => el.parentNode?.removeChild(el))
+  )
 }
 
 export const createChartCanvas = (
@@ -191,23 +320,57 @@ export const createChartCanvas = (
   pdfConst: any,
   kmLegendInput?: IKmLegendInput
 ): HTMLCanvasElement => {
-  const svgItem = d3.select(chartId).select('svg')[0][0]
-  const svgClone = svgItem.cloneNode(true)
+  const svgItem = d3.select(chartId).select('svg')[0][0] as SVGSVGElement
+  const svgClone = svgItem.cloneNode(true) as SVGSVGElement
   const serializer = new XMLSerializer()
 
-  if (chartType.indexOf('km') > -1) {
+  const isKm = chartType.includes('km')
+  const isBarChart = chartType.includes('stacked') || chartType.includes('column')
+  const isBoxplot = chartType.includes('boxplot')
+
+  // Use the SVG's actual rendered pixel dimensions as the viewBox so canvg scales the
+  // chart correctly when rendering to the (possibly larger) export canvas.
+  // getBoundingClientRect gives the true pixel size even for responsive SVGs that use
+  // width="100%" / height="100%" — for those, width.baseVal.value would return 100 (the
+  // percentage) rather than the real pixel width, causing everything to appear shifted.
+  const svgRect = svgItem.getBoundingClientRect()
+  const svgNativeW = Math.round(svgRect.width) || targetWidth
+  const svgNativeH = Math.round(svgRect.height) || targetHeight
+  svgClone.setAttribute('width', targetWidth.toString())
+  svgClone.setAttribute('height', targetHeight.toString())
+  svgClone.setAttribute('viewBox', `0 0 ${svgNativeW} ${svgNativeH}`)
+
+  if (isKm) {
     svgClone.setAttribute('class', 'MriPaKaplan')
     svgApplyCSS(svgItem, svgClone, true)
-  } else if (chartType.indexOf('stacked') > -1 || chartType.indexOf('column') > -1) {
+  } else if (isBarChart) {
     svgApplyCSS(svgItem, svgClone)
     const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
     bgRect.style.width = '100%'
     bgRect.style.height = '100%'
     bgRect.style.fill = 'white'
     svgClone.prepend(bgRect)
-  } else if (chartType.indexOf('boxplot') > -1) {
+  } else if (isBoxplot) {
     svgApplyCSS(svgItem, svgClone)
     svgClone.childNodes[0].style.fill = '#ffffff'
+  }
+
+  stripInteractiveSVG(svgClone)
+
+  // Plotly renders axis titles (ytitle, xtitle) in the "infolayer" group which lives in a
+  // SECOND <svg> element layered on top of the main chart SVG. d3.select().select('svg')
+  // only captures the first SVG, so merge in the infolayer group to keep the axis titles.
+  const plotlyContainer = document.querySelector(chartId) as HTMLElement
+  if (plotlyContainer) {
+    const infolayerEl = plotlyContainer.querySelector('.infolayer')
+    if (infolayerEl && infolayerEl.closest('svg') !== svgItem) {
+      const infolayerClone = infolayerEl.cloneNode(true) as Element
+      svgApplyCSS(infolayerEl, infolayerClone)
+      // Remove any toolbar nodes that ride along in the same layer without touching the
+      // axis-title groups, then append so the axis titles remain in the export.
+      stripInteractiveSVG(infolayerClone)
+      svgClone.appendChild(infolayerClone)
+    }
   }
 
   const chartCanvas = document.createElement('canvas')
@@ -216,7 +379,7 @@ export const createChartCanvas = (
 
   let svgStr = serializer.serializeToString(svgClone)
 
-  if (chartType.indexOf('km') > -1) {
+  if (isKm) {
     // Manually Move X-Axis Legends for KM
     const xAxisLocation = `translate(${Math.floor(targetWidth)}`
     const xAxisNewLocation = `translate(${Math.floor(targetWidth) - pdfConst.kmLegendWidth}`
@@ -229,9 +392,15 @@ export const createChartCanvas = (
   v.start()
 
   let outputCanvas = chartCanvas
-  if (chartType.indexOf('km') > -1 && kmLegendInput) {
+  if (isKm && kmLegendInput) {
     const legendCanvas = createKmLegendCanvas(pdfConst, kmLegendInput)
     outputCanvas = combineCanvas(chartCanvas, legendCanvas, kmLegendInput.overlapCanvas)
+  } else if (isBarChart) {
+    const barLegendItems = readStackBarLegendFromDOM()
+    if (barLegendItems.length > 0) {
+      const legendCanvas = createBarLegendCanvas(barLegendItems)
+      outputCanvas = combineCanvas(chartCanvas, legendCanvas)
+    }
   }
 
   return outputCanvas
