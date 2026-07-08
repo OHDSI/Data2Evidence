@@ -148,10 +148,9 @@ if (existsSync(landingImageSrc)) {
 
 // Helper scripts injected into Atlas3's index.html:
 //  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
-//  - logo-link.js: routes the header logo to the d2e portal.
 //  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
-const headScripts = ['login-guard.js', 'logo-link.js', 'user-link.js', 'token-keeper.js'];
+const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
