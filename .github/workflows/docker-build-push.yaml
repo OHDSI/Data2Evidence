@@ -455,7 +455,23 @@ jobs:
           [ $FAILED -eq 0 ] || exit $FAILED
           if [[ $SHOULD_PUBLISH == true ]]; then
             for PACK_FILE in "${TGZ_FILES[@]}"; do
-              npm publish "$PACK_FILE"
+              # Azure Artifacts feeds are immutable: re-publishing an existing
+              # version returns 409. Treat "already published" as success so a
+              # release re-run at the same tag is idempotent (skips the plugins
+              # already on the feed, publishes the ones that are missing) and the
+              # job stays green. Any other publish error still fails the leg.
+              if PUBLISH_LOG="$(npm publish "$PACK_FILE" 2>&1)"; then
+                echo "$PUBLISH_LOG"
+              else
+                RC=$?
+                echo "$PUBLISH_LOG"
+                if echo "$PUBLISH_LOG" | grep -qiE '409|EPUBLISHCONFLICT|already exists|cannot publish over'; then
+                  echo "::notice::$PACK_FILE already published at this version — skipping"
+                else
+                  echo "::error::publish failed for $PACK_FILE"
+                  exit $RC
+                fi
+              fi
             done
           fi
 
