@@ -147,6 +147,7 @@ export const ConceptSets: FC<ConceptSetsProps> = ({ isAtlas }) => {
               isLoading={isLoading}
               onAddEdit={handleAddAndEditConceptSet}
               onDelete={handleDeleteClick}
+              userName={userName}
             />
           )}
         </div>

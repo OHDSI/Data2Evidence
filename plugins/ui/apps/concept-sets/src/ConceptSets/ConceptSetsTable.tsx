@@ -23,6 +23,7 @@ interface ConceptSetsTableProps {
   isLoading: boolean;
   onAddEdit: (conceptSetId?: string) => void;
   onDelete: (conceptSet: ConceptSet) => void;
+  userName?: string;
 }
 
 export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
@@ -30,6 +31,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   isLoading,
   onAddEdit,
   onDelete,
+  userName,
 }) => {
   const { getText } = useTranslation();
   const [searchText, setSearchText] = useState<string>("");
@@ -108,29 +110,34 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         header: "",
         size: 90,
         enableSorting: false,
-        Cell: ({ row }) => (
-          <>
-            <IconButton
-              startIcon={
-                row.original.hasWriteAccess ? (
-                  <EditIcon />
-                ) : (
-                  <VisibilityOnIcon />
-                )
-              }
-              onClick={() => onAddEdit(row.original.id)}
-            />
-            {row.original.hasWriteAccess && (
+        Cell: ({ row }) => {
+          const isWritable =
+            row.original.hasWriteAccess ||
+            row.original.createdBy === userName;
+          return (
+            <>
               <IconButton
-                startIcon={<DeleteIcon />}
-                onClick={() => onDelete(row.original)}
+                startIcon={
+                  isWritable ? (
+                    <EditIcon />
+                  ) : (
+                    <VisibilityOnIcon />
+                  )
+                }
+                onClick={() => onAddEdit(row.original.id)}
               />
-            )}
-          </>
-        ),
+              {isWritable && (
+                <IconButton
+                  startIcon={<DeleteIcon />}
+                  onClick={() => onDelete(row.original)}
+                />
+              )}
+            </>
+          );
+        },
       },
     ],
-    [getText, onAddEdit, onDelete]
+    [getText, onAddEdit, onDelete, userName]
   );
 
   const table = useMaterialReactTable({

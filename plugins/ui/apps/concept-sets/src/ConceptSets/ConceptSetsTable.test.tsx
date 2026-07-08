@@ -78,6 +78,7 @@ describe("ConceptSetsTable", () => {
         isLoading={false}
         onAddEdit={onAddEdit}
         onDelete={onDelete}
+        userName="owner"
       />
     );
 
@@ -117,6 +118,7 @@ describe("ConceptSetsTable", () => {
         isLoading={false}
         onAddEdit={onAddEdit}
         onDelete={onDelete}
+        userName="owner"
       />
     );
 
@@ -157,6 +159,7 @@ describe("ConceptSetsTable", () => {
         isLoading={false}
         onAddEdit={onAddEdit}
         onDelete={onDelete}
+        userName="owner"
       />
     );
 
@@ -187,10 +190,52 @@ describe("ConceptSetsTable", () => {
         isLoading={false}
         onAddEdit={onAddEdit}
         onDelete={onDelete}
+        userName="owner"
       />
     );
 
     expect(screen.getByText("CONCEPT_SETS__WEBAPI")).toBeTruthy();
     expect(screen.queryByText("CONCEPT_SETS__LEGACY")).toBeNull();
+  });
+
+  it("renders edit and delete actions for WebAPI concept sets created by current user when hasWriteAccess is false", () => {
+    const onAddEdit = vi.fn();
+    const onDelete = vi.fn();
+
+    render(
+      <ConceptSetsTable
+        data={[
+          {
+            id: "webapi:2",
+            externalId: 2,
+            source: "webapi",
+            name: "Cardiac arrest",
+            concepts: [],
+            shared: false,
+            createdBy: "admin",
+            userName: "admin",
+            hasWriteAccess: false,
+            hasReadAccess: false,
+          },
+        ]}
+        isLoading={false}
+        onAddEdit={onAddEdit}
+        onDelete={onDelete}
+        userName="admin"
+      />
+    );
+
+    const row = screen.getByTestId("row-webapi:2");
+    const buttons = within(row).getAllByRole("button");
+    expect(screen.getByText("EditIcon")).toBeTruthy();
+    expect(buttons).toHaveLength(2);
+
+    fireEvent.click(buttons[0]);
+    fireEvent.click(buttons[1]);
+
+    expect(onAddEdit).toHaveBeenCalledWith("webapi:2");
+    expect(onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "webapi:2", hasWriteAccess: false })
+    );
   });
 });

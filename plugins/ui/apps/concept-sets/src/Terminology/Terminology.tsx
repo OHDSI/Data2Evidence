@@ -588,14 +588,16 @@ export const Terminology: FC<TerminologyProps> = ({
         sortAndSetSelectedConcepts(conceptSet.concepts);
         setCurrentConceptSet(conceptSet);
         setConceptSetShared(conceptSet.shared);
-        setIsUserConceptSet(!!conceptSet.hasWriteAccess);
+        setIsUserConceptSet(
+          !!conceptSet.hasWriteAccess || conceptSet.createdBy === userName,
+        );
         setErrorMsg("");
         return;
       } finally {
         setIsConceptSetLoading(false);
       }
     },
-    [activeDatasetId],
+    [activeDatasetId, userName],
   );
   const isDrawer = !!onClose;
 
