@@ -217,8 +217,12 @@ $transition-collapse: height 0.35s ease;
 // Fonts
 // Font, line-height, and color for body text, headings, and more.
 // stylelint-disable value-keyword-case
-$font-family-sans-serif: 'GT-America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-  sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+// GT-America stays first (name only — we no longer ship it) so clients with it
+// installed still render it; everyone else falls to self-hosted IBM Plex Sans.
+// Kept in sync with the Analyze/Integrate font stack (PR #2791).
+$font-family-sans-serif: 'GT-America', 'IBM Plex Sans Variable', 'IBM Plex Sans', -apple-system,
+  BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans',
+  'Helvetica Neue', sans-serif;
 $font-family-monospace: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 $font-family-base: $font-family-sans-serif;
 // stylelint-enable value-keyword-case

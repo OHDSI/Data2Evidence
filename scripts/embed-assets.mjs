@@ -1,13 +1,28 @@
-import { readFileSync, writeFileSync, mkdirSync, unlinkSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, unlinkSync, readdirSync } from "fs";
 import { join, dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import { execFileSync } from "child_process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const content = readFileSync(join(__dirname, "../docker-compose.yml"), "utf8");
+
+// Bundle the atlas-db-init SQL scripts so the distributed CLI can stage them
+// next to the embedded compose file. The webapi-init service bind-mounts
+// ./services/atlas-db-init into /scripts, which only exists at repo root.
+const atlasDbInitDir = join(__dirname, "../services/atlas-db-init");
+const atlasDbInitScripts = Object.fromEntries(
+  readdirSync(atlasDbInitDir)
+    .filter((f) => f.endsWith(".sql"))
+    .sort()
+    .map((f) => [f, readFileSync(join(atlasDbInitDir, f), "utf8")])
+);
+
 writeFileSync(
   join(__dirname, "docker-compose-embed.ts"),
-  `export const dockerComposeContent = ${JSON.stringify(content)};\n`
+  `export const dockerComposeContent = ${JSON.stringify(content)};\n` +
+    `export const atlasDbInitScripts: Record<string, string> = ${JSON.stringify(
+      atlasDbInitScripts
+    )};\n`
 );
 
 const SCRIPT_MAP = {

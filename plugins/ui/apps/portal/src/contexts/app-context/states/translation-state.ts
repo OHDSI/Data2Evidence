@@ -134,7 +134,7 @@ export const i18nDefault = {
     ANALYSIS_DIALOG__DATA_CHARACTERIZATION: "Data characterization",
     ANALYSIS_DIALOG__DATA_QUALITY: "Data quality",
     ANALYSIS_DIALOG__FORM_TITLE: "Dataset analysis configuration",
-    ANALYSIS_DIALOG__RESULTS_SCHEMA_NAME: "Results schema name (optional)",
+    ANALYSIS_DIALOG__RESULTS_SCHEMA_NAME: "Preferred schema name (optional)",
     ANALYSIS_DIALOG__RUN: "Run analysis",
     ANALYSIS_DIALOG__RUN_SUCCESS: "Successfully generated {0} job for {1}",
     ANALYSIS_DIALOG__TITLE: "Run {0} for dataset: {1}",
@@ -750,8 +750,7 @@ export const i18nDefault = {
     JOB_DIALOG__CANCEL: "Cancel",
     JOB_DIALOG__COMMENT: "Comment",
     JOB_DIALOG__ERROR: "An error has occurred when trying to create a {0} Job",
-    JOB_DIALOG__ERROR_DESCRIPTION:
-      "Please try again. To report the error, please send an email to your administrator.",
+    JOB_DIALOG__ERROR_DESCRIPTION: "Please try again. To report the error, please send an email to your administrator.",
     JOB_DIALOG__GENERATE: "Generate",
     JOB_DIALOG__GENERATE_DATA_CHARACTERIZATION: "Generate data characterization",
     JOB_DIALOG__GENERATE_DATA_QUALITY: "Generate data quality",
@@ -947,8 +946,7 @@ export const i18nDefault = {
     SAVE_DB_DIALOG__ENTER_VALID_JSON_DATA_PLATFORM: "Please enter a valid JSON value in Extra for Data Platform.",
     SAVE_DB_DIALOG__ENTER_VALID_JSON_INTERNAL: "Please enter a valid JSON value in Extra for Internal.",
     SAVE_DB_DIALOG__ERROR: "An error has occurred.",
-    SAVE_DB_DIALOG__ERROR_MESSAGE:
-      "Please try again. To report the error, please send an email to your administrator.",
+    SAVE_DB_DIALOG__ERROR_MESSAGE: "Please try again. To report the error, please send an email to your administrator.",
     SAVE_DB_DIALOG__EXTRA: "Extra",
     SAVE_DB_DIALOG__EXTRA_INVALID_JSON:
       "Invalid JSON in Extra (Internal). Please correct the JSON before testing the connection.",
