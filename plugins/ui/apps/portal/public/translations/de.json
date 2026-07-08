@@ -121,7 +121,7 @@
   "ANALYSIS_DIALOG__DATA_CHARACTERIZATION": "Datencharakterisierung",
   "ANALYSIS_DIALOG__DATA_QUALITY": "Datenqualität",
   "ANALYSIS_DIALOG__FORM_TITLE": "Datensatz-Analysekonfiguration",
-  "ANALYSIS_DIALOG__RESULTS_SCHEMA_NAME": "Ergebnis-Schemaname (optional)",
+  "ANALYSIS_DIALOG__RESULTS_SCHEMA_NAME": "Bevorzugter Schemaname (optional)",
   "ANALYSIS_DIALOG__RUN": "Analyse ausführen",
   "ANALYSIS_DIALOG__RUN_SUCCESS": "Auftrag {0} für {1} erfolgreich generiert",
   "ANALYSIS_DIALOG__TITLE": "{0} für Datensatz ausführen: {1}",
