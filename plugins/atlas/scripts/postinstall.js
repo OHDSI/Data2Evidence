@@ -93,11 +93,12 @@ if (existsSync(assetsDir)) {
   // d2e landing-page image: Atlas3's landing hero is a hardcoded asset
   // (`const A = new URL("atlas-loading-<hash>.svg", import.meta.url)` rendered as
   // <img class="landing__logo">) — there is NO landing-image theme option (only
-  // logoUrl). Repoint just the LandingView reference to the d2e brand image served
-  // at /atlas/config/d2e2.svg (../config/ resolves from the assets/ module dir),
-  // leaving the shared loading-screen graphic untouched. Version-specific: the
-  // hashed filenames change on @ohdsi/atlas3 bumps, so re-verify after upgrades.
-  const LANDING_IMAGE = '../config/d2e2.svg';
+  // logoUrl). Repoint just the LandingView reference to the d2e portal landing
+  // illustration served at /atlas/config/landing-page-illustration.svg (../config/
+  // resolves from the assets/ module dir), leaving the shared loading-screen graphic
+  // untouched. Version-specific: the hashed filenames change on @ohdsi/atlas3 bumps,
+  // so re-verify after upgrades.
+  const LANDING_IMAGE = '../config/landing-page-illustration.svg';
   let landingPatched = 0;
   for (const file of readdirSync(assetsDir)) {
     if (!/^LandingView.*\.js$/.test(file)) continue;
@@ -137,11 +138,20 @@ if (existsSync(logoSrc)) {
   copyFileSync(logoSrc, join(resourcesDir, 'config', 'd2e2.svg'));
 }
 
+// Make the d2e portal landing illustration (LandingView hero image) available
+// under /atlas/config; see the LandingView repoint above.
+const landingImageSrc = join(rootDir, 'landing-page-illustration.svg');
+if (existsSync(landingImageSrc)) {
+  mkdirSync(join(resourcesDir, 'config'), { recursive: true });
+  copyFileSync(landingImageSrc, join(resourcesDir, 'config', 'landing-page-illustration.svg'));
+}
+
 // Helper scripts injected into Atlas3's index.html:
 //  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
 //  - logo-link.js: routes the header logo to the d2e portal.
+//  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
-const headScripts = ['login-guard.js', 'logo-link.js', 'token-keeper.js'];
+const headScripts = ['login-guard.js', 'logo-link.js', 'user-link.js', 'token-keeper.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
