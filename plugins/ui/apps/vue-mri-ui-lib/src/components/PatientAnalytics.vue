@@ -167,6 +167,7 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
+import { registerPaTools } from '@/ai/webmcpServer'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -270,10 +271,12 @@ export default {
     },
   },
   mounted() {
+    this._unregisterPaTools = registerPaTools(this.$store)
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
+    this._unregisterPaTools?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
     this.chartBusy = false
   },
