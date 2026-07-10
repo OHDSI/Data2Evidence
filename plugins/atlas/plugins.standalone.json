@@ -65,6 +65,16 @@
         { "id": "studies.main", "name": "Studies", "route": "/plugins/studies-plugin/", "icon": "mdi-flask-outline", "order": 40 }
       ],
       "metadata": { "author": "OHDSI", "description": "Studies shell: Local / Network / Results" }
+    },
+    {
+      "id": "patient-analytics",
+      "name": "Data Exploration",
+      "version": "2.0.0",
+      "entryPoint": "patient-analytics/index.system.js",
+      "menuItems": [
+        { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45 }
+      ],
+      "metadata": { "author": "D2E", "description": "Data Exploration (Patient Analytics/MRI) — visual cohort exploration against the selected data source" }
     }
   ],
   "settings": {

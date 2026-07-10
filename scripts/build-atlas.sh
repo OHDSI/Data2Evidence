@@ -59,7 +59,9 @@ for p in "${SUBPLUGINS[@]}"; do
   if [ "$p" = "results-viewer" ]; then
     build_results_viewer_shinylive
   fi
-  ( cd "$PLUGIN_DIR/$p" && npm install && npm run build )
+  # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
+  ( cd "$PLUGIN_DIR/$p" && npm install \
+    && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
   if [ ! -f "$PLUGIN_DIR/$p/dist/index.system.js" ]; then
     echo "[build-atlas] ERROR: $p did not produce dist/index.system.js" >&2
     exit 1
@@ -68,6 +70,23 @@ done
 
 echo "[build-atlas] Building the Atlas plugin (assembles Atlas3 + sub-plugin dists)..."
 ( cd "$ATLAS_DIR" && npm install && npm run build )
+
+# Patient Analytics ships as an Atlas plugin too, but lives in the UI monorepo
+# (not the trex-notebook submodule), so it is built and staged separately —
+# after the atlas npm install, whose postinstall recreates resources/atlas.
+# --workspaces=false keeps npm from resolving the whole bun-managed monorepo.
+PA_DIR="plugins/ui/apps/vue-mri-ui-lib"
+echo "[build-atlas] Building sub-plugin: patient-analytics ($PA_DIR)"
+( cd "$PA_DIR" && npm install --workspaces=false --legacy-peer-deps && npm run build:atlas )
+if [ ! -f "$PA_DIR/dist-atlas/index.system.js" ]; then
+  echo "[build-atlas] ERROR: patient-analytics did not produce dist-atlas/index.system.js" >&2
+  exit 1
+fi
+PA_DEST="$ATLAS_DIR/resources/atlas/plugins/patient-analytics"
+rm -rf "$PA_DEST"
+mkdir -p "$PA_DEST"
+cp -r "$PA_DIR/dist-atlas/." "$PA_DEST/"
+echo "[build-atlas] Staged patient-analytics at /atlas/plugins/patient-analytics"
 
 echo "[build-atlas] Packing Atlas plugin into $ARTIFACTS_DIR ..."
 mkdir -p "$ARTIFACTS_DIR"
