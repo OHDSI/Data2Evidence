@@ -45,11 +45,13 @@ describe('createPaTools', () => {
       'pa_list_cohorts',
       'pa_open_cohort',
       'pa_apply_cohort_patch',
+      'pa_list_filter_options',
       'pa_save_current_cohort',
     ])
-    // Mutating tools must declare their required inputs so the model can't
-    // call them with an empty object.
-    expect((byName(tools, 'pa_apply_cohort_patch').inputSchema as any).required).toEqual(['bookmark'])
+    // pa_save_current_cohort must declare its required inputs so the model can't
+    // call it with an empty object. pa_apply_cohort_patch accepts either
+    // `patchOps` (preferred) or `bookmark` (legacy), so neither is unconditionally
+    // required — the handler validates that at least one is present.
     expect((byName(tools, 'pa_save_current_cohort').inputSchema as any).required).toEqual(['params'])
   })
 
@@ -176,6 +178,70 @@ describe('createPaTools', () => {
       await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({ bookmark })
 
       expect(store.dispatch).toHaveBeenCalledWith('loadBookmarkDataToState', { bookmark, chartType: undefined })
+    })
+
+    it('routes patchOps through the deterministic applier (no legacy bookmark dispatch)', async () => {
+      const store = makeStore()
+      // Minimal store surface applyCohortPatch touches for a single add_card.
+      store.getters.getFilterCards = () => ({ fc1: {} })
+      store.dispatch.mockImplementation((type: string) => {
+        if (type === 'addFilterCard') return Promise.resolve('fc1')
+        return Promise.resolve(undefined)
+      })
+
+      const patchOps = [{ op: 'add_card', cardConfigPath: 'patient.interactions.priDiag' }]
+      const res = await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({ patchOps })
+
+      expect(store.dispatch).toHaveBeenCalledWith('addFilterCard', {
+        configPath: 'patient.interactions.priDiag',
+        isExclusion: false,
+      })
+      expect(store.dispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())
+      expect(parse(res)).toEqual({ applied: true, createdCards: ['fc1'] })
+    })
+
+    it('returns applied:false with an error when neither patchOps nor bookmark is given', async () => {
+      const store = makeStore()
+      const res = await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({})
+
+      expect(parse(res)).toEqual({ applied: false, error: 'Provide patchOps (preferred) or a bookmark object.' })
+      expect(store.dispatch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('pa_list_filter_options', () => {
+    it('maps the frontend config filter cards + attributes to a flat catalog', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
+          {
+            getConfigPath: () => 'patient',
+            getName: () => 'Basic Data',
+            getAllAttributes: () => [
+              { getConfigPath: () => 'patient.attributes.age', getName: () => 'Age', getType: () => 'num' },
+            ],
+          },
+        ],
+      }
+
+      const res = await byName(createPaTools(store), 'pa_list_filter_options').execute()
+
+      expect(parse(res)).toEqual({
+        filterCards: [
+          {
+            cardConfigPath: 'patient',
+            cardName: 'Basic Data',
+            attributes: [{ attributePath: 'patient.attributes.age', name: 'Age', type: 'num' }],
+          },
+        ],
+      })
+    })
+
+    it('degrades gracefully when the frontend config is not loaded', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = undefined
+      const res = await byName(createPaTools(store), 'pa_list_filter_options').execute()
+      expect(parse(res)).toEqual({ filterCards: [], error: 'Frontend config not loaded.' })
     })
   })
 

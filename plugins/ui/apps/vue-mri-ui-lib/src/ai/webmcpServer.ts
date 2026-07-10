@@ -6,6 +6,7 @@
 //   Chrome 150+:    document.modelContext    (current spec)
 // We try document first, then fall back to navigator for older builds.
 import type { Store } from 'vuex'
+import { applyCohortPatch, type PatchOp } from './cohortPatch'
 
 export interface PaToolResult {
   content: Array<{ type: 'text'; text: string }>
@@ -110,18 +111,73 @@ export function createPaTools(store: Store<any>): PaTool[] {
     },
     {
       name: 'pa_apply_cohort_patch',
-      description: 'Apply a bookmark patch and re-render the PA builder live.',
+      description:
+        'Edit the live cohort. Preferred: pass `patchOps` — typed intent applied deterministically in-place ' +
+        '(add_card / add_constraint / remove_card / remove_constraint). Discover valid paths with ' +
+        'pa_list_filter_options. Legacy: a full `bookmark` object may be passed instead, but never hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
-          bookmark: { type: 'object', description: 'Parsed bookmark object' },
+          patchOps: {
+            type: 'array',
+            description:
+              'Typed patch operations. Each: ' +
+              '{ op:"add_card", cardConfigPath, exclude?, ref? } | ' +
+              '{ op:"add_constraint", card, attributePath, value, operator? } | ' +
+              '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath }. ' +
+              'value is a number/string, { from, to } date range, or { conceptSetId, includeDescendants? }.',
+            items: { type: 'object' },
+          },
+          bookmark: { type: 'object', description: 'Legacy: parsed bookmark object (back-compat)' },
           chartType: { type: 'string', description: 'Target chart type, e.g. "bar"' },
         },
-        required: ['bookmark'],
       },
-      async execute({ bookmark, chartType }: { bookmark: object; chartType?: string }) {
-        await store.dispatch('loadBookmarkDataToState', { bookmark, chartType })
-        return textResult({ applied: true })
+      async execute({
+        patchOps,
+        bookmark,
+        chartType,
+      }: {
+        patchOps?: PatchOp[]
+        bookmark?: object
+        chartType?: string
+      }) {
+        if (Array.isArray(patchOps)) {
+          try {
+            const result = await applyCohortPatch(store, patchOps)
+            return textResult(result)
+          } catch (err) {
+            return textResult({ applied: false, error: err instanceof Error ? err.message : String(err) })
+          }
+        }
+        if (bookmark) {
+          await store.dispatch('loadBookmarkDataToState', { bookmark, chartType })
+          return textResult({ applied: true })
+        }
+        return textResult({ applied: false, error: 'Provide patchOps (preferred) or a bookmark object.' })
+      },
+    },
+    {
+      name: 'pa_list_filter_options',
+      description:
+        'List the valid filter cards and attributes for the current dataset as ' +
+        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type }] }. ' +
+        'Use these exact paths in pa_apply_cohort_patch patchOps — never invent paths.',
+      inputSchema: { type: 'object', properties: {} },
+      async execute() {
+        const config = store.getters.getMriFrontendConfig
+        if (!config?.getFilterCards) {
+          return textResult({ filterCards: [], error: 'Frontend config not loaded.' })
+        }
+        const filterCards = (config.getFilterCards() ?? []).map((card: any) => ({
+          cardConfigPath: card.getConfigPath(),
+          cardName: card.getName(),
+          attributes: (card.getAllAttributes() ?? []).map((attr: any) => ({
+            attributePath: attr.getConfigPath(),
+            name: attr.getName(),
+            type: attr.getType(),
+          })),
+        }))
+        return textResult({ filterCards })
       },
     },
     {
