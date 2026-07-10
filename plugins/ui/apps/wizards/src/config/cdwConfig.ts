@@ -80,7 +80,11 @@ const mockConfig: CdwConfig = {
 
 const isDev = import.meta.env.DEV;
 
-const mockMeta: ConfigMeta = { configId: "mock", configVersion: "1" };
+const mockMeta: ConfigMeta = {
+  configId: "mock",
+  configVersion: "1",
+  dependentConfig: { configId: "mock-cdm", configVersion: "1" },
+};
 
 let cachedResult: CdwConfigResult | null = null;
 
@@ -124,7 +128,7 @@ export async function fetchAttributeValues(
   attributePath: string,
   meta: ConfigMeta,
   datasetId?: string,
-  searchQuery?: string,
+  searchQuery?: string
 ): Promise<Array<{ label: string; value: string }>> {
   if (isDev) {
     const values = mockAttributeValues[attributePath] || [];

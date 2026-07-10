@@ -3,6 +3,11 @@ import type { ConfigMeta, ChartOptions, CdwConfig } from "../config/cdwConfig";
 import { buildMriBookmark } from "./mriQuery";
 import { compress } from "./cohortUrlCodec";
 
+export interface WizardSubmitPayload {
+  bookmark: ReturnType<typeof buildMriBookmark>["bookmark"];
+  wizardConfig: Record<string, any>;
+}
+
 /**
  * Generate deep link URL for wizard result action.
  *
@@ -17,7 +22,7 @@ import { compress } from "./cohortUrlCodec";
 export function generateDeepLink(
   action: ResultAction,
   formData: Record<string, any>,
-  datasetId?: string,
+  datasetId?: string
 ): string | null {
   if (action.type !== "deep-link" || !action.urlTemplate) {
     return null;
@@ -86,19 +91,55 @@ export function generateFormSubmitDeepLink(
   config?: CdwConfig,
   wizardFields?: FieldDefinition[],
   wizardId?: string,
-  displayValues?: Record<string, string>,
+  displayValues?: Record<string, string>
 ): string {
   const resolvedDatasetId = datasetId || "default";
-
-  const { bookmark, fieldInstanceMap } = buildMriBookmark(
+  const { bookmark, wizardConfig } = buildWizardSubmitPayload(
     fields,
     formData,
     configMeta,
     resolvedDatasetId,
     chartOptions,
     config,
+    wizardFields,
+    wizardId,
+    displayValues
   );
   const compressed = compress(bookmark);
+
+  const wizards = compress(wizardConfig);
+
+  const params = new URLSearchParams({
+    datasetId: resolvedDatasetId,
+    linkType: "cohort-definition",
+    query: compressed,
+    wizards,
+  });
+  const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
+
+  return url;
+}
+
+/** Build the shared bookmark and dashboard configuration without navigating. */
+export function buildWizardSubmitPayload(
+  fields: FieldDefinition[],
+  formData: Record<string, any>,
+  configMeta: ConfigMeta,
+  datasetId: string,
+  chartOptions?: ChartOptions,
+  config?: CdwConfig,
+  wizardFields?: FieldDefinition[],
+  wizardId?: string,
+  displayValues?: Record<string, string>
+): WizardSubmitPayload {
+  const { bookmark, fieldInstanceMap } = buildMriBookmark(
+    fields,
+    formData,
+    configMeta,
+    datasetId,
+    chartOptions,
+    config
+  );
 
   // Collect wizard-only fields into the wizards param
   const wizardsData: Record<string, any> = {};
@@ -164,15 +205,5 @@ export function generateFormSubmitDeepLink(
     wizardsData.displayValues = { fields: fieldDisplayValues };
   }
 
-  const wizards = compress(wizardsData);
-
-  const params = new URLSearchParams({
-    datasetId: resolvedDatasetId,
-    linkType: "cohort-definition",
-    query: compressed,
-    wizards,
-  });
-  const url = `/d2e/portal/researcher/cohort?${params.toString()}`;
-
-  return url;
+  return { bookmark, wizardConfig: wizardsData };
 }

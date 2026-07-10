@@ -2,23 +2,40 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
-import { generateFormSubmitDeepLink } from "../utils/deepLinks";
+import { buildWizardSubmitPayload, generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
 import { TypeaheadField } from "./TypeaheadField";
 import { AnalyticsIcon } from "./icons/AnalyticsIcon";
+import { WizardDashboardModal } from "./WizardDashboardModal";
+import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import styles from "./StepForm.module.css";
 
 /**
  * Form step renderer with config-driven fields.
  */
 export function StepForm() {
-  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
-    useWizardContext();
+  const {
+    selectedWizard,
+    formData,
+    updateFormData,
+    goBack,
+    goForward,
+    getCurrentStepConfig,
+    portalProps,
+    ensureBookmarkCache,
+    refreshBookmarkCache,
+  } = useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
   const displayValuesRef = useRef<Record<string, string>>({});
   const defaultFormValues = { ...formData };
+  const dashboardFlow = useWizardDashboardFlow({
+    datasetId: portalProps.datasetId,
+    username: portalProps.username,
+    ensureCache: ensureBookmarkCache,
+    refreshCache: refreshBookmarkCache,
+  });
 
   selectedWizard?.fields.forEach((field) => {
     if (!field.id.startsWith("condition")) {
@@ -113,7 +130,7 @@ export function StepForm() {
           cdwConfig,
           wizardOnlyFields,
           selectedWizard.id,
-          displayValuesRef.current,
+          displayValuesRef.current
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -128,6 +145,30 @@ export function StepForm() {
     } else {
       // Default behavior: next-step or undefined
       goForward();
+    }
+  };
+
+  const onOpenDashboard = async (data: Record<string, any>) => {
+    updateFormData(data);
+    if (!selectedWizard || !portalProps.datasetId) return;
+
+    try {
+      const combinedFormData = { ...formData, ...data };
+      const { config: cdwConfig, meta } = await fetchCdwConfig(portalProps.datasetId);
+      const payload = buildWizardSubmitPayload(
+        selectedWizard.fields.filter((field) => !field.isWizardField),
+        combinedFormData,
+        meta,
+        portalProps.datasetId,
+        cdwConfig.chartOptions,
+        cdwConfig,
+        selectedWizard.fields.filter((field) => field.isWizardField),
+        selectedWizard.id,
+        displayValuesRef.current
+      );
+      dashboardFlow.openDashboard({ ...payload, configMeta: meta });
+    } catch (error) {
+      console.error("[Wizards StepForm] Failed to prepare dashboard:", error);
     }
   };
 
@@ -239,8 +280,8 @@ export function StepForm() {
               {hasYearError
                 ? ((fromError?.message || toError?.message) as string)
                 : fromYearValue && !toYearValue
-                  ? "To year is required"
-                  : "From year is required"}
+                ? "To year is required"
+                : "From year is required"}
             </span>
           )}
         </div>
@@ -394,15 +435,26 @@ export function StepForm() {
           <button type="button" onClick={goBack} className={styles.button}>
             Back
           </button>
-          <button
-            type="submit"
-            disabled={!allRequiredFieldsFilled() || !isValid}
-            className={`${styles.button} ${styles.buttonPrimary}`}
-          >
-            <AnalyticsIcon /> {submitLabel}
-          </button>
+          <div className={styles.primaryActions}>
+            <button
+              type="submit"
+              disabled={!allRequiredFieldsFilled() || !isValid}
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              <AnalyticsIcon /> {submitLabel}
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit(onOpenDashboard)}
+              disabled={!allRequiredFieldsFilled() || !isValid}
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              <AnalyticsIcon /> Open Dashboard
+            </button>
+          </div>
         </div>
       </form>
+      <WizardDashboardModal state={dashboardFlow.state} onClose={dashboardFlow.close} onRetry={dashboardFlow.retry} />
     </div>
   );
 }

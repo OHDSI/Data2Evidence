@@ -162,6 +162,11 @@
   margin-top: 24px;
 }
 
+.primaryActions {
+  display: flex;
+  gap: 12px;
+}
+
 .button {
   padding: 10px 20px;
   font-size: 14px;
@@ -325,6 +330,10 @@
   .buttonRow {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .primaryActions {
+    flex-direction: column;
   }
 
   .button {
