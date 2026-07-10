@@ -46,7 +46,7 @@ interface AxisSelection {
   seq: number;
 }
 
-interface MriBookmark {
+export interface MriBookmark {
   filter: {
     configMetadata: { id: string; version: string };
     cards: BooleanContainer;
