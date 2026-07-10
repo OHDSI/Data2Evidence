@@ -15,10 +15,10 @@
     "dev": "vite"
   },
   "dependencies": {
-    "@ohdsi/atlas3": "0.1.0-20260621142339-0a13950",
+    "@ohdsi/atlas3": "0.1.0-20260707025242-3a0f3f3",
     "@ohdsi/network-plugin": "file:../ui/libs/react-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:../ui/libs/react-notebook/plugins/notebook-plugin",
-    "@ohdsi/pythia-plugin": "0.1.0-develop.2.g8edf28a",
+    "@ohdsi/pythia-plugin": "0.1.0-develop.6.gc427022",
     "@ohdsi/results-viewer": "file:../ui/libs/react-notebook/plugins/results-viewer",
     "@ohdsi/strategus-plugin": "file:../ui/libs/react-notebook/plugins/strategus",
     "@ohdsi/studies-plugin": "file:../ui/libs/react-notebook/plugins/studies",

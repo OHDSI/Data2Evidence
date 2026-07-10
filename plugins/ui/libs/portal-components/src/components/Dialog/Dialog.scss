@@ -1,7 +1,6 @@
 .alp-dialog {
   padding: 19px 24px;
-  // App sans-serif (GT-America) instead of MUI's Roboto; fallback chain covers Storybook.
-  font-family: var(--font-family-secondary, "GT-America", Helvetica, Arial, sans-serif);
+  font-family: var(--font-family-secondary, "GT-America", "IBM Plex Sans Variable", "IBM Plex Sans", Helvetica, Arial, sans-serif);
 
   &__title {
     display: flex;

@@ -35,6 +35,93 @@ describe('store - patientList', () => {
         })
       })
     })
+
+    describe('initPLModel', () => {
+      const createAttribute = ({ configPath, isInitialInPatientList = false }) => ({
+        getConfigPath: () => configPath,
+        isInitialInPatientList: () => isInitialInPatientList,
+      })
+
+      const createPatientListConfig = ({
+        initialColumns = [],
+        basicAttributes = [],
+      }: {
+        initialColumns?: string[]
+        basicAttributes?: Array<{ getConfigPath: () => string; isInitialInPatientList: () => boolean }>
+      }) => ({
+        getDefaultPageSize: () => 20,
+        getInitialTableColumns: () => initialColumns,
+        getBasicDataCols: () => ({
+          attributes: basicAttributes,
+        }),
+        getAllAttributes: () => basicAttributes,
+      })
+
+      const findInitDataModelCommit = (commit: any) =>
+        commit.mock.calls.find(([mutationType]) => mutationType === types.PL_INIT_DATAMODEL)?.[1]
+
+      it('sorts by pid key in ascending order when available', () => {
+        const commit = vi.fn()
+        const state = {
+          dataModel: {
+            resultDefinition: {
+              selected_attributes: {},
+              sorted_attributes: '',
+              sorting_directions: '',
+            },
+          },
+        }
+        const rootGetters = {
+          getMriFrontendConfig: {
+            getPatientListConfig: () =>
+              createPatientListConfig({
+                initialColumns: ['patient.attributes.pid', 'patient.attributes.smoker'],
+                basicAttributes: [
+                  createAttribute({ configPath: 'patient.attributes.pid' }),
+                  createAttribute({ configPath: 'patient.attributes.smoker' }),
+                ],
+              }),
+          },
+        }
+
+        patientList.actions.initPLModel({ commit, state, rootGetters }, { loadDefault: true })
+        const initDataModelPayload = findInitDataModelCommit(commit)
+
+        expect(initDataModelPayload.resultDefinition.sorted_attributes).toEqual('patient.attributes.pid')
+        expect(initDataModelPayload.resultDefinition.sorting_directions).toEqual('A')
+      })
+
+      it('falls back to first selected initial patient list column in ascending order when pid is unavailable', () => {
+        const commit = vi.fn()
+        const state = {
+          dataModel: {
+            resultDefinition: {
+              selected_attributes: {},
+              sorted_attributes: '',
+              sorting_directions: '',
+            },
+          },
+        }
+        const rootGetters = {
+          getMriFrontendConfig: {
+            getPatientListConfig: () =>
+              createPatientListConfig({
+                initialColumns: ['patient.attributes.age', 'patient.attributes.gender'],
+                basicAttributes: [
+                  createAttribute({ configPath: 'patient.attributes.age', isInitialInPatientList: false }),
+                  createAttribute({ configPath: 'patient.attributes.gender', isInitialInPatientList: true }),
+                ],
+              }),
+          },
+        }
+
+        patientList.actions.initPLModel({ commit, state, rootGetters }, { loadDefault: true })
+        const initDataModelPayload = findInitDataModelCommit(commit)
+
+        expect(initDataModelPayload.resultDefinition.sorted_attributes).toEqual('patient.attributes.gender')
+        expect(initDataModelPayload.resultDefinition.sorting_directions).toEqual('A')
+      })
+    })
   })
   describe('mutations', () => {
     let state
