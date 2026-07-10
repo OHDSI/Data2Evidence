@@ -33,6 +33,7 @@ const props = defineProps<{
   cohortId: string
   wizardConfig?: Record<string, any>
   mriquery?: string
+  dialect?: string | null
 }>()
 
 const store = useStore()
@@ -147,6 +148,7 @@ function sendTokenToIframe(source?: MessageEventSource) {
       cohortId: props.cohortId,
       wizardConfig: props.wizardConfig,
       mriquery: props.mriquery,
+      dialect: props.dialect,
     })
     source?.postMessage(message)
   } catch (err) {

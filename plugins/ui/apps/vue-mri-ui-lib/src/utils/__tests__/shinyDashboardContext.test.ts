@@ -19,6 +19,7 @@ describe('shinyDashboardContext', () => {
       datasetId: 'dataset-1',
       cohortId: 'materialized-cohort-7',
       mriquery: '{"cohortDefinition":{"cards":[]}}',
+      dialect: 'hana',
       timestamp: 123,
       wizardConfig: {
         dashboardType: 'table1',
@@ -37,6 +38,7 @@ describe('shinyDashboardContext', () => {
         datasetId: 'dataset-1',
         cohortId: 'materialized-cohort-7',
         mriquery: '{"cohortDefinition":{"cards":[]}}',
+        dialect: 'hana',
         wizardConfig: {
           dashboardType: 'table1',
           conceptSets: [
@@ -46,6 +48,17 @@ describe('shinyDashboardContext', () => {
         },
       },
     })
+  })
+
+  it('defaults dialect to null when not provided', () => {
+    const message = buildShinyDashboardAuthMessage({
+      token: 'bearer-token',
+      datasetId: 'dataset-1',
+      cohortId: 'materialized-cohort-7',
+      timestamp: 123,
+    })
+
+    expect(message.context.dialect).toBeNull()
   })
 
   it('serializes wizard config to a plain object for postMessage', () => {

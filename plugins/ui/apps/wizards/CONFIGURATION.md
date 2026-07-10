@@ -25,7 +25,7 @@ You should customize the wizards configuration when:
 | `ethnicityName` | `ethnicity` |
 | `raceName` | `race` |
 | `meas_concept_name` | `measurementconceptname` |
-| `condition_occ_concept_name` | `conditionconceptname` |
+| `condition_occ_concept_id` | `conditionconceptcode` |
 
 ## Discovering Your Attribute Paths
 

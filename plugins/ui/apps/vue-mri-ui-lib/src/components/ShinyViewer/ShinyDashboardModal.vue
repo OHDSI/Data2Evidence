@@ -15,6 +15,7 @@
             :cohort-id="cohortId"
             :wizard-config="wizardConfig"
             :mriquery="mriquery"
+            :dialect="dialect"
           />
         </div>
       </div>
@@ -31,6 +32,7 @@ const props = defineProps<{
   cohortId: string
   wizardConfig?: Record<string, any>
   mriquery?: string
+  dialect?: string | null
 }>()
 
 const emit = defineEmits<{

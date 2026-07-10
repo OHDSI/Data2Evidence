@@ -140,6 +140,7 @@
       :wizard-config="dashboardFlow.dashboardContext.wizardConfig"
       :conditions="dashboardFlow.dashboardContext.conditions"
       :mriquery="dashboardFlow.dashboardContext.mriquery"
+      :dialect="dashboardFlow.dashboardContext.dialect"
       @close="dashboardFlow.closeDashboardModal"
     />
   </Teleport>
