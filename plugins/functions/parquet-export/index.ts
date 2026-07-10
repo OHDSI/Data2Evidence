@@ -16,6 +16,7 @@ interface SqlQueryTemplate {
 interface DatasetMetadata {
   id: string;
   databaseCode: string;
+  dialect?: string;
   schemaName: string;
   vocabSchemaName: string;
   resultsSchemaName: string;
@@ -77,6 +78,10 @@ function isValidConceptCode(str: string): boolean {
   return typeof str === "string" && /^[a-zA-Z0-9.\-]+$/.test(str);
 }
 
+export function isValidConceptId(str: string): boolean {
+  return typeof str === "string" && /^\d+$/.test(str);
+}
+
 function isValidWildcardFlag(val: string): boolean {
   return Number(val) === 1 || Number(val) === 0;
 }
@@ -112,10 +117,15 @@ const RESERVED_PLACEHOLDERS = new Set([
   "WILDCARD_FLAG3",
   "WILDCARD_FLAG4",
   "WILDCARD_FLAG5",
+  "CONCEPT_ID1",
+  "CONCEPT_ID2",
+  "CONCEPT_ID3",
+  "CONCEPT_ID4",
+  "CONCEPT_ID5",
   "CONCEPT_IDS",
 ]);
 
-function substituteTemplateParams(
+export function substituteTemplateParams(
   sqlTemplate: string,
   params: {
     cohortId: number;
@@ -146,6 +156,7 @@ function substituteTemplateParams(
   }
   for (let i = 1; i <= 5; i++) {
     const conceptCodeKey = `CONCEPT_CODE${i}`;
+    const conceptIdKey = `CONCEPT_ID${i}`;
     const wildcardFlagKey = `WILDCARD_FLAG${i}`;
     if (
       conceptCodeKey in additionalParams &&
@@ -153,6 +164,14 @@ function substituteTemplateParams(
     ) {
       if (!isValidConceptCode(additionalParams[conceptCodeKey])) {
         throw new Error(`Invalid ${conceptCodeKey}`);
+      }
+    }
+    if (
+      conceptIdKey in additionalParams &&
+      additionalParams[conceptIdKey] !== ""
+    ) {
+      if (!isValidConceptId(additionalParams[conceptIdKey])) {
+        throw new Error(`Invalid ${conceptIdKey}`);
       }
     }
     if (
@@ -222,6 +241,13 @@ function substituteTemplateParams(
       /\{\{WILDCARD_FLAG5\}\}/g,
       additionalParams["WILDCARD_FLAG5"] || "",
     )
+    // Numeric concept ids are substituted unquoted; empty slots default to 0
+    // so the SQL stays valid (templates filter out concept_id = 0).
+    .replace(/\{\{CONCEPT_ID1\}\}/g, additionalParams["CONCEPT_ID1"] || "0")
+    .replace(/\{\{CONCEPT_ID2\}\}/g, additionalParams["CONCEPT_ID2"] || "0")
+    .replace(/\{\{CONCEPT_ID3\}\}/g, additionalParams["CONCEPT_ID3"] || "0")
+    .replace(/\{\{CONCEPT_ID4\}\}/g, additionalParams["CONCEPT_ID4"] || "0")
+    .replace(/\{\{CONCEPT_ID5\}\}/g, additionalParams["CONCEPT_ID5"] || "0")
     .replace(
       /\{\{CONCEPT_IDS\}\}/g,
       conceptIds ? conceptIds.join(",") : "",
@@ -470,6 +496,32 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
+    // The dataset dialect determines which condition identifier the SQL template
+    // expects: HANA matches on concept_code ({{CONCEPT_CODEn}}), non-HANA
+    // (duckdb/postgres) on concept_id ({{CONCEPT_IDn}}). Guard against a template
+    // seeded for the wrong dialect so the failure is explicit, not an empty result.
+    const isHana = (dataset.dialect || "").toLowerCase() === "hana";
+    const templateUsesConceptId = /\{\{CONCEPT_ID[1-5]\}\}/.test(
+      template.sqlText,
+    );
+    const templateUsesConceptCode = /\{\{CONCEPT_CODE[1-5]\}\}/.test(
+      template.sqlText,
+    );
+    if (isHana && templateUsesConceptId) {
+      return res.status(400).json({
+        error: "Dialect mismatch",
+        message:
+          "HANA datasets expect concept_code ({{CONCEPT_CODEn}}) placeholders, but the template uses concept_id",
+      });
+    }
+    if (!isHana && templateUsesConceptCode) {
+      return res.status(400).json({
+        error: "Dialect mismatch",
+        message:
+          "Non-HANA datasets expect concept_id ({{CONCEPT_IDn}}) placeholders, but the template uses concept_code",
+      });
+    }
+
     const format =
       (req.body.format as string | undefined)?.toLowerCase() || "parquet";
     if (format !== "parquet" && format !== "json") {
@@ -630,5 +682,9 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 app.use("/parquet-export", router);
-app.listen(8000);
+
+// Only start the server when run directly (not when imported by tests).
+if (import.meta.main) {
+  app.listen(8000);
+}
   
