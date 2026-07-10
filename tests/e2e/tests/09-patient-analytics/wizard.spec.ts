@@ -372,6 +372,7 @@ test(TEST_NAME, async ({ page }) => {
                                 Shiny.setInputValue('d2e_cohortId', data.context.cohortId, {priority: 'event'});
                                 Shiny.setInputValue('d2e_wizardConfig', data.context.wizardConfig, {priority: 'event'});
                                 Shiny.setInputValue('d2e_mriquery', data.context.mriquery, {priority: 'event'});
+                                Shiny.setInputValue('d2e_dialect', data.context.dialect, {priority: 'event'});
                             }
                             
                             if (data.parentOrigin) {
@@ -490,8 +491,9 @@ test(TEST_NAME, async ({ page }) => {
                     'cohortId': None,
                     'wizardConfig': None,
                     'mriquery': None,
+                    'dialect': None,
                 }
-                
+
                 try:
                     if hasattr(input, 'd2e_datasetId') and input.d2e_datasetId():
                         context['datasetId'] = str(input.d2e_datasetId())
@@ -501,7 +503,9 @@ test(TEST_NAME, async ({ page }) => {
                         context['wizardConfig'] = input.d2e_wizardConfig()
                     if hasattr(input, 'd2e_mriquery') and input.d2e_mriquery():
                         context['mriquery'] = input.d2e_mriquery()
-                    
+                    if hasattr(input, 'd2e_dialect') and input.d2e_dialect():
+                        context['dialect'] = str(input.d2e_dialect())
+
                     if context['datasetId']:
                         return context
                 except Exception as e:
@@ -515,6 +519,7 @@ test(TEST_NAME, async ({ page }) => {
                         context['cohortId'] = str(ctx.cohortId) if hasattr(ctx, 'cohortId') and ctx.cohortId else None
                         context['wizardConfig'] = ctx.wizardConfig.to_py() if hasattr(ctx, 'wizardConfig') and ctx.wizardConfig else None
                         context['mriquery'] = str(ctx.mriquery) if hasattr(ctx, 'mriquery') and ctx.mriquery else None
+                        context['dialect'] = str(ctx.dialect) if hasattr(ctx, 'dialect') and ctx.dialect else None
                 except Exception as e:
                     print(f"Error getting context from globalThis: {e}")
                 
@@ -585,17 +590,31 @@ test(TEST_NAME, async ({ page }) => {
                 end_year = int(year_range.get("to", datetime.now().year))
                     
                 conditions = wizard_config.get("conditions", []) if wizard_config else []
-                
-                concept_codes = []
+
+                # HANA datasets match conditions on concept_code; non-HANA
+                # (duckdb/postgres) on concept_id. Default to legacy concept_code
+                # when the dialect is unknown.
+                dialect = str(ctx.get("dialect") or "").lower()
+                is_hana = dialect == "hana" or not dialect
+                key = "CONCEPT_CODE" if is_hana else "CONCEPT_ID"
+
+                condition_filters = []
                 for idx in range(5):
                     filter_item = {}
                     if idx < len(conditions):
-                        filter_item[f"CONCEPT_CODE{idx+1}"] = sanitize_input(conditions[idx].get("value", ""))
+                        raw = sanitize_input(str(conditions[idx].get("value", "")))
+                        if is_hana:
+                            filter_item[f"{key}{idx+1}"] = raw
+                        else:
+                            try:
+                                filter_item[f"{key}{idx+1}"] = int(raw)
+                            except (ValueError, TypeError):
+                                filter_item[f"{key}{idx+1}"] = 0
                         filter_item[f"WILDCARD_FLAG{idx+1}"] = 1 if conditions[idx].get("useDescendants", False) else 0
                     else:
-                        filter_item[f"CONCEPT_CODE{idx+1}"] = "abc123"
+                        filter_item[f"{key}{idx+1}"] = "abc123" if is_hana else 0
                         filter_item[f"WILDCARD_FLAG{idx+1}"] = 0
-                    concept_codes.append(filter_item)
+                    condition_filters.append(filter_item)
                     
                 body = {
                     "datasetId": dataset_id,
@@ -608,7 +627,7 @@ test(TEST_NAME, async ({ page }) => {
                         "from": str(start_year),
                         "to": str(end_year)
                     },
-                    "conditions": concept_codes
+                    "conditions": condition_filters
                 }
                     
                 api_url = f"{origin}/parquet-export"
@@ -659,14 +678,14 @@ test(TEST_NAME, async ({ page }) => {
                     start_year = year_range.get("from", "")
                     end_year = year_range.get("to", "")
                     conditions = wizard_config.get("conditions", [])
-                    concept_code = conditions[0].get("value", "N/A") if conditions else "N/A"
+                    condition_label = (conditions[0].get("displayName") or conditions[0].get("value", "N/A")) if conditions else "N/A"
                     year_text = f"from {start_year} to {end_year}" if start_year and end_year else "for selected years"
                 else:
-                    concept_code = "N/A"
+                    condition_label = "N/A"
                     year_text = "for selected years"
-                
+
                 return ui.p(
-                    f"Breakdown by age, gender, race, ethnicity of patients who had the condition {concept_code} {year_text}",
+                    f"Breakdown by age, gender, race, ethnicity of patients who had the condition {condition_label} {year_text}",
                     style="margin: 0 0 20px 0; color: #7f8c8d;"
                 )
             
@@ -898,7 +917,7 @@ test(TEST_NAME, async ({ page }) => {
     await expect(sql).toBeVisible()
     await sql.click()
     await sql.fill(
-      "WITH ancestor_concepts AS (\n    SELECT\n        c.concept_id AS ancestor_concept_id,\n        cc.concept_code,\n        cc.wildcard_flag\n    FROM (\n        SELECT '{{CONCEPT_CODE1}}' AS concept_code, {{WILDCARD_FLAG1}} AS wildcard_flag\n    ) cc\n    INNER JOIN {{VOCAB_SCHEMA}}.concept c\n    ON c.concept_code = cc.concept_code\n        AND UPPER(c.domain_id) = 'CONDITION'\n),\n\nconcept_set AS (\n    SELECT\n        ac.concept_code,\n        ac.ancestor_concept_id,\n        COALESCE(ca.descendant_concept_id, ac.ancestor_concept_id) AS condition_source_concept_id\n    FROM ancestor_concepts ac\n    LEFT JOIN {{VOCAB_SCHEMA}}.concept_ancestor ca\n        ON ac.ancestor_concept_id = ca.ancestor_concept_id\n        AND ac.wildcard_flag = 1\n    WHERE ac.ancestor_concept_id != 0\n),\n\nbins AS (\n  SELECT\n    CAST((n * 5) AS VARCHAR) || '-' || CAST((n * 5) + 4 AS VARCHAR) AS age_bin,\n    n * 5 AS bin_start\n  FROM (\n    SELECT UNNEST(generate_series(0, 17)) AS n\n  )\n  UNION ALL\n  SELECT '90+', 90\n),\n\nperson_ages AS (\n  SELECT\n    p.person_id,\n    g.concept_name AS gender_concept_name,\n    EXTRACT(YEAR FROM CURRENT_DATE) AS year,\n    (COALESCE(EXTRACT(YEAR FROM d.death_date), EXTRACT(YEAR FROM CURRENT_DATE)) - p.year_of_birth) AS age\n  FROM {{SCHEMA}}.person p\n  INNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\n  LEFT JOIN {{SCHEMA}}.death d ON p.person_id = d.person_id\n  LEFT JOIN {{VOCAB_SCHEMA}}.concept g ON p.gender_concept_id = g.concept_id\n  INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n  INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n  WHERE c.cohort_definition_id = {{COHORT_ID}}\n    AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n),\n\ngender_age_counts AS (\n  SELECT\n    gender_concept_name,\n    CASE\n      WHEN age >= 90 THEN '90+'\n      ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR)\n    END AS age_bin,\n    CASE\n      WHEN age >= 90 THEN 90\n      ELSE CAST(age / 5 AS INTEGER) * 5\n    END AS bin_start,\n    COUNT(DISTINCT person_id) AS persons\n  FROM person_ages\n  GROUP BY gender_concept_name,\n    CASE WHEN age >= 90 THEN '90+' ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR) END,\n    CASE WHEN age >= 90 THEN 90 ELSE CAST(age / 5 AS INTEGER) * 5 END\n)\n\nSELECT\n    'race' AS attribute,\n    COALESCE(r.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept r ON p.race_concept_id = r.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY r.concept_name\n\nUNION ALL\n\nSELECT\n    'ethnicity' AS attribute,\n    COALESCE(e.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept e ON p.ethnicity_concept_id = e.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY e.concept_name\n\nUNION ALL\n\nSELECT\n  'gender' AS attribute,\n  COALESCE(g.gender_concept_name, '') AS attribute_value,\n  b.age_bin,\n  COALESCE(c.persons, 0) AS persons\nFROM bins b\nCROSS JOIN (\n  SELECT DISTINCT gender_concept_name FROM person_ages\n) g\nLEFT JOIN gender_age_counts c\n  ON c.gender_concept_name = g.gender_concept_name AND c.bin_start = b.bin_start\n\nUNION ALL\n\nSELECT\n  'condition_start_year' AS attribute,\n  CAST(t1.y_year AS VARCHAR) AS attribute_value,\n  NULL AS age_bin,\n  COUNT(DISTINCT t2.person_id) AS persons\nFROM (\n  SELECT UNNEST(generate_series({{STARTYEAR}}, {{ENDYEAR}})) AS y_year\n) t1\nLEFT JOIN (\n    SELECT\n        p.person_id,\n        EXTRACT(YEAR FROM co.condition_start_date) AS condition_start_year\n    FROM {{SCHEMA}}.person p\n    INNER JOIN {{RESULTS_SCHEMA}}.cohort c\n        ON p.person_id = c.subject_id\n        AND c.cohort_definition_id = {{COHORT_ID}}\n    INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n    INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n        AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n) t2\nON t1.y_year = t2.condition_start_year\nGROUP BY t1.y_year\nORDER BY attribute_value ASC"
+      "WITH ancestor_concepts AS (\n    SELECT\n        c.concept_id AS ancestor_concept_id,\n        c.concept_code,\n        cc.wildcard_flag\n    FROM (\n        SELECT {{CONCEPT_ID1}} AS concept_id, {{WILDCARD_FLAG1}} AS wildcard_flag\n    ) cc\n    INNER JOIN {{VOCAB_SCHEMA}}.concept c\n    ON c.concept_id = cc.concept_id\n        AND UPPER(c.domain_id) = 'CONDITION'\n    WHERE cc.concept_id != 0\n),\n\nconcept_set AS (\n    SELECT\n        ac.concept_code,\n        ac.ancestor_concept_id,\n        COALESCE(ca.descendant_concept_id, ac.ancestor_concept_id) AS condition_source_concept_id\n    FROM ancestor_concepts ac\n    LEFT JOIN {{VOCAB_SCHEMA}}.concept_ancestor ca\n        ON ac.ancestor_concept_id = ca.ancestor_concept_id\n        AND ac.wildcard_flag = 1\n    WHERE ac.ancestor_concept_id != 0\n),\n\nbins AS (\n  SELECT\n    CAST((n * 5) AS VARCHAR) || '-' || CAST((n * 5) + 4 AS VARCHAR) AS age_bin,\n    n * 5 AS bin_start\n  FROM (\n    SELECT UNNEST(generate_series(0, 17)) AS n\n  )\n  UNION ALL\n  SELECT '90+', 90\n),\n\nperson_ages AS (\n  SELECT\n    p.person_id,\n    g.concept_name AS gender_concept_name,\n    EXTRACT(YEAR FROM CURRENT_DATE) AS year,\n    (COALESCE(EXTRACT(YEAR FROM d.death_date), EXTRACT(YEAR FROM CURRENT_DATE)) - p.year_of_birth) AS age\n  FROM {{SCHEMA}}.person p\n  INNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\n  LEFT JOIN {{SCHEMA}}.death d ON p.person_id = d.person_id\n  LEFT JOIN {{VOCAB_SCHEMA}}.concept g ON p.gender_concept_id = g.concept_id\n  INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n  INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n  WHERE c.cohort_definition_id = {{COHORT_ID}}\n    AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n),\n\ngender_age_counts AS (\n  SELECT\n    gender_concept_name,\n    CASE\n      WHEN age >= 90 THEN '90+'\n      ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR)\n    END AS age_bin,\n    CASE\n      WHEN age >= 90 THEN 90\n      ELSE CAST(age / 5 AS INTEGER) * 5\n    END AS bin_start,\n    COUNT(DISTINCT person_id) AS persons\n  FROM person_ages\n  GROUP BY gender_concept_name,\n    CASE WHEN age >= 90 THEN '90+' ELSE CAST(CAST(age / 5 AS INTEGER) * 5 AS VARCHAR) || '-' || CAST(CAST(age / 5 AS INTEGER) * 5 + 4 AS VARCHAR) END,\n    CASE WHEN age >= 90 THEN 90 ELSE CAST(age / 5 AS INTEGER) * 5 END\n)\n\nSELECT\n    'race' AS attribute,\n    COALESCE(r.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept r ON p.race_concept_id = r.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY r.concept_name\n\nUNION ALL\n\nSELECT\n    'ethnicity' AS attribute,\n    COALESCE(e.concept_name, '') AS attribute_value,\n    NULL AS age_bin,\n    COUNT(DISTINCT p.person_id) AS persons\nFROM {{SCHEMA}}.person p\nINNER JOIN {{RESULTS_SCHEMA}}.cohort c ON p.person_id = c.subject_id\nLEFT JOIN {{VOCAB_SCHEMA}}.concept e ON p.ethnicity_concept_id = e.concept_id\nINNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\nINNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\nWHERE c.cohort_definition_id = {{COHORT_ID}}\n  AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\nGROUP BY e.concept_name\n\nUNION ALL\n\nSELECT\n  'gender' AS attribute,\n  COALESCE(g.gender_concept_name, '') AS attribute_value,\n  b.age_bin,\n  COALESCE(c.persons, 0) AS persons\nFROM bins b\nCROSS JOIN (\n  SELECT DISTINCT gender_concept_name FROM person_ages\n) g\nLEFT JOIN gender_age_counts c\n  ON c.gender_concept_name = g.gender_concept_name AND c.bin_start = b.bin_start\n\nUNION ALL\n\nSELECT\n  'condition_start_year' AS attribute,\n  CAST(t1.y_year AS VARCHAR) AS attribute_value,\n  NULL AS age_bin,\n  COUNT(DISTINCT t2.person_id) AS persons\nFROM (\n  SELECT UNNEST(generate_series({{STARTYEAR}}, {{ENDYEAR}})) AS y_year\n) t1\nLEFT JOIN (\n    SELECT\n        p.person_id,\n        EXTRACT(YEAR FROM co.condition_start_date) AS condition_start_year\n    FROM {{SCHEMA}}.person p\n    INNER JOIN {{RESULTS_SCHEMA}}.cohort c\n        ON p.person_id = c.subject_id\n        AND c.cohort_definition_id = {{COHORT_ID}}\n    INNER JOIN {{SCHEMA}}.condition_occurrence co ON co.person_id = p.person_id\n    INNER JOIN concept_set cs ON co.condition_source_concept_id = cs.condition_source_concept_id\n        AND EXTRACT(YEAR FROM co.condition_start_date) BETWEEN {{STARTYEAR}} AND {{ENDYEAR}}\n) t2\nON t1.y_year = t2.condition_start_year\nGROUP BY t1.y_year\nORDER BY attribute_value ASC"
     )
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByText('Code saved successfully')).toBeVisible()
