@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        default: "0.17.0"
+        default: "0.17.0-beta"
         description: Enter version to use
         required: true
         type: string
 
 env:
-  DEFAULT_VERSION: "0.17.0"
+  DEFAULT_VERSION: "0.17.0-beta"
 
 jobs:
   demosetup:
@@ -47,7 +47,7 @@ jobs:
           VERSION="${VERSION#v}"  
           PLATFORM="linux-x64"   
           mkdir -p d2e-cli
-          curl -L "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e-cli/d2e
+          curl -fSL "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e-cli/d2e
           chmod +x d2e-cli/d2e
           ./d2e-cli/d2e --version || true
       
