@@ -90,6 +90,12 @@ export async function runWizardDashboardFlow(
     candidate ??= selectBestWizardBookmark(items, scope, input.bookmark);
   }
 
+  const cacheOutcome = candidate
+    ? candidate.cohortDefinitionId === undefined
+      ? "hit-unmaterialized"
+      : "hit-ready"
+    : "miss";
+
   if (!candidate) {
     const bookmarkName = input.pendingBookmarkName ?? createWizardBookmarkName((dependencies.now ?? Date.now)());
     dependencies.onBookmarkName?.(bookmarkName);
@@ -142,5 +148,6 @@ export async function runWizardDashboardFlow(
     cohortId: candidate.cohortDefinitionId!,
     wizardConfig: input.wizardConfig,
     mriquery: JSON.stringify(mriQuery),
+    cacheOutcome,
   };
 }

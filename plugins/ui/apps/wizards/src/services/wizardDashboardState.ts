@@ -14,6 +14,7 @@ export interface WizardDashboardResult {
   cohortId: number;
   wizardConfig: Record<string, unknown>;
   mriquery: string;
+  cacheOutcome: "hit-ready" | "hit-unmaterialized" | "miss";
 }
 
 export interface WizardDashboardState {

@@ -27,7 +27,7 @@ describe("Wizard dashboard flow", () => {
       materializeBookmark,
     });
 
-    expect(result).toMatchObject({ bookmarkId: "bookmark-1", cohortId: 42 });
+    expect(result).toMatchObject({ bookmarkId: "bookmark-1", cohortId: 42, cacheOutcome: "hit-ready" });
     expect(JSON.parse(result.mriquery)).toMatchObject({ datasetId: "dataset-1" });
     expect(createBookmark).not.toHaveBeenCalled();
     expect(materializeBookmark).not.toHaveBeenCalled();
@@ -38,7 +38,7 @@ describe("Wizard dashboard flow", () => {
     const materializeBookmark = vi.fn().mockResolvedValue(undefined);
     const poll = vi.fn().mockResolvedValue(candidate({ cohortDefinitionId: 42 }));
 
-    await runWizardDashboardFlow(baseInput, {
+    const result = await runWizardDashboardFlow(baseInput, {
       ensureCache: vi.fn().mockResolvedValue([bookmarkItem()]),
       refreshCache: vi.fn(),
       createBookmark,
@@ -48,6 +48,7 @@ describe("Wizard dashboard flow", () => {
 
     expect(createBookmark).not.toHaveBeenCalled();
     expect(materializeBookmark).toHaveBeenCalledTimes(1);
+    expect(result.cacheOutcome).toBe("hit-unmaterialized");
     expect(poll).toHaveBeenCalledWith(expect.objectContaining({ requirement: "cohort" }));
   });
 
@@ -71,6 +72,7 @@ describe("Wizard dashboard flow", () => {
     });
 
     expect(result.cohortId).toBe(42);
+    expect(result.cacheOutcome).toBe("miss");
     expect(createBookmark).toHaveBeenCalledTimes(1);
     expect(materializeBookmark).toHaveBeenCalledTimes(1);
     expect(poll).toHaveBeenNthCalledWith(1, expect.objectContaining({ requirement: "bookmark" }));

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildShinyDashboardAuthMessage, buildShinyDashboardIframeUrl } from "../utils/shinyDashboardContext";
 import styles from "./ShinyDashboardIframe.module.css";
+import { logWizardDashboardDiagnostic } from "../services/wizardDashboardDiagnostics";
 
 interface ShinyDashboardIframeProps {
   datasetId: string;
@@ -76,6 +77,7 @@ export function ShinyDashboardIframe({
         setIsReady(true);
         sendContext();
       } else if (event.data?.type === "SHINYLIVE_ERROR") {
+        logWizardDashboardDiagnostic({ event: "dashboard-failed" });
         setError("The dashboard reported an error. Please try opening it again.");
       }
     };
