@@ -1465,13 +1465,12 @@ jobs:
           fi
 
       - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
+        uses: dataaxiom/ghcr-cleanup-action@v1
         continue-on-error: true
         with:
-          package-name: ${{ matrix.image }}
-          package-type: container
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
+          packages: ${{ matrix.image }}
+          keep-n-untagged: 3
+          delete-untagged: true
 
   docker-success:
     needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]
