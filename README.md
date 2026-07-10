@@ -100,7 +100,7 @@ Set `VERSION` and your platform, then download it as `d2e`.
 
 **Linux / macOS** — `PLATFORM` is one of `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`:
 ```bash
-VERSION="0.16.0-beta"        # any released version
+VERSION="0.17.0-beta"        # any released version
 PLATFORM="darwin-arm64"      # your OS/arch
 curl -L "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e
 chmod +x d2e
@@ -108,7 +108,7 @@ chmod +x d2e
 
 **Windows (PowerShell)**:
 ```powershell
-$VERSION = "0.16.0-beta"     # any released version
+$VERSION = "0.17.0-beta"     # any released version
 curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-windows-x64.exe"
 ```
 
