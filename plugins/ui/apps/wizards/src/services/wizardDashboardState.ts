@@ -13,6 +13,7 @@ export interface WizardDashboardResult {
   bookmarkName: string;
   cohortId: number;
   wizardConfig: Record<string, unknown>;
+  mriquery: string;
 }
 
 export interface WizardDashboardState {
@@ -23,6 +24,7 @@ export interface WizardDashboardState {
   pendingBookmarkName: string | null;
   result: WizardDashboardResult | null;
   error: string | null;
+  errorStage: Exclude<WizardDashboardStatus, "idle" | "ready" | "error"> | null;
 }
 
 export type WizardDashboardEvent =
@@ -30,7 +32,12 @@ export type WizardDashboardEvent =
   | { type: "stage"; operationId: number; status: Exclude<WizardDashboardStatus, "idle" | "ready" | "error"> }
   | { type: "bookmark-name"; operationId: number; bookmarkName: string }
   | { type: "ready"; operationId: number; result: WizardDashboardResult }
-  | { type: "fail"; operationId: number; message: string }
+  | {
+      type: "fail";
+      operationId: number;
+      message: string;
+      stage: Exclude<WizardDashboardStatus, "idle" | "ready" | "error">;
+    }
   | { type: "close" }
   | { type: "dataset-changed"; datasetId?: string };
 
@@ -42,6 +49,7 @@ export const initialWizardDashboardState: WizardDashboardState = {
   pendingBookmarkName: null,
   result: null,
   error: null,
+  errorStage: null,
 };
 
 export function wizardDashboardReducer(state: WizardDashboardState, event: WizardDashboardEvent): WizardDashboardState {
@@ -59,9 +67,10 @@ export function wizardDashboardReducer(state: WizardDashboardState, event: Wizar
         pendingBookmarkName: event.pendingBookmarkName ?? null,
         result: null,
         error: null,
+        errorStage: null,
       };
     case "stage":
-      return { ...state, status: event.status, error: null };
+      return { ...state, status: event.status, error: null, errorStage: null };
     case "bookmark-name":
       return { ...state, pendingBookmarkName: event.bookmarkName };
     case "ready":
@@ -71,9 +80,10 @@ export function wizardDashboardReducer(state: WizardDashboardState, event: Wizar
         pendingBookmarkName: event.result.bookmarkName,
         result: event.result,
         error: null,
+        errorStage: null,
       };
     case "fail":
-      return { ...state, status: "error", error: event.message, result: null };
+      return { ...state, status: "error", error: event.message, errorStage: event.stage, result: null };
     case "close":
       return { ...state, isOpen: false };
     case "dataset-changed":

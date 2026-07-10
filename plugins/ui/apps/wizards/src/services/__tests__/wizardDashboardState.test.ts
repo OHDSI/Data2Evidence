@@ -19,7 +19,7 @@ describe("wizard dashboard state", () => {
         operationId: 2,
         datasetId: "dataset-1",
       }),
-      { type: "fail", operationId: 1, message: "late failure" }
+      { type: "fail", operationId: 1, message: "late failure", stage: "saving-bookmark" }
     );
 
     expect(state.status).toBe("awaiting-cache");
@@ -37,12 +37,18 @@ describe("wizard dashboard state", () => {
       operationId: 1,
       bookmarkName: "wizards-1783670400000",
     });
-    state = wizardDashboardReducer(state, { type: "fail", operationId: 1, message: "request failed" });
+    state = wizardDashboardReducer(state, {
+      type: "fail",
+      operationId: 1,
+      message: "request failed",
+      stage: "saving-bookmark",
+    });
 
     expect(state).toMatchObject({
       status: "error",
       pendingBookmarkName: "wizards-1783670400000",
       error: "request failed",
+      errorStage: "saving-bookmark",
     });
   });
 

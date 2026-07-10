@@ -28,6 +28,7 @@ describe("Wizard dashboard flow", () => {
     });
 
     expect(result).toMatchObject({ bookmarkId: "bookmark-1", cohortId: 42 });
+    expect(JSON.parse(result.mriquery)).toMatchObject({ datasetId: "dataset-1" });
     expect(createBookmark).not.toHaveBeenCalled();
     expect(materializeBookmark).not.toHaveBeenCalled();
   });
@@ -115,6 +116,24 @@ describe("Wizard dashboard flow", () => {
       })
     ).rejects.toThrow("save failed");
     expect(materializeBookmark).not.toHaveBeenCalled();
+  });
+
+  it("polls without a second materialization after a submitted cohort is still associating", async () => {
+    const materializeBookmark = vi.fn();
+    const poll = vi.fn().mockResolvedValue(candidate({ cohortDefinitionId: 42 }));
+
+    await runWizardDashboardFlow(
+      { ...baseInput, materializationSubmittedForBookmarkId: "bookmark-1" },
+      {
+        ensureCache: vi.fn().mockResolvedValue([bookmarkItem()]),
+        refreshCache: vi.fn(),
+        materializeBookmark,
+        poll,
+      }
+    );
+
+    expect(materializeBookmark).not.toHaveBeenCalled();
+    expect(poll).toHaveBeenCalledWith(expect.objectContaining({ requirement: "cohort" }));
   });
 
   it("generates only the strict timestamp bookmark format", () => {

@@ -29,6 +29,7 @@ export interface RunWizardDashboardFlowInput {
   bookmark: MriBookmark;
   wizardConfig: Record<string, unknown>;
   pendingBookmarkName?: string | null;
+  materializationSubmittedForBookmarkId?: string | null;
   signal?: AbortSignal;
 }
 
@@ -41,6 +42,7 @@ export interface WizardDashboardFlowDependencies {
   now?: () => number;
   onStage?: (stage: FlowStage) => void;
   onBookmarkName?: (bookmarkName: string) => void;
+  onMaterializationSubmitted?: (bookmarkId: string) => void;
 }
 
 export function createWizardBookmarkName(now = Date.now()): string {
@@ -110,15 +112,19 @@ export async function runWizardDashboardFlow(
     });
   }
 
+  const mriQuery = buildMriMaterializationQuery(input.bookmark, input.datasetId);
   if (candidate.cohortDefinitionId === undefined) {
-    stage("materializing");
-    await materializeBookmark({
-      datasetId: input.datasetId,
-      bookmarkId: candidate.bmkId,
-      bookmarkName: candidate.bookmarkname,
-      mriQuery: buildMriMaterializationQuery(input.bookmark, input.datasetId),
-    });
-    throwIfAborted(input.signal);
+    if (input.materializationSubmittedForBookmarkId !== candidate.bmkId) {
+      stage("materializing");
+      await materializeBookmark({
+        datasetId: input.datasetId,
+        bookmarkId: candidate.bmkId,
+        bookmarkName: candidate.bookmarkname,
+        mriQuery,
+      });
+      dependencies.onMaterializationSubmitted?.(candidate.bmkId);
+      throwIfAborted(input.signal);
+    }
     stage("resolving-cohort");
     candidate = await poll({
       refresh: dependencies.refreshCache,
@@ -135,5 +141,6 @@ export async function runWizardDashboardFlow(
     bookmarkName: candidate.bookmarkname,
     cohortId: candidate.cohortDefinitionId!,
     wizardConfig: input.wizardConfig,
+    mriquery: JSON.stringify(mriQuery),
   };
 }

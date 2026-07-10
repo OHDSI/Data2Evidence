@@ -17,6 +17,12 @@
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.25);
 }
 
+.modalReady {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -45,6 +51,17 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+}
+
+.modalReady .content {
+  min-height: 0;
+  flex: 1;
+  padding: 16px;
+}
+
+.dashboard {
+  width: 100%;
+  height: 100%;
 }
 
 .status {

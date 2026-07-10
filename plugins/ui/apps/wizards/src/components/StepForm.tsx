@@ -148,11 +148,10 @@ export function StepForm() {
     }
   };
 
-  const onOpenDashboard = async (data: Record<string, any>) => {
+  const onOpenDashboard = (data: Record<string, any>) => {
     updateFormData(data);
-    if (!selectedWizard || !portalProps.datasetId) return;
-
-    try {
+    dashboardFlow.openDashboard(async () => {
+      if (!selectedWizard || !portalProps.datasetId) throw new Error("Missing Wizard context");
       const combinedFormData = { ...formData, ...data };
       const { config: cdwConfig, meta } = await fetchCdwConfig(portalProps.datasetId);
       const payload = buildWizardSubmitPayload(
@@ -166,10 +165,8 @@ export function StepForm() {
         selectedWizard.id,
         displayValuesRef.current
       );
-      dashboardFlow.openDashboard({ ...payload, configMeta: meta });
-    } catch (error) {
-      console.error("[Wizards StepForm] Failed to prepare dashboard:", error);
-    }
+      return { ...payload, configMeta: meta };
+    });
   };
 
   const renderField = (field: FieldDefinition) => {
@@ -446,7 +443,8 @@ export function StepForm() {
             <button
               type="button"
               onClick={handleSubmit(onOpenDashboard)}
-              disabled={!allRequiredFieldsFilled() || !isValid}
+              disabled={!allRequiredFieldsFilled() || !isValid || dashboardFlow.state.isOpen}
+              aria-busy={dashboardFlow.state.isOpen && dashboardFlow.state.status !== "ready"}
               className={`${styles.button} ${styles.buttonPrimary}`}
             >
               <AnalyticsIcon /> Open Dashboard
@@ -454,7 +452,13 @@ export function StepForm() {
           </div>
         </div>
       </form>
-      <WizardDashboardModal state={dashboardFlow.state} onClose={dashboardFlow.close} onRetry={dashboardFlow.retry} />
+      <WizardDashboardModal
+        state={dashboardFlow.state}
+        onClose={dashboardFlow.close}
+        onRetry={dashboardFlow.retry}
+        datasetId={portalProps.datasetId}
+        getToken={portalProps.getToken}
+      />
     </div>
   );
 }
