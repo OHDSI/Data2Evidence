@@ -34,6 +34,10 @@ export interface CdwConfig {
 export interface ConfigMeta {
   configId: string;
   configVersion: string;
+  dependentConfig?: {
+    configId: string;
+    configVersion: string;
+  };
 }
 
 export interface CdwConfigResult {
