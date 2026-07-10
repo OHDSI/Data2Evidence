@@ -843,6 +843,8 @@ jobs:
         if: success() || failure()
         uses: nick-fields/retry@v3
         id: start
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
@@ -923,6 +925,8 @@ jobs:
 
       - name: Restart d2e services
         if: success() || failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml stop
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions -c ./docker-compose-ci.yml start
@@ -1089,6 +1093,8 @@ jobs:
         if: success() || failure()
         uses: nick-fields/retry@v3
         id: start
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
