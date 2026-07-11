@@ -577,7 +577,7 @@ onErrorCaptured((err, instance, info) => {
               ['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) ? '' : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click="onSelectBookmark(bookmarkDisplay)"
+            @click="['D', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) && onSelectBookmark(bookmarkDisplay)"
             :title="getText('MRI_PA_TOOLTIP_SELECT_BOOKMARK')"
             data-testid="pa-cohort-select-btn"
           >
@@ -596,7 +596,7 @@ onErrorCaptured((err, instance, info) => {
                 : 'icon-button-disabled'
             }`"
             style="width: 32px; height: 32px; display: flex; justify-content: center; align-items: center"
-            @click.stop="canModify(bookmarkDisplay) && renameBookmark(bookmarkDisplay)"
+            @click.stop="['D', 'M', 'D+M'].includes(getBookmarkType(bookmarkDisplay)) && canModify(bookmarkDisplay) && renameBookmark(bookmarkDisplay)"
             :title="
               canModify(bookmarkDisplay)
                 ? getText('MRI_PA_TOOLTIP_RENAME_BOOKMARK')

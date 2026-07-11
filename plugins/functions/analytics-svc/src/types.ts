@@ -246,6 +246,12 @@ export type PluginEndpointStreamResultType = {
     debug?: any;
     noDataReason?: string;
     rowCount?: number;
+    selectedAttributes?: PluginSelectedAttributeType[];
+    cohortBuilderConfigMetaData?: CDMConfigMetaDataType;
+    cdmConfigMetaData?: CDMConfigMetaDataType;
+    auditLogChannelName: string;
+    /** Called after all response data has been written; drops the backing table for DuckDB datasets. */
+    cleanup?: () => Promise<void>;
 };
 
 export type CohortDefinitionType = {

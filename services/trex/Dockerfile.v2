@@ -10,7 +10,7 @@
 # "-with-dx" build passes the trexsql-dx image, which additionally ships the
 # devx code-editor plugin, the devx_ext DuckDB extension, and claude-code/gh.
 # Declared before the first FROM so it is usable in the FROM line.
-ARG BASE_IMAGE=ghcr.io/ohdsi/trexsql:sha-6d83b7e7a5bfbba36b2f20c9c7abec52be4adc2d@sha256:0dafd8d78713687e76475b2952afe8c3bc55b76b0c54cefeba462b1c617d06aa
+ARG BASE_IMAGE=ghcr.io/ohdsi/trexsql:sha-fe68fc7298fe04c0ea8b667c1fdb0ca7e55d946f@sha256:cf41bc415c8ddecb2771f7ee402824a21525a85a995013743fc5d0b97822d1fd
 
 FROM ${BASE_IMAGE} AS base
 

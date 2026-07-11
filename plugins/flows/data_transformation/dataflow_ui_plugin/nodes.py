@@ -403,15 +403,28 @@ class TransformFhirDataNode(Node):
 
         return pd.DataFrame(expanded_rows)
         
-    def get_fhir_structure_definition(self, url: str) -> dict:
-        fhir_api = FhirAPI()
-        print("Getting source structure definition from FHIR server...")
-        print(f"URL: {url}")
-        query = f"?url={url}"
-        response = fhir_api.get(resource_type="StructureDefinition", query=query)
-        if response:
-            entries = response.get("entry", [])
-            return entries[0].get("resource", {}) if entries else {}
+    def get_fhir_structure_definition(self, folder: str, source_resource_name: str) -> dict:
+        # Previous implementation (kept for reference, do not remove):
+        # fhir_api = FhirAPI()
+        # print("Getting source structure definition from FHIR server...")
+        # print(f"URL: {url}")
+        # query = f"?url={url}"
+        # response = fhir_api.get(resource_type="StructureDefinition", query=query)
+        # if response:
+        #     entries = response.get("entry", [])
+        #     return entries[0].get("resource", {}) if entries else {}
+
+        print("Getting source structure definition from local folder...")
+        print(f"FHIR Resource: {source_resource_name}")
+
+        if not os.path.isdir(folder):
+            return {}
+
+        resource_file = os.path.join(folder, f"{source_resource_name}.json")
+        if os.path.isfile(resource_file):
+            with open(resource_file, "r", encoding="utf8") as f:
+                return json.load(f)
+
         return {}
     
     def get_omop_structure_definition_by_url(self, folder: str, incoming_url: str) -> dict:
@@ -454,7 +467,9 @@ class TransformFhirDataNode(Node):
         if omop_table_name is None:
             raise Exception(f"OMOP table mapping not found for target structure definition url: {target_structure_definition_url}")
 
-        source_structure_definition = self.get_fhir_structure_definition(source_structure_definition_url)
+        source_resource_name = source_structure_definition_url.rstrip("/").split("/")[-1]
+        folder = "/app/flows/dataflow_ui_plugin/fhirutils/fhir_structureDefinition"
+        source_structure_definition = self.get_fhir_structure_definition(folder, source_resource_name)
         if not source_structure_definition:
             raise Exception(f"Source Structure Definition not found for url: {source_structure_definition_url}")
 
@@ -462,8 +477,8 @@ class TransformFhirDataNode(Node):
         target_structure_definition = self.get_omop_structure_definition_by_url(folder, target_structure_definition_url)
 
         fhir_resource = None
-        if "content" in input_fhir_df.columns:
-            content_list = input_fhir_df["content"].tolist()
+        if "_raw" in input_fhir_df.columns:
+            content_list = input_fhir_df["_raw"].tolist()
             fhir_resource = content_list if content_list else None
 
         transformed_omop = []
@@ -533,8 +548,8 @@ class TransformFhirDataNode(Node):
             df_to_write = upstream.result
             if not isinstance(df_to_write, pd.DataFrame):
                 return Result(True, f"No input data: result from '{self.dataframe}' is not a dataframe", self, task_run_context)
-            if "content" not in df_to_write.columns or df_to_write["content"].dropna().empty:
-                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' has no FHIR resources in the 'content' column", self, task_run_context)
+            if "_raw" not in df_to_write.columns or df_to_write["_raw"].dropna().empty:
+                return Result(True, f"No input data: the incoming dataframe from '{self.dataframe}' has no FHIR resources in the '_raw' column", self, task_run_context)
             df = self.transform_fhir_data(df_to_write)
             if df is None:
                 raise Exception("Transformation resulted in empty dataframe")
