@@ -3,8 +3,18 @@
   "version": "0.0.99",
   "description": "",
   "main": "index.js",
+  "files": [
+    "flows",
+    "_shared_flow_utils",
+    "__init__.py",
+    "pyproject.toml",
+    "pixi.lock",
+    "renv.lock"
+  ],
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-loyalty-score:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-loyalty-score:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
   },
   "repository": {
     "type": "git",

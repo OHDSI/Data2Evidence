@@ -50,6 +50,12 @@ plugins/flows/**/__pycache__
 plugins/flows/.env
 plugins/flows/**/*private*
 plugins/flows/**/.env*
+# pixi envs + transient prepack staging output (stage_package.sh)
+plugins/flows/*/.pixi/
+plugins/flows/*/flows/
+plugins/flows/*/_shared_flow_utils/
+plugins/flows/*/__init__.py
+plugins/flows/*/*.tgz
 
 ui/resources/*
 !ui/resources/img

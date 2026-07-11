@@ -8,7 +8,7 @@ dependencies = [
     "httpx==0.27.2",
     "ibis-framework[duckdb,postgres]==10.0.0",
     "pandas==2.2.2",
-    "prefect[docker,shell]==3.0.3",
+    "prefect[docker,shell]==3.6.10",
     "psycopg2-binary==2.9.6",
     "pydantic==2.10.6",
     "pyjwt==2.12.0",
@@ -23,3 +23,13 @@ dev = [
     "ruff==0.12.7",
     "uv==0.11.6",
 ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+
+[tool.pixi.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT"
