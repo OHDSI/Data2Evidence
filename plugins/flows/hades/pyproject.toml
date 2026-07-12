@@ -8,16 +8,19 @@ dependencies = [
     "duckdb==1.4.0",
     "genson==1.3.0",
     "httpx==0.27.2",
+    # Undeclared prefect 3.6.x dependency: prefect/workers/base.py imports the
+    # importlib_metadata backport, which opentelemetry-api>=1.43 no longer
+    # provides transitively.
+    "importlib-metadata==8.7.0",
     "ibis-framework[duckdb,postgres]==10.0.0",
     "numpy==2.0.0",
     "openai==0.28",
     "pandas==2.2.2",
-    "prefect[docker,shell]==3.0.3",
-    "psycopg2-binary==2.9.6",
+    "prefect[docker,shell]==3.6.10",
+    "psycopg2-binary==2.9.9",
     "pydantic==2.10.6",
     "pyjwt==2.12.0",
     "python-dotenv==1.2.2",
-    "rpy2==3.5.13",
     "sqlalchemy==2.0.38",
 ]
 
@@ -27,3 +30,51 @@ dev = [
     "pytest==9.0.3",
     "uv==0.11.6",
 ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+r-base = "4.4.3.*"
+# conda rpy2 links against conda r-base; 3.6.x is the earliest series built
+# for r-base 4.4 (bumped from pypi rpy2==3.5.13).
+rpy2 = ">=3.6,<3.7"
+# HADES is validated against Java 11 (JAVA_TOOL_OPTIONS heap tuning below
+# replaces the image's init_rjava.R/.Rprofile mechanism).
+openjdk = "11.*"
+compilers = "*"
+make = "*"
+pkg-config = "*"
+libxml2 = "*"
+libxml2-devel = "*"
+libarchive = "*"
+cairo = "*"
+harfbuzz = "*"
+fribidi = "*"
+libgit2 = "*"
+libsodium = "*"
+krb5 = "*"
+# link-time .so symlinks for -lz/-llzma (conda-forge splits runtime libs
+# libzlib/liblzma from the devel packages; rJava and friends link both)
+zlib = "*"
+liblzma-devel = "*"
+glpk = "*"
+sqlite = "*"
+# rpy2's conda dependency chain brings `packaging`; cap it so the conda-pinned
+# version stays inside ibis-framework 10.0.0's `packaging<25` requirement.
+packaging = "<25"
+
+[tool.pixi.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT"
+# rJava/JNI: libjvm.so sits outside the default linker path of the conda env.
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
+JAVA_TOOL_OPTIONS = "-Xms1g -Xmx4g"
+# renv must compile from source against the conda toolchain; Posit PPM binary
+# packages link against apt-distro libs.
+RENV_CONFIG_PPM_ENABLED = "FALSE"
+
+[tool.pixi.tasks]
+# GITHUB_PAT should be set for the many GitHub installs (rate limits).
+setup-r = "bash setup_r.sh"

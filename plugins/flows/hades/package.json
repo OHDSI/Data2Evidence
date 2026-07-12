@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-hades:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-hades:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
   },
   "repository": {
     "type": "git",
@@ -24,23 +26,23 @@
           "name": "strategus_plugin",
           "entrypoint": "flows.strategus_plugin.flow.strategus_plugin",
           "parameter_openapi_schema": {
-              "title": "Parameters",
-              "type": "object",
-              "properties": {
-                  "json_graph": {
-                      "position": 0,
-                      "title": "json_graph"
-                  },
-                  "options": {
-                      "position": 1,
-                      "title": "options"
-                  }
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "json_graph": {
+                "position": 0,
+                "title": "json_graph"
               },
-              "required": [
-                  "json_graph",
-                  "options"
-              ],
-              "definitions": {}
+              "options": {
+                "position": 1,
+                "title": "options"
+              }
+            },
+            "required": [
+              "json_graph",
+              "options"
+            ],
+            "definitions": {}
           },
           "type": "strategus"
         },
@@ -170,5 +172,15 @@
         }
       ]
     }
-  }
+  },
+  "files": [
+    "flows",
+    "_shared_flow_utils",
+    "__init__.py",
+    "pyproject.toml",
+    "pixi.lock",
+    "renv.lock",
+    "setup_assets.sh",
+    "setup_r.sh"
+  ]
 }
