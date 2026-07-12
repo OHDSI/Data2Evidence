@@ -875,7 +875,7 @@
             }
           },
           "type": "NLP",
-          "command": "/app/run-flow.sh data-transformation-flow"
+          "command": "/app/run-flow.sh data-transformation-flow ner"
         }
       ]
     }

@@ -308,7 +308,8 @@ hana = { features = ["hana"], solve-group = "default" }
 #### Task 3.2: SPIKE — NER environment (timeboxed, 1 day)
 
 - [x] **SPIKE RESULT (2026-07-12): the closure does NOT lock — proven unlockable by metadata.** `en_ner_bc5cdr_md 0.5.4` declares `spacy>=3.7.4,<3.8.0` while `en_core_med7_trf 1.1.0` declares `spacy>=3.8.14,<3.9.0` — mutually exclusive; no resolver can satisfy both. Today's image works only because `--no-deps` installs both models against spacy 3.8.2, violating both declarations.
-- [ ] **Decision needed (options, recommended first):**
+- [x] **RESOLVED (2026-07-12): models-as-assets implemented.** The `ner` pixi environment is self-contained (`no-default-feature`: PyNER's chain needs numpy<2, which the old image's pip layer silently downgraded to; spacy resolves to 3.7.5 per scispacy's declared range — the old image force-installed 3.8.2 violating three declared ranges; now only med7's range stays violated, matching production runtime). Locked: prefect core + scispacy 0.5.5 + spacy 3.7.5 + spacy-transformers + torch-cpu 2.8.0 + nmslib(git) + PyNER 1.0.8 + en_core_web_sm. The two model packages install in `setup-assets` via pinned URL + sha256 with `pip --no-deps` into the ner env. `ner_extract_plugin` command: `/app/run-flow.sh data-transformation-flow ner` (launcher env override; packageutils preserves extending commands on regeneration). **No Docker carve-out needed — all 26 flows migrate.** Runtime NER validation (model load + a smoke extraction) rides the Phase 4 full-stack check.
+- Original options record:
   1. **Models-as-assets:** lock the core NER env normally (spacy 3.8.2, scispacy, spacy-transformers, torch-cpu, nmslib git, PyNER git) in a `ner` feature, and install the two model packages in `setup-assets` via pinned URL + sha256 with `pip install --no-deps` into the env — deterministic parity with today's build-time behavior, moved to provisioning time. nmslib compiles from its git SHA at provisioning (compilers in the ner feature). Env is lockfile-managed except the two data-only model packages.
   2. **Docker carve-out:** `ner_extract_plugin` stays on a residual `docker-pool` + `flow-data-transformation` image (§Not-migrated).
   Follow-up either way: re-publish the models (or a PyNER meta-package) with corrected metadata so option 1 collapses into a plain lock.
@@ -359,7 +360,7 @@ hana = { features = ["hana"], solve-group = "default" }
 
 ## Not migrated (candidates — confirmed during execution)
 
-- `ner_extract_plugin` if the NER closure won't lock (Task 3.2) — stays on a minimal `docker-pool` + `flow-data-transformation` image.
+- (none — `ner_extract_plugin` migrated via the models-as-assets ner environment, Task 3.2)
 - No flows found flagged with image-provenance/compliance requirements.
 
 ## Open risks (ranked)

@@ -28,6 +28,11 @@ install_env() { # $1 = plugin dir
   if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
     pixi install --frozen -e hana --manifest-path "$manifest" || return 1
   fi
+  # Additional named environments some plugins declare (e.g. the NER stack's
+  # self-contained env in data_transformation).
+  if grep -qE '^ner *= \{' "$manifest"; then
+    pixi install --frozen -e ner --manifest-path "$manifest" || return 1
+  fi
   if grep -q '^setup-assets' "$manifest"; then
     (cd "$dir" && pixi run --frozen --manifest-path "$manifest" setup-assets) || return 1
   fi

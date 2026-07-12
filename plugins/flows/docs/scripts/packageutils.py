@@ -130,7 +130,9 @@ def create_prefect_entrypoint(filepath: str, flow_function: str) -> str:
 def modify_plugin(plugin: dict, plugin_name: str, prefect_entrypoint: str, parameter_schema: dict, 
                   plugin_type: str = "", datamodels: list = [], tags: list = [], command: str = ""):
     plugin["name"] = plugin_name
-    if command:
+    if command and not str(plugin.get("command", "")).startswith(command):
+        # Preserve commands extending the base (e.g. an environment override
+        # like ".../run-flow.sh data-transformation-flow ner").
         plugin["command"] = command
     plugin["entrypoint"] = ".".join(
         ["flows"] + prefect_entrypoint.split(".")[1:])

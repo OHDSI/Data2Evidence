@@ -43,6 +43,38 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# NER core stack (lockable). The two model packages (en_ner_bc5cdr_md,
+# en_core_med7_trf) declare mutually exclusive spacy ranges (<3.8.0 vs
+# >=3.8.14) and are installed as pinned assets by setup_assets.sh instead —
+# same --no-deps semantics the previous image build used.
+ner = [
+    # Self-contained environment core (no-default-feature: PyNER's chain
+    # requires numpy<2 — the previous image's pip layer silently downgraded
+    # numpy over the uv env; here the NER env owns its numpy honestly).
+    "prefect[docker,shell]==3.6.10",
+    "importlib-metadata==8.7.0",
+    "fastapi==0.128.0",
+    "numpy==1.26.4",
+    "pandas==2.2.2",
+    "httpx==0.27.2",
+    "pydantic==2.10.6",
+    "pyjwt==2.12.0",
+    "psycopg2-binary==2.9.9",
+    "sqlalchemy==2.0.38",
+    "ibis-framework[duckdb,postgres]==11.0.0",
+    "scispacy==0.5.5",
+    "scipy==1.16.0",
+    # scispacy 0.5.5 requires spacy>=3.7,<3.8 (the old image force-installed
+    # 3.8.2 over it); 3.7.x also satisfies the bc5cdr model. The med7 model
+    # (declared: spacy>=3.8.14) is the single remaining declared-range
+    # violation — unchanged from production, installed as an asset.
+    "spacy>=3.7.0,<3.8.0",
+    "spacy-transformers==1.3.9",
+    "torch @ https://download.pytorch.org/whl/cpu/torch-2.8.0%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+    "nmslib @ git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings",
+    "py-name-entity-recognition @ git+https://github.com/data2evidence/py_name_entity_recognition@release-v1.0.8",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+]
 dataflow_ui = [
     "genson==1.3.0",
     "jsonpath-ng==1.7.0",
@@ -103,6 +135,19 @@ RENV_CONFIG_CACHE_ENABLED = "FALSE"
 [tool.pixi.tasks]
 setup-r = "bash setup_r.sh"
 setup-assets = "bash setup_assets.sh"
+
+# Conda side of the self-contained ner environment (no-default-feature drops
+# the default conda deps): interpreter + toolchain for nmslib's C++ build.
+[tool.pixi.feature.ner.dependencies]
+python = "3.12.*"
+compilers = "*"
+make = "*"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+# Own solve-group: the NER stack's pins (scipy 1.16, torch 2.8 cpu) must not
+# constrain the default environment.
+ner = { features = ["ner"], no-default-feature = true }
 
 # NOTE: the existing [project.optional-dependencies] extras duplicate
 # [project.dependencies] entries, so the default environment already equals

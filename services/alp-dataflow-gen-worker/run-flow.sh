@@ -3,7 +3,8 @@
 # directly as the flow run's command (argv[0]); it must end in `exec` so
 # Prefect signals reach the engine.
 #
-# Usage: run-flow.sh <plugin-short-name>   (e.g. "loyalty-score-flow")
+# Usage: run-flow.sh <plugin-short-name> [environment]
+#   e.g. "run-flow.sh loyalty-score-flow", "run-flow.sh data-transformation-flow ner"
 #
 # Resolution order for the plugin's code+env:
 #   1. The flow run's deployment carries job_variables.plugin_artifact
@@ -12,7 +13,8 @@
 #      (baked release plugins land there at image build).
 set -uo pipefail
 
-name="${1:?usage: run-flow.sh <plugin-short-name>}"
+name="${1:?usage: run-flow.sh <plugin-short-name> [environment]}"
+env_override="${2:-}"
 cache_root="${D2E_FLOWS_CACHE:-/var/lib/d2e-flows}"
 
 plugin_dir=""
@@ -62,11 +64,11 @@ if [ -z "$plugin_dir" ]; then
 fi
 
 manifest="$plugin_dir/pyproject.toml"
-env_name="default"
+env_name="${env_override:-default}"
 # hana features may be declared as [project.optional-dependencies] entries
 # (pixi maps them to features) or pixi-native tables; the environments table
 # always carries a `hana = { features = ... }` line either way.
-if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
+if [ -z "$env_override" ] && [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
   env_name="hana"
 fi
 
