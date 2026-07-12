@@ -55,8 +55,10 @@ ENV PIXI_CACHE_DIR=/opt/pixi/cache \
 
 # xvfb: required by white_rabbit_plugin (Java AWT headless display) and not
 # available on conda-forge — the one flow-specific apt package.
+# git: pixi/uv fetch direct git dependencies (data_transformation's ner env)
+# during provisioning, before any env exists that could provide it.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl python3 xvfb \
+        ca-certificates curl git python3 xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-x86_64-unknown-linux-musl" \
