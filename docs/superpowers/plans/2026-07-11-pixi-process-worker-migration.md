@@ -233,9 +233,11 @@ docker run --rm -w /var/lib/d2e-flows/loyalty-score-flow/<sha> d2e-dataflow-gen-
 
 - [ ] **Step 2: THE POINT — artifact-delivered run without image rebuild.** Bump the plugin version, `npm pack`, hand-upload the tarball to any reachable HTTP endpoint (the d2e supabase-storage service works as a stand-in until `@trex/storage` lands — the launcher only sees a URL + sha), PATCH the pilot deployment's `job_variables.plugin_artifact = {path/url, sha256, name, version}`. Trigger: provisioner/launcher fetches, verifies, provisions on local disk (watch worker logs), run green; second run instant; the run's paths show the **new sha dir**, proving update-without-rebuild.
 
-- [ ] **Step 3: trex-registration sanity check** (behavior verified in source — light check only): flip `PREFECT_POOL=process-pool`/`WORKPOOL_NAME` in `.env.local`, restart trex, confirm deployments register into the process pool with `command` intact and Prefect accepts the four ignored docker variables against the new template (Task 4.2's schema, seeded manually for the check). Unmigrated groups failing to *run* is expected. Revert.
+- [ ] **Step 3: trex-registration sanity check** (behavior verified in source — light check only): flip `PREFECT_POOL=process-pool`/`WORKPOOL_NAME` in `.env.local`, restart trex, confirm deployments register into the process pool with `command` intact and Prefect accepts the four ignored docker variables against the new template (Task 4.2's schema, seeded manually for the check). Unmigrated groups failing to *run* is expected. Revert. **[DEFERRED: needs a local d2e trex stack; the machine's running `alp` stack belongs to another session — do not disturb. Fold into the Phase 4 full-stack verification or run when the stack is free.]**
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
+
+**Phase 0 RESULTS (2026-07-12, isolated pilot stack):** baked run executes flow code in the plugin's pixi env via the command override (fails at `database-credentials` block — expected without a seeded stack; full-green deferred to Phase 4's full-stack check); zero provisioning events on repeat runs; artifact loop proven end-to-end (version bump → tarball → deployment PATCH → watch-loop pre-warm → run from new sha dir, no rebuild/restart); scheduled→terminal ~16s. Findings folded into constraints: `importlib-metadata==8.7.0` needed in **every env incl. the worker's**; `psycopg2-binary` → 2.9.9; no-sdists lock check. Known wart: on CRASHED runs the worker tries to import the flow in its own env for `on_crashed` hooks and logs a `ModuleNotFoundError: flows` traceback — harmless (d2e flows define no such hooks), revisit if hooks are ever added.
 
 ---
 
@@ -303,7 +305,11 @@ hana = { features = ["hana"], solve-group = "default" }
 
 #### Task 3.2: SPIKE — NER environment (timeboxed, 1 day)
 
-- [ ] Feature `ner`, own solve-group: scispacy 0.5.5, spacy 3.8.2, spacy-transformers 1.3.9, scipy 1.16.0, torch cpu (`{ version = "==2.8.0", index = "https://download.pytorch.org/whl/cpu" }`), URL deps for model tarball/wheels, git deps for nmslib (`rev = "2ae5378"`) and PyNER (`tag = "release-v1.0.8"`). `pixi lock` decides. Locks → env `ner`, `ner_extract_plugin` targets `-e ner`. Doesn't lock → plugin stays on Docker (§Not-migrated) + follow-up to modernize PyNER pins.
+- [x] **SPIKE RESULT (2026-07-12): the closure does NOT lock — proven unlockable by metadata.** `en_ner_bc5cdr_md 0.5.4` declares `spacy>=3.7.4,<3.8.0` while `en_core_med7_trf 1.1.0` declares `spacy>=3.8.14,<3.9.0` — mutually exclusive; no resolver can satisfy both. Today's image works only because `--no-deps` installs both models against spacy 3.8.2, violating both declarations.
+- [ ] **Decision needed (options, recommended first):**
+  1. **Models-as-assets:** lock the core NER env normally (spacy 3.8.2, scispacy, spacy-transformers, torch-cpu, nmslib git, PyNER git) in a `ner` feature, and install the two model packages in `setup-assets` via pinned URL + sha256 with `pip install --no-deps` into the env — deterministic parity with today's build-time behavior, moved to provisioning time. nmslib compiles from its git SHA at provisioning (compilers in the ner feature). Env is lockfile-managed except the two data-only model packages.
+  2. **Docker carve-out:** `ner_extract_plugin` stays on a residual `docker-pool` + `flow-data-transformation` image (§Not-migrated).
+  Follow-up either way: re-publish the models (or a PyNER meta-package) with corrected metadata so option 1 collapses into a plain lock.
 
 ---
 
