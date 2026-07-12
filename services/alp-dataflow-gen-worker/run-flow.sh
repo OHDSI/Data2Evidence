@@ -58,6 +58,18 @@ if [ -z "$plugin_dir" ] || [ ! -f "$plugin_dir/.d2e-env-ready" ]; then
   done)"
 fi
 
+# Re-provision before running: a no-op when the ready-marker matches, but it
+# applies stamp deltas — e.g. the HANA driver top-up when the image was baked
+# without INSTALL_SQLALCHEMY_HANA and the worker runs with it enabled.
+# The base stamp comes from the dir's own marker (artifact sha for artifact
+# dirs, lockfile hash for baked dirs), minus any :hana suffix provision_dir
+# re-derives from the current flag.
+if [ -n "$plugin_dir" ] && [ -f "$plugin_dir/pyproject.toml" ] && [ -f "$plugin_dir/.d2e-env-ready" ]; then
+  stamp="$(sed 's/:hana$//' "$plugin_dir/.d2e-env-ready")"
+  /app/provision-envs.sh --dir "$plugin_dir" "$stamp" || {
+    echo "ERROR: provisioning check failed for $plugin_dir" >&2; exit 1; }
+fi
+
 if [ -z "$plugin_dir" ]; then
   echo "ERROR: no provisioned environment found for plugin '$name' under $cache_root" >&2
   exit 1
