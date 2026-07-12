@@ -3,7 +3,9 @@
   "version": "0.0.99",
   "description": "",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
   },
   "repository": {
     "type": "git",
@@ -68,40 +70,61 @@
                   },
                   "schema_name": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Schema Name"
                   },
                   "vocab_schema": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Vocabulary Schema"
                   },
                   "results_schema": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Results Schema"
                   },
                   "datasets": {
                     "anyOf": [
-                      { "items": {}, "type": "array" },
-                      { "type": "null" }
+                      {
+                        "items": {},
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Datasets"
                   },
                   "load_csvs": {
                     "anyOf": [
-                      { "type": "boolean" },
-                      { "type": "null" }
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": false,
                     "title": "Load CSVs into CDM schema"
@@ -131,8 +154,8 @@
               "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"
             },
             {
-                "tag": "flow-level-concurrency",
-                "limit": "CACHE_FLOW_LEVEL_CONCURRENCY"
+              "tag": "flow-level-concurrency",
+              "limit": "CACHE_FLOW_LEVEL_CONCURRENCY"
             }
           ],
           "parameter_openapi_schema": {
@@ -991,5 +1014,15 @@
         }
       ]
     }
-  }
+  },
+  "files": [
+    "flows",
+    "_shared_flow_utils",
+    "__init__.py",
+    "pyproject.toml",
+    "pixi.lock",
+    "renv.lock",
+    "setup_assets.sh",
+    "setup_r.sh"
+  ]
 }

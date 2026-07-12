@@ -129,6 +129,7 @@
     "pyproject.toml",
     "pixi.lock",
     "renv.lock",
-    "setup_assets.sh"
+    "setup_assets.sh",
+    "setup_r.sh"
   ]
 }
