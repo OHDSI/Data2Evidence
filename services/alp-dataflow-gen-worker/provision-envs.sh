@@ -84,8 +84,10 @@ else:
   local tmp
   tmp="$(mktemp -d)" || return 1
   trap 'rm -rf "$tmp"' RETURN
+  # Both headers on purpose: trex's authContext accepts service_role keys only
+  # via `apikey`, while the embedded supabase-storage validates Authorization.
   local auth=()
-  [ -n "${TREX_STORAGE_SERVICE_KEY:-}" ] && auth=(-H "Authorization: Bearer $TREX_STORAGE_SERVICE_KEY")
+  [ -n "${TREX_STORAGE_SERVICE_KEY:-}" ] && auth=(-H "apikey: $TREX_STORAGE_SERVICE_KEY" -H "Authorization: Bearer $TREX_STORAGE_SERVICE_KEY")
   curl -fLsS --retry 3 "${auth[@]}" -o "$tmp/plugin.tgz" "$url" || { log "download failed: $url"; return 1; }
 
   local got
