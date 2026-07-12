@@ -126,8 +126,7 @@ RUN for HOME_DIR in /root /home/node; do \
     chown -R node:node /home/node/.duckdb 2>/dev/null || true
 
 # WebAPI, trexas HTTP/TLS, pgwire, gossip, FHIR.
-# 8001/8000: the trex-core main service + TLS (dx builds, second trexas).
-EXPOSE 8080 33001 33000 5433 5432 4200 8094 8001 8000
+EXPOSE 8080 33001 33000 5433 5432 4200 8094
 
 # Write the internal TLS cert from env, then run the engine. ENTRYPOINT is
 # cleared because the base one gates on TREX_ROOT_KEY, which d2e doesn't use.
