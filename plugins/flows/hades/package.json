@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-hades:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64",
+    "build": "docker build ../../.. -f ../../../services/alp-dataflow-gen-worker/Dockerfile -t d2e-dataflow-gen-worker:local --build-arg GITHUB_PAT=${GITHUB_PAT}",
     "prepack": "bash ../build/stage_package.sh",
     "postpack": "bash ../build/stage_package.sh clean"
   },
