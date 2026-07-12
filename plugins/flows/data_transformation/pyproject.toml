@@ -95,6 +95,10 @@ PYTHONPATH = "$PIXI_PROJECT_ROOT"
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
 RETICULATE_PYTHON = "$PIXI_PROJECT_ROOT/.pixi/envs/default/bin/python"
 RENV_CONFIG_PPM_ENABLED = "FALSE"
+# The global renv cache is shared across environments and serves binaries
+# compiled against a DIFFERENT env's prefix/JDK. Each plugin env compiles
+# its own packages.
+RENV_CONFIG_CACHE_ENABLED = "FALSE"
 
 [tool.pixi.tasks]
 setup-r = "bash setup_r.sh"

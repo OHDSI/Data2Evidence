@@ -86,6 +86,10 @@ LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
 # renv must compile from source against the conda toolchain; Posit PPM binary
 # packages link against apt-distro libs.
 RENV_CONFIG_PPM_ENABLED = "FALSE"
+# The global renv cache is shared across environments and serves binaries
+# compiled against a DIFFERENT env's prefix/JDK (rJava from the base env
+# broke the hades env). Each plugin env compiles its own packages.
+RENV_CONFIG_CACHE_ENABLED = "FALSE"
 
 [tool.pixi.tasks]
 setup-assets = "bash setup_assets.sh"
