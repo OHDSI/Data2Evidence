@@ -136,7 +136,9 @@ packaging = "<25"
 [tool.pixi.activation.env]
 PYTHONPATH = "$PIXI_PROJECT_ROOT"
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
-RETICULATE_PYTHON = "$PIXI_PROJECT_ROOT/.pixi/envs/default/bin/python"
+# venv wrapper created by setup_assets.sh — reticulate rejects the conda-
+# structured env python outright (wants a conda binary to activate it)
+RETICULATE_PYTHON = "$PIXI_PROJECT_ROOT/.pixi/envs/default/reticulate-venv/bin/python"
 RENV_CONFIG_PPM_ENABLED = "FALSE"
 # The global renv cache is shared across environments and serves binaries
 # compiled against a DIFFERENT env's prefix/JDK. Each plugin env compiles

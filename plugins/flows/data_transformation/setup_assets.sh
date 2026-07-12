@@ -8,6 +8,15 @@
 #   HTTP-fetchable artifact (publish the dist as a release tarball) or an OCI
 #   fetch tool. Tracked in the migration plan (Task 3.1).
 set -euo pipefail
+
+# reticulate (R->python, used by ARTEMIS) classifies the pixi env as a conda
+# environment (conda-meta/ present) and refuses it without a conda binary,
+# silently falling back to a private uv python without our packages. A
+# --system-site-packages venv wrapping the same interpreter reads as a plain
+# virtualenv and inherits the full site-packages; RETICULATE_PYTHON points here.
+if [ ! -x ".pixi/envs/default/reticulate-venv/bin/python" ]; then
+  .pixi/envs/default/bin/python -m venv --system-site-packages .pixi/envs/default/reticulate-venv
+fi
 if [ ! -d node_modules/@synanetics/fhir-transform ]; then
   npm install --no-audit --no-fund @synanetics/fhir-transform@0.10.6
 fi
