@@ -63,6 +63,8 @@ pkg-config = "*"
 libxml2 = "*"
 libxml2-devel = "*"
 libarchive = "*"
+# libpq headers + pg_config for RPostgres source builds
+libpq = "*"
 cairo = "*"
 harfbuzz = "*"
 fribidi = "*"
