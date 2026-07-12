@@ -288,7 +288,7 @@ hana = { features = ["hana"], solve-group = "default" }
 
 #### Task 2.2: base group — productionize
 
-- [ ] Manifest + locks committed; baked cache gains base (its `setup-r` runs at image build — own layer, the slow one); pilot-verify `dqd_plugin` (`/app/run-flow.sh d2e-flows`) and `create_cachedb_file_plugin` on a demo dataset; second runs instant. **Artifact-path timing:** provision base from a hand-uploaded artifact on a clean worker and record the wall-clock — that's the ops number for "R plugin update on a live host".
+- [x] **DONE (2026-07-12).** Baked cache gains base; in-image R acceptance passes; `dqd_plugin` and `create_cachedb_file_plugin` pilot runs execute flow code in the base env up to the platform-dependency boundary (`database-credentials` block — full-green needs the seeded stack, Phase 4). Clean base R restore inside the image build: **~15 min** (MAKEFLAGS=-j2). Additional finding: **fastapi pinned to 0.128.0 in every env** — 0.129+ router internals break prefect.server's `PrefectRouter` (ephemeral server / `prefect_test_harness`); 0.128.0 matches the prefecthq/prefect:3.6.10 pairing. Dockerfile restructured to per-group staging+provision layers so single-group changes don't re-run every renv restore. Demo-dataset green runs + artifact-path R timing: folded into Phase 4 full-stack verification. Ops note: hades/dt restores are validated on the host (nice-19/-j2) — the full 7-group image bake runs in CI (a 14GB shared dev machine can't host concurrent multi-GB builds; learned the hard way).
 
 #### Task 2.3: hades group
 
