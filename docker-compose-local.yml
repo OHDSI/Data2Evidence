@@ -132,35 +132,6 @@ services:
       context: .
       dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
 
-  # Pixi process-worker pilot (docs/superpowers/plans/2026-07-11-pixi-process-worker-migration.md
-  # Phase 0). Runs a parallel `process-pool`; production deployments keep using
-  # docker-pool. Removed at cutover (Task 4.3).
-  alp-dataflow-gen-worker-pixi:
-    build:
-      context: .
-      dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
-    image: d2e-dataflow-gen-worker:pixi-local
-    command:
-      - pixi
-      - run
-      - --manifest-path
-      - /opt/worker/pyproject.toml
-      - sh
-      - -c
-      - >-
-        prefect work-pool create 'process-pool' --type process;
-        prefect worker start --pool 'process-pool' --type process
-        --name prefect-process-worker --with-healthcheck
-    environment:
-      PREFECT_API_URL: ${PREFECT_API_URL:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api}
-      INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-false}
-      TREX_STORAGE_URL: ${TREX_STORAGE_URL:-}
-      TREX_STORAGE_SERVICE_KEY: ${TREX_STORAGE_SERVICE_KEY:-}
-    volumes:
-      - trex:/app/duckdb_data
-    networks:
-      - data
-
   alp-logto:
     build:
       context: ./services/alp-logto
