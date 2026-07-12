@@ -70,6 +70,8 @@ liblzma-devel = "*"
 # (e.g. hades' r-duckdb runs `tar xJf`, which execs xz)
 xz = "*"
 glpk = "*"
+# nloptr builds its bundled nlopt with cmake
+cmake = "*"
 sqlite = "*"
 # rpy2's conda dependency chain brings `packaging`; cap it so the conda-pinned
 # version stays inside ibis-framework 10.0.0's `packaging<25` requirement.
@@ -90,6 +92,9 @@ RENV_CONFIG_PPM_ENABLED = "FALSE"
 # compiled against a DIFFERENT env's prefix/JDK (rJava from the base env
 # broke the hades env). Each plugin env compiles its own packages.
 RENV_CONFIG_CACHE_ENABLED = "FALSE"
+# The V8 R package downloads its pinned static libv8 at build time (no
+# conda-forge standalone v8 library exists).
+DOWNLOAD_STATIC_LIBV8 = "1"
 
 [tool.pixi.tasks]
 # GITHUB_PAT should be set for the many GitHub installs (rate limits).
