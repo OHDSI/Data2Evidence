@@ -56,6 +56,12 @@ libxml2-devel = "*"
 libarchive = "*"
 # libpq headers + pg_config for RPostgres source builds
 libpq = "*"
+# graphics stack headers for systemfonts/textshaping/ragg/svglite/png
+freetype = "*"
+fontconfig = "*"
+harfbuzz = "*"
+fribidi = "*"
+libpng = "*"
 cairo = "*"
 harfbuzz = "*"
 fribidi = "*"
