@@ -181,6 +181,7 @@
     "pixi.lock",
     "renv.lock",
     "setup_assets.sh",
-    "setup_r.sh"
+    "setup_r.sh",
+    "rprofile_java.R"
   ]
 }

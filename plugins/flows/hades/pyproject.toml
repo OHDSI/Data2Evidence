@@ -75,6 +75,9 @@ PYTHONPATH = "$PIXI_PROJECT_ROOT"
 # rJava/JNI: libjvm.so sits outside the default linker path of the conda env.
 LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
 JAVA_TOOL_OPTIONS = "-Xms1g -Xmx4g"
+# Aligns rJava's java.parameters with JAVA_TOOL_OPTIONS (see rprofile_java.R);
+# replaces the old image's /app/.Rprofile + init_rjava.R mechanism.
+R_PROFILE_USER = "$PIXI_PROJECT_ROOT/rprofile_java.R"
 # renv must compile from source against the conda toolchain; Posit PPM binary
 # packages link against apt-distro libs.
 RENV_CONFIG_PPM_ENABLED = "FALSE"
