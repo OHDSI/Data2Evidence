@@ -63,7 +63,10 @@ fi
 
 manifest="$plugin_dir/pyproject.toml"
 env_name="default"
-if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q '^\[tool\.pixi\.feature\.hana' "$manifest"; then
+# hana features may be declared as [project.optional-dependencies] entries
+# (pixi maps them to features) or pixi-native tables; the environments table
+# always carries a `hana = { features = ... }` line either way.
+if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
   env_name="hana"
 fi
 

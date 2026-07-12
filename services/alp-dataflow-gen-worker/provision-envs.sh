@@ -25,7 +25,7 @@ install_env() { # $1 = plugin dir
   local dir="$1" manifest="$1/pyproject.toml"
   [ -f "$manifest" ] || { log "no pyproject.toml in $dir"; return 1; }
   pixi install --frozen --manifest-path "$manifest" || return 1
-  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q '^\[tool\.pixi\.feature\.hana' "$manifest"; then
+  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
     pixi install --frozen -e hana --manifest-path "$manifest" || return 1
   fi
   if grep -q '^setup-assets' "$manifest"; then
