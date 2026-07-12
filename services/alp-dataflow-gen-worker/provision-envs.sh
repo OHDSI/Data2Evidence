@@ -38,6 +38,12 @@ install_env() { # $1 = plugin dir
 
 provision_dir() { # $1 = extracted plugin dir, $2 = marker value
   local dir="$1" stamp="$2"
+  # The hana env is part of the provisioned state: an image baked without it
+  # must re-provision (cheap: hardlinks + two pypi packages) when the worker
+  # runs with INSTALL_SQLALCHEMY_HANA=true.
+  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$dir/pyproject.toml" 2>/dev/null; then
+    stamp="$stamp:hana"
+  fi
   if [ "$(cat "$dir/.d2e-env-ready" 2>/dev/null)" = "$stamp" ]; then
     return 0
   fi
@@ -65,8 +71,13 @@ else:
 ')" || return 1
 
   local dest="$cache_root/$name/${sha:0:12}"
-  if [ "$(cat "$dest/.d2e-env-ready" 2>/dev/null)" = "$sha" ]; then
-    return 0
+  local have
+  have="$(cat "$dest/.d2e-env-ready" 2>/dev/null)"
+  if [ "$have" = "$sha" ] || [ "$have" = "$sha:hana" ]; then
+    # Present (possibly needing only the hana env top-up) — no re-download;
+    # provision_dir handles the stamp delta.
+    provision_dir "$dest" "$sha"
+    return $?
   fi
 
   log "fetching $name@${sha:0:12} from $url"

@@ -10,11 +10,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 \
 COPY plugins/flows /src/plugins/flows
 # Same staged layout the npm tarball ships (stage_package.sh is the single
 # source of truth for it), so baked and artifact-delivered plugins are
-# byte-identical. Pilot scope: loyalty_score only; later phases append groups.
-RUN cd /src/plugins/flows/loyalty_score && bash ../build/stage_package.sh && \
-    mkdir -p /staged/loyalty-score-flow/baked && \
-    cp -a flows _shared_flow_utils __init__.py pyproject.toml pixi.lock \
-        /staged/loyalty-score-flow/baked/
+# byte-identical. One entry per bundled group: <repo-dir>:<npm-short-name>.
+RUN set -eu; \
+    for pair in \
+        "loyalty_score:loyalty-score-flow" \
+        "i2b2:i2b2-flow" \
+        "data_management:data-management-flow" \
+        "search_embedding:search-embedding-flow"; do \
+      g="${pair%%:*}"; short="${pair##*:}"; \
+      cd "/src/plugins/flows/$g"; \
+      bash ../build/stage_package.sh; \
+      dest="/staged/$short/baked"; mkdir -p "$dest"; \
+      cp -a flows _shared_flow_utils __init__.py pyproject.toml pixi.lock "$dest/"; \
+      for extra in renv.lock setup_assets.sh; do \
+        [ -f "$extra" ] && cp "$extra" "$dest/" || true; \
+      done; \
+    done
 
 FROM ubuntu:24.04
 ARG PIXI_VERSION=0.72.2
@@ -40,8 +51,9 @@ RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 
 # Baked warm cache: release plugins provisioned at build so fresh workers are
 # instant and offline-capable; runtime artifact updates land beside them.
+# Single RUN: envs hardlink into the shared in-image pixi cache.
 COPY --from=staging /staged /var/lib/d2e-flows
-RUN /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
+RUN set -eu; for d in /var/lib/d2e-flows/*/baked; do /app/provision-envs.sh --dir "$d"; done
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]
