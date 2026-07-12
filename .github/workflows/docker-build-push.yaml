@@ -540,7 +540,7 @@ jobs:
           provenance: false
           sbom: false
           build-args: |
-            BASE_IMAGE=ghcr.io/ohdsi/trexsql-dx:sha-2f0e2d899e76c40dd6af2c7d5f351ab66a572930
+            BASE_IMAGE=ghcr.io/ohdsi/trexsql-dx:sha-bcc2221ab4ebada5a1444cf151008b04c0ecf5bc
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
