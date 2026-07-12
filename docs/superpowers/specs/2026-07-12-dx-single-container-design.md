@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-12
 **Branch:** p-hoffmann/dx
-**Status:** Approved
+**Status:** Implemented (2026-07-12)
 
 ## Goal
 
