@@ -65,15 +65,15 @@ libxml2-devel = "*"
 libarchive = "*"
 # libpq headers + pg_config for RPostgres source builds
 libpq = "*"
-# graphics stack headers for systemfonts/textshaping/ragg/svglite/png
+# graphics stack headers for systemfonts/textshaping/ragg/svglite/png.
+# expat: fontconfig.pc requires expat.pc — without it the whole
+# `pkg-config --cflags fontconfig freetype2` query fails and configure
+# scripts fall back to system paths that don't exist in the env.
 freetype = "*"
 fontconfig = "*"
-harfbuzz = "*"
-fribidi = "*"
 libpng = "*"
+expat = "*"
 cairo = "*"
-harfbuzz = "*"
-fribidi = "*"
 libgit2 = "*"
 libsodium = "*"
 krb5 = "*"
@@ -101,6 +101,9 @@ RENV_CONFIG_PPM_ENABLED = "FALSE"
 # compiled against a DIFFERENT env's prefix/JDK (rJava from the base env
 # broke the hades env). Each plugin env compiles its own packages.
 RENV_CONFIG_CACHE_ENABLED = "FALSE"
+# Host dotfile isolation: a developer's ~/.R/Makevars would otherwise leak
+# arbitrary flags into every package build (seen: -march=native).
+R_MAKEVARS_USER = "/dev/null"
 
 [tool.pixi.tasks]
 setup-assets = "bash setup_assets.sh"
