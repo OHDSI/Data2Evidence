@@ -135,6 +135,7 @@ jobs:
               - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
+              - "docker-compose-local.yml"
               - "scripts/**"
               - "tests/backend_integration_tests/**"
               - ".github/workflows/docker-build-push.yaml"
@@ -146,10 +147,12 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
             e2e:
               - "tests/e2e/**"
+              - "docker-compose-local.yml"
               - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
             regression:
               - "tests/regression/**"
+              - "docker-compose-local.yml"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
