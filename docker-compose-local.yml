@@ -129,8 +129,8 @@ services:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
   alp-dataflow-gen-worker:
     build:
-      context: ./services/alp-dataflow-gen-worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
 
   # Pixi process-worker pilot (docs/superpowers/plans/2026-07-11-pixi-process-worker-migration.md
   # Phase 0). Runs a parallel `process-pool`; production deployments keep using
@@ -138,7 +138,7 @@ services:
   alp-dataflow-gen-worker-pixi:
     build:
       context: .
-      dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile.pixi
+      dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
     image: d2e-dataflow-gen-worker:pixi-local
     command:
       - pixi
