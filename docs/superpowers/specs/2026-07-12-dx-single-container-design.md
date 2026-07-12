@@ -9,9 +9,9 @@
 Collapse the dx overlay's dedicated `trex-dx` node: the `-with-dx` d2e-trex
 image serves the DevX editor from the same `alp-trex` container that runs d2e.
 The overlay shrinks from five services (`trex-dx`, `trex-dx-postgres`,
-`trex-dx-postgrest`, `trex-dx-init`, `devx-workspaces-init`) to two
-(`trex-dx-init`, `trex-dx-postgres`), and DevX moves from its own origin
-(`http://localhost:9001`) to the portal origin (`https://localhost:41100`).
+`trex-dx-postgrest`, `trex-dx-init`, `devx-workspaces-init`) to one one-shot
+(`trex-dx-init`), and DevX moves from its own origin (`http://localhost:9001`)
+to the portal origin (`https://localhost:41100`).
 
 ## Why this is possible now
 
@@ -33,14 +33,35 @@ Three facts, verified against `~/code/trex` (b9409136) and the
    `trexsql-dx:fixed` overlay workaround).
 3. **PostgREST runs in-process.** The `@trex/postgrest` plugin replaced the
    sidecar (upstream `f2f5be8b` cutover, `6297f39b` removed sidecar mode); it
-   is configured purely via `PGRST_*` env vars.
+   is configured purely via `PGRST_*` env vars (`config.ts` reads them
+   generically; the `trexdb.setting` layer only covers
+   maxRows/dbSchema/dbExtraSearchPath/dbPool — the JWT secret must come from
+   `PGRST_JWT_SECRET`).
 
-Postgres itself stays a container: trex has no embedded Postgres, and the
-core-schema migrations (better-auth tables, `authenticator` role, DEK
-wrapping) are real PL/pgSQL. The dedicated `trex-dx-postgres` keeps trex's
-migrations away from d2e's minerva database — its roles (`authenticator`,
-`anon`, `supabase_admin`) are cluster-global and would collide with
-supabase-storage state in minerva.
+Four more, discovered against the running develop stack (they simplify this
+design below what was first approved):
+
+4. **The base compose already provisions trex core in minerva.** `alp-trex`
+   on develop already sets `DATABASE_URL` (→ minerva `alp` DB), `SCHEMA_DIR`,
+   `PLUGINS_DEV_PATH`, `TREX_ROOT_KEY`, `BETTER_AUTH_SECRET/URL`
+   (`docker-compose.yml:414-424`). Verified live: `trexdb` schema and the
+   `authenticator`/`anon` roles exist in `alp`, migrations log `ok`, and
+   `/trex/api/ready` returns 200. **No dedicated dx Postgres is needed** —
+   the "keep migrations away from minerva" rationale is moot because develop
+   already runs them there.
+5. **Caddy already routes DevX paths.** The generated Caddyfile's default
+   handler proxies all unmatched paths (including `/trex/*` and `/plugins/*`)
+   to trex:33001 — verified via `https://localhost:41100/trex/api/ready` →
+   200. **No caddy changes are needed.**
+6. **The d2e image runs as root** (`USER root`, root entrypoint), so the
+   claude/gh config volumes mount under `/root/…` and no chown one-shots are
+   needed.
+7. **`PGRST_JWT_SECRET` must equal HKDF(TREX_ROOT_KEY, "trex.jwt.hs256.v1")**
+   — the value trex derives in-process (`core/server/auth/jwt.ts`). trex's
+   `derive-secrets.ts` computes exactly this into `secrets/derived.env`, but
+   it derives from `secrets/root.env` (generating a random key if absent) and
+   ignores the env var — so the init must seed `root.env` from d2e's
+   `${TREX_ROOT_KEY}` or the JWTs won't verify.
 
 ## Changes
 
@@ -59,79 +80,57 @@ Rewrite header comment to describe the merged topology. Services:
   - `image`: `…d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx`; the `build:`
     section (context `./services/trex`, `BASE_IMAGE` = trexsql-dx pin,
     `PLUGINS_FROM_REGISTRY`) moves here from the deleted `trex-dx`.
-  - `depends_on` (adds to base): `trex-dx-init` completed,
-    `trex-dx-postgres` healthy.
-  - `env_file`: `./secrets/root.env`, `./secrets/derived.env`
-    (both `required: false`; supplies `TREX_ROOT_KEY`, `PGRST_JWT_SECRET`,
-    better-auth secrets).
+  - `depends_on` (adds to base): `trex-dx-init` completed.
+  - `env_file`: `./secrets/derived.env` (`required: false`; supplies
+    `PGRST_JWT_SECRET`. `TREX_ROOT_KEY` already comes from `.env.local` via
+    the base `environment`, which takes precedence over env_file — that is
+    why the init seeds `root.env` FROM `${TREX_ROOT_KEY}`, keeping both
+    derivations aligned.)
   - `volumes` (adds): `devx-workspaces:/tmp/devx-workspaces`,
     `trex-dx-claude-config:/root/.claude`,
-    `trex-dx-gh-config:/root/.config/gh`. The d2e container runs as root, so
-    configs mount under `/root` (no `HOME` override) and no chown init is
-    needed.
-  - `environment` (adds):
-    - `DATABASE_URL=postgres://postgres:${TREX_DX_POSTGRES_PASSWORD:-mypass}@trex-dx-postgres:5432/testdb`
-      (engine attaches it as `_config`)
-    - `SCHEMA_DIR=/usr/src/core/schema` (data node runs core migrations)
-    - `PGRST_DB_URI=postgres://authenticator:authenticator_pass@trex-dx-postgres:5432/testdb`,
+    `trex-dx-gh-config:/root/.config/gh` (root image — no HOME override).
+  - `environment` (adds — NO `DATABASE_URL`/`SCHEMA_DIR`/`PLUGINS_DEV_PATH`
+    overrides; the base already sets them against minerva `alp`):
+    - `PGRST_DB_URI=postgres://authenticator:authenticator_pass@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp`
+      (the `authenticator` role + `public.postgrest_pre_request` were created
+      in `alp` by the core migrations the base stack already runs),
       `PGRST_DB_SCHEMAS=public`, `PGRST_DB_ANON_ROLE=anon`,
       `PGRST_DB_PRE_REQUEST=public.postgrest_pre_request`,
-      `PGRST_OPENAPI_SERVER_PROXY_URI=https://localhost:41100/trex/rest/v1`
-    - `BETTER_AUTH_URL=https://localhost:41100/trex`
-    - `PLUGINS_DEV_PATH=/usr/src/plugins-dev` (devx plugin lives there in the
-      dx base)
+      `PGRST_OPENAPI_SERVER_PROXY_URI=https://localhost:${CADDY_PORT:-${PORT:-443}}/trex/rest/v1`
+    - `BETTER_AUTH_URL=https://localhost:${CADDY_PORT:-${PORT:-443}}/trex`
+      (overrides the base's `http://localhost:33001/trex` — browser flows go
+      through caddy)
     - `TREX_WEB_NAV_EXTRA='[{"path":"/devx","label":"DevX","plugin":"devx"}]'`
     - `GITHUB_CLIENT_ID`, `DEVX_ENCRYPTION_KEY` passthroughs
-    - Pool sizing: `TREX_POOL_SIZE`, `TREX_PG_CONNECTION_LIMIT`,
-      `TREX_POOL_LEASE_TIMEOUT_MS` — must satisfy
-      `TREX_POOL_SIZE <= TREX_PG_CONNECTION_LIMIT <= max_connections (1200)`.
-      If the base compose already sets any of these, keep the base value and
-      only ensure the invariant holds.
-- **`trex-dx-init`** — unchanged (generates `secrets/{root,derived}.env`,
-  idempotent, one-shot).
-- **`trex-dx-postgres`** — unchanged (postgres:16, DB name `testdb` —
-  hardcoded in trex's `V1__initial_schema.sql` grant — `wal_level=logical`,
-  `max_connections=1200`).
-- **Deleted:** `trex-dx`, `trex-dx-postgrest`, `devx-workspaces-init`, host
-  ports 9000/9001. Volumes `devx-workspaces`, `trex-dx-pgdata`,
-  `trex-dx-claude-config`, `trex-dx-gh-config` stay.
+- **`trex-dx-init`** — seeds `secrets/root.env` from `${TREX_ROOT_KEY}` when
+  the file doesn't exist yet, then runs trex's `derive-secrets`
+  (`/usr/local/bin/trex-init`), then chowns the files to uid 1000 so compose
+  (running as the host user) can read them as env_file. Idempotent one-shot.
+- **Deleted:** `trex-dx`, `trex-dx-postgres`, `trex-dx-postgrest`,
+  `devx-workspaces-init`, host ports 9000/9001, volume `trex-dx-pgdata`.
+  Volumes `devx-workspaces`, `trex-dx-claude-config`, `trex-dx-gh-config`
+  stay.
 
-### 3. Caddy routes (`docker-compose.yml`, generated Caddyfile)
+### 3. Caddy routes
 
-Add to the base Caddyfile heredoc, proxying to
-`http://{PROJECT_NAME}-trex.{TLS__INTERNAL__DOMAIN}:33001`:
-
-- `handle /trex/*` — trex shell, better-auth (`/trex/auth/*`),
-  `/trex/api/*`, in-process PostgREST (`/trex/rest/*`)
-- `handle /plugins/*` — DevX UI (`/plugins/trex/devx/`), `devx-api`, and the
-  Vite HMR websocket tunnel (`/plugins/*/devx-api/apps/*/proxy/*`); needs the
-  same websocket matcher treatment as the existing jupyter route
-
-These routes live in the base file (not the overlay) because caddy's config
-is an inline heredoc that an overlay cannot extend without duplicating it
-wholesale. Without the dx overlay they proxy to plain trex — shell endpoints
-respond, devx paths 404 — which is harmless.
-
-Implementation must verify neither prefix collides with existing caddy
-handles or portal SPA routes (check the heredoc for existing `/trex` or
-`/plugins` matchers before adding).
+None. The generated Caddyfile's default handler already proxies `/trex/*`
+and `/plugins/*` to trex:33001 (verified live). Websocket upgrades pass
+through caddy's `reverse_proxy` by default.
 
 ### 4. Startup flow (first boot)
 
-1. `trex-dx-init` writes `secrets/{root,derived}.env` (idempotent;
-   `alp-trex` reads them via `env_file`, so they must exist before the
-   container is *created* — compose ordering handles this via `depends_on`
-   since the init completes before trex starts, but a literal first
-   `docker compose up` creates both simultaneously; the env_files are
-   `required: false`, so a first-boot race yields a trex missing
-   `TREX_ROOT_KEY` that crash-loops until the next `up`. Known compose
-   limitation, same as today. Accepted: the overlay header documents "on the
-   very first boot, run start:dx twice"; no CLI change in this scope.)
-2. `trex-dx-postgres` healthy.
-3. `alp-trex` boots: engine attaches `_config` → runs
-   `trex_migration_run_schema` (data node + `SCHEMA_DIR`) → trexas on 33001
-   starts → compat mounts d2e routes → plugins mount (devx) → better-auth
-   keys written to DB → `/trex/api/ready` flips to 200.
+1. `trex-dx-init` seeds `root.env` from `${TREX_ROOT_KEY}`, derives
+   `secrets/derived.env`, fixes ownership. (`alp-trex` reads `derived.env`
+   via env_file at container *creation*; on a literal first
+   `docker compose up` both are created simultaneously and the env_file is
+   `required: false`, so a first boot can start trex without
+   `PGRST_JWT_SECRET` — DevX REST returns auth errors until the next
+   `up` recreates trex. Known compose limitation. Accepted: the overlay
+   header documents "on the very first boot, run start:dx twice"; no CLI
+   change in this scope.)
+2. `alp-trex` boots exactly as on develop (attach `_config` → migrations →
+   trexas 33001 → compat routes → plugins, now including devx → auth keys →
+   `/trex/api/ready` 200). The only new boot work is the devx plugin mount.
 
 Migration failures print `FAILED` in `alp-trex` logs without killing boot;
 verification (below) catches this via `/trex/api/ready`, which stays non-200
@@ -140,15 +139,16 @@ when auth provisioning failed.
 ### 5. Out of scope
 
 - Logto/better-auth SSO integration (DevX keeps its own better-auth login).
-- Removing the `trex-dx-postgres` container (no embedded Postgres in trex).
+- Embedding Postgres in trex (trex core schema keeps living in minerva `alp`,
+  as develop already has it).
 - Multi-node / remote-session topologies.
 
 ## Verification
 
 Fresh `npm run dx -- clean` + `npm run start:dx`:
 
-1. Containers added by the overlay: exactly `alp-trex-dx-init` (exited 0) and
-   `alp-trex-dx-postgres` (healthy). No `alp-trex-dx`, no postgrest.
+1. Containers added by the overlay: exactly `alp-trex-dx-init` (exited 0).
+   No `alp-trex-dx`, no dx postgres, no postgrest.
 2. `alp-trex` healthy; logs show `Running core schema migrations ... ok` and
    no `FAILED`.
 3. `curl -k https://localhost:41100/d2e/portal/` → 200; portal login works
@@ -172,7 +172,9 @@ Fresh `npm run dx -- clean` + `npm run start:dx`:
   serving a compat-disabled copy of the core (requires patching
   `d2e-compat/index.ts` in the copy at image build).
 - **Shared DuckDB pool**: DevX command sessions and d2e queries now share one
-  Local pool; exhaustion shows as lease timeouts. Mitigation: pool-size
-  invariant above.
+  Local pool; exhaustion shows as lease timeouts. Unchanged from develop
+  (base sets `TREX_POOL_SIZE=1024` against minerva `max_connections=1000` —
+  a pre-existing headroom wrinkle this design neither worsens nor fixes; the
+  in-process PostgREST adds ~10 connections via `PGRST_DB_POOL` default).
 - **Single origin**: `BETTER_AUTH_URL` pins DevX auth to
   `https://localhost:41100`; direct-port access goes away by design.
