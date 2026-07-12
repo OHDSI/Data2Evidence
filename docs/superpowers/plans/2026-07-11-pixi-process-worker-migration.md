@@ -18,6 +18,7 @@
 ## Global Constraints
 
 - Prefect server/worker: `prefecthq/prefect:3.6.10-python3.12`; **every flow env pins `prefect==3.6.10`** (bumped from today's 3.0.3 so engine and server match; keep each group's extras, e.g. `[docker,shell]`, `[dask,docker,shell]`). If a companion pin conflicts at `pixi lock` time (e.g. `prefect-shell==0.3.1`), bump it to the nearest compatible release and record it in the group's commit message.
+- **Every group additionally pins** (found in Phase 0): `importlib-metadata==8.7.0` (prefect 3.6.x imports the backport in `workers/base.py` without declaring it; `opentelemetry-api>=1.43` no longer provides it transitively) and `psycopg2-binary==2.9.9` instead of 2.9.6 (first release with cp312 wheels; 2.9.6 compiles from source, which runtime-provisioned envs must never do). Per-group check after locking: `grep 'pypi: https.*\.tar\.gz' pixi.lock` must be empty (no sdists — binary-only envs).
 - Python `==3.12.*` in every flow env; R `4.4.3` in R groups; Java 17 everywhere except hades (Java 11); duckdb `1.4.0`.
 - Engine entrypoint: `prefect flow-run execute` (what all existing commands and CI use; also the 3.6.10 process worker's default).
 - Process workers exec the command without a shell: commands must be plain argv (a `#!` script as argv[0] is fine; `bash -c '...'` is not).
@@ -63,7 +64,7 @@ Keep the existing **7 groups = 7 pixi projects** (one env per group; each group 
 | hades (2) | python 3.12, r-base 4.4.3, rpy2, openjdk 11, compilers, make, pkg-config | current list | renv.lock (280 pkgs: full HADES); `JAVA_TOOL_OPTIONS=-Xms1g -Xmx4g` via pixi activation env; GITHUB_PAT for GitHub installs |
 | data_transformation (9) | python 3.12, r-base 4.4.3, rpy2, openjdk 17, nodejs, compilers, make, pkg-config (+xvfb if conda-forge has it — A6) | current list (ibis 11, dask extra, pydicom, …) | renv.lock (171 pkgs incl. ARTEMIS); WhiteRabbit dist; NLP CUI zip; fhir-transform npm (`setup-assets`); **NER — A4**. .NET SDK 6 dropped as unused (A6) |
 
-Universal core shared by all 7 (dedupes via pixi cache hardlinks): httpx 0.27.2, ibis-framework[duckdb,postgres], pandas 2.2.2, prefect==3.6.10, psycopg2-binary 2.9.6, pydantic 2.10.6, pyjwt 2.12.0, sqlalchemy 2.0.38.
+Universal core shared by all 7 (dedupes via pixi cache hardlinks): httpx 0.27.2, ibis-framework[duckdb,postgres], pandas 2.2.2, prefect==3.6.10, **psycopg2-binary 2.9.6 → 2.9.9 in every group** (2.9.6 has no cp312 wheels — today's image builds silently compile it from source with gcc/libpq-dev; runtime-provisioned envs must not compile, and 2.9.9 is the first release with cp312 manylinux wheels — found at Task 0.2), pydantic 2.10.6, pyjwt 2.12.0, sqlalchemy 2.0.38.
 
 **Principle:** per-plugin non-Python needs (Java version, node, ant, R itself) belong in the plugin's conda deps; assets ship in the tarball or are fetched by its `setup-assets` task with pinned URLs + checksums. The worker image carries only what conda-forge cannot provide.
 

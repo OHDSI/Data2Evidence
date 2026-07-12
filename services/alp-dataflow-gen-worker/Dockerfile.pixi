@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+# D2E dataflow process worker: generic base (pixi + prefect) with a baked warm
+# cache of the release's bundled flow plugins. Flow envs are pixi projects
+# provisioned from plugin artifacts (see run-flow.sh / provision-envs.sh);
+# installing or updating a flow plugin never requires rebuilding this image.
+
+FROM ubuntu:24.04 AS staging
+RUN apt-get update && apt-get install -y --no-install-recommends python3 \
+    && rm -rf /var/lib/apt/lists/*
+COPY plugins/flows /src/plugins/flows
+# Same staged layout the npm tarball ships (stage_package.sh is the single
+# source of truth for it), so baked and artifact-delivered plugins are
+# byte-identical. Pilot scope: loyalty_score only; later phases append groups.
+RUN cd /src/plugins/flows/loyalty_score && bash ../build/stage_package.sh && \
+    mkdir -p /staged/loyalty-score-flow/baked && \
+    cp -a flows _shared_flow_utils __init__.py pyproject.toml pixi.lock \
+        /staged/loyalty-score-flow/baked/
+
+FROM ubuntu:24.04
+ARG PIXI_VERSION=0.72.2
+ENV PIXI_CACHE_DIR=/opt/pixi/cache \
+    D2E_FLOWS_CACHE=/var/lib/d2e-flows \
+    PATH=/usr/local/bin:$PATH
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl python3 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL "https://github.com/prefix-dev/pixi/releases/download/v${PIXI_VERSION}/pixi-x86_64-unknown-linux-musl" \
+        -o /usr/local/bin/pixi && chmod +x /usr/local/bin/pixi
+
+# The worker's own Prefect environment (also pixi-managed, lockfile-pinned).
+COPY services/alp-dataflow-gen-worker/pyproject.toml services/alp-dataflow-gen-worker/pixi.lock /opt/worker/
+RUN pixi install --locked --manifest-path /opt/worker/pyproject.toml
+
+COPY services/alp-dataflow-gen-worker/run-flow.sh services/alp-dataflow-gen-worker/provision-envs.sh /app/
+COPY services/alp-dataflow-gen-worker/entrypoint.sh /entrypoint.sh
+COPY plugins/flows/drivers /app/inst/drivers/
+RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
+
+# Baked warm cache: release plugins provisioned at build so fresh workers are
+# instant and offline-capable; runtime artifact updates land beside them.
+COPY --from=staging /staged /var/lib/d2e-flows
+RUN /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
+
+WORKDIR /app
+ENTRYPOINT ["/entrypoint.sh"]
