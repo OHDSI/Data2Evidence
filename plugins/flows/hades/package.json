@@ -44,7 +44,8 @@
             ],
             "definitions": {}
           },
-          "type": "strategus"
+          "type": "strategus",
+          "command": "/app/run-flow.sh hades-flow"
         },
         {
           "name": "cohort_generator_plugin",
@@ -168,7 +169,8 @@
               }
             }
           },
-          "type": "cohort_generator"
+          "type": "cohort_generator",
+          "command": "/app/run-flow.sh hades-flow"
         }
       ]
     }

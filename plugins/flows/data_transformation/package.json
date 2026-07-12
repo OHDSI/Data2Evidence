@@ -171,7 +171,8 @@
               }
             }
           },
-          "type": "data_load"
+          "type": "data_load",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "data_load_fhir_plugin",
@@ -238,7 +239,8 @@
               }
             }
           },
-          "type": "data_load"
+          "type": "data_load",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "dataflow_ui_plugin",
@@ -270,7 +272,8 @@
             ],
             "definitions": {}
           },
-          "type": "dataflow_ui"
+          "type": "dataflow_ui",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "questionnaire_plugin",
@@ -352,7 +355,8 @@
               }
             }
           },
-          "type": "questionnaire"
+          "type": "questionnaire",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "fhir_to_omop_plugin",
@@ -436,7 +440,8 @@
               }
             }
           },
-          "type": "fhir_to_omop"
+          "type": "fhir_to_omop",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "dicom_etl_plugin",
@@ -584,7 +589,8 @@
               }
             }
           },
-          "type": "dicom_etl"
+          "type": "dicom_etl",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "mimic_omop_conversion_plugin",
@@ -680,7 +686,8 @@
               }
             }
           },
-          "type": "mimic"
+          "type": "mimic",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "white_rabbit_plugin",
@@ -803,7 +810,8 @@
               }
             }
           },
-          "type": "white_rabbit"
+          "type": "white_rabbit",
+          "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
           "name": "ner_extract_plugin",
@@ -866,7 +874,8 @@
               }
             }
           },
-          "type": "NLP"
+          "type": "NLP",
+          "command": "/app/run-flow.sh data-transformation-flow"
         }
       ]
     }

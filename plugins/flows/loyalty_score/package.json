@@ -158,7 +158,8 @@
               }
             }
           },
-          "type": "loyaltyscore"
+          "type": "loyaltyscore",
+          "command": "/app/run-flow.sh loyalty-score-flow"
         }
       ]
     }

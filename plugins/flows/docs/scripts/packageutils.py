@@ -47,6 +47,12 @@ def generate_package_json(package_json_name: str, entrypoint: str, plugin_type: 
     parameter_schema = parameter_schema_from_entrypoint(
         str(Path.cwd() / entrypoint)).model_dump_for_openapi()
 
+    # Process-worker command: run-flow.sh resolves the plugin by its npm short
+    # name (tpm extract dir / artifact name / baked-cache key all use it) and
+    # execs the Prefect engine inside the plugin's pixi environment.
+    package_short_name = package_json["name"].split("/")[-1]
+    flow_command = f"/app/run-flow.sh {package_short_name}"
+
     # Check if existing flow plugin
     existing_plugin = check_plugin_exists(
         plugin_name, package_json["trex"]["flow"]["flows"])
@@ -54,14 +60,16 @@ def generate_package_json(package_json_name: str, entrypoint: str, plugin_type: 
     if not existing_plugin:
         print(f"'{plugin_name}' does not exist in this package.json! Adding '{plugin_name}'...")
         plugin_template = modify_plugin(
-            {}, plugin_name, prefect_entrypoint, parameter_schema, plugin_type, datamodels)
+            {}, plugin_name, prefect_entrypoint, parameter_schema, plugin_type, datamodels,
+            command=flow_command)
         package_json["trex"]["flow"]["flows"].append(plugin_template)
     else:
         print(f"'{plugin_name}' already exists in this package.json! Modifying '{plugin_name}'...")
         for idx, plugin in enumerate(package_json["trex"]["flow"]["flows"]):
             if plugin["name"] == plugin_name:
                 override = modify_plugin(plugin, plugin_name, prefect_entrypoint,
-                                  parameter_schema, plugin_type, datamodels, plugin["tags"])
+                                  parameter_schema, plugin_type, datamodels, plugin["tags"],
+                                  command=flow_command)
                 package_json["trex"]["flow"]["flows"][idx].update(override)
 
     # Update package version
@@ -120,8 +128,10 @@ def create_prefect_entrypoint(filepath: str, flow_function: str) -> str:
 
 
 def modify_plugin(plugin: dict, plugin_name: str, prefect_entrypoint: str, parameter_schema: dict, 
-                  plugin_type: str = "", datamodels: list = [], tags: list = []):
+                  plugin_type: str = "", datamodels: list = [], tags: list = [], command: str = ""):
     plugin["name"] = plugin_name
+    if command:
+        plugin["command"] = command
     plugin["entrypoint"] = ".".join(
         ["flows"] + prefect_entrypoint.split(".")[1:])
     plugin["parameter_openapi_schema"] = parameter_schema

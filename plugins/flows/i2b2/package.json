@@ -117,7 +117,8 @@
           "type": "datamodel",
           "datamodels": [
             "v1.8.1"
-          ]
+          ],
+          "command": "/app/run-flow.sh i2b2-flow"
         }
       ]
     }
