@@ -60,6 +60,8 @@ openjdk = "17.*"
 compilers = "*"
 make = "*"
 pkg-config = "*"
+# runtime HANA driver installs (provision-envs.sh) need pip inside the env
+pip = "*"
 libxml2 = "*"
 libxml2-devel = "*"
 libarchive = "*"
@@ -113,4 +115,3 @@ setup-r = "bash setup_r.sh"
 # is provisioned at runtime only (INSTALL_SQLALCHEMY_HANA) — never shipped.
 [tool.pixi.environments]
 default = { solve-group = "default" }
-hana = { features = ["hana"], solve-group = "default" }

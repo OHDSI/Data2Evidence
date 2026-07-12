@@ -25,8 +25,12 @@ install_env() { # $1 = plugin dir
   local dir="$1" manifest="$1/pyproject.toml"
   [ -f "$manifest" ] || { log "no pyproject.toml in $dir"; return 1; }
   pixi install --frozen --manifest-path "$manifest" || return 1
-  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
-    pixi install --frozen -e hana --manifest-path "$manifest" || return 1
+  # HANA driver goes INTO the default env (a separate pixi env would have its
+  # own empty R library — renv restores only into default). Same runtime-install
+  # semantics as install_hana_drivers.sh in the docker-pool images.
+  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q 'sqlalchemy-hana' "$manifest"; then
+    pixi run --frozen --manifest-path "$manifest" \
+      pip install --quiet "sqlalchemy-hana==${SQLALCHEMY_HANA_VERSION:-2.2.0}" || return 1
   fi
   # Additional named environments some plugins declare (e.g. the NER stack's
   # self-contained env in data_transformation).
@@ -46,7 +50,7 @@ provision_dir() { # $1 = extracted plugin dir, $2 = marker value
   # The hana env is part of the provisioned state: an image baked without it
   # must re-provision (cheap: hardlinks + two pypi packages) when the worker
   # runs with INSTALL_SQLALCHEMY_HANA=true.
-  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$dir/pyproject.toml" 2>/dev/null; then
+  if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -q 'sqlalchemy-hana' "$dir/pyproject.toml" 2>/dev/null; then
     stamp="$stamp:hana"
   fi
   if [ "$(cat "$dir/.d2e-env-ready" 2>/dev/null)" = "$stamp" ]; then

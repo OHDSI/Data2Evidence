@@ -156,6 +156,9 @@ setup-assets = "bash setup_assets.sh"
 # the default conda deps): interpreter + toolchain for nmslib's C++ build.
 [tool.pixi.feature.ner.dependencies]
 python = "3.12.*"
+# setup_assets.sh installs the model packages with the ner env's pip
+pip = "*"
+packaging = "<25"
 compilers = "*"
 make = "*"
 

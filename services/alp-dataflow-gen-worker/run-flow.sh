@@ -64,13 +64,9 @@ if [ -z "$plugin_dir" ]; then
 fi
 
 manifest="$plugin_dir/pyproject.toml"
+# HANA support lives inside the default env (provision-envs pip-installs the
+# driver there); named env overrides (e.g. ner) come from the deployment command.
 env_name="${env_override:-default}"
-# hana features may be declared as [project.optional-dependencies] entries
-# (pixi maps them to features) or pixi-native tables; the environments table
-# always carries a `hana = { features = ... }` line either way.
-if [ -z "$env_override" ] && [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ] && grep -qE '^hana *=' "$manifest"; then
-  env_name="hana"
-fi
 
 cd "$plugin_dir"
 exec pixi run --frozen -e "$env_name" --manifest-path "$manifest" prefect flow-run execute

@@ -27,6 +27,10 @@ fi
 # pinned URLs + sha256, the semantics the previous image build used.
 # Skipped until the ner environment exists (provisioned with the plugin).
 NER_ENV_PIP=".pixi/envs/ner/bin/pip"
+if [ -d ".pixi/envs/ner" ] && [ ! -x "$NER_ENV_PIP" ]; then
+  echo "ERROR: ner env exists but has no pip (model install would be skipped)" >&2
+  exit 1
+fi
 if [ -x "$NER_ENV_PIP" ] && ! .pixi/envs/ner/bin/python -c "import en_ner_bc5cdr_md, en_core_med7_trf" 2>/dev/null; then
   fetch_verified() { # url sha256 dest
     curl -fLsS --retry 5 -o "$3" "$1"
