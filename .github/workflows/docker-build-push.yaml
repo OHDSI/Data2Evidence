@@ -261,6 +261,17 @@ jobs:
         if: always()
         run: docker system prune -af
 
+  # Lockfile discipline for pixi-managed flow plugin environments: manifests
+  # must not change without their committed pixi.lock, and locks must stay
+  # binary-only (see _pixi-lock-check.yml).
+  pixi_lock_check:
+    needs: [setup]
+    if: |
+      github.event_name == 'merge_group' ||
+      needs.setup.outputs.is_publish_push == 'true' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+    uses: ./.github/workflows/_pixi-lock-check.yml
+
   build_plugins:
     needs: [setup]
     if: |
