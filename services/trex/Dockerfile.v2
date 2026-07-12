@@ -107,14 +107,9 @@ ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 # NOTE: the core (main + event, with D2E_COMPAT) is NOT vendored — it is provided
 # by the base trexsql image at /usr/src/core (index.eszip already bundled there).
 # D2E_COMPAT is activated at runtime via the D2E_COMPAT=true env (set in compose),
-# which makes /usr/src/core serve the d2e main service.
-#
-# The dx compose also runs trex's canonical core (the devx code editor in the
-# trexsql-dx base) as a SECOND trexas main service on a separate port, reading
-# from /usr/src/trex-core. Since the base core IS that canonical core, duplicate
-# it there rather than moving it (d2e-main still needs /usr/src/core). For the
-# plain trexsql base this is just an unused copy.
-RUN cp -a /usr/src/core /usr/src/trex-core
+# which makes /usr/src/core serve the d2e main service. The compat layer adds
+# d2e routes on top of the canonical core, so the same trexas also serves
+# trex's own shell and plugins (including devx in the trexsql-dx base).
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
