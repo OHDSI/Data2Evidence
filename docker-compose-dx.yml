@@ -34,7 +34,11 @@ services:
   # Seeds ./secrets/root.env from d2e's TREX_ROOT_KEY (so all derivations
   # match the key trex gets from .env.local), derives the downstream
   # secrets (PGRST_JWT_SECRET et al), and makes the files readable by the
-  # host user for compose env_file loading. Idempotent.
+  # host user for compose env_file loading. Idempotent. root.env is purely
+  # derived state in this topology — the authoritative key lives in
+  # .env.local — so re-seeding it from TREX_ROOT_KEY whenever they diverge
+  # is safe and required to keep derived.env matching trex's in-process
+  # HKDF derivation.
   trex-dx-init:
     image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx
     container_name: ${PROJECT_NAME:-d2e}-trex-dx-init
@@ -43,13 +47,18 @@ services:
       - -c
       - |
         set -eu
-        if [ ! -f /shared/root.env ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
+        if [ -n "$${TREX_ROOT_KEY:-}" ]; then
           umask 077
-          printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /shared/root.env
-          echo "[trex-dx-init] seeded root.env from TREX_ROOT_KEY"
+          if [ ! -f /shared/root.env ]; then
+            printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /shared/root.env
+            echo "[trex-dx-init] seeded root.env from TREX_ROOT_KEY"
+          elif [ "$$(cat /shared/root.env)" != "TREX_ROOT_KEY=$$TREX_ROOT_KEY" ]; then
+            printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /shared/root.env
+            echo "[trex-dx-init] root.env key differs from TREX_ROOT_KEY — re-seeding"
+          fi
         fi
         /usr/local/bin/trex-init
-        chown 1000:1000 /shared/root.env /shared/derived.env
+        chown 1000:1000 /shared /shared/root.env /shared/derived.env
     environment:
       TREX_SECRETS_DIR: /shared
       TREX_ROOT_KEY: ${TREX_ROOT_KEY}

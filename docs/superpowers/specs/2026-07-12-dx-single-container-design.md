@@ -155,8 +155,9 @@ Fresh `npm run dx -- clean` + `npm run start:dx`:
    (d2e regression check).
 4. `docker exec alp-trex node -e "fetch('http://localhost:33001/trex/api/ready')…"`
    → 200 (auth keys provisioned).
-5. `https://localhost:41100/plugins/trex/devx/` loads; better-auth sign-in
-   succeeds; DevX appears in the trex shell nav.
+5. `https://localhost:41100/plugins/trex/devx/` loads; signing in with the
+   seeded dev admin (admin@trex.local / password) succeeds; DevX appears in
+   the trex shell nav.
 6. `https://localhost:41100/trex/rest/v1/` answers (in-process PostgREST with
    JWT from derived.env).
 7. DevX workspace create + a command execution works (devx_ext + workspaces
