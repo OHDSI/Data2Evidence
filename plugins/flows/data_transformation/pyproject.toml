@@ -13,6 +13,10 @@ dependencies = [
     # importlib_metadata backport, which opentelemetry-api>=1.43 no longer
     # provides transitively.
     "importlib-metadata==8.7.0",
+    # fastapi 0.129+ router internals break prefect.server's PrefectRouter
+    # (ephemeral server, prefect_test_harness); 0.128.0 is what the
+    # prefecthq/prefect:3.6.10 image ships.
+    "fastapi==0.128.0",
     "ibis-framework[duckdb,postgres]==11.0.0",
     "jsonpath-ng==1.7.0",
     "numpy==2.0.0",
