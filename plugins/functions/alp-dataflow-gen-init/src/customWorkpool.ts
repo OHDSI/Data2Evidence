@@ -1,4 +1,102 @@
-import { D2E_MEMORY_LIMIT, D2E_SWAP_LIMIT, INSTALL_SQLALCHEMY, CUSTOM_WORK_POOL_CONFIGURATION } from "./env";
+import { D2E_MEMORY_LIMIT, D2E_SWAP_LIMIT, INSTALL_SQLALCHEMY, CUSTOM_WORK_POOL_CONFIGURATION, DEFAULT_FLOW_COMMAND } from "./env";
+
+// Base job template for the pixi process worker (WORKPOOL_TYPE=process).
+// job_configuration mirrors ProcessWorker.get_default_base_job_template() on
+// prefect 3.6.10 exactly (command/env/labels/name/stream_output/working_dir).
+// The variables schema additionally accepts-and-ignores the four docker-worker
+// variables trex core always sends (core/server/plugin/flow.ts:208-213) and
+// `plugin_artifact`, which run-flow.sh reads back from the deployment record —
+// neither may appear in job_configuration.
+export const customProcessWorkpool = Object.keys(CUSTOM_WORK_POOL_CONFIGURATION).length > 0 ? CUSTOM_WORK_POOL_CONFIGURATION : {
+  variables: {
+    type: "object",
+    properties: {
+      env: {
+        type: "object",
+        title: "Environment Variables",
+        description: "Environment variables to set when starting a flow run.",
+        additionalProperties: { type: "string" },
+      },
+      name: {
+        type: "string",
+        title: "Name",
+        description:
+          "Name given to infrastructure created by the worker using this job configuration.",
+      },
+      labels: {
+        type: "object",
+        title: "Labels",
+        description:
+          "Labels applied to infrastructure created by the worker using this job configuration.",
+        additionalProperties: { type: "string" },
+      },
+      command: {
+        type: "string",
+        title: "Command",
+        default: DEFAULT_FLOW_COMMAND,
+        description:
+          "The command executed for a flow run. Flow plugin deployments override this with `/app/run-flow.sh <plugin-short-name>`; the default covers flows imported at runtime (base group environment).",
+      },
+      working_dir: {
+        type: "string",
+        title: "Working Directory",
+        default: "/app",
+        description:
+          "The working directory the worker opens the flow-run process in. run-flow.sh changes into the resolved plugin directory before starting the engine.",
+      },
+      stream_output: {
+        type: "boolean",
+        title: "Stream Output",
+        default: true,
+        description:
+          "If enabled, workers will stream output from flow run processes to local standard output.",
+      },
+      image: {
+        type: "string",
+        title: "Image (ignored by the process worker)",
+        description:
+          "Sent by trex core for docker pools; accepted so job-variable validation passes, never used.",
+      },
+      image_pull_policy: {
+        type: "string",
+        title: "Image Pull Policy (ignored by the process worker)",
+        description:
+          "Sent by trex core for docker pools; accepted so job-variable validation passes, never used.",
+      },
+      volumes: {
+        type: "array",
+        items: { type: "string" },
+        title: "Volumes (ignored by the process worker)",
+        description:
+          "Sent by trex core for docker pools; accepted so job-variable validation passes, never used.",
+      },
+      networks: {
+        type: "array",
+        items: { type: "string" },
+        title: "Networks (ignored by the process worker)",
+        description:
+          "Sent by trex core for docker pools; accepted so job-variable validation passes, never used.",
+      },
+      plugin_artifact: {
+        type: "object",
+        title: "Plugin Artifact",
+        description:
+          "Reference to the plugin tarball backing this deployment ({path|url, sha256, name, version}). Read by run-flow.sh/provision-envs.sh via the deployment record; not templated into the job configuration.",
+      },
+    },
+    definitions: {},
+    description:
+      "Configuration for the D2E process worker (pixi-managed flow plugin environments).",
+  },
+  job_configuration: {
+    env: "{{ env }}",
+    name: "{{ name }}",
+    labels: "{{ labels }}",
+    command: "{{ command }}",
+    working_dir: "{{ working_dir }}",
+    stream_output: "{{ stream_output }}",
+  },
+};
 
 export const customDockerWorkpool = Object.keys(CUSTOM_WORK_POOL_CONFIGURATION).length > 0 ? CUSTOM_WORK_POOL_CONFIGURATION : {
   variables: {
