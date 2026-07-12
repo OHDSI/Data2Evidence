@@ -73,6 +73,9 @@ krb5 = "*"
 # libzlib/liblzma from the devel packages; rJava and friends link both)
 zlib = "*"
 liblzma-devel = "*"
+# the xz CLI itself: R package builds unpack vendored .tar.xz sources
+# (e.g. hades' r-duckdb runs `tar xJf`, which execs xz)
+xz = "*"
 # rpy2's conda dependency chain brings `packaging`; cap it so the conda-pinned
 # version stays inside ibis-framework 10.0.0's `packaging<25` requirement.
 packaging = "<25"
