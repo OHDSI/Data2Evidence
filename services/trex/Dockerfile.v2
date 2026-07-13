@@ -105,6 +105,15 @@ ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 # d2e routes on top of the canonical core, so the same trexas also serves
 # trex's own shell and plugins (including the TREX_DX_ENABLED-gated devx).
 
+# The base entrypoint's TREX_DX_ENABLED gate turns EXTENSION_DIR into a
+# colon-separated list, which the orchestrator's per-connection
+# `LOAD '$EXTENSION_DIR/<ext>.trex'` (plugins/db start_service_local) cannot
+# resolve — trexas/pgwire then fail to start. Copy the gated extension into
+# the primary dir instead and leave EXTENSION_DIR untouched. Remove once the
+# orchestrator handles EXTENSION_DIR lists upstream.
+RUN sed -i 's|export EXTENSION_DIR=.*extensions-dx"$|cp -n /usr/lib/trexsql/extensions-dx/*.trex /usr/lib/trexsql/extensions/|' /usr/src/entrypoint.sh \
+    && grep -q 'cp -n /usr/lib/trexsql/extensions-dx' /usr/src/entrypoint.sh
+
 RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
