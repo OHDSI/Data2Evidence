@@ -516,7 +516,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.0.1-develop.6.gc427022
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
