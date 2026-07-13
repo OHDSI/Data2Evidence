@@ -4,16 +4,17 @@
 # provisioned from plugin artifacts (see run-flow.sh / provision-envs.sh);
 # installing or updating a flow plugin never requires rebuilding this image.
 #
-# Build topology: each group provisions in its own stage — the granularity
-# the registry build cache operates on (mode=max exports the env stages, so
-# unchanged groups are blob downloads on later builds). The R-heavy stages
-# (base, data_transformation, hades) are chained via marker COPYs and run
-# strictly one at a time with full cores: concurrent runs looked attractive
-# but each stage's bundled-duckdb link needs gigabytes, and two heavies
-# swap-thrashed a 16GB runner into a 14h zombie build. Light python-only
-# groups do run in parallel alongside. Trade-off carried over from the
-# layered layout: pixi-cache hardlinks dedupe only within a stage; the
-# final COPY materializes full copies. Build-time wins over image size here.
+# Build topology: the R-heavy stages (base -> hades -> data_transformation)
+# form a FROM lineage ending in the final image, so each heavy env exists
+# exactly once as native layers — no COPY --from duplication (stage snapshot
+# + copied layer overran the CI runner's disk) — and the lineage serializes
+# them naturally (two concurrent bundled-duckdb links swap-thrashed the 16GB
+# runner into a 14h zombie). Order matches the old layered build: a dt-only
+# change rebuilds dt alone; hades changes rebuild hades+dt. Light python-only
+# groups build in parallel stages alongside and are COPY'd in (small).
+# Per-stage granularity is what the registry cache keys on (mode=max).
+# Trade-off carried over: pixi-cache hardlinks dedupe only within a stage;
+# light-group COPYs materialize full copies. Build-time wins over size here.
 
 FROM ubuntu:24.04 AS staging
 RUN apt-get update && apt-get install -y --no-install-recommends python3 \
@@ -91,17 +92,12 @@ FROM provisioner AS env-search-embedding
 COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
 RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embedding-flow/baked
 
+# Heavy-env lineage (each layer lands in the final image exactly once).
 FROM provisioner AS env-base
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
 RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
 
-FROM provisioner AS env-data-transformation
-COPY --from=env-base /var/lib/d2e-flows/d2e-flows/baked/.d2e-env-ready /tmp/.env-base-done
-COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
-RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
-
-FROM provisioner AS env-hades
-COPY --from=env-data-transformation /var/lib/d2e-flows/data-transformation-flow/baked/.d2e-env-ready /tmp/.env-dt-done
+FROM env-base AS env-hades
 COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 # Secret mount, not a build-arg: the token differs per CI run and an ARG would
 # poison this stage's cache key (registry cache would never hit).
@@ -109,25 +105,27 @@ RUN --mount=type=secret,id=github_pat \
     MAKEFLAGS="-j$(nproc)" GITHUB_PAT="$(cat /run/secrets/github_pat 2>/dev/null || true)" \
     /app/provision-envs.sh --dir /var/lib/d2e-flows/hades-flow/baked
 
-FROM runtime-base
+FROM env-hades AS env-data-transformation
+COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
+
+FROM env-data-transformation
 # The worker's own Prefect environment (also pixi-managed, lockfile-pinned).
 COPY services/alp-dataflow-gen-worker/pyproject.toml services/alp-dataflow-gen-worker/pixi.lock /opt/worker/
 RUN pixi install --locked --manifest-path /opt/worker/pyproject.toml
 
-COPY services/alp-dataflow-gen-worker/run-flow.sh services/alp-dataflow-gen-worker/provision-envs.sh /app/
+COPY services/alp-dataflow-gen-worker/run-flow.sh /app/
 COPY services/alp-dataflow-gen-worker/entrypoint.sh /entrypoint.sh
 COPY plugins/flows/drivers /app/inst/drivers/
 RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 
-# Baked warm cache: release plugins provisioned at build so fresh workers are
-# instant and offline-capable; runtime artifact updates land beside them.
+# Light groups from their parallel stages (baked warm cache: release plugins
+# provisioned at build so fresh workers are instant and offline-capable;
+# runtime artifact updates land beside them).
 COPY --from=env-loyalty-score /var/lib/d2e-flows/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
 COPY --from=env-i2b2 /var/lib/d2e-flows/i2b2-flow /var/lib/d2e-flows/i2b2-flow
 COPY --from=env-data-management /var/lib/d2e-flows/data-management-flow /var/lib/d2e-flows/data-management-flow
 COPY --from=env-search-embedding /var/lib/d2e-flows/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
-COPY --from=env-base /var/lib/d2e-flows/d2e-flows /var/lib/d2e-flows/d2e-flows
-COPY --from=env-hades /var/lib/d2e-flows/hades-flow /var/lib/d2e-flows/hades-flow
-COPY --from=env-data-transformation /var/lib/d2e-flows/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]
