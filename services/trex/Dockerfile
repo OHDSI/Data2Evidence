@@ -6,7 +6,7 @@
 # not by a forked main. See docs/superpowers/specs/2026-06-20-d2e-trex-main-migration-design.md
 # NOTE: trexsql has no `develop` tag — use `dev`, or pin an immutable sha-<commit>.
 # Pinned to the same base develop's Dockerfile.v2 uses.
-ARG TREXSQL_TAG=sha-347a91227639060f76608589321f2d2a255aca44
+ARG TREXSQL_TAG=sha-66647e98ee18df39f10f0da7327dd12ccfcf302d
 FROM ghcr.io/ohdsi/trexsql:${TREXSQL_TAG}
 
 USER root
