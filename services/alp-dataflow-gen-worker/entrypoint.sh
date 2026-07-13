@@ -27,11 +27,16 @@ if [ "${INSTALL_SQLALCHEMY_HANA:-false}" = "true" ]; then
   fi
 fi
 
-# Re-provision baked plugin dirs: no-ops unless a stamp delta applies (e.g.
-# the HANA driver top-up when the runtime flag differs from build time).
-for dir in "${D2E_FLOWS_CACHE:-/var/lib/d2e-flows}"/*/baked; do
-  [ -f "$dir/pyproject.toml" ] && /app/provision-envs.sh --dir "$dir" || true
-done
+# Re-provision baked plugin dirs in the background: no-ops unless a stamp
+# delta applies (e.g. the HANA driver top-up when the runtime flag differs
+# from build time). Must not block worker startup — flow runs submitted
+# right after a container (re)start would sit Pending; run-flow.sh performs
+# the same per-dir check itself, and provision_dir holds a per-dir flock.
+(
+  for dir in "${D2E_FLOWS_CACHE:-/var/lib/d2e-flows}"/*/baked; do
+    [ -f "$dir/pyproject.toml" ] && /app/provision-envs.sh --dir "$dir" || true
+  done
+) &
 
 /app/provision-envs.sh --watch &
 

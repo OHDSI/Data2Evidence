@@ -47,6 +47,10 @@ install_env() { # $1 = plugin dir
 
 provision_dir() { # $1 = extracted plugin dir, $2 = marker value
   local dir="$1" stamp="$2"
+  # Serialize per-dir: the background pre-warm and a flow run's own
+  # provisioning check may race on the same directory.
+  exec 9>"$dir/.d2e-provision.lock" || return 1
+  flock 9 || return 1
   # The hana env is part of the provisioned state: an image baked without it
   # must re-provision (cheap: hardlinks + two pypi packages) when the worker
   # runs with INSTALL_SQLALCHEMY_HANA=true.

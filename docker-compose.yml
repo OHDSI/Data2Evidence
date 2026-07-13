@@ -796,6 +796,7 @@ services:
         prefect work-pool create '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process};
         prefect worker start --pool '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process}
         --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
+        --limit ${D2E_WORKER_FLOW_RUN_LIMIT:-3}
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
