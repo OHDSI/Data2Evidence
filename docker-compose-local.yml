@@ -10,7 +10,7 @@ services:
         - github_token
       args:
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae}
     extra_hosts:
       - "physionet-host:host-gateway"
     networks:
@@ -28,11 +28,13 @@ services:
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
+      - studio-edge-functions:/app/edge-functions  # shared with the studio sidecar (LOCAL ONLY)
       # - ./plugins/chat_functions:/usr/src/plugins/chat
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core  # live trex core for local dev
+      # IMAGE-BASED TEST: no core source-mount — trex's main (now vendored into
+      # services/trex/core) is bundled into the image's eszip by Dockerfile.v2.
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
     environment:
@@ -40,8 +42,12 @@ services:
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
+      # Supabase Studio sidecar (LOCAL ONLY) — trex proxies /plugins/trex/studio/** to it.
+      STUDIO_INTERNAL_URL: http://${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}:3000
+      EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
       # Bind-mounted source plugins win over bundled ones with the same package name.
-      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
+      # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
+      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       # PhysioNet auto-provision / entitlements sync are OFF by default for local
       # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
@@ -64,8 +70,8 @@ services:
                   "config": {
                     "host": "0.0.0.0",
                     "port": 33001,
-                    "main_service_path": "/usr/src/core/server",
-                    "event_worker_path": "/usr/src/core/event",
+                    "main_service_path": "/usr/src/core/server/index.eszip",
+                    "event_worker_path": "/usr/src/core/event/index.eszip",
                     "tls_port": 33000,
                     "tls_cert_path": "/usr/src/cert/cert.pem",
                     "tls_key_path": "/usr/src/cert/key.pem",
@@ -233,6 +239,63 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # trex studio sidecar — LOCAL ONLY (intentionally not in docker-compose.yml).
+  # Internal-only: no host port. trex proxies /plugins/trex/studio/** to it and
+  # enforces its own admin-only gate.
+  studio:
+    image: ghcr.io/ohdsi/trex-studio:latest
+    container_name: ${PROJECT_NAME:-d2e}-studio
+    hostname: ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+    restart: unless-stopped
+    networks:
+      alp:
+        aliases:
+          - studio
+          - ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+    depends_on:
+      trex:
+        condition: service_healthy
+    volumes:
+      - studio-snippets:/app/snippets
+      - studio-edge-functions:/app/edge-functions
+      # The baked key-fetch reads trex.setting; d2e stores auth keys in trexdb.setting.
+      - ./services/studio/fetch-trex-keys.cjs:/app/apps/studio/fetch-trex-keys.cjs:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://localhost:3000/plugins/trex/studio/api/platform/profile'').then(r => { if (r.status !== 200) throw new Error(r.status) })"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      HOSTNAME: "0.0.0.0"
+      # trex serves the supabase-compat surface under /trex at its internal endpoint.
+      SUPABASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex
+      SUPABASE_PUBLIC_URL: https://localhost:41100/trex
+      STUDIO_PG_META_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex/pg/v1
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      # Fallback direct DB access — trexdb lives in the alp Postgres.
+      POSTGRES_HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
+      POSTGRES_PORT: ${PG_PORT:-5432}
+      POSTGRES_DB: alp
+      POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
+      POSTGRES_USER_READ_WRITE: ${PG_SUPER_USER:-postgres}
+      POSTGRES_USER_READ_ONLY: ${PG_SUPER_USER:-postgres}
+      PGRST_DB_SCHEMAS: public,storage
+      DEFAULT_ORGANIZATION_NAME: ${PROJECT_NAME:-d2e}
+      DEFAULT_PROJECT_NAME: default
+      NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
+      NEXT_PUBLIC_ENABLE_LOGS: "false"
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
+      EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
+
+# Studio sidecar volumes (LOCAL ONLY).
+volumes:
+  studio-snippets:
+  studio-edge-functions:
 
 # Build-time GitHub Packages token for installing @ohdsi/* plugins.
 secrets:
