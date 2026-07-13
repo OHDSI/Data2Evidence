@@ -166,6 +166,8 @@ jobs:
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      # branch-scoped registry-cache suffix (tag-safe)
+      CACHE_SLUG: ${{ github.head_ref && format('pr-{0}', github.event.pull_request.number) || 'develop' }}
     strategy:
       fail-fast: false
       matrix:
@@ -190,12 +192,13 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             # repo-root context: the image bakes plugins/flows (pixi envs + R)
             DOCKER_BUILD_CONTEXT_PATH: .
-            # Registry build cache (mode=max exports the per-group env stages,
-            # which never appear in the final image): unchanged groups become
-            # blob downloads instead of renv compiles. The hades stage reads
-            # GITHUB_PAT from a BuildKit secret so the rotating token cannot
-            # poison its cache key.
-            cache_ref: ghcr.io/ohdsi/d2e-dataflow-gen-worker:buildcache
+            # Registry build cache (mode=max exports every stage, including the
+            # expensive env stages): unchanged groups become blob downloads
+            # instead of renv compiles. PRs write to a per-branch cache tag and
+            # fall back to reading develop's; develop pushes write the shared
+            # tag. The hades stage reads GITHUB_PAT from a BuildKit secret so
+            # the rotating token cannot poison its cache key.
+            cache_enabled: "true"
             needs_github_pat_secret: "true"
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
@@ -242,8 +245,10 @@ jobs:
           tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
           provenance: false
           sbom: false
-          cache-from: ${{ matrix.cache_ref && format('type=registry,ref={0}', matrix.cache_ref) || '' }}
-          cache-to: ${{ matrix.cache_ref && needs.setup.outputs.is_pr_or_mg != 'true' && format('type=registry,ref={0},mode=max', matrix.cache_ref) || '' }}
+          cache-from: |
+            ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache-{2}', env.REG_URL, matrix.AZ_REG_REPOSITORY, env.CACHE_SLUG) || '' }}
+            ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache', env.REG_URL, matrix.AZ_REG_REPOSITORY) || '' }}
+          cache-to: ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache{2},mode=max', env.REG_URL, matrix.AZ_REG_REPOSITORY, needs.setup.outputs.is_publish_push == 'true' && '' || format('-{0}', env.CACHE_SLUG)) || '' }}
           secrets: ${{ matrix.needs_github_pat_secret == 'true' && format('github_pat={0}', secrets.GITHUB_TOKEN) || '' }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
