@@ -75,23 +75,24 @@ RUN chmod 755 /app/run-flow.sh /app/provision-envs.sh /entrypoint.sh
 
 # Baked warm cache: release plugins provisioned at build so fresh workers are
 # instant and offline-capable; runtime artifact updates land beside them.
-# MAKEFLAGS caps R source-build parallelism. Light python-only groups first
+# MAKEFLAGS matches the builder's cores (R layers build sequentially, so the
+# full machine belongs to whichever renv compile is running). Light python-only groups first
 # (fast layers), R groups last and separate (slow, cache independently).
 COPY --from=staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
 COPY --from=staging /staged/i2b2-flow /var/lib/d2e-flows/i2b2-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/i2b2-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/i2b2-flow/baked
 COPY --from=staging /staged/data-management-flow /var/lib/d2e-flows/data-management-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/data-management-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-management-flow/baked
 COPY --from=staging /staged/search-embedding-flow /var/lib/d2e-flows/search-embedding-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embedding-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embedding-flow/baked
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
 COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 ARG GITHUB_PAT=
-RUN MAKEFLAGS=-j2 GITHUB_PAT="$GITHUB_PAT" /app/provision-envs.sh --dir /var/lib/d2e-flows/hades-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" GITHUB_PAT="$GITHUB_PAT" /app/provision-envs.sh --dir /var/lib/d2e-flows/hades-flow/baked
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
 
 WORKDIR /app
 ENTRYPOINT ["/entrypoint.sh"]
