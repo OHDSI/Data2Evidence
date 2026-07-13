@@ -4,14 +4,15 @@
 # provisioned from plugin artifacts (see run-flow.sh / provision-envs.sh);
 # installing or updating a flow plugin never requires rebuilding this image.
 #
-# Build topology: each group provisions in its own stage so BuildKit runs them
-# in parallel (renv installs are sequential per package, so a single group
-# leaves most cores idle — overlap across groups is where wall-clock goes).
-# env-hades alone is serialized behind env-base: both compile the bundled
-# duckdb C++ (as does data_transformation), and three concurrent duckdb
-# builds exhaust a 16GB runner. Cache granularity is unchanged: editing one
-# group's sources/locks rebuilds only its stage. Trade-off carried over from
-# the layered layout: pixi-cache hardlinks dedupe only within a stage; the
+# Build topology: each group provisions in its own stage — the granularity
+# the registry build cache operates on (mode=max exports the env stages, so
+# unchanged groups are blob downloads on later builds). The R-heavy stages
+# (base, data_transformation, hades) are chained via marker COPYs and run
+# strictly one at a time with full cores: concurrent runs looked attractive
+# but each stage's bundled-duckdb link needs gigabytes, and two heavies
+# swap-thrashed a 16GB runner into a 14h zombie build. Light python-only
+# groups do run in parallel alongside. Trade-off carried over from the
+# layered layout: pixi-cache hardlinks dedupe only within a stage; the
 # final COPY materializes full copies. Build-time wins over image size here.
 
 FROM ubuntu:24.04 AS staging
@@ -72,9 +73,8 @@ FROM runtime-base AS provisioner
 COPY services/alp-dataflow-gen-worker/provision-envs.sh /app/provision-envs.sh
 RUN chmod 755 /app/provision-envs.sh
 
-# One stage per group. Independent stages build concurrently on one builder,
-# so per-stage MAKEFLAGS stays modest (-j2) to share cores/memory fairly;
-# env-hades runs after env-base (see header) and gets the whole machine.
+# One stage per group; marker COPYs are the dependency edges that keep the
+# heavy stages sequential (see header).
 FROM provisioner AS env-loyalty-score
 COPY --from=staging /staged/loyalty-score-flow /var/lib/d2e-flows/loyalty-score-flow
 RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/loyalty-score-flow/baked
@@ -93,16 +93,15 @@ RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/search-embeddi
 
 FROM provisioner AS env-base
 COPY --from=staging /staged/d2e-flows /var/lib/d2e-flows/d2e-flows
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/d2e-flows/baked
 
 FROM provisioner AS env-data-transformation
+COPY --from=env-base /var/lib/d2e-flows/d2e-flows/baked/.d2e-env-ready /tmp/.env-base-done
 COPY --from=staging /staged/data-transformation-flow /var/lib/d2e-flows/data-transformation-flow
-RUN MAKEFLAGS=-j2 /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
+RUN MAKEFLAGS="-j$(nproc)" /app/provision-envs.sh --dir /var/lib/d2e-flows/data-transformation-flow/baked
 
 FROM provisioner AS env-hades
-# Serialize behind env-base (memory headroom for hades' own duckdb/JVM
-# compiles); the marker COPY is the dependency edge.
-COPY --from=env-base /var/lib/d2e-flows/d2e-flows/baked/.d2e-env-ready /tmp/.env-base-done
+COPY --from=env-data-transformation /var/lib/d2e-flows/data-transformation-flow/baked/.d2e-env-ready /tmp/.env-dt-done
 COPY --from=staging /staged/hades-flow /var/lib/d2e-flows/hades-flow
 # Secret mount, not a build-arg: the token differs per CI run and an ARG would
 # poison this stage's cache key (registry cache would never hit).
