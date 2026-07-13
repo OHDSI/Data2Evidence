@@ -78,6 +78,7 @@ interface FormData extends Omit<IDatabase, "id" | "credentials.id" | "publicatio
   warehouse?: string;
   schema?: string;
   role?: string;
+  privateKey?: string;
   privateKeyPassphrase?: string;
 }
 
@@ -150,6 +151,7 @@ const EMPTY_FORM_DATA: FormData = {
   warehouse: "",
   schema: "",
   role: "",
+  privateKey: "",
   privateKeyPassphrase: "",
 };
 
@@ -253,7 +255,13 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         return;
       }
 
-      if (formData.dialect !== DB_DIALECTS.BIG_QUERY && formData.authenticationMode === AUTHENTICATION_MODES.PASSWORD) {
+      if (
+        formData.dialect !== DB_DIALECTS.BIG_QUERY &&
+        formData.dialect !== DB_DIALECTS.SNOWFLAKE &&
+        formData.authenticationMode === AUTHENTICATION_MODES.PASSWORD
+      ) {
+        // Snowflake uses key-pair: the PEM lives in db_extra.Internal.privateKey (too
+        // long for the RSA-encrypted credential store), so skip password validation.
         if (!validateCredentials(formData.credentials, setFeedback)) {
           return;
         }
@@ -317,6 +325,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         if (formData.warehouse) sf.warehouse = formData.warehouse;
         if (formData.schema) sf.schema = formData.schema;
         if (formData.role) sf.role = formData.role;
+        if (formData.privateKey) sf.privateKey = formData.privateKey;
         if (formData.privateKeyPassphrase) sf.privateKeyPassphrase = formData.privateKeyPassphrase;
       }
 
@@ -392,6 +401,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
         if (formData.warehouse) extra.warehouse = formData.warehouse;
         if (formData.schema) extra.schema = formData.schema;
         if (formData.role) extra.role = formData.role;
+        if (formData.privateKey) extra.privateKey = formData.privateKey;
         if (formData.privateKeyPassphrase) extra.privateKeyPassphrase = formData.privateKeyPassphrase;
       }
 
@@ -492,7 +502,7 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
           <BigQueryForm data={pick(formData, "host", "name")} onChange={(changes) => handleFormDataChange(changes)} />
         ) : formData.dialect === DB_DIALECTS.SNOWFLAKE ? (
           <SnowflakeForm
-            data={pick(formData, "host", "name", "warehouse", "schema", "role", "privateKeyPassphrase")}
+            data={pick(formData, "host", "name", "warehouse", "schema", "role", "privateKey", "privateKeyPassphrase")}
             onChange={(changes) => handleFormDataChange(changes)}
           />
         ) : (

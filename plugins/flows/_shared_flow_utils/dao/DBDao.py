@@ -18,6 +18,7 @@ _DAO_REGISTRY = {
     SupportedDatabaseDialects.HANA: SqlAlchemyDao,
     SupportedDatabaseDialects.DUCKDB: SqlAlchemyDao,
     SupportedDatabaseDialects.BIGQUERY: SqlAlchemyDao,
+    SupportedDatabaseDialects.SNOWFLAKE: SqlAlchemyDao,
     SupportedDatabaseDialects.TREX: TrexDao,
 }
 

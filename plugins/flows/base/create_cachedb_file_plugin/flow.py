@@ -215,8 +215,10 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
             attach_query = f"ATTACH 'project={read_credentials.host}' AS {database_name} (TYPE bigquery, READ_ONLY);"
         case SupportedDatabaseDialects.SNOWFLAKE.value:
             # AUTH_TYPE 'key_pair' is required by the community snowflake extension for
-            # key-pair auth (matches the trex attach layer). The Snowflake user + PEM key
-            # come from the Admin credential (adminUser/adminPassword), same as trex.
+            # key-pair auth (matches the trex attach layer). The Snowflake user is the
+            # Admin credential username; the PEM private key travels in db_extra
+            # (read_credentials.privateKey), mirroring BigQuery's service-account key —
+            # a PEM is too long for the RSA-encrypted credential store.
             # host carries the account identifier. Optional clauses are only emitted when
             # set. Single quotes are escaped to keep the SECRET SQL well-formed.
             def _sf_q(value):
@@ -227,7 +229,7 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
                 f"ACCOUNT '{_sf_q(read_credentials.host)}'",
                 f"USER '{_sf_q(read_credentials.adminUser)}'",
                 "AUTH_TYPE 'key_pair'",
-                f"PRIVATE_KEY '{_sf_q(read_credentials.adminPassword.get_secret_value())}'",
+                f"PRIVATE_KEY '{_sf_q(read_credentials.privateKey.get_secret_value())}'",
                 f"DATABASE '{_sf_q(read_credentials.databaseName)}'",
             ]
             if read_credentials.privateKeyPassphrase:

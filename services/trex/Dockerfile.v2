@@ -38,6 +38,33 @@ RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && 
         gzip -df ${lib}.duckdb_extension.gz; \
     done
 
+# Snowflake source support (see docs/snowflake-setup.md).
+# The community `snowflake` DuckDB extension is a thin wrapper that dlopen()s the
+# Apache Arrow ADBC Snowflake driver at ATTACH time. That native driver is NOT
+# bundled with the extension, so install it into /usr/local/lib — a
+# version-independent path the extension searches (alongside
+# ~/.duckdb/extensions/<ver>/<platform>/ and /usr/lib). The driver is DuckDB-
+# version independent; only the CPU arch must match. Wheel from Apache Arrow
+# ADBC 1.8.0 on PyPI (immutable hashed URLs).
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-1.8.0-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;; \
+      arm64) WHL="https://files.pythonhosted.org/packages/a4/14/7f448f5be225a3c596aa1a14a704fb4d8a2871e306d8725f98028af4265f/adbc_driver_snowflake-1.8.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl" ;; \
+      *) echo "unsupported TARGETARCH=$TARGETARCH for ADBC snowflake driver" >&2; exit 1 ;; \
+    esac; \
+    cd /tmp && wget -q "$WHL" -O adbc.whl && \
+    python3 -m zipfile -e adbc.whl adbc_extract && \
+    cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
+    ldconfig && rm -rf adbc.whl adbc_extract
+
+# Best-effort offline preinstall of the snowflake extension wrapper. Non-fatal:
+# if it isn't published for this DuckDB version/arch, the engine falls back to a
+# runtime `INSTALL snowflake FROM community` (which needs network on first use).
+RUN cd /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && \
+    ( wget -q https://community-extensions.duckdb.org/v${DUCKDB_VERSION}/linux_${TARGETARCH}/snowflake.duckdb_extension.gz && \
+      gzip -df snowflake.duckdb_extension.gz && echo "snowflake extension preinstalled for v${DUCKDB_VERSION}/linux_${TARGETARCH}" ) || \
+    echo "WARN: snowflake community extension not prebuilt for v${DUCKDB_VERSION}/linux_${TARGETARCH}; relying on runtime INSTALL"
+
 RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles

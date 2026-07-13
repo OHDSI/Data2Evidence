@@ -41,10 +41,12 @@ class DBCredentialsType(BaseModel):
     auth_provider_x509_cert_url: Optional[str] = None
     client_x509_cert_url: Optional[str] = None
     universe_domain: Optional[str] = None
-    # Snowflake specific fields (key-pair auth)
+    # Snowflake specific fields (key-pair auth). privateKey holds the PEM key and
+    # travels in db_extra (via transformDBCredentials), not the credential store.
     warehouse: Optional[str] = None
     snowflakeSchema: Optional[str] = None
     role: Optional[str] = None
+    privateKey: Optional[SecretStr] = None
     privateKeyPassphrase: Optional[SecretStr] = None
 
 

@@ -942,6 +942,7 @@
   "SNOWFLAKE_FORM__ACCOUNT": "Kontobezeichner",
   "SNOWFLAKE_FORM__DATABASE": "Datenbank",
   "SNOWFLAKE_FORM__PASSPHRASE": "Passphrase für privaten Schlüssel (optional)",
+  "SNOWFLAKE_FORM__PRIVATE_KEY": "Privater Schlüssel (PEM)",
   "SNOWFLAKE_FORM__ROLE": "Rolle",
   "SNOWFLAKE_FORM__SCHEMA": "Schema",
   "SNOWFLAKE_FORM__WAREHOUSE": "Warehouse",

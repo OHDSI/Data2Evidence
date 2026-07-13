@@ -6,6 +6,12 @@ export function transformDBCredentials(
   dbCredentialsArray
 )  {
   return dbCredentialsArray.map((dbCredentials) => {
+    // db_extra is a jsonb column; normalize whether pg returns it as a parsed
+    // object or a raw JSON string so the field accesses below work in both cases.
+    if (typeof dbCredentials.db_extra === "string") {
+      try { dbCredentials.db_extra = JSON.parse(dbCredentials.db_extra || "{}"); } catch { dbCredentials.db_extra = {}; }
+    }
+    dbCredentials.db_extra = dbCredentials.db_extra ?? {};
     // Extract read and admin credentials based on their type
     const readCredential = dbCredentials.credentials.find(
       (cred) => cred.userScope === "Read"
@@ -85,6 +91,9 @@ export function transformDBCredentials(
         : null,
       role: dbCredentials.db_extra.role
         ? dbCredentials.db_extra.role
+        : null,
+      privateKey: dbCredentials.db_extra.privateKey
+        ? dbCredentials.db_extra.privateKey
         : null,
       privateKeyPassphrase: dbCredentials.db_extra.privateKeyPassphrase
         ? dbCredentials.db_extra.privateKeyPassphrase

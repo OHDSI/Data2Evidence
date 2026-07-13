@@ -57,11 +57,14 @@ export interface SourceCredential {
   name: string;
   adminUsername: string;
   adminPassword: string;
-  // Snowflake key-pair extras (from db_extra). adminUsername = Snowflake user,
-  // adminPassword = PEM private key.
+  // Snowflake key-pair extras (all from db_extra.Internal, mirroring how BigQuery
+  // stores its long service-account key). adminUsername = Snowflake user; the PEM
+  // private key is `privateKey` (NOT adminPassword — a PEM is too long for the
+  // RSA-encrypted, 420-char-capped credential store).
   warehouse?: string;
   schema?: string;
   role?: string;
+  privateKey?: string;
   privateKeyPassphrase?: string;
 }
 
@@ -70,13 +73,19 @@ export interface SourceCredential {
 // JSON.stringify(c.extra?.Internal), and PrefectAPI.ts reads db_extra.<field> directly.
 export function snowflakeExtrasFromRow(dbExtra: unknown): Pick<
   SourceCredential,
-  "warehouse" | "schema" | "role" | "privateKeyPassphrase"
+  "warehouse" | "schema" | "role" | "privateKey" | "privateKeyPassphrase"
 > {
-  const extra = (dbExtra as any) ?? {};
+  // db_extra is a jsonb column. Depending on the pg type parser in this runtime it
+  // may arrive already-parsed (object) or as a raw JSON string — normalize both.
+  let extra: any = dbExtra ?? {};
+  if (typeof extra === "string") {
+    try { extra = JSON.parse(extra || "{}"); } catch { extra = {}; }
+  }
   return {
     warehouse: extra.warehouse,
     schema: extra.schema,
     role: extra.role,
+    privateKey: extra.privateKey,
     privateKeyPassphrase: extra.privateKeyPassphrase,
   };
 }
@@ -115,13 +124,22 @@ export async function ensureSourceAttached(
     // key-pair auth requires AUTH_TYPE 'key_pair' explicitly; PRIVATE_KEY is the PEM
     // key content (not a file path in this usage). ROLE is included as an optional
     // parameter — not explicitly documented but accepted by the extension.
-    // adminPassword carries the PEM private key; adminUsername = Snowflake user.
-    if (!c.adminPassword) {
+    // The PEM private key comes from db_extra (c.privateKey); adminUsername = Snowflake user.
+    if (!c.privateKey) {
       throw new Error(`snowflake key-pair auth requires a private key for ${c.id}`);
+    }
+    // The community snowflake extension is not autoloaded by DuckDB the way core
+    // scanners are, so load it explicitly before CREATE SECRET (TYPE snowflake).
+    // Preinstalled in the image (offline LOAD); fall back to a community install.
+    try {
+      await opts.exec("LOAD snowflake");
+    } catch (_e) {
+      await opts.exec("INSTALL snowflake FROM community");
+      await opts.exec("LOAD snowflake");
     }
     const account = sqlQuote(c.host);
     const user = sqlQuote(c.adminUsername);
-    const privateKey = sqlQuote(c.adminPassword);
+    const privateKey = sqlQuote(c.privateKey);
     const secretName = `${alias}_secret`;
     const parts = [
       `TYPE snowflake`,

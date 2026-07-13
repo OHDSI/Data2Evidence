@@ -163,6 +163,7 @@ export const i18nDefault = {
     SNOWFLAKE_FORM__SCHEMA: "Schema",
     SNOWFLAKE_FORM__ROLE: "Role",
     SNOWFLAKE_FORM__PASSPHRASE: "Private key passphrase (optional)",
+    SNOWFLAKE_FORM__PRIVATE_KEY: "Private key (PEM)",
     BOX_PLOT_CHART__NO_DATA: "Results not available",
     CDM_DOWNLOAD_DIALOG__ERROR_DOWNLOAD:
       "Error occurred while downloading patient data. To report the error, please send an email to your administrator",

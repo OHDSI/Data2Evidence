@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { TextField } from "@portal/components";
+import { TextArea, TextField } from "@portal/components";
 import { useTranslation } from "../../../../contexts";
 
 interface FormData {
@@ -8,6 +8,7 @@ interface FormData {
   warehouse?: string;
   schema?: string;
   role?: string;
+  privateKey?: string; // PEM key-pair private key; stored in db_extra.Internal
   privateKeyPassphrase?: string;
 }
 
@@ -67,6 +68,16 @@ export const SnowflakeForm: FC<SnowflakeFormProps> = ({ data, onChange }) => {
           sx={{ flex: 1 }}
           value={data.privateKeyPassphrase || ""}
           onChange={(event) => onChange({ privateKeyPassphrase: event.target?.value })}
+        />
+      </div>
+      <div style={{ marginBottom: "32px" }}>
+        <div style={{ marginBottom: "8px" }}>
+          <b>{getText(i18nKeys.SNOWFLAKE_FORM__PRIVATE_KEY)}</b>
+        </div>
+        <TextArea
+          rows={8}
+          value={data.privateKey || ""}
+          onChange={(event) => onChange({ privateKey: event.target.value })}
         />
       </div>
     </>

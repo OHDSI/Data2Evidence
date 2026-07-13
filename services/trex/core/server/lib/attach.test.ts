@@ -257,19 +257,21 @@ Deno.test("ensureSourceAttached — snowflake creates a SECRET then ATTACHes rea
     host: "myorg-myaccount",
     name: "OMOP_DB",
     adminUsername: "SVC_USER",
-    adminPassword: "-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----",
+    adminPassword: "",
     warehouse: "COMPUTE_WH",
     schema: "CDM",
     role: "D2E_READER",
+    privateKey: "-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----",
   };
   await ensureSourceAttached(c, { exec });
-  assertEquals(calls.length, 2);
+  assertEquals(calls.length, 3);
+  assertEquals(calls[0], "LOAD snowflake");
   assertEquals(
-    calls[0],
+    calls[1],
     "CREATE OR REPLACE SECRET sf_alpha__srcdb_secret (TYPE snowflake, ACCOUNT 'myorg-myaccount', USER 'SVC_USER', AUTH_TYPE 'key_pair', PRIVATE_KEY '-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----', WAREHOUSE 'COMPUTE_WH', DATABASE 'OMOP_DB', SCHEMA 'CDM', ROLE 'D2E_READER')",
   );
   assertEquals(
-    calls[1],
+    calls[2],
     "ATTACH IF NOT EXISTS '' AS sf_alpha__srcdb (TYPE snowflake, SECRET sf_alpha__srcdb_secret, READ_ONLY)",
   );
 });
@@ -283,12 +285,14 @@ Deno.test("ensureSourceAttached — snowflake omits optional clauses when unset"
     host: "acct",
     name: "DB",
     adminUsername: "U",
-    adminPassword: "KEY",
+    adminPassword: "",
+    privateKey: "KEY",
   };
   await ensureSourceAttached(c, { exec });
-  assertEquals(calls.length, 2);
+  assertEquals(calls.length, 3);
+  assertEquals(calls[0], "LOAD snowflake");
   assertEquals(
-    calls[0],
+    calls[1],
     "CREATE OR REPLACE SECRET sf_min__srcdb_secret (TYPE snowflake, ACCOUNT 'acct', USER 'U', AUTH_TYPE 'key_pair', PRIVATE_KEY 'KEY', DATABASE 'DB')",
   );
 });
@@ -312,11 +316,11 @@ Deno.test("ensureSourceAttached — snowflake without a private key throws a cle
 
 Deno.test("snowflakeExtrasFromRow — reads extras directly off db_extra, tolerates missing", () => {
   assertEquals(
-    snowflakeExtrasFromRow({ warehouse: "WH", schema: "CDM", role: "R", privateKeyPassphrase: "pp" }),
-    { warehouse: "WH", schema: "CDM", role: "R", privateKeyPassphrase: "pp" },
+    snowflakeExtrasFromRow({ warehouse: "WH", schema: "CDM", role: "R", privateKey: "PEM", privateKeyPassphrase: "pp" }),
+    { warehouse: "WH", schema: "CDM", role: "R", privateKey: "PEM", privateKeyPassphrase: "pp" },
   );
   assertEquals(
     snowflakeExtrasFromRow(null),
-    { warehouse: undefined, schema: undefined, role: undefined, privateKeyPassphrase: undefined },
+    { warehouse: undefined, schema: undefined, role: undefined, privateKey: undefined, privateKeyPassphrase: undefined },
   );
 });

@@ -126,6 +126,19 @@ RUN \
     && /app/download_duckdb_extensions.sh "$DUCKDB_VERSION" "$DUCKDB_EXTENSIONS" \
     && rm -f /app/download_duckdb_extensions.sh
 
+# ADBC 1.8.0 on PyPI; the driver is DuckDB-version independent.
+ARG TARGETARCH
+RUN set -eu; \
+    case "$TARGETARCH" in \
+      amd64) WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-1.8.0-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;; \
+      arm64) WHL="https://files.pythonhosted.org/packages/a4/14/7f448f5be225a3c596aa1a14a704fb4d8a2871e306d8725f98028af4265f/adbc_driver_snowflake-1.8.0-py3-none-manylinux2014_aarch64.manylinux_2_17_aarch64.whl" ;; \
+      *) echo "unsupported TARGETARCH=$TARGETARCH for ADBC snowflake driver" >&2; exit 1 ;; \
+    esac; \
+    cd /tmp && wget -q "$WHL" -O adbc.whl && \
+    python3 -m zipfile -e adbc.whl adbc_extract && \
+    cp "$(find adbc_extract -name 'libadbc_driver_snowflake.so' | head -n1)" /usr/local/lib/ && \
+    ldconfig && rm -rf adbc.whl adbc_extract
+
 
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
