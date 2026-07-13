@@ -1,12 +1,15 @@
 # DevX override — layered LAST on docker-compose.yml (+ docker-compose-local.yml).
 #
-# Serves the DevX editor from d2e's own trex container: the -with-dx image
-# (trexsql-dx base) ships the devx plugin in /usr/src/plugins-dev, and the
-# base stack already provides everything else it needs — trex's core-schema
-# migrations run into minerva's `alp` DB (authenticator/anon roles,
-# better-auth, trexdb.*), caddy's default handler routes /trex/* and
-# /plugins/* to trexas on 33001, and PostgREST is served in-process by the
-# @trex/postgrest plugin (PGRST_* envs below; no sidecar).
+# Serves the DevX editor from d2e's own trex container. Since trex's
+# single-image consolidation (TREX_DX_ENABLED), every trexsql base ships the
+# devx plugin and devx_ext extension in gated folders (/usr/src/plugins-dx,
+# /usr/lib/trexsql/extensions-dx) that trex's entrypoint.sh only exposes when
+# TREX_DX_ENABLED=true — so the standard d2e-trex image is used as-is; this
+# overlay only flips the gate and wires DevX's runtime needs. The base stack
+# already provides the rest: trex's core-schema migrations run into minerva's
+# `alp` DB (authenticator/anon roles, better-auth, trexdb.*), caddy's default
+# handler routes /trex/* and /plugins/* to trexas on 33001, and PostgREST is
+# served in-process by the @trex/postgrest plugin (PGRST_* envs below).
 #
 # The only extra service is trex-dx-init, which derives PGRST_JWT_SECRET
 # from TREX_ROOT_KEY into ./secrets/derived.env. It must derive from the
@@ -14,7 +17,6 @@
 # env_file), so it seeds ./secrets/root.env from ${TREX_ROOT_KEY} first.
 #
 # Run via the CLI scripts (they append this file with `-c`):
-#   npm run build:dx     # build the -with-dx image
 #   npm run start:dx     # bring up the d2e stack with DevX
 #   npm run stop:dx
 #
@@ -40,7 +42,7 @@ services:
   # is safe and required to keep derived.env matching trex's in-process
   # HKDF derivation.
   trex-dx-init:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx
+    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
     container_name: ${PROJECT_NAME:-d2e}-trex-dx-init
     entrypoint:
       - /bin/sh
@@ -68,20 +70,13 @@ services:
     networks:
       - alp
 
-  # d2e's trex, switched to the -with-dx image. The devx plugin loads from
-  # the base's /usr/src/plugins-dev (already on PLUGINS_DEV_PATH); the
-  # in-process PostgREST plugin serves /trex/rest/v1 against minerva `alp`,
-  # where the base stack's core-schema migrations created the authenticator
-  # role and public.postgrest_pre_request.
+  # d2e's standard trex image with the DevX gate flipped on. trex's
+  # entrypoint.sh (which the base compose execs after writing certs) appends
+  # the gated /usr/src/plugins-dx and /usr/lib/trexsql/extensions-dx paths
+  # when TREX_DX_ENABLED=true. The in-process PostgREST plugin serves
+  # /trex/rest/v1 against minerva `alp`, where the base stack's core-schema
+  # migrations created the authenticator role and public.postgrest_pre_request.
   trex:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}-with-dx
-    build:
-      context: ./services/trex
-      dockerfile: ./Dockerfile.v2
-      args:
-        # Keep in sync with the -with-dx build in docker-build-push.yaml.
-        BASE_IMAGE: ghcr.io/ohdsi/trexsql-dx:sha-bcc2221ab4ebada5a1444cf151008b04c0ecf5bc
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow}
     depends_on:
       trex-dx-init:
         condition: service_completed_successfully
@@ -96,6 +91,9 @@ services:
       - trex-dx-claude-config:/root/.claude
       - trex-dx-gh-config:/root/.config/gh
     environment:
+      # Expose the gated devx plugin + devx_ext extension baked into the base
+      # image (handled by trex's entrypoint.sh; exact string "true" required).
+      TREX_DX_ENABLED: "true"
       # Browser-facing better-auth flows go through caddy, not port 33001.
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
       # In-process PostgREST (@trex/postgrest plugin) against minerva `alp`.
