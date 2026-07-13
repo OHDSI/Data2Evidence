@@ -114,6 +114,11 @@ ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 RUN sed -i 's|export EXTENSION_DIR=.*extensions-dx"$|cp -n /usr/lib/trexsql/extensions-dx/*.trex /usr/lib/trexsql/extensions/|' /usr/src/entrypoint.sh \
     && grep -q 'cp -n /usr/lib/trexsql/extensions-dx' /usr/src/entrypoint.sh
 
+# devx's claude_code_agent hardcodes /usr/src/plugins-dev/devx/fn-claude-code
+# (its pre-consolidation home); the gated payload lives in /usr/src/plugins-dx.
+# Symlink the old location until devx derives the path from the plugin mount.
+RUN ln -s /usr/src/plugins-dx/devx /usr/src/plugins-dev/devx
+
 RUN mkdir -p ./logto
 COPY ./logto ./logto
 COPY ./cdw_data/built_in /usr/src/cdw_data/built_in
