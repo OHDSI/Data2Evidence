@@ -397,9 +397,6 @@ export function StepForm() {
     );
   }
 
-  // Get submit button text from stepConfig or default to "Next"
-  const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
-
   const renderFields = (fields: FieldDefinition[]) => {
     return fields.map((field) => renderField(field));
   };
@@ -433,13 +430,6 @@ export function StepForm() {
             Back
           </button>
           <div className={styles.primaryActions}>
-            <button
-              type="submit"
-              disabled={!allRequiredFieldsFilled() || !isValid}
-              className={`${styles.button} ${styles.buttonPrimary}`}
-            >
-              <AnalyticsIcon /> {submitLabel}
-            </button>
             <button
               type="button"
               onClick={handleSubmit(onOpenDashboard)}
