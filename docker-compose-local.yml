@@ -44,8 +44,13 @@ services:
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
       - devx-workspaces:/tmp/devx-workspaces
-      # This image runs as root; claude-code/gh read config from /root.
+      # devx splits claude state across two homes: the claude-code helper
+      # (HOME-based) uses /root/.claude (this image runs as root) for
+      # skills/settings, while the UI OAuth login stores its token at the
+      # hardcoded /home/node/.claude/oauth-token.json. Mount the same volume
+      # at both paths so a login survives container recreation either way.
       - trex-dx-claude-config:/root/.claude
+      - trex-dx-claude-config:/home/node/.claude
       - trex-dx-gh-config:/root/.config/gh
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
@@ -63,6 +68,10 @@ services:
       # Expose the gated devx plugin + devx_ext extension baked into the base
       # image (handled by trex's entrypoint.sh; exact string "true" required).
       TREX_DX_ENABLED: "true"
+      # claude-code refuses --dangerously-skip-permissions (devx's
+      # bypassPermissions mode) when running as root; IS_SANDBOX=1 is its
+      # container escape hatch. This image runs as root — local dev only.
+      IS_SANDBOX: "1"
       # Browser-facing better-auth flows go through caddy, not port 33001.
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
       # In-process PostgREST (@trex/postgrest plugin) against minerva `alp`,
