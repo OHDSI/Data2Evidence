@@ -77,27 +77,27 @@ jobs:
       - uses: docker/setup-buildx-action@v3
         id: builder
 
-      - name: Build flow-hades image
-        uses: docker/build-push-action@v6
-        with:
-          builder: ${{ steps.builder.outputs.name }}
-          context: ./plugins/flows
-          file: ./plugins/flows/hades/Dockerfile
-          platforms: linux/amd64
-          push: false
-          load: true
-          tags: ${{ env.REG_URL }}/d2e/flow-hades:${{ env.DOCKER_TAG_NAME }}
-          provenance: false
-          sbom: false
-          build-args: |
-            GIT_COMMIT_ARG=${{ github.sha }}
-            BUILD_TYPE=OSS
+      # - name: Build flow-hades image
+      #   uses: docker/build-push-action@v6
+      #   with:
+      #     builder: ${{ steps.builder.outputs.name }}
+      #     context: ./plugins/flows
+      #     file: ./plugins/flows/hades/Dockerfile
+      #     platforms: linux/amd64
+      #     push: false
+      #     load: true
+      #     tags: ${{ env.REG_URL }}/d2e/flow-hades:${{ env.DOCKER_TAG_NAME }}
+      #     provenance: false
+      #     sbom: false
+      #     build-args: |
+      #       GIT_COMMIT_ARG=${{ github.sha }}
+      #       BUILD_TYPE=OSS
 
-      - name: Pull docker compose images
-        if: success() || failure()
-        run: |
-          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
-          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+      # - name: Pull docker compose images
+      #   if: success() || failure()
+      #   run: |
+      #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -d ./plugins/functions pull
+      #     docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
 
       - name: Start services
         if: success() || failure()
@@ -145,20 +145,22 @@ jobs:
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
 
-      - name: Setup HTTP Test Env
+      - name: Setupdemo
         if: success() || failure()
         uses: nick-fields/retry@v3
+        id: setupdemo
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 1
+          max_attempts: 2
           retry_on: any
           command: |
-            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setuphttptestenv
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
             DC_EXIT_CODE=$?
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
 
       - name: Get dataset Id
         run: |
