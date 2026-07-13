@@ -22,50 +22,57 @@ interface WizardDashboardModalProps {
 export function WizardDashboardModal({ state, onClose, onRetry, datasetId, getToken }: WizardDashboardModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const isWorking = state.status !== "error" && state.status !== "ready";
 
   useEffect(() => {
     if (!state.isOpen) return;
     returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeButtonRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && !isWorking) onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       returnFocusRef.current?.focus();
     };
-  }, [onClose, state.isOpen]);
+  }, [isWorking, onClose, state.isOpen]);
 
   if (!state.isOpen) return null;
 
-  const isWorking = state.status !== "error" && state.status !== "ready";
   return (
     <div className={styles.backdrop} role="presentation">
       <section
-        className={`${styles.modal} ${state.status === "ready" ? styles.modalReady : ""}`}
+        className={`${styles.modal} ${isWorking ? styles.modalWorking : state.status === "ready" ? styles.modalReady : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wizard-dashboard-title"
         aria-busy={isWorking}
       >
-        <div className={styles.header}>
-          <h2 id="wizard-dashboard-title">Wizard dashboard</h2>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            onClick={onClose}
-            className={styles.closeButton}
-            aria-label="Close dashboard"
-          >
-            ×
-          </button>
-        </div>
+        {!isWorking && (
+          <div className={styles.header}>
+            <h2 id="wizard-dashboard-title">Wizard dashboard</h2>
+            <button
+              ref={closeButtonRef}
+              type="button"
+              onClick={onClose}
+              className={styles.closeButton}
+              aria-label="Close dashboard"
+            >
+              ×
+            </button>
+          </div>
+        )}
         <div className={styles.content} aria-live="polite">
           {isWorking && (
-            <div className={styles.status}>
+            <div className={styles.workingStatus}>
+              <h2 id="wizard-dashboard-title" className={styles.workingTitle}>
+                Generating dashboard
+              </h2>
               <span className={styles.spinner} aria-hidden="true" />
-              <p>{stageMessages[state.status as keyof typeof stageMessages] ?? "Preparing the dashboard…"}</p>
+              <p className={styles.workingMessage}>
+                {stageMessages[state.status as keyof typeof stageMessages] ?? "Preparing the dashboard…"}
+              </p>
             </div>
           )}
           {state.status === "error" && (
