@@ -73,8 +73,8 @@ services:
       PGRST_DB_ANON_ROLE: anon
       PGRST_DB_PRE_REQUEST: public.postgrest_pre_request
       PGRST_OPENAPI_SERVER_PROXY_URI: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex/rest/v1"
-      # Surface DevX in trex's web shell top nav.
-      TREX_WEB_NAV_EXTRA: '[{"path":"/devx","label":"DevX","plugin":"devx"}]'
+      # Surface DevX in trex's web shell top nav (labelled "Code").
+      TREX_WEB_NAV_EXTRA: '[{"path":"/devx","label":"Code","plugin":"devx"}]'
       # GitHub device-flow OAuth (DevX → Connect GitHub). Optional; bundled default used if unset.
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
       # AES-256 key (64 hex) for DevX integration-token storage. Optional.
