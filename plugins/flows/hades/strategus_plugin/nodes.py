@@ -1371,6 +1371,8 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
                 );
                 """
                 dbdao.execute_sql(create_table_sql)
+            else:
+                print(f'Schema {results_schema} already exists, skipping creation of results datamodel')
 
             # uploadResults logs are not captured by default
             # so we override the consolewrite_print callback to capture the logs
