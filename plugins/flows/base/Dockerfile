@@ -129,6 +129,8 @@ RUN \
 
 COPY --chown=docker:docker  ./__init__.py /app/
 COPY --chown=docker:docker ./drivers /app/inst/drivers/
+RUN mkdir -p /app/inst/drivers \
+    && chown -R docker:docker /app/inst
 
 
 ARG POSIT_DATE=2025-09-22
