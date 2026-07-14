@@ -1,6 +1,7 @@
 import {
   buildRecommendation,
   generateConfigWithDefaultAttributes,
+  getCdwServiceCredentials,
 } from "../../../src/qe/config/configSuggestion";
 import { dw_views_pholderTableMap } from "../../data/global/dw_views_pholdertablemap";
 import { Settings } from "../../../src/qe/settings/Settings";
@@ -245,5 +246,28 @@ describe("CDM Config generate config with default attributes", () => {
       expect(output.patient.attributes.start).toBeDefined();
       expect(output.patient.attributes.end).toBeDefined();
     });
+  });
+});
+
+describe("CDM Config empty config credentials", () => {
+  it("uses the first generated CDW service when multiple CDW services exist", () => {
+    const vcapServices = {
+      mridb: [
+        {
+          name: "first-cdw",
+          tags: ["cdw"],
+          credentials: { vocabSchema: "FIRST_VOCAB" },
+        },
+        {
+          name: "second-cdw",
+          tags: ["cdw"],
+          credentials: { vocabSchema: "SECOND_VOCAB" },
+        },
+      ],
+    };
+
+    expect(getCdwServiceCredentials(vcapServices).vocabSchema).toEqual(
+      "FIRST_VOCAB"
+    );
   });
 });
