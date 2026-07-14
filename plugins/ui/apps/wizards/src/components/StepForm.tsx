@@ -403,7 +403,20 @@ export function StepForm() {
 
   return (
     <div className={styles.container}>
-      <h2>{selectedWizard.name}</h2>
+      <div className={styles.titleRow}>
+        <button
+          type="button"
+          onClick={goBack}
+          className={styles.backIconButton}
+          aria-label="Back to wizard selection"
+          title="Back to wizard selection"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z" />
+          </svg>
+        </button>
+        <h2>{selectedWizard.name}</h2>
+      </div>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
