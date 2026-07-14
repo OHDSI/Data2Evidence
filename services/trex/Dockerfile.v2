@@ -6,7 +6,7 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-66647e98ee18df39f10f0da7327dd12ccfcf302d@sha256:efa6cecfeb2cb30e3fbc13926d00a025fe2cdb9735a5cea245185e8fdaa50f08 AS base
+FROM ghcr.io/ohdsi/trexsql:sha-f734dae75c52cecf04f54486a8a3433f6d2a9fe7@sha256:b64053ea07cffba843802cbe38041592c8042b7e9dd9377eba989e1a77d67529 AS base
 
 USER root
 WORKDIR /usr/src
@@ -104,20 +104,6 @@ ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 # which makes /usr/src/core serve the d2e main service. The compat layer adds
 # d2e routes on top of the canonical core, so the same trexas also serves
 # trex's own shell and plugins (including the TREX_DX_ENABLED-gated devx).
-
-# The base entrypoint's TREX_DX_ENABLED gate turns EXTENSION_DIR into a
-# colon-separated list, which the orchestrator's per-connection
-# `LOAD '$EXTENSION_DIR/<ext>.trex'` (plugins/db start_service_local) cannot
-# resolve — trexas/pgwire then fail to start. Copy the gated extension into
-# the primary dir instead and leave EXTENSION_DIR untouched. Remove once the
-# orchestrator handles EXTENSION_DIR lists upstream.
-RUN sed -i 's|export EXTENSION_DIR=.*extensions-dx"$|cp -n /usr/lib/trexsql/extensions-dx/*.trex /usr/lib/trexsql/extensions/|' /usr/src/entrypoint.sh \
-    && grep -q 'cp -n /usr/lib/trexsql/extensions-dx' /usr/src/entrypoint.sh
-
-# devx's claude_code_agent hardcodes /usr/src/plugins-dev/devx/fn-claude-code
-# (its pre-consolidation home); the gated payload lives in /usr/src/plugins-dx.
-# Symlink the old location until devx derives the path from the plugin mount.
-RUN ln -s /usr/src/plugins-dx/devx /usr/src/plugins-dev/devx
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto
