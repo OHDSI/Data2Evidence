@@ -1450,8 +1450,8 @@ def getRCdmExecutionSettings(settings) -> str:
             rCohortGenerator = importr('CohortGenerator')
 
             rExecutionSettings = rStrategus.createCdmExecutionSettings(
-                workDatabaseSchema = settings['schemaName'],
-                cdmDatabaseSchema = settings['schemaName'],
+                workDatabaseSchema = f"{settings['dbName']}.{settings['schemaName']}",
+                cdmDatabaseSchema = f"{settings['dbName']}.{settings['schemaName']}",
                 cohortTableNames = rCohortGenerator.getCohortTableNames(cohortTable = "cohort"),
                 workFolder = settings['workFolder'],
                 resultsFolder = settings['resultsFolder'],

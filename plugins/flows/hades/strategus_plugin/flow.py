@@ -246,6 +246,7 @@ def runStrategus(json_graph, options):
     analysisSpec = json.dumps(analysisSpec)
     defaultExecutionSettings = getRCdmExecutionSettings({
         "cacheId": cache_id,
+        "dbName": cache_id if cache_id else database_code,
         "schemaName": schema_name,
         "workFolder": work_folder,
         "resultsFolder": path_to_results
