@@ -1,5 +1,11 @@
 services:
   trex:
+    # DevX is enabled by default for local dev (docker-compose-local.yml), but
+    # CI's e2e/integration suites don't exercise the editor — keep it off here so
+    # the devx plugin + devx_ext + claude/bun tooling don't load into the test
+    # stack. This overlay is applied last, so it wins over the local default.
+    environment:
+      TREX_DX_ENABLED: "false"
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
       # Overlay the e2e-patched MRI/PA seed config onto the image-bundled
