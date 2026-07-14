@@ -97,10 +97,10 @@ test(TEST_NAME, async ({ page }) => {
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByRole('button', { name: 'Discard' }).click()
+  await page.getByRole('button', { name: 'Leave without saving' }).click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByText('Extended Logic Filter').click()
-  await page.getByRole('button', { name: 'Discard' }).click()
+  await page.getByRole('button', { name: 'Leave without saving' }).click()
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
 

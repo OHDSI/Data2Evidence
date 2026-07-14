@@ -216,7 +216,7 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
       .first()
       .click()
-    await page.getByRole('button', { name: 'Discard' }).click()
+    await page.getByRole('button', { name: 'Leave without saving' }).click()
     //Verify filters are loaded
     await expect(page.getByText('>2')).toBeVisible()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
