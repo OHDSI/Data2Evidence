@@ -530,6 +530,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV file',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP file',
     MRI_PA_EXPORT_FILE_PNG: 'PNG file',
+    MRI_PA_EXPORT_FAILED: 'Unable to export {0}',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: 'Save and activate the current configuration in the back-end system',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC:
       'You can define attributes that apply to all interactions (except Basic Data).',
@@ -1038,7 +1039,7 @@ export const i18n = {
     MRI_PA_COLL_BUT_OK: 'OK',
     MRI_PA_COLL_BUT_CANCEL: 'Abbrechen',
     MRI_PA_COLL_BUT_RETRY: 'Wiederholen',
-    MRI_PA_COLL_BUT_SAVE: 'Speichern',
+    MRI_PA_COLL_BUT_SAVE: 'Sichern',
     MRI_PA_COHORT_SAVED: 'Kohorte gespeichert',
     MRI_PA_BOOKMARK_SAVED: 'Lesezeichen erfolgreich gespeichert',
     MRI_PA_COLL_SUCCESS_ADD_PATIENT: 'Patienten wurden zu Kohorte hinzugefügt.',
@@ -1048,7 +1049,7 @@ export const i18n = {
     MRI_PA_COLL_FAILURE_ADD_PATIENT: 'Patienten konnten Kohorte nicht hinzugefügt werden.',
     MRI_PA_COLL_LIST: 'Liste der materialisierten Kohorten von {0}',
     MRI_PA_COLL_NO_COHORTS_TEXT:
-      'Es sind keine Kohorten materialisiert. Sie können Ihre aktuelle Kohorte speichern und auf die Schaltfläche „Kohorte materialisieren" klicken, um zu beginnen.',
+      'Es sind keine Kohorten materialisiert. Sie können Ihre aktuelle Kohorte sichern und auf die Schaltfläche „Kohorte materialisieren" klicken, um zu beginnen.',
     MRI_PA_COHORT_ALREADY_MATERIALIZED:
       'Diese Filterkombination wurde bereits materialisiert. Lesezeichen wird nur gespeichert.',
     MRI_PA_CLEAR_SELECTION: 'Auswahl löschen',
@@ -1403,7 +1404,7 @@ export const i18n = {
     MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP: 'Filterübersicht anzeigen',
     MRI_PA_TITLE_SAVED_BOOKMARKS: 'Gesicherte Filter',
     MRI_PA_TITLE_SAVE_BOOKMARK: 'Aktuelle Filter sichern',
-    MRI_PA_TITLE_SAVE_AND_MATERIALIZE: 'Speichern und Materialisieren',
+    MRI_PA_TITLE_SAVE_AND_MATERIALIZE: 'Sichern und Materialisieren',
     MRI_PA_TITLE_MATERIALIZE_COHORT: 'Kohorte Materialisieren',
     MRI_PA_TXT_SAVE_BOOKMARK: 'Geben Sie einen Namen für Ihre aktuellen Filter ein.',
     MRI_PA_TOOLTIP_REFRESH_BUTTON: 'Filterkacheln und Diagramme zurücksetzen',
@@ -1434,7 +1435,7 @@ export const i18n = {
     MRI_PA_BUTTON_VIEW_RESULT: 'Ergebnisse anzeigen',
     MRI_PA_BUTTON_RUN_DQD: 'Führen Sie Datenqualität aus',
     MRI_PA_BUTTON_SAVE: 'Sichern',
-    MRI_PA_BUTTON_CONTINUE: 'Weitermachen',
+    MRI_PA_BUTTON_CONTINUE: 'Weiter',
     MRI_PA_CONFIG_ADMIN_WRONG_IMPORT_FORMAT:
       'Falsches Format oder ungültige Struktur. Geben Sie den zu importierenden Inhalt im JSON-Format ein.',
     MRI_PA_BUTTON_OVERWRITE: 'Überschreiben',
@@ -1563,6 +1564,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV-Datei',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP-Datei',
     MRI_PA_EXPORT_FILE_PNG: 'PNG-Datei',
+    MRI_PA_EXPORT_FAILED: '{0} kann nicht exportiert werden',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: 'Aktuelle Konfiguration im Backend-System sichern und aktivieren',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC:
       'Sie können Attribute definieren, die für alle Interaktionen (ausgenommen Grunddaten) gültig sind.',
@@ -2557,6 +2559,7 @@ export const i18n = {
     MRI_PA_EXPORT_FILE_CSV: 'CSV 文件',
     MRI_PA_EXPORT_FILE_ZIP: 'ZIP 文件',
     MRI_PA_EXPORT_FILE_PNG: 'PNG 文件',
+    MRI_PA_EXPORT_FAILED: '无法导出{0}',
     MRI_PA_CONFIG_ADMIN_SAVE_AND_ACTIVATE_TOOLTIP: '保存并激活后端系统中的当前配置',
     MRI_PA_CONFIG_ADMIN_DEFAULT_ATTR_ADDITIONAL_DESC: '可定义应用于所有交互的属性（基本数据除外）。',
     MRI_PA_BUTTON_SEARCH_VB: '导航到基因组的特定位置',

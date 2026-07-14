@@ -7,6 +7,9 @@ spec:
     - name: caddy
       port: 443
       targetPort: 443
+    - name: caddy-http
+      port: 80
+      targetPort: 8080
   selector:
     profile: d2e-core-caddy
   type: {{ .Values.gateway.serviceType | default "ClusterIP" }}

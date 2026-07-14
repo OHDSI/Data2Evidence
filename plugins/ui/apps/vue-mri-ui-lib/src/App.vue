@@ -12,6 +12,9 @@
 </template>
 
 <script setup lang="ts">
+// Self-hosted IBM Plex Sans webfont. Imported here (the root component rendered
+// by both the standalone and single-spa entries) so it loads in every context.
+import '@fontsource-variable/ibm-plex-sans'
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useStore } from 'vuex'
 import patientanalytics from './components/PatientAnalytics.vue'

@@ -42,6 +42,7 @@ jobs:
       changes_ui: ${{ steps.file_changes.outputs.ui }}
       changes_flow_package_json: ${{ steps.file_changes.outputs.flow_package_json }}
       changes_e2e: ${{ steps.file_changes.outputs.e2e }}
+      changes_regression: ${{ steps.file_changes.outputs.regression }}
     steps:
       - id: shuffle
         run: echo "random_runner=$(shuf -e ubuntu-22.04 ubuntu-24.04 | head -n 1)" >> "$GITHUB_OUTPUT"
@@ -146,6 +147,9 @@ jobs:
             e2e:
               - "tests/e2e/**"
               - "services/trex/**"
+              - ".github/workflows/docker-build-push.yaml"
+            regression:
+              - "tests/regression/**"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
@@ -512,7 +516,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.0.1-develop.2.g8edf28a
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -869,6 +873,7 @@ jobs:
       - name: Wait for d2e-trex healthy
         if: success() || failure()
         run: |
+          status=missing
           for i in $(seq 1 60); do
             status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
             echo "[$i] d2e-trex health: $status"
@@ -876,6 +881,24 @@ jobs:
             sleep 5
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ "$status" != "healthy" ]; then
+            echo "::error::d2e-trex did not become healthy (last status: $status)"
+            exit 1
+          fi
+
+      # demodb (postgres:16-alpine, docker-compose.yml) is behind the demodb profile and
+      # is otherwise pulled from Docker Hub lazily inside Setupdemo, where a transient
+      # registry timeout aborts the whole demo setup. Pre-pull it with retries so the
+      # image is cached before Setupdemo runs.
+      - name: Pre-pull demo db image
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
 
       - name: Setupdemo
         if: success() || failure()
@@ -884,7 +907,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 2
+          max_attempts: 3
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
@@ -1061,6 +1084,10 @@ jobs:
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+          # HANA data-model flows need the sqlalchemy-hana dialect. #2824 moved its
+          # install to the INSTALL_SQLALCHEMY workpool command (blank by default), so
+          # set that in this test's .env — the dev/DuckDB path doesn't need it.
+          echo "INSTALL_SQLALCHEMY=bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'" >> .env
         env:
           init_choice: y
 
@@ -1244,6 +1271,41 @@ jobs:
       prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
     secrets: inherit
 
+  test_regression:
+    needs: [setup, build_images, build_trex_image, build_plugins]
+    if: |
+      needs.setup.outputs.is_publish_push == 'true' ||
+      contains(github.base_ref, 'release/') ||
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'merge_group' ||
+      (github.event_name == 'pull_request' && (needs.setup.outputs.changes_regression == 'true' || needs.setup.outputs.changes_http_tests == 'true'))
+    uses: ./.github/workflows/_test-regression.yml
+    with:
+      attempt: "1"
+      runner: ${{ needs.setup.outputs.random_runner }}
+      run_tag: ${{ needs.setup.outputs.run_tag }}
+      reg_url: ghcr.io/ohdsi
+      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+    secrets: inherit
+
+  test_regression_gate:
+    needs: [test_regression]
+    if: always() && needs.test_regression.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: regression-attempt-*
+          path: ./_attempts
+      - name: Pass if regression attempt succeeded
+        run: |
+          if find ./_attempts -name 'success' -type f | grep -q .; then
+            echo "Regression performance test attempt succeeded."
+            exit 0
+          fi
+          echo "Regression performance test attempt failed."
+          exit 1
+
   test_demosetup_dev_gate:
     needs: [test_demosetup_dev]
     if: always() && needs.test_demosetup_dev.result != 'skipped'
@@ -1390,17 +1452,22 @@ jobs:
             echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
           fi
 
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
+      # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
+      # list are stored as untagged package versions in GHCR, so a blind
+      # delete-only-untagged sweep (actions/delete-package-versions) removes
+      # the children of freshly pushed multi-arch tags and leaves the tag
+      # unpullable ("manifest unknown"). This action resolves manifest-list
+      # references and only deletes truly orphaned versions.
+      - name: Delete orphaned untagged versions
+        uses: dataaxiom/ghcr-cleanup-action@v1
         continue-on-error: true
         with:
-          package-name: ${{ matrix.image }}
-          package-type: container
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
+          package: ${{ matrix.image }}
+          delete-untagged: true
+          validate: true
 
   docker-success:
-    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate]
+    needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -1416,9 +1483,10 @@ jobs:
           R_DEMO_HANA: ${{ needs.test_demosetup_hana_gate.result }}
           R_HTTP_DUCKDB: ${{ needs.test_http_duckdb_gate.result }}
           R_HTTP_HANA: ${{ needs.test_http_hana_gate.result }}
+          R_REGRESSION: ${{ needs.test_regression_gate.result }}
         run: |
           fail=0
-          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA"; do
+          for r in "$R_BUILD_IMAGES" "$R_BUILD_TREX" "$R_BUILD_PLUGINS" "$R_BUILD_E2E" "$R_HELM_LINT" "$R_HELM_KIND" "$R_DEMO_DEV" "$R_DEMO_HANA" "$R_HTTP_DUCKDB" "$R_HTTP_HANA" "$R_REGRESSION"; do
             case "$r" in
               success|skipped) ;;
               *) fail=1 ;;

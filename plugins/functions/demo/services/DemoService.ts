@@ -5,6 +5,7 @@ import { PortalAPI } from "../api/PortalAPI.ts";
 import { UserMgmtAPI } from "../api/UserMgmtAPI.ts";
 import { env } from "../env.ts";
 import {
+  IDataset,
   IDbCreateDto,
   IDbCredentialDto,
   IDemoInput,
@@ -82,23 +83,8 @@ export class DemoService {
     this.logger.info("Adding dataset");
 
     const portalAPI = new PortalAPI(token);
-    const datasets = await portalAPI.getDatasets();
-
-    const existingDataset = datasets.find(
-      (dataset) =>
-        dataset.databaseCode === env.DEMO_DB_CODE &&
-        dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
-        dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
-        dataset.sourceStudyId == null &&
-        dataset.visibilityStatus !== "HIDDEN"
-    );
-
-    if (existingDataset) {
-      this.logger.info(`Dataset exists: ${JSON.stringify(existingDataset)}`);
-      return existingDataset;
-    }
-
     const datasetAPI = new DatasetAPI(token);
+
     const dataset = {
       ...env.DEMO_DATASET,
       databaseCode: env.DEMO_DB_CODE,
@@ -107,30 +93,85 @@ export class DemoService {
       resultsSchemaValue: env.DEMO_DB_RESULT_SCHEMA,
     };
 
-    const result = await datasetAPI.createDataset(dataset);
-    this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
-
-    // Look the dataset back up so we always carry the server-assigned id forward,
-    // regardless of which fields the gateway echoes in its response.
-    const refreshed = await portalAPI.getDatasets();
-    const createdDataset =
-      (result?.id && refreshed.find((d) => d.id === result.id)) ||
-      refreshed.find(
-        (d) =>
-          d.databaseCode === env.DEMO_DB_CODE &&
-          d.schemaName === env.DEMO_DB_CDM_SCHEMA &&
-          d.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
-          d.sourceStudyId == null &&
-          d.visibilityStatus !== "HIDDEN"
+    // Right after the demo database is registered, TrexSQL needs time to attach
+    // the source database and expose its schemas. Until that completes, the
+    // dataset service's schema-existence precheck rejects creation without
+    // inserting a row, so we retry create-and-confirm until the dataset is
+    // actually visible in the portal.
+    const maxAttempts = 30;
+    const retryDelayMs = 10000;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const existingDataset = this.findDemoDataset(
+        await this.getDatasetsSafe(portalAPI)
       );
+      if (existingDataset?.id) {
+        this.logger.info(
+          `Dataset confirmed in portal: ${JSON.stringify(existingDataset)}`
+        );
+        return existingDataset;
+      }
 
-    if (!createdDataset?.id) {
-      throw new Error(
-        `Dataset created but not visible in portal (result=${JSON.stringify(result)})`
+      const result = await datasetAPI.createDataset(dataset);
+      this.logger.info(`Dataset added: ${JSON.stringify(result)}`);
+
+      // Look the dataset back up so we always carry the server-assigned id
+      // forward, regardless of which fields the gateway echoes in its response.
+      const refreshed = await this.getDatasetsSafe(portalAPI);
+      const createdDataset =
+        (result?.id && refreshed.find((d) => d.id === result.id)) ||
+        this.findDemoDataset(refreshed);
+
+      if (createdDataset?.id) {
+        this.logger.info(
+          `Dataset confirmed in portal: ${JSON.stringify(createdDataset)}`
+        );
+        return createdDataset;
+      }
+
+      this.logger.info(
+        `Dataset not visible yet (attempt ${attempt}/${maxAttempts}); ` +
+          `source schema may still be attaching. Retrying in ${retryDelayMs}ms.`
       );
+      await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
     }
-    this.logger.info(`Dataset confirmed in portal: ${JSON.stringify(createdDataset)}`);
-    return createdDataset;
+
+    throw new Error(
+      `Dataset could not be created and confirmed in portal after ${maxAttempts} attempts`
+    );
+  }
+
+  private findDemoDataset(datasets: IDataset[]) {
+    return datasets.find(
+      (dataset) =>
+        dataset.databaseCode === env.DEMO_DB_CODE &&
+        dataset.schemaName === env.DEMO_DB_CDM_SCHEMA &&
+        dataset.vocabSchemaName === env.DEMO_DB_CDM_SCHEMA &&
+        dataset.sourceStudyId == null &&
+        dataset.visibilityStatus !== "HIDDEN"
+    );
+  }
+
+  private async getDatasetsSafe(
+    portalAPI: PortalAPI,
+    attempts = 5,
+    delayMs = 3000
+  ): Promise<IDataset[]> {
+    for (let i = 1; i <= attempts; i++) {
+      try {
+        const datasets = await portalAPI.getDatasets();
+        if (Array.isArray(datasets)) {
+          return datasets;
+        }
+      } catch (error) {
+        this.logger.info(
+          `getDatasets attempt ${i}/${attempts} failed: ${error.message}`
+        );
+      }
+      if (i < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    return [];
   }
 
   // Poll cache status until bao reports COMPLETED. The dataset POST returns as

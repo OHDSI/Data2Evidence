@@ -37,6 +37,9 @@ spec:
         - name: storage-volume
           persistentVolumeClaim:
             claimName: storage-pvc
+        - name: atlas-db-init
+          configMap:
+            name: "{{ .Release.Name }}-{{ .Chart.Name }}-atlas-db-init"
         {{- if .Values.features.materializeCohorts }}
         - name: materialize-cohorts-pki
           secret:
@@ -53,8 +56,8 @@ spec:
               cpu: 50m
               memory: 50Mi
             limits:
-              cpu: 100m
-              memory: 100Mi
+              cpu: 70m
+              memory: 70Mi
           volumeMounts:
             - mountPath: /usr/src/data
               name: trex-volume
@@ -185,7 +188,7 @@ spec:
             - name: IDP__ALP_DATA_CLIENT_ID
               value: $(IDP__ALP_DATA__CLIENT_ID)
             - name: LOGTO__CLIENT_APPS
-              value: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "$(IDP__ALP_SVC__CLIENT_ID)", "secret": "$(IDP__ALP_SVC__CLIENT_SECRET)"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "$(IDP__ALP_DATA__CLIENT_ID)", "secret": "$(IDP__ALP_DATA__CLIENT_SECRET)"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "$(IDP__ALP_APP__CLIENT_ID)", "secret": "$(IDP__ALP_APP__CLIENT_SECRET)", "oidcClientMetadata":{"redirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal/login-callback", "https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/ui/gateway/dashboard"],"postLogoutRedirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
+              value: '[{"name":"alp-svc","description":"alp-svc","type":"MachineToMachine", "id": "$(IDP__ALP_SVC__CLIENT_ID)", "secret": "$(IDP__ALP_SVC__CLIENT_SECRET)"},{"name":"alp-data","description":"alp-data","type":"MachineToMachine", "id": "$(IDP__ALP_DATA__CLIENT_ID)", "secret": "$(IDP__ALP_DATA__CLIENT_SECRET)"},{"name":"alp-app","description":"alp-app","type":"Traditional", "id": "$(IDP__ALP_APP__CLIENT_ID)", "secret": "$(IDP__ALP_APP__CLIENT_SECRET)", "oidcClientMetadata":{"redirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal/login-callback","https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/ui/gateway/dashboard","https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback/openid","https://$(CADDY__D2E__PUBLIC_FQDN)/atlas-login/"],"postLogoutRedirectUris":["https://$(CADDY__D2E__PUBLIC_FQDN)/d2e/portal"]},"customClientMetadata":{"corsAllowedOrigins":[],"refreshTokenTtlInDays":14,"alwaysIssueRefreshToken":true,"rotateRefreshToken":true}}]'
             - name: LOGTO__RESOURCE
               value: '{"name":"alp-default","indicator":"https://alp-default","accessTokenTtl":3600}'
             - name: LOGTO__USER
@@ -200,6 +203,11 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__SCOPES
+            - name: LOGTO__ROLES_SCOPES
+              valueFrom:
+                configMapKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__ROLES_SCOPES
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
               value: "http://idp-admin.d2e.svc.cluster.local:443"
             - name: LOGTO__ALP_ADMIN_APP
@@ -313,6 +321,69 @@ spec:
             initialDelaySeconds: 120
             periodSeconds: 10
             timeoutSeconds: 20
+        - name: webapi-init
+          image: postgres:16-alpine
+          resources:
+            requests:
+              cpu: 10m
+              memory: 50Mi
+            limits:
+              cpu: 50m
+              memory: 50Mi
+          env:
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_HOST
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_CONFIG_DB
+          volumeMounts:
+            - mountPath: /scripts
+              name: atlas-db-init
+              readOnly: true
+          command:
+            - sh
+            - -c
+            - |
+              set -e;
+              echo "Waiting for webapi.sec_role table...";
+              for i in $(seq 1 120); do
+                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'webapi' AND table_name = 'sec_role'" | grep -q 1; then
+                  echo "webapi.sec_role table found";
+                  break;
+                fi;
+                echo "Waiting... ($i/120)";
+                sleep 5;
+              done;
+              echo "Waiting for logto.users table...";
+              for i in $(seq 1 60); do
+                if psql -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema = 'logto' AND table_name = 'users'" | grep -q 1; then
+                  echo "logto.users table found";
+                  break;
+                fi;
+                echo "Waiting... ($i/60)";
+                sleep 2;
+              done;
+              for f in /scripts/*.sql; do psql -v ON_ERROR_STOP=1 -f "$$f"; done;
+              touch /tmp/webapi-init.done;
+              echo "webapi-init: SQL scripts complete";
+              tail -f /dev/null
         - name: trex
           env:
             - name: RUST_BACKTRACE
@@ -326,13 +397,13 @@ spec:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: ACHILLES_THREAD_COUNT
-            - name: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
+            - name: AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
               valueFrom:
                 configMapKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: AZ_AUTO_GRANT_RESEARCHER_BY_DATASET_CODES
             - name: USER_MGMT__ROLE_SOURCE
-              value: "usermgmt"
+              value: "logto"
             - name: CADDY__D2E__PUBLIC_FQDN
               valueFrom:
                 configMapKeyRef:
@@ -385,9 +456,19 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: LOGTO__SVC_CLIENT_ID
+            - name: LOGTO__SVC_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_ID
             - name: LOGTO__D2E_SVC__CLIENT_ID
               value: $(IDP__ALP_SVC__CLIENT_ID)
             - name: IDP__ALP_SVC__CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__SVC_CLIENT_SECRET
+            - name: LOGTO__SVC_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
@@ -428,6 +509,8 @@ spec:
               value: admin
             - name: IDP__INITIAL_USER__UUID
               value: a6660e40-261e-4782-873e-f76b4328aecf
+            - name: IDP__AUTO_PROVISION_USERS
+              value: "true"
             - name: IDP__RELYING_PARTY
               valueFrom:
                 configMapKeyRef:
@@ -445,7 +528,7 @@ spec:
             - name: LOCAL_DEBUG
               value: "false"
             - name: LOGTO__ADMIN_SERVER__FQDN_URL
-              value: http://idp.d2e.svc.cluster.local:443
+              value: http://idp-admin.d2e.svc.cluster.local:443
             - name: LOGTO__DEFAULT_TENANT__FQDN_URL
               value: https://default.logto.app/api
             - name: LOGTO__AUDIENCES
@@ -460,7 +543,7 @@ spec:
             - name: LOGTO__TOKEN_URL
               value: http://idp.d2e.svc.cluster.local:443/oidc/token
             - name: LOGTO__ISSUER
-              value: http://idp.d2e.svc.cluster.local:443/oidc
+              value: "http://gateway.d2e.svc.cluster.local/oidc"
             - name: NODE_ENV
               value: development
             - name: NOT_EQ_CHECK_FILTERCARDS
@@ -474,8 +557,225 @@ spec:
               value: "true"
             - name: PREFECT_DOCKER_VOLUMES
               value: "[]"
+            - name: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__CLIENTID_PASSWORD__BASIC_AUTH
             - name: PLUGINS_PATH
-              value: "./data/plugins"
+              value: "/usr/src/data/plugins"
+            - name: DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DATASOURCE_URL
+            - name: DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: DATASOURCE_OHDSI_SCHEMA
+              value: webapi
+            - name: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA
+              value: webapi
+            - name: SPRING_BATCH_REPOSITORY_TABLEPREFIX
+              value: webapi.batch_
+            # Flyway migration settings
+            - name: FLYWAY_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: FLYWAY_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SPRING_FLYWAY_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: DATASOURCE_URL
+            - name: SPRING_FLYWAY_USER
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SPRING_FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SPRING_FLYWAY_SCHEMAS
+              value: webapi
+            - name: SPRING_FLYWAY_TABLE
+              value: flyway_schema_history
+            - name: SPRING_FLYWAY_PLACEHOLDERS_OHDSISCHEMA
+              value: webapi
+            # No SPRING_FLYWAY_BASELINE_VERSION: on an empty schema Flyway baselines at v1
+            # and applies all migrations, including the early ones that create cc_* tables.
+            # Existing installs already have history rows so this is a no-op for them.
+            # Security configuration
+            - name: SECURITY_PROVIDER
+              value: AtlasRegularSecurity
+            - name: SECURITY_ORIGIN
+              value: "*"
+            - name: SECURITY_SSL_ENABLED
+              value: "false"
+            # Enable forwarded headers support for reverse proxy
+            - name: SERVER_FORWARD_HEADERS_STRATEGY
+              value: NATIVE
+            # Auth providers - OpenID via Logto + Database auth
+            - name: SECURITY_AUTH_JDBC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_WINDOWS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_KERBEROS_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_OIDC_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_FACEBOOK_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GITHUB_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_GOOGLE_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_LDAP_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_AD_ENABLED
+              value: "false"
+            - name: SECURITY_AUTH_CAS_ENABLED
+              value: "false"
+            # Database authentication configuration (uses webapi_security schema in d2e-dev-app-pg)
+            - name: SECURITY_DB_DATASOURCE_SCHEMA
+              value: webapi_security
+            - name: SECURITY_DB_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SECURITY_DB_DATASOURCE_URL
+            - name: SECURITY_DB_DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: SECURITY_DB_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SECURITY_DB_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SECURITY_DB_DATASOURCE_AUTHENTICATIONQUERY
+              value: "SELECT password, email AS firstname, NULL AS middlename, email AS lastname FROM webapi_security.security WHERE email = ?"
+            # Native WebAPI reads its auth datasource under security.auth.db.datasource.*
+            # (not the legacy security.db.datasource.* above).
+            - name: SECURITY_AUTH_DB_ENABLED
+              value: "true"
+            - name: SECURITY_AUTH_DB_DATASOURCE_DRIVERCLASSNAME
+              value: org.postgresql.Driver
+            - name: SECURITY_AUTH_DB_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: SECURITY_DB_DATASOURCE_URL
+            - name: SECURITY_AUTH_DB_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER
+            - name: SECURITY_AUTH_DB_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: POSTGRES_SUPERUSER_PASSWORD
+            - name: SECURITY_AUTH_DB_DATASOURCE_SCHEMA
+              value: webapi_security        
+            # OpenID Connect configuration (Logto)
+            # Property prefix updated for WebAPI p-hoffmann/openid branch: security.auth.openId.* (was security.oid.*)
+            - name: SECURITY_AUTH_OIDC_CLIENTID
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_ID
+            - name: SECURITY_AUTH_OIDC_APISECRET
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: LOGTO__APP_CLIENT_SECRET
+            - name: SECURITY_AUTH_OIDC_URL
+              value: "http://gateway.d2e.svc.cluster.local/oidc/.well-known/openid-configuration"
+            # External URL for browser redirects - used to rewrite internal OIDC URLs to external ones
+            - name: SECURITY_AUTH_OIDC_EXTERNALURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc"
+            - name: SECURITY_AUTH_OIDC_LOGOUTURL
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/oidc/session/end"
+            # Role claim in the ID token (Logto emits `roles` when the roles feature is enabled for the app)
+            - name: SECURITY_AUTH_OIDC_ROLESCLAIM
+              value: "roles"
+            # NOTE: scopes `openid profile email` are added by default by the new WebAPI; extraScopes no longer required
+            # OAuth callback URLs - must use external URL for browser redirects
+            # NOTE: callback path now includes /openid segment (Spring oauth2Login convention).
+            # The Logto app's redirect URI must be updated to end with /user/oauth/callback/openid
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_API
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/WebAPI/user/oauth/callback"
+            - name: SECURITY_AUTH_OAUTH_CALLBACK_UI
+              value: "https://$(CADDY__D2E__PUBLIC_FQDN)/atlas/#/welcome"
+            # TrexSQL configuration
+            # PG__ vars needed by trex (npm start) for database connection                            
+            - name: TREX__SQL__HOST
+              value: trex-sql.d2e.svc.cluster.local
+            - name: TREX__SQL__USER
+              value: postgres
+            - name: TREX__SQL__DBNAME
+              value: postgres
+            - name: TREX__ENDPOINT_URL
+              value: "http://localhost:33001"
+            - name: TREX_ROUTES
+              value: '{"d2e":"http://localhost:33001"}'
+            - name: TREX_EXTENSIONS_PATH
+              value: /usr/src/node_modules/@trex
+            - name: TREX_POOL_SIZE
+              value: "1024"
+            - name: TREXSQL_ENABLED
+              value: "true"
+            - name: SWARM_NODE
+              value: d2e
+            - name: SWARM_CONFIG
+              value: |-
+                {
+                  "cluster_id": "d2e",
+                  "nodes": {
+                    "d2e": {
+                      "gossip_addr": "0.0.0.0:4200",
+                      "extensions": [
+                        {
+                          "name": "trexas",
+                          "config": {
+                            "host": "0.0.0.0",
+                            "port": 33001,
+                            "main_service_path": "/usr/src/core/server/index.eszip",
+                            "event_worker_path": "/usr/src/core/event/index.eszip",
+                            "tls_port": 33000,
+                            "tls_cert_path": "/usr/src/cert/cert.pem",
+                            "tls_key_path": "/usr/src/cert/key.pem"
+                          }
+                        },
+                        {
+                          "name": "pgwire",
+                          "config": { "host": "0.0.0.0", "port": 5433, "password": "dummy" }
+                        }
+                      ]
+                    }
+                  }
+                }
             - name: PLUGINS_API_VERSION
               valueFrom:
                 configMapKeyRef:
@@ -619,11 +919,17 @@ spec:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__KEY
             - name: TREX__SQL__PORT
-              value: "5433"
+              value: "443"
             - name: TREX__SQL__PASSWORD
               value: "dummy"
             - name: TREX_SQL_PASSWORD
               value: "$(TREX__SQL__PASSWORD)"
+            - name: JASYPT_ENCRYPTOR_ENABLED
+              value: "false"
+            - name: JASYPT_ENCRYPTOR_PASSWORD
+              value: ""
+            - name: JASYPT_ENCRYPTOR_ALGORITHM
+              value: "PBEWITHSHA256AND256BITAES-CBC-BC"
             - name: TPM_USE_NODE_MODULES
               value: "false"
             - name: USE_PUBLIC_WEBAPI_PROXY
@@ -631,25 +937,20 @@ spec:
             - name: USE_TREX_DB_CONN
               value: "false"
             - name: ANALYTICS_HANA_STREAMING_ENABLED
-              value: "true"
+              value: {{ .Values.features.materializeCohorts | quote }}
             - name: ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES
               value: "true"
           image: ghcr.io/ohdsi/d2e-trex:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
-          command: ["npm", "run", "start"]
-          lifecycle:
-            postStart:
-              exec:
-                command: ["/bin/sh", "-c", "sleep 120"]
           resources:
             requests:
               cpu: {{ .Values.resources.trex.requests.cpu }}
               memory: {{ .Values.resources.trex.requests.memory }}
             limits:
               cpu: {{ .Values.resources.trex.limits.cpu }}
-              memory: {{ .Values.resources.trex.limits.memory }}
+              memory: {{ .Values.resources.trex.limits.memory }}        
           ports:
             - containerPort: 33000
               protocol: TCP
@@ -674,9 +975,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - npm
-                - run
-                - health
+                - /bin/sh
+                - -c
+                - curl -f http://localhost:33001/_internal/health || exit 1
             failureThreshold: 5
             initialDelaySeconds: 200
             periodSeconds: 5
@@ -695,6 +996,8 @@ spec:
               value: "/app/PKI/server.crt"
             - name: API_TLS_KEY_PATH
               value: "/app/PKI/server.key"
+            - name: INSTALL_SQLALCHEMY_HANA
+              value: "true"
           image: {{ .Values.global.images.materializeCohorts }}:{{ .Values.global.image.tag }}
           imagePullPolicy: Always
           volumeMounts:
@@ -728,7 +1031,7 @@ spec:
             timeoutSeconds: 5
         {{- end }}
         - name: supabase-storage
-          command: ["/bin/sh"]
+          command: ["/bin/sh", "-c"]
           args:
             [
               "-c",
@@ -812,8 +1115,8 @@ spec:
               protocol: TCP
           resources:
             requests:
-              cpu: 100m
-              memory: 200Mi
+              cpu: 50m
+              memory: 100Mi
             limits:
               cpu: 500m
-              memory: 1000Mi
+              memory: 500Mi

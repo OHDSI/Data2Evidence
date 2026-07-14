@@ -171,7 +171,7 @@ const legendItems = computed(() => {
 }
 .stackbar-legend-entry-text {
   font-size: 12px;
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   color: #000080;
   white-space: nowrap;
 }
@@ -183,7 +183,7 @@ const legendItems = computed(() => {
   border-radius: 4px;
   border: 1px solid #dedede;
   font-size: 12px;
-  font-family: 'GT-America', sans-serif;
+  font-family: var(--app-font-family);
   white-space: pre-wrap;
   width: fit-content;
   max-width: 62ch;

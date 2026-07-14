@@ -15,6 +15,7 @@
     "check-format": "prettier --check ."
   },
   "dependencies": {
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
     "@d4l/web-components-library": "^3.20.2",
     "@emotion/react": "^11.9.0",
     "@emotion/styled": "^11.8.1",

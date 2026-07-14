@@ -8,7 +8,7 @@
     "theme": {
       "primaryColor": "#000080",
       "logoUrl": "/atlas/config/d2e2.svg",
-      "logoNavigateTo": "/cohorts"
+      "logoNavigateTo": "/"
     },
     "header": {
       "showNavBar": false,
