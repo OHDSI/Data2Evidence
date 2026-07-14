@@ -419,7 +419,7 @@ services:
       BETTER_AUTH_URL: "http://localhost:33001/trex"
       BASE_PATH: /trex
       SCHEMA_DIR: /usr/src/core/schema
-      PLUGINS_DEV_PATH: /usr/src/plugins-dev
+      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       # Phase 0: keep d2e behaviors OFF until Phase 1 lands.
       D2E_COMPAT: "true"
 
