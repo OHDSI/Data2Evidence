@@ -3,23 +3,28 @@ services:
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     #
-    # DevX is enabled for local dev: the trexsql base ships the devx plugin
-    # and devx_ext extension in gated folders (/usr/src/plugins-dx,
-    # /usr/lib/trexsql/extensions-dx) that trex's entrypoint.sh only exposes
-    # when TREX_DX_ENABLED=true (see environment below). Editor:
-    # https://localhost:41100/plugins/trex/devx/ (also in the trex shell nav).
-    # trex-dx-init derives PGRST_JWT_SECRET into ./secrets/derived.env; on the
-    # very first boot that file does not exist yet when compose creates this
-    # container (env_file resolves at creation), so DevX REST auth only works
-    # after a second `npm start` recreates trex.
-    depends_on:
-      trex-dx-init:
-        condition: service_completed_successfully
-    env_file:
-      # PGRST_JWT_SECRET — must be the HKDF derivation of TREX_ROOT_KEY that
-      # trex computes in-process; derive-secrets (trex-dx-init) writes it.
-      - path: ./secrets/derived.env
-        required: false
+    # DevX is enabled for local dev: the trexsql base ships the devx plugin and
+    # devx_ext extension in gated folders that trex's entrypoint.sh exposes when
+    # TREX_DX_ENABLED=true. Editor: https://localhost:41100/plugins/trex/devx/
+    # (also in the trex shell nav, labelled "Code"). The command below derives
+    # DevX's PGRST_JWT_SECRET from TREX_ROOT_KEY and exports it before exec, so
+    # it always matches trex's own in-process HKDF — with no separate init
+    # one-shot (a compose one-shot breaks `up --wait`, which the CLI uses) and
+    # no host secrets dir. CI turns TREX_DX_ENABLED off (docker-compose-ci.yml),
+    # so the whole block is skipped there.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /usr/src/cert
+        printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        if [ "$${TREX_DX_ENABLED:-}" = "true" ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
+          mkdir -p /tmp/dx-secrets
+          printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /tmp/dx-secrets/root.env
+          TREX_SECRETS_DIR=/tmp/dx-secrets /usr/local/bin/trex-init || echo "[dx] trex-init failed; DevX REST may 401"
+          set -a; . /tmp/dx-secrets/derived.env 2>/dev/null || true; set +a
+        fi
+        exec /usr/src/entrypoint.sh
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
@@ -163,42 +168,6 @@ services:
           "strategus-analysis": false,
           "mcp-server": false
         }
-
-  # Seeds ./secrets/root.env from d2e's TREX_ROOT_KEY (so all derivations
-  # match the key trex gets from .env.local), derives the downstream secrets
-  # (PGRST_JWT_SECRET et al), and makes the files readable by the host user
-  # for compose env_file loading. Idempotent. root.env is purely derived
-  # state in this topology — the authoritative key lives in .env.local — so
-  # re-seeding it from TREX_ROOT_KEY whenever they diverge is safe and
-  # required to keep derived.env matching trex's in-process HKDF derivation.
-  trex-dx-init:
-    image: ${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}
-    container_name: ${PROJECT_NAME:-d2e}-trex-dx-init
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        set -eu
-        if [ -n "$${TREX_ROOT_KEY:-}" ]; then
-          umask 077
-          if [ ! -f /shared/root.env ]; then
-            printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /shared/root.env
-            echo "[trex-dx-init] seeded root.env from TREX_ROOT_KEY"
-          elif [ "$$(cat /shared/root.env)" != "TREX_ROOT_KEY=$$TREX_ROOT_KEY" ]; then
-            printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /shared/root.env
-            echo "[trex-dx-init] root.env key differs from TREX_ROOT_KEY — re-seeding"
-          fi
-        fi
-        /usr/local/bin/trex-init
-        chown 1000:1000 /shared /shared/root.env /shared/derived.env
-    environment:
-      TREX_SECRETS_DIR: /shared
-      TREX_ROOT_KEY: ${TREX_ROOT_KEY}
-    volumes:
-      - ./secrets:/shared
-    restart: "no"
-    networks:
-      - alp
 
   alp-caddy:
     ports:
