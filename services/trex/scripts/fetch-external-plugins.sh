@@ -18,13 +18,36 @@ mkdir -p "$DEST"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
+# Registry pulls (npm pack) intermittently fail on transient GitHub Packages /
+# feed hiccups, which would otherwise abort the whole image build. Retry with
+# exponential backoff before giving up.
+PACK_RETRIES="${PACK_RETRIES:-5}"
+PACK_BACKOFF="${PACK_BACKOFF:-3}"
+retry() {
+  attempt=1
+  delay="$PACK_BACKOFF"
+  while true; do
+    if "$@"; then
+      return 0
+    fi
+    if [ "$attempt" -ge "$PACK_RETRIES" ]; then
+      echo "giving up after $PACK_RETRIES attempts: $*" >&2
+      return 1
+    fi
+    echo "attempt $attempt/$PACK_RETRIES failed: $* — retrying in ${delay}s" >&2
+    sleep "$delay"
+    attempt=$((attempt + 1))
+    delay=$((delay * 2))
+  done
+}
+
 while IFS= read -r LINE || [ -n "$LINE" ]; do
   CLEAN="$(printf '%s' "$LINE" | sed 's/#.*$//' | tr -d '[:space:]')"
   [ -z "$CLEAN" ] && continue
   PKG="$CLEAN"
   (
     cd "$WORK"
-    npm pack "$PKG" --silent
+    retry npm pack "$PKG" --silent
   )
   TGZ="$(ls -1t "$WORK"/*.tgz | head -n 1)"
   # Derive SHORT from the tarball's own package.json (not the manifest line)
