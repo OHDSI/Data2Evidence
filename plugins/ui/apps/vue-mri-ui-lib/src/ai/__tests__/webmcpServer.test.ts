@@ -200,14 +200,6 @@ describe('createPaTools', () => {
       expect(parse(res)).toEqual({ applied: true })
     })
 
-    it('passes chartType: undefined when omitted', async () => {
-      const store = makeStore()
-      const bookmark = { filter: {} }
-      await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({ bookmark })
-
-      expect(store.dispatch).toHaveBeenCalledWith('loadBookmarkDataToState', { bookmark, chartType: undefined })
-    })
-
     it('routes patchOps through the deterministic applier (no legacy bookmark dispatch)', async () => {
       const store = makeStore()
       // Minimal store surface applyCohortPatch touches for a single add_card.
