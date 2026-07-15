@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildMriBookmark } from "../mriQuery";
 import {
+  findWizardBookmarkById,
   parseWizardBookmarkCandidates,
   selectBestWizardBookmark,
   type WizardBookmarkScope,
@@ -15,7 +16,7 @@ const targetBookmark = buildMriBookmark(
   [],
   {},
   { configId: "mri-config", configVersion: "2" },
-  scope.datasetId
+  scope.datasetId,
 ).bookmark;
 
 describe("Wizard bookmark cache selection", () => {
@@ -65,7 +66,7 @@ describe("Wizard bookmark cache selection", () => {
     const otherDatasetBookmark = { ...targetBookmark, datasetId: "dataset-2" };
 
     expect(
-      parseWizardBookmarkCandidates([bookmarkItem({ bookmark: JSON.stringify(otherDatasetBookmark) })], scope)
+      parseWizardBookmarkCandidates([bookmarkItem({ bookmark: JSON.stringify(otherDatasetBookmark) })], scope),
     ).toEqual([]);
   });
 
@@ -77,6 +78,17 @@ describe("Wizard bookmark cache selection", () => {
     ];
 
     expect(parseWizardBookmarkCandidates(combinedList, scope)).toHaveLength(1);
+  });
+
+  it("finds an eligible bookmark by its backend id", () => {
+    const selected = findWizardBookmarkById(
+      [bookmarkItem(), bookmarkItem({ bmkId: "bookmark-2", bookmarkname: "wizards-1783670400001" })],
+      scope,
+      "bookmark-2",
+    );
+
+    expect(selected?.bmkId).toBe("bookmark-2");
+    expect(findWizardBookmarkById([bookmarkItem()], scope, "missing")).toBeNull();
   });
 
   it("selects a matching materialized bookmark over a newer unmaterialized duplicate", () => {
@@ -95,7 +107,7 @@ describe("Wizard bookmark cache selection", () => {
         }),
       ],
       scope,
-      targetBookmark
+      targetBookmark,
     );
 
     expect(selected).toMatchObject({ bmkId: "old-materialized", cohortDefinitionId: 123 });
@@ -118,7 +130,7 @@ describe("Wizard bookmark cache selection", () => {
         }),
       ],
       scope,
-      targetBookmark
+      targetBookmark,
     );
 
     expect(selected).toMatchObject({ bmkId: "newer", cohortDefinitionId: 456 });

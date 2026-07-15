@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { ConfigMeta } from "../config/cdwConfig";
 import type { MriBookmark } from "../utils/mriQuery";
-import { runWizardDashboardFlow, type RunWizardDashboardFlowInput } from "../services/wizardDashboardFlow";
+import {
+  runWizardDashboardFlow,
+  type PendingWizardBookmark,
+  type RunWizardDashboardFlowInput,
+} from "../services/wizardDashboardFlow";
 import {
   initialWizardDashboardState,
   wizardDashboardReducer,
@@ -52,7 +56,7 @@ export function useWizardDashboardFlow({
   const operationIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
   const lastInputRef = useRef<RunWizardDashboardFlowInput | null>(null);
-  const pendingBookmarkNameRef = useRef<string | null>(null);
+  const pendingBookmarkRef = useRef<PendingWizardBookmark | null>(null);
   const materializationSubmittedRef = useRef<string | null>(null);
   const activeStageRef = useRef<ActiveStage>("awaiting-cache");
   const loadInputRef = useRef<(() => Promise<OpenWizardDashboardInput>) | null>(null);
@@ -71,7 +75,7 @@ export function useWizardDashboardFlow({
         type: "start",
         operationId,
         datasetId: input.datasetId,
-        pendingBookmarkName: input.pendingBookmarkName,
+        pendingBookmarkName: input.pendingBookmark?.bookmarkName,
       });
 
       void runWizardDashboardFlow(flowInput, {
@@ -81,10 +85,10 @@ export function useWizardDashboardFlow({
           activeStageRef.current = status;
           dispatch({ type: "stage", operationId, status });
         },
-        onBookmarkName: (bookmarkName) => {
-          pendingBookmarkNameRef.current = bookmarkName;
-          if (lastInputRef.current) lastInputRef.current.pendingBookmarkName = bookmarkName;
-          dispatch({ type: "bookmark-name", operationId, bookmarkName });
+        onBookmarkCreated: (pendingBookmark) => {
+          pendingBookmarkRef.current = pendingBookmark;
+          if (lastInputRef.current) lastInputRef.current.pendingBookmark = pendingBookmark;
+          dispatch({ type: "bookmark-name", operationId, bookmarkName: pendingBookmark.bookmarkName });
         },
         onMaterializationSubmitted: (bookmarkId) => {
           materializationSubmittedRef.current = bookmarkId;
@@ -117,13 +121,13 @@ export function useWizardDashboardFlow({
           }
         });
     },
-    [ensureCache, refreshCache]
+    [ensureCache, refreshCache],
   );
 
   const openDashboard = useCallback(
     (loadInput: () => Promise<OpenWizardDashboardInput>) => {
       loadInputRef.current = loadInput;
-      pendingBookmarkNameRef.current = null;
+      pendingBookmarkRef.current = null;
       materializationSubmittedRef.current = null;
       const operationId = ++operationIdRef.current;
       abortRef.current?.abort();
@@ -164,7 +168,7 @@ export function useWizardDashboardFlow({
           }
         });
     },
-    [datasetId, execute, username]
+    [datasetId, execute, username],
   );
 
   const retry = useCallback(() => {
@@ -175,7 +179,7 @@ export function useWizardDashboardFlow({
     }
     execute({
       ...input,
-      pendingBookmarkName: pendingBookmarkNameRef.current ?? input.pendingBookmarkName,
+      pendingBookmark: pendingBookmarkRef.current ?? input.pendingBookmark,
       materializationSubmittedForBookmarkId:
         materializationSubmittedRef.current ?? input.materializationSubmittedForBookmarkId,
     });
@@ -189,7 +193,7 @@ export function useWizardDashboardFlow({
   useEffect(() => {
     abortRef.current?.abort();
     lastInputRef.current = null;
-    pendingBookmarkNameRef.current = null;
+    pendingBookmarkRef.current = null;
     materializationSubmittedRef.current = null;
     loadInputRef.current = null;
     dispatch({ type: "dataset-changed", datasetId });

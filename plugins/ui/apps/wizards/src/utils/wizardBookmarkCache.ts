@@ -111,6 +111,14 @@ export function parseWizardBookmarkCandidates(items: unknown, scope: WizardBookm
   });
 }
 
+export function findWizardBookmarkById(
+  items: unknown,
+  scope: WizardBookmarkScope,
+  bookmarkId: string,
+): WizardBookmarkCandidate | null {
+  return parseWizardBookmarkCandidates(items, scope).find((candidate) => candidate.bmkId === bookmarkId) ?? null;
+}
+
 function isMaterialized(candidate: WizardBookmarkCandidate): boolean {
   return candidate.cohortDefinitionId !== undefined;
 }
@@ -118,7 +126,7 @@ function isMaterialized(candidate: WizardBookmarkCandidate): boolean {
 export function selectBestWizardBookmark(
   items: unknown,
   scope: WizardBookmarkScope,
-  targetQuery: unknown
+  targetQuery: unknown,
 ): WizardBookmarkCandidate | null {
   const targetIdentity = getMriQueryIdentity(targetQuery);
   if (targetIdentity === null) {
@@ -126,7 +134,7 @@ export function selectBestWizardBookmark(
   }
 
   const matchingCandidates = parseWizardBookmarkCandidates(items, scope).filter(
-    (candidate) => candidate.queryIdentity === targetIdentity
+    (candidate) => candidate.queryIdentity === targetIdentity,
   );
 
   matchingCandidates.sort((left, right) => {

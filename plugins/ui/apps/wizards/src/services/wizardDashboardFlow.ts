@@ -1,17 +1,14 @@
 import {
   createWizardBookmark,
   materializeWizardBookmark,
+  type CreateWizardBookmarkResult,
   type CreateWizardBookmarkInput,
   type MaterializeWizardBookmarkInput,
 } from "../api/wizardCohortApi";
 import type { MriBookmark } from "../utils/mriQuery";
 import { buildMriMaterializationQuery } from "../utils/mriMaterializationQuery";
 import {
-  findWizardBookmarkByName,
-  pollForWizardBookmark,
-  type PollForWizardBookmarkOptions,
-} from "./wizardBookmarkResolution";
-import {
+  findWizardBookmarkById,
   selectBestWizardBookmark,
   type WizardBookmarkCandidate,
   type WizardBookmarkScope,
@@ -19,6 +16,11 @@ import {
 import type { WizardDashboardResult, WizardDashboardStatus } from "./wizardDashboardState";
 
 type FlowStage = Exclude<WizardDashboardStatus, "idle" | "ready" | "error">;
+
+export interface PendingWizardBookmark {
+  bmkId: string;
+  bookmarkName: string;
+}
 
 export interface RunWizardDashboardFlowInput {
   datasetId: string;
@@ -28,7 +30,7 @@ export interface RunWizardDashboardFlowInput {
   cdmConfigVersion: string;
   bookmark: MriBookmark;
   wizardConfig: Record<string, unknown>;
-  pendingBookmarkName?: string | null;
+  pendingBookmark?: PendingWizardBookmark | null;
   materializationSubmittedForBookmarkId?: string | null;
   signal?: AbortSignal;
 }
@@ -36,12 +38,11 @@ export interface RunWizardDashboardFlowInput {
 export interface WizardDashboardFlowDependencies {
   ensureCache: () => Promise<unknown>;
   refreshCache: () => Promise<unknown>;
-  createBookmark?: (input: CreateWizardBookmarkInput) => Promise<void>;
+  createBookmark?: (input: CreateWizardBookmarkInput) => Promise<CreateWizardBookmarkResult>;
   materializeBookmark?: (input: MaterializeWizardBookmarkInput) => Promise<void>;
-  poll?: (options: PollForWizardBookmarkOptions) => Promise<WizardBookmarkCandidate>;
   now?: () => number;
   onStage?: (stage: FlowStage) => void;
-  onBookmarkName?: (bookmarkName: string) => void;
+  onBookmarkCreated?: (bookmark: PendingWizardBookmark) => void;
   onMaterializationSubmitted?: (bookmarkId: string) => void;
 }
 
@@ -58,7 +59,7 @@ function throwIfAborted(signal?: AbortSignal): void {
 
 export async function runWizardDashboardFlow(
   input: RunWizardDashboardFlowInput,
-  dependencies: WizardDashboardFlowDependencies
+  dependencies: WizardDashboardFlowDependencies,
 ): Promise<WizardDashboardResult> {
   const scope: WizardBookmarkScope = {
     datasetId: input.datasetId,
@@ -67,7 +68,6 @@ export async function runWizardDashboardFlow(
   };
   const createBookmark = dependencies.createBookmark ?? createWizardBookmark;
   const materializeBookmark = dependencies.materializeBookmark ?? materializeWizardBookmark;
-  const poll = dependencies.poll ?? pollForWizardBookmark;
   const stage = dependencies.onStage ?? (() => undefined);
 
   throwIfAborted(input.signal);
@@ -76,17 +76,14 @@ export async function runWizardDashboardFlow(
   throwIfAborted(input.signal);
 
   let candidate: WizardBookmarkCandidate | null = null;
-  if (input.pendingBookmarkName) {
-    candidate = findWizardBookmarkByName(items, scope, input.pendingBookmarkName);
+  if (input.pendingBookmark) {
+    candidate = findWizardBookmarkById(items, scope, input.pendingBookmark.bmkId);
   }
   candidate ??= selectBestWizardBookmark(items, scope, input.bookmark);
 
-  if (!candidate) {
+  if (!candidate && !input.pendingBookmark) {
     items = await dependencies.refreshCache();
     throwIfAborted(input.signal);
-    if (input.pendingBookmarkName) {
-      candidate = findWizardBookmarkByName(items, scope, input.pendingBookmarkName);
-    }
     candidate ??= selectBestWizardBookmark(items, scope, input.bookmark);
   }
 
@@ -96,56 +93,59 @@ export async function runWizardDashboardFlow(
       : "hit-ready"
     : "miss";
 
+  let bookmarkId = candidate?.bmkId ?? input.pendingBookmark?.bmkId;
+  let bookmarkName = candidate?.bookmarkname ?? input.pendingBookmark?.bookmarkName;
+  let cohortDefinitionId = candidate?.cohortDefinitionId;
+
   if (!candidate) {
-    const bookmarkName = input.pendingBookmarkName ?? createWizardBookmarkName((dependencies.now ?? Date.now)());
-    dependencies.onBookmarkName?.(bookmarkName);
-    stage("saving-bookmark");
-    await createBookmark({
-      datasetId: input.datasetId,
-      bookmarkname: bookmarkName,
-      bookmark: input.bookmark,
-      paConfigId: input.paConfigId,
-      cdmConfigId: input.cdmConfigId,
-      cdmConfigVersion: input.cdmConfigVersion,
-    });
-    throwIfAborted(input.signal);
-    candidate = await poll({
-      refresh: dependencies.refreshCache,
-      scope,
-      bookmarkName,
-      requirement: "bookmark",
-      signal: input.signal,
-    });
+    if (!bookmarkId || !bookmarkName) {
+      bookmarkName = createWizardBookmarkName((dependencies.now ?? Date.now)());
+      stage("saving-bookmark");
+      const created = await createBookmark({
+        datasetId: input.datasetId,
+        bookmarkname: bookmarkName,
+        bookmark: input.bookmark,
+        paConfigId: input.paConfigId,
+        cdmConfigId: input.cdmConfigId,
+        cdmConfigVersion: input.cdmConfigVersion,
+      });
+      bookmarkId = created.bmkId;
+      dependencies.onBookmarkCreated?.({ bmkId: bookmarkId, bookmarkName });
+      throwIfAborted(input.signal);
+    }
+  }
+  if (!bookmarkId || !bookmarkName) {
+    throw new Error("The Wizard bookmark did not include an id and name");
   }
 
   const mriQuery = buildMriMaterializationQuery(input.bookmark, input.datasetId);
-  if (candidate.cohortDefinitionId === undefined) {
-    if (input.materializationSubmittedForBookmarkId !== candidate.bmkId) {
+  if (cohortDefinitionId === undefined) {
+    if (input.materializationSubmittedForBookmarkId !== bookmarkId) {
       stage("materializing");
       await materializeBookmark({
         datasetId: input.datasetId,
-        bookmarkId: candidate.bmkId,
-        bookmarkName: candidate.bookmarkname,
+        bookmarkId,
+        bookmarkName,
         mriQuery,
       });
-      dependencies.onMaterializationSubmitted?.(candidate.bmkId);
+      dependencies.onMaterializationSubmitted?.(bookmarkId);
       throwIfAborted(input.signal);
     }
     stage("resolving-cohort");
-    candidate = await poll({
-      refresh: dependencies.refreshCache,
-      scope,
-      bookmarkName: candidate.bookmarkname,
-      requirement: "cohort",
-      signal: input.signal,
-    });
+    const refreshedItems = await dependencies.refreshCache();
+    throwIfAborted(input.signal);
+    const refreshedBookmark = findWizardBookmarkById(refreshedItems, scope, bookmarkId);
+    if (refreshedBookmark?.cohortDefinitionId === undefined) {
+      throw new Error("The materialized Wizard cohort was not returned by the bookmark list");
+    }
+    cohortDefinitionId = refreshedBookmark.cohortDefinitionId;
   }
 
   stage("opening-dashboard");
   return {
-    bookmarkId: candidate.bmkId,
-    bookmarkName: candidate.bookmarkname,
-    cohortId: candidate.cohortDefinitionId!,
+    bookmarkId,
+    bookmarkName,
+    cohortId: cohortDefinitionId,
     wizardConfig: input.wizardConfig,
     mriquery: JSON.stringify(mriQuery),
     cacheOutcome,
