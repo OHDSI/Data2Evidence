@@ -516,7 +516,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.0.1-develop.6.gc427022
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -873,6 +873,7 @@ jobs:
       - name: Wait for d2e-trex healthy
         if: success() || failure()
         run: |
+          status=missing
           for i in $(seq 1 60); do
             status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
             echo "[$i] d2e-trex health: $status"
@@ -880,6 +881,24 @@ jobs:
             sleep 5
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ "$status" != "healthy" ]; then
+            echo "::error::d2e-trex did not become healthy (last status: $status)"
+            exit 1
+          fi
+
+      # demodb (postgres:16-alpine, docker-compose.yml) is behind the demodb profile and
+      # is otherwise pulled from Docker Hub lazily inside Setupdemo, where a transient
+      # registry timeout aborts the whole demo setup. Pre-pull it with retries so the
+      # image is cached before Setupdemo runs.
+      - name: Pre-pull demo db image
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
 
       - name: Setupdemo
         if: success() || failure()
@@ -888,7 +907,7 @@ jobs:
         with:
           timeout_seconds: 1800
           retry_wait_seconds: 100
-          max_attempts: 2
+          max_attempts: 3
           retry_on: any
           command: |
             ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
@@ -1065,6 +1084,10 @@ jobs:
         if: success() || failure()
         run: |
           ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v develop -n .env init
+          # HANA data-model flows need the sqlalchemy-hana dialect. #2824 moved its
+          # install to the INSTALL_SQLALCHEMY workpool command (blank by default), so
+          # set that in this test's .env — the dev/DuckDB path doesn't need it.
+          echo "INSTALL_SQLALCHEMY=bash -c 'uv pip install sqlalchemy-hana==2.2.0 && prefect flow-run execute'" >> .env
         env:
           init_choice: y
 
@@ -1429,14 +1452,19 @@ jobs:
             echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
           fi
 
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
+      # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
+      # list are stored as untagged package versions in GHCR, so a blind
+      # delete-only-untagged sweep (actions/delete-package-versions) removes
+      # the children of freshly pushed multi-arch tags and leaves the tag
+      # unpullable ("manifest unknown"). This action resolves manifest-list
+      # references and only deletes truly orphaned versions.
+      - name: Delete orphaned untagged versions
+        uses: dataaxiom/ghcr-cleanup-action@v1
         continue-on-error: true
         with:
-          package-name: ${{ matrix.image }}
-          package-type: container
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
+          package: ${{ matrix.image }}
+          delete-untagged: true
+          validate: true
 
   docker-success:
     needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]

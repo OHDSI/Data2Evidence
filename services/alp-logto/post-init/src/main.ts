@@ -482,7 +482,7 @@ async function main() {
     },
     customCss:
       process.env.LOGTO__CUSTOM_CSS ||
-      `a[aria-label="Powered By Logto"] { display: none; }
+      `[data-logto-signature="secured"][data-logto-signature="secured"] { display: none !important; }
 img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
     // Registration is opt-in via LOGTO__ENABLE_REGISTRATION so that connectors

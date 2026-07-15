@@ -1,19 +1,32 @@
 import {
   type CustomJwtErrorBody,
   CustomJwtErrorCode,
-  LogtoJwtTokenKeyType,
   jwtCustomizerUserContextGuard,
   userInfoSelectFields,
   type CustomJwtFetcher,
   type JwtCustomizerType,
   type JwtCustomizerUserContext,
+  type JwtCustomizerApplicationContext,
   type LogtoJwtTokenKey,
+  LogtoJwtTokenKeyType,
   type CustomJwtApiContext,
   type CustomJwtScriptPayload,
+  jsonObjectGuard,
+  isBuiltInApplicationId,
+  buildBuiltInApplicationDataForTenant,
 } from '@logto/schemas';
 import { type ConsoleLog } from '@logto/shared';
-import { assert, deduplicate, pick, pickState } from '@silverhand/essentials';
+import {
+  assert,
+  deduplicate,
+  type Optional,
+  pick,
+  pickState,
+  trySafe,
+} from '@silverhand/essentials';
 import deepmerge from 'deepmerge';
+import { got, HTTPError } from 'got';
+import { type UnknownObject } from 'oidc-provider';
 import { ZodError, z } from 'zod';
 
 import { EnvSet } from '#src/env-set/index.js';
@@ -28,9 +41,21 @@ import {
   runScriptFunctionInLocalVm,
   buildLocalVmErrorBody,
   type CustomJwtDeployRequestBody,
+  parseAzureFunctionsResponseError,
 } from '#src/utils/custom-jwt/index.js';
 
 import { type CloudConnectionLibrary } from './cloud-connection.js';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var tokenMap: Record<string, string | undefined> | undefined;
+  // eslint-disable-next-line no-var
+  var refreshTokenMap: Record<string, string | undefined> | undefined;
+}
+
+const accessTokenUserGuard = z.object({
+  user: z.object({ primaryEmail: z.string().nullable() }).partial(),
+});
 
 const apiContext: CustomJwtApiContext = Object.freeze({
   denyAccess: (message = 'Access denied') => {
@@ -53,35 +78,35 @@ export class JwtCustomizerLibrary {
   // Convert errors to WithTyped client response error to share the error handling logic.
   static async runScriptInLocalVm(data: CustomJwtFetcher) {
     try {
-      const mapId = (data as any)?.context?.["user"]?.primaryEmail || "default_map_id";
-      const payload: CustomJwtScriptPayload = {
-        ...(data.tokenType === LogtoJwtTokenKeyType.AccessToken
+      const mapId =
+        data.tokenType === LogtoJwtTokenKeyType.AccessToken
+          ? (accessTokenUserGuard.safeParse(data.context).data?.user.primaryEmail ??
+            'default_map_id')
+          : 'default_map_id';
+
+      const payload: CustomJwtScriptPayload & {
+        extra?: { thirdPartyToken?: string; thirdPartyRefreshToken?: string };
+      } =
+        data.tokenType === LogtoJwtTokenKeyType.AccessToken
           ? {
               ...pick(data, 'token', 'context', 'environmentVariables'),
               extra: {
-                // @ts-ignore
-                thirdPartyToken: globalThis?.tokenMap
-                  ? // @ts-ignore
-                    globalThis.tokenMap[mapId]
-                  : undefined,
-                // @ts-ignore
-                thirdPartyRefreshToken: globalThis?.refreshTokenMap
-                  ? // @ts-ignore
-                    globalThis.refreshTokenMap[mapId]
-                  : undefined,
+                thirdPartyToken: globalThis.tokenMap?.[mapId],
+                thirdPartyRefreshToken: globalThis.refreshTokenMap?.[mapId],
               },
+              api: apiContext,
             }
-          : pick(data, 'token', 'environmentVariables')),
-        api: apiContext,
-      };
+          : {
+              ...pick(data, 'token', 'environmentVariables'),
+              api: apiContext,
+            };
+
       const result = await runScriptFunctionInLocalVm(data.script, 'getCustomJwtClaims', payload);
 
-      // @ts-ignore
       if (globalThis.tokenMap) {
-        // @ts-ignore
-        delete globalThis.tokenMap[mapId];
+        // eslint-disable-next-line @silverhand/fp/no-mutation
+        globalThis.tokenMap[mapId] = undefined;
       }
-
 
       // If the `result` is not a record, we cannot merge it to the existing token payload.
       return z.record(z.unknown()).parse(result);
@@ -116,6 +141,12 @@ export class JwtCustomizerLibrary {
     private readonly userLibrary: UserLibrary,
     private readonly scopeLibrary: ScopeLibrary
   ) {}
+
+  get isRegionalAzureFunctionAppConfigured(): boolean {
+    const { azureFunctionUntrustedAppKey, azureFunctionUntrustedAppEndpoint } = EnvSet.values;
+
+    return Boolean(azureFunctionUntrustedAppKey && azureFunctionUntrustedAppEndpoint);
+  }
 
   /**
    * We does not include org roles' scopes for the following reason:
@@ -165,6 +196,22 @@ export class JwtCustomizerLibrary {
     return jwtCustomizerUserContextGuard.parse(userContext);
   }
 
+  async getApplicationContext(
+    tenantId: string,
+    clientId: string
+  ): Promise<JwtCustomizerApplicationContext | undefined> {
+    const application = isBuiltInApplicationId(clientId)
+      ? buildBuiltInApplicationDataForTenant(tenantId, clientId)
+      : await trySafe(this.queries.applications.findApplicationById(clientId));
+
+    if (!application) {
+      return;
+    }
+
+    const { secret: _, ...rest } = application;
+    return rest;
+  }
+
   /**
    * This method is used to deploy the give JWT customizer scripts to the cloud worker service.
    *
@@ -192,6 +239,15 @@ export class JwtCustomizerLibrary {
       return;
     }
 
+    if (this.isRegionalAzureFunctionAppConfigured) {
+      consoleLog.info(
+        'Skipping Cloudflare Workers deployment since regional Azure Function App is configured.'
+      );
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/prefer-ts-expect-error
+    // @ts-ignore TS2589: caused by router type growth from @logto/cloud
     const [client, jwtCustomizers] = await Promise.all([
       this.cloudConnection.getClient(),
       this.logtoConfigs.getJwtCustomizers(consoleLog),
@@ -228,12 +284,19 @@ export class JwtCustomizerLibrary {
       return;
     }
 
+    if (this.isRegionalAzureFunctionAppConfigured) {
+      consoleLog.info(
+        'Skipping Cloudflare Workers undeployment since regional Azure Function App is configured.'
+      );
+      return;
+    }
+
     const [client, jwtCustomizers] = await Promise.all([
       this.cloudConnection.getClient(),
       this.logtoConfigs.getJwtCustomizers(consoleLog),
     ]);
 
-    assert(jwtCustomizers[key], new RequestError({ code: 'entity.not_exists', key }));
+    assert(jwtCustomizers[key], new RequestError({ code: 'entity.not_exists', name: key }));
 
     // Undeploy the worker directly if the only JWT customizer is being deleted.
     if (Object.entries(jwtCustomizers).length === 1) {
@@ -252,6 +315,51 @@ export class JwtCustomizerLibrary {
 
     await client.put(`/api/services/custom-jwt/worker`, {
       body: deepmerge(customizerScriptsFromDatabase, newCustomizerScripts),
+    });
+  }
+
+  /**
+   * @remarks
+   * For Logto cloud use only. Run the custom JWT claims script remotely in an isolated environment.
+   * For OSS version, use @see JwtCustomizerLibrary.runScriptInLocalVm instead.
+   *
+   * @param payload - The custom JWT fetcher payload.
+   * @param isTest - Whether to run the script in test mode.
+   */
+  async runScriptRemotely(
+    payload: CustomJwtFetcher,
+    isTest?: boolean
+  ): Promise<Optional<UnknownObject>> {
+    const { azureFunctionUntrustedAppKey, azureFunctionUntrustedAppEndpoint } = EnvSet.values;
+
+    if (this.isRegionalAzureFunctionAppConfigured) {
+      try {
+        const result = await got
+          .post(new URL('/api/custom-jwt', azureFunctionUntrustedAppEndpoint), {
+            json: payload,
+            headers: {
+              'x-functions-key': azureFunctionUntrustedAppKey,
+            },
+          })
+          .json<unknown>();
+
+        const parsedResult = jsonObjectGuard.parse(result);
+        return parsedResult;
+      } catch (error: unknown) {
+        // Convert got HTTPError to WithTyped client ResponseError for unified error handling.
+        if (error instanceof HTTPError) {
+          throw parseAzureFunctionsResponseError(error);
+        }
+
+        throw error;
+      }
+    }
+
+    // Fallback to use cloud connection to call the custom JWT API.
+    const client = await this.cloudConnection.getClient();
+    return client.post(`/api/services/custom-jwt`, {
+      body: payload,
+      search: isTest ? { isTest: 'true' } : {},
     });
   }
 }
