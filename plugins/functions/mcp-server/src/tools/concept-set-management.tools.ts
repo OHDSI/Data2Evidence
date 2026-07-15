@@ -179,10 +179,25 @@ export function registerConceptSetManagementTools(server: McpServer) {
         `[MCP-TIMING] [check_concept_coverage_in_dataset] END total=${(performance.now() - toolStart).toFixed(1)}ms found=${found.length} missing=${missing.length}`,
       );
 
-      const text =
-        missing.length === 0
-          ? `All ${found.length} concept${found.length === 1 ? "" : "s"} exist in this dataset.`
-          : `${found.length} of ${conceptIds.length} concepts exist in this dataset. ${missing.length} are not in the vocabulary cache: ${missing.join(", ")}.`;
+      let text: string;
+      if (missing.length === 0) {
+        text = `All ${found.length} concept${found.length === 1 ? "" : "s"} exist in this dataset.`;
+      } else if (found.length === 0) {
+        // Every id missing usually means the OMOP-standard path doesn't apply here
+        // (a SAP HANA / LEAF dataset that filters on SOURCE concept codes / concept
+        // sets, not standard concept ids). Say so explicitly so the model stops
+        // retrying search_concepts / create_concept_set — which would build a
+        // zero-coverage set — and routes to the live builder's FE-native path.
+        text =
+          `None of the ${conceptIds.length} concept id(s) are in this dataset's vocabulary cache ` +
+          `(${missing.join(", ")}). This dataset likely does NOT use the OMOP standard vocabulary ` +
+          `(e.g. a SAP HANA / LEAF dataset whose condition/drug/measurement filters use source concept ` +
+          `codes or concept sets). Stop routing this term through search_concepts / create_concept_set — ` +
+          `resolve it on the live cohort builder with the WebMCP pa_search_attribute_values tool against ` +
+          `the card's *source concept code* or *concept-name* attribute, which returns the exact selectable token(s).`;
+      } else {
+        text = `${found.length} of ${conceptIds.length} concepts exist in this dataset. ${missing.length} are not in the vocabulary cache: ${missing.join(", ")}.`;
+      }
 
       return createStructuredResponse(text, { found, missing });
     },

@@ -480,7 +480,7 @@ describe('createPaTools', () => {
   })
 
   describe('pa_search_attribute_values', () => {
-    it('delegates to loadValuesForAttributePath and returns the values', async () => {
+    it('delegates to loadValuesForAttributePath and returns the values with counts', async () => {
       const store = makeStore()
       const values = [{ value: '461', text: 'Acute sinusitis', display_value: 'Acute sinusitis (461)' }]
       store.dispatch.mockImplementation((type: string) =>
@@ -496,7 +496,68 @@ describe('createPaTools', () => {
         searchQuery: 'sinusitis',
         attributeType: 'text',
       })
-      expect(parse(res)).toEqual({ attributePath: 'patient.interactions.priDiag.attributes.icd10', values })
+      // A small clean result: no truncation, no note, counts reported.
+      expect(parse(res)).toEqual({
+        attributePath: 'patient.interactions.priDiag.attributes.icd10',
+        total: 1,
+        returned: 1,
+        truncated: false,
+        values,
+      })
+    })
+
+    it('caps a large result to `limit`, flags truncation, and returns a routing note', async () => {
+      const store = makeStore()
+      // 1,602 tokens (the gemfibrozil case) — the flood the cap protects against.
+      const values = Array.from({ length: 1602 }, (_, i) => ({ value: String(i), text: `gemfibrozil ${i}` }))
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'loadValuesForAttributePath' ? Promise.resolve(values) : Promise.resolve(undefined)
+      )
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'patient.interactions.drugexposure.attributes.drugconceptcode',
+        query: 'gemfibrozil',
+        limit: 25,
+      })
+
+      const parsed = parse(res)
+      expect(parsed.total).toBe(1602)
+      expect(parsed.returned).toBe(25)
+      expect(parsed.values).toHaveLength(25)
+      expect(parsed.truncated).toBe(true)
+      expect(parsed.note).toContain('concept set with descendants')
+    })
+
+    it('clamps limit to MAX_VALUE_LIMIT (200)', async () => {
+      const store = makeStore()
+      const values = Array.from({ length: 500 }, (_, i) => ({ value: String(i), text: `t${i}` }))
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'loadValuesForAttributePath' ? Promise.resolve(values) : Promise.resolve(undefined)
+      )
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'p.attr',
+        query: 'x',
+        limit: 10000,
+      })
+      expect(parse(res).returned).toBe(200)
+    })
+
+    it('surfaces loadedStatus TOO_MANY_RESULTS so the model narrows instead of concluding "absent"', async () => {
+      const store = makeStore()
+      store.dispatch.mockImplementation((type: string) =>
+        // 204 → the store records TOO_MANY_RESULTS and returns an empty list.
+        type === 'loadValuesForAttributePath' ? Promise.resolve([]) : Promise.resolve(undefined)
+      )
+      store.getters.getDomainValues = () => ({ loadedStatus: 'TOO_MANY_RESULTS', values: [] })
+
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'p.attr',
+        query: 'aspirin',
+      })
+      const parsed = parse(res)
+      expect(parsed.loadedStatus).toBe('TOO_MANY_RESULTS')
+      expect(parsed.total).toBe(0)
+      expect(parsed.note).toContain('TOO_MANY_RESULTS')
+      expect(parsed.note).toContain('Narrow the query')
     })
 
     it('errors without dispatching when attributePath or query is missing', async () => {

@@ -36,6 +36,54 @@ const textResult = (payload: unknown): PaToolResult => ({
   content: [{ type: 'text', text: JSON.stringify(payload) }],
 })
 
+// pa_search_attribute_values caps how many tokens it returns. A coded catalog
+// search (a drug/condition on a non-OMOP dataset) routinely matches thousands of
+// tokens across code systems (RxNorm/NDC/ATC/SNOMED) and every strength/form —
+// e.g. "gemfibrozil" resolved to 1,602 tokens — which floods the model's context
+// and makes it guess which one to pick. Return a bounded slice + a count + a
+// routing note instead. Callers can raise `limit` (bounded by MAX) if they truly
+// need the full list.
+const DEFAULT_VALUE_LIMIT = 50
+const MAX_VALUE_LIMIT = 200
+
+// Turn the /values result shape into an actionable hint so the model narrows the
+// query or routes to a concept set, rather than picking one product token (which
+// is clinically incomplete for "any form of X") or misreading TOO_MANY_RESULTS as
+// "term absent". The store computes `loadedStatus` (a 204 → TOO_MANY_RESULTS) but
+// its action only returns the value array, so we read it from getDomainValues.
+function attributeValuesNote(opts: {
+  total: number
+  returned: number
+  truncated: boolean
+  loadedStatus?: string
+  query: string
+}): string | undefined {
+  const { total, returned, truncated, loadedStatus, query } = opts
+  if (loadedStatus === 'TOO_MANY_RESULTS' && total === 0) {
+    return (
+      `The /values endpoint reported TOO_MANY_RESULTS and returned no rows for "${query}". ` +
+      'Narrow the query (add strength/form/vocabulary words, or a more specific term) so it returns ' +
+      'selectable tokens — do NOT conclude the term is absent from the dataset.'
+    )
+  }
+  if (truncated) {
+    return (
+      `Showing the first ${returned} of ${total} matching tokens. A broad term can match many tokens across ` +
+      'code systems (RxNorm/NDC/ATC/SNOMED) and every strength/form — picking one product token is clinically ' +
+      `incomplete for "any form of ${query}". Prefer a concept set with descendants (backend d2e-mcp) when the ` +
+      'dataset supports it, or pick the ingredient/standard-level token (e.g. an RxNorm ingredient), and narrow ' +
+      'the query to disambiguate. Raise `limit` only if you genuinely need the full list.'
+    )
+  }
+  if (total === 0) {
+    return (
+      `No tokens matched "${query}". Try a broader or alternate term, or a different attributePath — a card often ` +
+      'exposes both a *source concept code* and a *concept-name* attribute; the term may live on the other one.'
+    )
+  }
+  return undefined
+}
+
 // Classify HOW an attribute's constraint value must be supplied, so the model
 // picks the right add_constraint value shape without guessing — the crux for a
 // non-OMOP (SAP HANA / LEAF) config. Such a config filters conditions/drugs/labs
@@ -328,10 +376,14 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         "Resolve the EXACT stored value token for any categorical/text attribute via the app's /values " +
         'endpoint — no auth/token handling needed. Use it for demographics too: gender/race/etc. tokens are ' +
         'dataset-specific (e.g. "FEMALE" vs "Female" vs "F"), so NEVER hardcode them — look them up here. ' +
-        'Also resolves a term like "sinusitis" to selectable diagnosis values. Returns [{ value, text, ' +
-        'display_value }]; pass a returned `value` as an add_constraint value in pa_apply_cohort_patch. ' +
-        'attributePath comes from pa_list_filter_options. For persisted concept SETS, prefer the backend ' +
-        'd2e-mcp concept tools — this returns raw attribute values, not a concept-set id.',
+        'Also resolves a term like "sinusitis" to selectable diagnosis values. Returns { total, returned, ' +
+        'truncated, loadedStatus, values:[{ value, text, display_value }], note }; pass a returned `value` as an ' +
+        'add_constraint value in pa_apply_cohort_patch. The list is CAPPED (default 50, `limit` to change) — when ' +
+        '`truncated` or loadedStatus is "TOO_MANY_RESULTS", NARROW the query rather than paging: a broad drug/' +
+        'condition term matches thousands of tokens across code systems and strengths, and one product token is ' +
+        'clinically incomplete. For "any form of X", prefer a concept set with descendants (backend d2e-mcp). Read ' +
+        'the `note`. attributePath comes from pa_list_filter_options. This returns raw attribute values, not a ' +
+        'concept-set id.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -345,6 +397,12 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             type: 'string',
             description: 'Optional value-type hint: "text" (default) or "conceptSet".',
           },
+          limit: {
+            type: 'number',
+            description:
+              `Max values to return (default ${DEFAULT_VALUE_LIMIT}, max ${MAX_VALUE_LIMIT}). Narrow the query ` +
+              'instead of raising this when results span many code systems/strengths.',
+          },
         },
         required: ['attributePath', 'query'],
       },
@@ -352,20 +410,40 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         attributePath,
         query,
         attributeType,
+        limit,
       }: {
         attributePath: string
         query: string
         attributeType?: string
+        limit?: number
       }) {
         if (!attributePath || !query) {
           return textResult({ values: [], error: 'Provide attributePath and query.' })
         }
-        const values = await store.dispatch('loadValuesForAttributePath', {
-          attributePathUid: attributePath,
-          searchQuery: query,
-          attributeType: attributeType ?? 'text',
+        const all: any[] =
+          (await store.dispatch('loadValuesForAttributePath', {
+            attributePathUid: attributePath,
+            searchQuery: query,
+            attributeType: attributeType ?? 'text',
+          })) ?? []
+        // The store's action returns only the value array, but it records WHY a list
+        // is empty/short as `loadedStatus` (a 204 → "TOO_MANY_RESULTS"). Read it from
+        // the getter so the model can tell "no such token" from "narrow the query".
+        const loadedStatus: string | undefined = store.getters.getDomainValues?.(attributePath)?.loadedStatus
+        const cap = Math.max(1, Math.min(limit ?? DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT))
+        const total = all.length
+        const values = all.slice(0, cap)
+        const truncated = total > values.length
+        const note = attributeValuesNote({ total, returned: values.length, truncated, loadedStatus, query })
+        return textResult({
+          attributePath,
+          total,
+          returned: values.length,
+          truncated,
+          loadedStatus,
+          values,
+          ...(note ? { note } : {}),
         })
-        return textResult({ attributePath, values: values ?? [] })
       },
     },
     {
