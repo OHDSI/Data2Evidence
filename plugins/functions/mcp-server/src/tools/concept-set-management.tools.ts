@@ -220,6 +220,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
             standardConcept: z.string(),
           }),
         ),
+        sourceFallback: z.boolean().optional(),
       },
     },
     async (
@@ -227,7 +228,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
       { requestInfo },
     ) => {
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
-      const concepts = await vocabularyApi.searchConcepts(
+      let concepts = await vocabularyApi.searchConcepts(
         authorization,
         datasetId,
         query,
@@ -235,18 +236,41 @@ export function registerConceptSetManagementTools(server: McpServer) {
         standardOnly,
         limit,
       );
+      // Non-OMOP (SAP HANA / LEAF) datasets often filter on SOURCE concept codes
+      // (e.g. ICD10CM) rather than OMOP standard concepts, so a STANDARD-only search
+      // returns nothing. Retry once including non-standard/source concepts before
+      // giving up, so those datasets still resolve a term to candidate ids.
+      let sourceFallback = false;
+      if (concepts.length === 0 && standardOnly) {
+        concepts = await vocabularyApi.searchConcepts(
+          authorization,
+          datasetId,
+          query,
+          domain,
+          false,
+          limit,
+        );
+        sourceFallback = concepts.length > 0;
+      }
       const summary = concepts.length
-        ? `Found ${concepts.length} concept(s) for "${query}"${domain ? ` in ${domain}` : ""} ` +
-          `(ranked by record count). Pick the right concept id(s).\n` +
+        ? `Found ${concepts.length} concept(s) for "${query}"${domain ? ` in ${domain}` : ""}` +
+          (sourceFallback
+            ? " — no STANDARD match; these include NON-STANDARD/source concepts (verify vocabulary/domain before use)"
+            : "") +
+          ` (ranked by record count). Pick the right concept id(s).\n` +
           concepts
             .slice(0, 10)
             .map(
               (c) =>
-                `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}]`,
+                `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}/${c.standardConcept || "non-standard"}]`,
             )
             .join("\n")
-        : `No concepts found for "${query}"${domain ? ` in ${domain}` : ""}. Try a different term or domain.`;
-      return createStructuredResponse(summary, { concepts });
+        : `No concepts found for "${query}"${domain ? ` in ${domain}` : ""} (standard or source). ` +
+          `This dataset may be non-OMOP (SAP HANA / LEAF): its coded condition/drug/measurement filters use ` +
+          `source concept codes or concept sets, not the OMOP standard vocabulary. Resolve the term on the live ` +
+          `cohort builder instead — WebMCP pa_search_attribute_values against the card's *source concept code* / ` +
+          `concept-name attribute returns the exact selectable token(s). Or try a different term/domain.`;
+      return createStructuredResponse(summary, { concepts, sourceFallback });
     },
   );
 }
