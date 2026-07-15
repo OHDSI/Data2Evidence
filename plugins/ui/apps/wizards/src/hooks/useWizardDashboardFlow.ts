@@ -11,7 +11,6 @@ import {
   wizardDashboardReducer,
   type WizardDashboardState,
 } from "../services/wizardDashboardState";
-import { logWizardDashboardDiagnostic } from "../services/wizardDashboardDiagnostics";
 
 interface UseWizardDashboardFlowOptions {
   datasetId?: string;
@@ -70,7 +69,6 @@ export function useWizardDashboardFlow({
       const flowInput = { ...input, signal: controller.signal };
       lastInputRef.current = flowInput;
       activeStageRef.current = "awaiting-cache";
-      const startedAt = performance.now();
       dispatch({
         type: "start",
         operationId,
@@ -96,22 +94,10 @@ export function useWizardDashboardFlow({
         },
       })
         .then((result) => {
-          logWizardDashboardDiagnostic({
-            event: "complete",
-            operationId,
-            elapsedMs: performance.now() - startedAt,
-            cacheOutcome: result.cacheOutcome,
-          });
           dispatch({ type: "ready", operationId, result });
         })
         .catch((error: unknown) => {
           if (!controller.signal.aborted) {
-            logWizardDashboardDiagnostic({
-              event: "failed",
-              operationId,
-              elapsedMs: performance.now() - startedAt,
-              failedStage: activeStageRef.current,
-            });
             dispatch({
               type: "fail",
               operationId,
