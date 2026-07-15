@@ -13,7 +13,8 @@ export type ConstraintValue =
   | number
   | string
   | { from?: string; to?: string }
-  | { conceptSetId: string; includeDescendants?: boolean; displayValue?: string }
+  // conceptSetId may arrive as a number — d2e-mcp create_concept_set returns numeric ids.
+  | { conceptSetId: string | number; includeDescendants?: boolean; displayValue?: string }
 
 export type PatchOp =
   | { op: 'add_card'; cardConfigPath: string; exclude?: boolean; ref?: string }
@@ -27,8 +28,13 @@ export interface ApplyCohortPatchResult {
   error?: string
 }
 
-const isConceptSetValue = (v: any): v is { conceptSetId: string; includeDescendants?: boolean; displayValue?: string } =>
-  !!v && typeof v === 'object' && typeof v.conceptSetId === 'string'
+// A concept-set value is any object carrying a conceptSetId. Accept string OR number:
+// d2e-mcp returns numeric concept-set ids, and a number that slips through to the
+// generic text path gets String()'d into "[object Object]" (a broken filter → count "--").
+const isConceptSetValue = (
+  v: any
+): v is { conceptSetId: string | number; includeDescendants?: boolean; displayValue?: string } =>
+  !!v && typeof v === 'object' && (typeof v.conceptSetId === 'string' || typeof v.conceptSetId === 'number')
 
 // Rollback bookkeeping: created cards are deleted, prior constraint values restored.
 interface Rollback {
@@ -88,6 +94,18 @@ async function applyOne(
 ): Promise<void> {
   switch (op.op) {
     case 'add_card': {
+      // Fail fast on a bad path with a recoverable message, instead of a generic
+      // store error (or a silently-malformed card). Skip when config isn't loaded.
+      const config = store.getters.getMriFrontendConfig
+      if (config?.getFilterCards) {
+        const validPaths: string[] = (config.getFilterCards() ?? []).map((c: any) => c.getConfigPath())
+        if (!validPaths.includes(op.cardConfigPath)) {
+          throw new Error(
+            `Unknown cardConfigPath "${op.cardConfigPath}". Use pa_list_filter_options (or the ` +
+              'validFilterOptions returned on this error) for the valid card paths.'
+          )
+        }
+      }
       const filterCardId = (await dispatch('addFilterCard', {
         configPath: op.cardConfigPath,
         isExclusion: op.exclude ?? false,
