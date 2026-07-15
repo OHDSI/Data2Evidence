@@ -19,10 +19,91 @@ export interface PaTool {
   execute: (args?: any) => Promise<PaToolResult>
 }
 
+// Optional hooks the host component (PatientAnalytics.vue) hands in so a tool can
+// drive component-local UI that is NOT in the Vuex store — e.g. switching the
+// saved-cohort list ↔ builder view. Kept optional so createPaTools stays
+// unit-testable with only a mocked store (no component, no browser).
+export interface PaComponentHooks {
+  // Show the cohort builder pane (vs. the saved-cohort list). Functionally
+  // required for a programmatically built cohort to render and compute its
+  // count/chart: the chart-query watcher (getFireRequest → fireQuery) only runs
+  // while the builder — and its chart component — is mounted.
+  showBuilder?: () => void
+}
+
 // Wrap a JSON payload in the MCP text-content envelope every tool returns.
 const textResult = (payload: unknown): PaToolResult => ({
   content: [{ type: 'text', text: JSON.stringify(payload) }],
 })
+
+// Classify HOW an attribute's constraint value must be supplied, so the model
+// picks the right add_constraint value shape without guessing — the crux for a
+// non-OMOP (SAP HANA / LEAF) config. Such a config filters conditions/drugs/labs
+// on coded *source concept code* CATALOG attributes (type "text" + useRefValue,
+// resolved via pa_search_attribute_values) and on *concept set* attributes
+// (type "conceptSet", taking a { conceptSetId }) — NOT on OMOP standard concept
+// ids. A bare "text" type alone doesn't tell these apart, so surface the routing.
+function describeAttributeValue(attr: any): { valueKind: string; howTo: string } {
+  const type = attr.getType?.()
+  const isCatalog =
+    (typeof attr.isCatalogAttribute === 'function' && attr.isCatalogAttribute()) ||
+    // useRefText-only catalogs (coded columns shown by their ref text) also need /values.
+    !!attr.oInternalConfigAttribute?.useRefText
+  if (type === 'conceptSet') {
+    return {
+      valueKind: 'conceptSet',
+      howTo: 'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools.',
+    }
+  }
+  if (type === 'num') {
+    return { valueKind: 'numeric', howTo: 'add_constraint value:<number> with operator ("<",">","=",…).' }
+  }
+  if (type === 'time' || type === 'datetime') {
+    return { valueKind: 'date', howTo: 'add_constraint value:{ from, to } (date range).' }
+  }
+  if (isCatalog) {
+    return {
+      valueKind: 'catalog',
+      howTo:
+        'Coded catalog value — resolve the EXACT stored token with pa_search_attribute_values, then pass its ' +
+        'returned `value`. Dataset-specific: never hardcode or invent the token.',
+    }
+  }
+  return { valueKind: 'text', howTo: 'add_constraint value:<string> (free text).' }
+}
+
+// The valid filter-card / attribute catalog from the frontend config (SAP-MRI or
+// OMOP alike). Shared by pa_list_filter_options AND used to enrich patch failures,
+// so a bad path is self-correcting from the error alone — no Vue/Pinia scraping.
+// Each attribute carries a `valueKind` + `howTo` so the model routes its value
+// correctly on a non-OMOP config (see describeAttributeValue).
+function listFilterOptions(store: Store<any>): { filterCards: any[]; note?: string; error?: string } {
+  const config = store.getters.getMriFrontendConfig
+  if (!config?.getFilterCards) {
+    return { filterCards: [], error: 'Frontend config not loaded.' }
+  }
+  const filterCards = (config.getFilterCards() ?? []).map((card: any) => ({
+    cardConfigPath: card.getConfigPath(),
+    cardName: card.getName(),
+    attributes: (card.getAllAttributes() ?? []).map((attr: any) => ({
+      attributePath: attr.getConfigPath(),
+      name: attr.getName(),
+      type: attr.getType(),
+      ...describeAttributeValue(attr),
+    })),
+  }))
+  return {
+    filterCards,
+    note:
+      'Route each add_constraint value by `valueKind`: numeric→number+operator, date→{from,to}, ' +
+      'conceptSet→{conceptSetId} (build via d2e-mcp), catalog→resolve the exact token with ' +
+      'pa_search_attribute_values first. This dataset may be non-OMOP (SAP HANA / LEAF): its coded ' +
+      'condition/drug/measurement filters use source concept codes or concept sets, not OMOP standard ' +
+      'concept ids — so d2e-mcp search_concepts may return nothing; fall back to catalog/conceptSet paths. ' +
+      'If a measurement/lab card exposes no numeric value attribute here, a value threshold ' +
+      '(e.g. BMI < 18.5) is NOT expressible — use a diagnosis/concept-set instead.',
+  }
+}
 
 // Build the Patient Analytics WebMCP tool definitions against a Vuex store.
 //
@@ -31,7 +112,7 @@ const textResult = (payload: unknown): PaToolResult => ({
 // Chrome flag, no bridge, no Claude required. This is verification "layer B":
 // handler ↔ Vuex correctness, where most real bugs live. registerPaTools below
 // is a thin adapter that registers whatever this returns.
-export function createPaTools(store: Store<any>): PaTool[] {
+export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): PaTool[] {
   // Saved cohorts are fetched into the store when PA mounts; be defensive in case
   // a tool runs before that has happened (or after a store reset).
   const ensureBookmarksLoaded = async () => {
@@ -43,6 +124,28 @@ export function createPaTools(store: Store<any>): PaTool[] {
   }
 
   return [
+    {
+      name: 'pa_new_cohort',
+      description:
+        'Start a fresh, empty cohort in the PA builder (the "Create D2E cohort" button) and switch to the ' +
+        'builder view so subsequent edits render live. Call this before pa_apply_cohort_patch when building a ' +
+        'cohort from scratch. PA must already be open — this resets the builder, it cannot navigate to PA if unmounted.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Working name for the new cohort (default "New cohort").' },
+        },
+      },
+      async execute({ name }: { name?: string } = {}) {
+        // Mirror Bookmarks.vue addNewCohort(): a brand-new unsaved active bookmark
+        // (no bmkId, isNew) + a blank IFR/chart from config defaults.
+        store.commit('SET_ACTIVE_BOOKMARK', { bookmarkname: name || 'New cohort', isNew: true })
+        await store.dispatch('resetChart')
+        // Switch list → builder so the chart mounts and the result computes.
+        hooks.showBuilder?.()
+        return textResult({ created: true, name: name || 'New cohort' })
+      },
+    },
     {
       name: 'pa_get_current_cohort',
       description: 'Return the active cohort / bookmark definition as JSON.',
@@ -56,10 +159,25 @@ export function createPaTools(store: Store<any>): PaTool[] {
     },
     {
       name: 'pa_list_cohorts',
-      description: 'List the saved cohorts (bookmarks) available in this dataset, as { bmkId, name }.',
-      inputSchema: { type: 'object', properties: {} },
-      async execute() {
-        await ensureBookmarksLoaded()
+      description:
+        'List the saved cohorts (bookmarks) available in this dataset, as { bmkId, name }. ' +
+        'Pass forceRefresh:true to reload from the server — do this right after pa_save_current_cohort so a ' +
+        'just-saved cohort appears (the default path serves a cached list and can be stale).',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          forceRefresh: {
+            type: 'boolean',
+            description: 'Reload the list from the server instead of using the cached one.',
+          },
+        },
+      },
+      async execute({ forceRefresh = false }: { forceRefresh?: boolean } = {}) {
+        if (forceRefresh) {
+          await store.dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
+        } else {
+          await ensureBookmarksLoaded()
+        }
         const cohorts = (store.getters.getBookmarks ?? []).map((b: any) => ({
           bmkId: b.bmkId,
           name: b.bookmarkname,
@@ -106,15 +224,19 @@ export function createPaTools(store: Store<any>): PaTool[] {
         }
 
         await store.dispatch('loadbookmarkToState', { bmkId, chartType })
+        // Ensure the builder is visible even when a cohort was already active (the
+        // store's null→set view watcher only fires on the first bookmark).
+        hooks.showBuilder?.()
         return textResult({ opened: true, bmkId })
       },
     },
     {
       name: 'pa_apply_cohort_patch',
       description:
-        'Edit the live cohort. Preferred: pass `patchOps` — typed intent applied deterministically in-place ' +
-        '(add_card / add_constraint / remove_card / remove_constraint). Discover valid paths with ' +
-        'pa_list_filter_options. Legacy: a full `bookmark` object may be passed instead, but never hand-author one.',
+        'Edit the live cohort. Preferred (and the ONLY way to add/remove a filter): pass `patchOps` — typed intent ' +
+        'applied deterministically in-place (add_card / add_constraint / remove_card / remove_constraint). Discover ' +
+        'valid paths with pa_list_filter_options. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder — ' +
+        'a hand-authored tree is validated and rejected (it silently loads the wrong cohort). Never hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -144,14 +266,44 @@ export function createPaTools(store: Store<any>): PaTool[] {
         if (Array.isArray(patchOps)) {
           try {
             const result = await applyCohortPatch(store, patchOps)
+            // Make sure the builder (and its chart) is on screen so the edit renders
+            // and the count/chart query actually runs.
+            hooks.showBuilder?.()
             return textResult(result)
           } catch (err) {
-            return textResult({ applied: false, error: err instanceof Error ? err.message : String(err) })
+            // Attach the valid catalog so a wrong card/attribute path is recoverable
+            // straight from the error — no need to call pa_list_filter_options separately
+            // or scrape the app's internals.
+            return textResult({
+              applied: false,
+              error: err instanceof Error ? err.message : String(err),
+              validFilterOptions: listFilterOptions(store).filterCards,
+            })
           }
         }
         if (bookmark) {
-          await store.dispatch('loadBookmarkDataToState', { bookmark, chartType })
-          return textResult({ applied: true })
+          // A hand-authored bookmark tree is the #1 footgun here: loadBookmarkDataToState
+          // clobbers the active bookmark with a "Linked Cohort" stub BEFORE it parses, so
+          // a malformed tree (e.g. a filter card missing `attributes`) throws in
+          // convertBM2IFR and leaves the builder pointing at a broken cohort that then
+          // crashes the chart — while the caller may still think it succeeded.
+          // The parse throws before any IFR mutation, so on failure only the active
+          // bookmark is dirty: snapshot it and restore, leaving state untouched, and
+          // surface the error so the caller uses patchOps instead.
+          const prevActiveBookmark = store.getters.getActiveBookmark
+          try {
+            await store.dispatch('loadBookmarkDataToState', { bookmark, chartType })
+            return textResult({ applied: true })
+          } catch (err) {
+            store.commit('SET_ACTIVE_BOOKMARK', prevActiveBookmark)
+            const detail = err instanceof Error ? err.message || err.name : String(err)
+            return textResult({
+              applied: false,
+              error:
+                `Rejected malformed bookmark (${detail}). Do not hand-author bookmark trees — ` +
+                'edit the live cohort with patchOps (add_card / add_constraint) instead.',
+            })
+          }
         }
         return textResult({ applied: false, error: 'Provide patchOps (preferred) or a bookmark object.' })
       },
@@ -160,62 +312,196 @@ export function createPaTools(store: Store<any>): PaTool[] {
       name: 'pa_list_filter_options',
       description:
         'List the valid filter cards and attributes for the current dataset as ' +
-        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type }] }. ' +
+        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type, valueKind, howTo }] } plus a ' +
+        'routing `note`. `valueKind` (numeric | date | conceptSet | catalog | text) + `howTo` tell you how to ' +
+        'supply each add_constraint value — essential on non-OMOP (SAP HANA / LEAF) datasets whose coded ' +
+        'filters use source concept codes/concept sets, not OMOP standard concept ids. ' +
         'Use these exact paths in pa_apply_cohort_patch patchOps — never invent paths.',
       inputSchema: { type: 'object', properties: {} },
       async execute() {
-        const config = store.getters.getMriFrontendConfig
-        if (!config?.getFilterCards) {
-          return textResult({ filterCards: [], error: 'Frontend config not loaded.' })
+        return textResult(listFilterOptions(store))
+      },
+    },
+    {
+      name: 'pa_search_attribute_values',
+      description:
+        "Resolve the EXACT stored value token for any categorical/text attribute via the app's /values " +
+        'endpoint — no auth/token handling needed. Use it for demographics too: gender/race/etc. tokens are ' +
+        'dataset-specific (e.g. "FEMALE" vs "Female" vs "F"), so NEVER hardcode them — look them up here. ' +
+        'Also resolves a term like "sinusitis" to selectable diagnosis values. Returns [{ value, text, ' +
+        'display_value }]; pass a returned `value` as an add_constraint value in pa_apply_cohort_patch. ' +
+        'attributePath comes from pa_list_filter_options. For persisted concept SETS, prefer the backend ' +
+        'd2e-mcp concept tools — this returns raw attribute values, not a concept-set id.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          attributePath: {
+            type: 'string',
+            description:
+              'Attribute config path from pa_list_filter_options, e.g. "patient.interactions.priDiag.attributes.icd10".',
+          },
+          query: { type: 'string', description: 'Search text, e.g. "sinusitis".' },
+          attributeType: {
+            type: 'string',
+            description: 'Optional value-type hint: "text" (default) or "conceptSet".',
+          },
+        },
+        required: ['attributePath', 'query'],
+      },
+      async execute({
+        attributePath,
+        query,
+        attributeType,
+      }: {
+        attributePath: string
+        query: string
+        attributeType?: string
+      }) {
+        if (!attributePath || !query) {
+          return textResult({ values: [], error: 'Provide attributePath and query.' })
         }
-        const filterCards = (config.getFilterCards() ?? []).map((card: any) => ({
-          cardConfigPath: card.getConfigPath(),
-          cardName: card.getName(),
-          attributes: (card.getAllAttributes() ?? []).map((attr: any) => ({
-            attributePath: attr.getConfigPath(),
-            name: attr.getName(),
-            type: attr.getType(),
-          })),
-        }))
-        return textResult({ filterCards })
+        const values = await store.dispatch('loadValuesForAttributePath', {
+          attributePathUid: attributePath,
+          searchQuery: query,
+          attributeType: attributeType ?? 'text',
+        })
+        return textResult({ attributePath, values: values ?? [] })
+      },
+    },
+    {
+      name: 'pa_get_cohort_result',
+      description:
+        'Return the LIVE computed RESULT of the current cohort: matched patient count, total, active chart type, ' +
+        'and the binned chart data (categories, measures, per-bin patient counts). Use this to verify what actually ' +
+        'rendered after building/editing — pa_get_current_cohort returns only the definition, not the result. ' +
+        'Requires the builder to be open (pa_new_cohort / pa_open_cohort switch to it) so the chart query has run.',
+      inputSchema: { type: 'object', properties: {} },
+      async execute() {
+        const g = store.getters
+        // getResponse is a getter that returns a function; call it for the raw response.
+        const resp = typeof g.getResponse === 'function' ? g.getResponse() : g.getResponse
+        const chartData = resp?.data
+        const chart = chartData
+          ? {
+              totalPatientCount: chartData.totalPatientCount,
+              categories: chartData.categories,
+              measures: chartData.measures,
+              data: chartData.data,
+              noDataReason: chartData.noDataReason,
+            }
+          : null
+        return textResult({
+          currentPatientCount: g.getCurrentPatientCount,
+          totalPatientCount: g.getDisplayTotalGuardedPatientCount ? g.getTotalPatientListCount : g.getTotalPatientCount,
+          chartType: g.getActiveChart,
+          chart,
+        })
       },
     },
     {
       name: 'pa_save_current_cohort',
-      description: 'Persist the current cohort to bookmark-svc.',
+      description:
+        'Persist the current cohort to bookmark-svc and refresh the saved-cohort list. ' +
+        'New cohort → pass { name } (inserts). Overwrite an existing one → pass { bookmarkId } or method:"put" (updates). ' +
+        'The save payload (cmd / bookmark body / shareBookmark) is built from live store state — you do not construct it. ' +
+        'Advanced/back-compat: a raw `params` object, if provided, is forwarded to fireBookmarkQuery verbatim.',
       inputSchema: {
         type: 'object',
         properties: {
-          params: { type: 'object' },
-          bookmarkId: { type: 'string' },
-          method: { type: 'string', enum: ['post', 'put'], default: 'post' },
+          name: {
+            type: 'string',
+            description: 'Name for a NEW cohort (insert). Required to insert unless updating or passing raw params.',
+          },
+          share: { type: 'boolean', description: 'Share the cohort with other users (default false).' },
+          bookmarkId: { type: 'string', description: 'Existing cohort id to overwrite (update). Omit to insert.' },
+          method: { type: 'string', enum: ['post', 'put'], description: 'post = insert (default), put = update.' },
+          params: { type: 'object', description: 'Advanced/back-compat: raw fireBookmarkQuery params, forwarded verbatim.' },
         },
-        required: ['params'],
       },
       async execute({
-        params,
+        name,
+        share = false,
         bookmarkId,
-        method = 'post',
+        method,
+        params,
       }: {
-        params: object
+        name?: string
+        share?: boolean
         bookmarkId?: string
         method?: string
-      }) {
-        const res = await store.dispatch('fireBookmarkQuery', { method, params, bookmarkId })
-        return textResult({ saved: true, bookmarkId: res?.bmkId ?? bookmarkId })
+        params?: any
+      } = {}) {
+        // Reload the list after a write so pa_list_cohorts (and the UI) reflect it —
+        // fireBookmarkQuery does NOT refetch after insert/update on its own.
+        const refreshList = () => store.dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
+
+        // Back-compat: forward a hand-built params object verbatim.
+        if (params) {
+          const res = await store.dispatch('fireBookmarkQuery', { method: method ?? 'post', params, bookmarkId })
+          await refreshList()
+          return textResult({ saved: true, bookmarkId: res?.bmkId ?? bookmarkId })
+        }
+
+        const bookmarkData = store.getters.getBookmarksData
+        if (!bookmarkData || Object.keys(bookmarkData).length === 0) {
+          return textResult({ saved: false, error: 'Current cohort is empty — build filters before saving.' })
+        }
+
+        const active = store.getters.getActiveBookmark
+        const targetId = bookmarkId ?? (method === 'put' ? active?.bmkId : undefined)
+        const isUpdate = method === 'put' || !!targetId
+
+        let builtParams: Record<string, unknown>
+        let httpMethod: string
+        if (isUpdate) {
+          if (!targetId) {
+            return textResult({
+              saved: false,
+              error: 'Update requested but no bookmarkId (and no active saved cohort) to update.',
+            })
+          }
+          builtParams = { cmd: 'update', bookmark: JSON.stringify(bookmarkData), shareBookmark: share }
+          httpMethod = 'put'
+        } else {
+          const cohortName = name ?? (active && !active.isNew ? active.bookmarkname : undefined)
+          if (!cohortName) {
+            return textResult({ saved: false, error: 'Provide a name to save a new cohort.' })
+          }
+          builtParams = {
+            cmd: 'insert',
+            bookmarkname: cohortName,
+            bookmark: JSON.stringify(bookmarkData),
+            shareBookmark: share,
+          }
+          httpMethod = 'post'
+        }
+
+        const res = await store.dispatch('fireBookmarkQuery', { method: httpMethod, params: builtParams, bookmarkId: targetId })
+        const savedId = res?.bmkId ?? targetId
+
+        // Mirror the in-app dialogs: reload the list so the row is visible, then
+        // adopt the saved record as the active bookmark so a follow-up save updates
+        // it instead of inserting a duplicate.
+        await refreshList()
+        if (savedId) {
+          const saved = (store.getters.getBookmarks ?? []).find((b: any) => b.bmkId === savedId)
+          if (saved) store.commit('SET_ACTIVE_BOOKMARK', saved)
+        }
+
+        return textResult({ saved: true, bookmarkId: savedId })
       },
     },
   ]
 }
 
-export function registerPaTools(store: Store<any>): () => void {
+export function registerPaTools(store: Store<any>, hooks: PaComponentHooks = {}): () => void {
   const mc = (document as any).modelContext ?? (navigator as any).modelContext
   if (!mc) {
     console.warn('[WebMCP] modelContext API not available. Enable chrome://flags/#enable-webmcp-testing (Chrome 146+)')
     return () => {}
   }
 
-  const regs: Array<{ unregister?: () => void }> = createPaTools(store).map(tool => mc.registerTool(tool))
+  const regs: Array<{ unregister?: () => void }> = createPaTools(store, hooks).map(tool => mc.registerTool(tool))
 
   // Return a cleanup function for beforeUnmount
   return () => regs.forEach(r => r?.unregister?.())
