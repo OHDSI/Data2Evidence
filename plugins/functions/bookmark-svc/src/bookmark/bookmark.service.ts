@@ -195,8 +195,8 @@ export async function _insertBookmark(
       userName
     )
     const portalAPI = new PortalAPI(token)
-    const result = await portalAPI.createBookmark({ serviceArtifact: bookmarkDto }, datasetId)
-    callback(null, result)
+    await portalAPI.createBookmark({ serviceArtifact: bookmarkDto }, datasetId)
+    callback(null, { status: 'success', bmkId: bookmarkDto.id })
   } catch (error) {
     console.error(error)
     callback(error, null)
@@ -493,7 +493,7 @@ export async function queryBookmarks(
           shareBookmark,
           token,
           datasetId,
-          cb
+          callback
         )
         break
       case 'delete':
