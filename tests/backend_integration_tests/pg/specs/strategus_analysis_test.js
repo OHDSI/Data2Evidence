@@ -93,7 +93,7 @@ describe('-- STRATEGUS ANALYSIS TESTS --', function () {
             datasetId: process.env.DATASET_ID,
             studyId: HARDCODED_STUDY.studyId,
             tokenStudyCode: HARDCODED_STUDY.tokenStudyCode,
-            uploadResults: false
+            uploadResults: false // TODO: set to true once we have a results schema
           }
         }),
         contentType: 'application/json',
