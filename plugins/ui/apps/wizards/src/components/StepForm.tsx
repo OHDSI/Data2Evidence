@@ -11,6 +11,10 @@ import { WizardDashboardModal } from "./WizardDashboardModal";
 import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import styles from "./StepForm.module.css";
 
+// Keep the legacy Cohort Builder action available for a one-line re-enable.
+// Standalone Wizards currently exposes only the direct dashboard action.
+const SHOW_COHORT_BUILDER_ACTION = false;
+
 /**
  * Form step renderer with config-driven fields.
  */
@@ -397,6 +401,8 @@ export function StepForm() {
     );
   }
 
+  const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
+
   const renderFields = (fields: FieldDefinition[]) => {
     return fields.map((field) => renderField(field));
   };
@@ -443,6 +449,15 @@ export function StepForm() {
             Back
           </button>
           <div className={styles.primaryActions}>
+            {SHOW_COHORT_BUILDER_ACTION && (
+              <button
+                type="submit"
+                disabled={!allRequiredFieldsFilled() || !isValid}
+                className={`${styles.button} ${styles.buttonPrimary}`}
+              >
+                <AnalyticsIcon /> {submitLabel}
+              </button>
+            )}
             <button
               type="button"
               onClick={handleSubmit(onOpenDashboard)}
