@@ -1267,9 +1267,7 @@ def execute_r_strategus(analysisSpec: str, executionSettings, dbSettings):
                 cache_id=cache_id
             )
             db_credentials = dbdao.tenant_configs
-            # print db connection string
             print(f"Connecting to database with connection string: {dbdao.get_database_connector_connection_string()}")
-            print(f"Connecting to database with DBMS: {dbdao.get_database_connector_dbms_val()}")
 
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
                 dbms=dbdao.get_database_connector_dbms_val(), 
@@ -1324,7 +1322,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
         try:
             ro.r(set_trex_env_var(USE_TREX_CONNECTION))
             database_code = dbSettings['database_code']
-            results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
+            results_schema = f'{database_code}.results_{validate_token_study_code(dbSettings["token_study_code"])}'
             rStrategus = importr('Strategus')
             rParallelLogger = importr('ParallelLogger')
             rDatabaseConnector = importr('DatabaseConnector')
@@ -1332,8 +1330,7 @@ def upload_strategus_results(analysisSpec: str, path_to_results, dbSettings):
 
             dbdao = DBDao(
                 dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-                database_code=database_code,
-                cache_id=dbSettings.get('cache_id', None)
+                database_code=database_code
             )
             db_credentials = dbdao.tenant_configs
             rConnectionDetails = rDatabaseConnector.createConnectionDetails(
@@ -1434,8 +1431,7 @@ def drop_strategus_results_schema(dbSettings):
     results_schema = f'results_{validate_token_study_code(dbSettings["token_study_code"])}'
     dbdao = DBDao(
         dialect=SupportedDatabaseDialects.TREX if USE_TREX_CONNECTION else None,
-        database_code=database_code,
-        cache_id=dbSettings.get('cache_id', None)
+        database_code=database_code
     )
 
     if(dbdao.check_schema_exists(results_schema)):

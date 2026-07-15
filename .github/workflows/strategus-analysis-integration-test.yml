@@ -29,7 +29,7 @@ env:
 
 jobs:
   strategus-analysis-integration-test:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     steps:
@@ -160,7 +160,6 @@ jobs:
             DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
             docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
             [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
 
       - name: Get dataset Id
         run: |
@@ -322,33 +321,6 @@ jobs:
           sudo apt install -y postgresql-client
           pg_isready -d ${PGDATABASE} -h ${PGHOST} -p ${PGPORT} -U ${PGUSER}
           psql -h ${PGHOST} -p ${PGPORT} -U ${PGUSER} -d ${PGDATABASE}
-
-      # - name: Setup Test DB
-      #   run: |
-      #     PGPASSWORD=$(echo $(docker exec d2e-trex printenv DEMO__DB_PASSWORD))
-      #     yarn --prefer-offline
-      #     yarn inittestdb-pg
-
-      # - name: Setupdemo
-      #   if: success() || failure()
-      #   uses: nick-fields/retry@v3
-      #   id: setupdemo
-      #   with:
-      #     timeout_seconds: 1800
-      #     retry_wait_seconds: 100
-      #     max_attempts: 2
-      #     retry_on: any
-      #     command: |
-      #       ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }}  -d ./plugins/functions setupdemo
-      #       DC_EXIT_CODE=$?
-      #       DOCKER_STATUS_FILE=../docker-status-${GITHUB_RUN_ID:-ghRunId}-$(date '+%Y%m%dT%H%M%S').txt | tee -a $GITHUB_ENV
-      #       docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee $DOCKER_STATUS_FILE | tee -a $GITHUB_STEP_SUMMARY
-      #       [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
-
-      # - name: Logs
-      #   if: success() || failure()
-      #   run: |
-      #     ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
 
       - name: Install dependencies in backend integration tests
         run: |

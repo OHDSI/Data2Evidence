@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from prefect import flow, task
 from prefect.context import TaskRunContext, FlowRunContext, get_run_context
+from prefect.variables import Variable
 from prefect.artifacts import create_markdown_artifact
 
 from .hooks import generate_nodes_flow_hook, execute_nodes_flow_hook, node_task_execution_hook
@@ -53,6 +54,7 @@ def strategus_plugin(json_graph, options):
     update_results_schema = _options.get('updateResultsSchema', True)
     databaseCode = options.get('databaseCode', None)
     datasetId = options.get('datasetId', None)
+    cacheId = options.get('cacheId', None)
     studyName = options.get("studyName", "")
     tokenStudyCode = options.get('tokenStudyCode', None)
 
@@ -91,12 +93,18 @@ def strategus_plugin(json_graph, options):
         )
         # updateResultsSchema option will drop the existing schema before uploading new results
         if(update_results_schema):
-            drop_strategus_results(options)
+            results_db_settings = {
+                'database_code': Variable.get('trex_strategus_results_db_name'),
+                'cache_id': cacheId,
+                "dataset_id": datasetId,
+                "token_study_code": tokenStudyCode
+            }
+            drop_strategus_results(results_db_settings)
 
         if(upload_results):
             result_db_settings = {
-                'database_code': databaseCode,
-                'cache_id': options.get('cacheId', None),
+                'database_code': Variable.get('trex_strategus_results_db_name'),
+                'cache_id': cacheId,
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
             }
@@ -256,11 +264,15 @@ def runStrategus(json_graph, options):
     execute_r_strategus(analysisSpec, executionSettings, dbSettings)
     # updateResultsSchema option will drop the existing schema before uploading new results
     if(update_results_schema):
-        drop_strategus_results(options)
+        drop_strategus_results({
+            'databaseCode': Variable.get('trex_strategus_results_db_name'),
+            'cacheId': cache_id,
+            'tokenStudyCode': token_study_code
+        })
 
     if(upload_results):
         result_db_settings = {
-            'database_code': database_code,
+            'database_code': Variable.get('trex_strategus_results_db_name'),
             'cache_id': cache_id,
             "dataset_id": datasetId,
             "token_study_code": token_study_code

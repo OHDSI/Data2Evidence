@@ -42,6 +42,7 @@ export const env = {
     trex_sql_port: _env.TREX__SQL__PORT,
     trex_sql_dbname: _env.TREX__SQL__DBNAME,
     trex_sql_user: _env.TREX__SQL__USER,
+    trex_strategus_results_db_name: _env.TREX__STRATEGUS_RESULTS_DB_NAME,
     is_dev_env: _env.PREFECT__LOCAL_DEBUG === "true" || false, // Default to false if not set
     logs_debug_enable: _env.PREFECT__LOGS_DEBUG_ENABLED === "true" || false, // Default to false if not set
     fhir_database_code: _env.FHIR_DATABASE_CODE,
