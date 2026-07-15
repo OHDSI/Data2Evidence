@@ -271,7 +271,11 @@ export default {
     },
   },
   mounted() {
-    this._unregisterPaTools = registerPaTools(this.$store)
+    this._unregisterPaTools = registerPaTools(this.$store, {
+      // Let pa_new_cohort switch from the saved-cohort list to the builder so a
+      // programmatically built cohort renders and computes its count/chart.
+      showBuilder: () => this.toggleCohorts(false),
+    })
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
