@@ -94,7 +94,7 @@ def strategus_plugin(json_graph, options):
         # updateResultsSchema option will drop the existing schema before uploading new results
         if(update_results_schema):
             results_db_settings = {
-                'database_code': Variable.get('trex_strategus_results_db_name'),
+                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
                 'cache_id': cacheId,
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
@@ -103,7 +103,7 @@ def strategus_plugin(json_graph, options):
 
         if(upload_results):
             result_db_settings = {
-                'database_code': Variable.get('trex_strategus_results_db_name'),
+                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
                 'cache_id': cacheId,
                 "dataset_id": datasetId,
                 "token_study_code": tokenStudyCode
@@ -265,14 +265,14 @@ def runStrategus(json_graph, options):
     # updateResultsSchema option will drop the existing schema before uploading new results
     if(update_results_schema):
         drop_strategus_results({
-            'databaseCode': Variable.get('trex_strategus_results_db_name'),
+            'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
             'cacheId': cache_id,
             'tokenStudyCode': token_study_code
         })
 
     if(upload_results):
         result_db_settings = {
-            'database_code': Variable.get('trex_strategus_results_db_name'),
+            'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
             'cache_id': cache_id,
             "dataset_id": datasetId,
             "token_study_code": token_study_code
