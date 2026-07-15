@@ -222,9 +222,11 @@ function handleConfirm() {
 }
 
 .covariate-picker__label {
-  color: var(--color-ui-dark-text, #595757);
+  color: var(--color-ui-light-text, #595757);
   display: block;
   font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
   margin-bottom: 4px;
 }
 
@@ -356,49 +358,4 @@ function handleConfirm() {
   padding-right: 0;
 }
 
-:deep(.covariate-picker .multiselect__placeholder),
-:deep(.covariate-picker .multiselect__input),
-:deep(.covariate-picker .multiselect__single) {
-  color: var(--color-ui-darkest-text, #000);
-  font-size: 16px;
-}
-
-:deep(.covariate-picker .multiselect__tag) {
-  background: #d7e8ff;
-  border: 0;
-  border-radius: 999px;
-  color: var(--color-mri-brand, #000080);
-  font-size: 14px;
-  margin-bottom: 6px;
-  padding: 4px 26px 4px 10px;
-}
-
-:deep(.covariate-picker .multiselect__tag-icon::after) {
-  color: var(--color-mri-brand, #000080);
-}
-
-:deep(.covariate-picker .multiselect__tag span > i:not(.multiselect__tag-icon)) {
-  display: none;
-}
-
-:deep(.covariate-picker .unicode-icon button) {
-  align-items: center;
-  background: var(--color-mri-brand, #000080);
-  border-color: var(--color-mri-brand, #000080);
-  border-radius: 999px;
-  color: var(--color-mri-lightest-text, #fff);
-  display: inline-flex;
-  height: 48px;
-  justify-content: center;
-  line-height: 1;
-  padding: 0;
-  width: 48px;
-}
-
-:deep(.covariate-picker .unicode-icon span) {
-  color: var(--color-mri-lightest-text, #fff);
-  display: block;
-  font-size: 30px;
-  line-height: 1;
-}
 </style>

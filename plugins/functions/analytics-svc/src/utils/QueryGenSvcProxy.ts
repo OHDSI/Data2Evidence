@@ -48,7 +48,9 @@ export async function generateQuery(
             "auth-type": "azure-ad",
             "authorization": accessToken,
             "user-agent": "ALP Service",
-            "x-source-origin": sourceOrigin,
+            // Omit x-source-origin when absent: an `undefined` header value throws
+            // ERR_HTTP_INVALID_HEADER_VALUE in Node's http client. Pass-through header.
+            ...(sourceOrigin != null ? { "x-source-origin": sourceOrigin } : {}),
             "x-req-correlation-id": reqCorrelationId,
         },
     };
