@@ -105,6 +105,37 @@ describe('applyCohortPatch', () => {
     ])
   })
 
+  it('accepts a NUMERIC conceptSetId (d2e-mcp create_concept_set) — no "[object Object]"', async () => {
+    const { store, constraints } = makeStore()
+    await applyCohortPatch(store, [
+      { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
+      {
+        op: 'add_constraint',
+        card: 'dx',
+        attributePath: 'patient.interactions.conditionoccurrence.attributes.condition',
+        // conceptSetId as a number, exactly as create_concept_set returns it
+        value: { conceptSetId: 29, includeDescendants: true, displayValue: 'Sinusitis' },
+      },
+    ])
+
+    const con = Object.values(constraints).find((c: any) => c.props.attrKey === 'condition') as any
+    // value must be the stringified concept-set id (the filter Expression reads .value),
+    // NOT the object stringified to "[object Object]".
+    expect(con.props.value).toEqual([
+      { value: '29', text: 'Sinusitis', display_value: 'Sinusitis', includeDescendants: true },
+    ])
+  })
+
+  it('rejects an unknown cardConfigPath with a recoverable message when config is loaded', async () => {
+    const { store } = makeStore()
+    store.getters.getMriFrontendConfig = {
+      getFilterCards: () => [{ getConfigPath: () => 'patient' }],
+    }
+    await expect(
+      applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: 'patient.bogus' }])
+    ).rejects.toThrow(/Unknown cardConfigPath/)
+  })
+
   it('creates an exclusion card when exclude is set', async () => {
     const { store, cards } = makeStore()
     await applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: 'patient.interactions.priDiag', exclude: true }])

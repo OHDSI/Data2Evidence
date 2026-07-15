@@ -15,8 +15,10 @@ const makeStore = ({ bookmarks = [], loadAllResult }: { bookmarks?: any[]; loadA
       getBookmarksData: { name: 'Elderly Diabetics', cards: ['c1'] },
       getBookmarkFromIFR: { filter: { age: { min: 65 } } },
       getBookmarks: bookmarks,
+      getActiveBookmark: null,
     },
     dispatch: vi.fn(),
+    commit: vi.fn(),
   }
   store.dispatch.mockImplementation((type: string, payload: any) => {
     if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'loadAll' && loadAllResult) {
@@ -41,18 +43,25 @@ describe('createPaTools', () => {
     const tools = createPaTools(makeStore())
 
     expect(tools.map(t => t.name)).toEqual([
+      'pa_new_cohort',
       'pa_get_current_cohort',
       'pa_list_cohorts',
       'pa_open_cohort',
       'pa_apply_cohort_patch',
       'pa_list_filter_options',
+      'pa_search_attribute_values',
+      'pa_get_cohort_result',
       'pa_save_current_cohort',
     ])
-    // pa_save_current_cohort must declare its required inputs so the model can't
-    // call it with an empty object. pa_apply_cohort_patch accepts either
-    // `patchOps` (preferred) or `bookmark` (legacy), so neither is unconditionally
-    // required — the handler validates that at least one is present.
-    expect((byName(tools, 'pa_save_current_cohort').inputSchema as any).required).toEqual(['params'])
+    // pa_save_current_cohort has no unconditionally-required input: it builds the
+    // payload from live store state given { name } (insert) or { bookmarkId } (update),
+    // and still accepts a raw `params` escape hatch — the handler validates the combo.
+    expect((byName(tools, 'pa_save_current_cohort').inputSchema as any).required).toBeUndefined()
+    // pa_search_attribute_values does require its two search inputs.
+    expect((byName(tools, 'pa_search_attribute_values').inputSchema as any).required).toEqual([
+      'attributePath',
+      'query',
+    ])
   })
 
   describe('pa_get_current_cohort', () => {
@@ -96,6 +105,25 @@ describe('createPaTools', () => {
 
       expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
       expect(parse(res)).toEqual({ cohorts: [{ bmkId: 'b9', name: 'Loaded Later' }] })
+    })
+
+    it('forceRefresh reloads via loadAll even when the list is already populated (fixes staleness)', async () => {
+      const store = makeStore({
+        bookmarks: [{ bmkId: 'b1', bookmarkname: 'Old', bookmark: '{}' }],
+        loadAllResult: [
+          { bmkId: 'b1', bookmarkname: 'Old', bookmark: '{}' },
+          { bmkId: 'b2', bookmarkname: 'Just Saved', bookmark: '{}' },
+        ],
+      })
+      const res = await byName(createPaTools(store), 'pa_list_cohorts').execute({ forceRefresh: true })
+
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
+      expect(parse(res)).toEqual({
+        cohorts: [
+          { bmkId: 'b1', name: 'Old' },
+          { bmkId: 'b2', name: 'Just Saved' },
+        ],
+      })
     })
   })
 
@@ -207,6 +235,53 @@ describe('createPaTools', () => {
       expect(parse(res)).toEqual({ applied: false, error: 'Provide patchOps (preferred) or a bookmark object.' })
       expect(store.dispatch).not.toHaveBeenCalled()
     })
+
+    it('attaches the valid filter catalog when a patch fails, so a bad path is self-correcting', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
+          { getConfigPath: () => 'patient', getName: () => 'Basic Data', getAllAttributes: () => [] },
+        ],
+      }
+      // Force the applier to throw (addFilterCard rejects).
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'addFilterCard' ? Promise.reject(new Error('boom')) : Promise.resolve(undefined)
+      )
+
+      const res = await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({
+        patchOps: [{ op: 'add_card', cardConfigPath: 'patient' }],
+      })
+
+      const parsed = parse(res)
+      expect(parsed.applied).toBe(false)
+      expect(parsed.validFilterOptions).toEqual([{ cardConfigPath: 'patient', cardName: 'Basic Data', attributes: [] }])
+    })
+
+    it('rejects a malformed bookmark, restores the active cohort, and steers to patchOps', async () => {
+      const store = makeStore()
+      const prevActive = { bmkId: 'test-1', bookmarkname: 'test', isNew: false }
+      store.getters.getActiveBookmark = prevActive
+      // loadBookmarkDataToState clobbers the active bookmark, then rejects on the bad tree.
+      store.dispatch.mockImplementation((type: string) => {
+        if (type === 'loadBookmarkDataToState') {
+          const e: any = new Error('')
+          e.name = 'InvalidArgumentException'
+          return Promise.reject(e)
+        }
+        return Promise.resolve(undefined)
+      })
+
+      const res = await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({
+        // filter card missing `attributes` — the shape that threw in the wild
+        bookmark: { filter: { cards: { type: 'FilterCard' } } },
+      })
+
+      const parsed = parse(res)
+      expect(parsed.applied).toBe(false)
+      expect(parsed.error).toContain('patchOps')
+      // the failed load left a broken active bookmark; the tool restores the prior one
+      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', prevActive)
+    })
   })
 
   describe('pa_list_filter_options', () => {
@@ -226,15 +301,57 @@ describe('createPaTools', () => {
 
       const res = await byName(createPaTools(store), 'pa_list_filter_options').execute()
 
-      expect(parse(res)).toEqual({
-        filterCards: [
+      const parsed = parse(res)
+      expect(parsed.filterCards).toEqual([
+        {
+          cardConfigPath: 'patient',
+          cardName: 'Basic Data',
+          attributes: [
+            {
+              attributePath: 'patient.attributes.age',
+              name: 'Age',
+              type: 'num',
+              valueKind: 'numeric',
+              howTo: expect.stringContaining('operator'),
+            },
+          ],
+        },
+      ])
+      // the routing note steers value shape on non-OMOP configs
+      expect(parsed.note).toContain('valueKind')
+    })
+
+    it('classifies a coded catalog attribute (useRefValue) as valueKind "catalog"', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
           {
-            cardConfigPath: 'patient',
-            cardName: 'Basic Data',
-            attributes: [{ attributePath: 'patient.attributes.age', name: 'Age', type: 'num' }],
+            getConfigPath: () => 'patient.interactions.conditionoccurrence',
+            getName: () => 'Conditions',
+            getAllAttributes: () => [
+              {
+                getConfigPath: () => 'patient.interactions.conditionoccurrence.attributes.condsourcecode',
+                getName: () => 'Condition Source concept code',
+                getType: () => 'text',
+                isCatalogAttribute: () => true,
+              },
+              {
+                getConfigPath: () => 'patient.interactions.conditionoccurrence.attributes.condsourceconceptset',
+                getName: () => 'Condition Source concept set',
+                getType: () => 'conceptSet',
+                isCatalogAttribute: () => false,
+              },
+            ],
           },
         ],
-      })
+      }
+
+      const attrs = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).filterCards[0]
+        .attributes
+      expect(attrs[0].valueKind).toBe('catalog')
+      expect(attrs[0].howTo).toContain('pa_search_attribute_values')
+      expect(attrs[1].valueKind).toBe('conceptSet')
+      expect(attrs[1].howTo).toContain('conceptSetId')
     })
 
     it('degrades gracefully when the frontend config is not loaded', async () => {
@@ -277,6 +394,168 @@ describe('createPaTools', () => {
       })
       expect(parse(res)).toEqual({ saved: true, bookmarkId: 'existing-7' })
     })
+
+    it('builds an insert payload from live state, refreshes the list, and adopts the saved bookmark', async () => {
+      const savedRecord = { bmkId: 'new-1', bookmarkname: 'Female Sinusitis', bookmark: '{}' }
+      const store = makeStore()
+      store.getters.getActiveBookmark = { bookmarkname: 'New cohort', isNew: true }
+      store.dispatch.mockImplementation((type: string, payload: any) => {
+        if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'insert') return Promise.resolve({ bmkId: 'new-1' })
+        if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'loadAll') {
+          store.getters.getBookmarks = [savedRecord]
+        }
+        return Promise.resolve(undefined)
+      })
+
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({ name: 'Female Sinusitis' })
+
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', {
+        method: 'post',
+        params: {
+          cmd: 'insert',
+          bookmarkname: 'Female Sinusitis',
+          bookmark: JSON.stringify(store.getters.getBookmarksData),
+          shareBookmark: false,
+        },
+        bookmarkId: undefined,
+      })
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
+      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', savedRecord)
+      expect(parse(res)).toEqual({ saved: true, bookmarkId: 'new-1' })
+    })
+
+    it('builds an update payload (cmd:update) when a bookmarkId is given', async () => {
+      const store = makeStore()
+      store.dispatch.mockResolvedValue(undefined)
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({
+        bookmarkId: 'existing-9',
+        share: true,
+      })
+
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', {
+        method: 'put',
+        params: { cmd: 'update', bookmark: JSON.stringify(store.getters.getBookmarksData), shareBookmark: true },
+        bookmarkId: 'existing-9',
+      })
+      expect(parse(res)).toEqual({ saved: true, bookmarkId: 'existing-9' })
+    })
+
+    it('refuses to save an empty cohort without dispatching', async () => {
+      const store = makeStore()
+      store.getters.getBookmarksData = {}
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({ name: 'Empty' })
+
+      expect(parse(res)).toEqual({ saved: false, error: 'Current cohort is empty — build filters before saving.' })
+      expect(store.dispatch).not.toHaveBeenCalled()
+    })
+
+    it('requires a name to insert a brand-new cohort', async () => {
+      const store = makeStore()
+      store.getters.getActiveBookmark = { bookmarkname: 'New cohort', isNew: true }
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({})
+
+      expect(parse(res)).toEqual({ saved: false, error: 'Provide a name to save a new cohort.' })
+    })
+  })
+
+  describe('pa_new_cohort', () => {
+    it('resets the active bookmark + chart and switches to the builder view', async () => {
+      const store = makeStore()
+      const showBuilder = vi.fn()
+      const res = await byName(createPaTools(store, { showBuilder }), 'pa_new_cohort').execute({ name: 'My Cohort' })
+
+      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', { bookmarkname: 'My Cohort', isNew: true })
+      expect(store.dispatch).toHaveBeenCalledWith('resetChart')
+      expect(showBuilder).toHaveBeenCalledOnce()
+      expect(parse(res)).toEqual({ created: true, name: 'My Cohort' })
+    })
+
+    it('defaults the name and works without a showBuilder hook', async () => {
+      const store = makeStore()
+      const res = await byName(createPaTools(store), 'pa_new_cohort').execute()
+
+      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', { bookmarkname: 'New cohort', isNew: true })
+      expect(parse(res)).toEqual({ created: true, name: 'New cohort' })
+    })
+  })
+
+  describe('pa_search_attribute_values', () => {
+    it('delegates to loadValuesForAttributePath and returns the values', async () => {
+      const store = makeStore()
+      const values = [{ value: '461', text: 'Acute sinusitis', display_value: 'Acute sinusitis (461)' }]
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'loadValuesForAttributePath' ? Promise.resolve(values) : Promise.resolve(undefined)
+      )
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'patient.interactions.priDiag.attributes.icd10',
+        query: 'sinusitis',
+      })
+
+      expect(store.dispatch).toHaveBeenCalledWith('loadValuesForAttributePath', {
+        attributePathUid: 'patient.interactions.priDiag.attributes.icd10',
+        searchQuery: 'sinusitis',
+        attributeType: 'text',
+      })
+      expect(parse(res)).toEqual({ attributePath: 'patient.interactions.priDiag.attributes.icd10', values })
+    })
+
+    it('errors without dispatching when attributePath or query is missing', async () => {
+      const store = makeStore()
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({ attributePath: '', query: '' })
+
+      expect(parse(res)).toEqual({ values: [], error: 'Provide attributePath and query.' })
+      expect(store.dispatch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('pa_get_cohort_result', () => {
+    it('returns the matched count, total, chart type and binned chart data', async () => {
+      const store = makeStore()
+      const chartData = {
+        totalPatientCount: 2694,
+        categories: [{ id: 'patient.attributes.age', name: 'Age', binsize: 10 }],
+        measures: [{ id: 'patient.attributes.pcount', name: 'Patient Count' }],
+        data: [{ 'patient.attributes.age': 0, 'patient.attributes.pcount': 12 }],
+      }
+      Object.assign(store.getters, {
+        getCurrentPatientCount: 1275,
+        getTotalPatientCount: 2694,
+        getTotalPatientListCount: 0,
+        getDisplayTotalGuardedPatientCount: false,
+        getActiveChart: 'vb',
+        getResponse: () => ({ data: chartData }),
+      })
+
+      const res = await byName(createPaTools(store), 'pa_get_cohort_result').execute()
+
+      expect(parse(res)).toEqual({
+        currentPatientCount: 1275,
+        totalPatientCount: 2694,
+        chartType: 'vb',
+        chart: {
+          totalPatientCount: 2694,
+          categories: chartData.categories,
+          measures: chartData.measures,
+          data: chartData.data,
+        },
+      })
+    })
+
+    it('uses the guarded total for list/custom charts and null chart when no response data', async () => {
+      const store = makeStore()
+      Object.assign(store.getters, {
+        getCurrentPatientCount: 5,
+        getTotalPatientCount: 99,
+        getTotalPatientListCount: 42,
+        getDisplayTotalGuardedPatientCount: true,
+        getActiveChart: 'list',
+        getResponse: () => ({}),
+      })
+
+      const res = await byName(createPaTools(store), 'pa_get_cohort_result').execute()
+
+      expect(parse(res)).toEqual({ currentPatientCount: 5, totalPatientCount: 42, chartType: 'list', chart: null })
+    })
   })
 })
 
@@ -299,7 +578,7 @@ describe('registerPaTools', () => {
 
   it('registers every createPaTools tool on document.modelContext and unregisters on cleanup', () => {
     const unregister = vi.fn()
-    const registerTool = vi.fn(() => ({ unregister }))
+    const registerTool = vi.fn((_tool: PaTool) => ({ unregister }))
     ;(document as any).modelContext = { registerTool }
     const store = makeStore()
     const toolCount = createPaTools(store).length
