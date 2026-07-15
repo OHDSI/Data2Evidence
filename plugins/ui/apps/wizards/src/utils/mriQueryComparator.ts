@@ -1,3 +1,10 @@
+/**
+ * MRI bookmarks and cohort materialization requests describe the same cohort
+ * using different object shapes. This comparator extracts the cohort-defining
+ * fields from either shape, normalizes object-key order, and compares the
+ * resulting identities. Presentation-only fields are ignored, while malformed
+ * or circular inputs are rejected so they can never cause cohort reuse.
+ */
 type JsonPrimitive = boolean | number | string | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
 
