@@ -94,10 +94,10 @@ def strategus_plugin(json_graph, options):
         # updateResultsSchema option will drop the existing schema before uploading new results
         if(update_results_schema):
             results_db_settings = {
-                'database_code': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
+                'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
                 'cache_id': cacheId,
-                "dataset_id": datasetId,
-                "token_study_code": tokenStudyCode
+                "datasetID": datasetId,
+                "tokenStudyCode": tokenStudyCode
             }
             drop_strategus_results(results_db_settings)
 
