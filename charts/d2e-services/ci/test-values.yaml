@@ -170,6 +170,7 @@ global:
     LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: "Y2ktbTJtOmNpLW0ybS1zZWNyZXQ="
     SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
     SUPABASE_STORAGE_JWT_TOKEN: ""
+    TREX__SQL__PASSWORD: "pencil"
   resources:
     caddy:
       requests: { cpu: 25m, memory: 50Mi }

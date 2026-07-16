@@ -1491,14 +1491,19 @@ jobs:
             echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
           fi
 
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
+      # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
+      # list are stored as untagged package versions in GHCR, so a blind
+      # delete-only-untagged sweep (actions/delete-package-versions) removes
+      # the children of freshly pushed multi-arch tags and leaves the tag
+      # unpullable ("manifest unknown"). This action resolves manifest-list
+      # references and only deletes truly orphaned versions.
+      - name: Delete orphaned untagged versions
+        uses: dataaxiom/ghcr-cleanup-action@v1
         continue-on-error: true
         with:
-          package-name: ${{ matrix.image }}
-          package-type: container
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
+          package: ${{ matrix.image }}
+          delete-untagged: true
+          validate: true
 
   docker-success:
     needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]

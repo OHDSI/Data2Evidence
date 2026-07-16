@@ -921,7 +921,10 @@ spec:
             - name: TREX__SQL__PORT
               value: "443"
             - name: TREX__SQL__PASSWORD
-              value: "dummy"
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+                  key: TREX__SQL__PASSWORD
             - name: TREX_SQL_PASSWORD
               value: "$(TREX__SQL__PASSWORD)"
             - name: JASYPT_ENCRYPTOR_ENABLED
