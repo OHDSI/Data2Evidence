@@ -135,7 +135,7 @@ test('import and run nodes test template', async ({ page }) => {
     const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
     await expect(saveDialog).toBeVisible()
     await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Source nodes test flow')
-    await saveDialog.getByRole('button', { name: 'Save' }).click()
+    await saveDialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect(saveDialog).not.toBeVisible()
     await expect(page.getByText('Up to Date')).toBeVisible()
   })
@@ -150,7 +150,7 @@ test('import and run nodes test template', async ({ page }) => {
     expect(exported.nodes.map((node) => node.data.name).sort()).toEqual([...NODES_TEST_NODE_NAMES].sort())
   })
 
-  await test.step('Create a second empty workflow and import the exported JSON', async () => {
+  await test.step('Create a second empty workflow, import the exported JSON, and remove the db_reader node', async () => {
     await page.getByLabel('Create new dataflow').getByRole('button').click()
     await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible()
     await page.getByRole('textbox', { name: 'Name' }).fill(importedFlowName)
@@ -171,14 +171,41 @@ test('import and run nodes test template', async ({ page }) => {
 
     await expect(expectNode(page, 'db_writer_node_0')).toBeVisible()
     await expect(expectNode(page, 'db_reader_node_0')).toBeVisible()
+
+    await expectNode(page, 'db_reader_node_0').click()
+    await page.keyboard.press('Backspace')
+    if (await expectNode(page, 'db_reader_node_0').isVisible({ timeout: 3000 }).catch(() => false)) {
+      await page.keyboard.press('Delete')
+    }
+    await expect(expectNode(page, 'db_reader_node_0')).not.toBeVisible()
   })
 
-  await test.step('Save and run the imported workflow', async () => {
+  await test.step('Save and run the imported workflow without db_reader first', async () => {
     await page.getByRole('button', { name: 'Save' }).click()
     const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
     await expect(saveDialog).toBeVisible()
-    await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Imported exported nodes test flow')
-    await saveDialog.getByRole('button', { name: 'Save' }).click()
+    await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Imported nodes test flow without db_reader')
+    await saveDialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
+    await expect(saveDialog).not.toBeVisible()
+    await expect(page.getByText('Up to Date')).toBeVisible()
+
+    await page.getByLabel('Run flow').getByRole('button').click()
+    await expect(expectNode(page, 'db_writer_node_0').getByRole('button', { name: 'View output' })).toBeVisible({ timeout: RUN_TIMEOUT })
+  })
+
+  await test.step('Add db_reader back from the exported JSON, save, and rerun', async () => {
+    const fileChooserPromise = page.waitForEvent('filechooser')
+    await page.getByLabel('Import flow').getByRole('button').click()
+    const fileChooser = await fileChooserPromise
+    await fileChooser.setFiles(exportedFlowPath)
+
+    await expect(expectNode(page, 'db_reader_node_0')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Save' }).click()
+    const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
+    await expect(saveDialog).toBeVisible()
+    await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Added db_reader back after db_writer completed')
+    await saveDialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect(saveDialog).not.toBeVisible()
     await expect(page.getByText('Up to Date')).toBeVisible()
 
