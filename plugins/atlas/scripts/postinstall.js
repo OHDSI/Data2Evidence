@@ -113,27 +113,15 @@ if (existsSync(assetsDir)) {
   }
   console.log(`[postinstall] Repointed Atlas3 landing image -> ${LANDING_IMAGE} in ${landingPatched} LandingView file(s)`);
 
-  // The d2e-compat WebAPI proxy drops POST bodies that serialize to an empty
-  // object, so Atlas3's characterization results request (posted with `{}`)
-  // reaches WebAPI with no body and fails "Required request body is missing".
-  // Coerce an empty/missing body on the results POST to a non-empty, semantically
-  // equivalent request (null analysisIds == all). Anchored on the stable endpoint
-  // URL rather than the per-build minified helper name.
-  const RESULTS_POST_FROM = 'nn(`/cohort-characterization/generation/${e}/result`,t)';
-  const RESULTS_POST_TO =
-    'nn(`/cohort-characterization/generation/${e}/result`,t&&Object.keys(t).length?t:{analysisIds:null})';
-  let resultsPatched = 0;
-  for (const file of readdirSync(assetsDir)) {
-    if (!/\.js$/.test(file)) continue;
-    const p = join(assetsDir, file);
-    let txt = readFileSync(p, 'utf8');
-    if (txt.includes(RESULTS_POST_FROM)) {
-      txt = txt.split(RESULTS_POST_FROM).join(RESULTS_POST_TO);
-      writeFileSync(p, txt);
-      resultsPatched++;
-    }
-  }
-  console.log(`[postinstall] Coerced non-empty characterization results POST body in ${resultsPatched} asset file(s)`);
+  // These patches rewrite @ohdsi/atlas3's minified bundle, so their anchors embed
+  // per-build mangled names. atlas3 is pinned to an exact version in package.json;
+  // when that pin is bumped the anchors must be re-derived from the new bundle.
+  // Fail the install instead of silently skipping — a no-op patch regresses the
+  // WebAPI fix it carries, and a green build would hide that.
+  const missedPatches = [];
+  const requirePatched = (label, count) => {
+    if (count === 0) missedPatches.push(label);
+  };
 
   // The trexsql cache-status endpoint transiently returns status "error" during a
   // benign attach-retry race even when the cache is built and healthy, and that
@@ -142,12 +130,12 @@ if (existsSync(assetsDir)) {
   // transient error self-heals for every consumer (data-source list, count gate,
   // config page). Anchored on the stable `/cache/status` fetch's parse/return;
   // idempotent via the e$rt sentinel; no-op if the minified shape changes on a bump.
-  const CACHE_STATUS_SIG_FROM = 'async function Pp(e){const t=`';
-  const CACHE_STATUS_SIG_TO = 'async function Pp(e,e$rt=0){const t=`';
+  const CACHE_STATUS_SIG_FROM = 'async function ng(e){const t=`';
+  const CACHE_STATUS_SIG_TO = 'async function ng(e,e$rt=0){const t=`';
   const CACHE_STATUS_RET_FROM =
-    'const r=await a.json(),i=dq.safeParse(r);return i.success?i.data:yq(e,r)}';
+    'const r=await a.json(),i=DQ.safeParse(r);return i.success?i.data:OQ(e,r)}';
   const CACHE_STATUS_RET_TO =
-    'const r=await a.json(),i=dq.safeParse(r),e$rs=i.success?i.data:yq(e,r);return e$rs&&e$rs.status==="error"&&e$rt<5?(await new Promise(e$rr=>setTimeout(e$rr,2500)),Pp(e,e$rt+1)):e$rs}';
+    'const r=await a.json(),i=DQ.safeParse(r),e$rs=i.success?i.data:OQ(e,r);return e$rs&&e$rs.status==="error"&&e$rt<5?(await new Promise(e$rr=>setTimeout(e$rr,2500)),ng(e,e$rt+1)):e$rs}';
   let cacheRetryPatched = 0;
   for (const file of readdirSync(assetsDir)) {
     if (!/\.js$/.test(file)) continue;
@@ -161,6 +149,7 @@ if (existsSync(assetsDir)) {
     cacheRetryPatched++;
   }
   console.log(`[postinstall] Added trexsql cache-status re-check on transient "error" in ${cacheRetryPatched} asset file(s)`);
+  requirePatched('trexsql cache-status re-check', cacheRetryPatched);
 
   // Tag assignment posts a bare tag id (e.g. `2`) as the JSON body, which WebAPI's
   // `/{conceptset|cohortdefinition}/{id}/tag/` endpoints require (they consume a
@@ -176,12 +165,12 @@ if (existsSync(assetsDir)) {
   // patched substring.
   const TAG_POST_PATCHES = [
     [
-      'za(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'za(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+      'sr(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'sr(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
     ],
     [
-      'Ft(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
-      'Ft(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
     ],
   ];
   let tagPostPatched = 0;
@@ -199,6 +188,7 @@ if (existsSync(assetsDir)) {
     if (changed) { writeFileSync(p, txt); tagPostPatched++; }
   }
   console.log(`[postinstall] Set body-parser-skipping content-type on tag-assign POST in ${tagPostPatched} asset file(s)`);
+  requirePatched('tag-assign POST content-type', tagPostPatched);
 
   // The ConceptSetEditor save handler updates the concept set first, then calls
   // syncTags(id, oldTags, currentTags). The update mutates the store's concept set,
@@ -208,9 +198,9 @@ if (existsSync(assetsDir)) {
   // against those. Anchored on the stable save-handler literal; idempotent via the
   // snapshot-local substring.
   const CS_SYNCTAGS_FROM =
-    'function ot(){if(b.value){h.value=!0;try{let i;if(me.value&&c.conceptSet?.id?i=await v.update({...c.conceptSet,name:R.value.name,items:v.currentSet?.items||[]}):i=await v.create({name:R.value.name,items:v.currentSet?.items||[]}),i){const r=i?.id;r!=null&&(await v.syncTags(r,E.value,C.value),E.value=[...C.value]),';
+    'function lt(){if(C.value){P.value=!0;try{let u;if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,j.value,$.value);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...$.value]}';
   const CS_SYNCTAGS_TO =
-    'function ot(){if(b.value){h.value=!0;try{let i;const E$prev=[...E.value],C$next=[...C.value];if(me.value&&c.conceptSet?.id?i=await v.update({...c.conceptSet,name:R.value.name,items:v.currentSet?.items||[]}):i=await v.create({name:R.value.name,items:v.currentSet?.items||[]}),i){const r=i?.id;r!=null&&(await v.syncTags(r,E$prev,C$next),E.value=[...C$next]),';
+    'function lt(){if(C.value){P.value=!0;try{let u;const e$prev=[...j.value],e$next=[...$.value];if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,e$prev,e$next);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...e$next]}';
   let csSyncPatched = 0;
   for (const file of readdirSync(assetsDir)) {
     if (!/^ConceptSetEditor.*\.js$/.test(file)) continue;
@@ -223,6 +213,14 @@ if (existsSync(assetsDir)) {
     csSyncPatched++;
   }
   console.log(`[postinstall] Snapshotted concept-set tag refs before update so syncTags persists new tags in ${csSyncPatched} asset file(s)`);
+  requirePatched('concept-set tag snapshot', csSyncPatched);
+
+  if (missedPatches.length) {
+    console.error('[postinstall] ERROR: no asset matched these Atlas3 patches:', missedPatches.join(', '));
+    console.error('[postinstall] The @ohdsi/atlas3 pin likely changed and remangled the bundle.');
+    console.error('[postinstall] Re-derive each anchor from resources/atlas/assets/ and update scripts/postinstall.js.');
+    process.exit(1);
+  }
 }
 
 // Overlay d2e runtime config: point Atlas3 at WebAPI through d2e.

@@ -6,42 +6,10 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-4b1635062ebff6f63c7375ca69abdea0a4b19175@sha256:6341331e0440e7a945423108c06cb31e846114afa077cd19479114c1a7b7daf8 AS base
+FROM ghcr.io/ohdsi/trexsql:sha-66647e98ee18df39f10f0da7327dd12ccfcf302d@sha256:efa6cecfeb2cb30e3fbc13926d00a025fe2cdb9735a5cea245185e8fdaa50f08 AS base
 
 USER root
 WORKDIR /usr/src
-
-# Optional R + OHDSI/HADES runtime (enable: --build-arg WITH_R=true). Default
-# off keeps the image lean; Run/hades-api needs this on. The trexsql base
-# ships the hades DuckDB extension but not R, so hades_execute fails with
-# "Rscript not found. Install R or set R_HOME." without this layer. Package
-# set mirrors the verified trex-notebook image (same trexsql base family).
-ARG WITH_R=false
-RUN if [ "$WITH_R" = "true" ]; then \
-      apt-get update && apt-get install -y --no-install-recommends \
-        r-base-core \
-        default-jre-headless \
-        r-cran-rjava \
-        curl \
-        libcurl4 libssl3 libxml2 libsodium23 libpng16-16 \
-      && R CMD javareconf \
-      # rJava's .so needs libjvm.so on the dynamic-linker path; register the
-      # JRE's server lib dir so DatabaseConnector (JDBC) can load at runtime.
-      && echo "$(dirname "$(find /usr/lib/jvm -name libjvm.so | head -1)")" > /etc/ld.so.conf.d/rjava-jvm.conf \
-      && ldconfig \
-      && mkdir -p /usr/local/jdbc \
-      # DatabaseConnector (JDBC) needs a driver jar; it reads
-      # DATABASECONNECTOR_JAR_FOLDER as the default pathToDriver. Provide the
-      # PostgreSQL driver (hades connects to trex's pgwire, which speaks the
-      # postgres protocol).
-      && curl -fsSL -o /usr/local/jdbc/postgresql-42.7.4.jar \
-           https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar \
-      # hades_setup_env provisions per-analysis R libraries via renv; remotes
-      # is renv's own install dependency.
-      && R -e "install.packages(c('remotes','renv'), repos='https://cloud.r-project.org')" \
-      && rm -rf /var/lib/apt/lists/*; \
-    fi
-ENV DATABASECONNECTOR_JAR_FOLDER=/usr/local/jdbc
 
 # Selects arch-correct ONNX and DuckDB extension binaries (amd64/arm64).
 ARG TARGETARCH
