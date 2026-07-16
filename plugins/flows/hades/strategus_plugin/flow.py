@@ -95,7 +95,7 @@ def strategus_plugin(json_graph, options):
         if(update_results_schema):
             results_db_settings = {
                 'databaseCode': Variable.get('trex_strategus_results_db_name', 'strategus_results'),
-                'cache_id': cacheId,
+                'cacheId': cacheId,
                 "datasetID": datasetId,
                 "tokenStudyCode": tokenStudyCode
             }
