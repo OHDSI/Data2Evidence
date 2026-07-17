@@ -9,7 +9,7 @@ import { computed } from 'vue'
 import QueryFilterCriteriaGroup from './QueryFilterCriteriaGroup.vue'
 import { QueryFilterCriteriaManager } from '../models/QueryFilterModel'
 import type { ConceptSetItemDisplay, ConceptSetDomainValues } from '../types/ConceptSetTypes'
-import ButtonMaterial from './ButtonMaterial.vue'
+import VButton from '@/components/vuetify/VButton.vue'
 import AddIcon from './icons/AddIcon.vue'
 import GroupButtons from './GroupButtons.vue'
 
@@ -111,12 +111,12 @@ const handleGroupRemove = (groupIndex: number) => {
       <div class="criteria-groups-content">
         <!-- Add Group Button (Outside the sidebar layout) -->
         <div v-if="!readonly" class="add-group-container">
-          <ButtonMaterial variant="text" color="primary" @button-click="addNewGroup">
-            <template #startIcon>
+          <VButton variant="text" color="primary" @click="addNewGroup">
+            <template #prepend>
               <AddIcon />
             </template>
             New inclusion criteria
-          </ButtonMaterial>
+          </VButton>
         </div>
         <QueryFilterCriteriaGroup
           v-for="(group, index) in currentCriteriaData.criteria"
