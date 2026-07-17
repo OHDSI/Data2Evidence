@@ -120,7 +120,10 @@ Deno.serve(async (req: Request) => {
 
     return json({ error: "NOT_FOUND" }, 404);
   } catch (e) {
-    return json({ error: "METADATA_ERROR", detail: e instanceof Error ? e.message : String(e) }, 500);
+    // Log the cause here rather than returning it: an unhandled exception carries
+    // stack frames, SQL and storage URLs that callers must not see.
+    console.error("metadata-api: unhandled error", e);
+    return json({ error: "METADATA_ERROR" }, 500);
   }
 });
 
