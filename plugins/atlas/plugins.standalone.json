@@ -72,7 +72,7 @@
       "version": "2.0.0",
       "entryPoint": "patient-analytics/index.system.js",
       "menuItems": [
-        { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45 }
+        { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45, "insertBefore": "cohorts" }
       ],
       "metadata": { "author": "D2E", "description": "Data Exploration (Patient Analytics/MRI) — visual cohort exploration against the selected data source" }
     }
