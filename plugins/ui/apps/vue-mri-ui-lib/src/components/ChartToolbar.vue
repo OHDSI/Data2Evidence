@@ -24,11 +24,11 @@
         v-if="getActiveBookmark && canOpenDashboard"
         :title="canOpenDashboard ? '' : getText('MRI_PA_OPEN_DASHBOARD_TOOLTIP_DISABLED')"
       >
-        <Button
-          :text="getText('MRI_PA_OPEN_DASHBOARD_TEXT')"
-          :onClick="dashboardFlow.openDashboardModal"
+        <VButton
+          block
           :disabled="!canOpenDashboard"
-        />
+          @click="dashboardFlow.openDashboardModal"
+        >{{ getText('MRI_PA_OPEN_DASHBOARD_TEXT') }}</VButton>
       </div>
       <div class="attritionButton" v-if="getActiveBookmark && enableInclusionReport">
         <VButton @click="openInclusionReportModal">{{ getText('MRI_PA_INCLUSION_REPORT_BUTTON') }}</VButton>
@@ -211,7 +211,6 @@ import SaveCohortModal from './ShinyViewer/SaveCohortModal.vue'
 import DashboardSelectionModal from './ShinyViewer/DashboardSelectionModal.vue'
 import CompleteRequiredFiltersModal from './ShinyViewer/CompleteRequiredFiltersModal.vue'
 import ConfigureTable1Dialog from './ShinyViewer/ConfigureTable1Dialog.vue'
-import Button from './Button.vue'
 import { useDashboardFlow } from '../composables/useDashboardFlow'
 import { usePortalContext } from '../composables/usePortalContext'
 
@@ -574,7 +573,6 @@ export default {
     DashboardSelectionModal,
     CompleteRequiredFiltersModal,
     ConfigureTable1Dialog,
-    Button,
     VButton,
     VDialog,
     InclusionReport,
