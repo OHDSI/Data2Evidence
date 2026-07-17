@@ -7,7 +7,7 @@ export default {
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import configLoader, { type CriteriaOption } from '../utils/ConfigLoader'
-import ButtonMaterial from './ButtonMaterial.vue'
+import VButton from '@/components/vuetify/VButton.vue'
 import AddIcon from './icons/AddIcon.vue'
 
 interface Props {
@@ -84,12 +84,12 @@ onUnmounted(() => {
 
 <template>
   <div class="criteria-selector-dropdown" ref="dropdownRef">
-    <ButtonMaterial variant="text" color="primary" :disabled="disabled" @button-click.stop="toggleDropdown">
-      <template #startIcon>
+    <VButton variant="text" color="primary" :disabled="disabled" @click.stop="toggleDropdown">
+      <template #prepend>
         <AddIcon />
       </template>
       Add filter
-    </ButtonMaterial>
+    </VButton>
 
     <div v-if="isOpen" class="criteria-selector-dropdown__menu" role="menu">
       <div class="criteria-selector-dropdown__header">
