@@ -9,22 +9,20 @@ import {
   IBaseMaterializedCohort,
   IAtlasCohortDefinition,
 } from "../api/types.ts";
-
 import { AnalyticsSvcAPI } from "../api/AnalyticsAPI.ts";
 import { JobPluginsAPI } from "../api/JobPluginsAPI.ts";
 import { PortalServerAPI } from "../api/PortalServerAPI.ts";
+import { WebAPIAPI } from "../api/WebAPIAPI.ts";
 import { BookmarksAPI } from "../api/BookmarksAPI.ts";
 import {
   AtlasCohortDefinitionDto,
-  CohortDefinitionCreateResponseDto,
-  CohortDefinitionCopyResponseDto,
-  CohortDefinitionResponseDto,
-  IUserArtifactAtlasCohortDefinitionDto,
   IGenerateCohortResponseDto,
   ICohortDefinitionCheckV2ResponseDto,
+  IWebAPICohortDefinitionResponseDto,
 } from "../dto/cohortdefinition.ts";
+import { IWebAPICohortDefinition } from "../api/WebAPIAPI.ts";
 import { BookmarksSchema } from "../api/types.ts";
-import { ICohortExpression, UserArtifactServiceNames } from "../types.ts";
+import { ICohortExpression } from "../types.ts";
 import { TrexDAO } from "../dao/trex.dao.ts";
 
 const MATERIALIZED_COHORT_RETRY_ATTEMPTS = 5;
@@ -82,6 +80,32 @@ const getErrorDetails = (error: unknown) => {
   };
 };
 
+const parseExpressionToJson = (
+  expression: ICohortExpression | string,
+): ICohortExpression => {
+  if (typeof expression !== "string") {
+    return expression;
+  }
+
+  const parsedExpression = JSON.parse(expression);
+  if (
+    typeof parsedExpression !== "object" ||
+    parsedExpression === null ||
+    Array.isArray(parsedExpression)
+  ) {
+    throw new Error("Parsed cohort expression was not a JSON object");
+  }
+
+  return parsedExpression as ICohortExpression;
+};
+
+const normalizeCohortDefinitionExpression = (
+  cohortDefinition: IWebAPICohortDefinition,
+): IWebAPICohortDefinitionResponseDto => ({
+  ...cohortDefinition,
+  expression: parseExpressionToJson(cohortDefinition.expression),
+});
+
 export const generateCohort = async (
   token: string,
   datasetId: string,
@@ -94,14 +118,16 @@ export const generateCohort = async (
     dataset;
   const cacheId = dataset.cacheId ?? dataset.databaseCode;
 
-  // Get atlas cohort definition from user artifacts via cohort definition id
-  const userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      atlasCohortDefinitionId,
-    );
-  const { name, description, expressionType, expression, tags } =
-    userArtifactAtlasCohortDefinition;
+  // Get atlas cohort definition from WebAPI via cohort definition id
+  const webApiApi = new WebAPIAPI(token);
+  const webApiCohortDefinition = await webApiApi.getCohortDefinition(
+    atlasCohortDefinitionId,
+  );
+  const { name, description, expressionType } = webApiCohortDefinition;
+  const tags = (webApiCohortDefinition.tags ?? [])
+    .map((tag) => (typeof tag === "string" ? tag : tag.name))
+    .filter((tag): tag is string => tag.length > 0);
+  const expression = parseExpressionToJson(webApiCohortDefinition.expression);
 
   // If cohortJson expression has any CRITICAL warnings, reject cohort generation
   const cohortJsonValidation = await checkV2(token, datasetId, expression);
@@ -186,40 +212,13 @@ export const generateCohort = async (
 
 export const createCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  // Get atlas cohort definition id from sequence
-  const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinitionId =
-    await portalServerApi.getUserArtifactSequenceNextval(
-      datasetId,
-      UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS,
-    );
-
-  const userArtifactAtlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto =
-    {
-      ...cohortDefinitionDto,
-      id: atlasCohortDefinitionId,
-    };
-  // Create atlas_cohort_definition in user artifact
-  const portalUserArtifacts = await portalServerApi.createAtlasCohortDefinition(
-    datasetId,
-    userArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const response: z.infer<typeof CohortDefinitionCreateResponseDto> = {
-    id: atlasCohortDefinitionId,
-    name: cohortDefinitionDto.name,
-    description: cohortDefinitionDto.description,
-    expressionType: cohortDefinitionDto.expressionType,
-    expression: cohortDefinitionDto.expression,
-    createdDate: Date.parse(portalUserArtifacts.createdDate),
-    hasWriteAccess: true,
-    hasReadAccess: true,
-  };
-  return response;
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition =
+    await webApiApi.createCohortDefinition(cohortDefinitionDto);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const getCohortDefinitionList = async (
@@ -227,30 +226,59 @@ export const getCohortDefinitionList = async (
   datasetId: string,
   isAtlas: boolean,
 ): Promise<ICombinedCohortDefnitionListItem[]> => {
-  const portalServerApi = new PortalServerAPI(token);
+  const webApiApi = new WebAPIAPI(token);
+
+  const parseDateToEpoch = (value: number | string | null | undefined) => {
+    if (typeof value === "number") {
+      return value;
+    }
+    if (typeof value === "string") {
+      const parsedDate = Date.parse(value);
+      return Number.isNaN(parsedDate) ? null : parsedDate;
+    }
+    return null;
+  };
+
+  const getUserName = (
+    value: string | null | undefined | { name?: string | null },
+  ) => {
+    if (typeof value === "string") {
+      return value;
+    }
+    if (value && typeof value === "object") {
+      return value.name ?? null;
+    }
+    return null;
+  };
+
+  const getTagName = (tag: string | { name?: string | null }) => {
+    if (typeof tag === "string") {
+      return tag;
+    }
+    return tag.name ?? "";
+  };
 
   const mapAtlasCohortDefinitions = (
     atlasCohortDefinitions: Awaited<
-      ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
+      ReturnType<typeof webApiApi.getCohortDefinitionList>
     >,
   ): IAtlasCohortDefinition[] =>
     atlasCohortDefinitions.map((atlasCohortDefinition) => ({
       id: atlasCohortDefinition.id,
       name: atlasCohortDefinition.name,
-      description: atlasCohortDefinition.description,
-      createdBy: atlasCohortDefinition.createdBy,
-      createdDate: atlasCohortDefinition.createdDate,
-      modifiedBy: atlasCohortDefinition.modifiedBy,
-      modifiedDate: atlasCohortDefinition.modifiedDate,
-      hasWriteAccess: true,
-      hasReadAccess: true,
-      tags: atlasCohortDefinition.tags,
+      description: atlasCohortDefinition.description ?? null,
+      createdBy: getUserName(atlasCohortDefinition.createdBy),
+      createdDate: parseDateToEpoch(atlasCohortDefinition.createdDate),
+      modifiedBy: getUserName(atlasCohortDefinition.modifiedBy),
+      modifiedDate: parseDateToEpoch(atlasCohortDefinition.modifiedDate),
+      hasWriteAccess: atlasCohortDefinition.writeAccess,
+      hasReadAccess: atlasCohortDefinition.readAccess,
+      tags: (atlasCohortDefinition.tags ?? []).map(getTagName),
     }));
 
   // isAtlas=true only needs atlas cohort definitions and return early
   if (isAtlas) {
-    const atlasCohortDefinitions =
-      await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+    const atlasCohortDefinitions = await webApiApi.getCohortDefinitionList();
     return mapAtlasCohortDefinitions(atlasCohortDefinitions);
   }
   const bookmarksApi = new BookmarksAPI(token);
@@ -262,13 +290,13 @@ export const getCohortDefinitionList = async (
     rawDataFromBookmarks,
     baseMaterializedCohorts,
   ] = await Promise.all([
-    portalServerApi.getAtlasCohortDefinitionList(datasetId).catch((error) => {
+    webApiApi.getCohortDefinitionList().catch((error) => {
       console.error(
         "Failed to fetch atlas cohort definitions, continuing with empty list:",
         error,
       );
       return [] as Awaited<
-        ReturnType<typeof portalServerApi.getAtlasCohortDefinitionList>
+        ReturnType<typeof webApiApi.getCohortDefinitionList>
       >;
     }),
     bookmarksApi.getAllBookmarks(datasetId).catch((error) => {
@@ -276,7 +304,7 @@ export const getCohortDefinitionList = async (
         "Failed to fetch bookmarks, continuing with empty list:",
         error,
       );
-      return { bookmarks: [], schemaName: "" };
+      return { bookmarks: [] as IBookmark[], schemaName: "" };
     }),
     (async (): Promise<IBaseMaterializedCohort[]> => {
       const canMaterializeCohort = await withRetry(
@@ -303,15 +331,12 @@ export const getCohortDefinitionList = async (
         () => analyticsSvcAPI.getFilteredCohorts(datasetId, { datasetId }),
         MATERIALIZED_COHORT_RETRY_DELAYS_MS,
       ).catch((error) => {
-        console.error(
-          "Failed to fetch materialized cohorts after retries:",
-          {
-            datasetId,
-            attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
-            elapsedMs: Date.now() - materializedCohortFetchStartedAt,
-            error: getErrorDetails(error),
-          },
-        );
+        console.error("Failed to fetch materialized cohorts after retries:", {
+          datasetId,
+          attempts: MATERIALIZED_COHORT_RETRY_ATTEMPTS,
+          elapsedMs: Date.now() - materializedCohortFetchStartedAt,
+          error: getErrorDetails(error),
+        });
         throw error;
       });
 
@@ -341,6 +366,9 @@ export const getCohortDefinitionList = async (
   // Create mappings for materialized cohorts to bookmarks and atlas cohort definitions respectively
   const bookmarkIdToCohortId = new Map<string, number>();
   const atlasDefIdToCohortId = new Map<number, number>();
+
+  // Sort baseMaterializedCohorts so that the latest materialized cohort definition is matched with the corresponding atlas cohort definition
+  baseMaterializedCohorts.sort((a, b) => a.id - b.id);
   for (const cohort of baseMaterializedCohorts) {
     let syntax: { bookmarkId?: string; atlasCohortDefinitionId?: number };
     try {
@@ -393,71 +421,27 @@ export const getCohortDefinitionList = async (
 
 export const getCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  const atlasCohortDefinition = await portalServerApi.getAtlasCohortDefinition(
-    datasetId,
-    cohortDefinitionId,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionResponseDto> = {
-    id: atlasCohortDefinition.id,
-    name: atlasCohortDefinition.name,
-    description: atlasCohortDefinition.description,
-    createdBy: atlasCohortDefinition.createdBy,
-    createdDate: atlasCohortDefinition.createdDate,
-    modifiedBy: atlasCohortDefinition.modifiedBy,
-    modifiedDate: atlasCohortDefinition.modifiedDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    tags: atlasCohortDefinition.tags,
-    expression: atlasCohortDefinition.expression,
-    expressionType: atlasCohortDefinition.expressionType,
-  };
-  return result;
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition =
+    await webApiApi.getCohortDefinition(cohortDefinitionId);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const updateCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
   cohortDefinitionDto: z.infer<typeof AtlasCohortDefinitionDto>,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  // Get existing atlas cohort definition from user artifacts via cohort definition id
-  let userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      cohortDefinitionId,
-    );
-
-  // Update existing atlas cohort definition with incoming params
-  userArtifactAtlasCohortDefinition = {
-    ...userArtifactAtlasCohortDefinition,
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition = await webApiApi.updateCohortDefinition({
     ...cohortDefinitionDto,
-  };
-  await portalServerApi.updateAtlasCohortDefinition(
-    datasetId,
-    userArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionResponseDto> = {
     id: cohortDefinitionId,
-    name: userArtifactAtlasCohortDefinition.name,
-    description: userArtifactAtlasCohortDefinition.description,
-    expressionType: userArtifactAtlasCohortDefinition.expressionType,
-    expression: userArtifactAtlasCohortDefinition.expression,
-    createdDate: userArtifactAtlasCohortDefinition.createdDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    tags: userArtifactAtlasCohortDefinition.tags,
-    modifiedDate: userArtifactAtlasCohortDefinition.modifiedDate,
-  };
-  return result;
+  });
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const deleteCohortDefinition = async (
@@ -488,71 +472,35 @@ export const deleteCohortDefinition = async (
     await analyticsSvcAPI.deleteCohort(datasetId, materializedCohort.id);
   }
 
-  // Delete atlas cohort definition from user artifacts
-  const portalServerApi = new PortalServerAPI(token);
-  await portalServerApi.deleteAtlasCohortDefinition(
-    datasetId,
-    cohortDefinitionId,
-  );
+  const webApiApi = new WebAPIAPI(token);
+  await webApiApi.deleteCohortDefinition(cohortDefinitionId);
   return;
 };
 
 export const copyCohortDefinition = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
 ) => {
-  const portalServerApi = new PortalServerAPI(token);
-  // Get atlas cohort definition from cohort definition id
-  const userArtifactAtlasCohortDefinition =
-    await portalServerApi.getAtlasCohortDefinition(
-      datasetId,
-      cohortDefinitionId,
-    );
-
-  const copyAtlasCohortDefinitionId =
-    await portalServerApi.getUserArtifactSequenceNextval(
-      datasetId,
-      UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS,
-    );
-
-  const copyUserArtifactAtlasCohortDefinition = {
-    ...userArtifactAtlasCohortDefinition,
-    id: copyAtlasCohortDefinitionId,
-  };
-  // Create copy of atlas cohort definition
-  await portalServerApi.createAtlasCohortDefinition(
-    datasetId,
-    copyUserArtifactAtlasCohortDefinition,
-  );
-
-  // Construct response
-  const result: z.infer<typeof CohortDefinitionCopyResponseDto> = {
-    id: copyAtlasCohortDefinitionId,
-    name: copyUserArtifactAtlasCohortDefinition.name,
-    createdDate: copyUserArtifactAtlasCohortDefinition.createdDate,
-    hasWriteAccess: true,
-    hasReadAccess: true,
-    expressionType: copyUserArtifactAtlasCohortDefinition.expressionType,
-    expression: copyUserArtifactAtlasCohortDefinition.expression,
-  };
-  return result;
+  const webApiApi = new WebAPIAPI(token);
+  const cohortDefinition =
+    await webApiApi.copyCohortDefinition(cohortDefinitionId);
+  return normalizeCohortDefinitionExpression(cohortDefinition);
 };
 
 export const checkIfAtlasCohortDefinitionExists = async (
   token: string,
-  datasetId: string,
+  _datasetId: string,
   cohortDefinitionId: number,
   cohortDefinitionName: string,
 ): Promise<number> => {
-  const portalServerApi = new PortalServerAPI(token);
-  const userArtifactAtlasCohortDefinitions =
-    await portalServerApi.getAtlasCohortDefinitionList(datasetId);
+  const webApiApi = new WebAPIAPI(token);
+  const webApiCohortDefinitions = await webApiApi.getCohortDefinitionList();
 
-  const nameUsedInOtherDefinition = userArtifactAtlasCohortDefinitions.find(
-    (cd) => {
-      cd.id !== cohortDefinitionId && cd.name === cohortDefinitionName;
-    },
+  const nameUsedInOtherDefinition = webApiCohortDefinitions.find(
+    (cohortDefinition) =>
+      cohortDefinition.id !== cohortDefinitionId &&
+      cohortDefinition.name === cohortDefinitionName,
   );
   const result = nameUsedInOtherDefinition ? 1 : 0;
   return result;
@@ -561,7 +509,7 @@ export const checkIfAtlasCohortDefinitionExists = async (
 export const checkV2 = async (
   token: string,
   datasetId: string,
-  cohortJsonExpression: ICohortExpression,
+  cohortJsonExpression: ICohortExpression | string,
 ): Promise<ICohortDefinitionCheckV2ResponseDto> => {
   const trexDao = await TrexDAO.getTrexDao(token, datasetId);
   const warnings =

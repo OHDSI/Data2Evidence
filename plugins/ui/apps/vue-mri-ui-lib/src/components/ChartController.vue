@@ -283,7 +283,7 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue', 'setColorAxisIndex']),
+    ...mapActions(['setFireRequest', 'setKMDisplayInfo', 'clearAxisValue', 'setColorAxisIndex', 'setDefaultColorAxisIndex']),
     setChartBusy(status) {
       this.$emit('setChartBusy', status)
     },
@@ -375,7 +375,7 @@ export default {
       if (smallest.count > 5) return
 
       this.$nextTick(() => {
-        this.setColorAxisIndex(smallest.axisIndex)
+        this.setDefaultColorAxisIndex(smallest.axisIndex)
       })
     },
   },
