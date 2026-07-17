@@ -37,9 +37,12 @@ git submodule update --init --recursive "$SUBMODULE"
 
 # notebook-plugin bundles source from the sibling notebook app, which imports `webr`;
 # install the app's deps so that import resolves during the wrapper build.
+# --no-workspaces: the sub-plugins live under plugins/ui, whose workspace npm would
+# otherwise adopt and then choke on the bun-only "workspace:*" protocol its apps use.
+# Each sub-plugin resolves standalone (siblings via file:).
 if printf '%s\n' "${SUBPLUGINS[@]}" | grep -qx notebook-plugin; then
   echo "[build-atlas] Installing notebook app deps (provides webr for notebook-plugin)..."
-  ( cd "$PLUGIN_DIR/notebook" && npm install )
+  ( cd "$PLUGIN_DIR/notebook" && npm install --no-workspaces )
 fi
 
 build_results_viewer_shinylive() {
@@ -60,7 +63,7 @@ for p in "${SUBPLUGINS[@]}"; do
     build_results_viewer_shinylive
   fi
   # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
-  ( cd "$PLUGIN_DIR/$p" && npm install \
+  ( cd "$PLUGIN_DIR/$p" && npm install --no-workspaces \
     && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
   if [ ! -f "$PLUGIN_DIR/$p/dist/index.system.js" ]; then
     echo "[build-atlas] ERROR: $p did not produce dist/index.system.js" >&2

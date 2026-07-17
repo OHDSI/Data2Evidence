@@ -368,11 +368,14 @@ jobs:
           SKIP_SHINYLIVE: "1"
         run: |
           SUB=plugins/ui/libs/react-notebook/plugins
+          # --no-workspaces: these live under plugins/ui, whose workspace npm would
+          # otherwise adopt and then choke on the bun-only "workspace:*" protocol its
+          # apps use. Each sub-plugin resolves standalone (siblings via file:).
           # notebook-plugin bundles the notebook app's source, which imports webr.
-          ( cd "$SUB/notebook" && npm install )
+          ( cd "$SUB/notebook" && npm install --no-workspaces )
           # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
           for p in network notebook-plugin results-viewer strategus studies; do
-            ( cd "$SUB/$p" && npm install \
+            ( cd "$SUB/$p" && npm install --no-workspaces \
               && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
           done
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
