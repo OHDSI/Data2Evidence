@@ -121,30 +121,24 @@
       <div class="bookmark-content__header" ref="bookmarkHeaderRef">
         <div class="bookmark-content__header-title" v-if="!isAtlas">Create Cohort:</div>
         <div class="bookmark-content__header-button-group">
-          <Button :text="getText('MRI_PA_CREATE_D2E_COHORT_TEXT')" :onClick="openAddNewCohort" v-if="!isAtlas"></Button>
-          <Button
+          <VButton @click="openAddNewCohort" v-if="!isAtlas">{{ getText('MRI_PA_CREATE_D2E_COHORT_TEXT') }}</VButton>
+          <VButton
             v-if="useAtlasLite || usePaAtlas"
-            :text="isAtlas ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT')"
-            :onClick="openAtlasLink"
-          >
-          </Button>
+            @click="openAtlasLink"
+          >{{ isAtlas ? 'Create Cohort' : getText('MRI_PA_CREATE_ATLAS_COHORT_TEXT') }}</VButton>
 
           <!-- <Button v-if="usePaAtlas" :text="getText('MRI_PA_CREATE_PA_ATLAS_COHORT_TEXT')" :onClick="openAtlasLink">
           </Button> -->
 
-          <Button
+          <VButton
             v-if="enableAtlasCohortDefinition"
-            :text="isAtlas ? 'Import Cohort' : getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT')"
-            :onClick="openImportAtlasCohortDefinition"
-          >
-          </Button>
-          <Button
-            :text="getText('MRI_PA_COMPARE_D2E_COHORT_TEXT')"
-            :onClick="openCompareDialog"
+            @click="openImportAtlasCohortDefinition"
+          >{{ isAtlas ? 'Import Cohort' : getText('MRI_PA_IMPORT_ATLAS_COHORT_DEFINITION_TEXT') }}</VButton>
+          <VButton
             :disabled="!showCohortCompareBtn"
             v-if="!isAtlas"
-          >
-          </Button>
+            @click="openCompareDialog"
+          >{{ getText('MRI_PA_COMPARE_D2E_COHORT_TEXT') }}</VButton>
           <div class="shared-toggle-container" v-if="!isAtlas">
             {{ getText('MRI_PA_BOOKMARK_SHOW_SHARED_COHORTS_TEXT') }}
             <SlideToggle v-model="showSharedBookmarks" />
@@ -241,7 +235,7 @@ import appMessageStrip from '../lib/ui/app-message-strip.vue'
 import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
-import Button from './Button.vue'
+import VButton from './vuetify/VButton.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -794,7 +788,7 @@ export default {
     appMessageStrip,
     BookmarkItems,
     SlideToggle,
-    Button,
+    VButton,
     ImportAtlasCohortDefinitionDialog,
   },
 }
