@@ -12,40 +12,74 @@
 
 <script setup lang="ts">
 /**
- * VButton - A wrapper for Vuetify's VBtn component with custom styling
+ * VButton — shared Vuetify 3 button wrapper for vue-mri-ui-lib.
  *
- * This component provides a wrapper around Vuetify's v-btn that:
- * - Matches the visual style of the existing Button.vue component
- * - Passes through all props via v-bind="$attrs"
- * - Passes through all slots dynamically
- * - Provides consistent styling with CSS variables
+ * All Vuetify VBtn props are supported via v-bind="$attrs" (variant, color,
+ * size, density, block, icon, href, …). Only a few props are declared
+ * explicitly for type-safety; everything else passes through automatically.
  *
- * Usage:
- * <v-button text="Click Me" @click="handleClick" />
- * <v-button :disabled="true" text="Disabled" />
- * <v-button :loading="isLoading" text="Loading..." />
+ * ## Basic usage
+ * ```vue
+ * <VButton @click="handleClick">Save</VButton>
+ * <VButton text="Save" @click="handleClick" />
+ * <VButton :disabled="isSaving" @click="save">Save</VButton>
+ * <VButton :loading="isSaving" @click="save">Save</VButton>
+ * ```
  *
- * With slots:
- * <v-button>
- *   <template #prepend>
- *     <v-icon>mdi-check</v-icon>
- *   </template>
- *   Custom Content
- * </v-button>
+ * ## Variants (passed through to v-btn)
+ * ```vue
+ * <!-- Default: flat primary (set in plugins/vuetify.ts defaults) -->
+ * <VButton @click="fn">Primary Action</VButton>
  *
- * All Vuetify VBtn props are supported.
+ * <!-- Outlined / secondary -->
+ * <VButton variant="outlined" @click="fn">Secondary</VButton>
+ *
+ * <!-- Text / link-like -->
+ * <VButton variant="text" color="primary" @click="fn">Link style</VButton>
+ * ```
+ *
+ * ## Full-width
+ * ```vue
+ * <VButton block @click="fn">Full width</VButton>
+ * ```
+ *
+ * ## With icons (Vuetify prepend/append slots)
+ * ```vue
+ * <VButton @click="fn">
+ *   <template #prepend><AddIcon /></template>
+ *   New item
+ * </VButton>
+ * ```
+ *
+ * ## Replacing Button.vue (old API)
+ * Old: `<Button :text="label" :onClick="fn" :disabled="d" />`
+ * New: `<VButton :disabled="d" @click="fn">{{ label }}</VButton>`
+ *
+ * ## Replacing ButtonMaterial.vue (old API)
+ * Old: `<ButtonMaterial variant="text" color="primary" @button-click="fn"><template #startIcon><Ico /></template>Label</ButtonMaterial>`
+ * New: `<VButton variant="text" color="primary" @click="fn"><template #prepend><Ico /></template>Label</VButton>`
  */
 
 interface Props {
+  /** Text content — alternative to the default slot for simple labels. */
   text?: string
+  /** Disables the button and applies disabled styling. */
   disabled?: boolean
+  /** Shows a loading spinner inside the button. */
   loading?: boolean
+  /**
+   * Makes the button expand to 100% of its container width.
+   * Equivalent to Vuetify's `block` prop on VBtn.
+   * Declared here for discoverability; passes through via $attrs automatically.
+   */
+  block?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   text: '',
   disabled: false,
   loading: false,
+  block: false,
 })
 </script>
 
@@ -56,11 +90,10 @@ withDefaults(defineProps<Props>(), {
     display: none;
   }
 
-  /* Layout */
+  /* Layout — width is NOT forced; use the `block` prop for full-width. */
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
 
   /* Shape */
   border-radius: 6px;
