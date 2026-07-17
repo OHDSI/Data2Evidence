@@ -231,6 +231,12 @@ export default defineConfig(({ command, mode }) => {
       environment: 'happy-dom',
       setupFiles: ['./vitest.setup.ts'],
       include: ['src/**/__tests__/*.test.ts'],
+      css: false,
+      server: {
+        deps: {
+          inline: ['vuetify'],
+        },
+      },
       coverage: {
         reporter: ['text', 'html', 'cobertura'],
         include: ['src/**/*.ts', 'src/**/*.vue'],
