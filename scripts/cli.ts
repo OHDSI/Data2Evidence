@@ -81,9 +81,7 @@ class D2ECli {
 
   extract_compose_file(): void {
     const dest = path.join(this.compose_dir, "docker-compose.yml");
-    if (!fs.existsSync(dest)) {
-      fs.writeFileSync(dest, dockerComposeContent);
-    }
+    this.write_embedded_file(dest, dockerComposeContent);
     // Stage the atlas-db-init SQL scripts next to the compose file so the
     // webapi-init service's `./services/atlas-db-init:/scripts` bind mount
     // resolves. These live at repo root but aren't present where the
@@ -93,9 +91,39 @@ class D2ECli {
       "services",
       "atlas-db-init"
     );
-    fs.mkdirSync(atlasDbInitDir, { recursive: true });
+    try {
+      fs.mkdirSync(atlasDbInitDir, { recursive: true });
+    } catch (err: any) {
+      if (err?.code === "EACCES" || err?.code === "EPERM") {
+        console.warn(
+          `Warning: could not create ${atlasDbInitDir} (permission denied). ` +
+            `Skipping atlas-db-init staging; continuing with existing files.`
+        );
+        return;
+      }
+      throw err;
+    }
     for (const [name, content] of Object.entries(atlasDbInitScripts)) {
-      fs.writeFileSync(path.join(atlasDbInitDir, name), content);
+      this.write_embedded_file(path.join(atlasDbInitDir, name), content);
+    }
+  }
+
+  private write_embedded_file(dest: string, content: string): void {
+    try {
+      if (fs.existsSync(dest) && fs.readFileSync(dest, "utf8") === content) {
+        return;
+      }
+      fs.writeFileSync(dest, content);
+    } catch (err: any) {
+      if (err?.code === "EACCES" || err?.code === "EPERM") {
+        console.warn(
+          `Warning: could not update ${dest} (permission denied). ` +
+            `It looks owned by another user (e.g. root from a release download). ` +
+            `Continuing with the existing file. To refresh it, run: sudo rm -f "${dest}"`
+        );
+        return;
+      }
+      throw err;
     }
   }
 
