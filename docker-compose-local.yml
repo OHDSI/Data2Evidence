@@ -1,10 +1,10 @@
 services:
   trex:
-    # Local R+HADES-enabled image (built with --build-arg WITH_R=true; see
-    # services/trex/Dockerfile.v2). `up` uses this tag directly if present
-    # locally; `docker compose build` re-tags it, so pass WITH_R=true there too
-    # or this override reverts to an R-less image.
-    image: d2e-trex:withr
+    # Defaults to the same published image as docker-compose.yml so `compose pull`
+    # works; CI relies on that. Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to
+    # keep a locally built R+HADES image under its own tag, where pulling the
+    # published one would otherwise overwrite it with an R-less build.
+    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}}
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     build:
