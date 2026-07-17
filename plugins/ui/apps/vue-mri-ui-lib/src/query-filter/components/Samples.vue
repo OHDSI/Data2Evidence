@@ -14,8 +14,8 @@ export default {
 
   <div v-else class="samples">
     <div class="samples__action">
-      <ButtonMaterial class="samples-actions-btn" color="primary" @button-click="openCreateSampleDialog"
-        >Create Sample</ButtonMaterial
+      <VButton class="samples-actions-btn" color="primary" @click="openCreateSampleDialog"
+        >Create Sample</VButton
       >
     </div>
     <div>
@@ -211,7 +211,7 @@ export default {
 </template>
 
 <script setup lang="ts">
-import ButtonMaterial from '@/query-filter/components/ButtonMaterial.vue'
+import VButton from '@/components/vuetify/VButton.vue'
 import MessageBox from '@/components/MessageBox.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import TrashIcon from '@/query-filter/components/icons/TrashIcon.vue'
