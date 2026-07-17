@@ -135,11 +135,17 @@ Deno.serve(async (req: Request) => {
 // upstream used to reach trex is replaced by the storage service-role token, since the
 // supabase-storage service authenticates with its own JWT, not the caller's session.
 async function ensureBucket(name: string) {
-  await fetch(`${STORAGE_BASE_URL}/bucket`, {
+  const resp = await fetch(`${STORAGE_BASE_URL}/bucket`, {
     method: "POST",
     headers: storageHeaders("application/json"),
     body: JSON.stringify({ name, id: name }),
-  }); // 409 if exists — ignored
+  });
+  // 409 = bucket already exists, which is the success case here. Any other non-2xx
+  // (e.g. 401/403 from bad storage auth) must fail loudly, not be swallowed and
+  // resurface later as a confusing upload error.
+  if (!resp.ok && resp.status !== 409) {
+    throw new Error(`storage ensureBucket ${resp.status}: ${await resp.text()}`);
+  }
 }
 async function uploadObject(bucket: string, key: string, bytes: Uint8Array) {
   const resp = await fetch(`${STORAGE_BASE_URL}/object/${bucket}/${key}`, {

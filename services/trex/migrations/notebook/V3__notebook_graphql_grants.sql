@@ -7,9 +7,13 @@
 -- schema and saving a study fails with HTTP 400 "Cannot query field
 -- createNotebookAnalysisDefinition on type Mutation".
 --
--- notebook.* has no RLS and holds no secrets, so authenticated gets full table
--- CRUD (unscoped) and service_role gets ALL. Mirrors the non-sensitive-table
--- pattern in core/schema/V3__graphql_trexdb_grants.sql.
+-- notebook.* has no RLS, so authenticated gets full table CRUD (unscoped) and
+-- service_role gets ALL. Mirrors the pattern in core/schema/V3__graphql_trexdb_grants.sql.
+-- One column IS sensitive: cdm_connection.password_encrypted holds an AES-encrypted
+-- value (useless without METADATA_ENC_KEY) and is hidden from GraphQL via its
+-- `@behavior -*` smart comment. This table-level grant still lets authenticated read
+-- those encrypted bytes over direct SQL, so treat the column as in-scope when reviewing
+-- privileges — narrow this to column-level grants if a future value must stay unreadable.
 
 GRANT USAGE ON SCHEMA notebook TO anon, authenticated, service_role, authenticator;
 

@@ -16,27 +16,29 @@ export interface QueryResult {
   rows: Record<string, unknown>[];
 }
 
+// getConnection() logs a harmless "Error getting dialect for memory" at error level
+// while resolving credentials for the in-memory db. Filter just that one line, once at
+// module load — NOT per query. A per-call save/restore of the global console.error
+// races across concurrent requests in a shared worker: one request can swallow another's
+// real errors, or restore a stale handler. Idempotent so repeated evaluation (or a
+// sibling *-api sql module) doesn't stack filters.
+if (!(console.error as any).__memDialectFiltered) {
+  const origError = console.error;
+  const filtered = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].includes("Error getting dialect for memory")) return;
+    origError.apply(console, args);
+  };
+  (filtered as any).__memDialectFiltered = true;
+  console.error = filtered;
+}
+
 export async function query(sql: string, params?: unknown[]): Promise<QueryResult> {
   const dbm = (globalThis as any).Trex?.databaseManager?.();
   if (!dbm) {
     throw new Error("Trex.databaseManager unavailable in this worker (see spike note)");
   }
 
-  // Suppress the harmless "Error getting dialect for memory" log the runtime's
-  // getConnection() emits when looking up credentials for the "memory" db.
-  const origError = console.error;
-  console.error = (...args: unknown[]) => {
-    if (typeof args[0] === "string" && args[0].includes("Error getting dialect for memory")) return;
-    origError.apply(console, args);
-  };
-
-  let conn: any;
-  try {
-    conn = dbm.getConnection("memory", "main", "main", "main", {});
-  } finally {
-    console.error = origError;
-  }
-
+  const conn = dbm.getConnection("memory", "main", "main", "main", {});
   const result = await conn.connection.execute(sql, params ?? []);
   const rows = normalizeRows(result);
   return { rows };
