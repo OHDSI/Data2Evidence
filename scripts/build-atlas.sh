@@ -3,8 +3,8 @@
 # tarball into services/trex/plugin-artifacts/ so the trex image bakes it in via the
 # existing plugin-artifacts extract step. Reproducible counterpart to the CI atlas job.
 #
-# The sub-plugins (jobs, network, notebook, results-viewer, strategus) live in the
-# trex-notebook submodule (plugins/ui/libs/react-notebook) and are not published, so
+# The sub-plugins (network, notebook-plugin, results-viewer, strategus, studies) live in
+# the trex-notebook submodule (plugins/atlas/trex-notebook) and are not published, so
 # they are built from source here; plugins/atlas references them via file: deps.
 #
 # Requires a GitHub token with read:packages (public @ohdsi/atlas3, @ohdsi/atlas-ui,
@@ -15,7 +15,12 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-SUBMODULE="plugins/ui/libs/react-notebook"
+# The Atlas3 sub-plugins come from the trex-notebook submodule pinned here. It is a
+# SECOND checkout of that repo: plugins/ui/libs/react-notebook stays on the older,
+# single-package commit that the portal's webr-notebook builds against, while this one
+# tracks the restructured monorepo. Keeping it out of plugins/ui also keeps its deps
+# out of that bun workspace.
+SUBMODULE="plugins/atlas/trex-notebook"
 PLUGIN_DIR="$SUBMODULE/plugins"
 ATLAS_DIR="plugins/atlas"
 ARTIFACTS_DIR="services/trex/plugin-artifacts"
@@ -37,12 +42,9 @@ git submodule update --init --recursive "$SUBMODULE"
 
 # notebook-plugin bundles source from the sibling notebook app, which imports `webr`;
 # install the app's deps so that import resolves during the wrapper build.
-# --no-workspaces: the sub-plugins live under plugins/ui, whose workspace npm would
-# otherwise adopt and then choke on the bun-only "workspace:*" protocol its apps use.
-# Each sub-plugin resolves standalone (siblings via file:).
 if printf '%s\n' "${SUBPLUGINS[@]}" | grep -qx notebook-plugin; then
   echo "[build-atlas] Installing notebook app deps (provides webr for notebook-plugin)..."
-  ( cd "$PLUGIN_DIR/notebook" && npm install --no-workspaces )
+  ( cd "$PLUGIN_DIR/notebook" && npm install )
 fi
 
 build_results_viewer_shinylive() {
@@ -63,7 +65,7 @@ for p in "${SUBPLUGINS[@]}"; do
     build_results_viewer_shinylive
   fi
   # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
-  ( cd "$PLUGIN_DIR/$p" && npm install --no-workspaces \
+  ( cd "$PLUGIN_DIR/$p" && npm install \
     && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
   if [ ! -f "$PLUGIN_DIR/$p/dist/index.system.js" ]; then
     echo "[build-atlas] ERROR: $p did not produce dist/index.system.js" >&2

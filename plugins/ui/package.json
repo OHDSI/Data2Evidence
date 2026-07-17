@@ -22,7 +22,6 @@
   },
   "workspaces": [
     "libs/*",
-    "libs/react-notebook/plugins/notebook",
     "apps/*"
   ],
   "devDependencies": {

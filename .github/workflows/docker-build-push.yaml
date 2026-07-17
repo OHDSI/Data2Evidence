@@ -348,9 +348,12 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # Atlas3 sub-plugins (network/notebook-plugin/results-viewer/strategus/studies)
-      # live in the trex-notebook submodule and are unpublished; build them from source
-      # so plugins/atlas's file: deps resolve during its install/postinstall.
+      # Atlas3 sub-plugins (network/notebook-plugin/results-viewer/strategus/studies) live
+      # in the trex-notebook submodule at plugins/atlas/trex-notebook and are unpublished;
+      # build them from source so plugins/atlas's file: deps resolve during its
+      # install/postinstall. This is a second checkout of trex-notebook, pinned to the
+      # restructured monorepo; plugins/ui/libs/react-notebook stays on the older
+      # single-package commit that the portal's webr-notebook builds against.
       - name: Build Atlas sub-plugins (trex-notebook submodule)
         if: ${{ matrix.ATLAS }}
         env:
@@ -367,15 +370,12 @@ jobs:
           # /atlas/plugins/results-viewer/shinylive/) is absent from CI-built images.
           SKIP_SHINYLIVE: "1"
         run: |
-          SUB=plugins/ui/libs/react-notebook/plugins
-          # --no-workspaces: these live under plugins/ui, whose workspace npm would
-          # otherwise adopt and then choke on the bun-only "workspace:*" protocol its
-          # apps use. Each sub-plugin resolves standalone (siblings via file:).
+          SUB=plugins/atlas/trex-notebook/plugins
           # notebook-plugin bundles the notebook app's source, which imports webr.
-          ( cd "$SUB/notebook" && npm install --no-workspaces )
+          ( cd "$SUB/notebook" && npm install )
           # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
           for p in network notebook-plugin results-viewer strategus studies; do
-            ( cd "$SUB/$p" && npm install --no-workspaces \
+            ( cd "$SUB/$p" && npm install \
               && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
           done
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
