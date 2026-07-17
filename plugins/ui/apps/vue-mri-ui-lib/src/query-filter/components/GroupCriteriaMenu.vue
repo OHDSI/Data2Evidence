@@ -6,7 +6,7 @@ export default {
 
 <script setup lang="ts">
 import Popper from '@/components/Popper.vue'
-import ButtonMaterial from './ButtonMaterial.vue'
+import VButton from '@/components/vuetify/VButton.vue'
 import DropdownMenu from './DropdownMenu.vue'
 import { ref, computed, watch } from 'vue'
 
@@ -139,8 +139,8 @@ const getGroupCriteriaCount = () => {
           </div>
 
           <div class="footer">
-            <ButtonMaterial
-              @button-click="
+            <VButton
+              @click="
                 () => {
                   updateGroupCriteriaField()
                   hide()
@@ -148,7 +148,7 @@ const getGroupCriteriaCount = () => {
               "
             >
               OK
-            </ButtonMaterial>
+            </VButton>
           </div>
         </div>
       </div>
