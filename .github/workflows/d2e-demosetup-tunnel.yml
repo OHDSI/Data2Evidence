@@ -1,20 +1,5 @@
 name: d2e/demosetup-tunnel
 
-# Manually triggered demo environment: runs the demosetup-dev flow (start,
-# setupdemo incl. DQD, checkflow) without the e2e tests, then exposes the
-# portal through a Cloudflare quick tunnel for the requested duration.
-#
-# Triggered only via repository_dispatch (event_type: demosetup-tunnel) —
-# e.g. by a bot after a PR's Docker Build succeeds. Runs the default-branch
-# workflow file, so the target branch does not need to contain this file.
-# For a PR's images pass its CI run tag (pr-<PR#>-<shortsha>) as `version`;
-# pr-* tags are swept ~24h after the last build (cleanup-stale-pr-tags.yml).
-#
-#   gh api repos/<owner>/<repo>/dispatches -f event_type=demosetup-tunnel \
-#     -F 'client_payload[ref]=<branch>' \
-#     -F 'client_payload[version]=pr-123-abc1234' \
-#     -F 'client_payload[duration_minutes]=120'
-
 permissions:
   contents: read
   packages: read
@@ -34,8 +19,6 @@ env:
 jobs:
   demosetup_tunnel:
     runs-on: ubuntu-24.04
-    # Hosted runners cap jobs at 360 minutes; leaves ~3.5h for setup plus the
-    # default 2h tunnel window.
     timeout-minutes: 330
     env:
       VERSION: ${{ github.event.client_payload.version || 'develop' }}
@@ -81,12 +64,6 @@ jobs:
           sudo dpkg -i /tmp/cloudflared.deb
           cloudflared --version
 
-      # The quick tunnel is started before init so the assigned hostname can be
-      # baked into the stack as CADDY__D2E__PUBLIC_FQDN (Caddy site address,
-      # Logto redirect URIs, OIDC external URLs). The tunnel serves 502 until
-      # the services come up. The hostname is also mapped to 127.0.0.1 so
-      # runner-local traffic (setupdemo, health checks) bypasses the Cloudflare
-      # edge.
       - name: Start Cloudflare quick tunnel
         run: |
           nohup cloudflared tunnel --url https://localhost:443 --no-tls-verify --logfile /tmp/cloudflared.log > /dev/null 2>&1 &
@@ -122,8 +99,6 @@ jobs:
         id: init
         run: |
           init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config CADDY__D2E__PUBLIC_FQDN=$TUNNEL_HOST node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} init
-          # cloudflared connects to the origin with SNI "localhost"; keep it as
-          # an additional Caddy site address alongside the tunnel hostname.
           echo "CADDY__ADDITIONAL_HOSTS=https://localhost" >> .env
 
       - name: Pre-pull flow images
@@ -174,9 +149,6 @@ jobs:
             exit 1
           fi
 
-      # demodb (postgres:16-alpine) is behind the demodb profile and otherwise
-      # pulled lazily inside Setupdemo, where a transient registry timeout
-      # aborts the whole demo setup. Pre-pull it with retries.
       - name: Pre-pull demo db image
         if: success() || failure()
         uses: nick-fields/retry@v3
