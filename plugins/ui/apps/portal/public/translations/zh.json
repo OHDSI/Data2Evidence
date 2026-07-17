@@ -578,6 +578,8 @@
   "FEATURE__DATAFLOW": "数据流",
   "FEATURE__ATLAS": "Atlas",
   "FEATURE__PYTHIA": "Pythia (Atlas AI 助手)",
+  "FEATURE__SIBYL": "Sibyl",
+  "FEATURE__DATA_EXPLORATION": "数据探索",
   "FEATURE__DATASET_FILTER": "数据集筛选器",
   "FEATURE__DATASET_SEARCH": "数据集搜索",
   "FEATURE__DATA_MAPPING_SUGGESTION": "数据映射 AI 建议",
