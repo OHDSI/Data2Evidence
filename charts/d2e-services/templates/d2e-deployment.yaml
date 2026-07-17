@@ -74,6 +74,7 @@ spec:
               "sh",
               "-c",
               "mkdir -p /usr/src/data/plugins && mkdir -p /usr/src/data/cache && \
+              mkdir -p /usr/src/data/flow_staging && chmod 1777 /usr/src/data/flow_staging && \
               cp -rfv /data/plugins/.npmrc /usr/src/data/plugins/.npmrc && \
               cp -rfv /data/plugins/bunfig.toml /usr/src/data/plugins/bunfig.toml && exit 0",
             ]

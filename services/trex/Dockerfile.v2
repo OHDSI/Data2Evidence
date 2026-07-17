@@ -40,7 +40,9 @@ RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && 
         gzip -df ${lib}.duckdb_extension.gz; \
     done
 
-RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert
+# flow_staging: shared bulk-load exchange dir for Prefect flows with write access.
+RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/data/flow_staging /usr/src/cdw_data/built_in ./cert \
+    && chmod 1777 /usr/src/data/flow_staging
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.
