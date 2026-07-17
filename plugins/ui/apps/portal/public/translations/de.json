@@ -573,6 +573,7 @@
   "EDIT_TENANT_ROLE_DIALOG__SAVE": "Sichern",
   "EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION": "Bitte versuchen Sie es erneut. Um den Fehler zu melden, senden Sie eine E-Mail an Ihren Administrator.",
   "FEATURE__ADMIN_ONLY_SHARING": "Nur Admin-Freigabe",
+  "FEATURE__AI_ASSISTANT": "KI-Assistent",
   "FLOW_RUN_NOTIFICATION_DIALOG__CLOSE": "Schließen",
   "FLOW_RUN_NOTIFICATION_DIALOG__VIEW_FLOW_RUN": "Flow-Lauf anzeigen",
   "FLOW_RUN_NOTIFICATION_DIALOG__PROGRESS_MESSAGE": "Den Fortschritt können Sie auf der Seite Jobs verfolgen.",
