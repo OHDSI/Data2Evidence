@@ -27,7 +27,7 @@ import { useDatasetId } from '../composables/useDatasetId'
 import { useUserRole } from '../../composables/useUserRole'
 import { usePortalContext } from '../../composables/usePortalContext'
 import QueryFilterEntryExit from './QueryFilterEntryExit.vue'
-import ButtonMaterial from './ButtonMaterial.vue'
+import VButton from '@/components/vuetify/VButton.vue'
 import SplashScreen from '@/components/SplashScreen.vue'
 import messageBox from '../../components/MessageBox.vue'
 import ExecuteSidePanel from './ExecuteSidePanel.vue'
@@ -1219,17 +1219,17 @@ const handleExecutePanelGenerateCohort = (sourceKey: string) => {
         <!-- Right: Save -->
         <div class="header-section-right">
           <div class="right-button-group">
-            <ButtonMaterial @button-click="openSaveDialog" :disabled="!isReadyToSave">
+            <VButton @click="openSaveDialog" :disabled="!isReadyToSave">
               {{ isReadyToSave ? 'Save' : 'Loading...' }}
-            </ButtonMaterial>
-            <ButtonMaterial
+            </VButton>
+            <VButton
               class="cohort-actions-btn"
               color="primary"
               variant="outlined"
-              @button-click="openExecuteDrawer"
+              @click="openExecuteDrawer"
             >
               View more
-            </ButtonMaterial>
+            </VButton>
           </div>
         </div>
       </div>
