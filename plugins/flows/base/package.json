@@ -3,7 +3,9 @@
   "version": "0.0.99",
   "description": "",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-base:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../../.. -f ../../../services/alp-dataflow-gen-worker/Dockerfile -t d2e-dataflow-gen-worker:local --build-arg GITHUB_PAT=${GITHUB_PAT}",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
   },
   "repository": {
     "type": "git",
@@ -22,7 +24,7 @@
         {
           "name": "hana_load_plugin",
           "entrypoint": "flows.hana_load_plugin.flow.hana_load_plugin",
-          "command": "bash -c '/app/install_hana_drivers.sh prefect flow-run execute'",
+          "command": "/app/run-flow.sh d2e-flows",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -68,40 +70,61 @@
                   },
                   "schema_name": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Schema Name"
                   },
                   "vocab_schema": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Vocabulary Schema"
                   },
                   "results_schema": {
                     "anyOf": [
-                      { "type": "string" },
-                      { "type": "null" }
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Results Schema"
                   },
                   "datasets": {
                     "anyOf": [
-                      { "items": {}, "type": "array" },
-                      { "type": "null" }
+                      {
+                        "items": {},
+                        "type": "array"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": null,
                     "title": "Datasets"
                   },
                   "load_csvs": {
                     "anyOf": [
-                      { "type": "boolean" },
-                      { "type": "null" }
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
                     ],
                     "default": false,
                     "title": "Load CSVs into CDM schema"
@@ -131,8 +154,8 @@
               "limit": "CACHE_TABLE_LEVEL_CONCURRENCY"
             },
             {
-                "tag": "flow-level-concurrency",
-                "limit": "CACHE_FLOW_LEVEL_CONCURRENCY"
+              "tag": "flow-level-concurrency",
+              "limit": "CACHE_FLOW_LEVEL_CONCURRENCY"
             }
           ],
           "parameter_openapi_schema": {
@@ -356,7 +379,8 @@
               }
             }
           },
-          "type": "create_cachedb_file"
+          "type": "create_cachedb_file",
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "create_cdw_validation_config_plugin",
@@ -407,7 +431,8 @@
               }
             }
           },
-          "type": "create_cdw_config"
+          "type": "create_cdw_config",
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "create_cachedb_hana_plugin",
@@ -471,12 +496,13 @@
               }
             }
           },
-          "type": "create_cachedb_hana"
+          "type": "create_cachedb_hana",
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "data_characterization_plugin",
           "entrypoint": "flows.data_characterization_plugin.flow.data_characterization_plugin",
-          "command": "bash -c '/app/install_hana_drivers.sh prefect flow-run execute'",
+          "command": "/app/run-flow.sh d2e-flows",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -551,7 +577,7 @@
         {
           "name": "dqd_plugin",
           "entrypoint": "flows.dqd_plugin.flow.dqd_plugin",
-          "command": "bash -c '/app/install_hana_drivers.sh prefect flow-run execute'",
+          "command": "/app/run-flow.sh d2e-flows",
           "parameter_openapi_schema": {
             "title": "Parameters",
             "type": "object",
@@ -790,7 +816,8 @@
           "datamodels": [
             "omop5-3",
             "omop5-4"
-          ]
+          ],
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "phenotype_plugin",
@@ -866,7 +893,8 @@
               }
             }
           },
-          "type": "phenotype"
+          "type": "phenotype",
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "admin_share_plugin",
@@ -928,12 +956,13 @@
               }
             }
           },
-          "type": "adminshare"
+          "type": "adminshare",
+          "command": "/app/run-flow.sh d2e-flows"
         },
         {
           "name": "shiny_live_plugin",
           "entrypoint": "flows.shiny_live_plugin.flow.shiny_live_plugin",
-          "command": "bash -c '/app/install_hana_drivers.sh prefect flow-run execute'",
+          "command": "/app/run-flow.sh d2e-flows",
           "parameter_openapi_schema": {
             "type": "object",
             "title": "Parameters",
@@ -991,5 +1020,15 @@
         }
       ]
     }
-  }
+  },
+  "files": [
+    "flows",
+    "_shared_flow_utils",
+    "__init__.py",
+    "pyproject.toml",
+    "pixi.lock",
+    "renv.lock",
+    "setup_assets.sh",
+    "setup_r.sh"
+  ]
 }
