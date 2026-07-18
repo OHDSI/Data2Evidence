@@ -50,16 +50,6 @@ export interface IWebApiConcept {
   VALID_END_DATE: string | number;
 }
 
-export interface IWebApiConceptSetExpression {
-  items: Array<{
-    concept: IWebApiConcept;
-    isExcluded: boolean;
-    includeDescendants: boolean;
-    includeMapped: boolean;
-  }>;
-}
-
-const SOURCE_KEY_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
 const CONTROL_CHAR_REGEX = /[\x00-\x1F\x7F]/;
 
 const assertNonNegativeInteger = (value: unknown, field: string): number => {
@@ -78,13 +68,6 @@ const assertPositiveInteger = (value: unknown, field: string): number => {
     value > Number.MAX_SAFE_INTEGER
   ) {
     throw new Error(`Invalid ${field}: expected positive integer`);
-  }
-  return value;
-};
-
-const assertSourceKey = (value: string): string => {
-  if (typeof value !== "string" || !SOURCE_KEY_REGEX.test(value)) {
-    throw new Error(`Invalid sourceKey: ${value}`);
   }
   return value;
 };
@@ -112,13 +95,6 @@ const assertOptionalDescription = (value: unknown): string | undefined => {
     );
   }
   return value;
-};
-
-const assertConceptIds = (values: number[]): number[] => {
-  if (!Array.isArray(values)) {
-    throw new Error("Invalid conceptIds: expected array");
-  }
-  return values.map((id) => assertPositiveInteger(id, "conceptId"));
 };
 
 const buildUrl = (baseUrl: string, ...segments: (string | number)[]): URL => {
@@ -212,21 +188,11 @@ export class WebApiConceptSetAPI {
     return response.json();
   }
 
-  async getConceptSetExpression(
-    id: number,
-    sourceKey: string,
-  ): Promise<IWebApiConceptSetExpression> {
+  async getConceptSetItems(id: number): Promise<IWebApiConceptSetItem[]> {
     const validatedId = assertPositiveInteger(id, "id");
-    const validatedSourceKey = assertSourceKey(sourceKey);
 
     const response = await fetch(
-      buildUrl(
-        this.baseUrl,
-        "conceptset",
-        validatedId,
-        "expression",
-        validatedSourceKey,
-      ),
+      buildUrl(this.baseUrl, "conceptset", validatedId, "items"),
       {
         method: "GET",
         headers: buildHeaders(this.token),
@@ -235,7 +201,7 @@ export class WebApiConceptSetAPI {
 
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch WebAPI concept set expression ${validatedId}: ${response.status}`,
+        `Failed to fetch WebAPI concept set items ${validatedId}: ${response.status}`,
       );
     }
 
@@ -368,66 +334,6 @@ export class WebApiConceptSetAPI {
     if (!response.ok) {
       throw new Error(
         `Failed to check WebAPI concept set existence for ${validatedId}: ${response.status}`,
-      );
-    }
-
-    return response.json();
-  }
-
-  async resolveConceptSetExpression(
-    sourceKey: string,
-    expression: IWebApiConceptSetExpression,
-  ): Promise<number[]> {
-    const validatedSourceKey = assertSourceKey(sourceKey);
-
-    const response = await fetch(
-      buildUrl(
-        this.baseUrl,
-        "vocabulary",
-        validatedSourceKey,
-        "resolveConceptSetExpression",
-      ),
-      {
-        method: "POST",
-        headers: buildHeaders(this.token, "application/json"),
-        body: JSON.stringify(expression),
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to resolve WebAPI concept set expression for source ${validatedSourceKey}: ${response.status}`,
-      );
-    }
-
-    return response.json();
-  }
-
-  async lookupIdentifiers(
-    sourceKey: string,
-    conceptIds: number[],
-  ): Promise<IWebApiConcept[]> {
-    const validatedSourceKey = assertSourceKey(sourceKey);
-    const validatedConceptIds = assertConceptIds(conceptIds);
-
-    const response = await fetch(
-      buildUrl(
-        this.baseUrl,
-        "vocabulary",
-        validatedSourceKey,
-        "lookup",
-        "identifiers",
-      ),
-      {
-        method: "POST",
-        headers: buildHeaders(this.token, "application/json"),
-        body: JSON.stringify(validatedConceptIds),
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to lookup WebAPI identifiers for source ${validatedSourceKey}: ${response.status}`,
       );
     }
 

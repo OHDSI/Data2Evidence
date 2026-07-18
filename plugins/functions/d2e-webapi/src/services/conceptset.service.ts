@@ -2,6 +2,7 @@ import { TerminologySvcAPI } from "../api/TerminologySvcAPI.ts";
 import {
   IWebApiConcept,
   IWebApiConceptSetHeader,
+  IWebApiConceptSetItem,
   IWebApiConceptSetItemWrite,
   WebApiConceptSetAPI,
 } from "../api/WebApiConceptSetAPI.ts";
@@ -24,7 +25,6 @@ import {
   ConceptSetInUseError,
   ConceptSetValidationError,
 } from "../errors/ConceptSetErrors.ts";
-import { resolveSourceKey } from "./source.service.ts";
 import { getConceptsFromIdentifiers } from "./vocabulary.service.ts";
 import {
   CONCEPT_SET_LEGACY_OFFSET_BOUNDARY,
@@ -356,36 +356,41 @@ export const getConceptSetExpression = async (
   if (ref.source === "webapi") {
     const webApiConceptSetApi = new WebApiConceptSetAPI(token);
 
-    let sourceKey: string;
+    let items: IWebApiConceptSetItem[];
     try {
-      sourceKey = await resolveSourceKey(token, datasetId);
+      items = await webApiConceptSetApi.getConceptSetItems(ref.externalId);
     } catch (error) {
       console.error(
-        "[ConceptSetExpression] Failed to resolve source key for dataset %s",
-        datasetId,
+        "[ConceptSetExpression] Failed to fetch items for WebAPI concept set %s",
+        ref.externalId,
         error,
       );
       throw new ConceptSetExpressionError(
-        `Failed to resolve source configuration for dataset ${datasetId}`,
+        `Failed to fetch items for WebAPI concept set ${ref.externalId}`,
       );
     }
 
-    try {
-      return await webApiConceptSetApi.getConceptSetExpression(
-        ref.externalId,
-        sourceKey,
-      );
-    } catch (error) {
-      console.error(
-        "[ConceptSetExpression] Failed to fetch expression for WebAPI concept set %s using source key %s",
-        ref.externalId,
-        sourceKey,
-        error,
-      );
-      throw new ConceptSetExpressionError(
-        `Failed to fetch concept set expression for source ${sourceKey}`,
-      );
-    }
+    const conceptDetails = items.length > 0
+      ? await getConceptsFromIdentifiers(
+        token,
+        datasetId,
+        items.map((item) => item.conceptId),
+      )
+      : [];
+
+    return {
+      items: items.map((item) => {
+        const detail = conceptDetails.find(
+          (concept) => concept.CONCEPT_ID === item.conceptId,
+        );
+        return {
+          concept: detail ?? buildPlaceholderConcept(item.conceptId),
+          isExcluded: item.isExcluded === 1,
+          includeDescendants: item.includeDescendants === 1,
+          includeMapped: item.includeMapped === 1,
+        };
+      }),
+    };
   }
 
   const terminologySvcApi = new TerminologySvcAPI(token);
@@ -468,6 +473,23 @@ const parseDateValue = (value: string | number): number => {
   }
   return Date.parse(value);
 };
+
+// Used when a stored WebAPI concept set item no longer exists in the
+// dataset's vocabulary, so the item stays visible instead of disappearing.
+const buildPlaceholderConcept = (conceptId: number): IWebApiConcept => ({
+  CONCEPT_ID: conceptId,
+  CONCEPT_NAME: "",
+  STANDARD_CONCEPT: null,
+  STANDARD_CONCEPT_CAPTION: "",
+  INVALID_REASON: null,
+  INVALID_REASON_CAPTION: "",
+  CONCEPT_CODE: "",
+  DOMAIN_ID: "",
+  VOCABULARY_ID: "",
+  CONCEPT_CLASS_ID: "",
+  VALID_START_DATE: 0,
+  VALID_END_DATE: 0,
+});
 
 const mapWebApiConceptToIncludedConcept = (
   concept: IWebApiConcept,
@@ -603,80 +625,78 @@ const getWebApiIncludedConcepts = async (
     return [];
   }
 
-  let sourceKey: string;
+  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
+
+  let conceptSetItems: IWebApiConceptSetItem[][];
   try {
-    sourceKey = await resolveSourceKey(token, datasetId);
+    conceptSetItems = await Promise.all(
+      externalIds.map((id) => webApiConceptSetApi.getConceptSetItems(id)),
+    );
   } catch (error) {
     console.error(
-      "[getIncludedConcepts] Failed to resolve source key for dataset %s",
-      datasetId,
+      "[getIncludedConcepts] Failed to fetch items for WebAPI concept sets %s",
+      externalIds,
       error,
     );
     throw new ConceptSetExpressionError(
-      `Failed to resolve source configuration for dataset ${datasetId}`,
+      `Failed to fetch items for WebAPI concept sets ${externalIds}`,
     );
   }
 
-  const webApiConceptSetApi = new WebApiConceptSetAPI(token);
-
-  const expressions = await Promise.all(
-    externalIds.map((id) =>
-      webApiConceptSetApi.getConceptSetExpression(id, sourceKey)
-    ),
-  );
-
+  // Resolve through terminology-svc, same engine as the legacy path
+  const terminologySvcApi = new TerminologySvcAPI(token);
   const resolvedIds = await Promise.all(
-    expressions.map((expression) =>
-      webApiConceptSetApi.resolveConceptSetExpression(sourceKey, expression)
+    conceptSetItems.map((items) =>
+      items.length === 0
+        ? Promise.resolve([])
+        : terminologySvcApi.resolveConceptSetExpression(
+          datasetId,
+          items.map((item) => ({
+            id: item.conceptId,
+            useMapped: item.includeMapped === 1,
+            useDescendants: item.includeDescendants === 1,
+            isExcluded: item.isExcluded === 1,
+          })),
+        )
     ),
   );
 
   const allResolvedIds = Array.from(new Set(resolvedIds.flat()));
-  const conceptDetails = allResolvedIds.length > 0
-    ? await webApiConceptSetApi.lookupIdentifiers(sourceKey, allResolvedIds)
-    : [];
+  const conceptDetails = (allResolvedIds.length > 0
+    ? await getConceptsFromIdentifiers(token, datasetId, allResolvedIds)
+    : []) as IWebApiConcept[];
 
   const result: IIncludedConcept[] = [];
   const seen = new Set<number>();
 
-  for (const expression of expressions) {
+  for (const items of conceptSetItems) {
     const expressionFlagMap = new Map(
-      expression.items.map((item) => [
-        item.concept.CONCEPT_ID,
+      items.map((item) => [
+        item.conceptId,
         {
-          useMapped: item.includeMapped,
-          useDescendants: item.includeDescendants,
+          useMapped: item.includeMapped === 1,
+          useDescendants: item.includeDescendants === 1,
         },
       ]),
     );
 
-    const resolvedIdList = resolvedIds[expressions.indexOf(expression)];
-    for (const resolvedId of resolvedIdList) {
+    for (const resolvedId of resolvedIds[conceptSetItems.indexOf(items)]) {
       if (seen.has(resolvedId)) {
         continue;
       }
       seen.add(resolvedId);
 
-      const expressionItem = expression.items.find(
-        (item) => item.concept.CONCEPT_ID === resolvedId,
-      );
-      if (expressionItem) {
-        result.push(
-          mapWebApiConceptToIncludedConcept(expressionItem.concept, {
-            useMapped: expressionItem.includeMapped,
-            useDescendants: expressionItem.includeDescendants,
-          }),
-        );
-        continue;
-      }
-
       const detail = conceptDetails.find((c) => c.CONCEPT_ID === resolvedId);
       if (detail) {
-        const flags = expressionFlagMap.get(resolvedId) ?? {
-          useMapped: false,
-          useDescendants: false,
-        };
-        result.push(mapWebApiConceptToIncludedConcept(detail, flags));
+        result.push(
+          mapWebApiConceptToIncludedConcept(
+            detail,
+            expressionFlagMap.get(resolvedId) ?? {
+              useMapped: false,
+              useDescendants: false,
+            },
+          ),
+        );
       }
     }
   }

@@ -49,6 +49,7 @@ type ITerminologyConceptSet = import("../api/types.ts").ITerminologyConceptSet;
 type IUserArtifactAtlasCohortDefinitionDto = import(
   "../dto/cohortdefinition.ts"
 ).IUserArtifactAtlasCohortDefinitionDto;
+type IWebApiConcept = import("../api/WebApiConceptSetAPI.ts").IWebApiConcept;
 
 Deno.test("legacy concept sets remain writable in facade responses", () => {
   const conceptSet = mapLegacyConceptSetToWebApiConceptSet({
@@ -235,27 +236,30 @@ Deno.test("getConceptSet back-compat: offset-encoded numeric id routes to WebAPI
   }
 });
 
-Deno.test("WebAPI concept set expression resolves sourceStudyId before fetching", async () => {
-  const originalGetStudy = PortalServerAPI.prototype.getStudy;
-  const originalGetConceptSetExpression =
-    WebApiConceptSetAPI.prototype.getConceptSetExpression;
-  let seenSourceKey: string | undefined;
+Deno.test("WebAPI concept set expression fetches items and enriches concept details", async () => {
+  const originalGetConceptSetItems =
+    WebApiConceptSetAPI.prototype.getConceptSetItems;
+  const originalGetTrexDao = TrexDAO.getTrexDao;
 
   try {
-    PortalServerAPI.prototype.getStudy = () =>
-      Promise.resolve({
-        id: "cached-dataset-id",
-        sourceStudyId: "source-dataset-id",
-      } as any);
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = (
-      _id: number,
-      sourceKey: string,
-    ) => {
-      seenSourceKey = sourceKey;
-      return Promise.resolve({
-        items: [
-          {
-            concept: {
+    WebApiConceptSetAPI.prototype.getConceptSetItems = (id: number) => {
+      assertEquals(id, 1);
+      return Promise.resolve([
+        {
+          conceptId: 1,
+          isExcluded: 0,
+          includeDescendants: 1,
+          includeMapped: 0,
+        },
+      ]);
+    };
+
+    TrexDAO.getTrexDao = async (_token: string, _datasetId: string) => {
+      return {
+        getConceptsFromIdentifiers: (conceptIds: number[]) => {
+          assertEquals(conceptIds, [1]);
+          return Promise.resolve([
+            {
               CONCEPT_ID: 1,
               CONCEPT_NAME: "Test Concept",
               STANDARD_CONCEPT: null,
@@ -269,61 +273,89 @@ Deno.test("WebAPI concept set expression resolves sourceStudyId before fetching"
               VALID_START_DATE: "2020-01-01",
               VALID_END_DATE: "2099-12-31",
             },
-            isExcluded: false,
-            includeDescendants: false,
-            includeMapped: false,
-          },
-        ],
-      } as any);
+          ]);
+        },
+      } as any;
     };
 
     const result = await getConceptSetExpression(
       "token",
-      "cached-dataset-id",
+      "dataset-1",
       "webapi:1",
     );
 
-    assertEquals(seenSourceKey, "source-dataset-id");
     assertEquals(result.items.length, 1);
+    assertEquals(result.items[0].concept.CONCEPT_NAME, "Test Concept");
+    assertEquals(result.items[0].includeDescendants, true);
+    assertEquals(result.items[0].includeMapped, false);
+    assertEquals(result.items[0].isExcluded, false);
   } finally {
-    PortalServerAPI.prototype.getStudy = originalGetStudy;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression =
-      originalGetConceptSetExpression;
+    WebApiConceptSetAPI.prototype.getConceptSetItems =
+      originalGetConceptSetItems;
+    TrexDAO.getTrexDao = originalGetTrexDao;
   }
 });
 
-Deno.test("WebAPI concept set expression falls back to datasetId for source datasets", async () => {
-  const originalGetStudy = PortalServerAPI.prototype.getStudy;
-  const originalGetConceptSetExpression =
-    WebApiConceptSetAPI.prototype.getConceptSetExpression;
-  let seenSourceKey: string | undefined;
+Deno.test("WebAPI concept set expression keeps items missing from vocabulary as placeholders", async () => {
+  const originalGetConceptSetItems =
+    WebApiConceptSetAPI.prototype.getConceptSetItems;
+  const originalGetTrexDao = TrexDAO.getTrexDao;
 
   try {
-    PortalServerAPI.prototype.getStudy = () =>
-      Promise.resolve({
-        id: "source-dataset-id",
-        sourceStudyId: null,
-      } as any);
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = (
-      _id: number,
-      sourceKey: string,
-    ) => {
-      seenSourceKey = sourceKey;
-      return Promise.resolve({ items: [] } as any);
+    WebApiConceptSetAPI.prototype.getConceptSetItems = () =>
+      Promise.resolve([
+        {
+          conceptId: 999,
+          isExcluded: 1,
+          includeDescendants: 0,
+          includeMapped: 1,
+        },
+      ]);
+
+    TrexDAO.getTrexDao = async (_token: string, _datasetId: string) => {
+      return {
+        getConceptsFromIdentifiers: (_conceptIds: number[]) =>
+          Promise.resolve([]),
+      } as any;
     };
 
     const result = await getConceptSetExpression(
       "token",
-      "source-dataset-id",
+      "dataset-1",
       "webapi:1",
     );
 
-    assertEquals(seenSourceKey, "source-dataset-id");
-    assertEquals(result.items.length, 0);
+    assertEquals(result.items.length, 1);
+    assertEquals(result.items[0].concept.CONCEPT_ID, 999);
+    assertEquals(result.items[0].concept.CONCEPT_NAME, "");
+    assertEquals(result.items[0].isExcluded, true);
+    assertEquals(result.items[0].includeMapped, true);
   } finally {
-    PortalServerAPI.prototype.getStudy = originalGetStudy;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression =
-      originalGetConceptSetExpression;
+    WebApiConceptSetAPI.prototype.getConceptSetItems =
+      originalGetConceptSetItems;
+    TrexDAO.getTrexDao = originalGetTrexDao;
+  }
+});
+
+Deno.test("WebAPI concept set expression wraps item fetch failures", async () => {
+  const originalGetConceptSetItems =
+    WebApiConceptSetAPI.prototype.getConceptSetItems;
+
+  try {
+    WebApiConceptSetAPI.prototype.getConceptSetItems = () =>
+      Promise.reject(new Error("Failed to fetch WebAPI concept set items 1: 500"));
+
+    const error = await assertRejects(
+      () => getConceptSetExpression("token", "dataset-1", "webapi:1"),
+      ConceptSetExpressionError,
+    );
+    assertEquals(
+      error.message,
+      "Failed to fetch items for WebAPI concept set 1",
+    );
+  } finally {
+    WebApiConceptSetAPI.prototype.getConceptSetItems =
+      originalGetConceptSetItems;
   }
 });
 
@@ -398,68 +430,61 @@ Deno.test("getIncludedConcepts resolves legacy concept sets through terminology-
   }
 });
 
-Deno.test("getIncludedConcepts resolves webapi concept sets through WebAPI", async () => {
-  const originalGetStudy = PortalServerAPI.prototype.getStudy;
-  const originalGetConceptSetExpression =
-    WebApiConceptSetAPI.prototype.getConceptSetExpression;
+Deno.test("getIncludedConcepts resolves webapi concept sets via terminology-svc", async () => {
+  const originalGetConceptSetItems =
+    WebApiConceptSetAPI.prototype.getConceptSetItems;
   const originalResolveConceptSetExpression =
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression;
-  const originalLookupIdentifiers = WebApiConceptSetAPI.prototype.lookupIdentifiers;
+    TerminologySvcAPI.prototype.resolveConceptSetExpression;
+  const originalGetTrexDao = TrexDAO.getTrexDao;
+
+  const toWebApiConcept = (id: number): IWebApiConcept => ({
+    CONCEPT_ID: id,
+    CONCEPT_NAME: `Resolved ${id}`,
+    STANDARD_CONCEPT: "S",
+    STANDARD_CONCEPT_CAPTION: "Standard",
+    INVALID_REASON: null,
+    INVALID_REASON_CAPTION: "Valid",
+    CONCEPT_CODE: `code-${id}`,
+    DOMAIN_ID: "Condition",
+    VOCABULARY_ID: "SNOMED",
+    CONCEPT_CLASS_ID: "Clinical Finding",
+    VALID_START_DATE: "2020-01-01",
+    VALID_END_DATE: "2099-12-31",
+  });
 
   try {
-    PortalServerAPI.prototype.getStudy = () =>
-      Promise.resolve({
-        id: "dataset-1",
-        sourceStudyId: "source-dataset-id",
-      } as any);
-
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = (_id: number, _sourceKey: string) => {
-      return Promise.resolve({
-        items: [
-          {
-            concept: {
-              CONCEPT_ID: 201,
-              CONCEPT_NAME: "WebAPI Concept",
-              STANDARD_CONCEPT: "S",
-              STANDARD_CONCEPT_CAPTION: "Standard",
-              INVALID_REASON: null,
-              INVALID_REASON_CAPTION: "Valid",
-              CONCEPT_CODE: "webapi-code",
-              DOMAIN_ID: "Condition",
-              VOCABULARY_ID: "SNOMED",
-              CONCEPT_CLASS_ID: "Clinical Finding",
-              VALID_START_DATE: "2020-01-01",
-              VALID_END_DATE: "2099-12-31",
-            },
-            isExcluded: false,
-            includeDescendants: true,
-            includeMapped: false,
-          },
-        ],
-      } as any);
+    WebApiConceptSetAPI.prototype.getConceptSetItems = (id: number) => {
+      assertEquals(id, 1);
+      return Promise.resolve([
+        {
+          conceptId: 201,
+          isExcluded: 0,
+          includeDescendants: 1,
+          includeMapped: 0,
+        },
+      ]);
     };
 
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression = (_sourceKey: string, _expression: any) => {
+    TerminologySvcAPI.prototype.resolveConceptSetExpression = (
+      _datasetId: string,
+      concepts: any[],
+    ) => {
+      assertEquals(concepts, [
+        {
+          id: 201,
+          useMapped: false,
+          useDescendants: true,
+          isExcluded: false,
+        },
+      ]);
       return Promise.resolve([201, 202]);
     };
 
-    WebApiConceptSetAPI.prototype.lookupIdentifiers = (_sourceKey: string, conceptIds: number[]) => {
-      return Promise.resolve(
-        conceptIds.map((id) => ({
-          CONCEPT_ID: id,
-          CONCEPT_NAME: `Resolved ${id}`,
-          STANDARD_CONCEPT: "S",
-          STANDARD_CONCEPT_CAPTION: "Standard",
-          INVALID_REASON: null,
-          INVALID_REASON_CAPTION: "Valid",
-          CONCEPT_CODE: `code-${id}`,
-          DOMAIN_ID: "Condition",
-          VOCABULARY_ID: "SNOMED",
-          CONCEPT_CLASS_ID: "Clinical Finding",
-          VALID_START_DATE: "2020-01-01",
-          VALID_END_DATE: "2099-12-31",
-        }) as unknown as import("../api/WebApiConceptSetAPI.ts").IWebApiConcept)
-      );
+    TrexDAO.getTrexDao = async (_token: string, _datasetId: string) => {
+      return {
+        getConceptsFromIdentifiers: (conceptIds: number[]) =>
+          Promise.resolve(conceptIds.map(toWebApiConcept)),
+      } as any;
     };
 
     const result = await getIncludedConcepts("token", "dataset-1", ["webapi:1"]);
@@ -468,41 +493,30 @@ Deno.test("getIncludedConcepts resolves webapi concept sets through WebAPI", asy
     const directConcept = result.find((c) => c.CONCEPT_ID === 201);
     const descendantConcept = result.find((c) => c.CONCEPT_ID === 202);
 
-    assertEquals(directConcept?.CONCEPT_NAME, "WebAPI Concept");
+    assertEquals(directConcept?.CONCEPT_NAME, "Resolved 201");
     assertEquals(directConcept?.USEDESCENDANTS, true);
     assertEquals(directConcept?.USEMAPPED, false);
     assertEquals(descendantConcept?.CONCEPT_NAME, "Resolved 202");
     assertEquals(descendantConcept?.USEDESCENDANTS, false);
     assertEquals(descendantConcept?.USEMAPPED, false);
   } finally {
-    PortalServerAPI.prototype.getStudy = originalGetStudy;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression =
-      originalGetConceptSetExpression;
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression =
+    WebApiConceptSetAPI.prototype.getConceptSetItems =
+      originalGetConceptSetItems;
+    TerminologySvcAPI.prototype.resolveConceptSetExpression =
       originalResolveConceptSetExpression;
-    WebApiConceptSetAPI.prototype.lookupIdentifiers = originalLookupIdentifiers;
+    TrexDAO.getTrexDao = originalGetTrexDao;
   }
 });
 
 Deno.test("getIncludedConcepts deduplicates concepts across mixed sources", async () => {
-  const originalGetStudy = PortalServerAPI.prototype.getStudy;
   const originalGetConceptSetById = TerminologySvcAPI.prototype.getConceptSetById;
   const originalResolveConceptSetExpressionTerm =
     TerminologySvcAPI.prototype.resolveConceptSetExpression;
   const originalGetTrexDao = TrexDAO.getTrexDao;
-  const originalGetConceptSetExpression =
-    WebApiConceptSetAPI.prototype.getConceptSetExpression;
-  const originalResolveConceptSetExpressionWeb =
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression;
-  const originalLookupIdentifiers = WebApiConceptSetAPI.prototype.lookupIdentifiers;
+  const originalGetConceptSetItems =
+    WebApiConceptSetAPI.prototype.getConceptSetItems;
 
   try {
-    PortalServerAPI.prototype.getStudy = () =>
-      Promise.resolve({
-        id: "dataset-1",
-        sourceStudyId: "source-dataset-id",
-      } as any);
-
     TerminologySvcAPI.prototype.getConceptSetById = (_datasetId: string, id: number) => {
       return Promise.resolve({
         id,
@@ -547,38 +561,15 @@ Deno.test("getIncludedConcepts deduplicates concepts across mixed sources", asyn
       } as any;
     };
 
-    WebApiConceptSetAPI.prototype.getConceptSetExpression = (_id: number, _sourceKey: string) => {
-      return Promise.resolve({
-        items: [
-          {
-            concept: {
-              CONCEPT_ID: 301,
-              CONCEPT_NAME: "Shared Concept",
-              STANDARD_CONCEPT: "S",
-              STANDARD_CONCEPT_CAPTION: "Standard",
-              INVALID_REASON: null,
-              INVALID_REASON_CAPTION: "Valid",
-              CONCEPT_CODE: "shared-code",
-              DOMAIN_ID: "Condition",
-              VOCABULARY_ID: "SNOMED",
-              CONCEPT_CLASS_ID: "Clinical Finding",
-              VALID_START_DATE: "2020-01-01",
-              VALID_END_DATE: "2099-12-31",
-            },
-            isExcluded: false,
-            includeDescendants: true,
-            includeMapped: true,
-          },
-        ],
-      } as any);
-    };
-
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression = (_sourceKey: string, _expression: any) => {
-      return Promise.resolve([301]);
-    };
-
-    WebApiConceptSetAPI.prototype.lookupIdentifiers = (_sourceKey: string, _conceptIds: number[]) => {
-      return Promise.resolve([]);
+    WebApiConceptSetAPI.prototype.getConceptSetItems = (_id: number) => {
+      return Promise.resolve([
+        {
+          conceptId: 301,
+          isExcluded: 0,
+          includeDescendants: 1,
+          includeMapped: 1,
+        },
+      ]);
     };
 
     const result = await getIncludedConcepts("token", "dataset-1", [
@@ -592,16 +583,12 @@ Deno.test("getIncludedConcepts deduplicates concepts across mixed sources", asyn
     assertEquals(result[0].USEMAPPED, false);
     assertEquals(result[0].USEDESCENDANTS, false);
   } finally {
-    PortalServerAPI.prototype.getStudy = originalGetStudy;
     TerminologySvcAPI.prototype.getConceptSetById = originalGetConceptSetById;
     TerminologySvcAPI.prototype.resolveConceptSetExpression =
       originalResolveConceptSetExpressionTerm;
     TrexDAO.getTrexDao = originalGetTrexDao;
-    WebApiConceptSetAPI.prototype.getConceptSetExpression =
-      originalGetConceptSetExpression;
-    WebApiConceptSetAPI.prototype.resolveConceptSetExpression =
-      originalResolveConceptSetExpressionWeb;
-    WebApiConceptSetAPI.prototype.lookupIdentifiers = originalLookupIdentifiers;
+    WebApiConceptSetAPI.prototype.getConceptSetItems =
+      originalGetConceptSetItems;
   }
 });
 
