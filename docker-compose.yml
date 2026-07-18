@@ -424,7 +424,7 @@ services:
       # /studies/{id}/publish). Scaffold only — central has no path today for
       # a client_credentials token to receive role=coordinator, so network-api
       # keeps GET /coordinator/state reporting configured:false regardless of
-      # these being set. See plugins/functions/network-api/index.ts header.
+      # these being set. See plugins/sibyl_functions/network-api/index.ts header.
       NETWORK_COORDINATOR_CLIENT_ID: ${NETWORK_COORDINATOR_CLIENT_ID:-}
       NETWORK_COORDINATOR_CLIENT_SECRET: ${NETWORK_COORDINATOR_CLIENT_SECRET:-}
       NETWORK_COORDINATOR_TOKEN_SCOPE: ${NETWORK_COORDINATOR_TOKEN_SCOPE:-}
