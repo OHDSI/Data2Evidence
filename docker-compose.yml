@@ -283,13 +283,20 @@ services:
       # is up, crashes with ECONNREFUSED, and DQD flow runs later fail with 500.
       PREFECT_HEALTH_CHECK: ${PREFECT_HEALTH_CHECK:-http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api/health}
       # The trex core auto-deploys flow plugins to Prefect (core/server/plugin/flow.ts):
-      # it waits for a worker pool named PREFECT_POOL (default "default") before
-      # registering deployments and sets work_pool_name to it. d2e's worker pool is
-      # `docker-pool`, so without this the auto-deploy loops forever on "pool is not
-      # found", no flow deployments (dqd_plugin, etc.) are ever registered, and DQD
-      # flow runs fail with `deployment ... Not Found`. Must match the worker pool
-      # created by the dataflow-gen-worker (WORKPOOL_NAME=docker-pool).
-      PREFECT_POOL: ${PREFECT_POOL:-docker-pool}
+      # it waits for a worker pool named PREFECT_POOL before registering deployments
+      # and sets work_pool_name to it. Must match the pool created by the
+      # dataflow-gen-worker. Default is the pixi process pool; rollback to the
+      # docker worker = PREFECT_POOL=docker-pool + WORKPOOL_TYPE=docker (see the
+      # alp-dataflow-gen-worker service comment).
+      PREFECT_POOL: ${PREFECT_POOL:-process-pool}
+      WORKPOOL_TYPE: ${WORKPOOL_TYPE:-process}
+      DEFAULT_FLOW_COMMAND: ${DEFAULT_FLOW_COMMAND:-/app/run-flow.sh d2e-flows}
+      # trex-embedded supabase storage (@trex/storage at /plugins/trex/storage-api):
+      # flow.ts publishes flow plugin tarballs here and stamps plugin_artifact
+      # into deployments; persistent backend path on the trex data volume.
+      STORAGE_FILE_BACKEND_PATH: ${STORAGE_FILE_BACKEND_PATH:-/usr/src/data/storage}
+      TREX_STORAGE_URL: ${TREX_STORAGE_URL_INTERNAL:-http://localhost:33001/plugins/trex/storage-api}
+      TREX_STORAGE_SERVICE_KEY: ${TREX_STORAGE_SERVICE_KEY:-}
       DB_CREDENTIALS__PUBLIC_KEYS: |-
         {
          "DataPlatform": "",
@@ -783,11 +790,25 @@ services:
       PREFECT_SERVER_API_PORT: 41120
       PREFECT_API_ENABLE_HTTP2: False
 
+  # Pixi process worker: flow runs execute as subprocesses in per-plugin pixi
+  # environments (run-flow.sh); plugin code+envs arrive as deployment-attached
+  # artifacts from trex storage or the image's baked cache. Rollback to the
+  # docker worker: PREFECT_POOL=docker-pool WORKPOOL_TYPE=docker (+ revert the
+  # package.json command commit and use Dockerfile.docker-pool image).
   alp-dataflow-gen-worker:
     command:
+      - pixi
+      - run
+      - --manifest-path
+      - /opt/worker/pyproject.toml
       - sh
       - -c
-      - "rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db; prefect work-pool create 'docker-pool' --type docker; prefect worker start --pool 'docker-pool' --type docker --name prefect-docker-worker --with-healthcheck"
+      - >-
+        rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;
+        prefect work-pool create '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process};
+        prefect worker start --pool '${PREFECT_POOL:-process-pool}' --type ${WORKPOOL_TYPE:-process}
+        --name prefect-${WORKPOOL_TYPE:-process}-worker --with-healthcheck
+        --limit ${D2E_WORKER_FLOW_RUN_LIMIT:-3}
     container_name: &c83 ${PROJECT_NAME:-d2e}-dataflow-gen-worker
     platform: linux/amd64
     depends_on:
@@ -802,6 +823,10 @@ services:
       test:
         [
           "CMD",
+          "pixi",
+          "run",
+          "--manifest-path",
+          "/opt/worker/pyproject.toml",
           "python",
           "-c",
           "import urllib.request, sys; sys.exit(0 if 200 <= urllib.request.urlopen('http://localhost:8080/health', timeout=5).getcode() < 300 else 1)",
@@ -812,17 +837,24 @@ services:
     logging:
       options:
         tag: *c83
+    mem_limit: ${D2E_MEMORY_LIMIT:-16G}
     networks:
       data:
         priority: 20
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      # duckdb/cachedb data shared with trexsql; plugins travel as artifacts,
+      # not volumes. The docker.sock mount is gone with the docker worker.
+      - trex:/app/duckdb_data
     environment:
       PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api
       PREFECT_API_ENABLE_HTTP2: False
+      INSTALL_SQLALCHEMY_HANA: ${INSTALL_SQLALCHEMY_HANA:-true}
+      # trex-embedded supabase storage (artifact source); service key = JWT
+      # with role service_role signed with trex's PGRST_JWT_SECRET
+      TREX_STORAGE_URL: ${TREX_STORAGE_URL:-http://${PROJECT_NAME:-d2e}-trex:33001/plugins/trex/storage-api}
+      TREX_STORAGE_SERVICE_KEY: ${TREX_STORAGE_SERVICE_KEY:-}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
-      DOCKER_REGISTRY_URL: ${DOCKER_REGISTRY_URL:-ghcr.io}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
       PREFECT_TASKS_CACHE_ENABLED: false
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
@@ -923,7 +955,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.23.1 && npm start
+      - npm run cli db seed -- --swe && npx @logto/cli db alteration rollback 1.23.0 && npx @logto/cli db alteration deploy 1.40.1 && npm start
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:

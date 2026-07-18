@@ -63,6 +63,12 @@ test(TEST_NAME, async ({ page }) => {
 
   // Go to PA config and uncheck CEE
   await page.getByRole('link', { name: 'Account' }).click()
+  // The cohort has unsaved changes (filter cards + Entry/Exit + AND→OR), so navigating
+  // away now prompts the unsaved-changes dialog (#2636). Confirm leaving so nav proceeds.
+  await page
+    .getByRole('button', { name: 'Leave without saving' })
+    .click({ timeout: 3000 })
+    .catch(() => {})
   await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
   await page.getByRole('link', { name: 'Setup' }).click()
   await page
