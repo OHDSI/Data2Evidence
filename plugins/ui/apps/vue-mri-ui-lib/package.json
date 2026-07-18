@@ -6,6 +6,7 @@
   "scripts": {
     "serve": "vite --port 8081",
     "build": "vite build",
+    "build:atlas": "vite build --config vite.config.atlas.ts && vite build --config vite.config.atlas-app.ts",
     "build:local": "VITE_HOST=http://localhost:8085 vite build",
     "build:watch": "vite build --mode=development --watch",
     "dev": "vite build --mode=development && concurrently --kill-others \"npm run build:watch\" \"vite preview --port 8085 --mode=development\"",
@@ -79,6 +80,7 @@
     "tslib": "^2.6.2",
     "typescript": "5.9.3",
     "vite": "^6.4.2",
+    "vite-plugin-css-injected-by-js": "^3.5.2",
     "vite-plugin-vuetify": "^2.1.3",
     "vitest": "^1.2.2"
   },

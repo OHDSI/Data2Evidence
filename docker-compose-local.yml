@@ -1,5 +1,10 @@
 services:
   trex:
+    # Defaults to the same published image as docker-compose.yml so `compose pull`
+    # works; CI relies on that. Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to
+    # keep a locally built R+HADES image under its own tag, where pulling the
+    # published one would otherwise overwrite it with an R-less build.
+    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}}
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
     build:
@@ -10,7 +15,11 @@ services:
         - github_token
       args:
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7}
+        # Keep in sync with the `docker build --build-arg WITH_R=true` used to
+        # produce the d2e-trex:withr tag above — `docker compose build trex`
+        # must also bake R or it silently reverts to an R-less image.
+        WITH_R: "true"
     extra_hosts:
       - "physionet-host:host-gateway"
     networks:
@@ -26,7 +35,12 @@ services:
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
+      # PLUGINS_DEV_PATH resolves /usr/src/bundled-plugins before /usr/src/plugins,
+      # so the registry-published d2e-functions there (no /hades-api route) wins
+      # over the d2ef mount above unless overlaid directly.
+      - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/bundled-plugins/d2e-functions
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
+      - ${D2E_SIBYLFUNCTIONS:-./plugins/sibyl_functions}:/usr/src/plugins/sibyl
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
       - studio-edge-functions:/app/edge-functions  # shared with the studio sidecar (LOCAL ONLY)
       # - ./plugins/chat_functions:/usr/src/plugins/chat

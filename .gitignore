@@ -23,6 +23,7 @@ run_ssh.sh
 !tests/e2e/package-lock.json
 !plugins/functions/package-lock.json
 !plugins/fhir_functions/package-lock.json
+!plugins/sibyl_functions/package-lock.json
 
 pkg/*.tgz
 target

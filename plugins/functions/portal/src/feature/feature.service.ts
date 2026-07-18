@@ -62,6 +62,18 @@ export class FeatureService {
       name: 'AI assistant',
       nameI18nKey: 'FEATURE__AI_ASSISTANT',
       defaultEnabled: false
+    },
+    {
+      featureFlag: 'sibyl',
+      name: 'Sibyl',
+      nameI18nKey: 'FEATURE__SIBYL',
+      defaultEnabled: false
+    },
+    {
+      featureFlag: 'dataExploration',
+      name: 'Data Exploration',
+      nameI18nKey: 'FEATURE__DATA_EXPLORATION',
+      defaultEnabled: false
     }
   ]
 
