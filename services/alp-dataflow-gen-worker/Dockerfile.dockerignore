@@ -1,0 +1,9 @@
+# Allowlist for Dockerfile.pixi (BuildKit per-Dockerfile ignore).
+# Context is the repo root; only flow plugins + worker sources are needed.
+*
+!plugins/flows
+!services/alp-dataflow-gen-worker
+**/.pixi
+**/__pycache__
+**/*.tgz
+**/node_modules
