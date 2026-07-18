@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { ExtCohortConcept } from './types'
 import { api } from './api'
+import { formatConceptSetRef, parseConceptSetRef } from '@/query-filter/utils/conceptSetRef'
 
 function upperCaseKeys(obj: ExtCohortConcept): ExtCohortConcept {
   const result = {}
@@ -53,7 +54,30 @@ export const getConceptsFromConceptSet = async ({
   conceptSetId: string
   datasetId: string
 }): Promise<ExtCohortConcept[] | null> => {
-  const { concepts } = await api.terminology.getConceptsFromConceptSet(conceptSetId, datasetId)
+  const ref = parseConceptSetRef(conceptSetId)
+
+  if (ref.source === 'webapi') {
+    const concepts = await api.d2eWebapi.getIncludedConcepts([formatConceptSetRef(ref)], datasetId)
+
+    return concepts.length
+      ? concepts.map((concept: any) => ({
+          CONCEPT_ID: concept.CONCEPT_ID,
+          CONCEPT_NAME: concept.CONCEPT_NAME,
+          DOMAIN_ID: concept.DOMAIN_ID,
+          VOCABULARY_ID: concept.VOCABULARY_ID,
+          CONCEPT_CLASS_ID: concept.CONCEPT_CLASS_ID,
+          STANDARD_CONCEPT: concept.STANDARD_CONCEPT,
+          CONCEPT_CODE: concept.CONCEPT_CODE,
+          VALID_START_DATE: concept.VALID_START_DATE,
+          VALID_END_DATE: concept.VALID_END_DATE,
+          INVALID_REASON: concept.INVALID_REASON,
+          USEMAPPED: concept.USEMAPPED,
+          USEDESCENDANTS: concept.USEDESCENDANTS,
+        }))
+      : null
+  }
+
+  const { concepts } = await api.terminology.getConceptsFromConceptSet(ref.externalId, datasetId)
   return concepts.length
     ? concepts
         .map(concept => upperCaseKeys(concept))
