@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { AuditLogger, getAuditUserIdFromRequest } from "./AuditLogger.ts";
 import { env } from "../env.ts";
+import {
+    createPatientAccessAuditTransport,
+    NdjsonAuditEventWriter,
+} from "./AuditEventWriter.ts";
 
 type AuditAttribute = {
     name: string;
@@ -380,12 +384,11 @@ Deno.test("AuditLogger create requires an audit user", () => {
 });
 
 Deno.test(
-    "AuditLogger default transport writes one patient NDJSON event without console output",
+    "AuditLogger file transport writes one patient NDJSON event without console output",
     async () => {
         const auditDirectory = await Deno.makeTempDir({
             prefix: "d2e-patient-audit-",
         });
-        const previousAuditDirectory = Deno.env.get("AUDIT_LOG_DIRECTORY");
         const originalConsole = {
             debug: console.debug,
             error: console.error,
@@ -403,11 +406,15 @@ Deno.test(
         console.warn = captureConsole;
 
         try {
-            Deno.env.set("AUDIT_LOG_DIRECTORY", auditDirectory);
             env.IS_AUDIT_LOG_ENABLED = "true";
 
             const result = await logAsync(
-                AuditLogger.create({ user: "file-user" }),
+                AuditLogger.create({
+                    user: "file-user",
+                    auditTransport: createPatientAccessAuditTransport(
+                        new NdjsonAuditEventWriter(auditDirectory)
+                    ),
+                }),
                 [{ pid: "patient-1", age: 42 }],
                 [{ id: "pid" }, { id: "age" }]
             );
@@ -440,15 +447,6 @@ Deno.test(
             console.info = originalConsole.info;
             console.log = originalConsole.log;
             console.warn = originalConsole.warn;
-
-            if (previousAuditDirectory === undefined) {
-                Deno.env.delete("AUDIT_LOG_DIRECTORY");
-            } else {
-                Deno.env.set(
-                    "AUDIT_LOG_DIRECTORY",
-                    previousAuditDirectory
-                );
-            }
             await Deno.remove(auditDirectory, { recursive: true });
         }
     }

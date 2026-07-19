@@ -1,9 +1,30 @@
 import assert from "node:assert/strict";
 import {
+    AUDIT_LOG_DIRECTORY,
     createPatientAccessAuditTransport,
     NdjsonAuditEventWriter,
     PATIENT_ACCESS_AUDIT_FILE,
 } from "./AuditEventWriter.ts";
+
+Deno.test("default writer ignores audit directory environment overrides", () => {
+    const previousDirectory = Deno.env.get("AUDIT_LOG_DIRECTORY");
+
+    try {
+        Deno.env.set("AUDIT_LOG_DIRECTORY", "/tmp/ignored-audit-directory");
+        const writer = new NdjsonAuditEventWriter() as unknown as {
+            directory: string;
+        };
+
+        assert.equal(AUDIT_LOG_DIRECTORY, "/var/log/d2e/audit");
+        assert.equal(writer.directory, AUDIT_LOG_DIRECTORY);
+    } finally {
+        if (previousDirectory === undefined) {
+            Deno.env.delete("AUDIT_LOG_DIRECTORY");
+        } else {
+            Deno.env.set("AUDIT_LOG_DIRECTORY", previousDirectory);
+        }
+    }
+});
 
 Deno.test("NdjsonAuditEventWriter appends one JSON object per line", async () => {
     const directory = await Deno.makeTempDir({ prefix: "d2e-audit-writer-" });

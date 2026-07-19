@@ -1,4 +1,4 @@
-export const DEFAULT_AUDIT_LOG_DIRECTORY = "/var/log/d2e/audit";
+export const AUDIT_LOG_DIRECTORY = "/var/log/d2e/audit";
 export const PATIENT_ACCESS_AUDIT_FILE = "patient-access.ndjson";
 export const CDM_SQL_AUDIT_FILE = "cdm-sql-access.ndjson";
 
@@ -13,12 +13,6 @@ export interface AuditEventWriter {
 }
 
 const encoder = new TextEncoder();
-
-function getAuditLogDirectory(): string {
-    return (
-        Deno.env.get("AUDIT_LOG_DIRECTORY") ?? DEFAULT_AUDIT_LOG_DIRECTORY
-    );
-}
 
 function getAuditFilePath(directory: string, fileName: string): string {
     if (!/^[a-z0-9][a-z0-9.-]*\.ndjson$/.test(fileName)) {
@@ -44,7 +38,7 @@ async function chmodWhenAvailable(path: string, mode: number): Promise<void> {
 }
 
 export class NdjsonAuditEventWriter implements AuditEventWriter {
-    public constructor(private readonly directory = getAuditLogDirectory()) {}
+    public constructor(private readonly directory = AUDIT_LOG_DIRECTORY) {}
 
     public async append(fileName: string, event: AuditEvent): Promise<void> {
         await Deno.mkdir(this.directory, { recursive: true, mode: 0o750 });

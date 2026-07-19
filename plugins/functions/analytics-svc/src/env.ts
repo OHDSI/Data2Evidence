@@ -72,7 +72,6 @@ const Env = z
         DB_SVC__PORT: z.string().optional(),
         IS_AUDIT_LOG_ENABLED: z.string().optional(),
         IS_CDM_SQL_AUDIT_LOG_ENABLED: z.string().optional(),
-        AUDIT_LOG_DIRECTORY: z.string().optional(),
         ANALYTICS_HANA_STREAMING_ENABLED: z.string(),
         ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: z
             .string()
