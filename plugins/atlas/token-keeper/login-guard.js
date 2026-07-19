@@ -114,7 +114,10 @@
         return r
           .clone()
           .json()
-          .then(function (plugins) {
+          .then(function (manifest) {
+            // The manifest is either a bare plugin array (legacy) or
+            // {version, plugins: [...], settings} (plugins.standalone.json).
+            var plugins = Array.isArray(manifest) ? manifest : manifest && manifest.plugins;
             if (!Array.isArray(plugins)) return r;
             var kept = plugins.filter(function (p) {
               for (var flag in PLUGIN_GATES) {
@@ -122,7 +125,8 @@
               }
               return true;
             });
-            return new Response(JSON.stringify(kept), {
+            var body = Array.isArray(manifest) ? kept : Object.assign({}, manifest, { plugins: kept });
+            return new Response(JSON.stringify(body), {
               status: r.status,
               statusText: r.statusText,
               headers: r.headers
