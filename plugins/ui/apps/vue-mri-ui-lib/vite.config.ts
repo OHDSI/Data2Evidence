@@ -44,11 +44,6 @@ export default defineConfig(({ command, mode }) => {
       const path = url.split('?')[0] || ''
       const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
 
-      // The devx preview mounts this app under an injected --base, e.g.
-      // /plugins/trex/devx-api/apps/<appId>/proxy/. Everything under that prefix is this
-      // dev server's own document/asset traffic, not backend API traffic. Without this the
-      // catch-all '/' proxy forwards it to the backend, which answers 401 and the preview
-      // never renders.
       if (/^\/plugins\/[^/]+\/devx-api\/apps\/[^/]+\/proxy(\/|$)/.test(path)) {
         return url
       }
