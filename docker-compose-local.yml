@@ -50,9 +50,9 @@ services:
       - flows-dev:/usr/src/flows-dev
       - devx-workspaces:/tmp/devx-workspaces
       - trex-secrets:/trex-secrets
-      - trex-dx-claude-config:/root/.claude
-      - trex-dx-claude-config:/home/node/.claude
-      - trex-dx-gh-config:/root/.config/gh
+      - trex-dx:/root/.claude
+      - trex-dx:/home/node/.claude
+      - trex-dx-gh:/root/.config/gh
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
       # PLUGINS_DEV_PATH resolves /usr/src/bundled-plugins before /usr/src/plugins,
       # so the registry-published d2e-functions there (no /hades-api route) wins
@@ -358,8 +358,8 @@ volumes:
   studio-edge-functions:
   devx-workspaces:
   trex-secrets:
-  trex-dx-claude-config:
-  trex-dx-gh-config:
+  trex-dx:
+  trex-dx-gh:
 
 # Build-time GitHub Packages token for installing @ohdsi/* plugins.
 secrets:
