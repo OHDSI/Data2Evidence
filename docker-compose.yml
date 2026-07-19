@@ -455,7 +455,6 @@ services:
       PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins"
       D2E_COMPAT: "true"
 
-
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
     depends_on:
@@ -673,6 +672,18 @@ services:
             path_regexp atlas_case ^/Atlas(.*)$$
           }
           redir @atlas_uppercase /atlas{re.atlas_case.1} 301
+
+          @studio path /plugins/trex/studio /plugins/trex/studio/*
+          handle @studio {
+            reverse_proxy http://${PROJECT_NAME:-d2e}-trex:33001 {
+              import ${PROXY_HEADERS_MODE:-proxy_headers_default}
+              transport http {
+                read_buffer 8192
+              }
+              header_down -X-Frame-Options
+              header_down -Content-Security-Policy
+            }
+          }
 
           # Default handler - all other routes go to trex gateway
           handle {
@@ -1404,4 +1415,3 @@ services:
         echo "webapi-init: SQL scripts complete";
         tail -f /dev/null
       '
-
