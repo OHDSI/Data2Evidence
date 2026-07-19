@@ -17,6 +17,19 @@ name="${1:?usage: run-flow.sh <plugin-short-name> [environment]}"
 env_override="${2:-}"
 cache_root="${D2E_FLOWS_CACHE:-/var/lib/d2e-flows}"
 
+# Optional dev override (local iteration only). When D2E_FLOWS_DEV_DIR is set and
+# contains a dir for this plugin, its contents are overlaid onto the resolved plugin
+# dir just before exec, so edited flow source runs without rebuilding or re-publishing
+# an artifact. Opt-in by design: unset (the default, including every deployed env) this
+# is inert and cannot shadow a real artifact. It reuses the resolved dir's already
+# provisioned pixi env, so it is source-only — dependency changes still need a
+# re-provision. Note it MUTATES the resolved dir; drop the container (or re-provision)
+# to get back to pristine baked code.
+dev_src=""
+if [ -n "${D2E_FLOWS_DEV_DIR:-}" ] && [ -d "${D2E_FLOWS_DEV_DIR}/$name" ]; then
+  dev_src="${D2E_FLOWS_DEV_DIR}/$name"
+fi
+
 plugin_dir=""
 artifact_json=""
 if [ -n "${PREFECT__FLOW_RUN_ID:-}" ] && [ -n "${PREFECT_API_URL:-}" ]; then
@@ -73,6 +86,17 @@ fi
 if [ -z "$plugin_dir" ]; then
   echo "ERROR: no provisioned environment found for plugin '$name' under $cache_root" >&2
   exit 1
+fi
+
+# Apply the dev overlay last, so it wins over whatever was provisioned. Excludes the
+# pixi env and the ready-marker so a stray copy can't invalidate the environment.
+if [ -n "$dev_src" ]; then
+  echo "run-flow: DEV OVERRIDE — overlaying $dev_src onto $plugin_dir" >&2
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --exclude '.pixi/' --exclude '.d2e-env-ready' "$dev_src"/ "$plugin_dir"/
+  else
+    (cd "$dev_src" && tar -cf - --exclude='.pixi' --exclude='.d2e-env-ready' .) | (cd "$plugin_dir" && tar -xf -)
+  fi || { echo "ERROR: dev overlay from $dev_src failed" >&2; exit 1; }
 fi
 
 manifest="$plugin_dir/pyproject.toml"
