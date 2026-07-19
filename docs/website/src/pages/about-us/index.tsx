@@ -198,27 +198,6 @@ export const AboutUsPageContent = () => {
                 </p>
               </div>
             </div>
-            <div className="hero__aside">
-              <figure className="image">
-                <picture>
-                  <source
-                    type="image/webp"
-                    width="403"
-                    height="340"
-                    srcSet="/img/about-us/210521-asia-hero-image-company-403x.webp 1x, /img/about-us/210521-asia-hero-image-company.webp 2x"
-                  />
-                  <img
-                    className="image__img"
-                    loading="lazy"
-                    alt="Singapore skyline view"
-                    src="/img/about-us/210521_asia_hero_image_company.jpg"
-                    width="403"
-                    height="340"
-                    srcSet="/img/about-us/210521-asia-hero-image-company-403x.jpg 1x, /img/about-us/210521_asia_hero_image_company.jpg 2x"
-                  />
-                </picture>
-              </figure>
-            </div>
           </div>
         </div>
       </section>
@@ -349,27 +328,6 @@ export const AboutUsPageContent = () => {
               analytics. By supporting medical research, our digital solutions
               can lead to beneficial new insights.
             </p>
-          </div>
-          <div>
-            <figure className="image">
-              <picture>
-                <source
-                  type="image/webp"
-                  width="417"
-                  height="274.5"
-                  srcSet="/img/about-us/company-vision-417x.webp 1x, /img/about-us/company-vision.webp 2x"
-                />
-                <img
-                  className="image__img"
-                  loading="lazy"
-                  alt="Company vision"
-                  src="/img/about-us/company_vision.jpg"
-                  width="417"
-                  height="274.5"
-                  srcSet="/img/about-us/company-vision-417x.jpg 1x, /img/about-us/company_vision.jpg 2x"
-                />
-              </picture>
-            </figure>
           </div>
         </div>
       </section>
