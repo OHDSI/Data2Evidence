@@ -154,7 +154,7 @@ import MessageBox from '../MessageBox.vue'
 import appButton from '@/lib/ui/app-button.vue'
 import ConceptSetTypeaheadField from './ConceptSetTypeaheadField.vue'
 import type { WizardFieldDefinition } from '@/utils/dashboardFlowUtils'
-import { isConditionField } from '@/utils/dashboardFlowUtils'
+import { isConditionField, normalizeWizardFieldValueForComparison } from '@/utils/dashboardFlowUtils'
 import InputParser from '@/lib/utils/InputParser'
 import RangeConstraintTokenDefinition from '@/lib/utils/RangeConstraintTokenDefinition'
 import RangeConstraintPatternDefinition from '@/lib/utils/RangeConstraintPatternDefinition'
@@ -460,7 +460,8 @@ function markFieldDirty(fieldId: string) {
   }
 
   // For regular fields
-  const hasChanged = currentValue !== initialValue
+  const hasChanged =
+    normalizeWizardFieldValueForComparison(currentValue) !== normalizeWizardFieldValueForComparison(initialValue)
 
   if (hasChanged) {
     dirtyFields.add(fieldId)

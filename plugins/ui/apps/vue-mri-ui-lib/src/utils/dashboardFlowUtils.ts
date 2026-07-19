@@ -100,6 +100,10 @@ export interface RequiredFieldValidationResult {
   breakdown: FieldComparisonBreakdown[]
 }
 
+export function normalizeWizardFieldValueForComparison(value: unknown): unknown {
+  return value === null || typeof value === 'undefined' ? '' : value
+}
+
 function getLastPathSegment(path: string): string {
   const tokens = path.split('.')
   return tokens[tokens.length - 1] || path
