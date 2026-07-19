@@ -7,7 +7,6 @@ networks:
 
 volumes:
   caddy:
-  flows-dev:
   cdw-config-cachedb-data-1:
   minio-data-1:
   pg-minerva-data-1:
@@ -96,7 +95,6 @@ services:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
       - hades-data:/data/hades
-      - flows-dev:/usr/src/flows-dev
     ports:
       - "8090:8080"
     healthcheck:
@@ -887,7 +885,6 @@ services:
       # duckdb/cachedb data shared with trexsql; plugins travel as artifacts,
       # not volumes. The docker.sock mount is gone with the docker worker.
       - trex:/app/duckdb_data
-      - flows-dev:/var/lib/d2e-flows-dev
     environment:
       PREFECT_API_URL: http://${PROJECT_NAME:-d2e}-dataflow-gen-1:41120/d2e/api
       PREFECT_API_ENABLE_HTTP2: False
@@ -899,7 +896,6 @@ services:
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-16G}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-64G}
       PREFECT_WORKER_WEBSERVER_HOST: 0.0.0.0
-      D2E_FLOWS_DEV_DIR: ${D2E_FLOWS_DEV_DIR:-}
       PREFECT_TASKS_CACHE_ENABLED: false
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false

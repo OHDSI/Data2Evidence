@@ -47,6 +47,7 @@ services:
       - 8094:8094
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
+      - flows-dev:/usr/src/flows-dev
       - devx-workspaces:/tmp/devx-workspaces
       - trex-secrets:/trex-secrets
       - trex-dx-claude-config:/root/.claude
@@ -178,6 +179,12 @@ services:
     build:
       context: .
       dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
+    # flows-dev overlay: devx/trex writes flow source here, worker executes it.
+    # Local-dev only; inert unless D2E_FLOWS_DEV_DIR is set. See run-flow.sh.
+    volumes:
+      - flows-dev:/var/lib/d2e-flows-dev
+    environment:
+      D2E_FLOWS_DEV_DIR: ${D2E_FLOWS_DEV_DIR:-}
 
   alp-logto:
     build:
@@ -346,6 +353,7 @@ services:
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
 
 volumes:
+  flows-dev:
   studio-snippets:
   studio-edge-functions:
   devx-workspaces:
