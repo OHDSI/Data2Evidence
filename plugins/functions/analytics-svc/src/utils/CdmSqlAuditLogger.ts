@@ -23,7 +23,16 @@ export type CdmSqlAuditContext = {
     correlationId?: string;
     databaseCode?: string;
     databaseDialect?: string;
-    databaseEngine: "hana" | "duckdb";
+    databaseEngine: "hana" | "duckdb" | "postgresql";
+    schemaName?: string;
+};
+
+type CreateCdmSqlAuditContextOptions = {
+    request: unknown;
+    actorId: string;
+    databaseCode?: string;
+    databaseDialect?: string;
+    databaseEngine: CdmSqlAuditContext["databaseEngine"];
     schemaName?: string;
 };
 
@@ -39,6 +48,15 @@ type CdmSqlExecution = {
 
 type CdmSqlAuditRecorder = {
     record(execution: CdmSqlExecution): Promise<void>;
+};
+
+type ExecuteWithCdmSqlAuditOptions<T> = {
+    context: CdmSqlAuditContext;
+    operation: string;
+    sql: string;
+    parameters?: unknown;
+    execute: () => T | Promise<T>;
+    recorder?: CdmSqlAuditRecorder;
 };
 
 function getErrorDetails(error: unknown): Record<string, string> | undefined {
@@ -57,6 +75,49 @@ function getErrorDetails(error: unknown): Record<string, string> | undefined {
     }
 
     return Object.keys(details).length > 0 ? details : undefined;
+}
+
+export function createCdmSqlAuditContext({
+    request,
+    actorId,
+    databaseCode,
+    databaseDialect,
+    databaseEngine,
+    schemaName,
+}: CreateCdmSqlAuditContextOptions): CdmSqlAuditContext {
+    const requestObject =
+        request && typeof request === "object"
+            ? (request as Record<string, unknown>)
+            : {};
+    const headers =
+        requestObject.headers && typeof requestObject.headers === "object"
+            ? (requestObject.headers as Record<string, unknown>)
+            : {};
+    const correlationHeader = headers["x-req-correlation-id"];
+    const correlationId = Array.isArray(correlationHeader)
+        ? correlationHeader.find((value) => typeof value === "string")
+        : typeof correlationHeader === "string"
+        ? correlationHeader
+        : undefined;
+
+    return {
+        actorId,
+        requestMethod:
+            typeof requestObject.method === "string"
+                ? requestObject.method
+                : "unknown",
+        requestPath:
+            typeof requestObject.path === "string"
+                ? requestObject.path
+                : typeof requestObject.originalUrl === "string"
+                ? requestObject.originalUrl
+                : "unknown",
+        correlationId,
+        databaseCode,
+        databaseDialect,
+        databaseEngine,
+        schemaName,
+    };
 }
 
 function countParameters(value: unknown): number {
@@ -328,6 +389,51 @@ export class CdmSqlAuditLogger implements CdmSqlAuditRecorder {
             // errors, or request/user data into operational container logs.
             console.error("CDM SQL audit event could not be written");
         }
+    }
+}
+
+export async function executeWithCdmSqlAudit<T>({
+    context,
+    operation,
+    sql,
+    parameters = [],
+    execute,
+    recorder = new CdmSqlAuditLogger(context),
+}: ExecuteWithCdmSqlAuditOptions<T>): Promise<T> {
+    if (!CdmSqlAuditLogger.isEnabled()) {
+        return await execute();
+    }
+
+    const startedAt = performance.now();
+    const record = async (
+        successful: boolean,
+        error?: unknown
+    ): Promise<void> => {
+        try {
+            await recorder.record({
+                operation,
+                sql,
+                parameters,
+                parameterCount: countParameters(parameters),
+                successful,
+                durationMs: Math.max(
+                    0,
+                    Math.round((performance.now() - startedAt) * 1000) / 1000
+                ),
+                error,
+            });
+        } catch (_error) {
+            console.error("CDM SQL audit event could not be written");
+        }
+    };
+
+    try {
+        const result = await execute();
+        await record(true);
+        return result;
+    } catch (error) {
+        await record(false, error);
+        throw error;
     }
 }
 

@@ -3,7 +3,9 @@ import type { Connection } from "@alp/alp-base-utils";
 import { env } from "../env.ts";
 import {
     CdmSqlAuditLogger,
+    createCdmSqlAuditContext,
     createCdmSqlAuditConnection,
+    executeWithCdmSqlAudit,
     renderSqlWithParameters,
     type CdmSqlAuditContext,
 } from "./CdmSqlAuditLogger.ts";
@@ -18,6 +20,35 @@ const context: CdmSqlAuditContext = {
     databaseEngine: "hana",
     schemaName: "CDM",
 };
+
+Deno.test("createCdmSqlAuditContext captures request and database metadata", () => {
+    assert.deepEqual(
+        createCdmSqlAuditContext({
+            request: {
+                method: "GET",
+                path: "/analytics-svc/api/dataset-filter",
+                headers: {
+                    "x-req-correlation-id": ["correlation-2845"],
+                },
+            },
+            actorId: "test-user",
+            databaseCode: "characterization-db",
+            databaseDialect: "postgresql",
+            databaseEngine: "postgresql",
+            schemaName: "DQD",
+        }),
+        {
+            actorId: "test-user",
+            requestMethod: "GET",
+            requestPath: "/analytics-svc/api/dataset-filter",
+            correlationId: "correlation-2845",
+            databaseCode: "characterization-db",
+            databaseDialect: "postgresql",
+            databaseEngine: "postgresql",
+            schemaName: "DQD",
+        }
+    );
+});
 
 function createWriter() {
     const events: Array<Record<string, unknown>> = [];
@@ -247,6 +278,67 @@ Deno.test("audited connection preserves Promise-based execution", async () => {
         assert.deepEqual(result, [{ count: 1 }]);
         assert.equal(events.length, 1);
         assert.equal((events[0] as any).successful, true);
+    } finally {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = previousFlag;
+    }
+});
+
+Deno.test("executeWithCdmSqlAudit records the supplied CDM SQL", async () => {
+    const previousFlag = env.IS_CDM_SQL_AUDIT_LOG_ENABLED;
+    const { events, writer } = createWriter();
+
+    try {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = "true";
+        const result = await executeWithCdmSqlAudit({
+            context,
+            operation: "executeQuery",
+            sql: "SELECT * FROM person WHERE person_id = ?",
+            parameters: [{ value: 2845 }],
+            execute: () => Promise.resolve({ data: [{ person_id: 2845 }] }),
+            recorder: new CdmSqlAuditLogger(context, writer),
+        });
+
+        assert.deepEqual(result, { data: [{ person_id: 2845 }] });
+        assert.equal(events.length, 1);
+        assert.equal(
+            (events[0] as any).sql,
+            "SELECT * FROM person WHERE person_id = 2845"
+        );
+        assert.equal((events[0] as any).successful, true);
+    } finally {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = previousFlag;
+    }
+});
+
+Deno.test("executeWithCdmSqlAudit records failures and preserves the error", async () => {
+    const previousFlag = env.IS_CDM_SQL_AUDIT_LOG_ENABLED;
+    const { events, writer } = createWriter();
+    const databaseError = Object.assign(new Error("query failed"), {
+        name: "DatabaseError",
+        code: "HANA-2845",
+    });
+
+    try {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = "true";
+        await assert.rejects(
+            () =>
+                executeWithCdmSqlAudit({
+                    context,
+                    operation: "executeQuery",
+                    sql: "SELECT * FROM person WHERE person_id = ?",
+                    parameters: [{ value: 2845 }],
+                    execute: () => Promise.reject(databaseError),
+                    recorder: new CdmSqlAuditLogger(context, writer),
+                }),
+            (error) => error === databaseError
+        );
+
+        assert.equal(events.length, 1);
+        assert.equal((events[0] as any).successful, false);
+        assert.deepEqual((events[0] as any).error, {
+            name: "DatabaseError",
+            code: "HANA-2845",
+        });
     } finally {
         env.IS_CDM_SQL_AUDIT_LOG_ENABLED = previousFlag;
     }

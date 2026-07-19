@@ -18,6 +18,7 @@ import PortalServerAPI from "../PortalServerAPI";
 import { convertIFRToExtCohort } from "../../ifr-to-extcohort/main";
 import { dataflowRequest } from "../../utils/DataflowMgmtProxy";
 import { env } from "../../env";
+import { createCdmSqlAuditContext } from "../../utils/CdmSqlAuditLogger.ts";
 
 const language = "en";
 
@@ -314,6 +315,17 @@ export async function createCohort(req: IMRIRequest, res: Response) {
                     datasetId: req.selectedstudyDbMetadata.id,
                     token: req.headers.authorization,
                     dbCredential: req.dbCredentials.studyAnalyticsCredential,
+                    auditContext: createCdmSqlAuditContext({
+                        request: req,
+                        actorId: getUser(req)?.getUser() ?? "unknown",
+                        databaseCode:
+                            req.dbCredentials.studyAnalyticsCredential.code,
+                        databaseDialect:
+                            req.dbCredentials.studyAnalyticsCredential.dialect,
+                        databaseEngine: "hana",
+                        schemaName:
+                            req.dbCredentials.studyAnalyticsCredential.schema,
+                    }),
                 }
             );
         } else {

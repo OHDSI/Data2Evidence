@@ -12,6 +12,10 @@ import { dataflowRequest } from "../../utils/DataflowMgmtProxy";
 import { FilterScopeQueryBuilder } from "../../utils/dataset-filter/filter-scope-query-builder";
 import { FilterQueryBuilder } from "../../utils/dataset-filter/query-builder";
 import {
+    createCdmSqlAuditConnection,
+    createCdmSqlAuditContext,
+} from "../../utils/CdmSqlAuditLogger.ts";
+import {
     DatabaseSchemaMap,
     IDatasetFilterScopesDto,
     IDatasetFilterParamsDto,
@@ -204,6 +208,36 @@ const createDatabaseSchemaMap = (
     }, {});
 };
 
+const getDatasetFilterDbConnection = async (databaseName, req) => {
+    const userObj = getUser(req);
+    const dbCredentials = getDatabaseCredentials()[databaseName];
+    const connection =
+        await dbConnectionUtil.DBConnectionUtil.getDBConnection({
+            credentials: dbCredentials,
+            schemaName: dbCredentials.schemaName,
+            vocabSchemaName: dbCredentials.vocabSchemaName,
+            userObj,
+        });
+    const databaseEngine =
+        dbCredentials.dialect === "hana"
+            ? "hana"
+            : dbCredentials.dialect === "postgresql"
+            ? "postgresql"
+            : "duckdb";
+
+    return createCdmSqlAuditConnection(
+        connection,
+        createCdmSqlAuditContext({
+            request: req,
+            actorId: userObj?.getUser() ?? "unknown",
+            databaseCode: databaseName,
+            databaseDialect: dbCredentials.dialect,
+            databaseEngine,
+            schemaName: dbCredentials.schema,
+        })
+    );
+};
+
 const queryFilterScopes = async (
     databaseName,
     schemas,
@@ -213,16 +247,7 @@ const queryFilterScopes = async (
     const builder = new FilterScopeQueryBuilder(dialect, schemas);
     const query = builder.build();
 
-    let userObj;
-    userObj = getUser(req);
-    const dbCredentials = getDatabaseCredentials()[databaseName];
-    const dbConnection =
-        await dbConnectionUtil.DBConnectionUtil.getDBConnection({
-            credentials: dbCredentials,
-            schemaName: dbCredentials.schemaName,
-            vocabSchemaName: dbCredentials.vocabSchemaName,
-            userObj,
-        });
+    const dbConnection = await getDatasetFilterDbConnection(databaseName, req);
 
     const queryobject = QueryObject.format(query);
     var rangeResults = queryobject.executeQuery(dbConnection);
@@ -261,17 +286,7 @@ const filter = async (databaseName, schemas, dialect, filterParams, req) => {
     const builder = new FilterQueryBuilder(dialect, schemas, filterParams);
     const query = builder.build();
 
-    let userObj;
-    userObj = getUser(req);
-    // retrieve the connection
-    const dbCredentials = getDatabaseCredentials()[databaseName];
-    const dbConnection =
-        await dbConnectionUtil.DBConnectionUtil.getDBConnection({
-            credentials: dbCredentials,
-            schemaName: dbCredentials.schemaName,
-            vocabSchemaName: dbCredentials.vocabSchemaName,
-            userObj,
-        });
+    const dbConnection = await getDatasetFilterDbConnection(databaseName, req);
 
     const queryobject = QueryObject.format(query);
 

@@ -9,6 +9,10 @@ import CreateLogger = Logger.CreateLogger;
 import QueryObject = qo.QueryObject;
 import { Connection as connLib } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
+import {
+    executeWithCdmSqlAudit,
+    type CdmSqlAuditContext,
+} from "../../utils/CdmSqlAuditLogger.ts";
 const logger = CreateLogger("analytics-log");
 
 declare const Trex: any;
@@ -562,7 +566,12 @@ export class CohortEndpoint {
         cohortDefinitionId: number,
         cohort: CohortType,
         queryObject: QueryObjectType,
-        metadata: { datasetId: string; token: string; dbCredential: any }
+        metadata: {
+            datasetId: string;
+            token: string;
+            dbCredential: any;
+            auditContext: CdmSqlAuditContext;
+        }
     ) {
         try {
             const partialInsertQuery = QueryObject.formatDict(
@@ -608,9 +617,16 @@ export class CohortEndpoint {
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
                 );
-                const result = await materializeQuery.executeQuery<{ processed_rows: number }>(
-                    memConn
-                );
+                const result = await executeWithCdmSqlAudit({
+                    context: metadata.auditContext,
+                    operation: "executeQuery",
+                    sql: translatedSql,
+                    parameters: preparedQuery.placeholders ?? [],
+                    execute: () =>
+                        materializeQuery.executeQuery<{
+                            processed_rows: number;
+                        }>(memConn),
+                });
                 return result?.data?.[0]?.processed_rows;
             } finally {
                 if (typeof memConn?.close === "function") {
