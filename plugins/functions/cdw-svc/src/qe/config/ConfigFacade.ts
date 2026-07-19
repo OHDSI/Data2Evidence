@@ -1,4 +1,4 @@
-import { Connection as connLib, User } from "@alp/alp-base-utils";
+import { Connection as connLib, Logger, User } from "@alp/alp-base-utils";
 import ConnectionInterface = connLib.ConnectionInterface;
 import CallBackInterface = connLib.CallBackInterface;
 import { Settings } from "../settings/Settings";
@@ -6,6 +6,7 @@ import { FfhQeConfig, MESSAGES } from "./config";
 import { DbMeta } from "../settings/DbMeta";
 import { getAnalyticsConnection } from "../../utils/utils";
 import { getDatasetIdFromConfig } from "../settings/Utils";
+const log = Logger.CreateLogger();
 
 export class ConfigFacade {
   private settings: Settings;
@@ -35,6 +36,16 @@ export class ConfigFacade {
     userOrgs?
   ) {
     let analyticsConn;
+    const callbackWithAnalyticsCleanup = (err, result) => {
+      try {
+        analyticsConn?.close?.();
+      } catch (err) {
+        log.error(err);
+      } finally {
+        analyticsConn = undefined;
+      }
+      return callback(err, result);
+    };
     switch (request.action) {
       case "getAdminConfig":
         try {
@@ -90,9 +101,9 @@ export class ConfigFacade {
           analyticsConn,
           (err, res) => {
             if (err) {
-              return callback(err, null);
+              return callbackWithAnalyticsCleanup(err, null);
             }
-            callback(null, { validationResult: res });
+            callbackWithAnalyticsCleanup(null, { validationResult: res });
           }
         );
         break;
@@ -119,9 +130,9 @@ export class ConfigFacade {
           analyticsConn,
           (err, result) => {
             if (err) {
-              return callback(err, null);
+              return callbackWithAnalyticsCleanup(err, null);
             }
-            return callback(null, result);
+            return callbackWithAnalyticsCleanup(null, result);
           }
         );
         break;
@@ -135,9 +146,9 @@ export class ConfigFacade {
           analyticsConn,
           (err, result) => {
             if (err) {
-              return callback(err, null);
+              return callbackWithAnalyticsCleanup(err, null);
             }
-            return callback(null, result);
+            return callbackWithAnalyticsCleanup(null, result);
           }
         );
         break;
@@ -190,9 +201,9 @@ export class ConfigFacade {
           request.dbObjectList,
           (err, result) => {
             if (err) {
-              return callback(err, null);
+              return callbackWithAnalyticsCleanup(err, null);
             }
-            return callback(null, result);
+            return callbackWithAnalyticsCleanup(null, result);
           }
         );
         break;
