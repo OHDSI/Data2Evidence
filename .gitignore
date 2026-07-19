@@ -44,7 +44,6 @@ liquibase
 **/liveness
 data2evidence-cli-*.tgz
 
-
 plugins/flows/.DS_Store
 plugins/flows/venv
 plugins/flows/**/__pycache__
@@ -83,7 +82,6 @@ scripts/dist/
 scripts/docker-compose-embed.ts
 scripts/create_users.mjs
 *.bun-build
-# DevX (docker-compose-dx.yml) generated artifacts
 /secrets/
 .playwright-mcp/
 docs/superpowers/
