@@ -1,0 +1,213 @@
+csafreen:
+  name: Afreen Sikandara
+  image_url: https://github.com/csafreen.png
+  title: Developer
+  url: https://github.com/csafreen/
+  page: true
+  team: Data
+  socials:
+    github: csafreen
+
+alicia-koh:
+  name: Alicia Koh
+  image_url: https://github.com/alicia-koh.png
+  title: Developer
+  url: https://github.com/alicia-koh/
+  page: true
+  team: Data
+  socials:
+    github: alicia-koh
+
+Zhimin-arya:
+  name: Zhi Min
+  image_url: https://github.com/Zhimin-arya.png
+  title: Developer
+  url: https://github.com/Zhimin-arya/
+  page: true
+  team: Data
+  socials:
+    github: Zhimin-arya
+
+brandantck:
+  name: Brandan Tan
+  image_url: https://github.com/brandantck.png
+  title: Developer
+  url: https://github.com/brandantck/
+  page: true
+  team: Analyze
+  socials:
+    github: brandantck
+
+jerome-ng:
+  name: Jerome Ng
+  image_url: https://github.com/jerome-ng.png
+  title: Developer
+  url: https://github.com/jerome-ng/
+  page: true
+  team: Analyze
+  socials:
+    github: jerome-ng
+
+khairul-syazwan:
+  name: Khairul Syazwan Bin Masri
+  image_url: https://github.com/khairul-syazwan.png
+  title: Developer
+  url: https://github.com/khairul-syazwan/
+  page: true
+  team: Analyze
+  socials:
+    github: khairul-syazwan
+
+maggie-li-yd:
+  name: Maggie Li Yundi
+  image_url: https://github.com/maggie-li-yd.png
+  title: Developer
+  url: https://github.com/maggie-li-yd/
+  page: true
+  team: Analyze
+  socials:
+    github: maggie-li-yd
+
+LSriragavan:
+  name: Sriragavan Loganathan
+  image_url: https://github.com/LSriragavan.png
+  title: Developer
+  url: https://github.com/LSriragavan/
+  page: true
+  team: Analyze
+  socials:
+    github: LSriragavan
+
+SantanM:
+  name: Santan Maddi
+  image_url: https://github.com/SantanM.png
+  title: Software Engineering Lead
+  url: https://github.com/SantanM/
+  page: true
+  team: Integrate
+  socials:
+    github: SantanM
+
+amit-sharma-d4l:
+  name: Amit Sharma
+  image_url: https://github.com/amit-sharma-d4l.png
+  title: Data Scientist
+  url: https://github.com/amit-sharma-d4l/
+  page: true
+  team: Integrate
+  socials:
+    github: amit-sharma-d4l
+
+hengxian-jiang:
+  name: Hengxian Jiang
+  image_url: https://github.com/hengxian-jiang.png
+  title: Developer
+  url: https://github.com/hengxian-jiang/
+  page: true
+  team: Integrate
+  socials:
+    github: hengxian-jiang
+
+suwarnoong:
+  name: Suwarno Ong
+  image_url: https://github.com/suwarnoong.png
+  title: Developer
+  url: https://github.com/suwarnoong/
+  page: true
+  team: Integrate
+  socials:
+    github: suwarnoong
+
+benilligens:
+  name: Dr. Ben M.W. Illigens
+  image_url: /img/user.png
+  title: CEO
+  page: true
+  ops: true
+  team: Misc
+  socials:
+    linkedin: illigens
+
+p-hoffmann:
+  name: Peter Hoffmann
+  image_url: https://github.com/p-hoffmann.png
+  title: SVP Engineering & Country Director
+  url: https://github.com/p-hoffmann/
+  page: true
+  ops: true
+  team: Misc
+  socials:
+    github: p-hoffmann
+
+TimWalz:
+  name: Tim Walz
+  image_url: https://github.com/TimWalz.png
+  title: Chief of Staff
+  url: https://github.com/TimWalz
+  page: true
+  team: Misc
+  ops: true
+  socials:
+    github: TimWalz
+    linkedin: tim-walz
+
+ksd4l:
+  name: Karthik Seetharaman
+  image_url: https://github.com/ksd4l.png
+  title: Lead Product Manager
+  url: https://github.com/ksd4l/
+  page: true
+  team: Misc
+  ops: true
+  socials:
+    github: ksd4l
+
+jessica:
+  name: Jessica Susilo
+  image_url: /img/user.png
+  title: Product Designer
+  page: true
+  ops: true
+  socials:
+    linkedin: gabrielajessicasusilo
+
+sharon:
+  name: Sharon Rodrigues
+  image_url: /img/user.png
+  title: People & Office Manager
+  page: true
+  ops: true
+  socials:
+    linkedin: sharon-rodrigues-hr
+
+viola:
+  name: Viola Xiang
+  image_url: /img/user.png
+  title: Project Manager
+  page: true
+  ops: true
+  socials:
+    linkedin: violaxiangwei
+
+mwaiyee:
+  name: Wai Yee Man
+  image_url: https://github.com/mwaiyee.png
+  title: DevOps & Operations Specialist
+  url: https://github.com/mwaiyee/
+  page: true
+  team: Misc
+  ops: true
+  socials:
+    github: mwaiyee
+
+ratika-sianturi:
+  name: Ratika Sianturi
+  page: false
+
+Alrun-Steinrück:
+  name: Alrun Steinrück
+  page: false
+
+D4L:
+  name: Data4Life editorial team
+  page: false
