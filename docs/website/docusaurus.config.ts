@@ -206,13 +206,11 @@ const config: Config = {
         {
           href: 'https://github.com/OHDSI/Data2Evidence',
           label: 'GitHub',
-          className: 'icon',
           position: 'right',
         },
         {
           href: 'https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig',
           label: 'Slack',
-          className: 'icon',
           position: 'right',
         },
         {

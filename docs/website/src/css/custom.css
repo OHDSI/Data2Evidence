@@ -281,40 +281,6 @@ img {
     margin-top: -10px;
   }
 
-  .navbar .icon {
-    font-size: 0;
-    padding: 4px;
-    margin-right: 10px;
-
-    line-height: 0;
-  }
-
-  .navbar .icon::before {
-    content: '';
-    display: block;
-    width: 24px;
-    height: 24px;
-    background-size: cover;
-    background-color: var(--ifm-color-primary);
-    -webkit-mask-size: cover;
-    mask-size: cover;
-  }
-
-  .navbar .icon:hover::before {
-    opacity: 0.5;
-  }
-
-  .navbar .icon[href*=github]::before {
-    -webkit-mask-image: url('/static/img/github.svg');
-    mask-image: url('/static/img/github.svg');
-  }
-
-  .navbar .icon[href*=slack]::before {
-    -webkit-mask-image: url('/static/img/slack.svg');
-    mask-image: url('/static/img/slack.svg');
-  }
-
-
   .navbar svg[class*=iconExternalLink],
   aside svg[class*=iconExternalLink] {
     display: none;
