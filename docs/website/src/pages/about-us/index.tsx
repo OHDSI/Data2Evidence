@@ -83,36 +83,6 @@ const Author = (key, author) => {
           >
             {author.name}
           </a>
-          {author.socials?.github && (
-            <a
-              href={`https://github.com/${author.socials.github}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginLeft: '0.5rem' }}
-
-            >
-              <img
-                src="/img/github.svg"
-                alt="GitHub"
-                style={{ width: '15px', height: '15px' }}
-              />
-            </a>
-          )}
-          {author.socials?.linkedin && (
-            <a
-              href={`https://linkedin.com/in/${author.socials.linkedin}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginLeft: '0.5rem' }}
-
-            >
-              <img
-                src="/img/linkedin.svg"
-                alt="LinkedIn"
-                style={{ width: '15px', height: '15px' }}
-              />
-            </a>
-          )}
         </h4>
         {/* <p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem' }}>{author.title}</p> */}
       </div>
@@ -169,36 +139,6 @@ const AuthorTitle = (key, author) => {
           >
             {author.name}
           </a>
-          {author.socials?.github && (
-            <a
-              href={`https://github.com/${author.socials.github}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginLeft: '0.5rem' }}
-
-            >
-              <img
-                src="/img/github.svg"
-                alt="GitHub"
-                style={{ width: '15px', height: '15px' }}
-              />
-            </a>
-          )}
-          {author.socials?.linkedin && (
-            <a
-              href={`https://linkedin.com/in/${author.socials.linkedin}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ marginLeft: '0.5rem' }}
-
-            >
-              <img
-                src="/img/linkedin.svg"
-                alt="LinkedIn"
-                style={{ width: '15px', height: '15px' }}
-              />
-            </a>
-          )}
         </h4>
         {<p style={{ margin: '0 0 0.25rem', fontSize: '0.875rem' }}>{author.title}</p>}
       </div>
@@ -401,16 +341,6 @@ export const AboutUsPageContent = () => {
                       src="/img/d4l_logo.svg"
                       width={140} />
                   </a>
-                </div>
-                <div>
-                  <p>
-                    <small>&nbsp;</small>
-                  </p>
-                  <img
-                    alt="An initiative by the Hasso Plattner Foundation"
-                    src="/img/logohpf.svg"
-                    width={300}
-                  />
                 </div>
               </div>
             </div>

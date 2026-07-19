@@ -270,10 +270,8 @@ export default function D2EPage() {
               </div>
               <center>
                 <a href="https://github.com/ohdsi/data2evidence" target="_blank" className={styles.texticonbutton2} > GitHub
-                  <img loading="lazy" src='/img/GitHub.png' alt='Go to GitHub' className={styles.iconbutton} />
                 </a>
                 <a href="https://www.npmjs.com/package/d2e" target="_blank" className={styles.texticonbutton2}> npm
-                  <img loading="lazy" src='/img/npm.png' alt='Go to npm' className={styles.iconbutton} />
                 </a>
                 <a href="https://join.slack.com/t/data2evidence/shared_invite/zt-3vabnh2qr-vMev2VfLI2Sl1YA27gGVig" target="_blank" className={styles.texticonbutton2}> Slack
                 </a>
