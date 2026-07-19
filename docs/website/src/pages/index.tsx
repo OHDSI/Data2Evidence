@@ -106,8 +106,8 @@ export default function D2EPage() {
                   {playVideo ? (
                     <figure className={styles.video}>
                       <video controls preload="metadata" autoPlay>
-                        <source src="/img/543-001_data2evidence_v2_ut_eng-1080p.mp4" type="video/mp4" />
-                        <a href="/img/543-001_data2evidence_v2_ut_eng-1080p.mp4">
+                        <source src="https://www.data4life.care/media/pages/our-solutions/data2evidence/5519a3b357-1752757767/543-001_data2evidence_v2_ut_eng-1080p.mp4" type="video/mp4" />
+                        <a href="https://www.data4life.care/media/pages/our-solutions/data2evidence/5519a3b357-1752757767/543-001_data2evidence_v2_ut_eng-1080p.mp4">
                           <img src="/img/videop.png" alt="Data2Evidence Video"
                             style={{ cursor: 'pointer', width: '100%', height: 'auto', borderRadius: '20px' }}
                           />
