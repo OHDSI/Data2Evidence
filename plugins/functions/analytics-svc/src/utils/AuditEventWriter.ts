@@ -28,12 +28,27 @@ function getAuditFilePath(directory: string, fileName: string): string {
     return `${directory.replace(/\/+$/, "")}/${fileName}`;
 }
 
+async function chmodWhenAvailable(path: string, mode: number): Promise<void> {
+    try {
+        await Deno.chmod(path, mode);
+    } catch (error) {
+        if (
+            error instanceof Error &&
+            error.name === "PermissionDenied" &&
+            error.message === "Deno.chmod is blocklisted"
+        ) {
+            return;
+        }
+        throw error;
+    }
+}
+
 export class NdjsonAuditEventWriter implements AuditEventWriter {
     public constructor(private readonly directory = getAuditLogDirectory()) {}
 
     public async append(fileName: string, event: AuditEvent): Promise<void> {
         await Deno.mkdir(this.directory, { recursive: true, mode: 0o750 });
-        await Deno.chmod(this.directory, 0o750);
+        await chmodWhenAvailable(this.directory, 0o750);
 
         const path = getAuditFilePath(this.directory, fileName);
         const bytes = encoder.encode(`${JSON.stringify(event)}\n`);
@@ -45,7 +60,7 @@ export class NdjsonAuditEventWriter implements AuditEventWriter {
         });
 
         try {
-            await Deno.chmod(path, 0o640);
+            await chmodWhenAvailable(path, 0o640);
             // Keep one event in one append operation so concurrent Trex workers
             // cannot interleave portions of separate NDJSON records.
             const bytesWritten = await file.write(bytes);

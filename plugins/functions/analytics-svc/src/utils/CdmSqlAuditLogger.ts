@@ -449,6 +449,9 @@ export function createCdmSqlAuditConnection(
     return new Proxy(connection, {
         get(target, property) {
             const value = Reflect.get(target, property, target);
+            if (property === "constructor") {
+                return value;
+            }
             if (
                 typeof property !== "string" ||
                 !SQL_METHODS.has(property) ||

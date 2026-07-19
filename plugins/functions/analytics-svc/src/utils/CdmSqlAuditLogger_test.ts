@@ -168,6 +168,30 @@ Deno.test("CDM SQL audit flag is independent from patient audit flag", () => {
     }
 });
 
+Deno.test("audited connection preserves constructor identity", () => {
+    const previousFlag = env.IS_CDM_SQL_AUDIT_LOG_ENABLED;
+    const connection = createConnection();
+
+    try {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = "true";
+        const auditedConnection = createCdmSqlAuditConnection(
+            connection,
+            context
+        );
+
+        assert.equal(
+            auditedConnection.constructor,
+            connection.constructor
+        );
+        assert.equal(
+            auditedConnection.constructor.name,
+            connection.constructor.name
+        );
+    } finally {
+        env.IS_CDM_SQL_AUDIT_LOG_ENABLED = previousFlag;
+    }
+});
+
 Deno.test("audited connection writes one successful event per SQL call", async () => {
     const previousFlag = env.IS_CDM_SQL_AUDIT_LOG_ENABLED;
     const { events, writer } = createWriter();
