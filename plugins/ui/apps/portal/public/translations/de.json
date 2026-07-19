@@ -585,6 +585,8 @@
   "FEATURE__DATAFLOW": "Datenfluss",
   "FEATURE__ATLAS": "Atlas",
   "FEATURE__PYTHIA": "Pythia (Atlas-KI-Assistent)",
+  "FEATURE__SIBYL": "Sibyl",
+  "FEATURE__DATA_EXPLORATION": "Datenexploration",
   "FEATURE__DATASET_FILTER": "Datensatzfilter",
   "FEATURE__DATASET_SEARCH": "Datensatzsuche",
   "FEATURE__DATA_MAPPING_SUGGESTION": "KI-Vorschlag für Datenzuordnung",
