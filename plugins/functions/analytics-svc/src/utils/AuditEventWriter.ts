@@ -1,0 +1,88 @@
+export const DEFAULT_AUDIT_LOG_DIRECTORY = "/var/log/d2e/audit";
+export const PATIENT_ACCESS_AUDIT_FILE = "patient-access.ndjson";
+export const CDM_SQL_AUDIT_FILE = "cdm-sql-access.ndjson";
+
+export type AuditEvent = Record<string, unknown>;
+
+export type AuditTransport = {
+    audit(message: unknown, user: string): void | Promise<void>;
+};
+
+export interface AuditEventWriter {
+    append(fileName: string, event: AuditEvent): Promise<void>;
+}
+
+const encoder = new TextEncoder();
+
+function getAuditLogDirectory(): string {
+    return (
+        Deno.env.get("AUDIT_LOG_DIRECTORY") ?? DEFAULT_AUDIT_LOG_DIRECTORY
+    );
+}
+
+function getAuditFilePath(directory: string, fileName: string): string {
+    if (!/^[a-z0-9][a-z0-9.-]*\.ndjson$/.test(fileName)) {
+        throw new Error("Invalid audit file name");
+    }
+
+    return `${directory.replace(/\/+$/, "")}/${fileName}`;
+}
+
+export class NdjsonAuditEventWriter implements AuditEventWriter {
+    public constructor(private readonly directory = getAuditLogDirectory()) {}
+
+    public async append(fileName: string, event: AuditEvent): Promise<void> {
+        await Deno.mkdir(this.directory, { recursive: true, mode: 0o750 });
+        await Deno.chmod(this.directory, 0o750);
+
+        const path = getAuditFilePath(this.directory, fileName);
+        const bytes = encoder.encode(`${JSON.stringify(event)}\n`);
+        const file = await Deno.open(path, {
+            append: true,
+            create: true,
+            mode: 0o640,
+            write: true,
+        });
+
+        try {
+            await Deno.chmod(path, 0o640);
+            // Keep one event in one append operation so concurrent Trex workers
+            // cannot interleave portions of separate NDJSON records.
+            const bytesWritten = await file.write(bytes);
+            if (bytesWritten !== bytes.length) {
+                throw new Error("Incomplete audit event append");
+            }
+        } finally {
+            file.close();
+        }
+    }
+}
+
+export function createPatientAccessAuditTransport(
+    writer: AuditEventWriter = new NdjsonAuditEventWriter()
+): AuditTransport {
+    return {
+        async audit(message: unknown, user: string): Promise<void> {
+            const eventData =
+                message && typeof message === "object"
+                    ? (message as AuditEvent)
+                    : { message: String(message) };
+
+            try {
+                await writer.append(PATIENT_ACCESS_AUDIT_FILE, {
+                    ...eventData,
+                    schemaVersion: 1,
+                    eventType: "patient.access",
+                    actor: {
+                        type: "user",
+                        id: user,
+                    },
+                });
+            } catch (_error) {
+                // Audit persistence is fail-open. Never echo the event payload
+                // or patient identifier into operational container logs.
+                console.error("Patient audit event could not be written");
+            }
+        },
+    };
+}

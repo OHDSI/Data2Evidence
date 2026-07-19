@@ -378,3 +378,78 @@ Deno.test("AuditLogger create requires an audit user", () => {
         /requires a user/
     );
 });
+
+Deno.test(
+    "AuditLogger default transport writes one patient NDJSON event without console output",
+    async () => {
+        const auditDirectory = await Deno.makeTempDir({
+            prefix: "d2e-patient-audit-",
+        });
+        const previousAuditDirectory = Deno.env.get("AUDIT_LOG_DIRECTORY");
+        const originalConsole = {
+            debug: console.debug,
+            error: console.error,
+            info: console.info,
+            log: console.log,
+            warn: console.warn,
+        };
+        const consoleCalls: unknown[][] = [];
+        const captureConsole = (...args: unknown[]) => consoleCalls.push(args);
+
+        console.debug = captureConsole;
+        console.error = captureConsole;
+        console.info = captureConsole;
+        console.log = captureConsole;
+        console.warn = captureConsole;
+
+        try {
+            Deno.env.set("AUDIT_LOG_DIRECTORY", auditDirectory);
+            env.IS_AUDIT_LOG_ENABLED = "true";
+
+            const result = await logAsync(
+                AuditLogger.create({ user: "file-user" }),
+                [{ pid: "patient-1", age: 42 }],
+                [{ id: "pid" }, { id: "age" }]
+            );
+
+            assert.equal(result, null);
+
+            const auditFile = `${auditDirectory}/patient-access.ndjson`;
+            const lines = (await Deno.readTextFile(auditFile))
+                .trimEnd()
+                .split("\n");
+            assert.equal(lines.length, 1);
+
+            const event = JSON.parse(lines[0]);
+            assert.equal(event.schemaVersion, 1);
+            assert.equal(event.eventType, "patient.access");
+            assertIsoTimestamp(event.occurredAt);
+            assert.deepEqual(event.actor, {
+                type: "user",
+                id: "file-user",
+            });
+            assert.equal(event.action, "read");
+            assert.equal(event.personId, "patient-1");
+            assert.equal(event.accessChannel, "patient list");
+            assert.equal(event.successful, true);
+            assert.deepEqual(event.attributes, ["age"]);
+            assert.deepEqual(consoleCalls, []);
+        } finally {
+            console.debug = originalConsole.debug;
+            console.error = originalConsole.error;
+            console.info = originalConsole.info;
+            console.log = originalConsole.log;
+            console.warn = originalConsole.warn;
+
+            if (previousAuditDirectory === undefined) {
+                Deno.env.delete("AUDIT_LOG_DIRECTORY");
+            } else {
+                Deno.env.set(
+                    "AUDIT_LOG_DIRECTORY",
+                    previousAuditDirectory
+                );
+            }
+            await Deno.remove(auditDirectory, { recursive: true });
+        }
+    }
+);

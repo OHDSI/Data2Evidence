@@ -40,7 +40,8 @@ RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && 
         gzip -df ${lib}.duckdb_extension.gz; \
     done
 
-RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert
+RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit && \
+    chmod 0750 /var/log/d2e/audit
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.

@@ -32,6 +32,8 @@ import PortalServerAPI from "./api/PortalServerAPI";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
+import { getAuditUserIdFromRequest } from "./utils/AuditLogger.ts";
+import { createCdmSqlAuditConnection } from "./utils/CdmSqlAuditLogger.ts";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -151,16 +153,44 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                if (credentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-                    req.dbConnections = await getDBConnections({
-                        analyticsCredentials: credentials,
-                        userObj,
-                    });
-                } else {
-                    req.dbConnections = getTrexDbConnection({
-                        analyticsCredentials: credentials,
-                    });
-                }
+                const dbConnections =
+                    credentials.dialect === ANALYTICS_DB_DIALECTS.HANA
+                        ? await getDBConnections({
+                              analyticsCredentials: credentials,
+                              userObj,
+                          })
+                        : getTrexDbConnection({
+                              analyticsCredentials: credentials,
+                          });
+                const correlationHeader =
+                    req.headers["x-req-correlation-id"];
+                const correlationId = Array.isArray(correlationHeader)
+                    ? correlationHeader[0]
+                    : correlationHeader;
+
+                req.dbConnections = {
+                    ...dbConnections,
+                    analyticsConnection: createCdmSqlAuditConnection(
+                        dbConnections.analyticsConnection,
+                        {
+                            actorId:
+                                userObj?.getUser() ??
+                                getAuditUserIdFromRequest(req) ??
+                                "unknown",
+                            requestMethod: req.method,
+                            requestPath: req.path,
+                            correlationId,
+                            databaseCode: credentials.code,
+                            databaseDialect: credentials.dialect,
+                            databaseEngine:
+                                credentials.dialect ===
+                                ANALYTICS_DB_DIALECTS.HANA
+                                    ? "hana"
+                                    : "duckdb",
+                            schemaName: credentials.schema,
+                        }
+                    ),
+                };
             }
 
             next();

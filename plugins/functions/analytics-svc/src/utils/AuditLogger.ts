@@ -1,7 +1,10 @@
-import { getUser, Logger } from "@alp/alp-base-utils";
+import { getUser } from "@alp/alp-base-utils";
 import type { CDMConfigMetaDataType } from "../types";
 import { env } from "../env";
-const alpAuditLogger = Logger.CreateLogger("analytics-log");
+import {
+    createPatientAccessAuditTransport,
+    type AuditTransport,
+} from "./AuditEventWriter.ts";
 export const AUDITLOG_REQ_CHUNK_SIZE = 10;
 export const AUDIT_CHANNELS = {
     PATIENT_LIST: "D2E Pt Ls",
@@ -19,9 +22,6 @@ type AuditConfigMetaData = { id: string; version: string };
 type AuditConfigs = {
     cohortBuilder?: AuditConfigMetaData;
     cdm?: AuditConfigMetaData;
-};
-type AuditTransport = {
-    audit(message: unknown, user: string): void | Promise<void>;
 };
 type AuditLoggerCreateOptionsBase = {
     auditTransport?: AuditTransport;
@@ -109,7 +109,6 @@ export function getAuditUserIdFromRequest(req?: unknown): string | undefined {
 }
 
 export class AuditLogger {
-    private _isConsoleMode?: boolean = false;
     private _auditTransport: AuditTransport;
     private _cohortBuilderConfigMetaData?: AuditConfigMetaData;
     private _cdmConfigMetaData?: CDMConfigMetaDataType;
@@ -133,7 +132,6 @@ export class AuditLogger {
         }
 
         this._auditTransport = auditTransport;
-        this._isConsoleMode = auditCredentials?.logToConsole;
         this._cohortBuilderConfigMetaData = cohortBuilderConfigMetaData;
         this._cdmConfigMetaData = cdmConfigMetaData;
         this._ip = ip;
@@ -231,10 +229,6 @@ export class AuditLogger {
             attributeExistsForLog = logResult.attributeExistsForLog;
         }
 
-        if (attributeExistsForLog) {
-            alpAuditLogger.info("Logged patients in Audit log...");
-        }
-
         return emptyResult;
     }
 
@@ -319,7 +313,8 @@ export class AuditLogger {
     public static create(options: AuditLoggerCreateOptions): AuditLogger {
         return new AuditLogger({
             ...options,
-            auditTransport: options.auditTransport ?? alpAuditLogger,
+            auditTransport:
+                options.auditTransport ?? createPatientAccessAuditTransport(),
         });
     }
 

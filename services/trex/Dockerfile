@@ -26,7 +26,9 @@ COPY ./logto /usr/src/logto
 RUN mkdir -p /home/node/.duckdb/extensions && \
     cp -r /usr/share/trexsql/extensions/* /home/node/.duckdb/extensions/ 2>/dev/null || true
 
-RUN chown -R node:node /usr/src/cdw_data /usr/src/logto /home/node/.duckdb
+RUN mkdir -p /var/log/d2e/audit && \
+    chmod 0750 /var/log/d2e/audit && \
+    chown -R node:node /usr/src/cdw_data /usr/src/logto /home/node/.duckdb /var/log/d2e/audit
 USER node
 
 # Entrypoint + SWARM_CONFIG-driven startup are inherited from trexsql.
