@@ -78,6 +78,17 @@ MriConfigAttribute.prototype.isVisibleInPatientList = function () {
   )
 }
 
+/**
+ * Returns the patient-list link config for this attribute, or undefined.
+ * When present (e.g. `{ label: "OHIF viewer" }`), the attribute's value is a
+ * URL that should render as a link opening in a new tab.
+ */
+MriConfigAttribute.prototype.getPatientListLink = function () {
+  return this.oInternalConfigAttribute.patientlist && this.oInternalConfigAttribute.patientlist.link
+    ? this.oInternalConfigAttribute.patientlist.link
+    : undefined
+}
+
 MriConfigAttribute.prototype.getOrderInPatientList = function () {
   let order = null
 

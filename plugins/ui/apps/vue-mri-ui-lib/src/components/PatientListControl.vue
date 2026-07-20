@@ -77,7 +77,11 @@
                 <div v-for="detail in row[attribute.parentPath]" :key="detail" class="cellContainer">
                   <div class="textContent row-item">
                     <div class="textContent row-item">
-                      <patientListData :item="detail" :meta="attribute" />
+                      <component
+                        :is="cellComponent(detail, attribute)"
+                        :item="detail"
+                        :meta="attribute"
+                      />
                     </div>
                   </div>
                 </div>
@@ -96,6 +100,8 @@ import icon from '../lib/ui/app-icon.vue'
 import * as types from '../store/mutation-types'
 import DropDownMenu from './DropDownMenu.vue'
 import PatientListData from './PatientListData.vue'
+import PatientListLinkData from './PatientListLinkData.vue'
+import { isValidHttpUrl } from '../utils/urlUtils'
 
 function hasProp(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop)
@@ -167,6 +173,7 @@ export default {
           path,
           parentPath: this.getMriFrontendConfig.getInteractionInstancePath(path),
           text: this.getMriFrontendConfig.getAttributeByPath(path).getName(),
+          link: this.getMriFrontendConfig.getAttributeByPath(path).getPatientListLink(),
         }))
         .reduce((dict, col) => {
           if (dict[col.parentPath]) {
@@ -218,6 +225,12 @@ export default {
   },
   methods: {
     ...mapActions(['populateColumnMenu', 'setColumnWidths']),
+    // Render a cell as a new-tab link when it is configured as a link column
+    // or its value is a valid http(s) URL; otherwise render plain text.
+    cellComponent(detail, attribute) {
+      const value = detail ? detail[attribute.path] : null
+      return attribute.link || isValidHttpUrl(value) ? 'patientListLinkData' : 'patientListData'
+    },
     ...mapMutations([types.PL_REMOVE_SELECTED_ATTRIBUTE]),
     renderWidths() {
       const columnWidths = this.computeBaseWidth(this.tableColumns)
@@ -456,6 +469,7 @@ export default {
     icon,
     DropDownMenu,
     PatientListData,
+    PatientListLinkData,
   },
 }
 </script>
