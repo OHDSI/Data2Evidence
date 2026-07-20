@@ -4,6 +4,7 @@ import { health } from "./health.ts";
 import { source } from "./source.ts";
 import { i18n } from "./i18n.ts";
 import { notification } from "./notification.ts";
+import { migrate } from "./migrate.ts";
 
 import datasetRoutes from "./datasetRoutes.ts";
 
@@ -32,6 +33,10 @@ export default (app: fastify.FastifyInstance) => {
 
   app.register(notification, {
     prefix: "/notifications",
+  });
+
+  app.register(migrate, {
+    prefix: "/migrate",
   });
 
   // Register dataset routes, which required datasetId in request headers

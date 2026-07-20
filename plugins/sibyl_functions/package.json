@@ -1,0 +1,109 @@
+{
+  "name": "@data2evidence/sibyl",
+  "version": "0.0.99",
+  "description": "Sibyl (Strategus/notebook) backend functions — hades-api, metadata-api, network-api, and their init/token functions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tbuild ."
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@trex/cli": "latest"
+  },
+  "trex": {
+    "functions": {
+      "init": [
+        {
+          "function": "/notebook-init",
+          "imports": "/notebook-init/deno.json",
+          "env": "notebook-init"
+        },
+        {
+          "function": "/network-init",
+          "imports": "/network-init/deno.json",
+          "env": "network-init"
+        }
+      ],
+      "api": [
+        {
+          "source": "/hades-api",
+          "function": "/hades-api",
+          "imports": "/hades-api/deno.json",
+          "env": "hades-api",
+          "allowHostFsAccess": true
+        },
+        {
+          "source": "/network-api",
+          "function": "/network-api",
+          "imports": "/network-api/deno.json",
+          "env": "network-api"
+        },
+        {
+          "source": "/metadata-api",
+          "function": "/metadata-api",
+          "imports": "/metadata-api/deno.json",
+          "env": "metadata-api",
+          "allowHostFsAccess": true
+        },
+        {
+          "source": "/trex-token",
+          "function": "/trex-token",
+          "imports": "/trex-token/deno.json",
+          "env": "trex-token"
+        }
+      ],
+      "env": {
+        "_shared": {},
+        "hades-api": {
+          "HADES_ENVS_BASE_DIR": "${HADES_ENVS_BASE_DIR:-/tmp/hades/envs}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR:-/tmp/hades/output}",
+          "HADES_WORK_SCHEMA": "${HADES_WORK_SCHEMA:-work}"
+        },
+        "metadata-api": {
+          "METADATA_ENC_KEY": "${METADATA_ENC_KEY:-}",
+          "HADES_OUTPUT_BASE_DIR": "${HADES_OUTPUT_BASE_DIR:-/tmp/hades/output}",
+          "STORAGE_BASE_URL": "${STORAGE_BASE_URL:-http://${PROJECT_NAME:-d2e}-supabase-storage-1:9000}",
+          "SUPABASE_STORAGE_JWT_TOKEN": "${SUPABASE_STORAGE_JWT_TOKEN}",
+          "TREX_BASE_URL": "${TREX_BASE_URL:-http://localhost:8001/trex}"
+        },
+        "network-api": {
+          "NETWORK_COGNITO_DOMAIN": "${NETWORK_COGNITO_DOMAIN:-}",
+          "NETWORK_CENTRAL_API_URL": "${NETWORK_CENTRAL_API_URL:-}",
+          "NETWORK_MACHINE_CLIENT_ID": "${NETWORK_MACHINE_CLIENT_ID:-}",
+          "NETWORK_CLIENT_SECRET": "${NETWORK_CLIENT_SECRET:-}",
+          "NETWORK_TOKEN_SCOPE": "${NETWORK_TOKEN_SCOPE:-}",
+          "NETWORK_ENC_KEY": "${NETWORK_ENC_KEY:-}",
+          "NETWORK_COORDINATOR_CLIENT_ID": "${NETWORK_COORDINATOR_CLIENT_ID:-}",
+          "NETWORK_COORDINATOR_CLIENT_SECRET": "${NETWORK_COORDINATOR_CLIENT_SECRET:-}",
+          "NETWORK_COORDINATOR_TOKEN_SCOPE": "${NETWORK_COORDINATOR_TOKEN_SCOPE:-}"
+        },
+        "notebook-init": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "PG_SCHEMA": "notebook",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+        },
+        "network-init": {
+          "PG_USER": "${PG_WRITE_USER:-alp_pg_write_user}",
+          "PG_PASSWORD": "${PG_WRITE_PASSWORD}",
+          "PG_HOST": "${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}",
+          "PG_PORT": "${PG_PORT:-5432}",
+          "PG_DATABASE": "${PG_DB_NAME:-alp}",
+          "PG_SCHEMA": "network",
+          "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
+          "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}"
+        },
+        "trex-token": {
+          "LOGTO__ISSUER": "${LOGTO__ISSUER}",
+          "TREX_ROOT_KEY": "${TREX_ROOT_KEY}"
+        }
+      }
+    }
+  }
+}
