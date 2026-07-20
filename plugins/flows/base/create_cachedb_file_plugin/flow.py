@@ -8,9 +8,9 @@ from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
 from .utils import *
-from .fts import create_fts_index_task
+from .fts import create_fts_index_task, create_fts_index
 from .versioninfo import update_dataset_metadata
-from .copy import create_schema_tables_task, create_schema_if_not_exists_task
+from .copy import create_schema_tables_task, create_schema_if_not_exists_task, create_schema_if_not_exists, create_schema_tables
 from .types import CreateCacheOptions, CreateCDWValidationConfig, CacheFlowAction, CopyParameters
 
 from _shared_flow_utils.dao.DBDao import DBDao
@@ -84,34 +84,27 @@ def create_cache_flow(options: CreateCacheOptions):
         options.database_code, Variable.get("duckdb_data_folder")
     )
     
-    if not options.use_trex_connection:
-        logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
-
-        # Creates file if it does not exist
-        logger.info(f"Checking if cache file exists at '{duckdb_file_path}'...")
+    if dbdao.dialect == SupportedDatabaseDialects.SNOWFLAKE.value:
+        logger.info("Snowflake: building cache via single-connection offline DuckDB path.")
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
-
             attach_to_source_db(dbdao, file_conn, copy_params.source_database)
-
+            create_schema_if_not_exists(file_conn, copy_params, logger)
+            create_schema_tables(file_conn, dbdao, copy_params, logger)
+            create_fts_index(file_conn, copy_params, logger)
+    elif not options.use_trex_connection:
+        logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
+        with duckdb.connect(duckdb_file_path) as file_conn:
+            load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
+            attach_to_source_db(dbdao, file_conn, copy_params.source_database)
             duckdb_file_exists = check_if_file_exists(duckdb_file_path)
-    
             if not duckdb_file_exists:
-                # If the file doesn't exist do a one time copy of all schemas in database
-                logger.info(
-                    f"Cache file does not exist. Copying all schemas from '{options.database_code}' to cache through direct file connection."
-                )
+                logger.info(f"Cache file does not exist. Copying all schemas from '{options.database_code}'.")
                 copy_all_schemas(duckdb_file_path, dbdao, copy_params)
-
-
-
     else:
         logger.info("Using TREX SQL connection to cache")
-
         create_schema_if_not_exists_task(options.use_trex_connection, copy_params, duckdb_file_path)
-
         create_schema_tables_task(options.use_trex_connection, dbdao, copy_params, duckdb_file_path)
-
         create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 

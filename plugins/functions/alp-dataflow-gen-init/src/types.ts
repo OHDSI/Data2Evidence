@@ -48,6 +48,12 @@ interface DbExtra {
   auth_provider_x509_cert_url? : string
   client_x509_cert_url? : string
   universe_domain? : string
+  // Snowflake specific fields (key-pair auth; stored in db_extra.Internal)
+  warehouse? : string
+  schema? : string
+  role? : string
+  privateKey? : string
+  privateKeyPassphrase? : string
 }
 
 export interface DBCredentials {
@@ -103,6 +109,12 @@ export interface TransformedDBCredentials {
   auth_provider_x509_cert_url?: string;
   client_x509_cert_url?: string;
   universe_domain?: string;
+  // Snowflake specific fields
+  warehouse?: string | null;
+  snowflakeSchema?: string | null;
+  role?: string | null;
+  privateKey?: string | null;
+  privateKeyPassphrase?: string | null;
 }
 
 export function transformDBCredentials(
@@ -177,9 +189,25 @@ export function transformDBCredentials(
       client_x509_cert_url: dbCredentials.db_extra.client_x509_cert_url 
         ? dbCredentials.db_extra.client_x509_cert_url 
         : "",
-      universe_domain: dbCredentials.db_extra.universe_domain 
-        ? dbCredentials.db_extra.universe_domain 
+      universe_domain: dbCredentials.db_extra.universe_domain
+        ? dbCredentials.db_extra.universe_domain
         : "",
+      // Snowflake: user=adminUser, account=host, key/passphrase + wh/schema/role from db_extra
+      warehouse: dbCredentials.db_extra.warehouse
+        ? dbCredentials.db_extra.warehouse
+        : null,
+      snowflakeSchema: dbCredentials.db_extra.schema
+        ? dbCredentials.db_extra.schema
+        : null,
+      role: dbCredentials.db_extra.role
+        ? dbCredentials.db_extra.role
+        : null,
+      privateKey: dbCredentials.db_extra.privateKey
+        ? dbCredentials.db_extra.privateKey
+        : null,
+      privateKeyPassphrase: dbCredentials.db_extra.privateKeyPassphrase
+        ? dbCredentials.db_extra.privateKeyPassphrase
+        : null,
     };
     return transformedCredentials;
   });

@@ -109,7 +109,7 @@ RUN set -e; \
     git config --global advice.detachedHead false
 
 
-ARG DUCKDB_VERSION=1.4.0
+ARG DUCKDB_VERSION=1.4.4
 ARG DUCKDB_EXTENSIONS="postgres_scanner,fts"
 
 COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
@@ -117,7 +117,10 @@ COPY ./build/download_duckdb_extensions.sh /app/download_duckdb_extensions.sh
 RUN \
     # Create directory for duckdb extensions, achilles & dqd output logs
     mkdir -p /app/duckdb_extensions /app/achilles_output /app/dqd_output \
-    && chown -R docker:docker /app/achilles_output /app/dqd_output \
+    # Cache dir written directly by the offline (e.g. Snowflake) cache-build path;
+    # must be writable by the runtime `docker` user (mirrors search_embedding image).
+    && mkdir -p /app/duckdb_data/cache \
+    && chown -R docker:docker /app/achilles_output /app/dqd_output /app/duckdb_data \
     && chmod -R 711 /app/duckdb_extensions \
     # Make the download script executable
     && chmod +x /app/download_duckdb_extensions.sh \

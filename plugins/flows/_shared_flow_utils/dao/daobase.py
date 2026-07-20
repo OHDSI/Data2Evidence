@@ -37,6 +37,7 @@ class DialectDrivers(BaseModel):
         hana: str = "hana+hdbcli"
         duckdb: str = "duckdb"
         bigquery: str = "bigquery"
+        snowflake: str = "snowflake"
         trex: str = "postgresql+psycopg2"
 
     class ibis:
@@ -282,6 +283,38 @@ class DaoBase(ABC):
                 if not os.path.isfile(big_query_key_path):
                     DaoBase.create_service_account_credentials_file(db_credentials)
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}/{database_name}?credentials_path={big_query_key_path}"
+            case SupportedDatabaseDialects.SNOWFLAKE:
+                from cryptography.hazmat.primitives import serialization
+                account = host
+                user_str = user.get_secret_value() if hasattr(user, "get_secret_value") else user
+                sf_schema = getattr(db_credentials, "snowflakeSchema", None)
+                warehouse = getattr(db_credentials, "warehouse", None)
+                role = getattr(db_credentials, "role", None)
+                base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{user_str}@{account}/{database_name}"
+                if sf_schema:
+                    base_url += f"/{sf_schema}"
+                params = []
+                if warehouse:
+                    params.append(f"warehouse={warehouse}")
+                if role:
+                    params.append(f"role={role}")
+                if params:
+                    base_url += "?" + "&".join(params)
+                if not db_credentials.privateKey:
+                    raise ValueError("Snowflake key-pair auth requires db_credentials.privateKey")
+                pem = db_credentials.privateKey.get_secret_value().encode()
+                passphrase = (
+                    db_credentials.privateKeyPassphrase.get_secret_value().encode()
+                    if db_credentials.privateKeyPassphrase else None
+                )
+                pkey = serialization.load_pem_private_key(pem, password=passphrase)
+                connect_args = {
+                    "private_key": pkey.private_bytes(
+                        encoding=serialization.Encoding.DER,
+                        format=serialization.PrivateFormat.PKCS8,
+                        encryption_algorithm=serialization.NoEncryption(),
+                    )
+                }
             case _:
                 base_url = f"{getattr(DialectDrivers.sqlalchemy, dialect)}://{host}:{port}/{database_name}"
                 if auth_mode == AuthMode.PASSWORD:
