@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { INTERACTIVE_SELECTORS, stripInteractiveSVG } from '../ExportUtils'
+import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG } from '../ExportUtils'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -87,5 +87,41 @@ describe('stripInteractiveSVG', () => {
     expect(INTERACTIVE_SELECTORS).not.toContain('.g-ytitle')
     expect(INTERACTIVE_SELECTORS).not.toContain('.g-xtitle')
     expect(INTERACTIVE_SELECTORS).not.toContain('.ytitle')
+  })
+})
+
+describe('buildXAxisTitle', () => {
+  it('formats two x-axis categories as {x2}/{x1}', () => {
+    const categories = [
+      { id: 'patient.attributes.diagnosis', axis: 1, name: 'Diagnosis' },
+      { id: 'patient.attributes.stage', axis: 1, name: 'Stage' },
+    ]
+    expect(buildXAxisTitle(categories)).toBe('Stage/Diagnosis')
+  })
+
+  it('returns the single x-axis name when only one x-axis category is present', () => {
+    const categories = [{ id: 'patient.attributes.diagnosis', axis: 1, name: 'Diagnosis' }]
+    expect(buildXAxisTitle(categories)).toBe('Diagnosis')
+  })
+
+  it('ignores y-axis categories', () => {
+    const categories = [
+      { id: 'patient.attributes.diagnosis', axis: 1, name: 'Diagnosis' },
+      { id: 'patient.attributes.cohort', axis: 2, name: 'Cohort' },
+    ]
+    expect(buildXAxisTitle(categories)).toBe('Diagnosis')
+  })
+
+  it('ignores the dummy_category placeholder', () => {
+    const categories = [
+      { id: 'dummy_category', axis: 1, name: 'Current Cohort' },
+      { id: 'patient.attributes.stage', axis: 1, name: 'Stage' },
+    ]
+    expect(buildXAxisTitle(categories)).toBe('Stage')
+  })
+
+  it('returns an empty string for missing or empty categories', () => {
+    expect(buildXAxisTitle(undefined as any)).toBe('')
+    expect(buildXAxisTitle([])).toBe('')
   })
 })

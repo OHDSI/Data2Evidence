@@ -28,6 +28,52 @@ const BAR_LEGEND_FONT = '12px Arial'
 const BAR_LEGEND_DEFAULT_COLOR = '#cccccc'
 const BAR_LEGEND_DEFAULT_BORDER = 'transparent'
 
+const X_AXIS_TITLE_FONT = '13px Arial'
+const X_AXIS_TITLE_COLOR = '#000080'
+const X_AXIS_TITLE_BAND_HEIGHT = 26
+
+/**
+ * Builds the combined x-axis title shown beneath a bar/column chart, in the
+ * form "{x2}/{x1}". Plotly does not render an x-axis title for these charts, so
+ * the axis attribute names are drawn manually at export time.
+ *
+ * The backend returns x-axis categories in slot order (index 0 = x1, index 1 =
+ * x2); they are reversed here so the secondary (outer) axis precedes the primary
+ * one, matching the top-to-bottom order of the nested axis labels.
+ */
+export const buildXAxisTitle = (categories: any[]): string => {
+  if (!Array.isArray(categories)) return ''
+  const names = categories
+    .filter(c => c && c.axis === Constants.AxisId.X && c.id !== 'dummy_category')
+    .map(c => c.name)
+    .filter(Boolean)
+  if (names.length === 0) return ''
+  return [...names].reverse().join('/')
+}
+
+/**
+ * Returns a new canvas identical to `chartCanvas` with `title` drawn centred in
+ * a band directly beneath it.
+ */
+const appendXAxisTitle = (chartCanvas: HTMLCanvasElement, title: string): HTMLCanvasElement => {
+  const canvas = document.createElement('canvas')
+  canvas.width = chartCanvas.width
+  canvas.height = chartCanvas.height + X_AXIS_TITLE_BAND_HEIGHT
+
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.drawImage(chartCanvas, 0, 0)
+
+  ctx.font = X_AXIS_TITLE_FONT
+  ctx.fillStyle = X_AXIS_TITLE_COLOR
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(title, chartCanvas.width / 2, chartCanvas.height + X_AXIS_TITLE_BAND_HEIGHT / 2)
+
+  return canvas
+}
+
 /**
  * Reads the rendered StackBarChartLegend entries from the DOM.
  * The legend component is an HTML div outside the chart SVG so it must be
@@ -318,7 +364,8 @@ export const createChartCanvas = (
   targetHeight: number,
   targetWidth: number,
   pdfConst: any,
-  kmLegendInput?: IKmLegendInput
+  kmLegendInput?: IKmLegendInput,
+  xAxisTitle?: string
 ): HTMLCanvasElement => {
   const svgItem = d3.select(chartId).select('svg')[0][0] as SVGSVGElement
   const svgClone = svgItem.cloneNode(true) as SVGSVGElement
@@ -396,10 +443,13 @@ export const createChartCanvas = (
     const legendCanvas = createKmLegendCanvas(pdfConst, kmLegendInput)
     outputCanvas = combineCanvas(chartCanvas, legendCanvas, kmLegendInput.overlapCanvas)
   } else if (isBarChart) {
+    if (xAxisTitle) {
+      outputCanvas = appendXAxisTitle(outputCanvas, xAxisTitle)
+    }
     const barLegendItems = readStackBarLegendFromDOM()
     if (barLegendItems.length > 0) {
       const legendCanvas = createBarLegendCanvas(barLegendItems)
-      outputCanvas = combineCanvas(chartCanvas, legendCanvas)
+      outputCanvas = combineCanvas(outputCanvas, legendCanvas)
     }
   }
 
