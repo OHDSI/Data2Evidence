@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG } from '../ExportUtils'
+import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG, wrapTextByChars } from '../ExportUtils'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -123,5 +123,38 @@ describe('buildXAxisTitle', () => {
   it('returns an empty string for missing or empty categories', () => {
     expect(buildXAxisTitle(undefined as any)).toBe('')
     expect(buildXAxisTitle([])).toBe('')
+  })
+})
+
+describe('wrapTextByChars', () => {
+  it('keeps short text on a single line', () => {
+    expect(wrapTextByChars('Short label', 80)).toEqual(['Short label'])
+  })
+
+  it('wraps on word boundaries so no line exceeds the limit', () => {
+    const lines = wrapTextByChars('one two three four five', 8)
+    expect(lines).toEqual(['one two', 'three', 'four', 'five'])
+    lines.forEach(line => expect(line.length).toBeLessThanOrEqual(8))
+  })
+
+  it('wraps a long label at 80 characters', () => {
+    const text = 'a '.repeat(60).trim() // 60 single-char words → 119 chars total
+    const lines = wrapTextByChars(text, 80)
+    expect(lines.length).toBeGreaterThan(1)
+    lines.forEach(line => expect(line.length).toBeLessThanOrEqual(80))
+  })
+
+  it('hard-breaks a single word longer than the limit', () => {
+    const lines = wrapTextByChars('x'.repeat(25), 10)
+    expect(lines).toEqual(['xxxxxxxxxx', 'xxxxxxxxxx', 'xxxxx'])
+  })
+
+  it('hard-breaks a long word while preserving surrounding words', () => {
+    const lines = wrapTextByChars(`start ${'y'.repeat(12)} end`, 10)
+    expect(lines).toEqual(['start', 'yyyyyyyyyy', 'yy end'])
+  })
+
+  it('returns a single empty line for empty input', () => {
+    expect(wrapTextByChars('', 80)).toEqual([''])
   })
 })

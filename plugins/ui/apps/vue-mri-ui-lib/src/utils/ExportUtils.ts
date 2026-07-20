@@ -27,10 +27,19 @@ const BAR_LEGEND_TEXT_COLOR = '#000080'
 const BAR_LEGEND_FONT = '12px Arial'
 const BAR_LEGEND_DEFAULT_COLOR = '#cccccc'
 const BAR_LEGEND_DEFAULT_BORDER = 'transparent'
+const BAR_LEGEND_WRAP_CHARS = 40
 
 const X_AXIS_TITLE_FONT = '13px Arial'
 const X_AXIS_TITLE_COLOR = '#000080'
 const X_AXIS_TITLE_BAND_HEIGHT = 26
+
+// Slanted (rotated) x-axis tick labels overflow the plot area to the right and below;
+// Plotly clips that overflow at the SVG edge, cutting off the last/longest label in the
+// export. These paddings (in native SVG px) extend the viewBox on the right and bottom so
+// the full rotated labels are captured. Expressed in the same units as the live chart, so
+// they read as a fixed amount of breathing room regardless of the export target size.
+const CHART_EXPORT_PAD_RIGHT = 48
+const CHART_EXPORT_PAD_BOTTOM = 24
 
 /**
  * Builds the combined x-axis title shown beneath a bar/column chart, in the
@@ -88,7 +97,9 @@ const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
     const box = entry.querySelector('.stackbar-legend-entry-box') as HTMLElement | null
     const line = entry.querySelector('.stackbar-legend-entry-line') as HTMLElement | null
     const textEl = entry.querySelector('.stackbar-legend-entry-text')
-    const name = textEl?.textContent?.trim() || ''
+    // Prefer the untruncated full name (the visible text may be shortened with an ellipsis).
+    const fullName = (entry as HTMLElement).getAttribute('data-full-name')?.trim()
+    const name = fullName || textEl?.textContent?.trim() || ''
     if (!name) return
 
     let color = BAR_LEGEND_DEFAULT_COLOR
@@ -114,16 +125,24 @@ const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
  * Creates a canvas containing the bar/column chart legend (coloured swatches + names).
  */
 const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
+  // Wrap long names onto multiple lines so the full text is shown (never truncated).
+  const wrappedItems = items.map(item => ({
+    ...item,
+    lines: wrapTextByChars(item.name, BAR_LEGEND_WRAP_CHARS),
+  }))
+
   // Measure text widths to size the canvas correctly.
   const tmpCanvas = document.createElement('canvas')
   const tmpCtx = tmpCanvas.getContext('2d')!
   tmpCtx.font = BAR_LEGEND_FONT
-  const maxTextWidth = items.reduce((m, item) => Math.max(m, tmpCtx.measureText(item.name).width), 0)
+  const maxTextWidth = wrappedItems.reduce(
+    (m, item) => item.lines.reduce((lineMax, line) => Math.max(lineMax, tmpCtx.measureText(line).width), m),
+    0
+  )
+  const totalLines = wrappedItems.reduce((n, item) => n + item.lines.length, 0)
 
   const canvasWidth = Math.ceil(BAR_LEGEND_PADDING * 2 + BAR_LEGEND_BOX_SIZE + BAR_LEGEND_BOX_TEXT_GAP + maxTextWidth)
-  const canvasHeight = Math.ceil(
-    BAR_LEGEND_PADDING * 2 + items.length * BAR_LEGEND_ITEM_HEIGHT - BAR_LEGEND_ITEM_MARGIN
-  )
+  const canvasHeight = Math.ceil(BAR_LEGEND_PADDING * 2 + totalLines * BAR_LEGEND_ITEM_HEIGHT - BAR_LEGEND_ITEM_MARGIN)
 
   const canvas = document.createElement('canvas')
   canvas.width = canvasWidth
@@ -134,9 +153,9 @@ const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
   ctx.font = BAR_LEGEND_FONT
 
-  items.forEach((item, i) => {
-    const y = BAR_LEGEND_PADDING + i * BAR_LEGEND_ITEM_HEIGHT
-
+  let y = BAR_LEGEND_PADDING
+  wrappedItems.forEach(item => {
+    // Swatch is drawn once, aligned with the first line of the entry.
     ctx.save()
     ctx.globalAlpha = item.opacity
 
@@ -157,11 +176,15 @@ const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
     ctx.restore()
 
     ctx.fillStyle = BAR_LEGEND_TEXT_COLOR
-    ctx.fillText(
-      item.name,
-      BAR_LEGEND_PADDING + BAR_LEGEND_BOX_SIZE + BAR_LEGEND_BOX_TEXT_GAP,
-      y + BAR_LEGEND_BOX_SIZE - 1
-    )
+    item.lines.forEach((line, li) => {
+      ctx.fillText(
+        line,
+        BAR_LEGEND_PADDING + BAR_LEGEND_BOX_SIZE + BAR_LEGEND_BOX_TEXT_GAP,
+        y + li * BAR_LEGEND_ITEM_HEIGHT + BAR_LEGEND_BOX_SIZE - 1
+      )
+    })
+
+    y += item.lines.length * BAR_LEGEND_ITEM_HEIGHT
   })
 
   return canvas
@@ -226,6 +249,45 @@ export const canvasWrapper = (ctx, text, maxWidth) => {
   }
   lines.push(currentLine)
   return lines
+}
+
+/**
+ * Wraps `text` onto multiple lines so no line exceeds `maxChars` characters.
+ * Breaks on spaces where possible; a single word longer than `maxChars` is
+ * hard-broken so it never overflows the line.
+ */
+export const wrapTextByChars = (text: string, maxChars: number): string[] => {
+  if (!text) return ['']
+  const words = text.split(' ')
+  const lines: string[] = []
+  let currentLine = ''
+
+  for (const word of words) {
+    // Hard-break a single word that is longer than the limit on its own.
+    if (word.length > maxChars) {
+      if (currentLine) {
+        lines.push(currentLine)
+        currentLine = ''
+      }
+      let remaining = word
+      while (remaining.length > maxChars) {
+        lines.push(remaining.slice(0, maxChars))
+        remaining = remaining.slice(maxChars)
+      }
+      currentLine = remaining
+      continue
+    }
+
+    const candidate = currentLine ? `${currentLine} ${word}` : word
+    if (candidate.length > maxChars) {
+      lines.push(currentLine)
+      currentLine = word
+    } else {
+      currentLine = candidate
+    }
+  }
+  if (currentLine) lines.push(currentLine)
+  return lines.length ? lines : ['']
 }
 
 const cropCanvas = (canvas, width, height, y = 0, x = 0) => {
@@ -385,15 +447,21 @@ export const createChartCanvas = (
   //Size the canvas to the scaled chart to reduce excessive margin
   let renderWidth = targetWidth
   let renderHeight = targetHeight
+  // Extend the exported area for bar/column charts so slanted x-axis tick labels that
+  // overflow the plot to the right/bottom are not clipped (see CHART_EXPORT_PAD_* above).
+  let viewBoxWidth = svgNativeW
+  let viewBoxHeight = svgNativeH
   if (isBarChart) {
-    const scale = Math.min(targetWidth / svgNativeW, targetHeight / svgNativeH)
-    renderWidth = Math.round(svgNativeW * scale)
-    renderHeight = Math.round(svgNativeH * scale)
+    viewBoxWidth = svgNativeW + CHART_EXPORT_PAD_RIGHT
+    viewBoxHeight = svgNativeH + CHART_EXPORT_PAD_BOTTOM
+    const scale = Math.min(targetWidth / viewBoxWidth, targetHeight / viewBoxHeight)
+    renderWidth = Math.round(viewBoxWidth * scale)
+    renderHeight = Math.round(viewBoxHeight * scale)
   }
 
   svgClone.setAttribute('width', renderWidth.toString())
   svgClone.setAttribute('height', renderHeight.toString())
-  svgClone.setAttribute('viewBox', `0 0 ${svgNativeW} ${svgNativeH}`)
+  svgClone.setAttribute('viewBox', `0 0 ${viewBoxWidth} ${viewBoxHeight}`)
 
   if (isKm) {
     svgClone.setAttribute('class', 'MriPaKaplan')
