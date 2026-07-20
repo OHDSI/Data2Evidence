@@ -3,13 +3,14 @@ from re import compile
 from _shared_flow_utils.dao.DBDao import DBDao
 from _shared_flow_utils.types import InternalPluginType
 
-OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi"]
+OMOP_DATA_MODELS = ["omop", "omop5-4", "custom-omop-ms", "custom-omop-ms-phi", "waveform"]
 
 DATAMODEL_CDM_VERSION = {
     "omop": "5.3",
     "omop5-4": "5.4",
     "custom-omop-ms": "5.3",
-    "custom-omop-ms-phi": "5.3"
+    "custom-omop-ms-phi": "5.3",
+    "waveform": "5.4"
 }
 
 CHANGESET_AVAILABLE_REGEX = compile(r"db/migrations/\S+")
