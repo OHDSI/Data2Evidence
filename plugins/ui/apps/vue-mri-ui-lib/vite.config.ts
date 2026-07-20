@@ -44,6 +44,10 @@ export default defineConfig(({ command, mode }) => {
       const path = url.split('?')[0] || ''
       const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
 
+      if (/^\/plugins\/[^/]+\/devx-api\/apps\/[^/]+\/proxy(\/|$)/.test(path)) {
+        return url
+      }
+
       if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
         return url
       }

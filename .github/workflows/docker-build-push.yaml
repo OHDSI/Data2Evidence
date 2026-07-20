@@ -119,6 +119,7 @@ jobs:
               - "plugins/atlas/**"
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
+              - "plugins/sibyl_functions/**"
               - "services/trex/ext/**"
               - ".github/workflows/docker-build-push.yaml"
             http_tests:
@@ -301,6 +302,9 @@ jobs:
           - PKGPATH: ./plugins/fhir_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
             RUNNER: ubuntu-24.04
+          - PKGPATH: ./plugins/sibyl_functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/sibyl
+            RUNNER: ubuntu-24.04
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
       NPM_ARTIFACT_TYPE: OSS-develop
@@ -357,6 +361,36 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Atlas3 sub-plugins (network/notebook-plugin/results-viewer/strategus/studies) live
+      # in the trex-notebook submodule at plugins/atlas/trex-notebook and are unpublished;
+      # build them from source so plugins/atlas's file: deps resolve during its
+      # install/postinstall. This is a second checkout of trex-notebook, pinned to the
+      # restructured monorepo; plugins/ui/libs/react-notebook stays on the older
+      # single-package commit that the portal's webr-notebook builds against.
+      - name: Build Atlas sub-plugins (trex-notebook submodule)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # results-viewer's shinylive export (scripts/build-atlas.sh) needs a full R +
+          # renv toolchain — renv.lock pins 132 packages, several with compiled deps
+          # (V8, Rcpp, RSQLite), which is too heavy/slow to provision on this shared,
+          # already disk-constrained matrix runner. Skip it here rather than flake the
+          # whole build_plugins job; SKIP_SHINYLIVE is the same escape hatch
+          # scripts/build-atlas.sh honors locally. Until a dedicated R-provisioned
+          # runner/step exists, the shinylive bundle (and thus
+          # /atlas/plugins/results-viewer/shinylive/) is absent from CI-built images.
+          SKIP_SHINYLIVE: "1"
+        run: |
+          SUB=plugins/atlas/trex-notebook/plugins
+          # notebook-plugin bundles the notebook app's source, which imports webr.
+          ( cd "$SUB/notebook" && npm install )
+          # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
+          for p in network notebook-plugin results-viewer strategus studies; do
+            ( cd "$SUB/$p" && npm install \
+              && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
+          done
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
       # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
@@ -525,7 +559,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.13.gf78fcae
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
