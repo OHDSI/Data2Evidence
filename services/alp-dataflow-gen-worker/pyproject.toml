@@ -1,0 +1,23 @@
+[project]
+name = "d2e-dataflow-worker"
+version = "0.1.0"
+description = "Prefect process worker for D2E flow plugins"
+requires-python = "==3.12.*"
+dependencies = [
+    "prefect[docker]==3.6.10",
+    # Undeclared prefect 3.6.x dependency: prefect/workers/base.py imports the
+    # importlib_metadata backport, which opentelemetry-api>=1.43 no longer
+    # provides transitively.
+    "importlib-metadata==8.7.0",
+    # fastapi 0.129+ router internals break prefect.server's PrefectRouter
+    # (ephemeral server, prefect_test_harness); 0.128.0 is what the
+    # prefecthq/prefect:3.6.10 image ships.
+    "fastapi==0.128.0",
+]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"

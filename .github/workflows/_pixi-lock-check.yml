@@ -1,0 +1,39 @@
+name: pixi-lock-check
+
+# Fails when a flow plugin's pyproject.toml changed without regenerating its
+# committed pixi.lock, and when a lock resolves any pypi sdist (flow envs must
+# stay binary-only: runtime provisioning never compiles Python packages; the
+# two known pure-python exceptions are allowlisted).
+on:
+  workflow_call: {}
+
+jobs:
+  lock-check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        manifest:
+          - plugins/flows/base
+          - plugins/flows/data_management
+          - plugins/flows/data_transformation
+          - plugins/flows/hades
+          - plugins/flows/i2b2
+          - plugins/flows/loyalty_score
+          - plugins/flows/search_embedding
+          - services/alp-dataflow-gen-worker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: prefix-dev/setup-pixi@v0.9.0
+        with:
+          pixi-version: v0.72.2
+          run-install: false
+      - name: Lockfile up to date
+        run: pixi lock --check --manifest-path ${{ matrix.manifest }}/pyproject.toml
+      - name: No compiled sdists in lock
+        run: |
+          if grep -E 'pypi: https.*\.tar\.gz' "${{ matrix.manifest }}/pixi.lock" \
+             | grep -vE 'lzstring-|pandasql-'; then
+            echo "::error::pypi sdist found in ${{ matrix.manifest }}/pixi.lock (envs must be binary-only)"
+            exit 1
+          fi
