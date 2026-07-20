@@ -59,9 +59,9 @@ describe('applyConstraintValue', () => {
     })
 
     it('rejects an unparseable numeric value', async () => {
-      await expect(
-        applyConstraintValue(dispatch, constraint({}, { type: 'num' }), 'abc')
-      ).rejects.toThrow('Invalid numeric value for Age')
+      await expect(applyConstraintValue(dispatch, constraint({}, { type: 'num' }), 'abc')).rejects.toThrow(
+        'Invalid numeric value for Age'
+      )
       expect(dispatch).not.toHaveBeenCalled()
     })
   })
@@ -152,9 +152,9 @@ describe('applyConstraintValue', () => {
     })
 
     it('rejects when no date value is present', async () => {
-      await expect(
-        applyConstraintValue(dispatch, constraint({}, { type: 'time' }), '')
-      ).rejects.toThrow('Missing date value for Age')
+      await expect(applyConstraintValue(dispatch, constraint({}, { type: 'time' }), '')).rejects.toThrow(
+        'Missing date value for Age'
+      )
       expect(dispatch).not.toHaveBeenCalled()
     })
   })
