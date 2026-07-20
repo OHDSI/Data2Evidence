@@ -15,6 +15,12 @@ const context: CdmSqlAuditContext = {
     requestMethod: "POST",
     requestPath: "/analytics-svc/api/services/population",
     correlationId: "correlation-2845",
+    requestQuery: {
+        mriquery: "encoded-mri-query",
+        datasetId: "dataset-2845",
+    },
+    requestParams: { service: "population" },
+    requestBody: { chartType: "bar" },
     databaseCode: "test-cdm",
     databaseDialect: "hana",
     databaseEngine: "hana",
@@ -30,6 +36,16 @@ Deno.test("createCdmSqlAuditContext captures request and database metadata", () 
                 headers: {
                     "x-req-correlation-id": ["correlation-2845"],
                 },
+                query: {
+                    mriquery: "encoded-mri-query",
+                    datasetId: "dataset-2845",
+                },
+                params: { service: "dataset-filter" },
+                body: {
+                    chartType: "bar",
+                    password: "must-be-redacted",
+                    nested: { access_token: "must-also-be-redacted" },
+                },
             },
             actorId: "test-user",
             databaseCode: "characterization-db",
@@ -42,6 +58,16 @@ Deno.test("createCdmSqlAuditContext captures request and database metadata", () 
             requestMethod: "GET",
             requestPath: "/analytics-svc/api/dataset-filter",
             correlationId: "correlation-2845",
+            requestQuery: {
+                mriquery: "encoded-mri-query",
+                datasetId: "dataset-2845",
+            },
+            requestParams: { service: "dataset-filter" },
+            requestBody: {
+                chartType: "bar",
+                password: "[REDACTED]",
+                nested: { access_token: "[REDACTED]" },
+            },
             databaseCode: "characterization-db",
             databaseDialect: "postgresql",
             databaseEngine: "postgresql",
@@ -223,6 +249,12 @@ Deno.test("audited connection writes one successful event per SQL call", async (
             method: "POST",
             path: "/analytics-svc/api/services/population",
             correlationId: "correlation-2845",
+            query: {
+                mriquery: "encoded-mri-query",
+                datasetId: "dataset-2845",
+            },
+            params: { service: "population" },
+            body: { chartType: "bar" },
         });
         assert.deepEqual(event.database, {
             engine: "hana",

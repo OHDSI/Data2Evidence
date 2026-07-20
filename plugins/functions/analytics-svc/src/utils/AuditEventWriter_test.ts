@@ -1,10 +1,56 @@
 import assert from "node:assert/strict";
+import { env } from "../env.ts";
 import {
     AUDIT_LOG_DIRECTORY,
+    ConsoleAuditEventWriter,
+    createAuditEventWriter,
     createPatientAccessAuditTransport,
     NdjsonAuditEventWriter,
     PATIENT_ACCESS_AUDIT_FILE,
 } from "./AuditEventWriter.ts";
+
+Deno.test("audit output defaults to file and can switch to console", () => {
+    const previousFlag = env.AUDIT_LOG_TO_CONSOLE;
+
+    try {
+        env.AUDIT_LOG_TO_CONSOLE = undefined;
+        assert.equal(
+            createAuditEventWriter() instanceof NdjsonAuditEventWriter,
+            true
+        );
+
+        env.AUDIT_LOG_TO_CONSOLE = "false";
+        assert.equal(
+            createAuditEventWriter() instanceof NdjsonAuditEventWriter,
+            true
+        );
+
+        env.AUDIT_LOG_TO_CONSOLE = "true";
+        assert.equal(
+            createAuditEventWriter() instanceof ConsoleAuditEventWriter,
+            true
+        );
+    } finally {
+        env.AUDIT_LOG_TO_CONSOLE = previousFlag;
+    }
+});
+
+Deno.test("console audit writer emits one JSON line", async () => {
+    const originalConsoleInfo = console.info;
+    const calls: unknown[][] = [];
+    console.info = (...args: unknown[]) => calls.push(args);
+
+    try {
+        await new ConsoleAuditEventWriter().append("ignored.ndjson", {
+            eventType: "cdm.sql",
+            sql: "SELECT 1",
+        });
+
+        assert.deepEqual(calls, [['{"eventType":"cdm.sql","sql":"SELECT 1"}']]);
+    } finally {
+        console.info = originalConsoleInfo;
+    }
+});
 
 Deno.test("default writer ignores audit directory environment overrides", () => {
     const previousDirectory = Deno.env.get("AUDIT_LOG_DIRECTORY");

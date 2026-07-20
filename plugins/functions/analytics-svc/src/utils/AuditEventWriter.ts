@@ -1,3 +1,5 @@
+import { env } from "../env.ts";
+
 export const AUDIT_LOG_DIRECTORY = "/var/log/d2e/audit";
 export const PATIENT_ACCESS_AUDIT_FILE = "patient-access.ndjson";
 export const CDM_SQL_AUDIT_FILE = "cdm-sql-access.ndjson";
@@ -67,8 +69,21 @@ export class NdjsonAuditEventWriter implements AuditEventWriter {
     }
 }
 
+export class ConsoleAuditEventWriter implements AuditEventWriter {
+    public append(_fileName: string, event: AuditEvent): Promise<void> {
+        console.info(JSON.stringify(event));
+        return Promise.resolve();
+    }
+}
+
+export function createAuditEventWriter(): AuditEventWriter {
+    return env.AUDIT_LOG_TO_CONSOLE?.toLowerCase() === "true"
+        ? new ConsoleAuditEventWriter()
+        : new NdjsonAuditEventWriter();
+}
+
 export function createPatientAccessAuditTransport(
-    writer: AuditEventWriter = new NdjsonAuditEventWriter()
+    writer: AuditEventWriter = createAuditEventWriter()
 ): AuditTransport {
     return {
         async audit(message: unknown, user: string): Promise<void> {

@@ -3,7 +3,7 @@ import { env } from "../env.ts";
 import {
     CDM_SQL_AUDIT_FILE,
     type AuditEventWriter,
-    NdjsonAuditEventWriter,
+    createAuditEventWriter,
 } from "./AuditEventWriter.ts";
 
 const SQL_METHODS = new Set([
@@ -21,6 +21,9 @@ export type CdmSqlAuditContext = {
     requestMethod: string;
     requestPath: string;
     correlationId?: string;
+    requestQuery?: unknown;
+    requestParams?: unknown;
+    requestBody?: unknown;
     databaseCode?: string;
     databaseDialect?: string;
     databaseEngine: "hana" | "duckdb" | "postgresql";
@@ -58,6 +61,65 @@ type ExecuteWithCdmSqlAuditOptions<T> = {
     execute: () => T | Promise<T>;
     recorder?: CdmSqlAuditRecorder;
 };
+
+const SENSITIVE_REQUEST_FIELDS = new Set([
+    "authorization",
+    "cookie",
+    "setcookie",
+    "password",
+    "secret",
+    "token",
+    "clientsecret",
+    "accesstoken",
+    "refreshtoken",
+    "idtoken",
+]);
+
+function snapshotRequestValue(
+    value: unknown,
+    seen = new WeakSet<object>()
+): unknown {
+    if (
+        value === null ||
+        value === undefined ||
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+    ) {
+        return value;
+    }
+    if (typeof value === "bigint") {
+        return String(value);
+    }
+    if (value instanceof Date) {
+        return value.toISOString();
+    }
+    if (typeof value !== "object") {
+        return String(value);
+    }
+    if (seen.has(value)) {
+        return "[Circular]";
+    }
+
+    seen.add(value);
+    if (Array.isArray(value)) {
+        const snapshot = value.map((entry) =>
+            snapshotRequestValue(entry, seen)
+        );
+        seen.delete(value);
+        return snapshot;
+    }
+
+    const snapshot: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value)) {
+        const normalizedKey = key.toLowerCase().replace(/[-_]/g, "");
+        snapshot[key] = SENSITIVE_REQUEST_FIELDS.has(normalizedKey)
+            ? "[REDACTED]"
+            : snapshotRequestValue(entry, seen);
+    }
+    seen.delete(value);
+    return snapshot;
+}
 
 function getErrorDetails(error: unknown): Record<string, string> | undefined {
     if (!error || typeof error !== "object") {
@@ -113,6 +175,9 @@ export function createCdmSqlAuditContext({
                 ? requestObject.originalUrl
                 : "unknown",
         correlationId,
+        requestQuery: snapshotRequestValue(requestObject.query),
+        requestParams: snapshotRequestValue(requestObject.params),
+        requestBody: snapshotRequestValue(requestObject.body),
         databaseCode,
         databaseDialect,
         databaseEngine,
@@ -337,7 +402,7 @@ async function sha256(value: string): Promise<string> {
 export class CdmSqlAuditLogger implements CdmSqlAuditRecorder {
     public constructor(
         private readonly context: CdmSqlAuditContext,
-        private readonly writer: AuditEventWriter = new NdjsonAuditEventWriter()
+        private readonly writer: AuditEventWriter = createAuditEventWriter()
     ) {}
 
     public static isEnabled(): boolean {
@@ -364,6 +429,9 @@ export class CdmSqlAuditLogger implements CdmSqlAuditRecorder {
                     method: this.context.requestMethod,
                     path: this.context.requestPath,
                     correlationId: this.context.correlationId,
+                    query: this.context.requestQuery,
+                    params: this.context.requestParams,
+                    body: this.context.requestBody,
                 },
                 database: {
                     engine: this.context.databaseEngine,
