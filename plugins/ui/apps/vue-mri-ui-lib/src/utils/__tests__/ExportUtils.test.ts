@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG, wrapTextByChars } from '../ExportUtils'
+import { buildXAxisTitle, INTERACTIVE_SELECTORS, stripInteractiveSVG, wrapTextByWidth } from '../ExportUtils'
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 
@@ -126,35 +126,51 @@ describe('buildXAxisTitle', () => {
   })
 })
 
-describe('wrapTextByChars', () => {
+describe('wrapTextByWidth', () => {
+  // Stub context whose measured width equals the string's character count, so
+  // `maxWidth` behaves like a character limit and the assertions read naturally.
+  const charWidthCtx = {
+    measureText: (s: string) => ({ width: s.length }),
+  } as unknown as CanvasRenderingContext2D
+
   it('keeps short text on a single line', () => {
-    expect(wrapTextByChars('Short label', 80)).toEqual(['Short label'])
+    expect(wrapTextByWidth(charWidthCtx, 'Short label', 80)).toEqual(['Short label'])
   })
 
-  it('wraps on word boundaries so no line exceeds the limit', () => {
-    const lines = wrapTextByChars('one two three four five', 8)
+  it('wraps on word boundaries so no line exceeds the width', () => {
+    const lines = wrapTextByWidth(charWidthCtx, 'one two three four five', 8)
     expect(lines).toEqual(['one two', 'three', 'four', 'five'])
     lines.forEach(line => expect(line.length).toBeLessThanOrEqual(8))
   })
 
-  it('wraps a long label at 80 characters', () => {
+  it('wraps a long label at the given width', () => {
     const text = 'a '.repeat(60).trim() // 60 single-char words → 119 chars total
-    const lines = wrapTextByChars(text, 80)
+    const lines = wrapTextByWidth(charWidthCtx, text, 80)
     expect(lines.length).toBeGreaterThan(1)
     lines.forEach(line => expect(line.length).toBeLessThanOrEqual(80))
   })
 
-  it('hard-breaks a single word longer than the limit', () => {
-    const lines = wrapTextByChars('x'.repeat(25), 10)
+  it('hard-breaks a single word wider than the limit', () => {
+    const lines = wrapTextByWidth(charWidthCtx, 'x'.repeat(25), 10)
     expect(lines).toEqual(['xxxxxxxxxx', 'xxxxxxxxxx', 'xxxxx'])
   })
 
-  it('hard-breaks a long word while preserving surrounding words', () => {
-    const lines = wrapTextByChars(`start ${'y'.repeat(12)} end`, 10)
+  it('hard-breaks a wide word while preserving surrounding words', () => {
+    const lines = wrapTextByWidth(charWidthCtx, `start ${'y'.repeat(12)} end`, 10)
     expect(lines).toEqual(['start', 'yyyyyyyyyy', 'yy end'])
   })
 
   it('returns a single empty line for empty input', () => {
-    expect(wrapTextByChars('', 80)).toEqual([''])
+    expect(wrapTextByWidth(charWidthCtx, '', 80)).toEqual([''])
+  })
+
+  it('measures rendered width, not character count', () => {
+    // Each glyph is 2px wide here, so a 10px limit fits at most 5 characters.
+    const wideCtx = {
+      measureText: (s: string) => ({ width: s.length * 2 }),
+    } as unknown as CanvasRenderingContext2D
+    const lines = wrapTextByWidth(wideCtx, 'aaa bbb ccc', 10)
+    expect(lines).toEqual(['aaa', 'bbb', 'ccc'])
+    lines.forEach(line => expect(line.length * 2).toBeLessThanOrEqual(10))
   })
 })

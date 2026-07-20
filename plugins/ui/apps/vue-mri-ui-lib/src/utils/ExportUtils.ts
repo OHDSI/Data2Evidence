@@ -27,7 +27,7 @@ const BAR_LEGEND_TEXT_COLOR = '#000080'
 const BAR_LEGEND_FONT = '12px Arial'
 const BAR_LEGEND_DEFAULT_COLOR = '#cccccc'
 const BAR_LEGEND_DEFAULT_BORDER = 'transparent'
-const BAR_LEGEND_WRAP_CHARS = 40
+const BAR_LEGEND_MAX_TEXT_WIDTH = 240 // Max legend-name width in px before wrapping to a new line.
 
 const X_AXIS_TITLE_FONT = '13px Arial'
 const X_AXIS_TITLE_COLOR = '#000080'
@@ -120,16 +120,18 @@ const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
  * Creates a canvas containing the bar/column chart legend (coloured swatches + names).
  */
 const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
-  // Wrap long names onto multiple lines so the full text is shown (never truncated).
-  const wrappedItems = items.map(item => ({
-    ...item,
-    lines: wrapTextByChars(item.name, BAR_LEGEND_WRAP_CHARS),
-  }))
-
-  // Measure text widths to size the canvas correctly.
+  // Measuring context: its font must match the draw font so wrap widths and canvas
+  // sizing agree.
   const tmpCanvas = document.createElement('canvas')
   const tmpCtx = tmpCanvas.getContext('2d')!
   tmpCtx.font = BAR_LEGEND_FONT
+
+  // Wrap long names by rendered pixel width so the full text is shown (never truncated).
+  const wrappedItems = items.map(item => ({
+    ...item,
+    lines: wrapTextByWidth(tmpCtx, item.name, BAR_LEGEND_MAX_TEXT_WIDTH),
+  }))
+
   const maxTextWidth = wrappedItems.reduce(
     (m, item) => item.lines.reduce((lineMax, line) => Math.max(lineMax, tmpCtx.measureText(line).width), m),
     0
@@ -188,10 +190,7 @@ const createBarLegendCanvas = (items: IBarLegendItem[]): HTMLCanvasElement => {
 const duplicateStyle = (element, style, km: boolean) => {
   const colorConstOpacity = Constants.PDFColorConstOpacity
 
-  element.style.fill = style.fill
-  if (style.fill === 'rgba(0,0,0,0)') {
-    element.style.fill = 'transparent'
-  }
+  element.style.fill = style.fill === 'rgba(0,0,0,0)' ? 'transparent' : style.fill
   element.style.stroke = style.stroke
   element.style.strokeStyle = style.strokeStyle
   element.style.display = style.display
@@ -247,34 +246,40 @@ export const canvasWrapper = (ctx, text, maxWidth) => {
 }
 
 /**
- * Wraps `text` onto multiple lines so no line exceeds `maxChars` characters.
- * Breaks on spaces where possible; a single word longer than `maxChars` is
- * hard-broken so it never overflows the line.
+ * Wraps `text` onto multiple lines so no line's rendered width exceeds `maxWidth`
+ * pixels, measured with `ctx`'s current font. Breaks on spaces where possible; a
+ * single word wider than `maxWidth` is hard-broken character-by-character so it never
+ * overflows.
  */
-export const wrapTextByChars = (text: string, maxChars: number): string[] => {
+export const wrapTextByWidth = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] => {
   if (!text) return ['']
+  const fits = (s: string) => ctx.measureText(s).width <= maxWidth
   const words = text.split(' ')
   const lines: string[] = []
   let currentLine = ''
 
   for (const word of words) {
-    // Hard-break a single word that is longer than the limit on its own.
-    if (word.length > maxChars) {
+    // Hard-break a single word that is too wide to fit on a line by itself.
+    if (!fits(word)) {
       if (currentLine) {
         lines.push(currentLine)
         currentLine = ''
       }
-      let remaining = word
-      while (remaining.length > maxChars) {
-        lines.push(remaining.slice(0, maxChars))
-        remaining = remaining.slice(maxChars)
+      let chunk = ''
+      for (const ch of word) {
+        // Keep at least one char per line so an over-wide glyph can't loop forever.
+        if (chunk && !fits(chunk + ch)) {
+          lines.push(chunk)
+          chunk = ''
+        }
+        chunk += ch
       }
-      currentLine = remaining
+      currentLine = chunk
       continue
     }
 
     const candidate = currentLine ? `${currentLine} ${word}` : word
-    if (candidate.length > maxChars) {
+    if (!fits(candidate)) {
       lines.push(currentLine)
       currentLine = word
     } else {
@@ -285,13 +290,13 @@ export const wrapTextByChars = (text: string, maxChars: number): string[] => {
   return lines.length ? lines : ['']
 }
 
-const cropCanvas = (canvas, width, height, y = 0, x = 0) => {
+const cropCanvas = (canvas, width, height, dx = 0, dy = 0) => {
   const croppedCanvas = document.createElement('canvas')
   croppedCanvas.width = width
   croppedCanvas.height = height
 
   const context = croppedCanvas.getContext('2d')
-  context.drawImage(canvas, y, x, canvas.width, canvas.height)
+  context.drawImage(canvas, dx, dy, canvas.width, canvas.height)
   return croppedCanvas
 }
 
@@ -319,11 +324,32 @@ const combineCanvas = (canvasA: HTMLCanvasElement, canvasB: HTMLCanvasElement, o
     },
   ]
   canvasList.forEach(n => {
-    combinedContext.beginPath()
     combinedContext.drawImage(n.canvas, n.x, 0, n.width, n.height)
   })
 
   return combinedCanvas
+}
+
+/**
+ * Draws each entry of `lines` left-aligned at `x`, advancing the running y-cursor by
+ * `lineHeight` before every line after the first, and returns the final cursor value.
+ * `textOffset` is added to each line's baseline. Callers thread the return value back
+ * into their own `baseY` cursor.
+ */
+const drawWrappedLines = (
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  baseY: number,
+  lineHeight: number,
+  textOffset = 0
+): number => {
+  let y = baseY
+  lines.forEach((line, i) => {
+    if (i > 0) y += lineHeight
+    ctx.fillText(line, x, y + textOffset)
+  })
+  return y
 }
 
 export const createKmLegendCanvas = (pdfConst: any, kmLegendInput: IKmLegendInput) => {
@@ -357,12 +383,7 @@ export const createKmLegendCanvas = (pdfConst: any, kmLegendInput: IKmLegendInpu
 
   let wrappedText = canvasWrapper(ctx, kmTitle, pdfConst.kmLegendWidth * mm - kmLegendRowHeight)
 
-  for (let i = 0; i < wrappedText.length; i += 1) {
-    if (i > 0) {
-      baseY += pdfConst.kmLegendBox
-    }
-    ctx.fillText(wrappedText[i], 0, baseY + pdfConst.kmLegendBox)
-  }
+  baseY = drawWrappedLines(ctx, wrappedText, 0, baseY, pdfConst.kmLegendBox, pdfConst.kmLegendBox)
   ctx.font = pdfConst.kmLegendFont
 
   const kmLegendData = kmLegendInput.data
@@ -379,12 +400,14 @@ export const createKmLegendCanvas = (pdfConst: any, kmLegendInput: IKmLegendInpu
     ctx.fillStyle = pdfConst.kmLegendColor
     ctx.font = pdfConst.kmLegendFont
 
-    for (let ii = 0; ii < wrappedText.length; ii += 1) {
-      if (ii > 0) {
-        baseY += pdfConst.kmLegendBox
-      }
-      ctx.fillText(wrappedText[ii], kmLegendRowHeight, baseY + pdfConst.kmLegendBox - pdfConst.kmLegendTextMargin)
-    }
+    baseY = drawWrappedLines(
+      ctx,
+      wrappedText,
+      kmLegendRowHeight,
+      baseY,
+      pdfConst.kmLegendBox,
+      pdfConst.kmLegendBox - pdfConst.kmLegendTextMargin
+    )
   }
 
   return cropCanvas(tmpLegendCanvas, tmpLegendCanvas.width, baseY + kmLegendRowHeight)
