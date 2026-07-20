@@ -1,7 +1,7 @@
 import { env } from "./env";
 import { BlockType, DBCredentials, PrefectVariable, PrefectSecret, transformDBCredentials } from "./types";
 import { PrefectAPI } from "./PrefectAPI";
-import { customDockerWorkpool } from "./customWorkpool";
+import { customDockerWorkpool, customProcessWorkpool } from "./customWorkpool";
 
 export async function seed(): Promise<void> {
   let prefectApi = new PrefectAPI();
@@ -67,9 +67,10 @@ export async function seed(): Promise<void> {
     BlockType.RFS
   );
 
-  // apply custom workpool template
+  // apply custom workpool template (selected by WORKPOOL_TYPE; "docker" is the
+  // legacy/rollback path)
   const result = await prefectApi.updateWorkPool(
     env.WORKPOOL_NAME,
-    customDockerWorkpool
+    env.WORKPOOL_TYPE === "process" ? customProcessWorkpool : customDockerWorkpool
   );
 }

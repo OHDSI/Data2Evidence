@@ -218,6 +218,10 @@ class D2ECli {
       TREX__SQL__PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
       )}`,
+      // Root encryption key for trex's KEK/DEK wrapping and JWT signing. The
+      // trexsql entrypoint refuses to start without it (must be valid base64 of
+      // >=32 bytes, i.e. >=40 chars); 32 random bytes -> 44-char base64.
+      TREX_ROOT_KEY: crypto.randomBytes(32).toString("base64"),
       JASYPT_ENCRYPTOR_ENABLED: `true`,
       JASYPT_ENCRYPTOR_PASSWORD: `${this.generate_random_password(
         this.DEFAULT_PASSWORD_LENGTH,
@@ -986,12 +990,10 @@ class D2ECli {
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
-        await this.pull_image("d2e/flow-base", this.DOCKER_TAG_NAME);
+        // Flow runs execute on the pixi process worker (its image is part of
+        // the compose pull); the legacy per-group flow images are retired.
         if (options.jupyter) {
           await this.pull_image("d2e-r-ohdsi-kernel", this.DOCKER_TAG_NAME);
-        }
-        if (options.hades) {
-          await this.pull_image("d2e/flow-hades", this.DOCKER_TAG_NAME);
         }
         const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
@@ -1005,6 +1007,7 @@ class D2ECli {
             console.log("Process completed successfully.");
           } else {
             console.log(`Process exited with code ${code}`);
+            process.exitCode = code ?? 1;
           }
         });
       });

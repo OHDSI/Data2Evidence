@@ -471,6 +471,13 @@ export const i18nDefault = {
     DEMO_SETUP__SETUP_DEMO_DESCRIPTION: "Initialize system",
     DEMO_SETUP__SETUP_DEMO_TITLE: "Demo setup",
     DEMO_SETUP__SETUP_PHENOTYPE_DESCRIPTION: "Run standalone phenotype flow",
+    MIGRATE_USER_ARTIFACTS__TITLE: "Migrate user artifacts",
+    MIGRATE_USER_ARTIFACTS__DESCRIPTION: "Migrate user artifacts to webapi",
+    MIGRATE_USER_ARTIFACTS__ITEM_NAME: "Migrate atlas cohort definitions",
+    MIGRATE_USER_ARTIFACTS__RUN: "Migrate",
+    MIGRATE_USER_ARTIFACTS__NO_ITEMS: "No atlas cohort definitions user artifacts to migrate",
+    MIGRATE_USER_ARTIFACTS__SUCCESS: "Successfully migrated {0}/{1} atlas cohort definitions",
+    MIGRATE_USER_ARTIFACTS__ERROR: "Migration failed.",
     DISCLAIMER_DIALOG_DIALOG__DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     DISCLAIMER_DIALOG_DIALOG__ERROR: "An error has occurred.",
@@ -605,6 +612,7 @@ export const i18nDefault = {
     EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
+    FEATURE__AI_ASSISTANT: "AI assistant",
     FEATURE__CDM_DOWNLOAD: "CDM download",
     FEATURE__CONCEPT_RECORD_COUNTS: "Concept record counts",
     FLOW_RUN_NOTIFICATION_DIALOG__CLOSE: "Close",

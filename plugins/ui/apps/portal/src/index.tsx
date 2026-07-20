@@ -1,10 +1,10 @@
 import "@fontsource-variable/ibm-plex-sans";
 import React, { StrictMode } from "react";
 import * as ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { App } from "./App";
 import { theme } from "./theme";
+import { NavigationGuardRouter } from "./components/NavigationGuardRouter/NavigationGuardRouter";
 import { extractDeepLinkParamsFromUrl, saveDeepLinkParams } from "./utils/deepLinkStorage";
 import "./webcomponents/registerWebComponents";
 import "./index.scss";
@@ -27,11 +27,11 @@ try {
 const root = ReactDOM.createRoot(document.getElementById("root") as HTMLElement);
 root.render(
   <StrictMode>
-    <BrowserRouter basename="/d2e/portal">
+    <NavigationGuardRouter basename="/d2e/portal">
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <App />
       </ThemeProvider>
-    </BrowserRouter>
+    </NavigationGuardRouter>
   </StrictMode>
 );

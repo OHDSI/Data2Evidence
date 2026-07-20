@@ -209,6 +209,9 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await page.getByRole('cell', { name: 'Person id' }).locator('span').nth(1).click()
   await page.getByText('Sort Ascending').click()
+  // Sorting re-fetches the patient list; wait for the loader to clear before the
+  // screenshot, otherwise it captures the faded, still-loading (unsorted) table.
+  await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   await expect(page).toHaveScreenshot()
 
   // Export to ZIP file
