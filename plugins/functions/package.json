@@ -576,7 +576,9 @@
           "DATABASE_CREDENTIALS": "{}",
           "D2E_MEMORY_LIMIT": "${D2E_MEMORY_LIMIT:-16G}",
           "D2E_SWAP_LIMIT": "${D2E_SWAP_LIMIT:-64G}",
-          "WORKPOOL_NAME": "docker-pool",
+          "WORKPOOL_NAME": "${PREFECT_POOL:-process-pool}",
+          "WORKPOOL_TYPE": "${WORKPOOL_TYPE:-process}",
+          "DEFAULT_FLOW_COMMAND": "${DEFAULT_FLOW_COMMAND:-/app/run-flow.sh d2e-flows}",
           "PG_ADMIN_PASSWORD": "${PG_ADMIN_PASSWORD}",
           "PG_ADMIN_USER": "${PG_ADMIN_USER:-alp_pg_admin_user}",
           "PERSEUS__FILES_MANAGER_HOST": "${PERSEUS__FILES_MANAGER_HOST:-trex}",
@@ -798,7 +800,8 @@
           "strategus.results.admin.upload",
           "strategus.results.admin.delete",
           "mlflow",
-          "d2e.container.logs.read"
+          "d2e.container.logs.read",
+          "d2e.webapi.admin"
         ],
         "ALP_DASHBOARD_VIEWER": [],
         "TENANT_VIEWER": [
@@ -2985,6 +2988,12 @@
           "httpMethods": [
             "POST",
             "GET"
+          ]
+        },
+        {
+          "path": "^/d2e-webapi/migrate/cohortdefinition",
+          "scopes": [
+            "d2e.webapi.admin"
           ]
         },
         {

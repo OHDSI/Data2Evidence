@@ -7,6 +7,7 @@ d4l-button {
 }
 
 .theme-d2e {
+  --color-primary: #000080;
   --color-ui-medium-border-rgb: 204, 204, 204;
   --color-mri-brand: var(--color-primary, #000080);
   --color-mri-brand-selected: none;
@@ -313,4 +314,3 @@ d4l-button {
   --color-cardinality-at-most: var(--color-secondary);
   --color-cardinality-exactly: var(--color-black);
 }
-

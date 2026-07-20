@@ -15,7 +15,7 @@ export type IUserArtifactAtlasCohortDefinitionDto = z.infer<
 >;
 
 export const CohortDefinitionListResponseDto = z.array(
-  CombinedCohortDefinitionListSchema
+  CombinedCohortDefinitionListSchema,
 );
 export type ICohortDefinitionListResponseDto = z.infer<
   typeof CohortDefinitionListResponseDto
@@ -39,6 +39,54 @@ export const CohortDefinitionResponseDto = z.object({
 export const CohortDefinitionCreateResponseDto =
   CohortDefinitionResponseDto.omit({ modifiedDate: true, tags: true });
 
+const WebAPICohortUserDto = z.object({
+  name: z.string(),
+  id: z.number(),
+  login: z.string(),
+});
+
+const WebAPICohortTagDto = z.object({
+  name: z.string(),
+  id: z.number(),
+  hasWriteAccess: z.boolean(),
+  modifiedBy: WebAPICohortUserDto,
+  createdBy: WebAPICohortUserDto,
+  createdDate: z.string(),
+  modifiedDate: z.string(),
+  icon: z.string(),
+  permissionProtected: z.boolean(),
+  multiSelection: z.boolean(),
+  mandatory: z.boolean(),
+  type: z.enum(["SYSTEM", "CUSTOM", "PRIZM"]),
+  description: z.string(),
+  count: z.number(),
+  groups: z.array(z.unknown()),
+  color: z.string(),
+  showGroup: z.boolean(),
+  allowCustom: z.boolean(),
+});
+
+export const WebAPICohortDefinitionResponseDto = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string().nullish(),
+  hasWriteAccess: z.boolean().optional(),
+  tags: z.array(WebAPICohortTagDto).optional(),
+  expressionType: z.enum([
+    "SIMPLE_EXPRESSION",
+    "CUSTOM_SQL",
+    "EXTERNAL_SOURCED",
+  ]),
+  expression: CohortExpression,
+  modifiedBy: WebAPICohortUserDto.optional(),
+  createdBy: WebAPICohortUserDto,
+  createdDate: z.union([z.number(), z.string()]),
+  modifiedDate: z.union([z.number(), z.string()]).optional(),
+});
+export type IWebAPICohortDefinitionResponseDto = z.infer<
+  typeof WebAPICohortDefinitionResponseDto
+>;
+
 export const CohortDefinitionCopyResponseDto =
   CohortDefinitionCreateResponseDto.omit({ description: true });
 
@@ -57,7 +105,7 @@ export const CohortDefinitionIdVersionResponseDto = z.array(
     version: z.number(),
     archived: z.boolean(),
     createdDate: z.number(),
-  })
+  }),
 );
 
 export const CohortDefinitionIdInfoResponseDto = z.array(
@@ -72,7 +120,7 @@ export const CohortDefinitionIdInfoResponseDto = z.array(
     personCount: z.number().nullable(),
     recordCount: z.number().nullable(),
     createdBy: z.string().nullable(),
-  })
+  }),
 );
 export type ICohortDefinitionIdInfoResponseDto = z.infer<
   typeof CohortDefinitionIdInfoResponseDto
@@ -85,7 +133,7 @@ export const CohortDefinitionCheckV2ResponseDto = z.object({
       severity: z.string(),
       message: z.string(),
       conceptSetId: z.number().optional(),
-    })
+    }),
   ),
 });
 export type ICohortDefinitionCheckV2ResponseDto = z.infer<
