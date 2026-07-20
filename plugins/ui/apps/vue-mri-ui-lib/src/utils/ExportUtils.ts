@@ -353,9 +353,7 @@ export const INTERACTIVE_SELECTORS = [
  * Safe to call on axis-title subtrees: none of the selectors match g-xtitle / g-ytitle.
  */
 export const stripInteractiveSVG = (root: Element): void => {
-  INTERACTIVE_SELECTORS.forEach(sel =>
-    root.querySelectorAll(sel).forEach(el => el.parentNode?.removeChild(el))
-  )
+  INTERACTIVE_SELECTORS.forEach(sel => root.querySelectorAll(sel).forEach(el => el.parentNode?.removeChild(el)))
 }
 
 export const createChartCanvas = (
@@ -383,8 +381,18 @@ export const createChartCanvas = (
   const svgRect = svgItem.getBoundingClientRect()
   const svgNativeW = Math.round(svgRect.width) || targetWidth
   const svgNativeH = Math.round(svgRect.height) || targetHeight
-  svgClone.setAttribute('width', targetWidth.toString())
-  svgClone.setAttribute('height', targetHeight.toString())
+
+  //Size the canvas to the scaled chart to reduce excessive margin
+  let renderWidth = targetWidth
+  let renderHeight = targetHeight
+  if (isBarChart) {
+    const scale = Math.min(targetWidth / svgNativeW, targetHeight / svgNativeH)
+    renderWidth = Math.round(svgNativeW * scale)
+    renderHeight = Math.round(svgNativeH * scale)
+  }
+
+  svgClone.setAttribute('width', renderWidth.toString())
+  svgClone.setAttribute('height', renderHeight.toString())
   svgClone.setAttribute('viewBox', `0 0 ${svgNativeW} ${svgNativeH}`)
 
   if (isKm) {
@@ -421,8 +429,8 @@ export const createChartCanvas = (
   }
 
   const chartCanvas = document.createElement('canvas')
-  chartCanvas.height = targetHeight
-  chartCanvas.width = targetWidth
+  chartCanvas.height = renderHeight
+  chartCanvas.width = renderWidth
 
   let svgStr = serializer.serializeToString(svgClone)
 
