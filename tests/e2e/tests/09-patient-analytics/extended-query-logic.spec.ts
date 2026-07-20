@@ -97,10 +97,15 @@ test(TEST_NAME, async ({ page }) => {
   // Reload saved filter
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByRole('button', { name: 'Discard' }).click()
+  await page.getByRole('button', { name: 'Leave without saving' }).click()
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
   await page.getByText('Extended Logic Filter').click()
-  await page.getByRole('button', { name: 'Discard' }).click()
+  // The active cohort here is a fresh (clean) new cohort, so loading a saved filter no
+  // longer prompts the unsaved-changes dialog (#2636). Dismiss it only if it appears.
+  await page
+    .getByRole('button', { name: 'Leave without saving' })
+    .click({ timeout: 3000 })
+    .catch(() => {})
   await expect(page.locator('.loading-animation-component')).not.toBeVisible()
   // await expect(page).toHaveScreenshot()
 

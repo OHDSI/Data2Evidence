@@ -93,11 +93,12 @@ if (existsSync(assetsDir)) {
   // d2e landing-page image: Atlas3's landing hero is a hardcoded asset
   // (`const A = new URL("atlas-loading-<hash>.svg", import.meta.url)` rendered as
   // <img class="landing__logo">) — there is NO landing-image theme option (only
-  // logoUrl). Repoint just the LandingView reference to the d2e brand image served
-  // at /atlas/config/d2e2.svg (../config/ resolves from the assets/ module dir),
-  // leaving the shared loading-screen graphic untouched. Version-specific: the
-  // hashed filenames change on @ohdsi/atlas3 bumps, so re-verify after upgrades.
-  const LANDING_IMAGE = '../config/d2e2.svg';
+  // logoUrl). Repoint just the LandingView reference to the d2e portal landing
+  // illustration served at /atlas/config/landing-page-illustration.svg (../config/
+  // resolves from the assets/ module dir), leaving the shared loading-screen graphic
+  // untouched. Version-specific: the hashed filenames change on @ohdsi/atlas3 bumps,
+  // so re-verify after upgrades.
+  const LANDING_IMAGE = '../config/landing-page-illustration.svg';
   let landingPatched = 0;
   for (const file of readdirSync(assetsDir)) {
     if (!/^LandingView.*\.js$/.test(file)) continue;
@@ -111,6 +112,115 @@ if (existsSync(assetsDir)) {
     }
   }
   console.log(`[postinstall] Repointed Atlas3 landing image -> ${LANDING_IMAGE} in ${landingPatched} LandingView file(s)`);
+
+  // These patches rewrite @ohdsi/atlas3's minified bundle, so their anchors embed
+  // per-build mangled names. atlas3 is pinned to an exact version in package.json;
+  // when that pin is bumped the anchors must be re-derived from the new bundle.
+  // Fail the install instead of silently skipping — a no-op patch regresses the
+  // WebAPI fix it carries, and a green build would hide that.
+  const missedPatches = [];
+  const requirePatched = (label, count) => {
+    if (count === 0) missedPatches.push(label);
+  };
+
+  // The trexsql cache-status endpoint transiently returns status "error" during a
+  // benign attach-retry race even when the cache is built and healthy, and that
+  // terminal "error" makes the cohort builder's live patient count give up. Re-check
+  // with WebAPI a few times (2.5s backoff) at the single fetch site (Pp) so a
+  // transient error self-heals for every consumer (data-source list, count gate,
+  // config page). Anchored on the stable `/cache/status` fetch's parse/return;
+  // idempotent via the e$rt sentinel; no-op if the minified shape changes on a bump.
+  const CACHE_STATUS_SIG_FROM = 'async function ng(e){const t=`';
+  const CACHE_STATUS_SIG_TO = 'async function ng(e,e$rt=0){const t=`';
+  const CACHE_STATUS_RET_FROM =
+    'const r=await a.json(),i=DQ.safeParse(r);return i.success?i.data:OQ(e,r)}';
+  const CACHE_STATUS_RET_TO =
+    'const r=await a.json(),i=DQ.safeParse(r),e$rs=i.success?i.data:OQ(e,r);return e$rs&&e$rs.status==="error"&&e$rt<5?(await new Promise(e$rr=>setTimeout(e$rr,2500)),ng(e,e$rt+1)):e$rs}';
+  let cacheRetryPatched = 0;
+  for (const file of readdirSync(assetsDir)) {
+    if (!/\.js$/.test(file)) continue;
+    const p = join(assetsDir, file);
+    let txt = readFileSync(p, 'utf8');
+    if (txt.includes(CACHE_STATUS_SIG_TO)) continue;
+    if (!txt.includes(CACHE_STATUS_SIG_FROM) || !txt.includes(CACHE_STATUS_RET_FROM)) continue;
+    txt = txt.split(CACHE_STATUS_SIG_FROM).join(CACHE_STATUS_SIG_TO);
+    txt = txt.split(CACHE_STATUS_RET_FROM).join(CACHE_STATUS_RET_TO);
+    writeFileSync(p, txt);
+    cacheRetryPatched++;
+  }
+  console.log(`[postinstall] Added trexsql cache-status re-check on transient "error" in ${cacheRetryPatched} asset file(s)`);
+  requirePatched('trexsql cache-status re-check', cacheRetryPatched);
+
+  // Tag assignment posts a bare tag id (e.g. `2`) as the JSON body, which WebAPI's
+  // `/{conceptset|cohortdefinition}/{id}/tag/` endpoints require (they consume a
+  // primitive int). The d2e-compat WebAPI proxy sits behind a strict express.json
+  // body-parser that rejects a non-object JSON body ("Unexpected token '2', ... is
+  // not valid JSON"), so the assign 400s before reaching WebAPI and the tag never
+  // persists. Send the assign POST with a `application/json;` content-type (note the
+  // trailing empty parameter): media-typer treats it as malformed so body-parser's
+  // `application/json` matcher skips it and forwards the body raw, while Spring
+  // leniently parses it back to application/json and accepts the bare int. A plain
+  // `+json` suffix is not enough — the ConceptSet controller only consumes exactly
+  // application/json. Anchored on the stable endpoint literals; idempotent via the
+  // patched substring.
+  const TAG_POST_PATCHES = [
+    [
+      'sr(`/conceptset/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'sr(`/conceptset/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+    ],
+    [
+      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",body:JSON.stringify(t)})',
+      'Zt(`/cohortdefinition/${e}/tag/`,{method:"POST",headers:{"Content-Type":"application/json;"},body:JSON.stringify(t)})',
+    ],
+  ];
+  let tagPostPatched = 0;
+  for (const file of readdirSync(assetsDir)) {
+    if (!/\.js$/.test(file)) continue;
+    const p = join(assetsDir, file);
+    let txt = readFileSync(p, 'utf8');
+    let changed = false;
+    for (const [from, to] of TAG_POST_PATCHES) {
+      if (txt.includes(to)) continue;
+      if (!txt.includes(from)) continue;
+      txt = txt.split(from).join(to);
+      changed = true;
+    }
+    if (changed) { writeFileSync(p, txt); tagPostPatched++; }
+  }
+  console.log(`[postinstall] Set body-parser-skipping content-type on tag-assign POST in ${tagPostPatched} asset file(s)`);
+  requirePatched('tag-assign POST content-type', tagPostPatched);
+
+  // The ConceptSetEditor save handler updates the concept set first, then calls
+  // syncTags(id, oldTags, currentTags). The update mutates the store's concept set,
+  // whose watcher resets the tag refs to the (still tag-less) persisted value before
+  // syncTags reads them — so the newly added tag diffs to nothing and never gets
+  // assigned. Snapshot both tag refs into locals before the update await and diff
+  // against those. Anchored on the stable save-handler literal; idempotent via the
+  // snapshot-local substring.
+  const CS_SYNCTAGS_FROM =
+    'function lt(){if(C.value){P.value=!0;try{let u;if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,j.value,$.value);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...$.value]}';
+  const CS_SYNCTAGS_TO =
+    'function lt(){if(C.value){P.value=!0;try{let u;const e$prev=[...j.value],e$next=[...$.value];if(pe.value&&s.conceptSet?.id?u=await y.update({...s.conceptSet,name:A.value.name,items:y.currentSet?.items||[]}):u=await y.create({name:A.value.name,items:y.currentSet?.items||[]}),u){const r=u?.id;if(r!=null){const I=await y.syncTags(r,e$prev,e$next);I.success||h.danger(l("conceptSets.tagUpdateFailed","Failed to update tags"),{message:I.error}),j.value=[...e$next]}';
+  let csSyncPatched = 0;
+  for (const file of readdirSync(assetsDir)) {
+    if (!/^ConceptSetEditor.*\.js$/.test(file)) continue;
+    const p = join(assetsDir, file);
+    let txt = readFileSync(p, 'utf8');
+    if (txt.includes(CS_SYNCTAGS_TO)) continue;
+    if (!txt.includes(CS_SYNCTAGS_FROM)) continue;
+    txt = txt.split(CS_SYNCTAGS_FROM).join(CS_SYNCTAGS_TO);
+    writeFileSync(p, txt);
+    csSyncPatched++;
+  }
+  console.log(`[postinstall] Snapshotted concept-set tag refs before update so syncTags persists new tags in ${csSyncPatched} asset file(s)`);
+  requirePatched('concept-set tag snapshot', csSyncPatched);
+
+  if (missedPatches.length) {
+    console.error('[postinstall] ERROR: no asset matched these Atlas3 patches:', missedPatches.join(', '));
+    console.error('[postinstall] The @ohdsi/atlas3 pin likely changed and remangled the bundle.');
+    console.error('[postinstall] Re-derive each anchor from resources/atlas/assets/ and update scripts/postinstall.js.');
+    process.exit(1);
+  }
 }
 
 // Overlay d2e runtime config: point Atlas3 at WebAPI through d2e.
@@ -137,11 +247,23 @@ if (existsSync(logoSrc)) {
   copyFileSync(logoSrc, join(resourcesDir, 'config', 'd2e2.svg'));
 }
 
+// Make the d2e portal landing illustration (LandingView hero image) available
+// under /atlas/config; see the LandingView repoint above.
+const landingImageSrc = join(rootDir, 'landing-page-illustration.svg');
+if (existsSync(landingImageSrc)) {
+  mkdirSync(join(resourcesDir, 'config'), { recursive: true });
+  copyFileSync(landingImageSrc, join(resourcesDir, 'config', 'landing-page-illustration.svg'));
+} else {
+  // The LandingView repoint above unconditionally points at this file, so a
+  // missing source means a broken landing image — surface it loudly.
+  console.warn('[postinstall] WARN: landing-page-illustration.svg missing at', landingImageSrc, '- landing image will 404');
+}
+
 // Helper scripts injected into Atlas3's index.html:
 //  - login-guard.js: silent-SSO guard; runs first, blocks the WebAPI HS256 fallback.
-//  - logo-link.js: routes the header logo to the d2e portal.
+//  - user-link.js: routes the navbar user menu to the d2e portal account page.
 //  - token-keeper.js: refreshes the Logto bearerToken before expiry.
-const headScripts = ['login-guard.js', 'logo-link.js', 'token-keeper.js'];
+const headScripts = ['login-guard.js', 'user-link.js', 'token-keeper.js'];
 let indexHtml = readFileSync(join(resourcesDir, 'index.html'), 'utf8');
 let indexChanged = false;
 for (const script of headScripts) {
@@ -170,24 +292,50 @@ if (existsSync(loginSrc)) {
   console.log('[postinstall] Copied login bridge to resources/login');
 }
 
-// Serve the @ohdsi/pythia-plugin SystemJS bundle (installed via this plugin's
-// dependency + .npmrc, like @ohdsi/atlas3) at /atlas/plugins/pythia-plugin/.
-const pythiaSrc = join(rootDir, 'node_modules', '@ohdsi', 'pythia-plugin', 'dist');
-const pythiaDest = join(resourcesDir, 'plugins', 'pythia-plugin');
-if (existsSync(pythiaSrc)) {
-  mkdirSync(pythiaDest, { recursive: true });
-  cpSync(pythiaSrc, pythiaDest, { recursive: true });
-  // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
-  const pythiaEntry = join(pythiaDest, 'index.system.js');
-  if (existsSync(pythiaEntry)) {
-    let js = readFileSync(pythiaEntry, 'utf8');
-    if (js.includes('/WebAPI/trexsql/agent')) {
-      js = js.split('/WebAPI/trexsql/agent').join('/d2e/agent');
-      writeFileSync(pythiaEntry, js);
-      console.log('[postinstall] Repointed Pythia agent endpoint -> /d2e/agent (direct trex fn)');
+// Table-driven plugin loader: copy each published SystemJS plugin's dist into
+// resources/atlas/plugins/<id>/ and apply any endpoint repoints. Mirrors how
+// @ohdsi/atlas3 itself is staged; see plugins.standalone.json for registration.
+const PLUGINS = [
+  {
+    pkg: '@ohdsi/pythia-plugin',
+    id: 'pythia-plugin',
+    // Point the chat endpoint at the agent fn served by trex at /d2e/agent.
+    repoints: [['/WebAPI/trexsql/agent', '/d2e/agent']],
+  },
+  {
+    pkg: '@ohdsi/results-viewer',
+    id: 'results-viewer',
+    repoints: [],
+  },
+  { pkg: '@ohdsi/strategus-plugin', id: 'strategus-plugin', repoints: [] },
+  { pkg: '@ohdsi/notebook-plugin', id: 'notebook-plugin', repoints: [] },
+  { pkg: '@ohdsi/network-plugin', id: 'network-plugin', repoints: [] },
+  { pkg: '@ohdsi/studies-plugin', id: 'studies-plugin', repoints: [] },
+];
+
+for (const { pkg, id, repoints } of PLUGINS) {
+  const src = join(rootDir, 'node_modules', ...pkg.split('/'), 'dist');
+  const dest = join(resourcesDir, 'plugins', id);
+  if (!existsSync(src)) {
+    console.warn(`[postinstall] WARN: ${pkg} dist not found at ${src}; skipping ${id}`);
+    continue;
+  }
+  rmSync(dest, { recursive: true, force: true });
+  mkdirSync(dest, { recursive: true });
+  cpSync(src, dest, { recursive: true });
+  const entry = join(dest, 'index.system.js');
+  if (repoints.length && existsSync(entry)) {
+    let js = readFileSync(entry, 'utf8');
+    let changed = false;
+    for (const [from, to] of repoints) {
+      if (js.includes(from)) { js = js.split(from).join(to); changed = true; }
+    }
+    if (changed) {
+      writeFileSync(entry, js);
+      console.log(`[postinstall] Applied repoints for ${id}: ${repoints.map(([f, t]) => `${f}->${t}`).join(', ')}`);
     }
   }
-  console.log('[postinstall] Served Pythia plugin at /atlas/plugins/pythia-plugin');
+  console.log(`[postinstall] Served ${id} at /atlas/plugins/${id}`);
 }
 
 console.log('[postinstall] Atlas3 plugin setup complete!');
