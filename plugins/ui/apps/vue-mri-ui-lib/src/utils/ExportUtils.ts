@@ -112,7 +112,8 @@ const readStackBarLegendFromDOM = (): IBarLegendItem[] => {
       const style = window.getComputedStyle(targetEl)
       color = style.backgroundColor || BAR_LEGEND_DEFAULT_COLOR
       opacity = parseFloat(style.opacity || '1')
-      borderColor = style.borderTopColor || BAR_LEGEND_DEFAULT_BORDER // Using borderTopColor to capture the solid border if present
+      const hasBorder = style.borderTopStyle !== 'none' && parseFloat(style.borderTopWidth || '0') > 0
+      borderColor = hasBorder ? style.borderTopColor || BAR_LEGEND_DEFAULT_BORDER : BAR_LEGEND_DEFAULT_BORDER
       kind = box ? 'bar' : 'curve'
     }
 
