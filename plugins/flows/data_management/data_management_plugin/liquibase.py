@@ -64,7 +64,7 @@ class Liquibase:
 
         # path to liquibase executable
         liquibase_path = Variable.get("liquibase_path") if Variable.get(
-            "liquibase_path") else "/app/liquibase/liquibase"
+            "liquibase_path") else os.path.join(os.getcwd(), "liquibase/liquibase")
         liquibase_dir = os.path.dirname(liquibase_path)
         liquibase_properties = os.path.join(
             liquibase_dir, 'liquibase.properties')

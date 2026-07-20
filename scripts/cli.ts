@@ -990,12 +990,10 @@ class D2ECli {
         let DOCKER_IMAGE_PREFIX =
           process.env.DOCKER_IMAGE_PREFIX || "ghcr.io/ohdsi/";
         this.DOCKER_IMAGE_PREFIX = DOCKER_IMAGE_PREFIX;
-        await this.pull_image("d2e/flow-base", this.DOCKER_TAG_NAME);
+        // Flow runs execute on the pixi process worker (its image is part of
+        // the compose pull); the legacy per-group flow images are retired.
         if (options.jupyter) {
           await this.pull_image("d2e-r-ohdsi-kernel", this.DOCKER_TAG_NAME);
-        }
-        if (options.hades) {
-          await this.pull_image("d2e/flow-hades", this.DOCKER_TAG_NAME);
         }
         const { cmd, env } = this.build_docker_command(options, "pull");
         console.log(`Executing command: ${cmd}`);
