@@ -32,12 +32,6 @@ const BAR_LEGEND_WRAP_CHARS = 40
 const X_AXIS_TITLE_FONT = '13px Arial'
 const X_AXIS_TITLE_COLOR = '#000080'
 const X_AXIS_TITLE_BAND_HEIGHT = 26
-
-// Slanted (rotated) x-axis tick labels overflow the plot area to the right and below;
-// Plotly clips that overflow at the SVG edge, cutting off the last/longest label in the
-// export. These paddings (in native SVG px) extend the viewBox on the right and bottom so
-// the full rotated labels are captured. Expressed in the same units as the live chart, so
-// they read as a fixed amount of breathing room regardless of the export target size.
 const CHART_EXPORT_PAD_RIGHT = 48
 const CHART_EXPORT_PAD_BOTTOM = 24
 
@@ -437,10 +431,7 @@ export const createChartCanvas = (
   const isBoxplot = chartType.includes('boxplot')
 
   // Use the SVG's actual rendered pixel dimensions as the viewBox so canvg scales the
-  // chart correctly when rendering to the (possibly larger) export canvas.
-  // getBoundingClientRect gives the true pixel size even for responsive SVGs that use
-  // width="100%" / height="100%" — for those, width.baseVal.value would return 100 (the
-  // percentage) rather than the real pixel width, causing everything to appear shifted.
+  // chart correctly when rendering to export canvas.
   const svgRect = svgItem.getBoundingClientRect()
   const svgNativeW = Math.round(svgRect.width) || targetWidth
   const svgNativeH = Math.round(svgRect.height) || targetHeight
@@ -481,9 +472,7 @@ export const createChartCanvas = (
 
   stripInteractiveSVG(svgClone)
 
-  // Plotly renders axis titles (ytitle, xtitle) in the "infolayer" group which lives in a
-  // SECOND <svg> element layered on top of the main chart SVG. d3.select().select('svg')
-  // only captures the first SVG, so merge in the infolayer group to keep the axis titles.
+  // Merge in the infolayer group to keep the axis titles.
   const plotlyContainer = document.querySelector(chartId) as HTMLElement
   if (plotlyContainer) {
     const infolayerEl = plotlyContainer.querySelector('.infolayer')
