@@ -37,6 +37,34 @@ export async function seed(knex: Knex): Promise<void> {
         Modified: "2025-03-07 20:56:54",
       },
       {
+        Id: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        Version: "1",
+        Status: "A",
+        Name: "WAVEFORM_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwWaveformConfig,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
+      },
+      {
+        Id: "e618155c-feb0-48a8-9ccc-629e2824a1f7",
+        Version: "A",
+        Status: "",
+        Name: "WAVEFORM",
+        Type: "HC/MRI/PA",
+        Data: paWaveformConfig,
+        ParentId: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
+      },
+      {
         Id: "d10f83a0-ade9-4a33-90ae-cf760813953b",
         Version: "1",
         Status: "A",
@@ -38218,4 +38246,1724 @@ const omopHanaLeanPAConfig = {
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
     }
+};
+
+const waveformOccurrenceInteraction = {
+    "name": [
+        {
+            "lang": "",
+            "value": "Waveform Occurrence"
+        }
+    ],
+    "disabledLangName": [
+        {
+            "lang": "en",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "de",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "fr",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "es",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "pt",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "zh",
+            "value": "",
+            "visible": true
+        }
+    ],
+    "defaultFilter": "1=1",
+    "defaultPlaceholder": "@WAVEFORMOCC",
+    "order": 15,
+    "parentInteraction": [
+        "patient.interactions.visit"
+    ],
+    "parentInteractionsMapping": [
+        {
+            "currentMappingInteractionId": "@WAVEFORMOCC.visit_occurrence_id",
+            "parentInteraction": "patient.interactions.visit",
+            "parentMappingInteraction": "@VISIT",
+            "parentMappingInteractionLabel": "Visit parent"
+        }
+    ],
+    "parentInteractionLabel": "Visit parent",
+    "cohortDefinitionKey": "",
+    "conceptIdentifierType": "",
+    "attributes": {
+        "occstartdatetime": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Start Date/Time"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_START_DATETIME\"",
+            "order": 1,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceStartDate",
+            "conceptIdentifierType": ""
+        },
+        "occenddatetime": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "End Date/Time"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_END_DATETIME\"",
+            "order": 2,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceEndDate",
+            "conceptIdentifierType": ""
+        },
+        "occconceptset": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Occurrence Concept Set"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "conceptSet",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_CONCEPT_ID\"",
+            "order": 3,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "CodesetId",
+            "conceptIdentifierType": ""
+        },
+        "pid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Person id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMOCC.person_id",
+            "order": 4,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "visitid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Visit Occurrence id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMOCC.visit_occurrence_id",
+            "order": 5,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "visitdetailid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Visit Detail id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMOCC.visit_detail_id",
+            "order": 6,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "precedingoccid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Preceding Waveform Occurrence id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMOCC.preceding_waveform_occurrence_id",
+            "order": 7,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "formatconceptset": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Format Concept Set"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "conceptSet",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_FORMAT_CONCEPT_ID\"",
+            "order": 8,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "occsourcevalue": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Occurrence Source Value"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_SOURCE_VALUE\"",
+            "order": 9,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "numoffiles": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Num Of Files"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMOCC.\"NUM_OF_FILES\"",
+            "order": 10,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "formatsourcevalue": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Format Source Value"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_FORMAT_SOURCE_VALUE\"",
+            "order": 11,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        }
+    }
+};
+
+const waveformRegistryInteraction = {
+    "name": [
+        {
+            "lang": "",
+            "value": "Waveform Registry"
+        }
+    ],
+    "disabledLangName": [
+        {
+            "lang": "en",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "de",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "fr",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "es",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "pt",
+            "value": "",
+            "visible": true
+        },
+        {
+            "lang": "zh",
+            "value": "",
+            "visible": true
+        }
+    ],
+    "defaultFilter": "1=1",
+    "defaultPlaceholder": "@WAVEFORMREG",
+    "order": 16,
+    "parentInteraction": [
+        "patient.interactions.visit"
+    ],
+    "parentInteractionsMapping": [
+        {
+            "currentMappingInteractionId": "@WAVEFORMREG.visit_occurrence_id",
+            "parentInteraction": "patient.interactions.visit",
+            "parentMappingInteraction": "@VISIT",
+            "parentMappingInteractionLabel": "Visit parent"
+        }
+    ],
+    "parentInteractionLabel": "Visit parent",
+    "cohortDefinitionKey": "",
+    "conceptIdentifierType": "",
+    "attributes": {
+        "filestartdatetime": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "File Start Date/Time"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMREG.\"WAVEFORM_FILE_START_DATETIME\"",
+            "order": 1,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceStartDate",
+            "conceptIdentifierType": ""
+        },
+        "fileenddatetime": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "File End Date/Time"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMREG.\"WAVEFORM_FILE_END_DATETIME\"",
+            "order": 2,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceEndDate",
+            "conceptIdentifierType": ""
+        },
+        "fileextensionconceptset": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "File Extension Concept Set"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "conceptSet",
+            "expression": "@WAVEFORMREG.\"FILE_EXTENSION_CONCEPT_ID\"",
+            "order": 3,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "CodesetId",
+            "conceptIdentifierType": ""
+        },
+        "pid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Person id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMREG.person_id",
+            "order": 4,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "visitid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Visit Occurrence id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMREG.visit_occurrence_id",
+            "order": 5,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "visitdetailid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Visit Detail id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMREG.visit_detail_id",
+            "order": 6,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "waveformoccid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Occurrence id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMREG.waveform_occurrence_id",
+            "order": 7,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "waveformfeatureid": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Feature id"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "num",
+            "expression": "@WAVEFORMREG.waveform_feature_id",
+            "order": 8,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "fileextensionsourcevalue": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "File Extension Source Value"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMREG.\"FILE_EXTENSION_SOURCE_VALUE\"",
+            "order": 9,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "sourcefileuri": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Source File URI"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMREG.\"WAVEFORM_SOURCE_FILE_URI\"",
+            "order": 10,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "targetfileuri": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Waveform Target File URI"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "text",
+            "expression": "@WAVEFORMREG.\"WAVEFORM_TARGET_FILE_URI\"",
+            "order": 11,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        }
+    }
+};
+
+const dimWaveformOcc = {
+    "placeholder": "@WAVEFORMOCC",
+    "attributeTables": [],
+    "hierarchy": false,
+    "time": true,
+    "oneToN": false,
+    "condition": false
+};
+
+const dimWaveformReg = {
+    "placeholder": "@WAVEFORMREG",
+    "attributeTables": [
+        {
+            "placeholder": "@WAVEFORMCHANMETA",
+            "oneToN": true
+        }
+    ],
+    "hierarchy": false,
+    "time": true,
+    "oneToN": false,
+    "condition": false
+};
+
+const waveformTableMappingAdditions = {
+    "@WAVEFORMOCC": "$$SCHEMA$$.\"waveform_occurrence\"",
+    "@WAVEFORMOCC.PATIENT_ID": "\"person_id\"",
+    "@WAVEFORMOCC.INTERACTION_ID": "\"waveform_occurrence_id\"",
+    "@WAVEFORMOCC.CONDITION_ID": "\"waveform_occurrence_concept_id\"",
+    "@WAVEFORMOCC.PARENT_INTERACT_ID": "\"visit_occurrence_id\"",
+    "@WAVEFORMOCC.START": "\"waveform_occurrence_start_datetime\"",
+    "@WAVEFORMOCC.END": "\"waveform_occurrence_end_datetime\"",
+    "@WAVEFORMOCC.INTERACTION_TYPE": "\"waveform_occurrence_concept_id\"",
+    "@WAVEFORMREG": "$$SCHEMA$$.\"waveform_registry\"",
+    "@WAVEFORMREG.PATIENT_ID": "\"person_id\"",
+    "@WAVEFORMREG.INTERACTION_ID": "\"waveform_registry_id\"",
+    "@WAVEFORMREG.CONDITION_ID": "\"file_extension_concept_id\"",
+    "@WAVEFORMREG.PARENT_INTERACT_ID": "\"visit_occurrence_id\"",
+    "@WAVEFORMREG.START": "\"waveform_file_start_datetime\"",
+    "@WAVEFORMREG.END": "\"waveform_file_end_datetime\"",
+    "@WAVEFORMREG.INTERACTION_TYPE": "\"file_extension_concept_id\"",
+    "@WAVEFORMCHANMETA": "$$SCHEMA$$.\"waveform_channel_metadata\"",
+    "@WAVEFORMCHANMETA.INTERACTION_ID": "\"waveform_channel_metadata_id\"",
+    "@WAVEFORMCHANMETA.ATTRIBUTE": "\"metadata_concept_id\"",
+    "@WAVEFORMCHANMETA.VALUE": "\"value_as_number\""
+};
+
+const waveformOccurrenceInteractionFiltercard = {
+    "source": "patient.interactions.waveformoccurrence",
+    "visible": true,
+    "order": 15,
+    "initial": false,
+    "attributes": [
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.occstartdatetime",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 1
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Start Date/Time"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.occenddatetime",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 2
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "End Date/Time"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.occconceptset",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 3
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Occurrence Concept Set"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.visitid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 4
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Visit Occurrence id"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.visitdetailid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 5
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Visit Detail id"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.precedingoccid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 6
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Preceding Waveform Occurrence id"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.formatconceptset",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 7
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Format Concept Set"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.occsourcevalue",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 8
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Occurrence Source Value"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.numoffiles",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": false,
+            "measure": true,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 9
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Num Of Files"
+        },
+        {
+            "source": "patient.interactions.waveformoccurrence.attributes.formatsourcevalue",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 10
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Format Source Value"
+        }
+    ]
+};
+
+const waveformRegistryInteractionFiltercard = {
+    "source": "patient.interactions.waveformregistry",
+    "visible": true,
+    "order": 16,
+    "initial": false,
+    "attributes": [
+        {
+            "source": "patient.interactions.waveformregistry.attributes.filestartdatetime",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 1
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "File Start Date/Time"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.fileenddatetime",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 2
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "File End Date/Time"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.fileextensionconceptset",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 3
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "File Extension Concept Set"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.waveformoccid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 4
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Occurrence id"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.waveformfeatureid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 5
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Feature id"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.visitid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 6
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Visit Occurrence id"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.visitdetailid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 7
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Visit Detail id"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.fileextensionsourcevalue",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 8
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "File Extension Source Value"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.sourcefileuri",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 9
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Source File URI"
+        },
+        {
+            "source": "patient.interactions.waveformregistry.attributes.targetfileuri",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": false,
+                "order": 10
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": false,
+                "linkColumn": false
+            },
+            "modelName": "Waveform Target File URI"
+        }
+    ]
+};
+
+const cdwWaveformConfig = {
+    ...cdwConfigDuckdb,
+    patient: {
+        ...cdwConfigDuckdb.patient,
+        interactions: {
+            ...cdwConfigDuckdb.patient.interactions,
+            waveformoccurrence: waveformOccurrenceInteraction,
+            waveformregistry: waveformRegistryInteraction
+        }
+    },
+    advancedSettings: {
+        ...cdwConfigDuckdb.advancedSettings,
+        tableTypePlaceholderMap: {
+            ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap,
+            dimTables: [
+                ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap.dimTables,
+                dimWaveformOcc,
+                dimWaveformReg
+            ]
+        },
+        tableMapping: {
+            ...cdwConfigDuckdb.advancedSettings.tableMapping,
+            ...waveformTableMappingAdditions
+        }
+    }
+};
+
+const paWaveformConfig = {
+    ...paConfigDuckdb,
+    filtercards: [
+        ...paConfigDuckdb.filtercards,
+        waveformOccurrenceInteractionFiltercard,
+        waveformRegistryInteractionFiltercard
+    ]
 };
