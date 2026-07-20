@@ -46,14 +46,26 @@ export async function applyConstraintValue(
       value: parsedValues,
     })
   }
+  // A range value arrives as an object carrying both { from, to } keys. That is the
+  // only meaning of a { from, to } payload, so it is handled here regardless of the
+  // constraint type, and BEFORE the time/datetime branch below (which only handles
+  // scalar / { value } dates). A { from, to } object must never fall through to that
+  // branch — the ordering would otherwise silently mis-route it.
   if (rawInput && typeof rawInput === 'object' && 'from' in rawInput && 'to' in rawInput) {
-    const fromYear = rawInput.from
-    const toYear = rawInput.to
-    if (!fromYear && !toYear) {
+    const from = rawInput.from
+    const to = rawInput.to
+    if (!from && !to) {
       return Promise.reject(new Error(`Missing year value for ${constraint.props.name || constraint.id}`))
     }
-    const fromDate = fromYear ? new Date(`${fromYear}-01-01`) : new Date(`${toYear}-01-01`)
-    const toDate = toYear ? new Date(`${toYear}-12-31`) : new Date(`${fromYear}-12-31`)
+    // Fall back to the populated bound when only one side is given.
+    const fromRaw = from || to
+    const toRaw = to || from
+    // Bare 4-digit years (the wizard's yearRange) expand to the full calendar year;
+    // full date strings are parsed as-is
+    const isYear = (value: unknown) => typeof value === 'number' || /^\d{4}$/.test(String(value).trim())
+    const asYearRange = isYear(fromRaw) && isYear(toRaw)
+    const fromDate = asYearRange ? new Date(`${fromRaw}-01-01`) : new Date(fromRaw)
+    const toDate = asYearRange ? new Date(`${toRaw}-12-31`) : new Date(toRaw)
     return dispatch('updateDateConstraintValue', {
       constraintId: constraint.id,
       fromDateValue: fromDate,
