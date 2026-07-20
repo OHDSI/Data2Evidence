@@ -650,7 +650,7 @@ export default {
               // dereferencing undefined and crashing the whole chart render.
               const filterCardName = filterCard?.name
               if (filterCardName && (!category.name || !category.name.startsWith(filterCardName + ' - '))) {
-                category.name = `${filterCardName} - ${category.name}`
+                category.name = category.name ? `${filterCardName} - ${category.name}` : filterCardName
               }
             }
           }

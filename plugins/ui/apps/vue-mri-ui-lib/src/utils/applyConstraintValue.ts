@@ -81,13 +81,14 @@ export async function applyConstraintValue(
     return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
   }
   // Never String() an object into "[object Object]" — that silently produces a broken
-  // filter (empty chart, patient count "--"). A concept set must be { conceptSetId },
-  // a date range { from, to }; anything else reaching here is a caller bug.
+  // filter (empty chart, patient count "--"). Date ranges ({ from, to }) are handled by
+  // the branches above; by this point only a scalar value (string or number) is
+  // supported, so any object reaching here is a caller bug.
   if (typeof rawValue === 'object') {
     return Promise.reject(
       new Error(
         `Unsupported object value for ${constraint.props.name || constraint.id}: ` +
-          'pass { conceptSetId } for a concept set or { from, to } for a date range.'
+          'this constraint expects a scalar value (string or number).'
       )
     )
   }
