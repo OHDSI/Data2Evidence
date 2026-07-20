@@ -645,8 +645,12 @@ export default {
               }
             } else {
               const filterCard = this.getChartableFilterCardByInstanceId(filterCardPath.join('.'))
-              if (!category.name || !category.name.startsWith(filterCard.name + ' - ')) {
-                category.name = `${filterCard.name} - ${category.name}`
+              // Guard: a category can reference a filter card that is no longer chartable
+              // (e.g. after an inconsistent bookmark load). Skip the prefix rather than
+              // dereferencing undefined and crashing the whole chart render.
+              const filterCardName = filterCard?.name
+              if (filterCardName && (!category.name || !category.name.startsWith(filterCardName + ' - '))) {
+                category.name = `${filterCardName} - ${category.name}`
               }
             }
           }
