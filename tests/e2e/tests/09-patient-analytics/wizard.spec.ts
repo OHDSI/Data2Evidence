@@ -983,6 +983,12 @@ test(TEST_NAME, async ({ page }) => {
   // Cleanup: delete the dataset created for this test
   await test.step('Delete dataset', async () => {
     await page.getByRole('link', { name: 'Account' }).click()
+    // The wizard applied a condition filter to the (unsaved) cohort, so leaving the
+    // builder now prompts the unsaved-changes dialog (#2636). Confirm leaving.
+    await page
+      .getByRole('button', { name: 'Leave without saving' })
+      .click({ timeout: 3000 })
+      .catch(() => {})
     await page.getByRole('button', { name: 'Switch to Admin portal' }).click()
     await page.getByRole('link', { name: 'Datasets' }).click()
     await page.getByRole('row', { name: 'wizardE2E' }).getByRole('combobox').click()

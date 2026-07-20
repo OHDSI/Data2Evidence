@@ -971,6 +971,9 @@ const saveAtlasCohort = async () => {
       }
 
       store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
+      // The cohort was just persisted, so the current state is the new clean
+      // reference. SET_ACTIVE_BOOKMARK cleared the baseline; recapture it.
+      store.commit(types.SET_ACTIVE_BOOKMARK_BASELINE, store.getters.getBookmarksData)
     } else {
       // Update existing Atlas cohort
       await store.dispatch('fireUpdateAtlasCohortDefinitionQuery', {
@@ -988,6 +991,9 @@ const saveAtlasCohort = async () => {
         }
         store.commit(types.SET_ACTIVE_BOOKMARK, updatedBookmark)
       }
+      // The cohort was just persisted, so the current state is the new clean
+      // reference. SET_ACTIVE_BOOKMARK cleared the baseline; recapture it.
+      store.commit(types.SET_ACTIVE_BOOKMARK_BASELINE, store.getters.getBookmarksData)
     }
     closeSaveDialog()
   } catch (error) {
