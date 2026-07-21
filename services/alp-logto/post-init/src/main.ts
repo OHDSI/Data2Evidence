@@ -220,6 +220,11 @@ async function main() {
   // Make sure WebAPI (RS256) can verify Logto tokens before anything else.
   await ensureRsaSigningKey(headers);
 
+  // Re-fetch a token signed by the new RSA key.
+  jwt = await logto.fetchToken();
+  accessToken = jwt.access_token;
+  headers.Authorization = `Bearer ${accessToken}`;
+
   // Allow the standalone Atlas login bridge's redirect URI on the OIDC app(s).
   for (const app of apps) {
     await ensureAtlasLoginRedirectUri(headers, app.id);
