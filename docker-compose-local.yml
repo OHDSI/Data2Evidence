@@ -1,7 +1,25 @@
 services:
   trex:
+    # Defaults to the same published image as docker-compose.yml so `compose pull`
+    # works; CI relies on that. Set TREX_IMAGE (e.g. d2e-trex:withr in .env.local) to
+    # keep a locally built R+HADES image under its own tag, where pulling the
+    # published one would otherwise overwrite it with an R-less build.
+    image: ${TREX_IMAGE:-${DOCKER_IMAGE_PREFIX:-ghcr.io/ohdsi/}d2e-trex:${DOCKER_TAG_NAME:-develop}}
     # No platform pin: the trexsql base and d2e-trex image are multi-arch
     # (amd64/arm64), so Docker runs/builds native to the host.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        mkdir -p /usr/src/cert
+        printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
+        printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        if [ "$${TREX_DX_ENABLED:-}" = "true" ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
+          mkdir -p /trex-secrets
+          printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /trex-secrets/root.env
+          TREX_SECRETS_DIR=/trex-secrets /usr/local/bin/trex-init || echo "[dx] trex-init failed; DevX REST may 401"
+          set -a; . /trex-secrets/derived.env 2>/dev/null || true; set +a
+        fi
+        exec /usr/src/entrypoint.sh
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
@@ -10,7 +28,11 @@ services:
         - github_token
       args:
         # Local builds pull published plugins from the feed; CI uses plugin-artifacts/.
-        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.0.1-develop.6.gc427022}
+        PLUGINS_FROM_REGISTRY: ${PLUGINS_FROM_REGISTRY:-@data2evidence/d2e-ui @data2evidence/d2e-functions @data2evidence/fhir @data2evidence/sibyl @data2evidence/d2e-flows @data2evidence/i2b2-flow @data2evidence/search-embedding-flow @data2evidence/data-management-flow @data2evidence/hades-flow @data2evidence/loyalty-score-flow @data2evidence/data-transformation-flow @ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7}
+        # Keep in sync with the `docker build --build-arg WITH_R=true` used to
+        # produce the d2e-trex:withr tag above — `docker compose build trex`
+        # must also bake R or it silently reverts to an R-less image.
+        WITH_R: "true"
     extra_hosts:
       - "physionet-host:host-gateway"
     networks:
@@ -25,23 +47,55 @@ services:
       - 8094:8094
     volumes:
       - trex:/usr/src/data  # Persist plugins and cache data - must match PLUGINS_PATH
+      - flows-dev:/usr/src/flows-dev
+      - devx-workspaces:/tmp/devx-workspaces
+      - trex-secrets:/trex-secrets
+      - trex-dx:/root/.claude
+      - trex-dx:/home/node/.claude
+      - trex-dx-gh:/root/.config/gh
       - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/plugins/d2ef
+      # PLUGINS_DEV_PATH resolves /usr/src/bundled-plugins before /usr/src/plugins,
+      # so the registry-published d2e-functions there (no /hades-api route) wins
+      # over the d2ef mount above unless overlaid directly.
+      - ${D2E_FUNCTIONS:-./plugins/functions}:/usr/src/bundled-plugins/d2e-functions
       - ${D2E_FHIRFUNCTIONS:-./plugins/fhir_functions}:/usr/src/plugins/fhir
+      - ${D2E_SIBYLFUNCTIONS:-./plugins/sibyl_functions}:/usr/src/plugins/sibyl
       - ./plugins/atlas:/usr/src/plugins/atlas  # Atlas UI plugin
+      - studio-edge-functions:/app/edge-functions  # shared with the studio sidecar (LOCAL ONLY)
       # - ./plugins/chat_functions:/usr/src/plugins/chat
       # - ./plugins/ui/package.json:/usr/src/plugins/d2e-ui/package.json # For local ui development only
       # - ./plugins/ui/resources:/usr/src/plugins/d2e-ui/resources # For local ui development only
       # - ./plugins/ui/resources:/usr/src/local-resources # For CI ui build mounting
-      - ./services/trex/core:/usr/src/core  # live trex core for local dev
+      # IMAGE-BASED TEST: no core source-mount — trex's main (now vendored into
+      # services/trex/core) is bundled into the image's eszip by Dockerfile.v2.
       # - ./services/trex/deno.json:/usr/src/deno.json
       # - ./plugins/flows/base/package.json:/usr/src/plugins/d2e-flows/package.json # For local flows development only
+    env_file:
+      - path: .env.claw
+        required: false
     environment:
+      TREX_DX_ENABLED: "true"
+      IS_SANDBOX: "1"
+      BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
+      PGRST_DB_URI: postgres://authenticator:authenticator_pass@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_PRE_REQUEST: public.postgrest_pre_request
+      PGRST_OPENAPI_SERVER_PROXY_URI: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex/rest/v1"
+      TREX_WEB_NAV_EXTRA: '[{"path":"/devx","label":"Code","plugin":"devx"}]'
+      DEVX_HOT_RELOAD: ${DEVX_HOT_RELOAD:-true}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
+      # Supabase Studio sidecar (LOCAL ONLY) — trex proxies /plugins/trex/studio/** to it.
+      STUDIO_INTERNAL_URL: http://${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}:3000
+      EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
       # Bind-mounted source plugins win over bundled ones with the same package name.
-      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins:/usr/src/plugins"
+      # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
+      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       # PhysioNet auto-provision / entitlements sync are OFF by default for local
       # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
@@ -64,8 +118,8 @@ services:
                   "config": {
                     "host": "0.0.0.0",
                     "port": 33001,
-                    "main_service_path": "/usr/src/core/server",
-                    "event_worker_path": "/usr/src/core/event",
+                    "main_service_path": "/usr/src/core/server/index.eszip",
+                    "event_worker_path": "/usr/src/core/event/index.eszip",
                     "tls_port": 33000,
                     "tls_cert_path": "/usr/src/cert/cert.pem",
                     "tls_key_path": "/usr/src/cert/key.pem",
@@ -123,8 +177,14 @@ services:
       SYSTEM_PORTAL__API_URL: https://trex:33000/system-portal/
   alp-dataflow-gen-worker:
     build:
-      context: ./services/alp-dataflow-gen-worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
+    # flows-dev overlay: devx/trex writes flow source here, worker executes it.
+    # Local-dev only; inert unless D2E_FLOWS_DEV_DIR is set. See run-flow.sh.
+    volumes:
+      - flows-dev:/var/lib/d2e-flows-dev
+    environment:
+      D2E_FLOWS_DEV_DIR: ${D2E_FLOWS_DEV_DIR:-}
 
   alp-logto:
     build:
@@ -170,7 +230,6 @@ services:
       dockerfile: Dockerfile
     # volumes:
     #   - ./services/alp-logto/post-init:/home/docker
-
 
   enterprise-gateway:
     build:
@@ -233,6 +292,74 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # trex studio sidecar — LOCAL ONLY (intentionally not in docker-compose.yml).
+  # Internal-only: no host port. trex proxies /plugins/trex/studio/** to it and
+  # enforces its own admin-only gate.
+  studio:
+    image: ghcr.io/ohdsi/trex-studio:latest
+    container_name: ${PROJECT_NAME:-d2e}-studio
+    hostname: ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+    restart: unless-stopped
+    networks:
+      alp:
+        aliases:
+          - studio
+          - ${PROJECT_NAME:-d2e}-studio.${TLS__INTERNAL__DOMAIN:-alp.local}
+    depends_on:
+      trex:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 60); do [ -s /trex-secrets/derived.env ] && break; echo "[studio] waiting for /trex-secrets/derived.env ($$i)"; sleep 1; done
+        if [ -s /trex-secrets/derived.env ]; then set -a; . /trex-secrets/derived.env; set +a; else echo "[studio] WARN: derived.env missing; pg-meta will 500"; fi
+        exec /usr/local/bin/docker-entrypoint.sh node apps/studio/server.js
+    volumes:
+      - studio-snippets:/app/snippets
+      - studio-edge-functions:/app/edge-functions
+      # The baked key-fetch reads trex.setting; d2e stores auth keys in trexdb.setting.
+      - ./services/studio/fetch-trex-keys.cjs:/app/apps/studio/fetch-trex-keys.cjs:ro
+      - trex-secrets:/trex-secrets:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://localhost:3000/plugins/trex/studio/api/platform/profile'').then(r => { if (r.status !== 200) throw new Error(r.status) })"'
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    environment:
+      HOSTNAME: "0.0.0.0"
+      # trex serves the supabase-compat surface under /trex at its internal endpoint.
+      SUPABASE_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex
+      SUPABASE_PUBLIC_URL: https://localhost:41100/trex
+      STUDIO_PG_META_URL: http://${PROJECT_NAME:-d2e}-trex.${TLS__INTERNAL__DOMAIN:-alp.local}:33001/trex/pg/v1
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      # Fallback direct DB access — trexdb lives in the alp Postgres.
+      POSTGRES_HOST: ${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}
+      POSTGRES_PORT: ${PG_PORT:-5432}
+      POSTGRES_DB: alp
+      POSTGRES_PASSWORD: ${PG_SUPER_PASSWORD}
+      POSTGRES_USER_READ_WRITE: ${PG_SUPER_USER:-postgres}
+      POSTGRES_USER_READ_ONLY: ${PG_SUPER_USER:-postgres}
+      PGRST_DB_SCHEMAS: public,storage
+      DEFAULT_ORGANIZATION_NAME: ${PROJECT_NAME:-d2e}
+      DEFAULT_PROJECT_NAME: default
+      NEXT_ANALYTICS_BACKEND_PROVIDER: postgres
+      NEXT_PUBLIC_ENABLE_LOGS: "false"
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
+      EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
+
+volumes:
+  flows-dev:
+  studio-snippets:
+  studio-edge-functions:
+  devx-workspaces:
+  trex-secrets:
+  trex-dx:
+  trex-dx-gh:
 
 # Build-time GitHub Packages token for installing @ohdsi/* plugins.
 secrets:
