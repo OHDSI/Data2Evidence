@@ -25,9 +25,28 @@ class TrexConnection {
     try {
       // @ts-ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
-      // Pre-dataset / infra path: no datasetId in scope, so databaseCode doubles as the cache_id alias.
+      // getDatabaseCredentials() returns an array of objects with:
+      //   code: string      (= databaseCode)
+      //   id: string        (= dataset UUID)
+      //   dialect: string   (e.g. "hana", "postgres", "duckdb")
+      const allCredentials = dbm.getDatabaseCredentials() as Array<{
+        code: string;
+        id: string;
+        dialect: string;
+        [key: string]: any;
+      }>;
+      const cred = allCredentials.find((c) => c.code === databaseCode);
+      // For HANA: cacheId === databaseCode.
+      // For others: cacheId is computed from the dataset UUID (hyphens → underscores, leading digit → underscore prefix).
+      const normalized = cred ? cred.id.replace(/-/g, "_") : "";
+      const cacheId = cred
+        ? cred.dialect === "hana"
+          ? cred.code
+          : (normalized.match(/^[0-9]/) ? `_${normalized}` : normalized)
+        : databaseCode; // fallback: use databaseCode as-is (pre-restructure behaviour)
+
       this.conn = dbm.getConnection(
-        databaseCode,
+        cacheId,
         schemaName,
         schemaName,
         schemaName,
@@ -48,7 +67,7 @@ class TrexConnection {
           if (err) {
             return reject(err);
           }
-          resolve({ rows: res, rowCount: res.length ?? 0 });
+          resolve({ rows: res, rowCount: res?.length ?? 0 });
         },
       );
     });
@@ -56,6 +75,12 @@ class TrexConnection {
 
   async end() {
     this.conn.close();
+  }
+}
+
+export class EmptyMappingsError extends Error {
+  constructor() {
+    super("No concept mappings provided");
   }
 }
 
@@ -91,6 +116,10 @@ export const saveSourceToConceptMappings = async (
       }),
     );
 
+    if (!parsedMappings || parsedMappings.length === 0) {
+      throw new EmptyMappingsError();
+    }
+
     const columns = SOURCE_TO_CONCEPT_MAP_COLUMNS;
     const valuePlaceholders = parsedMappings
       .map(() => {
@@ -108,6 +137,9 @@ export const saveSourceToConceptMappings = async (
     const result = await client.query(sql, params);
     return result.rowCount;
   } catch (error) {
+    if (error instanceof EmptyMappingsError) {
+      throw error;
+    }
     console.error(error);
     throw new Error("Failed to save source to concept mappings");
   } finally {

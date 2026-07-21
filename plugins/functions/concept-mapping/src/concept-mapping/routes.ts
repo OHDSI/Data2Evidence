@@ -3,6 +3,7 @@ import { validationResult, matchedData } from "express-validator";
 import {
   getSourceToConceptMappings,
   saveSourceToConceptMappings,
+  EmptyMappingsError,
 } from "./services";
 import { GetConceptMappingDto, ConceptMappingDto } from "./middleware";
 
@@ -51,7 +52,7 @@ export class ConceptMappingRouter {
 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-          res.status(400).json({ errors: errors.array() });
+          return res.status(400).json({ errors: errors.array() });
         }
 
         try {
@@ -71,6 +72,9 @@ export class ConceptMappingRouter {
 
           res.status(200).send(`Inserted ${rows} rows to ${databaseCode}`);
         } catch (error) {
+          if (error instanceof EmptyMappingsError) {
+            return res.status(400).send("No concept mappings to save");
+          }
           console.error(error);
           res.status(500).send("Failed to save concept mappings");
         }
