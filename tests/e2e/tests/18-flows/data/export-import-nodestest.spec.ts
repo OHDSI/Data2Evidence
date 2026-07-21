@@ -3,6 +3,10 @@ import type { Page } from '@playwright/test'
 import fs from 'fs/promises'
 import path from 'path'
 
+const TEST_NAME = 'e2e-export-import-nodestest'
+const SHOULD_SKIP = false
+test.fixme(SHOULD_SKIP, `${TEST_NAME} test is temporarily disabled.`)
+
 let exportedFilePaths: string[] = []
 let createdDataflowNames: string[] = []
 
@@ -43,7 +47,9 @@ test.afterEach(async ({ page }) => {
         .allTextContents()
       await page.keyboard.press('Escape')
 
-      createdDataflowNames = Array.from(new Set([...createdDataflowNames, ...testFlowOptions.map((name) => name.trim()).filter(Boolean)])).reverse()
+      createdDataflowNames = Array.from(
+        new Set([...createdDataflowNames, ...testFlowOptions.map(name => name.trim()).filter(Boolean)])
+      ).reverse()
     }
   } catch {
     // Continue with the names recorded by the test if the flow list cannot be inspected.
@@ -106,7 +112,9 @@ test('import and run nodes test template', async ({ page }) => {
       await page.goto('/d2e/portal/etl')
     }
 
-    await expect(page.getByLabel('Create new dataflow').or(page.getByRole('button', { name: 'Create your first dataflow' }))).toBeVisible({
+    await expect(
+      page.getByLabel('Create new dataflow').or(page.getByRole('button', { name: 'Create your first dataflow' }))
+    ).toBeVisible({
       timeout: 30000
     })
   })
@@ -147,7 +155,7 @@ test('import and run nodes test template', async ({ page }) => {
     await download.saveAs(exportedFlowPath)
 
     const exported = JSON.parse(await fs.readFile(exportedFlowPath, 'utf-8')) as DataflowTemplate
-    expect(exported.nodes.map((node) => node.data.name).sort()).toEqual([...NODES_TEST_NODE_NAMES].sort())
+    expect(exported.nodes.map(node => node.data.name).sort()).toEqual([...NODES_TEST_NODE_NAMES].sort())
   })
 
   await test.step('Create a second empty workflow, import the exported JSON, and remove the db_reader node', async () => {
@@ -174,7 +182,11 @@ test('import and run nodes test template', async ({ page }) => {
 
     await expectNode(page, 'db_reader_node_0').click()
     await page.keyboard.press('Backspace')
-    if (await expectNode(page, 'db_reader_node_0').isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (
+      await expectNode(page, 'db_reader_node_0')
+        .isVisible({ timeout: 3000 })
+        .catch(() => false)
+    ) {
       await page.keyboard.press('Delete')
     }
     await expect(expectNode(page, 'db_reader_node_0')).not.toBeVisible()
@@ -184,13 +196,17 @@ test('import and run nodes test template', async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click()
     const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
     await expect(saveDialog).toBeVisible()
-    await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Imported nodes test flow without db_reader')
+    await saveDialog
+      .getByRole('textbox', { name: 'Describe your changes' })
+      .fill('Imported nodes test flow without db_reader')
     await saveDialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect(saveDialog).not.toBeVisible()
     await expect(page.getByText('Up to Date')).toBeVisible()
 
     await page.getByLabel('Run flow').getByRole('button').click()
-    await expect(expectNode(page, 'db_writer_node_0').getByRole('button', { name: 'View output' })).toBeVisible({ timeout: RUN_TIMEOUT })
+    await expect(expectNode(page, 'db_writer_node_0').getByRole('button', { name: 'View output' })).toBeVisible({
+      timeout: RUN_TIMEOUT
+    })
   })
 
   await test.step('Add db_reader back from the exported JSON, save, and rerun', async () => {
@@ -204,14 +220,20 @@ test('import and run nodes test template', async ({ page }) => {
     await page.getByRole('button', { name: 'Save' }).click()
     const saveDialog = page.getByRole('dialog').filter({ hasText: 'Save dataflow' })
     await expect(saveDialog).toBeVisible()
-    await saveDialog.getByRole('textbox', { name: 'Describe your changes' }).fill('Added db_reader back after db_writer completed')
+    await saveDialog
+      .getByRole('textbox', { name: 'Describe your changes' })
+      .fill('Added db_reader back after db_writer completed')
     await saveDialog.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit())
     await expect(saveDialog).not.toBeVisible()
     await expect(page.getByText('Up to Date')).toBeVisible()
 
     await page.getByLabel('Run flow').getByRole('button').click()
-    await expect(expectNode(page, 'db_reader_node_0').getByRole('button', { name: 'View output' })).toBeVisible({timeout: RUN_TIMEOUT})
-    await expect(expectNode(page, 'file_node_0').getByRole('button', { name: 'View output' })).toBeVisible({timeout: RUN_TIMEOUT})
+    await expect(expectNode(page, 'db_reader_node_0').getByRole('button', { name: 'View output' })).toBeVisible({
+      timeout: RUN_TIMEOUT
+    })
+    await expect(expectNode(page, 'file_node_0').getByRole('button', { name: 'View output' })).toBeVisible({
+      timeout: RUN_TIMEOUT
+    })
 
     // TODO: The csv_node_0 output is not being generated in the current test environment
     // await expect(expectNode(page, 'csv_node_0').getByRole('button', { name: 'View output' })).toBeVisible({ timeout: RUN_TIMEOUT })
