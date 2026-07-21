@@ -86,12 +86,26 @@ def create_cache_flow(options: CreateCacheOptions):
     
     if dbdao.dialect == SupportedDatabaseDialects.SNOWFLAKE.value:
         logger.info("Snowflake: building cache via single-connection offline DuckDB path.")
+        # A Snowflake source holds CDM data only; a results schema (e.g. CDM_results) has no
+        # source counterpart — results are written cache-side by DQD/DC. When the source
+        # schema is absent (the results-cache pass), create the empty schema in the cache and
+        # skip the copy; Snowflake raises on SHOW TABLES for a missing schema rather than
+        # returning an empty list. Case-insensitive match: Snowflake folds identifiers.
+        existing_schemas = [s.lower() for s in dbdao.get_schema_names()]
+        source_schema_exists = copy_params.source_schema.lower() in existing_schemas
         with duckdb.connect(duckdb_file_path) as file_conn:
             load_extensions(write_conn=file_conn, dialect=dbdao.dialect, trex_sql=False)
-            attach_to_source_db(dbdao, file_conn, copy_params.source_database)
             create_schema_if_not_exists(file_conn, copy_params, logger)
-            create_schema_tables(file_conn, dbdao, copy_params, logger)
-            create_fts_index(file_conn, copy_params, logger)
+            if source_schema_exists:
+                attach_to_source_db(dbdao, file_conn, copy_params.source_database)
+                create_schema_tables(file_conn, dbdao, copy_params, logger)
+                create_fts_index(file_conn, copy_params, logger)
+            else:
+                logger.info(
+                    f"Source schema '{copy_params.source_schema}' not found on the Snowflake "
+                    "source; created empty schema in cache and skipped table copy "
+                    "(results schema has no source counterpart)."
+                )
     elif not options.use_trex_connection:
         logger.info(f"Connecting to Cache file directly at '{duckdb_file_path}'...")
         with duckdb.connect(duckdb_file_path) as file_conn:
