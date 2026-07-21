@@ -107,19 +107,22 @@ export const saveSourceToConceptMappings = async (
   sourceVocabularyId: string,
   conceptMappings: string,
 ) => {
+  // Decode and validate mappings BEFORE opening a DB connection so that an
+  // empty payload is always rejected with EmptyMappingsError (→ 400), even
+  // when the database is unavailable.
+  const parsedMappings = convertZlibBase64ToJson(conceptMappings).map(
+    (mapping: any) => ({
+      ...mapping,
+      source_vocabulary_id: sourceVocabularyId,
+    }),
+  );
+
+  if (!parsedMappings || parsedMappings.length === 0) {
+    throw new EmptyMappingsError();
+  }
+
   const client = new TrexConnection(databaseCode, schemaName);
   try {
-    const parsedMappings = convertZlibBase64ToJson(conceptMappings).map(
-      (mapping: any) => ({
-        ...mapping,
-        source_vocabulary_id: sourceVocabularyId,
-      }),
-    );
-
-    if (!parsedMappings || parsedMappings.length === 0) {
-      throw new EmptyMappingsError();
-    }
-
     const columns = SOURCE_TO_CONCEPT_MAP_COLUMNS;
     const valuePlaceholders = parsedMappings
       .map(() => {
@@ -137,9 +140,6 @@ export const saveSourceToConceptMappings = async (
     const result = await client.query(sql, params);
     return result.rowCount;
   } catch (error) {
-    if (error instanceof EmptyMappingsError) {
-      throw error;
-    }
     console.error(error);
     throw new Error("Failed to save source to concept mappings");
   } finally {
