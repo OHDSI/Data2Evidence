@@ -19,7 +19,7 @@
     "@ohdsi/network-plugin": "file:./trex-notebook/plugins/network",
     "@ohdsi/notebook-plugin": "file:./trex-notebook/plugins/notebook-plugin",
     "@ohdsi/pythia-plugin": "0.1.0-develop.14.gf8bbfc7",
-    "@ohdsi/results-viewer": "file:./trex-notebook/plugins/results-viewer",
+    "@ohdsi/results-viewer": "^0.2.0-0",
     "@ohdsi/strategus-plugin": "file:./trex-notebook/plugins/strategus",
     "@ohdsi/studies-plugin": "file:./trex-notebook/plugins/studies",
     "react": "^18.2.0",
