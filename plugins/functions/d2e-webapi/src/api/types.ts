@@ -5,7 +5,7 @@ export interface ICohortDefinitionSyntax {
   atlasCohortDefinitionId: number;
   datasetId: string;
   expressionType: string;
-  expression: z.infer<typeof CohortExpression>;
+  expression: z.infer<typeof CohortExpression> | string;
   tags: string[];
 }
 // Construct response into OMOP cohort definition format
@@ -45,7 +45,7 @@ export interface ICohortJsonType {
   hasWriteAccess: boolean;
   tags: string[];
   expressionType: string;
-  expression: z.infer<typeof CohortExpression>;
+  expression: z.infer<typeof CohortExpression> | string;
 }
 
 export interface IResolveConceptSetExpressionConcept {

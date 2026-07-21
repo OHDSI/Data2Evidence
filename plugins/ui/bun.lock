@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@data2evidence/d2e-ui",
@@ -89,6 +88,7 @@
         "@d4l/web-components-library": "^3.20.2",
         "@emotion/react": "^11.9.0",
         "@emotion/styled": "^11.8.1",
+        "@fontsource-variable/ibm-plex-sans": "^5.2.8",
         "@mui/icons-material": "^5.8.3",
         "@mui/material": "^5.8.3",
         "@portal/components": "^1.0.0",
@@ -406,6 +406,8 @@
       "version": "2.0.0",
       "dependencies": {
         "@d4l/web-components-library": "^3.20.2",
+        "@fontsource-variable/ibm-plex-sans": "^5.2.8",
+        "@mdi/font": "^7.4.47",
         "@vuepic/vue-datepicker": "^11.0.2",
         "axios": "^1.13.4",
         "bootstrap": "4.6.1",
@@ -1347,6 +1349,8 @@
     "@maplibre/maplibre-gl-style-spec": ["@maplibre/maplibre-gl-style-spec@20.4.0", "", { "dependencies": { "@mapbox/jsonlint-lines-primitives": "~2.0.2", "@mapbox/unitbezier": "^0.0.1", "json-stringify-pretty-compact": "^4.0.0", "minimist": "^1.2.8", "quickselect": "^2.0.0", "rw": "^1.3.3", "tinyqueue": "^3.0.0" }, "bin": { "gl-style-format": "dist/gl-style-format.mjs", "gl-style-migrate": "dist/gl-style-migrate.mjs", "gl-style-validate": "dist/gl-style-validate.mjs" } }, "sha512-AzBy3095fTFPjDjmWpR2w6HVRAZJ6hQZUCwk5Plz6EyfnfuQW1odeW5i2Ai47Y6TBA2hQnC+azscjBSALpaWgw=="],
 
     "@marijn/find-cluster-break": ["@marijn/find-cluster-break@1.0.2", "", {}, "sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g=="],
+
+    "@mdi/font": ["@mdi/font@7.4.47", "", {}, "sha512-43MtGpd585SNzHZPcYowu/84Vz2a2g31TvPMTm9uTiCSWzaheQySUcSyUH/46fPnuPQWof2yd0pGBtzee/IQWw=="],
 
     "@mdx-js/mdx": ["@mdx-js/mdx@1.6.22", "", { "dependencies": { "@babel/core": "7.12.9", "@babel/plugin-syntax-jsx": "7.12.1", "@babel/plugin-syntax-object-rest-spread": "7.8.3", "@mdx-js/util": "1.6.22", "babel-plugin-apply-mdx-type-prop": "1.6.22", "babel-plugin-extract-import-names": "1.6.22", "camelcase-css": "2.0.1", "detab": "2.0.4", "hast-util-raw": "6.0.1", "lodash.uniq": "4.5.0", "mdast-util-to-hast": "10.0.1", "remark-footnotes": "2.0.0", "remark-mdx": "1.6.22", "remark-parse": "8.0.3", "remark-squeeze-paragraphs": "4.0.0", "style-to-object": "0.3.0", "unified": "9.2.0", "unist-builder": "2.0.3", "unist-util-visit": "2.0.3" } }, "sha512-AMxuLxPz2j5/6TpF/XSdKpQP1NlG0z11dFOlq+2IP/lSgl11GY8ji6S/rgsViN/L0BDvHvUMruRb7ub+24LUYA=="],
 

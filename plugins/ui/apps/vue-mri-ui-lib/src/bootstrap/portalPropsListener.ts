@@ -23,9 +23,24 @@ const isMatchingEvent = (
   return false
 }
 
+type GuardChange = (incoming: PropsChangedEventDetail, apply: () => void) => void
+
+const isDatasetOrReleaseChange = (
+  current: PortalContextLike,
+  incoming: PropsChangedEventDetail
+): boolean => {
+  const datasetChanged = incoming.datasetId !== undefined && incoming.datasetId !== current.datasetId
+  const releaseChanged = incoming.releaseId !== undefined && incoming.releaseId !== current.releaseId
+  return datasetChanged || releaseChanged
+}
+
 export function installPortalPropsListener(
   portalContext: PortalContextLike,
-  options?: { expectedAppId?: string; expectedContainerId?: string }
+  options?: {
+    expectedAppId?: string
+    expectedContainerId?: string
+    guardChange?: GuardChange
+  }
 ): () => void {
   const handler = (event: Event) => {
     const customEvent = event as CustomEvent<PropsChangedEventDetail>
@@ -36,7 +51,14 @@ export function installPortalPropsListener(
       return
     }
 
-    portalContext.applyProps(detail)
+    const apply = () => portalContext.applyProps(detail)
+
+    if (options?.guardChange && isDatasetOrReleaseChange(portalContext, detail)) {
+      options.guardChange(detail, apply)
+      return
+    }
+
+    apply()
   }
 
   window.addEventListener('custom-props-changed', handler)
