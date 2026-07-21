@@ -1,0 +1,30 @@
+.migrate-user-artifacts-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  border: 1px solid #ddd;
+  padding: 1em 2em;
+  margin-top: -1px;
+  min-height: 74px;
+
+  &__info {
+    flex: 1;
+    display: flex;
+    align-self: center;
+  }
+
+  &__progress {
+    margin-top: 10px;
+  }
+
+  &__progress-step {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+  }
+
+  &__progress-step--error {
+    color: #b00020;
+  }
+}
