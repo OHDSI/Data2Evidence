@@ -189,6 +189,10 @@ jobs:
             DOCKER_BUILD_FILE_PATH: ./services/enterprise-gateway/kernels/R_ohdsi_docker/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: .
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
+            # amd64-only for now: the R deps come from Posit Package Manager's
+            # binary CRAN mirror (Rprofile.site `__linux__/<codename>`), which
+            # only ships x86_64 binaries. 
+            PLATFORMS: linux/amd64
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
             # repo-root context: the image bakes plugins/flows (pixi envs + R)
