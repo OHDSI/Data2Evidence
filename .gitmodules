@@ -1,3 +1,6 @@
 [submodule "plugins/ui/libs/react-notebook"]
 	path = plugins/ui/libs/react-notebook
 	url = https://github.com/OHDSI/trex-notebook.git
+[submodule "plugins/atlas/trex-notebook"]
+	path = plugins/atlas/trex-notebook
+	url = https://github.com/OHDSI/trex-notebook.git

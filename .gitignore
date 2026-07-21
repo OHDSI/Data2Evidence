@@ -23,6 +23,7 @@ run_ssh.sh
 !tests/e2e/package-lock.json
 !plugins/functions/package-lock.json
 !plugins/fhir_functions/package-lock.json
+!plugins/sibyl_functions/package-lock.json
 
 pkg/*.tgz
 target
@@ -43,13 +44,18 @@ liquibase
 **/liveness
 data2evidence-cli-*.tgz
 
-
 plugins/flows/.DS_Store
 plugins/flows/venv
 plugins/flows/**/__pycache__
 plugins/flows/.env
 plugins/flows/**/*private*
 plugins/flows/**/.env*
+# pixi envs + transient prepack staging output (stage_package.sh)
+plugins/flows/*/.pixi/
+plugins/flows/*/flows/
+plugins/flows/*/_shared_flow_utils/
+plugins/flows/*/__init__.py
+plugins/flows/*/*.tgz
 
 ui/resources/*
 !ui/resources/img
@@ -76,3 +82,6 @@ scripts/dist/
 scripts/docker-compose-embed.ts
 scripts/create_users.mjs
 *.bun-build
+/secrets/
+.playwright-mcp/
+docs/superpowers/

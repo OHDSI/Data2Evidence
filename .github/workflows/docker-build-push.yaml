@@ -21,7 +21,7 @@ concurrency:
 env:
   REG_URL: ghcr.io/ohdsi
   DOCKER_BUILD_ARG1: GITHUB_PAT=${{ secrets.GITHUB_TOKEN }}
-  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
+  PREPULL_FLOW_IMAGES: ""  # legacy flow images retired: flows run on the pixi process worker
 
 jobs:
   setup:
@@ -119,6 +119,7 @@ jobs:
               - "plugins/atlas/**"
               - "plugins/functions/**"
               - "plugins/fhir_functions/**"
+              - "plugins/sibyl_functions/**"
               - "services/trex/ext/**"
               - ".github/workflows/docker-build-push.yaml"
             http_tests:
@@ -135,6 +136,7 @@ jobs:
               - "services/trex/**"
               - "package.json"
               - "docker-compose.yml"
+              - "docker-compose-local.yml"
               - "scripts/**"
               - "tests/backend_integration_tests/**"
               - ".github/workflows/docker-build-push.yaml"
@@ -146,10 +148,12 @@ jobs:
               - ".github/workflows/docker-build-push.yaml"
             e2e:
               - "tests/e2e/**"
+              - "docker-compose-local.yml"
               - "services/trex/**"
               - ".github/workflows/docker-build-push.yaml"
             regression:
               - "tests/regression/**"
+              - "docker-compose-local.yml"
               - ".github/workflows/docker-build-push.yaml"
 
   build_images:
@@ -163,31 +167,12 @@ jobs:
     runs-on: ${{ needs.setup.outputs.random_runner }}
     env:
       RUN_TAG: ${{ needs.setup.outputs.run_tag }}
+      # branch-scoped registry-cache suffix (tag-safe)
+      CACHE_SLUG: ${{ github.head_ref && format('pr-{0}', github.event.pull_request.number) || 'develop' }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - AZ_REG_REPOSITORY: d2e/flow-base
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/base/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-i2b2
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/i2b2/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-search-embedding
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/search_embedding/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-data-management
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_management/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-loyalty-score
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/loyalty_score/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-hades
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/hades/Dockerfile
-          - AZ_REG_REPOSITORY: d2e/flow-data-transformation
-            DOCKER_BUILD_CONTEXT_PATH: ./plugins/flows
-            DOCKER_BUILD_FILE_PATH: ./plugins/flows/data_transformation/Dockerfile
           - AZ_REG_REPOSITORY: d2e-pg-mgmt-init
             DOCKER_BUILD_FILE_PATH: ./services/alp-pg-management/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/alp-pg-management
@@ -206,7 +191,16 @@ jobs:
             build_disable: ${{ (needs.setup.outputs.changes_rkernel != 'true') && 'true' || 'false' }}
           - AZ_REG_REPOSITORY: d2e-dataflow-gen-worker
             DOCKER_BUILD_FILE_PATH: ./services/alp-dataflow-gen-worker/Dockerfile
-            DOCKER_BUILD_CONTEXT_PATH: ./services/alp-dataflow-gen-worker
+            # repo-root context: the image bakes plugins/flows (pixi envs + R)
+            DOCKER_BUILD_CONTEXT_PATH: .
+            # Registry build cache (mode=max exports every stage, including the
+            # expensive env stages): unchanged groups become blob downloads
+            # instead of renv compiles. PRs write to a per-branch cache tag and
+            # fall back to reading develop's; develop pushes write the shared
+            # tag. The hades stage reads GITHUB_PAT from a BuildKit secret so
+            # the rotating token cannot poison its cache key.
+            cache_enabled: "true"
+            needs_github_pat_secret: "true"
           - AZ_REG_REPOSITORY: d2e-supabase-storage
             DOCKER_BUILD_FILE_PATH: ./services/supabase-storage/Dockerfile
             DOCKER_BUILD_CONTEXT_PATH: ./services/supabase-storage
@@ -252,6 +246,11 @@ jobs:
           tags: ${{ env.REG_URL }}/${{ matrix.AZ_REG_REPOSITORY }}:${{ env.RUN_TAG }}
           provenance: false
           sbom: false
+          cache-from: |
+            ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache-{2}', env.REG_URL, matrix.AZ_REG_REPOSITORY, env.CACHE_SLUG) || '' }}
+            ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache', env.REG_URL, matrix.AZ_REG_REPOSITORY) || '' }}
+          cache-to: ${{ matrix.cache_enabled == 'true' && format('type=registry,ref={0}/{1}:buildcache{2},mode=max', env.REG_URL, matrix.AZ_REG_REPOSITORY, needs.setup.outputs.is_publish_push == 'true' && '' || format('-{0}', env.CACHE_SLUG)) || '' }}
+          secrets: ${{ matrix.needs_github_pat_secret == 'true' && format('github_pat={0}', secrets.GITHUB_TOKEN) || '' }}
           build-args: |
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
@@ -260,6 +259,17 @@ jobs:
       - name: Prune system
         if: always()
         run: docker system prune -af
+
+  # Lockfile discipline for pixi-managed flow plugin environments: manifests
+  # must not change without their committed pixi.lock, and locks must stay
+  # binary-only (see _pixi-lock-check.yml).
+  pixi_lock_check:
+    needs: [setup]
+    if: |
+      github.event_name == 'merge_group' ||
+      needs.setup.outputs.is_publish_push == 'true' ||
+      (github.event_name == 'pull_request' && needs.setup.outputs.changes_plugins == 'true')
+    uses: ./.github/workflows/_pixi-lock-check.yml
 
   build_plugins:
     needs: [setup]
@@ -291,6 +301,9 @@ jobs:
             RUNNER: ubuntu-24.04
           - PKGPATH: ./plugins/fhir_functions/
             DESTPATH: /usr/src/data/plugins/@data2evidence/fhir
+            RUNNER: ubuntu-24.04
+          - PKGPATH: ./plugins/sibyl_functions/
+            DESTPATH: /usr/src/data/plugins/@data2evidence/sibyl
             RUNNER: ubuntu-24.04
     runs-on: ${{ matrix.RUNNER || needs.setup.outputs.random_runner }}
     env:
@@ -348,6 +361,36 @@ jobs:
         env:
           CI: ${{ matrix.NPM != 'bun' }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Atlas3 sub-plugins (network/notebook-plugin/results-viewer/strategus/studies) live
+      # in the trex-notebook submodule at plugins/atlas/trex-notebook and are unpublished;
+      # build them from source so plugins/atlas's file: deps resolve during its
+      # install/postinstall. This is a second checkout of trex-notebook, pinned to the
+      # restructured monorepo; plugins/ui/libs/react-notebook stays on the older
+      # single-package commit that the portal's webr-notebook builds against.
+      - name: Build Atlas sub-plugins (trex-notebook submodule)
+        if: ${{ matrix.ATLAS }}
+        env:
+          CI: "true"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # results-viewer's shinylive export (scripts/build-atlas.sh) needs a full R +
+          # renv toolchain — renv.lock pins 132 packages, several with compiled deps
+          # (V8, Rcpp, RSQLite), which is too heavy/slow to provision on this shared,
+          # already disk-constrained matrix runner. Skip it here rather than flake the
+          # whole build_plugins job; SKIP_SHINYLIVE is the same escape hatch
+          # scripts/build-atlas.sh honors locally. Until a dedicated R-provisioned
+          # runner/step exists, the shinylive bundle (and thus
+          # /atlas/plugins/results-viewer/shinylive/) is absent from CI-built images.
+          SKIP_SHINYLIVE: "1"
+        run: |
+          SUB=plugins/atlas/trex-notebook/plugins
+          # notebook-plugin bundles the notebook app's source, which imports webr.
+          ( cd "$SUB/notebook" && npm install )
+          # Prefer build:pkg (targets dist/); the plain build targets the sibyl dev host.
+          for p in network notebook-plugin results-viewer strategus studies; do
+            ( cd "$SUB/$p" && npm install \
+              && npm run "$(node -e "process.stdout.write(require('./package.json').scripts['build:pkg'] ? 'build:pkg' : 'build')")" )
+          done
       # Atlas plugin: postinstall bakes Atlas3 + the Pythia UI into resources/;
       # build the portal entry. Packs only resources/ (see package.json "files").
       - name: Build Atlas plugin
@@ -516,7 +559,7 @@ jobs:
             GIT_COMMIT_ARG=${{ github.sha }}
             BUILD_TYPE=OSS
             PLUGINS_FEED=${{ needs.setup.outputs.is_release_push == 'true' && 'stable' || 'd2e' }}
-            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.0.1-develop.6.gc427022
+            PLUGINS_FROM_REGISTRY=@ohdsi/pythia-agent@0.1.0-develop.14.gf8bbfc7
           secrets: |
             "PLUGINS_REGISTRY=${{ secrets.PLUGINS_REGISTRY }}"
             "github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -873,6 +916,7 @@ jobs:
       - name: Wait for d2e-trex healthy
         if: success() || failure()
         run: |
+          status=missing
           for i in $(seq 1 60); do
             status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
             echo "[$i] d2e-trex health: $status"
@@ -880,6 +924,10 @@ jobs:
             sleep 5
           done
           docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ "$status" != "healthy" ]; then
+            echo "::error::d2e-trex did not become healthy (last status: $status)"
+            exit 1
+          fi
 
       # demodb (postgres:16-alpine, docker-compose.yml) is behind the demodb profile and
       # is otherwise pulled from Docker Hub lazily inside Setupdemo, where a transient
@@ -1207,7 +1255,7 @@ jobs:
       run_tag: ${{ needs.setup.outputs.run_tag }}
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
       reg_url: ghcr.io/ohdsi
-      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+      prepull_flow_images: ""
     secrets: inherit
 
   test_http_duckdb_retry:
@@ -1227,7 +1275,7 @@ jobs:
       run_tag: ${{ needs.setup.outputs.run_tag }}
       changes_ui: ${{ needs.setup.outputs.changes_ui }}
       reg_url: ghcr.io/ohdsi
-      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+      prepull_flow_images: ""
     secrets: inherit
 
   test_http_hana:
@@ -1244,7 +1292,7 @@ jobs:
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
       reg_url: ghcr.io/ohdsi
-      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+      prepull_flow_images: ""
     secrets: inherit
 
   test_http_hana_retry:
@@ -1263,7 +1311,7 @@ jobs:
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
       reg_url: ghcr.io/ohdsi
-      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+      prepull_flow_images: ""
     secrets: inherit
 
   test_regression:
@@ -1280,7 +1328,7 @@ jobs:
       runner: ${{ needs.setup.outputs.random_runner }}
       run_tag: ${{ needs.setup.outputs.run_tag }}
       reg_url: ghcr.io/ohdsi
-      prepull_flow_images: "flow-base flow-i2b2 flow-data-management"
+      prepull_flow_images: ""
     secrets: inherit
 
   test_regression_gate:
@@ -1409,13 +1457,6 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - d2e/flow-base
-          - d2e/flow-i2b2
-          - d2e/flow-search-embedding
-          - d2e/flow-data-management
-          - d2e/flow-loyalty-score
-          - d2e/flow-hades
-          - d2e/flow-data-transformation
           - d2e-pg-mgmt-init
           - d2e-logto
           - d2e-logto-post-init
@@ -1447,14 +1488,19 @@ jobs:
             echo "Source manifest $SRC not present (likely build_disable=true); skipping promotion."
           fi
 
-      - name: Delete untagged versions
-        uses: actions/delete-package-versions@v5
+      # Multi-arch-aware cleanup: the per-arch child manifests of a manifest
+      # list are stored as untagged package versions in GHCR, so a blind
+      # delete-only-untagged sweep (actions/delete-package-versions) removes
+      # the children of freshly pushed multi-arch tags and leaves the tag
+      # unpullable ("manifest unknown"). This action resolves manifest-list
+      # references and only deletes truly orphaned versions.
+      - name: Delete orphaned untagged versions
+        uses: dataaxiom/ghcr-cleanup-action@v1
         continue-on-error: true
         with:
-          package-name: ${{ matrix.image }}
-          package-type: container
-          min-versions-to-keep: 3
-          delete-only-untagged-versions: "true"
+          package: ${{ matrix.image }}
+          delete-untagged: true
+          validate: true
 
   docker-success:
     needs: [build_images, build_trex_image, build_plugins, build_e2e_image, helm_lint, test_helm_kind_gate, test_demosetup_dev_gate, test_demosetup_hana_gate, test_http_duckdb_gate, test_http_hana_gate, test_regression_gate]

@@ -6,7 +6,7 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-fe68fc7298fe04c0ea8b667c1fdb0ca7e55d946f@sha256:cf41bc415c8ddecb2771f7ee402824a21525a85a995013743fc5d0b97822d1fd AS base
+FROM ghcr.io/ohdsi/trexsql:sha-666aa4a2201b59039d180cc0eee37721b0da5a9c@sha256:12e37dd83b61c6e7b342b7b0edf41e3d5b5348b6e80504c3a514b009c81e5bbc AS base
 
 USER root
 WORKDIR /usr/src
@@ -100,7 +100,6 @@ ENV PLUGINS_DEV_PATH=/usr/src/bundled-plugins:/usr/src/plugins
 
 # NOTE: the core (main + event, with D2E_COMPAT) is NOT vendored — it is provided
 # by the base trexsql image at /usr/src/core (index.eszip already bundled there).
-# D2E_COMPAT is activated at runtime via the D2E_COMPAT=true env (set in compose).
 
 RUN mkdir -p ./logto
 COPY ./logto ./logto

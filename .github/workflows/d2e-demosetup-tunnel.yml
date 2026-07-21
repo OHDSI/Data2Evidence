@@ -1,0 +1,294 @@
+name: d2e/demosetup-tunnel
+
+permissions:
+  contents: read
+  packages: read
+
+on:
+  repository_dispatch:
+    types: [demosetup-tunnel]
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  REG_URL: ghcr.io/ohdsi
+  PREPULL_FLOW_IMAGES: "flow-base flow-i2b2 flow-data-management flow-search-embedding"
+
+jobs:
+  demosetup_tunnel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    outputs:
+      tunnel_url: ${{ steps.tunnel.outputs.tunnel_url }}
+    env:
+      VERSION: ${{ github.event.client_payload.version || 'develop' }}
+      DOCKER_TAG_NAME: ${{ github.event.client_payload.version || 'develop' }}
+      PLUGINS_IMAGE_TAG: ${{ github.event.client_payload.version || 'develop' }}
+      DURATION_MINUTES: ${{ github.event.client_payload.duration_minutes || '120' }}
+    steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
+      - name: Increase swapfile to 15G
+        run: |
+          sudo swapoff -a
+          sudo fallocate -l 15G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.client_payload.ref || github.ref }}
+          submodules: recursive
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install cloudflared
+        run: |
+          curl -fsSL -o /tmp/cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i /tmp/cloudflared.deb
+          cloudflared --version
+
+      - name: Start Cloudflare quick tunnel
+        id: tunnel
+        run: |
+          nohup cloudflared tunnel --url https://localhost:443 --no-tls-verify --logfile /tmp/cloudflared.log > /dev/null 2>&1 &
+          echo "TUNNEL_PID=$!" >> $GITHUB_ENV
+          TUNNEL_URL=""
+          for i in $(seq 1 30); do
+            TUNNEL_URL=$(grep -oE 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/cloudflared.log | head -1 || true)
+            [ -n "$TUNNEL_URL" ] && break
+            sleep 2
+          done
+          if [ -z "$TUNNEL_URL" ]; then
+            echo "::error::Could not obtain tunnel URL"
+            cat /tmp/cloudflared.log
+            exit 1
+          fi
+          TUNNEL_HOST=${TUNNEL_URL#https://}
+          echo "TUNNEL_URL=$TUNNEL_URL" >> $GITHUB_ENV
+          echo "TUNNEL_HOST=$TUNNEL_HOST" >> $GITHUB_ENV
+          echo "127.0.0.1 $TUNNEL_HOST" | sudo tee -a /etc/hosts
+          echo "Tunnel URL: $TUNNEL_URL" | tee -a $GITHUB_STEP_SUMMARY
+          echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+          printf '%s\n' "$TUNNEL_URL" > /tmp/tunnel-url.txt
+
+      # Published immediately so the URL can be fetched while the run is still going:
+      # job outputs and `gh run view --log` are only readable once the job has finished,
+      # by which point the tunnel is already torn down.
+      - name: Publish tunnel URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-url
+          path: /tmp/tunnel-url.txt
+          retention-days: 1
+
+      - name: npm install
+        run: npm install
+
+      - name: Install Atlas plugin resources
+        working-directory: ./plugins/atlas
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm install
+
+      - name: Initialise d2e
+        id: init
+        run: |
+          init_choice=y ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config CADDY__D2E__PUBLIC_FQDN=$TUNNEL_HOST node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} init
+          echo "CADDY__ADDITIONAL_HOSTS=https://localhost" >> .env
+
+      - name: Pre-pull flow images
+        run: |
+          for img in $PREPULL_FLOW_IMAGES; do
+            docker pull "${REG_URL}/d2e/${img}:${DOCKER_TAG_NAME}"
+          done
+
+      - name: Pull docker compose images
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions pull
+          docker images --format "table {{.ID}}\t{{.Repository}}\t{{.Tag}}"
+
+      - name: Start services
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: start
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 2
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
+            DC_EXIT_CODE=$?
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Logs
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions logs
+
+      - name: Wait for d2e-trex healthy
+        if: success() || failure()
+        run: |
+          status=missing
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' d2e-trex 2>/dev/null || echo "missing")
+            echo "[$i] d2e-trex health: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 5
+          done
+          docker ps --format '{{.Names}},{{.Status}}' | sort
+          if [ "$status" != "healthy" ]; then
+            echo "::error::d2e-trex did not become healthy (last status: $status)"
+            exit 1
+          fi
+
+      - name: Pre-pull demo db image
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        with:
+          timeout_seconds: 600
+          retry_wait_seconds: 30
+          max_attempts: 5
+          retry_on: any
+          command: docker pull postgres:16-alpine
+
+      - name: Setupdemo
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: setupdemo
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 3
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions setupdemo
+            DC_EXIT_CODE=$?
+            docker ps --format {{.Names}},{{.Status}} 2> /dev/null | sort | tee -a $GITHUB_STEP_SUMMARY
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Checkflow
+        if: success() || failure()
+        uses: nick-fields/retry@v3
+        id: checkflow
+        with:
+          timeout_seconds: 1800
+          retry_wait_seconds: 100
+          max_attempts: 1
+          retry_on: any
+          command: |
+            ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions checkflow
+            DC_EXIT_CODE=$?
+            [ $DC_EXIT_CODE = 0 ] || { echo EXIT DC_EXIT_CODE=$DC_EXIT_CODE && exit $DC_EXIT_CODE; }
+
+      - name: Restart d2e services
+        if: success() || failure()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions start
+
+      - name: Wait for webapi-init to complete
+        if: success() || failure()
+        run: |
+          echo "Waiting for webapi-init to complete (ensures logto admin user is created)..."
+          for i in $(seq 1 60); do
+            status=$(docker ps -a --filter "name=webapi-init" --format '{{.Status}}')
+            if echo "$status" | grep -q "(healthy)"; then
+              echo "webapi-init completed successfully"
+              break
+            fi
+            if echo "$status" | grep -qE "Exited \([1-9]"; then
+              echo "webapi-init failed!"
+              docker logs d2e-webapi-init || true
+              exit 1
+            fi
+            echo "Waiting for webapi-init... ($i/60)"
+            sleep 5
+          done
+
+      - name: Verify app is reachable
+        if: success() || failure()
+        run: |
+          echo "Local:"
+          curl -k -s -o /dev/null -w "%{http_code}\n" https://localhost:443/d2e/portal || echo "App not reachable locally"
+          echo "Tunnel:"
+          curl -s -o /dev/null -w "%{http_code}\n" --resolve "$TUNNEL_HOST:443:127.0.0.1" -k "$TUNNEL_URL/d2e/portal" || echo "App not reachable via tunnel host"
+
+      - name: Publish access details
+        if: success() || failure()
+        run: |
+          {
+            echo "## Demo environment is up"
+            echo ""
+            echo "- Portal: $TUNNEL_URL/d2e/portal"
+            echo "- Login: \`admin\` / \`Updatepassword12345\`"
+            echo "- Open for $DURATION_MINUTES minutes (until the 'Keep tunnel open' step ends)"
+            echo ""
+            echo "Cancel the workflow run to tear the environment down early."
+          } >> $GITHUB_STEP_SUMMARY
+
+      - name: Mark environment ready
+        if: success() || failure()
+        run: printf '%s\n' "$TUNNEL_URL" > /tmp/tunnel-ready.txt
+
+      - name: Publish readiness artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-ready
+          path: /tmp/tunnel-ready.txt
+          retention-days: 1
+
+      - name: Keep tunnel open
+        if: success() || failure()
+        run: |
+          END=$((SECONDS + DURATION_MINUTES * 60))
+          echo "Keeping tunnel open for $DURATION_MINUTES minutes: $TUNNEL_URL/d2e/portal"
+          while [ $SECONDS -lt $END ]; do
+            sleep 60
+            if ! kill -0 "$TUNNEL_PID" 2>/dev/null; then
+              echo "::warning::cloudflared exited early"
+              tail -20 /tmp/cloudflared.log || true
+              break
+            fi
+            REMAINING=$(( (END - SECONDS) / 60 ))
+            if [ $(( REMAINING % 10 )) -eq 0 ] || [ $REMAINING -le 1 ]; then
+              echo "[$(date -u '+%H:%M:%S')] tunnel open, ~${REMAINING}m remaining"
+            fi
+          done
+          echo "Tunnel window elapsed"
+
+      - name: Stop tunnel
+        if: always()
+        run: kill "$TUNNEL_PID" 2>/dev/null || true
+
+      - name: Stop d2e services
+        if: always()
+        run: |
+          ENV_TYPE=remote CADDY__CONFIG=./deploy/caddy-config node ./scripts/dist/cli.js -e -v ${{ env.VERSION }} -d ./plugins/functions stop
+
+      - name: Prune system
+        if: always()
+        run: docker system prune -af

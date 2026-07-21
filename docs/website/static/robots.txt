@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://data2evidence.org/sitemap.xml
