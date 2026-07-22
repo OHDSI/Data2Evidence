@@ -20,6 +20,8 @@ jobs:
   demosetup_tunnel:
     runs-on: ubuntu-24.04
     timeout-minutes: 330
+    outputs:
+      tunnel_url: ${{ steps.tunnel.outputs.tunnel_url }}
     env:
       VERSION: ${{ github.event.client_payload.version || 'develop' }}
       DOCKER_TAG_NAME: ${{ github.event.client_payload.version || 'develop' }}
@@ -65,6 +67,7 @@ jobs:
           cloudflared --version
 
       - name: Start Cloudflare quick tunnel
+        id: tunnel
         run: |
           nohup cloudflared tunnel --url https://localhost:443 --no-tls-verify --logfile /tmp/cloudflared.log > /dev/null 2>&1 &
           echo "TUNNEL_PID=$!" >> $GITHUB_ENV
@@ -84,6 +87,18 @@ jobs:
           echo "TUNNEL_HOST=$TUNNEL_HOST" >> $GITHUB_ENV
           echo "127.0.0.1 $TUNNEL_HOST" | sudo tee -a /etc/hosts
           echo "Tunnel URL: $TUNNEL_URL" | tee -a $GITHUB_STEP_SUMMARY
+          echo "tunnel_url=$TUNNEL_URL" >> $GITHUB_OUTPUT
+          printf '%s\n' "$TUNNEL_URL" > /tmp/tunnel-url.txt
+
+      # Published immediately so the URL can be fetched while the run is still going:
+      # job outputs and `gh run view --log` are only readable once the job has finished,
+      # by which point the tunnel is already torn down.
+      - name: Publish tunnel URL artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-url
+          path: /tmp/tunnel-url.txt
+          retention-days: 1
 
       - name: npm install
         run: npm install
@@ -233,6 +248,18 @@ jobs:
             echo ""
             echo "Cancel the workflow run to tear the environment down early."
           } >> $GITHUB_STEP_SUMMARY
+
+      - name: Mark environment ready
+        if: success() || failure()
+        run: printf '%s\n' "$TUNNEL_URL" > /tmp/tunnel-ready.txt
+
+      - name: Publish readiness artifact
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-ready
+          path: /tmp/tunnel-ready.txt
+          retention-days: 1
 
       - name: Keep tunnel open
         if: success() || failure()
