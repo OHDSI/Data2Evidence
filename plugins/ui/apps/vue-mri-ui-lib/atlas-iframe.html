@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!-- Iframe entry for the Atlas3 shell: booted by src/atlas-iframe-boot.ts once
+     the parent wrapper parcel delivers the portal context via postMessage. -->
+<html lang="en">
+  <head>
+    <title>Data Exploration</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <style>
+      html,
+      body,
+      .vue-main {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="vue-main"></div>
+    <span class="plugin-container"></span>
+    <script type="module" src="/src/atlas-iframe-boot.ts"></script>
+  </body>
+</html>

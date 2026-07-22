@@ -27,6 +27,8 @@ const state = {
   loading: false,
   canDatasetMaterializeCohorts: false,
   canMaterializeCohortDatasetId: '',
+  isRestoringBookmark: false,
+  activeBookmarkBaseline: null as any,
 }
 
 const bookmarkURL = '/analytics-svc/api/services/bookmark'
@@ -37,6 +39,8 @@ const getters = {
   getBookmarksLoading: modulestate => modulestate.loading,
   getBookmarks: modulestate => modulestate.bookmarks,
   getCanDatasetMaterializeCohorts: modulestate => modulestate.canDatasetMaterializeCohorts,
+  getIsRestoringBookmark: modulestate => modulestate.isRestoringBookmark,
+  getActiveBookmarkBaseline: modulestate => modulestate.activeBookmarkBaseline,
   getFilterSummaryVisibility: modulestate => modulestate.filterSummaryVisible,
   getSchemaName: modulestate => modulestate.schemaName,
   getAddNewCohort: modulestate => modulestate.addNewCohort,
@@ -158,30 +162,79 @@ const getters = {
     if (modulestate.activeBookmark == null) {
       return false
     }
-    // For new bookmarks or bookmarks without saved data, there are no changes to compare
-    if (!modulestate.activeBookmark.bookmark) {
+    // While restoring a bookmark, suppress change detection until the restore is complete.
+    if (modulestate.isRestoringBookmark) {
       return false
+    }
+    // A colorAxis that was set by automatic default-selection (not by the user
+    // or a restored bookmark) must not count as a change: opening a bookmark
+    // saved with colorAxis = null auto-picks a color axis after the chart loads.
+    //
+    // The auto value can leak into EITHER side of the comparison depending on
+    // timing: if onChartDataReady fires after the baseline snapshot the baseline
+    // holds null, but if it fires before (e.g. cached data on re-open) the
+    // baseline holds the auto value. Normalize BOTH sides so the comparison is
+    // invariant to that timing. A user-chosen colorAxis keeps
+    // isColorAxisAutoDefaulted false and is still compared.
+    const colorAxisAutoDefaulted = Boolean(rootGetters.getIsColorAxisAutoDefaulted)
+    const normalizeColorAxis = (data: any) =>
+      colorAxisAutoDefaulted && data && typeof data === 'object' && 'colorAxis' in data
+        ? { ...data, colorAxis: null }
+        : data
+    const currentData = moduleGetters.getBookmarksData
+    const normalizedCurrentData = normalizeColorAxis(currentData)
+
+    // For bookmarks without saved data (new/deep-link/Atlas), compare against the captured baseline.
+    // For saved bookmarks we also capture a baseline after restore so that auto-defaulted
+    // fields (e.g. colorAxis) do not cause false-positive dirty state.
+    const baseline = modulestate.activeBookmarkBaseline
+    if (baseline != null) {
+      return !isEqual(normalizedCurrentData, normalizeColorAxis(baseline))
+    }
+    if (!modulestate.activeBookmark.bookmark) {
+      // No saved JSON and no baseline: this bookmark came from an external
+      // source (deep link / Atlas import) and has never been saved as a PA
+      // bookmark. Treat it as always dirty so navigation prompts until saved.
+      // Contrast with addNewCohort, which captures a baseline immediately so
+      // an unmodified new cohort correctly reports clean.
+      return true
     }
     const bookmark = JSON.parse(modulestate.activeBookmark.bookmark)
     const newBookmarksFilter = moduleGetters.getBookmarksData.filter
     const currentBookmarksFilter = bookmark?.filter
     const newBookmarksAxisSelection = moduleGetters.getBookmarksData.axisSelection
     const currentBookmarksAxisSelection = bookmark?.axisSelection
-    // Only compare barChartType for stacked-bar bookmarks
+    // Only compare barChartType for stacked-bar bookmarks.
+    // Normalize both sides consistently:
+    //   - Disabled modes fall back to 'stack' (handled above).
+    //   - showDistributionOverlay is forced to false when the effective mode
+    //     does not support distribution overlays, matching the behaviour in
+    //     _loadParsedBookmarkToState. This prevents false-positive dirty state
+    //     when a saved overlay-capable mode is disabled by the current config.
     let barChartTypeChanged = false
     if (bookmark?.chartType === 'stacked') {
       const mriFrontendConfig = rootGetters.getMriFrontendConfig
       const defaultBarChartType = { mode: 'stack', showDistributionOverlay: false }
       const newRaw = moduleGetters.getBookmarksData.barChartType ?? defaultBarChartType
       const curRaw = bookmark?.barChartType ?? defaultBarChartType
-      // Normalize disabled modes to 'stack' on both sides so a freshly-loaded bookmark whose
-      // saved mode is disabled by the current config does not appear dirty.
+
+      const newEffectiveMode = getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig)
+      const curEffectiveMode = getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig)
+      const newEffectiveModeMeta = modeOrder.find(m => m.id === newEffectiveMode)
+      const curEffectiveModeMeta = modeOrder.find(m => m.id === curEffectiveMode)
+
       barChartTypeChanged = !isEqual(
-        { ...newRaw, mode: getEffectiveBarChartMode(newRaw.mode, mriFrontendConfig) },
-        { ...curRaw, mode: getEffectiveBarChartMode(curRaw.mode, mriFrontendConfig) }
+        {
+          mode: newEffectiveMode,
+          showDistributionOverlay: newEffectiveModeMeta?.hasDistributionOverlay && !!newRaw.showDistributionOverlay,
+        },
+        {
+          mode: curEffectiveMode,
+          showDistributionOverlay: curEffectiveModeMeta?.hasDistributionOverlay && !!curRaw.showDistributionOverlay,
+        }
       )
     }
-    const newColorAxis = moduleGetters.getBookmarksData.colorAxis ?? null
+    const newColorAxis = colorAxisAutoDefaulted ? null : moduleGetters.getBookmarksData.colorAxis ?? null
     const currentColorAxis = bookmark?.colorAxis ?? null
     return (
       !isEqual(newBookmarksFilter, currentBookmarksFilter) ||
@@ -390,6 +443,7 @@ const actions = {
    * Unlike loadbookmarkToState, this takes the parsed bookmark object directly
    */
   loadBookmarkDataToState({ commit, dispatch, getters, rootGetters }, { bookmark, chartType }) {
+    commit(types.SET_IS_RESTORING_BOOKMARK, true)
     // Set a virtual active bookmark so the UI shows the cohort tab
     commit(types.SET_ACTIVE_BOOKMARK, {
       bookmarkname: 'Linked Cohort',
@@ -413,8 +467,19 @@ const actions = {
       chartType,
       skipFireRequest: chartIsChanging,
     })
+      .then(result => {
+        // Do NOT capture a baseline for deep-link bookmarks. A deep link is
+        // unsaved external work that has never been persisted as a PA bookmark,
+        // so getCurrentBookmarkHasChanges should always report dirty (no baseline +
+        // no .bookmark JSON → true). The user must explicitly save to clear dirty.
+        return result
+      })
+      .finally(() => {
+        commit(types.SET_IS_RESTORING_BOOKMARK, false)
+      })
   },
   loadbookmarkToState({ commit, dispatch, getters, rootGetters }, { bmkId, chartType }) {
+    commit(types.SET_IS_RESTORING_BOOKMARK, true)
     const parsedBookmark = getters.getBookmarkById(bmkId)
     const currentActiveChart = rootGetters.getActiveChart
     const chartIsChanging = chartType && chartType !== currentActiveChart
@@ -426,6 +491,18 @@ const actions = {
       chartType,
       skipFireRequest: chartIsChanging || !isRightPaneMounted,
     })
+      .then(result => {
+        // Capture the post-restore live state as the comparison baseline.
+        // Saved bookmarks may omit keys that the app auto-defaults after load
+        // (e.g. colorAxis), so comparing against the raw saved JSON produces
+        // false-positive dirty state. The baseline reflects the normalized
+        // state the user actually sees.
+        commit(types.SET_ACTIVE_BOOKMARK_BASELINE, getters.getBookmarksData)
+        return result
+      })
+      .finally(() => {
+        commit(types.SET_IS_RESTORING_BOOKMARK, false)
+      })
   },
   /**
    * Internal action to load a parsed bookmark to state
@@ -668,7 +745,14 @@ const mutations = {
     modulestate.schemaName = schemaName
   },
   [types.SET_ACTIVE_BOOKMARK](modulestate, bookmark) {
-    modulestate.activeBookmark = bookmark
+    modulestate.activeBookmark = bookmark ? { ...bookmark, isNew: Boolean(bookmark.isNew) } : null
+    modulestate.activeBookmarkBaseline = null
+  },
+  [types.SET_ACTIVE_BOOKMARK_BASELINE](modulestate, baseline) {
+    modulestate.activeBookmarkBaseline = baseline
+  },
+  [types.SET_IS_RESTORING_BOOKMARK](modulestate, isRestoring) {
+    modulestate.isRestoringBookmark = isRestoring
   },
   [types.SET_ADD_NEW_COHORT](modulestate, { addNewCohort }) {
     modulestate.addNewCohort = addNewCohort

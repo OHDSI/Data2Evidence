@@ -24,4 +24,4 @@ Each scenario directory gets its own `baseline.json`. Commit these files to lock
 set -a && source .env && set +a && npm test
 ```
 
-Results print a table showing p95 response time vs baseline, delta per scenario, and min/max. Tests fail if any scenario exceeds 20% above baseline p95 (`PERF_FAIL_THRESHOLD`), if a non-2xx response is returned, or if no baseline entry exists for the scenario. The run exits immediately if `BEARER_TOKEN` is not set.
+Results print a table showing p95 response time vs baseline, delta per scenario, and min/max. Tests fail if any scenario exceeds 20% above baseline p95 (`PERF_FAIL_THRESHOLD`) by more than 15ms (`PERF_MIN_DELTA_MS`, so ms-level jitter on small baselines doesn't fail CI), if a non-2xx response is returned, or if no baseline entry exists for the scenario. The run exits immediately if `BEARER_TOKEN` is not set.

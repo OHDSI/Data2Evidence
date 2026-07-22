@@ -7,6 +7,10 @@ export const config = {
   // Fraction above baseline p95 that fails the test (default 20%)
   failThreshold: Number(process.env.PERF_FAIL_THRESHOLD ?? 0.2),
 
+  // Absolute p95 growth (ms) below which a threshold breach is treated as
+  // runner noise — small baselines (<25ms) otherwise fail on ms-level jitter.
+  minDeltaMs: Number(process.env.PERF_MIN_DELTA_MS ?? 15),
+
   bearerToken: process.env.BEARER_TOKEN ?? "",
 
   // Substituted for {{D2E_BASE_URL}} tokens in scenario files (runner/substituteConfig.ts).

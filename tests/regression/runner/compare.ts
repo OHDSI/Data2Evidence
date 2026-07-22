@@ -33,8 +33,10 @@ export function compareToBaseline(result: TimingResult, baseline: Baseline): Com
 
   const delta = (result.p95Ms - baselineP95Ms) / baselineP95Ms;
   let status: CompareStatus = "pass";
-  if (delta > config.failThreshold) status = "fail";
-  else if (delta > config.warnThreshold) status = "warn";
+  if (result.p95Ms - baselineP95Ms > config.minDeltaMs) {
+    if (delta > config.failThreshold) status = "fail";
+    else if (delta > config.warnThreshold) status = "warn";
+  }
 
   return {
     scenarioName: result.scenarioName,

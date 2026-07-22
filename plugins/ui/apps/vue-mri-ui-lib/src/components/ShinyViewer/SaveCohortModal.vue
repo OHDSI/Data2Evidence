@@ -287,7 +287,7 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'onAddCohortOkButtonPress']),
-    ...mapMutations([types.SET_ACTIVE_BOOKMARK]),
+    ...mapMutations([types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     generateDefaultName(): string {
       const now = new Date()
       const timestamp = now.toLocaleString('en-US', {
@@ -432,6 +432,7 @@ export default {
       }
 
       this[types.SET_ACTIVE_BOOKMARK](bookmark)
+      this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
 
       return bookmark
     },

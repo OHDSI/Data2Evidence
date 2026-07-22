@@ -1,0 +1,214 @@
+.about-us {
+  /* Full-width Hero Section with blue background */
+
+  // override default background color
+  .hero {
+    background-color: #ebf2fb;
+                  
+  }
+
+  .hero__aside .image__img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Typography */
+  .hero__headline {
+    font-size: 3rem;
+    color: #000080; /* navy text */
+  }
+
+  .hero__text p {
+    font-size: 1.2rem;
+    line-height: 1.27;
+    color: #000080;
+  }
+
+  .section h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #000080; /* navy text */
+  }
+
+  .section p {
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    color: #000080; /* navy text */
+  }
+
+  /* Section container to constrain width */
+  .section--narrow {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+
+
+  /* Grid utilities */
+  .grid {
+    display: grid;
+    grid-row-gap: 1.5rem;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    text-align: left;
+  }
+
+  .grid__background_blue {
+    background-color: #ebf2fb;
+  }
+
+  /* Column utility */
+  .column {
+    width: 100%;
+  }
+
+  /* Hints Section */
+  .hints__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .hints__item {
+    flex: 1 1 calc(100% - 1rem);
+    display: flex;
+    flex-direction: row; /* Change to row so image and text sit side-by-side */
+    align-items: center;
+    text-align: left; /* Align text to the left */
+    gap: 0.5rem; /* Optional: Adds some space between the logo and text */
+    margin-bottom: 1rem;
+  }
+
+  .hints__figure {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0; /* Remove bottom margin since we are in a row layout */
+  }
+
+  .section {
+    padding-bottom: 3.75rem;
+    padding-top: 3.75rem;
+  }
+
+  /* Vision Section as a Tile (Section Card) */
+  .section--card {
+    max-width: 1100px;
+    width: calc(100% - 30px);
+    border-radius: 12px;
+    overflow: hidden;
+    padding: 2rem;
+    background-color: #f2f0f1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 0 auto;
+  }
+
+  /* Add extra space before the nonprofit section */
+  .nonprofit {
+    margin-top: 3rem; /* adjust the value as needed */
+  }
+
+  .hpi {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 2rem -1.5rem;
+    display: flex;
+    flex-flow: row wrap;
+  }
+
+  .grid--2 {
+    grid-column-gap: 1.5rem;
+    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .teamGrid {
+    grid-template-columns: repeat(1, minmax(0px, 1fr));
+  }
+
+  /* Responsive Adjustments */
+  @media only screen and (min-width: 576px) {
+    .grid {
+      grid-column-gap: 15px;
+      max-width: 540px;
+    }
+
+    .grid--2 {
+      grid-column-gap: 1.5rem;
+      align-items: center;
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    .hpi {
+      margin: 2rem 0 2rem -4rem;
+    }
+
+    .hints__item {
+      flex: 1 1 calc(100% - 1rem);
+    }
+
+    .teamGrid {
+      grid-template-columns: repeat(1, minmax(0px, 1fr));
+    }
+  }
+
+  @media only screen and (min-width: 768px) {
+    .grid {
+      grid-column-gap: 15px;
+      max-width: 720px;
+    }
+
+
+    .grid--2 {
+      grid-column-gap: 1.5rem;
+      align-items: center;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .hero__aside {
+      margin: 0;
+    }
+
+    .section {
+      padding-bottom: 3.125rem;
+      padding-top: 3.125rem;
+    }
+
+    .teamGrid {
+      grid-template-columns: repeat(2, minmax(0px, 1fr));
+    }
+  }
+
+  @media only screen and (min-width: 992px) {
+    .grid {
+      max-width: 960px;
+    }
+
+    .hero__text {
+      font-size: 1.75rem;
+    }
+
+    .hints__item {
+      flex: 1 1 calc(50% - 1rem);
+    }
+
+    .teamGrid {
+      grid-template-columns: repeat(3, minmax(0px, 1fr));
+    }
+  }
+
+  @media only screen and (min-width: 1200px) {
+    .grid {
+      max-width: 1140px;
+    }
+
+
+  }
+}

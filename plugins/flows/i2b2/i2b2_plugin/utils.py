@@ -5,7 +5,7 @@ def get_version_from_tag(tag: str) -> str:
     return tag[1:4].replace(".", "-")
 
 def path_to_ant(tag: str) -> str:
-    return f"/app/i2b2-data-{tag[1:]}/edu.harvard.i2b2.data/Release_{get_version_from_tag(tag)}"
+    return os.path.join(os.getcwd(), f"i2b2-data-{tag[1:]}/edu.harvard.i2b2.data/Release_{get_version_from_tag(tag)}")
 
 def check_table_creation(dbdao, schema_name: str):
     '''
