@@ -47,6 +47,38 @@ def create_results_cache_flow(options: CreateCacheOptions):
     final_options = update_parameters(new_options, 'snapshot_schema_name', new_options.schema_name)
     create_cache_flow(final_options)
 
+def normalize_columns_to_lowercase(file_conn, copy_params: CopyParameters, logger):
+    """
+    Snowflake preserves UPPERCASE identifiers, so the offline `SELECT *` copy lands
+    UPPERCASE column names in the cache (e.g. CDM_VERSION, CONCEPT_ID). Every D2E consumer
+    expects lowercase (postgres/OMOP convention) and does `row["cdm_version"]`-style lookups
+    on result sets, which miss UPPERCASE keys. Rename any non-lowercase column so the
+    Snowflake cache is a drop-in standard OMOP cache and consumers need no per-dialect casing.
+    DuckDB allows case-only renames even though identifiers resolve case-insensitively.
+    """
+    db = copy_params.target_database
+    schema = copy_params.target_schema
+    rows = file_conn.execute(
+        """
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_catalog = ? AND table_schema = ?
+        """,
+        [db, schema],
+    ).fetchall()
+    renamed = 0
+    for table_name, column_name in rows:
+        if column_name != column_name.lower():
+            file_conn.execute(
+                f'ALTER TABLE "{db}"."{schema}"."{table_name}" '
+                f'RENAME COLUMN "{column_name}" TO "{column_name.lower()}"'
+            )
+            renamed += 1
+    logger.info(
+        f"Normalized {renamed} column name(s) to lowercase in '{db}'.'{schema}'."
+    )
+
+
 def create_cache_flow(options: CreateCacheOptions):
     logger = get_run_logger()
     # Log parameters excluding sensitive patient and timestamp data
@@ -86,6 +118,15 @@ def create_cache_flow(options: CreateCacheOptions):
     
     if dbdao.dialect == SupportedDatabaseDialects.SNOWFLAKE.value:
         logger.info("Snowflake: building cache via single-connection offline DuckDB path.")
+        # trex serves and attaches caches by cache_id (<cache_id>.db + catalog <cache_id>), not
+        # database_code. Build the offline cache into that same file/catalog so every cache
+        # consumer (terminology-svc, analytics-svc, DQD/DC) resolves it. Fall back to
+        # database_code only for legacy rows without a cache_id.
+        sf_catalog = options.cache_id or options.database_code
+        duckdb_file_path = resolve_duckdb_file_path(
+            sf_catalog, Variable.get("duckdb_data_folder")
+        )
+        copy_params.target_database = sf_catalog
         # A Snowflake source holds CDM data only; a results schema (e.g. CDM_results) has no
         # source counterpart — results are written cache-side by DQD/DC. When the source
         # schema is absent (the results-cache pass), create the empty schema in the cache and
@@ -99,6 +140,7 @@ def create_cache_flow(options: CreateCacheOptions):
             if source_schema_exists:
                 attach_to_source_db(dbdao, file_conn, copy_params.source_database)
                 create_schema_tables(file_conn, dbdao, copy_params, logger)
+                normalize_columns_to_lowercase(file_conn, copy_params, logger)
                 create_fts_index(file_conn, copy_params, logger)
             else:
                 logger.info(

@@ -606,6 +606,10 @@ const getTrexDbConnection = ({
                 // For bigquery, do not execute any queries on sourcedb
                 direct_connection_suffix = "";
                 break;
+            case ANALYTICS_DB_DIALECTS.SNOWFLAKE:
+                // Snowflake reads target the materialized DuckDB cache. No source (__srcdb) suffix.
+                direct_connection_suffix = "";
+                break;
 
             default:
                 throw new Error(
