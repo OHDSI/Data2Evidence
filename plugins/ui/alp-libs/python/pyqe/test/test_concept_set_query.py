@@ -1,4 +1,5 @@
 import pytest
+import requests
 from pyqe.api.concept_set_query import ConceptSetQuery
 from test.mock_object import MockResponse
 
@@ -242,4 +243,7 @@ def get_mock_response(auth_api, path, params=None, headers=None):
             ]
         })
 
-    return MockResponse(404, None)
+    # Unknown concept set: production _AuthApi._get raises HTTPError on a 404
+    # (see _validate_response -> raise_for_status), so mirror that here rather
+    # than returning a fake 404 response that never triggers the error path.
+    raise requests.HTTPError(response=MockResponse(404, None))

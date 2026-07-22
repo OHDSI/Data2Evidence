@@ -2,6 +2,7 @@ import os
 import logging
 import json
 import pandas as pd
+import requests
 from datetime import datetime, timezone
 from typing import List, Dict
 from pyqe.types.types import ConceptSet, ConceptSetConcept
@@ -201,7 +202,14 @@ class ConceptSetQuery(_AuthApi):
         _parse_ref(ref)
         headers = {"datasetid": self.study_id}
 
-        response = self._get(f"/d2e-webapi/conceptset/{ref}/expression", headers=headers)
+        try:
+            response = self._get(f"/d2e-webapi/conceptset/{ref}/expression", headers=headers)
+        except requests.HTTPError as error:
+            # A missing concept set has no concepts; surface that as an empty
+            # list rather than propagating the 404 to the caller.
+            if error.response is not None and error.response.status_code == 404:
+                return []
+            raise
         expression: dict = json.loads(response.text)
         items = expression.get("items", []) if expression else []
         return [_map_expression_item(item) for item in items]

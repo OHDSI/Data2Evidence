@@ -252,4 +252,16 @@ async def get_mock_response(auth_api, path, params=None, headers=None):
             ]
         })
 
-    return MockResponse(404, None)
+    # Unknown concept set: pyfetch does not raise on error status, so production
+    # returns the 404 response as-is. Its body is a not-found error page (often
+    # non-JSON), so the code must detect the 404 and not try to parse it as a
+    # concept-set expression.
+    return _NotFoundResponse()
+
+
+class _NotFoundResponse:
+    status = 404
+    status_code = 404
+
+    async def json(self):
+        raise ValueError("404 response body is not a concept-set expression")

@@ -202,6 +202,14 @@ class ConceptSetQuery(_AuthApi):
         headers = {"datasetid": self.study_id}
 
         response = await self._get(f"/d2e-webapi/conceptset/{ref}/expression", headers=headers)
+        # pyfetch does not raise on error status, so a missing concept set comes
+        # back as a 404 response. Treat that as "no concepts" instead of parsing
+        # the not-found body as a concept-set expression.
+        status = getattr(response, "status", None)
+        if status is None:
+            status = getattr(response, "status_code", None)
+        if status == 404:
+            return []
         expression: dict = await response.json()
         items = expression.get("items", []) if expression else []
         return [_map_expression_item(item) for item in items]
