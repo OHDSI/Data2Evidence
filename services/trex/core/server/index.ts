@@ -131,7 +131,6 @@ export async function initTrex() {
           logger.log(`[attach-startup] no Admin credential for ${row.id} — skipping __srcdb attach`);
           continue;
         }
-        // TODO(snowflake): verify the DuckDB snowflake extension accepts an inline PEM private key (adminPassword) vs. requiring a .p8 file path — needs live-account validation.
         connections.push({
           id: row.id,
           dialect: row.dialect,

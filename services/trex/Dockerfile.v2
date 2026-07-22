@@ -38,7 +38,7 @@ RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && 
         gzip -df ${lib}.duckdb_extension.gz; \
     done
 
-# Snowflake source support (see docs/snowflake-setup.md).
+# Snowflake source support
 # The community `snowflake` DuckDB extension is a thin wrapper that dlopen()s the
 # Apache Arrow ADBC Snowflake driver at ATTACH time. That native driver is NOT
 # bundled with the extension, so install it into /usr/local/lib — a

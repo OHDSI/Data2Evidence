@@ -95,7 +95,6 @@ export function addRoutes(app: Hono) {
               logger.log(`[trex/attach] no Admin credential for ${id} — skipping`);
               continue;
             }
-            // TODO(snowflake): verify the DuckDB snowflake extension accepts an inline PEM private key (adminPassword) vs. requiring a .p8 file path — needs live-account validation.
             connections.push({
               id: row.id,
               dialect: row.dialect,
