@@ -65,7 +65,9 @@ export class MemberRouter {
           })
         }
       } catch (err) {
-        this.logger.error(`Error when checking password policy: ${JSON.stringify(err)}`)
+        // Do not serialize the error: AxiosError.toJSON() includes the request config
+        // (password body and Authorization header)
+        this.logger.error(`Error when checking password policy: ${err?.message} (status: ${err?.response?.status ?? 'n/a'})`)
         return next(err)
       }
 
