@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express'
 import { Service } from 'typedi'
 import { createLogger } from '../Logger'
-import { PortalAPI } from '../api'
+import { LogtoAPI, PortalAPI } from '../api'
 import { ROLES } from '../const'
 import { B2cGroupService, MemberService, UserService } from '../services'
 import { UserActivateRequest, UserAddRequest, UserDeleteRequest } from '../types'
@@ -15,7 +15,8 @@ export class MemberRouter {
     private readonly memberService: MemberService,
     private readonly groupService: B2cGroupService,
     private readonly userService: UserService,
-    private readonly portalAPI: PortalAPI
+    private readonly portalAPI: PortalAPI,
+    private readonly logtoAPI: LogtoAPI
   ) {
     this.registerRoutes()
   }
@@ -53,6 +54,19 @@ export class MemberRouter {
       if (typeof password !== 'string' || !password.trim()) {
         this.logger.warn(`Param 'password' is required`)
         return res.status(400).send({ message: `Param 'password' is required` })
+      }
+
+      try {
+        const policyCheck = await this.logtoAPI.checkPasswordPolicy(password)
+        if (!policyCheck.accepted) {
+          this.logger.warn(`Password rejected by policy: ${JSON.stringify(policyCheck.rejection)}`)
+          return res.status(400).send({
+            message: `Password does not meet the policy: at least 8 characters, at most 64, and at least 3 of: lowercase, uppercase, number, symbol.`
+          })
+        }
+      } catch (err) {
+        this.logger.error(`Error when checking password policy: ${JSON.stringify(err)}`)
+        return next(err)
       }
 
       const tenants = await this.portalAPI.getTenants()
