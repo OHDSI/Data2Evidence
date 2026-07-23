@@ -37,6 +37,17 @@ export class WebApiSourceService {
     }
   }
 
+  // Manual cache (re)build for a webapi dataset. Unlike the private
+  // triggerCacheCreation used during source sync, this returns the result so
+  // the HTTP caller can surface success/failure.
+  async refreshCache(
+    sourceKey: string,
+    schemaName: string,
+    authToken?: string
+  ): Promise<{ success: boolean; databaseCode: string; error?: string }> {
+    return await this.webApiSourceApi.createCache(sourceKey, schemaName, authToken)
+  }
+
   // Kick off the TrexSQL cache build. We deliberately do NOT await
   // `waitForCacheReady` here: bao's COMPLETED transition can take minutes, and
   // edge-function HTTP callers (e.g. the dataset gateway) time out well before
@@ -80,6 +91,7 @@ export class WebApiSourceService {
     ready: boolean
     cacheExists: boolean
     cacheAttached: boolean
+    lastModified: number | null
     activeJobStatus?: string | null
     lastJobError?: string | null
   }> {
@@ -91,6 +103,7 @@ export class WebApiSourceService {
       ready,
       cacheExists: !!status.cacheExists,
       cacheAttached: !!status.cacheAttached,
+      lastModified: status.lastModified ?? null,
       activeJobStatus: jobStatus,
       lastJobError: status.activeJob?.error ?? null,
     }
