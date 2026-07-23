@@ -303,9 +303,7 @@ export class DatasetRouter {
                 `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
               );
 
-              const { cacheId } = (await portalAPI.getDataset(id)) as {
-                cacheId?: string;
-              };
+              const { cacheId } = await portalAPI.getDataset(id);
 
               const options = {
                 options: {
