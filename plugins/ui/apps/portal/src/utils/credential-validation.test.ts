@@ -1,4 +1,13 @@
 import { PASSWORD_RULES, isPasswordValid, validateUsername, PASSWORD_MAX_LENGTH } from "./credential-validation";
+import { generateRandom } from "./utils";
+
+describe("generateRandom (D5: must satisfy password rules)", () => {
+  it("always produces a checklist-compliant password", () => {
+    for (let i = 0; i < 50; i++) {
+      expect(isPasswordValid(generateRandom(12))).toBe(true);
+    }
+  });
+});
 
 describe("PASSWORD_RULES", () => {
   const byId = Object.fromEntries(PASSWORD_RULES.map((r) => [r.id, r]));

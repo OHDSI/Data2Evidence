@@ -1,3 +1,5 @@
+import { isPasswordValid } from "./credential-validation";
+
 export const isDev = process.env["NODE_ENV"] === "development";
 
 export const formatNumber = (value: number | string | null | undefined): string => {
@@ -77,15 +79,25 @@ const getRandomByte = () => {
 
 export const generateRandom = (length: number) => {
   const pattern = /[a-zA-Z0-9_\-\+\.]/;
-  return Array.from({ length }, () => {
-    let result;
-    while (true) {
-      result = String.fromCharCode(getRandomByte());
-      if (pattern.test(result)) {
-        return result;
+  const generate = () =>
+    Array.from({ length }, () => {
+      let result;
+      while (true) {
+        result = String.fromCharCode(getRandomByte());
+        if (pattern.test(result)) {
+          return result;
+        }
       }
-    }
-  }).join("");
+    }).join("");
+
+  // Retry until the password satisfies the checklist rules (letter, number,
+  // special char, min length) so the Generate button never produces a value
+  // the Add/Update buttons would reject. Expected retries: ~2.
+  let candidate = generate();
+  while (!isPasswordValid(candidate)) {
+    candidate = generate();
+  }
+  return candidate;
 };
 
 export const isValidJson = (json: string) => {
