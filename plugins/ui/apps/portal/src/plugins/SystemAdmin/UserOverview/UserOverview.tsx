@@ -45,7 +45,7 @@ export const UserOverview: FC<UserOverviewProps> = () => {
   const [userOverview, setUserOverview] = useState<UserWithRolesInfoExt[]>([]);
   const [alpUsers, setAlpUsers] = useState<UserWithRolesInfoExt[]>([]);
   const [alpDataAdmins, setAlpDataAdmins] = useState<UserWithRolesInfoExt[]>([]);
-  const { setFeedback, setGenericErrorFeedback } = useFeedback();
+  const { setFeedback, setGenericErrorFeedback, setSuccessFeedback } = useFeedback();
 
   const [showEditRole, openEditRoleDialog, closeEditRoleDialog] = useDialogHelper(false);
   const [showDeleteUser, openDeleteUserDialog, closeDeleteUserDialog] = useDialogHelper(false);
@@ -115,10 +115,11 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       setActiveUser(undefined);
 
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__SUCCESS));
         await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeEditRoleDialog]
+    [fetchUserOverview, closeEditRoleDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleDelete = useCallback(
@@ -135,10 +136,11 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       setActiveUser(undefined);
 
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.DELETE_USER_DIALOG__SUCCESS));
         await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeDeleteUserDialog]
+    [fetchUserOverview, closeDeleteUserDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const getRole = useCallback((roles: string[]) => {
@@ -193,10 +195,11 @@ export const UserOverview: FC<UserOverviewProps> = () => {
       closeAddUserDialog();
 
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.ADD_USER_DIALOG__SUCCESS));
         await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeAddUserDialog]
+    [fetchUserOverview, closeAddUserDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleOpenPasswordDialog = useCallback(
