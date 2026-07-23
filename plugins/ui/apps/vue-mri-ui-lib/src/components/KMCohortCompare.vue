@@ -215,9 +215,6 @@ const UNIT_DATA = {
   },
 }
 
-const CancelToken = axios.CancelToken
-let cancel: any
-
 interface Props {
   busyEv?: boolean
   bookmarkList?: any[]
@@ -1361,14 +1358,46 @@ const setUpSelectedAxis = () => {
   })
 }
 
+const cancelRequest = () => {
+  if (requestCancel.value) {
+    requestCancel.value()
+    requestCancel.value = null
+  }
+}
+
+const startRequest = (fire: any, onSuccess: any, onError: any) => {
+  requestId.value += 1
+  const currentRequestId = requestId.value
+
+  cancelRequest()
+
+  const cancelToken = new axios.CancelToken((c: any) => {
+    requestCancel.value = () => c('cancel')
+  })
+
+  emit('busyEv', true)
+
+  fire({ cancelToken })
+    .then((data: any) => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      onSuccess(data)
+    })
+    .catch((error: any) => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      onError(error)
+    })
+    .finally(() => {
+      if (isUnmounted.value || currentRequestId !== requestId.value) return
+      requestCancel.value = null
+      emit('busyEv', false)
+    })
+}
+
 const fireCompareRequest = () => {
   const configMetadata = getMriFrontendConfig.value.getConfigMetadata()
 
   emit('response', null)
-  emit('busyEv', true)
-  const cancelToken = new CancelToken((c: any) => {
-    cancel = c
-  })
+
   const callback = (chartDataResponse: any) => {
     const data = chartDataResponse.data
     showSubComponents.value = false
@@ -1426,36 +1455,35 @@ const fireCompareRequest = () => {
     emit('busyEv', false)
   }
 
-  ajaxAuth({
-    method: 'get',
-    url:
-      '/analytics-svc/api/services/patient/cohorts/compare/km?' +
-      'ids=' +
-      props.bookmarkList.map(e => e.id).join(',') +
-      '&xaxis=' +
-      props.xAxes +
-      '&yaxis=' +
-      props.yAxis +
-      '&configId=' +
-      configMetadata.configId +
-      '&configVersion=' +
-      configMetadata.configVersion +
-      '&kmstartevent=' +
-      kmStartEv.value +
-      '&kmeventofinterest=' +
-      kmEndEv.value +
-      '&kmstarteventocc=' +
-      kmStartEvOcc.value +
-      '&kmeventofinterestocc=' +
-      kmEndEvOcc.value,
-    cancelToken,
-  })
-    .then(callback)
-    .catch(({ message, response }: any) => {
-      if (message !== 'cancel') {
-        emit('busyEv', false)
-      }
-      errorMessage.value = message
+  startRequest(
+    ({ cancelToken }: any) =>
+      ajaxAuth({
+        method: 'get',
+        url:
+          '/analytics-svc/api/services/patient/cohorts/compare/km?' +
+          'ids=' +
+          props.bookmarkList.map(e => e.id).join(',') +
+          '&xaxis=' +
+          props.xAxes +
+          '&yaxis=' +
+          props.yAxis +
+          '&configId=' +
+          configMetadata.configId +
+          '&configVersion=' +
+          configMetadata.configVersion +
+          '&kmstartevent=' +
+          kmStartEv.value +
+          '&kmeventofinterest=' +
+          kmEndEv.value +
+          '&kmstarteventocc=' +
+          kmStartEvOcc.value +
+          '&kmeventofinterestocc=' +
+          kmEndEvOcc.value,
+        cancelToken,
+      }),
+    callback,
+    ({ response }: any) => {
+      errorMessage.value = response?.data?.errorMessage || ''
       if (response && response.status === 500) {
         callback({
           data: [],
@@ -1465,8 +1493,8 @@ const fireCompareRequest = () => {
           noDataReason: response.data.errorMessage,
         })
       }
-    })
-  emit('busyEv', true)
+    }
+  )
 }
 
 // Watchers
@@ -1564,9 +1592,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  isUnmounted.value = true
+  cancelRequest()
+  emit('busyEv', false)
   window.removeEventListener('resize', renderChart)
-  if (cancel) {
-    cancel()
-  }
 })
 </script>
