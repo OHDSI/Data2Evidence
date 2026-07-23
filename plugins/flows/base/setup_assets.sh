@@ -14,8 +14,12 @@ for ext in $EXTENSIONS; do
 done
 
 # ADBC Snowflake driver: the native .so the DuckDB `snowflake` community extension
+# dlopen()s at ATTACH time. The extension searches FIXED absolute paths (not
+# LD_LIBRARY_PATH): /root/.duckdb/extensions/<v>/<arch>, /usr/local/lib, /usr/lib.
+# Install into /usr/local/lib (matches the old flows/base Dockerfile). Requires
+# root — true during provision-envs.sh (image build / runtime worker runs as root).
 ADBC_VERSION="1.8.0"
-libdir="${CONDA_PREFIX:-$PWD}/lib"
+libdir="/usr/local/lib"
 if [ ! -f "$libdir/libadbc_driver_snowflake.so" ]; then
   case "$(uname -m)" in
     x86_64)  ADBC_WHL="https://files.pythonhosted.org/packages/b8/6f/ff6d76ca035f0f2308733e7c7e96aeb094d2927a1de1e1a1721593286d3e/adbc_driver_snowflake-${ADBC_VERSION}-py3-none-manylinux1_x86_64.manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_5_x86_64.whl" ;;

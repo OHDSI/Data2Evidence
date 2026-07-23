@@ -96,9 +96,7 @@ PYTHONPATH = "$PIXI_PROJECT_ROOT"
 # rJava/JNI: libjvm.so sits outside the default linker path of the conda env;
 # without this, rJava's configure "JNI programs run" check (and .jinit at
 # runtime) fails against the conda openjdk.
-# $CONDA_PREFIX/lib is also where setup_assets.sh drops libadbc_driver_snowflake.so
-# (the DuckDB snowflake extension dlopen()s it); keep it on the loader path.
-LD_LIBRARY_PATH = "$CONDA_PREFIX/lib:$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
 # renv must compile from source against the conda toolchain; Posit PPM binary
 # packages link against apt-distro libs.
 RENV_CONFIG_PPM_ENABLED = "FALSE"
