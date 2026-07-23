@@ -70,10 +70,19 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
       // If form data already has structure_map, don't replace it
       const existingStructureMap = prev.structure_map && prev.structure_map !== "" ? prev.structure_map : null;
 
+      const rawStructureMap =
+        existingStructureMap ??
+        structureMapTemplate?.structureMap ??
+        node.data.structure_map ??
+        "";
+
       return {
         ...prev,
         ...node.data,
-        structure_map: existingStructureMap || structureMapTemplate?.structureMap || node.data.structure_map || "",
+        structure_map:
+          typeof rawStructureMap === "string"
+            ? rawStructureMap
+            : JSON.stringify(rawStructureMap, null, 2),
       };
     });
   }, [node.data, structureMapTemplates]);
@@ -168,7 +177,11 @@ export const TransformDataDrawer: FC<TransformDataDrawerProps> = ({
         </Box>
         <Editor
           language="json"
-          value={formData.structure_map}
+          value={
+            typeof formData.structure_map === "string"
+              ? formData.structure_map
+              : JSON.stringify(formData.structure_map ?? "", null, 2)
+          }
           onChange={(value: string) => {
             try {
               // Try to parse and beautify JSON

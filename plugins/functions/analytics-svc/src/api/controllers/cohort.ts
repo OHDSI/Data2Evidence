@@ -421,7 +421,7 @@ export async function createCohortDefinition(req: IMRIRequest, res: Response) {
 
         const cohortDefiniton = <CohortDefinitionTableType>{
             name: req.body.name,
-            description: req.body.description,
+            description: req.body.description ?? "",
             creationTimestamp: new Date().toISOString().split("T")[0],
             definitionTypeConceptId: req.body.definitionTypeConceptId ?? 0,
             subjectConceptId: req.body.subjectConceptId ?? 0,

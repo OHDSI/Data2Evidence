@@ -220,6 +220,11 @@ async function main() {
   // Make sure WebAPI (RS256) can verify Logto tokens before anything else.
   await ensureRsaSigningKey(headers);
 
+  // Re-fetch a token signed by the new RSA key.
+  jwt = await logto.fetchToken();
+  accessToken = jwt.access_token;
+  headers.Authorization = `Bearer ${accessToken}`;
+
   // Allow the standalone Atlas login bridge's redirect URI on the OIDC app(s).
   for (const app of apps) {
     await ensureAtlasLoginRedirectUri(headers, app.id);
@@ -482,7 +487,7 @@ async function main() {
     },
     customCss:
       process.env.LOGTO__CUSTOM_CSS ||
-      `a[aria-label="Powered By Logto"] { display: none; }
+      `[data-logto-signature="secured"][data-logto-signature="secured"] { display: none !important; }
 img[alt="app logo"] { height: 40px; margin-bottom: 20px; }
 button[name="submit"]{ background: #000080 !important; }`,
     // Registration is opt-in via LOGTO__ENABLE_REGISTRATION so that connectors

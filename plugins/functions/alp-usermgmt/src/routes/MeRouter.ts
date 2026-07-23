@@ -21,6 +21,37 @@ export class MeRouter {
     this.registerRoutes()
   }
 
+  // Resolve a username for an IDP user id: prefer the username claim on the
+  // caller's token (our custom Logto JWT carries username/preferred_username),
+  // falling back to the Logto management API (access tokens don't always carry
+  // a username). Used to link a seeded user's NULL idp_user_id on first /me.
+  private async resolveUsername(
+    req: IAppRequest,
+    idpUserId: string
+  ): Promise<string | undefined> {
+    try {
+      const bearerToken = req.headers['authorization'] as string | undefined
+      if (bearerToken) {
+        const token = jwt.decode(bearerToken.replace(/bearer /i, '')) as JwtPayload | null
+        const claimed = (token?.username || token?.preferred_username) as
+          | string
+          | undefined
+        if (claimed) return claimed
+      }
+    } catch {
+      /* fall through to Logto lookup */
+    }
+    try {
+      const logtoUser = await this.logtoApi.getUser(idpUserId)
+      return (logtoUser?.username ?? logtoUser?.primaryEmail) as string | undefined
+    } catch (e) {
+      this.logger.warn(
+        `Could not resolve username for idp_user_id ${idpUserId}: ${e}`
+      )
+      return undefined
+    }
+  }
+
   private registerRoutes() {
     this.router.get('/', async (req: IAppRequest, res: Response, next: NextFunction) => {
       const { idpUserId } = req.user
@@ -33,7 +64,28 @@ export class MeRouter {
       this.logger.info(`Get IDP user ${idpUserId}`)
 
       try {
-        const user = await this.userService.getUserByIdpUserId(idpUserId)
+        let user = await this.userService.getUserByIdpUserId(idpUserId)
+
+        // The seeded admin (and any user created before its first usermgmt call)
+        // has a NULL idp_user_id until it is linked to its IDP identity. The
+        // grant-roles-by-scopes backfill only runs on user-group routes, so a
+        // token whose first usermgmt hit is /me — e.g. jobplugins resolving the
+        // username for a DQD flow run — would 400. Fall back to matching by
+        // username and backfill idp_user_id so the link self-heals on first /me.
+        if (!user) {
+          const username = await this.resolveUsername(req, idpUserId)
+          if (username) {
+            const byName = await this.userService.getUserByUsername(username)
+            if (byName?.id) {
+              this.logger.info(
+                `Linking idp_user_id ${idpUserId} to existing user "${username}"`
+              )
+              await this.userService.updateUser({ id: byName.id, idp_user_id: idpUserId })
+              user = byName
+            }
+          }
+        }
+
         if (!user) {
           this.logger.error(`IDP user ID ${idpUserId} not found`)
           return res.status(400).send({ message: `IDP user ID ${idpUserId} not found` })

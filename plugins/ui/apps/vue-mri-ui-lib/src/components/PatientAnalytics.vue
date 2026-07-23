@@ -232,6 +232,14 @@ export default {
         this.toggleCohorts(false)
       }
     },
+    getDatasetReloadInProgress(inProgress, wasInProgress) {
+      // When a dataset/release switch finishes, the previous bookmark has been
+      // cleared (datasetWatcher commits SET_ACTIVE_BOOKMARK null). Reset the view
+      // to the default empty state once the new config is loaded.
+      if (wasInProgress && !inProgress) {
+        this.resetToDefaultView()
+      }
+    },
     getBookmarkFromIFR(bm) {
       // In patient list, changePage is watched and already calls setFireRequest once
       // It seems like if both are run, `setFireRequest` runs consecutively in the same tick,
@@ -241,6 +249,9 @@ export default {
       } else {
         this.setFireRequest()
       }
+    },
+    getActiveChart() {
+      this.chartBusy = false
     },
     getHasAssignedConfig(val) {
       if (val) {
@@ -264,6 +275,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    this.chartBusy = false
   },
   computed: {
     ...mapGetters([
@@ -330,6 +342,18 @@ export default {
     loadDefaultFilters() {
       this.setIFRState({ ifr: this.getMriFrontendConfig.getInitialIFR() })
       this.setupChartDefaults()
+    },
+    resetToDefaultView() {
+      // Default empty state: full-width Cohorts list, no right chart pane, no
+      // query filter, no filter-card summary, and filters reset to the config's
+      // initial IFR (clears any retained filter-card selections).
+      this.displayCohorts = true
+      this.showQueryFilter = false
+      this.displayFilterCardSummary = false
+      this.paneSize = PANE_SIZE.FULL
+      this.rightPaneEverOpened = false
+      this.setRightPaneMounted(false)
+      this.loadDefaultFilters()
     },
     loadAllBookmark() {
       const params = {
@@ -522,5 +546,12 @@ export default {
 .pa-splitter:not(.right-pane-opened) :deep(.splitpanes__splitter) {
   pointer-events: none;
   opacity: 0;
+}
+
+/* splitpanes animates pane width (transition: width .2s) by default, which makes
+   the left pane visibly slide in when returning to Cohorts or resetting the view.
+   Keep pane sizing static. */
+.pa-splitter :deep(.splitpanes__pane) {
+  transition: none;
 }
 </style>

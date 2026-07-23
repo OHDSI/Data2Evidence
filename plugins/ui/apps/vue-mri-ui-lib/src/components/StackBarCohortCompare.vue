@@ -11,11 +11,6 @@ import Plotly from '../lib/CustomPlotly'
 import chartErrorMessage from './ChartErrorMessage.vue'
 import Constants from '../utils/Constants'
 
-let barCompareChart
-
-const CancelToken = axios.CancelToken
-let cancel
-
 export default {
   name: 'StackBarCohortCompare',
   props: ['busyEv', 'bookmarkList', 'xAxes', 'yAxis', 'sortOrder', 'setUpperAxisEv', 'setLowerAxisEv'],
@@ -30,20 +25,28 @@ export default {
         x: {},
         y: {},
       },
+      barCompareChart: null,
+      requestId: 0,
+      requestCancel: null as (() => void) | null,
+      isUnmounted: false,
     }
   },
   mounted() {
     this.setUpSelectedAxis()
     this.layout = Constants.PlotlyConsts.layout
     this.config = Constants.PlotlyConsts.config
-    if (barCompareChart) {
-      Plotly.purge(barCompareChart)
+    if (this.barCompareChart) {
+      Plotly.purge(this.barCompareChart)
     }
     this.fireCompareRequest()
   },
   beforeUnmount() {
-    if (barCompareChart) {
-      Plotly.purge(barCompareChart)
+    this.isUnmounted = true
+    this.cancelRequest()
+    this.$emit('busyEv', false)
+    if (this.barCompareChart) {
+      Plotly.purge(this.barCompareChart)
+      this.barCompareChart = null
     }
   },
   watch: {
@@ -89,10 +92,19 @@ export default {
     },
     fireCompareRequest() {
       const configMetadata = this.getMriFrontendConfig.getConfigMetadata()
-      this.$emit('busyEv', true)
-      const cancelToken = new CancelToken(c => {
-        cancel = c
+      this.requestId += 1
+      const requestId = this.requestId
+
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+
+      const cancelToken = new axios.CancelToken(c => {
+        this.requestCancel = () => c('cancel')
       })
+
+      this.$emit('busyEv', true)
 
       this.ajaxAuth({
         method: 'get',
@@ -113,15 +125,18 @@ export default {
         cancelToken,
       })
         .then(({ data }) => {
+          if (this.isUnmounted || requestId !== this.requestId) return
           this.chartData = this.processResponse(data)
           this.setupPlotly()
           this.renderChart()
+          this.requestCancel = null
           this.$emit('busyEv', false)
         })
-        .catch(({ message, response }) => {
-          if (barCompareChart) {
-            Plotly.purge(barCompareChart)
-            barCompareChart = null
+        .catch(({ response }) => {
+          if (this.isUnmounted || requestId !== this.requestId) return
+          if (this.barCompareChart) {
+            Plotly.purge(this.barCompareChart)
+            this.barCompareChart = null
           }
           let noDataReason = this.getText('MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE')
 
@@ -136,14 +151,19 @@ export default {
           }
 
           this.errorMessage = noDataReason
-          if (message !== 'cancel') {
-            this.$emit('busyEv', false)
-          }
+          this.requestCancel = null
+          this.$emit('busyEv', false)
         })
     },
+    cancelRequest() {
+      if (this.requestCancel) {
+        this.requestCancel()
+        this.requestCancel = null
+      }
+    },
     setupPlotly() {
-      barCompareChart = this.$el
-      Plotly.newPlot(barCompareChart, this.chartData.traces, this.layout, this.config)
+      this.barCompareChart = this.$el
+      Plotly.newPlot(this.barCompareChart, this.chartData.traces, this.layout, this.config)
     },
     renderChart() {
       const data = JSON.parse(JSON.stringify(this.chartData))
@@ -178,7 +198,7 @@ export default {
 
       this.chartData = this.dataToTraces(data)
       this.layout.xaxis.type = this.chartData.axisType
-      Plotly.react(barCompareChart, this.chartData.traces, this.layout, this.config)
+      Plotly.react(this.barCompareChart, this.chartData.traces, this.layout, this.config)
     },
     getLowerAxisProperties() {
       //     this.setUpSelectedAxis();

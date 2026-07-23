@@ -216,7 +216,13 @@ test(TEST_NAME, async ({ page }) => {
       .filter({ hasText: new RegExp(`^${NAME.renamedFilters}$`) })
       .first()
       .click()
-    await page.getByRole('button', { name: 'Discard' }).click()
+    // Loading a saved filter from an unmodified (clean) cohort no longer prompts the
+    // unsaved-changes dialog (#2636 changed the semantics so a fresh cohort is clean).
+    // Dismiss the dialog only if it happens to appear; otherwise the filter loads directly.
+    await page
+      .getByRole('button', { name: 'Leave without saving' })
+      .click({ timeout: 3000 })
+      .catch(() => {})
     //Verify filters are loaded
     await expect(page.getByText('>2')).toBeVisible()
     await expect(page.locator('#patient').getByText('FEMALE')).toBeVisible()
