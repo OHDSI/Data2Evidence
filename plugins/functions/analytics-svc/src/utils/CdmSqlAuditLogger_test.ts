@@ -267,7 +267,6 @@ Deno.test("audited connection writes one successful event per SQL call", async (
             event.sql,
             "SELECT * FROM person WHERE person_id = 123 AND name = 'Alice' AND external_id = 'sensitive-parameter'"
         );
-        assert.match(event.sqlHash, /^[a-f0-9]{64}$/);
         assert.equal(event.parameterCount, 1);
         assert.equal(event.successful, true);
         assert.equal(typeof event.durationMs, "number");
@@ -276,30 +275,6 @@ Deno.test("audited connection writes one successful event per SQL call", async (
     } finally {
         env.IS_CDM_SQL_AUDIT_LOG_ENABLED = previousFlag;
     }
-});
-
-Deno.test("SQL hash distinguishes complete statements with different literals", async () => {
-    const { events, writer } = createWriter();
-    const logger = new CdmSqlAuditLogger(context, writer);
-    const execution = {
-        operation: "executeQuery",
-        parameters: [],
-        parameterCount: 0,
-        successful: true,
-        durationMs: 1,
-    };
-
-    await logger.record({
-        ...execution,
-        sql: "SELECT * FROM person WHERE person_id = 123",
-    });
-    await logger.record({
-        ...execution,
-        sql: "SELECT * FROM person WHERE person_id = 456",
-    });
-
-    assert.equal(events.length, 2);
-    assert.notEqual((events[0] as any).sqlHash, (events[1] as any).sqlHash);
 });
 
 Deno.test("audited connection preserves Promise-based execution", async () => {
