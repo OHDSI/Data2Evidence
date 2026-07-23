@@ -1268,6 +1268,8 @@ export const i18nDefault = {
     USER_OVERVIEW__ADD_USER: "Add user",
     USER_OVERVIEW__DELETE: "Delete",
     USER_OVERVIEW__EDIT: "Edit",
+    USER_OVERVIEW__EDIT_ROLE_SUCCESS:
+      "User {0} has been granted new roles. Notify the user they must sign in again to apply them",
     USER_OVERVIEW__INACTIVE: "Inactive",
     USER_OVERVIEW__NO_DATA: "No data available",
     USER_OVERVIEW__ROLE: "Role",
