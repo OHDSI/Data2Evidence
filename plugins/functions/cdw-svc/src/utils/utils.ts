@@ -155,7 +155,7 @@ export function formatErrorMessage(
       errorStackTraceReturnOn: boolean;
     };
   },
-  description = ""
+  description = "",
 ) {
   let msg = "An error occurred";
   let settings = settingsObj.getSettings();
@@ -264,7 +264,7 @@ export function getJsonWalkFunction(obj) {
   function getMatch(pathExpression) {
     assert(
       !pathExpression.match(/.\*\*$/g),
-      "no ** expression at end of path allowed"
+      "no ** expression at end of path allowed",
     );
     let pathSplit = pathExpression.split(".");
     // Construct regular expression for matching paths
@@ -461,7 +461,7 @@ const filterVcapByTag = (
       credentials: { dialect: string; code: string };
     }[];
   },
-  tag: string
+  tag: string,
 ) => {
   const dbs: typeof vcapServices.mridb = [];
   for (const db of vcapServices.mridb) {
@@ -475,7 +475,7 @@ const filterVcapByTag = (
 export async function getAnalyticsConnection(
   userObj,
   token?: string,
-  datasetId: string = "DEFAULT"
+  datasetId: string = "DEFAULT",
 ) {
   let analyticsCredentials;
   let analyticsConnection;
@@ -504,19 +504,19 @@ export async function getAnalyticsConnection(
     } catch (err) {
       logger.error(err);
       throw new Error(
-        `Error while getting dataset information for datasetId:${datasetId}`
+        `Error while getting dataset information for datasetId:${datasetId}`,
       );
     }
   }
 
   if (dialect === "hana") {
     let cdwService = filterVcapByTag(env.VCAP_SERVICES, "cdw").map(
-      (db) => db.credentials
+      (db) => db.credentials,
     );
     analyticsCredentials = cdwService.find((db) => db.code == databaseCode);
     if (analyticsCredentials === undefined) {
       throw new Error(
-        `No hana database credentials setup for databaseCode: ${databaseCode}`
+        `No hana database credentials setup for databaseCode: ${databaseCode}`,
       );
     }
     // node hdb library checks for these to use TLS
@@ -535,7 +535,7 @@ export async function getAnalyticsConnection(
         analyticsCredentials["token"] = userObj.thirdPartyToken;
       } else {
         throw new Error(
-          "Intermediary IDP token doesnt exist for HANA JWT Authentication!"
+          "Intermediary IDP token doesnt exist for HANA JWT Authentication!",
         );
       }
     }
@@ -554,14 +554,28 @@ export async function getAnalyticsConnection(
         resultsSchemaName,
         userObj,
       });
+    await setSchema(analyticsConnection, schemaName);
   } else {
     analyticsConnection = await getTrexConnection(
       databaseCode,
       schemaName,
       vocabSchemaName,
-      resultsSchemaName
+      resultsSchemaName,
     );
   }
 
   return analyticsConnection;
 }
+
+const setSchema = async (connection, schema) => {
+  const escapedSchema = String(schema).replace(/"/g, '""'); // Remove double quotes
+  await new Promise<void>((resolve, reject) => {
+    connection.executeUpdate(`SET SCHEMA "${escapedSchema}"`, [], (err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
+  });
+};

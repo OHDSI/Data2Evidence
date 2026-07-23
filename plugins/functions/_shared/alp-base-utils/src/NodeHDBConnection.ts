@@ -39,14 +39,7 @@ export class NodeHDBConnection implements ConnectionInterface {
       callback(new DBError(logger.error(error), error.message), null);
       return;
     }
-    const sql = 'SET SCHEMA "' + schemaName + '"';
-    conn.execute(sql, [], (err, data) => {
-      if (err) {
-        callback(new DBError(logger.error(err), err.message), null);
-      } else {
-        callback(null, conn);
-      }
-    });
+    callback(null, conn);
   }
 
   /**
