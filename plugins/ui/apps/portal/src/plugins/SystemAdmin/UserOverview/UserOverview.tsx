@@ -103,10 +103,23 @@ export const UserOverview: FC<UserOverviewProps> = () => {
 
   const handleActivateUser = useCallback(
     async (user: UserWithRolesInfoExt, active: boolean) => {
-      await api.userMgmt.activateUser(user.userId, active);
-      await fetchUserOverview();
+      try {
+        await api.userMgmt.activateUser(user.userId, active);
+        setSuccessFeedback(
+          getText(active ? i18nKeys.USER_OVERVIEW__ACTIVATE_SUCCESS : i18nKeys.USER_OVERVIEW__DEACTIVATE_SUCCESS)
+        );
+        await fetchUserOverview();
+      } catch (err) {
+        console.error("Error when updating user active state", err);
+        setFeedback({
+          variant: "alert",
+          type: "error",
+          message: getText(active ? i18nKeys.USER_OVERVIEW__ACTIVATE_ERROR : i18nKeys.USER_OVERVIEW__DEACTIVATE_ERROR),
+          autoClose: 5000,
+        });
+      }
     },
-    [fetchUserOverview]
+    [fetchUserOverview, setSuccessFeedback, setFeedback, getText, i18nKeys]
   );
 
   const closeEditRole = useCallback(
