@@ -4,6 +4,7 @@ import traceback
 from typing import Any
 
 from prefect import flow, task
+from prefect.cache_policies import NONE
 from prefect.variables import Variable
 from prefect.logging import get_run_logger
 
@@ -66,6 +67,9 @@ def create_cache_flow(options: CreateCacheOptions):
         logger.info("Loading Google service account credentials for BigQuery access...")
         DaoBase.create_service_account_credentials_file(db_credentials)
 
+    # Write the cache into the portal-assigned cache_id catalog/file so that
+    # "Update metadata" (which reads the {cacheId} catalog) finds it. Fallback
+    # keeps HANA (cacheId == databaseCode) and legacy callers unchanged.
     cache_database = options.cache_id or options.database_code
 
     copy_params = CopyParameters(
@@ -117,7 +121,7 @@ def create_cache_flow(options: CreateCacheOptions):
         create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
-@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}")
+@task(log_prints=True, task_run_name="copy_all_schemas_from_{read_conn.database_code}", cache_policy=NONE)
 def copy_all_schemas(duckdb_file_path: str, read_conn: Any, copy_params: CopyParameters):
     logger = get_run_logger()
     logger.info(f"Starting schema copy for database '{read_conn.database_code}'...")
@@ -203,7 +207,7 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
     create_fts_index_task(options.use_trex_connection, copy_params, duckdb_file_path)
 
 
-@task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}")
+@task(log_prints=True, task_run_name="attach_to_source_db_{read_conn.database_code}", cache_policy=NONE)
 def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
     logger = get_run_logger()
     logger.info(f"Attaching to source database '{read_conn.database_code}' as '{database_name}'...")
@@ -223,7 +227,7 @@ def attach_to_source_db(read_conn: any, write_conn: any, database_name: str):
     logger.info(f"Successfully attached to source database '{read_conn.database_code}' as '{database_name}'!")
 
 
-@task(log_prints=True, task_run_name="load_extensions_{dialect}")
+@task(log_prints=True, task_run_name="load_extensions_{dialect}", cache_policy=NONE)
 def load_extensions(write_conn: any, dialect: str, trex_sql: bool = True):
     """
     Loads the necessary extensions based on the dialect and whether Trex SQL is used.
