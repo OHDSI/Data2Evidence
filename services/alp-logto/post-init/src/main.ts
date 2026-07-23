@@ -498,6 +498,24 @@ button[name="submit"]{ background: #000080 !important; }`,
     unknownSessionRedirectUrl: `https://${process.env.CADDY__D2E__PUBLIC_FQDN}/d2e/portal`,
     termsOfUseUrl: process.env.LOGTO__TERM_OF_USE_URL || "",
     privacyPolicyUrl: process.env.LOGTO__PRIVACY_POLICY_URL || "",
+    // Issue #2713 / Option B: Logto is the single server-side enforcement
+    // point for password rules across all flows (add user, admin change,
+    // self-service change).
+    // D2: characterTypes.min counts categories (lower/upper/digit/symbol);
+    // min 3 is the closest server-side approximation of the UI checklist's
+    // "letter + number + special char" rule.
+    // D6: rejects are all off so the backend never rejects a password the
+    // UI checklist has approved.
+    passwordPolicy: {
+      length: { min: 8, max: 64 }, // D1
+      characterTypes: { min: 3 },
+      rejects: {
+        pwned: false,
+        repetitionAndSequence: false,
+        userInfo: false,
+        words: [],
+      },
+    },
   };
 
   await update("sign-in-exp", headers, signinExperience);
