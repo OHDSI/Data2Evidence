@@ -38755,6 +38755,7 @@ const waveformOccurrenceInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
+        
         "numoffiles": {
             "name": [
                 {
@@ -38853,6 +38854,107 @@ const waveformOccurrenceInteraction = {
             "optionalFiltering": false,
             "standardConceptCodeFilter": "",
             "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        
+        "startdate": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Start Date"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_START_DATETIME\"",
+            "order": 12,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceStartDate",
+            "conceptIdentifierType": ""
+        },
+        "enddate": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "End Date"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "datetime",
+            "expression": "@WAVEFORMOCC.\"WAVEFORM_OCCURRENCE_END_DATETIME\"",
+            "order": 13,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceEndDate",
             "conceptIdentifierType": ""
         }
     }
@@ -39365,6 +39467,7 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
+        
         "sourcefileuri": {
             "name": [
                 {
@@ -39466,11 +39569,13 @@ const waveformRegistryInteraction = {
             "conceptIdentifierType": ""
         }
 ,
-        "channelsamplerate": {
+        
+        
+        "chanmeta_channelsourcevalue": {
             "name": [
                 {
                     "lang": "",
-                    "value": "Channel Sample Rate"
+                    "value": "Channel Metadata: Channel Source Value"
                 }
             ],
             "disabledLangName": [
@@ -39505,10 +39610,9 @@ const waveformRegistryInteraction = {
                     "visible": true
                 }
             ],
-            "type": "num",
-            "expression": "@WAVEFORMCHANMETA.VALUE",
-            "defaultFilter": "@WAVEFORMCHANMETA.ATTRIBUTE = 2082499968",
-            "order": 12,
+            "type": "text",
+            "expression": "@WAVEFORMCHANMETA.\"WAVEFORM_CHANNEL_SOURCE_VALUE\"",
+            "order": 20,
             "domainFilter": "",
             "includeDescendants": false,
             "includeDescendantsExpression": "",
@@ -39517,11 +39621,11 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
-        "channelresolution": {
+        "chanmeta_metadatasourcevalue": {
             "name": [
                 {
                     "lang": "",
-                    "value": "Channel Resolution"
+                    "value": "Channel Metadata: Metadata Source Value"
                 }
             ],
             "disabledLangName": [
@@ -39556,10 +39660,9 @@ const waveformRegistryInteraction = {
                     "visible": true
                 }
             ],
-            "type": "num",
-            "expression": "@WAVEFORMCHANMETA.VALUE",
-            "defaultFilter": "@WAVEFORMCHANMETA.ATTRIBUTE = 2082499969",
-            "order": 13,
+            "type": "text",
+            "expression": "@WAVEFORMCHANMETA.\"METADATA_SOURCE_VALUE\"",
+            "order": 22,
             "domainFilter": "",
             "includeDescendants": false,
             "includeDescendantsExpression": "",
@@ -39568,160 +39671,6 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
-        "featurevaluephillipsalg": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Feature Value (Phillips Algorithm)"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "num",
-            "expression": "@WAVEFORMFEAT.VALUE",
-            "defaultFilter": "@WAVEFORMFEAT.ATTRIBUTE = 2082499949",
-            "order": 14,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        },
-        "featurevaluehpalg": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Feature Value (Hewlett-Packard Algorithm)"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "num",
-            "expression": "@WAVEFORMFEAT.VALUE",
-            "defaultFilter": "@WAVEFORMFEAT.ATTRIBUTE = 2082499955",
-            "order": 15,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        },
-        "featurevaluegealg": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Feature Value (GE Algorithm)"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "num",
-            "expression": "@WAVEFORMFEAT.VALUE",
-            "defaultFilter": "@WAVEFORMFEAT.ATTRIBUTE = 2082499946",
-            "order": 16,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        }
-,
         "chanmeta_procedureid": {
             "name": [
                 {
@@ -39822,56 +39771,7 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
-        "chanmeta_channelsourcevalue": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Channel Metadata: Channel Source Value"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "text",
-            "expression": "@WAVEFORMCHANMETA.\"WAVEFORM_CHANNEL_SOURCE_VALUE\"",
-            "order": 20,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        },
+        
         "chanmeta_channelconceptset": {
             "name": [
                 {
@@ -39922,56 +39822,7 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
-        "chanmeta_metadatasourcevalue": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Channel Metadata: Metadata Source Value"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "text",
-            "expression": "@WAVEFORMCHANMETA.\"METADATA_SOURCE_VALUE\"",
-            "order": 22,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        },
+        
         "chanmeta_metadataconceptset": {
             "name": [
                 {
@@ -40272,56 +40123,8 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
-        "feat_occurrenceid": {
-            "name": [
-                {
-                    "lang": "",
-                    "value": "Feature: Waveform Occurrence id"
-                }
-            ],
-            "disabledLangName": [
-                {
-                    "lang": "en",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "de",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "fr",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "es",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "pt",
-                    "value": "",
-                    "visible": true
-                },
-                {
-                    "lang": "zh",
-                    "value": "",
-                    "visible": true
-                }
-            ],
-            "type": "num",
-            "expression": "@WAVEFORMFEAT.waveform_occurrence_id",
-            "order": 29,
-            "domainFilter": "",
-            "includeDescendants": false,
-            "includeDescendantsExpression": "",
-            "optionalFiltering": false,
-            "standardConceptCodeFilter": "",
-            "cohortDefinitionKey": "",
-            "conceptIdentifierType": ""
-        },
+        
+        
         "feat_channelmetadataid": {
             "name": [
                 {
@@ -40362,7 +40165,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "num",
-            "expression": "@WAVEFORMFEAT.waveform_channel_metadata_id",
+            "expression": "@WFFEAT.waveform_channel_metadata_id",
             "order": 30,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40412,7 +40215,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "num",
-            "expression": "@WAVEFORMFEAT.measurement_id",
+            "expression": "@WFFEAT.measurement_id",
             "order": 31,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40462,7 +40265,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "num",
-            "expression": "@WAVEFORMFEAT.observation_id",
+            "expression": "@WFFEAT.observation_id",
             "order": 32,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40512,7 +40315,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "conceptSet",
-            "expression": "@WAVEFORMFEAT.\"ALGORITHM_CONCEPT_ID\"",
+            "expression": "@WFFEAT.\"ALGORITHM_CONCEPT_ID\"",
             "order": 33,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40562,7 +40365,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "text",
-            "expression": "@WAVEFORMFEAT.\"ALGORITHM_SOURCE_VALUE\"",
+            "expression": "@WFFEAT.\"ALGORITHM_SOURCE_VALUE\"",
             "order": 34,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40572,6 +40375,7 @@ const waveformRegistryInteraction = {
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
         },
+        
         "feat_anatomicsiteconceptset": {
             "name": [
                 {
@@ -40612,7 +40416,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "conceptSet",
-            "expression": "@WAVEFORMFEAT.\"ANATOMIC_SITE_CONCEPT_ID\"",
+            "expression": "@WFFEAT.\"ANATOMIC_SITE_CONCEPT_ID\"",
             "order": 35,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40661,8 +40465,8 @@ const waveformRegistryInteraction = {
                     "visible": true
                 }
             ],
-            "type": "text",
-            "expression": "@WAVEFORMFEAT.\"WAVEFORM_FEATURE_START_TIMESTAMP\"",
+            "type": "time",
+            "expression": "@WFFEAT.\"WAVEFORM_FEATURE_START_TIMESTAMP\"",
             "order": 36,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40711,8 +40515,8 @@ const waveformRegistryInteraction = {
                     "visible": true
                 }
             ],
-            "type": "text",
-            "expression": "@WAVEFORMFEAT.\"WAVEFORM_FEATURE_END_TIMESTAMP\"",
+            "type": "time",
+            "expression": "@WFFEAT.\"WAVEFORM_FEATURE_END_TIMESTAMP\"",
             "order": 37,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40720,6 +40524,106 @@ const waveformRegistryInteraction = {
             "optionalFiltering": false,
             "standardConceptCodeFilter": "",
             "cohortDefinitionKey": "",
+            "conceptIdentifierType": ""
+        },
+        "startdate": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "Start Date"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "time",
+            "expression": "@WFFEAT.\"WAVEFORM_FEATURE_START_TIMESTAMP\"",
+            "order": 38,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceStartDate",
+            "conceptIdentifierType": ""
+        },
+        "enddate": {
+            "name": [
+                {
+                    "lang": "",
+                    "value": "End Date"
+                }
+            ],
+            "disabledLangName": [
+                {
+                    "lang": "en",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "de",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "fr",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "es",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "pt",
+                    "value": "",
+                    "visible": true
+                },
+                {
+                    "lang": "zh",
+                    "value": "",
+                    "visible": true
+                }
+            ],
+            "type": "time",
+            "expression": "@WFFEAT.\"WAVEFORM_FEATURE_END_TIMESTAMP\"",
+            "order": 39,
+            "domainFilter": "",
+            "includeDescendants": false,
+            "includeDescendantsExpression": "",
+            "optionalFiltering": false,
+            "standardConceptCodeFilter": "",
+            "cohortDefinitionKey": "OccurrenceEndDate",
             "conceptIdentifierType": ""
         },
         "feat_isfeatureoverflow": {
@@ -40762,7 +40666,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "text",
-            "expression": "@WAVEFORMFEAT.\"IS_FEATURE_OVERFLOW\"",
+            "expression": "@WFFEAT.\"IS_FEATURE_OVERFLOW\"",
             "order": 38,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40812,7 +40716,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "num",
-            "expression": "@WAVEFORMFEAT.\"VALUE_AS_NUMBER\"",
+            "expression": "@WFFEAT.\"VALUE_AS_NUMBER\"",
             "order": 39,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40862,7 +40766,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "conceptSet",
-            "expression": "@WAVEFORMFEAT.\"VALUE_AS_CONCEPT_ID\"",
+            "expression": "@WFFEAT.\"VALUE_AS_CONCEPT_ID\"",
             "order": 40,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40912,7 +40816,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "text",
-            "expression": "@WAVEFORMFEAT.\"VALUE_AS_STRING\"",
+            "expression": "@WFFEAT.\"VALUE_AS_STRING\"",
             "order": 41,
             "domainFilter": "",
             "includeDescendants": false,
@@ -40962,7 +40866,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "text",
-            "expression": "@WAVEFORMFEAT.\"VALUE_IS_A_REGISTRY_FILE\"",
+            "expression": "@WFFEAT.\"VALUE_IS_A_REGISTRY_FILE\"",
             "order": 42,
             "domainFilter": "",
             "includeDescendants": false,
@@ -41012,7 +40916,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "conceptSet",
-            "expression": "@WAVEFORMFEAT.\"UNIT_CONCEPT_ID\"",
+            "expression": "@WFFEAT.\"UNIT_CONCEPT_ID\"",
             "order": 43,
             "domainFilter": "",
             "includeDescendants": false,
@@ -41062,7 +40966,7 @@ const waveformRegistryInteraction = {
                 }
             ],
             "type": "text",
-            "expression": "@WAVEFORMFEAT.\"UNIT_SOURCE_VALUE\"",
+            "expression": "@WFFEAT.\"UNIT_SOURCE_VALUE\"",
             "order": 44,
             "domainFilter": "",
             "includeDescendants": false,
@@ -41071,7 +40975,7 @@ const waveformRegistryInteraction = {
             "standardConceptCodeFilter": "",
             "cohortDefinitionKey": "",
             "conceptIdentifierType": ""
-        }    }
+        },    }
 };
 
 const dimWaveformOcc = {
@@ -41091,7 +40995,7 @@ const dimWaveformReg = {
             "oneToN": true
         },
         {
-            "placeholder": "@WAVEFORMFEAT",
+            "placeholder": "@WFFEAT",
             "oneToN": true
         }
     ],
@@ -41122,10 +41026,10 @@ const waveformTableMappingAdditions = {
     "@WAVEFORMCHANMETA.INTERACTION_ID": "\"waveform_registry_id\"",
     "@WAVEFORMCHANMETA.ATTRIBUTE": "\"metadata_concept_id\"",
     "@WAVEFORMCHANMETA.VALUE": "\"value_as_number\"",
-    "@WAVEFORMFEAT": "$$SCHEMA$$.\"waveform_feature\"",
-    "@WAVEFORMFEAT.INTERACTION_ID": "\"waveform_registry_id\"",
-    "@WAVEFORMFEAT.ATTRIBUTE": "\"algorithm_concept_id\"",
-    "@WAVEFORMFEAT.VALUE": "\"value_as_number\""
+    "@WFFEAT": "$$SCHEMA$$.\"waveform_feature\"",
+    "@WFFEAT.INTERACTION_ID": "\"waveform_registry_id\"",
+    "@WFFEAT.ATTRIBUTE": "\"algorithm_concept_id\"",
+    "@WFFEAT.VALUE": "\"value_as_number\""
 };
 
 const waveformOccurrenceInteractionFiltercard = {
@@ -41294,6 +41198,7 @@ const waveformOccurrenceInteractionFiltercard = {
             },
             "modelName": "Waveform Occurrence Source Value"
         },
+        
         {
             "source": "patient.interactions.waveformoccurrence.attributes.numoffiles",
             "ordered": true,
@@ -41333,18 +41238,18 @@ const waveformOccurrenceInteractionFiltercard = {
                 "linkColumn": false
             },
             "modelName": "Waveform Format Source Value"
-        }
+        },
     ]
 };
 
 const waveformRegistryInteractionFiltercard = {
-    "source": "patient.interactions.waveformregistry",
+    "source": "patient.interactions.wfreg",
     "visible": true,
     "order": 23,
     "initial": false,
     "attributes": [
         {
-            "source": "patient.interactions.waveformregistry.attributes.filestartdatetime",
+            "source": "patient.interactions.wfreg.attributes.filestartdatetime",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41364,7 +41269,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "File Start Date/Time"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.fileenddatetime",
+            "source": "patient.interactions.wfreg.attributes.fileenddatetime",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41384,7 +41289,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "File End Date/Time"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.fileextensionconceptset",
+            "source": "patient.interactions.wfreg.attributes.fileextensionconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41404,7 +41309,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "File Extension Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.waveformoccid",
+            "source": "patient.interactions.wfreg.attributes.waveformoccid",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41424,7 +41329,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Waveform Occurrence id"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.waveformfeatureid",
+            "source": "patient.interactions.wfreg.attributes.waveformfeatureid",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41444,47 +41349,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Waveform Feature id"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.visitid",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 6
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Visit Occurrence id"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.visitdetailid",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 7
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Visit Detail id"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.fileextensionsourcevalue",
+            "source": "patient.interactions.wfreg.attributes.fileextensionsourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41504,7 +41369,48 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "File Extension Source Value"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.sourcefileuri",
+            "source": "patient.interactions.wfreg.attributes.visitid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 6
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Visit Occurrence id"
+        },
+        {
+            "source": "patient.interactions.wfreg.attributes.visitdetailid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 7
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Visit Detail id"
+        },
+        
+        {
+            "source": "patient.interactions.wfreg.attributes.sourcefileuri",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41524,7 +41430,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Waveform Source File URI"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.targetfileuri",
+            "source": "patient.interactions.wfreg.attributes.targetfileuri",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41544,149 +41450,10 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Waveform Target File URI"
         }
 ,
+        
+        
         {
-            "source": "patient.interactions.waveformregistry.attributes.channelsamplerate",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": true,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 12
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Channel Sample Rate"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.channelresolution",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": true,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 13
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Channel Resolution"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.featurevaluephillipsalg",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": true,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 14
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Feature Value (Phillips Algorithm)"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.featurevaluehpalg",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": true,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 15
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Feature Value (Hewlett-Packard Algorithm)"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.featurevaluegealg",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": true,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 16
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Feature Value (GE Algorithm)"
-        }
-,
-        {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_procedureid",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 18
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Channel Metadata: Procedure Occurrence id"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_deviceexpid",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 19
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Channel Metadata: Device Exposure id"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_channelsourcevalue",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_channelsourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41706,27 +41473,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Channel Source Value"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_channelconceptset",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 21
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Channel Metadata: Channel Concept Set"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_metadatasourcevalue",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_metadatasourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41746,7 +41493,69 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Metadata Source Value"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_metadataconceptset",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_procedureid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 18
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Channel Metadata: Procedure Occurrence id"
+        },
+        {
+            "source": "patient.interactions.wfreg.attributes.chanmeta_deviceexpid",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 19
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Channel Metadata: Device Exposure id"
+        },
+        
+        {
+            "source": "patient.interactions.wfreg.attributes.chanmeta_channelconceptset",
+            "ordered": true,
+            "cached": true,
+            "useRefText": false,
+            "useRefValue": false,
+            "category": true,
+            "measure": false,
+            "filtercard": {
+                "initial": false,
+                "visible": true,
+                "order": 21
+            },
+            "patientlist": {
+                "initial": false,
+                "visible": true,
+                "linkColumn": false
+            },
+            "modelName": "Channel Metadata: Channel Concept Set"
+        },
+        
+        {
+            "source": "patient.interactions.wfreg.attributes.chanmeta_metadataconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41766,13 +41575,14 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Metadata Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_valueasnumber",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_valueasnumber",
             "ordered": true,
             "cached": true,
             "useRefText": false,
             "useRefValue": false,
             "category": true,
             "measure": true,
+            "defaultBinSize": 50,
             "filtercard": {
                 "initial": false,
                 "visible": true,
@@ -41786,7 +41596,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Value As Number"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_valueasconceptset",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_valueasconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41806,7 +41616,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Value As Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_valueasstring",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_valueasstring",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41826,7 +41636,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Value As String"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_unitconceptset",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_unitconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41846,7 +41656,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Channel Metadata: Unit Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.chanmeta_unitsourcevalue",
+            "source": "patient.interactions.wfreg.attributes.chanmeta_unitsourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41865,28 +41675,10 @@ const waveformRegistryInteractionFiltercard = {
             },
             "modelName": "Channel Metadata: Unit Source Value"
         },
+        
+        
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_occurrenceid",
-            "ordered": true,
-            "cached": true,
-            "useRefText": false,
-            "useRefValue": false,
-            "category": true,
-            "measure": false,
-            "filtercard": {
-                "initial": false,
-                "visible": true,
-                "order": 29
-            },
-            "patientlist": {
-                "initial": false,
-                "visible": true,
-                "linkColumn": false
-            },
-            "modelName": "Feature: Waveform Occurrence id"
-        },
-        {
-            "source": "patient.interactions.waveformregistry.attributes.feat_channelmetadataid",
+            "source": "patient.interactions.wfreg.attributes.feat_channelmetadataid",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41906,7 +41698,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Waveform Channel Metadata id"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_measurementid",
+            "source": "patient.interactions.wfreg.attributes.feat_measurementid",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41926,7 +41718,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Measurement id"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_observationid",
+            "source": "patient.interactions.wfreg.attributes.feat_observationid",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41946,7 +41738,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Observation id"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_algorithmconceptset",
+            "source": "patient.interactions.wfreg.attributes.feat_algorithmconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41966,7 +41758,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Algorithm Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_algorithmsourcevalue",
+            "source": "patient.interactions.wfreg.attributes.feat_algorithmsourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -41985,8 +41777,9 @@ const waveformRegistryInteractionFiltercard = {
             },
             "modelName": "Feature: Algorithm Source Value"
         },
+        
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_anatomicsiteconceptset",
+            "source": "patient.interactions.wfreg.attributes.feat_anatomicsiteconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42006,7 +41799,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Anatomic Site Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_featurestarttime",
+            "source": "patient.interactions.wfreg.attributes.feat_featurestarttime",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42026,7 +41819,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Start Time"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_featureendtime",
+            "source": "patient.interactions.wfreg.attributes.feat_featureendtime",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42046,7 +41839,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: End Time"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_isfeatureoverflow",
+            "source": "patient.interactions.wfreg.attributes.feat_isfeatureoverflow",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42066,13 +41859,14 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Is Feature Overflow"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_valueasnumber",
+            "source": "patient.interactions.wfreg.attributes.feat_valueasnumber",
             "ordered": true,
             "cached": true,
             "useRefText": false,
             "useRefValue": false,
             "category": true,
             "measure": true,
+            "defaultBinSize": 10,
             "filtercard": {
                 "initial": false,
                 "visible": true,
@@ -42086,7 +41880,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Value As Number"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_valueasconceptset",
+            "source": "patient.interactions.wfreg.attributes.feat_valueasconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42106,7 +41900,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Value As Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_valueasstring",
+            "source": "patient.interactions.wfreg.attributes.feat_valueasstring",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42126,7 +41920,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Value As String"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_valueisaregistryfile",
+            "source": "patient.interactions.wfreg.attributes.feat_valueisaregistryfile",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42146,7 +41940,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Value Is A Registry File"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_unitconceptset",
+            "source": "patient.interactions.wfreg.attributes.feat_unitconceptset",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42166,7 +41960,7 @@ const waveformRegistryInteractionFiltercard = {
             "modelName": "Feature: Unit Concept Set"
         },
         {
-            "source": "patient.interactions.waveformregistry.attributes.feat_unitsourcevalue",
+            "source": "patient.interactions.wfreg.attributes.feat_unitsourcevalue",
             "ordered": true,
             "cached": true,
             "useRefText": false,
@@ -42184,7 +41978,7 @@ const waveformRegistryInteractionFiltercard = {
                 "linkColumn": false
             },
             "modelName": "Feature: Unit Source Value"
-        }
+        },
     ]
 };
 
@@ -42195,7 +41989,7 @@ const cdwWaveformConfig = {
         interactions: {
             ...cdwConfigDuckdb.patient.interactions,
             waveformoccurrence: waveformOccurrenceInteraction,
-            waveformregistry: waveformRegistryInteraction
+            wfreg: waveformRegistryInteraction
         }
     },
     advancedSettings: {
