@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
 import FormControl from "@mui/material/FormControl";
 import Divider from "@mui/material/Divider";
+import FormHelperText from "@mui/material/FormHelperText";
 import {
   Button,
   Dialog,
@@ -10,8 +11,10 @@ import {
   VisibilityOffIcon,
   VisibilityOnIcon,
 } from "@portal/components";
+import { PasswordRulesChecklist } from "../../../../components";
 import { Feedback } from "../../../../types";
 import { generateRandom } from "../../../../utils";
+import { isPasswordValid, PASSWORD_MAX_LENGTH } from "../../../../utils/credential-validation";
 import { api } from "../../../../axios/api";
 import "./ChangeUserPassword.scss";
 import { useTranslation } from "../../../../contexts";
@@ -34,11 +37,16 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
   const [loading, setLoading] = useState(false);
   const [passwordShown, setPasswordShown] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>({});
+  const [showErrors, setShowErrors] = useState(false);
+
+  const passwordTooLong = formData.password.length > PASSWORD_MAX_LENGTH;
+  const passwordValid = isPasswordValid(formData.password) && !passwordTooLong;
 
   useEffect(() => {
     setFormData(EMPTY_FORM_DATA);
     setFeedback({});
     setLoading(false);
+    setShowErrors(false);
   }, [open]);
 
   const handleClose = useCallback(() => {
@@ -57,6 +65,11 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
 
   const handleUpdate = useCallback(async () => {
     if (!userId) return;
+
+    if (!passwordValid) {
+      setShowErrors(true);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -79,7 +92,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
     } finally {
       setLoading(false);
     }
-  }, [userId, formData.password, getText]);
+  }, [userId, formData.password, passwordValid, getText]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -101,38 +114,43 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       <form onSubmit={handleSubmit}>
         <Divider />
         <div className="change-user-password-dialog__content">
-        <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <TextField
-                fullWidth
-                type={passwordShown ? "text" : "password"}
-                variant="standard"
-                label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
-                value={formData.password}
-                onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
-                autoFocus
-              />
-              <Tooltip
-                title={
-                  passwordShown
-                    ? getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD)
-                    : getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__SHOW_PASSWORD)
-                }
-              >
-                <IconButton
-                  startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
-                  onClick={handleTogglePassword}
+          <div className="u-padding-vertical--normal">
+            <FormControl fullWidth>
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
+                <TextField
+                  fullWidth
+                  type={passwordShown ? "text" : "password"}
+                  variant="standard"
+                  label={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD)}
+                  value={formData.password}
+                  onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+                  error={showErrors && !passwordValid}
+                  autoFocus
                 />
-              </Tooltip>
-              <Button
-                text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__GENERATE)}
-                variant="text"
-                onClick={handleGeneratePassword}
-              />
-            </div>
-          </FormControl>
-        </div>
+                <Tooltip
+                  title={
+                    passwordShown
+                      ? getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__HIDE_PASSWORD)
+                      : getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__SHOW_PASSWORD)
+                  }
+                >
+                  <IconButton
+                    startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
+                    onClick={handleTogglePassword}
+                  />
+                </Tooltip>
+                <Button
+                  text={getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__GENERATE)}
+                  variant="text"
+                  onClick={handleGeneratePassword}
+                />
+              </div>
+            </FormControl>
+            {passwordTooLong && (
+              <FormHelperText error={true}>{getText(i18nKeys.PASSWORD_RULES__MAX_LENGTH)}</FormHelperText>
+            )}
+            <PasswordRulesChecklist password={formData.password} showErrors={showErrors} />
+          </div>
         </div>
         <Divider />
         <div className="button-group-actions">
