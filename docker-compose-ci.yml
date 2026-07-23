@@ -1,5 +1,7 @@
 services:
   trex:
+    environment:
+      TREX_DX_ENABLED: "false"
     volumes:
       - ./plugins/ui-built:/usr/src/plugins/d2e-ui-pr
       # Overlay the e2e-patched MRI/PA seed config onto the image-bundled
