@@ -256,12 +256,10 @@ export const SaveDbDialog: FC<SaveDbDialogProps> = ({ open, onClose }) => {
       }
 
       if (
-        formData.dialect !== DB_DIALECTS.BIG_QUERY &&
-        formData.dialect !== DB_DIALECTS.SNOWFLAKE &&
+        (formData.dialect === DB_DIALECTS.POSTGRES ||
+          formData.dialect === DB_DIALECTS.HANA) &&
         formData.authenticationMode === AUTHENTICATION_MODES.PASSWORD
       ) {
-        // Snowflake uses key-pair: the PEM lives in db_extra.Internal.privateKey (too
-        // long for the RSA-encrypted credential store), so skip password validation.
         if (!validateCredentials(formData.credentials, setFeedback)) {
           return;
         }
