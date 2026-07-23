@@ -560,6 +560,7 @@ router.post("/", async (req: Request, res: Response) => {
       dataset.vocabSchemaName,
       dataset.resultsSchemaName,
       { duckdb: (e: unknown) => e, hana: (e: unknown) => e },
+      { APPLICATION: `WIZARD_${templateId}` },
     );
 
     try {
@@ -631,4 +632,3 @@ router.post("/", async (req: Request, res: Response) => {
 
 app.use("/parquet-export", router);
 app.listen(8000);
-  
