@@ -9,19 +9,17 @@ async function create(
 ) {
   try {
     console.log(`Request creation ${path}`);
-    console.log(`${JSON.stringify(data)}`);
     const resp = await logto.post(path, headers, data);
     console.log(`Responded with ${resp.status}`);
 
     if (resp.ok) {
       if (hasResponseBody) {
         let json = await resp.json();
-        console.log(JSON.stringify(json));
         return json;
       }
     } else {
       console.error("Request failed");
-      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      console.error(resp.statusText, " ", path);
       return -1;
     }
   } catch (error) {
@@ -37,19 +35,17 @@ async function update(
 ) {
   try {
     console.log(`Request update ${path}`);
-    console.log(JSON.stringify(data));
     const resp = await logto.patch(path, headers, data);
     console.log(`Responded with ${resp.status}`);
 
     if (resp.ok) {
       if (hasResponseBody) {
         let json = await resp.json();
-        console.log(JSON.stringify(json));
         return json;
       }
     } else {
       console.error("Request failed");
-      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      console.error(resp.statusText, " ", path);
       return -1;
     }
   } catch (error) {
@@ -65,19 +61,17 @@ async function upsert(
 ) {
   try {
     console.log(`Request create/update ${path}`);
-    console.log(JSON.stringify(data));
     const resp = await logto.put(path, headers, data);
     console.log(`Responded with ${resp.status}`);
 
     if (resp.ok) {
       if (hasResponseBody) {
         let json = await resp.json();
-        console.log(JSON.stringify(json));
         return json;
       }
     } else {
       console.error("Request failed");
-      console.error(resp.statusText, " ", path, " ", JSON.stringify(data));
+      console.error(resp.statusText, " ", path);
       return -1;
     }
   } catch (error) {

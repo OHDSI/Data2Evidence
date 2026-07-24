@@ -1,3 +1,4 @@
+export const PASSWORD_MIN_LENGTH = 8; // D1: mirrors the Logto policy length.min
 export const PASSWORD_MAX_LENGTH = 64; // D1: mirrors the Logto policy length.max
 
 export interface PasswordRule {
@@ -11,7 +12,7 @@ export interface PasswordRule {
 }
 
 export const PASSWORD_RULES: PasswordRule[] = [
-  { id: "minLength", i18nKey: "PASSWORD_RULES__MIN_LENGTH", test: (p) => p.length >= 8 },
+  { id: "minLength", i18nKey: "PASSWORD_RULES__MIN_LENGTH", test: (p) => p.length >= PASSWORD_MIN_LENGTH },
   { id: "letter", i18nKey: "PASSWORD_RULES__LETTER", test: (p) => /[A-Za-z]/.test(p) },
   { id: "number", i18nKey: "PASSWORD_RULES__NUMBER", test: (p) => /[0-9]/.test(p) },
   { id: "special", i18nKey: "PASSWORD_RULES__SPECIAL", test: (p) => /[^A-Za-z0-9\s]/.test(p) },

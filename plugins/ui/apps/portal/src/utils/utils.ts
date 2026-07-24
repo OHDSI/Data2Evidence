@@ -1,4 +1,4 @@
-import { isPasswordValid } from "./credential-validation";
+import { isPasswordValid, PASSWORD_MIN_LENGTH } from "./credential-validation";
 
 export const isDev = process.env["NODE_ENV"] === "development";
 
@@ -78,9 +78,12 @@ const getRandomByte = () => {
 };
 
 export const generateRandom = (length: number) => {
+  // Clamp up to the min-length rule: below it, isPasswordValid can never pass
+  // and the retry loop below would spin forever.
+  const effectiveLength = Math.max(length, PASSWORD_MIN_LENGTH);
   const pattern = /[a-zA-Z0-9_\-\+\.]/;
   const generate = () =>
-    Array.from({ length }, () => {
+    Array.from({ length: effectiveLength }, () => {
       let result;
       while (true) {
         result = String.fromCharCode(getRandomByte());

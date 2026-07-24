@@ -7,6 +7,14 @@ describe("generateRandom (D5: must satisfy password rules)", () => {
       expect(isPasswordValid(generateRandom(12))).toBe(true);
     }
   });
+
+  it("clamps a below-minimum length instead of looping forever", () => {
+    // length < min-length rule: without the clamp isPasswordValid can never
+    // pass and the retry loop hangs. The result must still be valid.
+    const result = generateRandom(4);
+    expect(result.length).toBeGreaterThanOrEqual(8);
+    expect(isPasswordValid(result)).toBe(true);
+  });
 });
 
 describe("PASSWORD_RULES", () => {
