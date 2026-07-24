@@ -53,7 +53,8 @@ against the gate-tested pin.
 
 ### Task handling — `hutch_bunny.core.upstream.task_handler.handle_task`
 
-- `handle_task(task_data, db_client, settings, client)`
+- `handle_task(task_data, db_client, settings, task_api_client)` — the 4th
+  positional arg is named `task_api_client` (a `TaskApiClient`), **not** `client`.
 
 ## CRITICAL: import-time env ordering
 
@@ -72,4 +73,34 @@ Record these placeholders now and confirm from source during Tasks 5–7:
 - The `DBDao` `CacheDBCredentialsType` attribute holding the **DuckDB file path**
   — TODO: confirm exact attribute name from source.
 - The exact `RquestResult.to_dict()` keys for **`count`** and **distribution rows**
-  — TODO: confirm exact key names from source.
+  — TODO: confirm exact key names from source. (`RquestResult.to_dict` confirmed
+  to exist on `hutch_bunny.core.rquest_models.result.RquestResult`.)
+
+## Actual observed signatures (verified against installed pin `a4121dc`)
+
+Captured via `inspect.signature` under `pixi run -e bunny` (Python 3.13):
+
+```
+handle_task(task_data: dict[str, object], db_client: hutch_bunny.core.db.base.BaseDBClient, settings: hutch_bunny.core.settings.DaemonSettings, task_api_client: hutch_bunny.core.upstream.task_api_client.TaskApiClient) -> None
+get_db_client() -> hutch_bunny.core.db.base.BaseDBClient
+execute_query(query_dict: dict[str, object], results_modifier: list[dict[str, str | int]], db_client: hutch_bunny.core.db.base.BaseDBClient, settings: hutch_bunny.core.settings.Settings | None = None, encode_result: bool = True) -> hutch_bunny.core.rquest_models.result.RquestResult
+PollingService.poll_for_tasks(self, max_iterations: int | None = None) -> None
+PollingService.__init__(self, client: TaskApiClient, task_handler: Callable, settings: DaemonSettings) -> None
+TaskApiClient.__init__(self, settings: DaemonSettings)
+```
+
+Reality-check corrections/refinements to the notes above:
+
+- `handle_task`'s 4th arg is `task_api_client`, not `client`.
+- `TASK_API_TYPE` is `Optional[Literal['a','b']]` with default `None` (not a
+  required field); `a` = availability, `b` = distribution, no `'c'`.
+- `DATASOURCE_DB_DRIVERNAME` default is `postgresql`, constrained by regex
+  `^(postgresql|mssql|duckdb|snowflake-connector-python)$`.
+- `DaemonSettings` required (no-default) fields confirmed: `DATASOURCE_DB_SCHEMA`,
+  `TASK_API_BASE_URL`, `TASK_API_USERNAME`, `TASK_API_PASSWORD`, `COLLECTION_ID`.
+  Additionally `DATASOURCE_DB_HOST` / `DATASOURCE_DB_PORT` / `DATASOURCE_DB_DATABASE`
+  are required **unless** `DATASOURCE_DB_DRIVERNAME=duckdb` (port also optional for
+  `snowflake-connector-python`).
+- Import-time env ordering CONFIRMED: importing `core.db` (via
+  `core.db.sync` → `settings = Settings()`) raised a pydantic `ValidationError`
+  until the required `DATASOURCE_*` env was set.
