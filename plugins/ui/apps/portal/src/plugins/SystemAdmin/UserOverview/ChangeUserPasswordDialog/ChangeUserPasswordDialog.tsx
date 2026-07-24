@@ -14,7 +14,7 @@ import { Feedback } from "../../../../types";
 import { generateRandom } from "../../../../utils";
 import { api } from "../../../../axios/api";
 import "./ChangeUserPassword.scss";
-import { useTranslation } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
 
 interface ChangeUserPasswordDialogProps {
   userId: string;
@@ -30,19 +30,21 @@ const EMPTY_FORM_DATA: FormData = { password: "" };
 
 export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ userId, open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
+  const { setFeedback } = useFeedback();
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
   const [passwordShown, setPasswordShown] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>({});
+  const [dialogFeedback, setDialogFeedback] = useState<Feedback>({});
 
   useEffect(() => {
     setFormData(EMPTY_FORM_DATA);
-    setFeedback({});
+    setDialogFeedback({});
+    setPasswordShown(false);
     setLoading(false);
   }, [open]);
 
   const handleClose = useCallback(() => {
-    setFeedback({});
+    setDialogFeedback({});
     typeof onClose === "function" && onClose();
   }, [onClose]);
 
@@ -62,24 +64,23 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       setLoading(true);
       await api.userMgmt.changeUserPassword(userId, formData.password);
       setFeedback({
+        variant: "alert",
         type: "success",
         message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__PASSWORD_UPDATED),
+        autoClose: 5000,
       });
+      typeof onClose === "function" && onClose();
     } catch (err: any) {
-      if (err?.data?.message) {
-        setFeedback({ type: "error", message: err?.data?.message });
-      } else {
-        console.log("There is an error in updating user's password", err);
-        setFeedback({
-          type: "error",
-          message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR),
-          description: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR_DESCRIPTION),
-        });
-      }
+      console.log("There is an error in updating user's password", err);
+      setDialogFeedback({
+        type: "error",
+        title: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR),
+        message: getText(i18nKeys.CHANGE_USER_PASSWORD_DIALOG__ERROR_DESCRIPTION),
+      });
     } finally {
       setLoading(false);
     }
-  }, [userId, formData.password, getText]);
+  }, [userId, formData.password, getText, setFeedback, onClose, i18nKeys]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -96,7 +97,7 @@ export const ChangeUserPasswordDialog: FC<ChangeUserPasswordDialogProps> = ({ us
       closable
       open={open}
       onClose={handleClose}
-      feedback={feedback}
+      feedback={dialogFeedback}
     >
       <form onSubmit={handleSubmit}>
         <Divider />
