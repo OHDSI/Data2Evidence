@@ -2,23 +2,44 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { useWizardContext } from "../context/WizardContext";
 import type { FieldDefinition, FormStepConfig } from "../types/wizard";
-import { generateFormSubmitDeepLink } from "../utils/deepLinks";
+import { buildWizardSubmitPayload, generateFormSubmitDeepLink } from "../utils/deepLinks";
 import { fetchCdwConfig } from "../config/cdwConfig";
 import type { ConfigMeta } from "../config/cdwConfig";
 import { TypeaheadField } from "./TypeaheadField";
 import { AnalyticsIcon } from "./icons/AnalyticsIcon";
+import { WizardDashboardModal } from "./WizardDashboardModal";
+import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import styles from "./StepForm.module.css";
+
+// Keep the legacy Cohort Builder action available for a one-line re-enable.
+// Standalone Wizards currently exposes only the direct dashboard action.
+const SHOW_COHORT_BUILDER_ACTION = false;
 
 /**
  * Form step renderer with config-driven fields.
  */
 export function StepForm() {
-  const { selectedWizard, formData, updateFormData, goBack, goForward, getCurrentStepConfig, portalProps } =
-    useWizardContext();
+  const {
+    selectedWizard,
+    formData,
+    updateFormData,
+    goBack,
+    goForward,
+    getCurrentStepConfig,
+    portalProps,
+    ensureBookmarkCache,
+    refreshBookmarkCache,
+  } = useWizardContext();
   const stepConfig = getCurrentStepConfig();
   const [configMeta, setConfigMeta] = useState<ConfigMeta | null>(null);
   const displayValuesRef = useRef<Record<string, string>>({});
   const defaultFormValues = { ...formData };
+  const dashboardFlow = useWizardDashboardFlow({
+    datasetId: portalProps.datasetId,
+    username: portalProps.username,
+    ensureCache: ensureBookmarkCache,
+    refreshCache: refreshBookmarkCache,
+  });
 
   selectedWizard?.fields.forEach((field) => {
     if (!field.id.startsWith("condition")) {
@@ -113,7 +134,7 @@ export function StepForm() {
           cdwConfig,
           wizardOnlyFields,
           selectedWizard.id,
-          displayValuesRef.current,
+          displayValuesRef.current
         );
 
         console.log("[Wizards StepForm] Generated deep link:", deepLinkUrl);
@@ -129,6 +150,27 @@ export function StepForm() {
       // Default behavior: next-step or undefined
       goForward();
     }
+  };
+
+  const onOpenDashboard = (data: Record<string, any>) => {
+    updateFormData(data);
+    dashboardFlow.openDashboard(async () => {
+      if (!selectedWizard || !portalProps.datasetId) throw new Error("Missing Wizard context");
+      const combinedFormData = { ...formData, ...data };
+      const { config: cdwConfig, meta } = await fetchCdwConfig(portalProps.datasetId);
+      const payload = buildWizardSubmitPayload(
+        selectedWizard.fields.filter((field) => !field.isWizardField),
+        combinedFormData,
+        meta,
+        portalProps.datasetId,
+        cdwConfig.chartOptions,
+        cdwConfig,
+        selectedWizard.fields.filter((field) => field.isWizardField),
+        selectedWizard.id,
+        displayValuesRef.current
+      );
+      return { ...payload, configMeta: meta };
+    });
   };
 
   const renderField = (field: FieldDefinition) => {
@@ -239,8 +281,8 @@ export function StepForm() {
               {hasYearError
                 ? ((fromError?.message || toError?.message) as string)
                 : fromYearValue && !toYearValue
-                  ? "To year is required"
-                  : "From year is required"}
+                ? "To year is required"
+                : "From year is required"}
             </span>
           )}
         </div>
@@ -359,7 +401,6 @@ export function StepForm() {
     );
   }
 
-  // Get submit button text from stepConfig or default to "Next"
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
 
   const renderFields = (fields: FieldDefinition[]) => {
@@ -368,7 +409,20 @@ export function StepForm() {
 
   return (
     <div className={styles.container}>
-      <h2>{selectedWizard.name}</h2>
+      <div className={styles.titleRow}>
+        <button
+          type="button"
+          onClick={goBack}
+          className={styles.backIconButton}
+          aria-label="Back to wizard selection"
+          title="Back to wizard selection"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+            <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.42-1.41L7.83 13H20v-2Z" />
+          </svg>
+        </button>
+        <h2>{selectedWizard.name}</h2>
+      </div>
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
@@ -394,15 +448,35 @@ export function StepForm() {
           <button type="button" onClick={goBack} className={styles.button}>
             Back
           </button>
-          <button
-            type="submit"
-            disabled={!allRequiredFieldsFilled() || !isValid}
-            className={`${styles.button} ${styles.buttonPrimary}`}
-          >
-            <AnalyticsIcon /> {submitLabel}
-          </button>
+          <div className={styles.primaryActions}>
+            {SHOW_COHORT_BUILDER_ACTION && (
+              <button
+                type="submit"
+                disabled={!allRequiredFieldsFilled() || !isValid}
+                className={`${styles.button} ${styles.buttonPrimary}`}
+              >
+                <AnalyticsIcon /> {submitLabel}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleSubmit(onOpenDashboard)}
+              disabled={!allRequiredFieldsFilled() || !isValid || dashboardFlow.state.isOpen}
+              aria-busy={dashboardFlow.state.isOpen && dashboardFlow.state.status !== "ready"}
+              className={`${styles.button} ${styles.buttonPrimary}`}
+            >
+              <AnalyticsIcon /> Open Dashboard
+            </button>
+          </div>
         </div>
       </form>
+      <WizardDashboardModal
+        state={dashboardFlow.state}
+        onClose={dashboardFlow.close}
+        onRetry={dashboardFlow.retry}
+        datasetId={portalProps.datasetId}
+        getToken={portalProps.getToken}
+      />
     </div>
   );
 }
