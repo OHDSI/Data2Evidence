@@ -165,8 +165,14 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('click', this.closeSubMenu)
+    this.$emit('setChartBusy', false)
   },
   watch: {
+    getActiveChart() {
+      // Reset busy state when switching chart types so a destroyed chart
+      // cannot leave the loading indicator stuck.
+      this.$emit('setChartBusy', false)
+    },
     getActiveBookmark(newVal, oldVal) {
       // Reset only when  switching to a different cohort.
       // Do NOT reset when a new cohort is saved for the first time:

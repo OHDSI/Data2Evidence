@@ -25,6 +25,7 @@ interface ActionSelectorProps {
   handleSetupSemanticSearch: (dataset: Study) => void;
   handleManageDashboard: (dataset: Study) => void;
   handleTransformToWebApi: (dataset: Study) => void;
+  handleRefreshCache: (dataset: Study) => void;
 }
 
 interface Action {
@@ -71,6 +72,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
   handleSetupSemanticSearch,
   handleManageDashboard,
   handleTransformToWebApi,
+  handleRefreshCache,
 }) => {
   const { getText, i18nKeys } = useTranslation();
   const { user } = useUser();
@@ -92,6 +94,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       { name: getText(i18nKeys.ACTION_SELECTOR__SETUP_SEMANTIC_SEARCH), value: "setup-semantic-search" },
       { name: getText(i18nKeys.ACTION_SELECTOR__MANAGE_DASHBOARD), value: "manage-dashboard" },
       { name: getText(i18nKeys.ACTION_SELECTOR__TRANSFORM_TO_WEBAPI), value: "transform-to-webapi" },
+      { name: getText(i18nKeys.ACTION_SELECTOR__REFRESH_CACHE), value: "refresh-cache" },
     ],
     [getText, i18nKeys]
   );
@@ -146,6 +149,9 @@ const ActionSelector: FC<ActionSelectorProps> = ({
         case "transform-to-webapi":
           handleTransformToWebApi(dataset);
           break;
+        case "refresh-cache":
+          handleRefreshCache(dataset);
+          break;
         default:
           break;
       }
@@ -165,6 +171,7 @@ const ActionSelector: FC<ActionSelectorProps> = ({
       handleSourceInformation,
       handleManageDashboard,
       handleTransformToWebApi,
+      handleRefreshCache,
       dataset,
     ]
   );
@@ -182,6 +189,9 @@ const ActionSelector: FC<ActionSelectorProps> = ({
           return true;
         }
         if (actionVal === "version" && !dataset.schemaName) {
+          return true;
+        }
+        if (actionVal === "refresh-cache" && !dataset.schemaName) {
           return true;
         }
         return false;
