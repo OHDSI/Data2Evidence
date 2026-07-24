@@ -11,6 +11,7 @@
   },
   "imports": {
     "zod": "npm:zod@^3.23.8",
+    "uuid": "npm:uuid@^9.0.0",
     "express": "npm:express@^4.19.2",
     "express-validator": "npm:express-validator@^7.2.0",
     "axios": "npm:axios@^1.7.7",
