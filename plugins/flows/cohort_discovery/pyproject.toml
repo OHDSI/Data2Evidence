@@ -22,3 +22,6 @@ hutch-bunny = { git = "https://github.com/Health-Informatics-UoN/hutch-bunny.git
 [tool.pixi.environments]
 default = { solve-group = "default" }
 bunny = { features = ["bunny"], no-default-feature = true }
+
+[tool.pytest.ini_options]
+markers = ["integration: end-to-end tests requiring external fixtures (DuckDB OMOP + stub relay)"]
