@@ -31,13 +31,6 @@ Each row has an **Actions** section on the right, with the following buttons:
   - Username
   - Initial password
 
-### Changing a user's password
-
-- In the user's row, click **More** and select **Change password**.
-- Enter a new password, or click **Generate** to fill in a random one; the generated password is shown in plain text so you can copy it. Use the eye icon to show or hide it.
-- Click **Change**. The dialog closes and the confirmation message "Your password has been updated successfully" appears briefly at the top of the page.
-- If the update fails, the dialog stays open and shows "Password update failed. Unable to update password. Please try again." — adjust the password and click **Change** to retry.
-
 ---
 
 ## User roles
