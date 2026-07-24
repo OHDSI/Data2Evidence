@@ -589,6 +589,7 @@
           "TREX__SQL__PORT": "${TREX__SQL__PORT:-5433}",
           "TREX__SQL__USER": "${TREX__SQL__USER:-postgres}",
           "TREX__SQL__DBNAME": "${TREX__SQL__DBNAME:-postgres}",
+          "TREX__STRATEGUS_RESULTS_DB_NAME": "${TREX__STRATEGUS_RESULTS_DB_NAME:-strategus_results}",
           "INSTALL_SQLALCHEMY": "${INSTALL_SQLALCHEMY:-}",
           "REFRESH_TOKEN__ENDPOINT": "${REFRESH_TOKEN__ENDPOINT}",
           "REFRESH_TOKEN__CLIENT_ID": "${REFRESH_TOKEN__CLIENT_ID}",
