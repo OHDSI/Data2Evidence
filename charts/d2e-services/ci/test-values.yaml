@@ -170,6 +170,8 @@ global:
     LOGTO__CLIENTID_PASSWORD__BASIC_AUTH: "Y2ktbTJtOmNpLW0ybS1zZWNyZXQ="
     SUPABASE_STORAGE_JWT_SECRET: "ci-supabase-jwt-secret-not-real-0000000000"
     SUPABASE_STORAGE_JWT_TOKEN: ""
+    TREX__SQL__PASSWORD: "pencil"
+    TREX_ROOT_KEY: "ndDfri0G85Aw/P+s5jYqdnuBFdfbbY8irhrI9gFSE1Q="
   resources:
     caddy:
       requests: { cpu: 25m, memory: 50Mi }
@@ -189,6 +191,9 @@ global:
     dataflowGen:
       requests: { cpu: 50m, memory: 150Mi }
       limits:   { cpu: 500m, memory: 500Mi }
+    dataflowGenWorker:
+      requests: { cpu: 100m, memory: 250Mi }
+      limits:   { cpu: 250m, memory: 1000Mi }
 
 features:
   materializeCohorts: false
