@@ -1,3 +1,6 @@
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import {
   Box,
   Button,
@@ -15,9 +18,11 @@ import {
 import { FetchBaseQueryError } from "@reduxjs/toolkit/dist/query";
 import React, {
   ChangeEvent,
+  DragEvent,
   FC,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { useSelector } from "react-redux";
@@ -38,21 +43,35 @@ import {
   useSaveDataflowMutation,
 } from "../../../slices";
 import { ErrorResponse, SaveDataflowDto } from "../../../types";
+import { ParsedDataflowContent, parseDataflowJson } from "../../../utils";
 import "./SaveFlowDialog.scss";
 
 export interface SaveFlowDialogProps extends DialogProps {}
 
+type CreateMode = "empty" | "template" | "import";
+
 interface FormData {
   name: string;
   comment: string;
+  createMode: CreateMode;
   selectedTemplate: string;
 }
 
 const EMPTY_FORM_DATA: FormData = {
   name: "",
   comment: "",
+  createMode: "empty",
   selectedTemplate: "",
 };
+
+interface ImportState {
+  loading: boolean;
+  fileName: string;
+  content?: ParsedDataflowContent;
+  error?: string;
+}
+
+const EMPTY_IMPORT_STATE: ImportState = { loading: false, fileName: "" };
 
 export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   onClose,
@@ -86,11 +105,15 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
   const [nameRef, setNameRef] = useState<any>();
   const [commentRef, setCommentRef] = useState<any>();
   const [error, setError] = useState<ErrorResponse>();
+  const [importState, setImportState] =
+    useState<ImportState>(EMPTY_IMPORT_STATE);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (props.open) {
       setError(undefined);
       setEditName(false);
+      setImportState(EMPTY_IMPORT_STATE);
     }
   }, [props.open]);
 
@@ -102,6 +125,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         setFormData({
           name: dataflow.canvas.name,
           comment: "",
+          createMode: "empty",
           selectedTemplate: "",
         });
       }
@@ -114,15 +138,71 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     }
   }, [props.open, dataflow, nameRef, commentRef]);
 
+  const handleFile = useCallback((file: File) => {
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      setImportState({
+        loading: false,
+        fileName: file.name,
+        error: "Invalid file. Accepted format: .json",
+      });
+      return;
+    }
+
+    setImportState({ loading: true, fileName: file.name });
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const content = parseDataflowJson(reader.result as string);
+        setImportState({ loading: false, fileName: file.name, content });
+      } catch (err) {
+        console.error("Error parsing JSON:", err);
+        setImportState({
+          loading: false,
+          fileName: file.name,
+          error: "The file is invalid or corrupted and cannot be imported",
+        });
+      }
+    };
+    reader.onerror = () => {
+      setImportState({
+        loading: false,
+        fileName: file.name,
+        error: "The file could not be read",
+      });
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleFileInputChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      file && handleFile(file);
+    },
+    [handleFile]
+  );
+
+  const handleDrop = useCallback(
+    (event: DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      const file = event.dataTransfer.files?.[0];
+      file && handleFile(file);
+    },
+    [handleFile]
+  );
+
   const handleSave = useCallback(async () => {
     const trimmedName = formData.name.trim();
-    
+
     if (!trimmedName) {
       return;
     }
-    
-    if (isNew && formData.selectedTemplate) {
+
+    if (isNew && formData.createMode === "template") {
       // Create from template
+      if (!formData.selectedTemplate) {
+        return;
+      }
+
       const response = await createFromTemplate({
         templateId: formData.selectedTemplate,
         name: trimmedName,
@@ -141,18 +221,27 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         typeof onClose === "function" && onClose();
       }
     } else {
-      // Without template
+      // Empty flow, imported flow, or save of an existing flow
+      const isImport = isNew && formData.createMode === "import";
+      if (isImport && !importState.content) {
+        return;
+      }
+
       const dataflow: SaveDataflowDto = {
         id: saveFlowDialog.dataflowId,
         name: trimmedName,
         dataflow: isNew
           ? {
-              nodes: [],
-              edges: [],
-              variables: [],
-              importLibs: [],
-              databases: [],
-              schemas: [],
+              ...(isImport
+                ? (importState.content as ParsedDataflowContent)
+                : {
+                    nodes: [],
+                    edges: [],
+                    variables: [],
+                    importLibs: [],
+                    databases: [],
+                    schemas: [],
+                  }),
               comment: formData.comment.trim(),
             }
           : { nodes, edges, variables, importLibs, databases, schemas, comment: formData.comment.trim() },
@@ -167,7 +256,9 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
       if (isNew && "data" in response) {
         if (response.data?.id) {
           dispatch(setDataflowId(response.data.id));
-          dispatch(setAddNodeTypeDialog({ visible: true }));
+          if (!isImport) {
+            dispatch(setAddNodeTypeDialog({ visible: true }));
+          }
         }
       }
 
@@ -179,6 +270,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     saveFlowDialog,
     isNew,
     formData,
+    importState,
     nodes,
     edges,
     variables,
@@ -201,6 +293,12 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
     },
     [handleSave]
   );
+
+  const createDisabled =
+    !formData.name.trim() ||
+    (isNew &&
+      ((formData.createMode === "template" && !formData.selectedTemplate) ||
+        (formData.createMode === "import" && !importState.content)));
 
   return (
     <Dialog
@@ -256,7 +354,33 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
         </Box>
         {isNew && (
           <Box mb={4}>
-            <InputLabel sx={{ mb: 1 }}>Template (Optional)</InputLabel>
+            <RadioGroup
+              value={formData.createMode}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                onFormDataChange({ createMode: e.target.value as CreateMode })
+              }
+            >
+              <FormControlLabel
+                value="empty"
+                control={<Radio size="small" />}
+                label="Create a new dataflow"
+              />
+              <FormControlLabel
+                value="template"
+                control={<Radio size="small" />}
+                label="Create from a template"
+              />
+              <FormControlLabel
+                value="import"
+                control={<Radio size="small" />}
+                label="Import a dataflow"
+              />
+            </RadioGroup>
+          </Box>
+        )}
+        {isNew && formData.createMode === "template" && (
+          <Box mb={4}>
+            <InputLabel sx={{ mb: 1 }}>Template</InputLabel>
             <Select
               sx={{ width: "100%" }}
               variant="standard"
@@ -268,7 +392,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
               disabled={templatesLoading}
             >
               <MenuItem value="">
-                <em>No template</em>
+                <em>Select a template</em>
               </MenuItem>
               {templates.map((template) => (
                 <MenuItem key={template.id} value={template.id}>
@@ -276,6 +400,55 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
                 </MenuItem>
               ))}
             </Select>
+          </Box>
+        )}
+        {isNew && formData.createMode === "import" && (
+          <Box mb={4}>
+            <div
+              className="save-flow-dialog__upload"
+              onDragOver={(e: DragEvent<HTMLDivElement>) => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <UploadFileOutlinedIcon sx={{ width: 28, height: 30 }} />
+              <div>
+                Drag and drop a file here, or{" "}
+                <Button
+                  text="Browse"
+                  variant="text"
+                  onClick={() => fileInputRef.current?.click()}
+                  loading={importState.loading}
+                />
+              </div>
+              <div className="save-flow-dialog__upload-hint">
+                Accepted format: .json
+              </div>
+              {importState.content && (
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  gap={0.5}
+                  sx={{ color: "success.main" }}
+                >
+                  <CheckCircleOutlineIcon fontSize="small" />
+                  {importState.fileName}
+                </Box>
+              )}
+              {importState.error && (
+                <Box sx={{ color: "error.main" }}>{importState.error}</Box>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleFileInputChange}
+              onClick={(event) => {
+                (event.target as HTMLInputElement).value = "";
+              }}
+              style={{ display: "none" }}
+              id="open-flow-json"
+            />
           </Box>
         )}
         </div>
@@ -291,7 +464,7 @@ export const SaveFlowDialog: FC<SaveFlowDialogProps> = ({
               onClick={handleSave}
               loading={isLoading || createFromTemplateLoading}
               type="submit"
-              disabled={!formData.name.trim()}
+              disabled={createDisabled}
             />
           </Box>
         </div>

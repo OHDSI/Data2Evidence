@@ -5,6 +5,24 @@
     padding: 1.5em;
   }
 
+  &__upload {
+    border: 1px dashed $neutral-light-color;
+    border-radius: 4px;
+    padding: 1.5em;
+    text-align: center;
+    color: $neutral-color;
+
+    &-hint {
+      color: $neutral-light-color;
+      font-size: 0.85em;
+      margin-bottom: 0.5em;
+    }
+
+    .alp-button__container {
+      display: inline-block;
+    }
+  }
+
   &__footer {
     border-top: 1px solid $border-color;
     padding: 1.5em;
