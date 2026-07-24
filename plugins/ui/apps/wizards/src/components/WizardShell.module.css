@@ -7,8 +7,8 @@
   font-family: var(--wizard-font-family);
 }
 
-.content {
-  flex: 1;
+.shell > .content {
+  flex: 1 0 auto;
   margin: 2rem;
   background-color: white;
   border-radius: 16px;
