@@ -104,6 +104,29 @@ export class SystemPortal {
     });
   }
 
+  public refreshWebApiCache(datasetId: string) {
+    return request<{ success: boolean; databaseCode: string; error?: string }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/${datasetId}/refresh-cache`,
+      method: "POST",
+    });
+  }
+
+  public getCacheStatus(datasetId: string) {
+    return request<{
+      ready: boolean;
+      cacheExists: boolean;
+      cacheAttached: boolean;
+      lastModified: number | null;
+      activeJobStatus?: string | null;
+      lastJobError?: string | null;
+    }>({
+      baseURL: SYSTEM_PORTAL_URL,
+      url: `dataset/${datasetId}/cache-status`,
+      method: "GET",
+    });
+  }
+
   public getDatasetFilterScopes() {
     return request<DatasetFilter>({
       baseURL: SYSTEM_PORTAL_URL,
