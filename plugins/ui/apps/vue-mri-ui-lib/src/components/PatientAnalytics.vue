@@ -250,6 +250,9 @@ export default {
         this.setFireRequest()
       }
     },
+    getActiveChart() {
+      this.chartBusy = false
+    },
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
@@ -272,6 +275,7 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    this.chartBusy = false
   },
   computed: {
     ...mapGetters([

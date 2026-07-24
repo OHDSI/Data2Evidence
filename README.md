@@ -96,26 +96,20 @@ cd d2e
 
 Install the Data2Evidence CLI
 
-Pick the asset for your OS/architecture from the [GitHub Releases](https://github.com/OHDSI/Data2Evidence/releases) page, then download it as `d2e`.
+Set `VERSION` and your platform, then download it as `d2e`.
 
-| OS      | x64                                 | arm64                            |
-| ------- | ----------------------------------- | -------------------------------- |
-| Linux   | `data2evidence-cli-linux-x64`       | `data2evidence-cli-linux-arm64`  |
-| macOS   | `data2evidence-cli-darwin-x64`      | `data2evidence-cli-darwin-arm64` |
-| Windows | `data2evidence-cli-windows-x64.exe` | —                                |
-
-**Linux / macOS** — set `VERSION` and `ASSET` for your platform (example uses macOS arm64):
+**Linux / macOS** — `PLATFORM` is one of `linux-x64`, `linux-arm64`, `darwin-x64`, `darwin-arm64`:
 ```bash
-VERSION="0.16.0"                            # e.g. latest release
-ASSET="data2evidence-cli-darwin-arm64"      # from the table above
-curl -L https://github.com/OHDSI/Data2Evidence/releases/download/v${VERSION}/${ASSET} -o d2e
+VERSION="0.17.0-beta"        # any released version
+PLATFORM="darwin-arm64"      # your OS/arch
+curl -L "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-$PLATFORM" -o d2e
 chmod +x d2e
 ```
 
 **Windows (PowerShell)**:
 ```powershell
-$VERSION = "0.16.0"
-curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-windows-x64.exe"
+$VERSION = "0.17.0-beta"     # any released version
+curl.exe -L --progress-bar -o d2e.exe "https://github.com/OHDSI/Data2Evidence/releases/download/v$VERSION/data2evidence-cli-$VERSION-windows-x64.exe"
 ```
 
 Generate `.env` file for Data2Evidence with random generated secrets and certificates
@@ -159,9 +153,9 @@ functions/  → Analytical utilities and notebook helpers
 | d2e services  | d2e  functions | d2e ui  |
 |:-:|:-:|:-:|
 | [![d2e/cli build and publish](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/cli-setup-npm.yml) | [![d2e Docker Build](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/docker-build-push.yaml) | [![d2e-ui/pa (vue)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-test-vue.yml)   |  
-| [![Run Trex Deno Tests](https://github.com/OHDSI/d2e/actions/workflows/trex-deno-tests.yml/badge.svg)](https://github.com/OHDSI/d2e/actions/workflows/trex-deno-tests.yml) |  | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
+|  |[![d2e-functions/pa integration tests](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml)  | [![d2e-ui/portal unit tests (Frontend)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-fe.yml)  |   
 | |  | [![d2e-ui/portal unit tests (Components Library)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-alp-portal-test-components.yml) |
-| | [![d2e-functions/pa integration tests](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/functions-mri-tests.yml) | [![d2e-ui/pyqe tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
+| |  | [![d2e-ui/pyqe tests](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml/badge.svg)](https://github.com/ohdsi/d2e/actions/workflows/ui-pyqe-test.yml) |  
 
 ## Contributing  
 
