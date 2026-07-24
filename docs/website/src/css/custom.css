@@ -1,0 +1,307 @@
+/**
+ * Global CSS overrides for Docusaurus to mimic the index.html look.
+ */
+
+/* Override Infima variables */
+:root {
+  --ifm-color-primary: navy;
+  --ifm-color-primary-dark: #000066;
+  --ifm-color-primary-darker: #00004d;
+  --ifm-color-primary-darkest: #000033;
+  --ifm-color-primary-light: #3333cc;
+  --ifm-color-primary-lighter: #4d4dff;
+  --ifm-color-primary-lightest: #6666ff;
+  --ifm-container-width-xl: 1170px;
+  --ifm-navbar-height: 72px;
+  --ifm-code-font-size: 80%;
+  --ifm-navbar-link-color: navy;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-font-family-base: GT-America, Helvetica, Arial, sans-serif;
+  /* Custom variables to mimic the index.html design */
+  --header-bg: white;
+  --header-text-color: navy;
+  --footer-text-color: navy;
+  /* Changed from #333 to navy */
+  /*--base-font-size: 1.05rem; /* 18px */
+  /*--heading-font-weight: 700;*/
+}
+
+/* Base font styling */
+body {
+  font-size: var(--base-font-size);
+  line-height: 1.6;
+  color: var(--ifm-color-primary);
+}
+
+p,
+div,
+span,
+a,
+li,
+button,
+input,
+textarea,
+table {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--ifm-color-primary);
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--header-text-color);
+}
+
+h1 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-family: MetaSerifPro, Georgia, serif;
+  font-size: 2.5rem;
+  line-height: 1.125;
+  font-weight: 300;
+}
+
+.theme-doc-markdown a {
+  text-decoration: underline;
+}
+
+@media only screen and (min-width: 992px) {
+  h1 {
+    font-size: 3.5rem;
+  }
+}
+
+h2 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-family: GT-America, Helvetica, Arial, sans-serif;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+h2 a {
+  line-height: 1.2;
+}
+
+h3 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-family: GT-America, Helvetica, Arial, sans-serif;
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.27;
+  font-weight: 300;
+}
+
+@media only screen and (min-width: 992px) {
+  h3 {
+    font-size: 1.75rem;
+  }
+}
+
+h4,
+h5,
+h6 {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-family: GT-America, Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+
+/* Header styles */
+.header {
+  background-color: var(--header-bg);
+  color: var(--header-text-color);
+  padding: 1.5rem 2.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+
+/* Navigation adjustments */
+.header__skip-link {
+  font-size: 0.875rem;
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.header__skip-link:focus {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  margin-bottom: 1rem;
+}
+
+/* Footer styles */
+.footer {
+  background-color: var(--footer-text-color);
+  color: white;
+  padding: 1.5rem 2.5rem;
+  border-top: 2px solid var(--ifm-color-primary-dark);
+  margin-top: 3rem;
+  text-align: left;
+}
+
+/* Button styling */
+.button {
+  background-color: var(--ifm-color-primary);
+  color: #fff;
+  border: none;
+  padding: 0.85rem 1.5rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s ease, font-weight 0.3s ease;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+.button:hover {
+  background-color: var(--ifm-color-primary-dark);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.button-contact {
+  border: 2px solid var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, font-weight 0.3s ease;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  text-decoration: none;
+
+  &.menu__link {
+    margin-top: 1rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    padding: 0.3rem 1rem;
+  }
+}
+
+.button-contact:hover {
+  color: white;
+  background-color: var(--ifm-color-primary);
+}
+
+/* Layout spacing overrides */
+.container,
+.markdown {
+  padding: 2rem;
+}
+
+/* Optional: Improve image responsiveness */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.navbar__logo {
+  height: 3rem;
+}
+
+
+@media (min-width: 996px) {
+
+  /* Override Docusaurus default link styles */
+  .navbar__link,
+  .menu__link,
+  .table-of-contents__link,
+  .pagination-nav__link {
+    color: var(--ifm-color-primary);
+    display: inline-block;
+    white-space: nowrap;
+    position: relative;
+  }
+
+  .menu__link {
+    display: block;
+  }
+
+  .navbar__link:hover,
+  .menu__link:hover,
+  .table-of-contents__link:hover,
+  .pagination-nav__link:hover,
+  .navbar__link--active {
+    text-shadow: -.25px -.25px, .25px .25px, -.25px .25px, .25px -.25px;
+  }
+
+  .navbar {
+    background-color: var(--hero-bg, rgba(255, 255, 255, 0.7));
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: none;
+    box-shadow: none;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: background-color 0.3s ease;
+  }
+
+  .navbar__inner {
+    width: 100%;
+    margin: 0 auto;
+    max-width: 1120px;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .navbar--fixed-top {
+    transition: background-color 0.3s ease;
+  }
+
+  .navbar.navbar--fixed-top.navbar-scroll {
+    background-color: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .navbar__logo {
+    height: 3.3rem;
+    margin-top: -10px;
+  }
+
+  .navbar svg[class*=iconExternalLink],
+  aside svg[class*=iconExternalLink] {
+    display: none;
+  }
+}
+
+.footer__copyright {
+  text-align: left;
+  /* Ensure text is left-aligned */
+  color: white;
+}
+
+.footer-link {
+  display: inline-block;
+  margin-left: 20px;
+  /* Adjust the value to add more space */
+  color: white;
+
+}
+
+.footer-link:hover {
+  color: white;
+  /* Change the hover color to white */
+}

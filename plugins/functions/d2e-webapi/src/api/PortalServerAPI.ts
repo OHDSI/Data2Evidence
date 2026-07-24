@@ -31,7 +31,7 @@ export class PortalServerAPI {
     params.append("role", "researcher");
     const result = await this.portalapi.get(
       `${this.baseURL}/dataset/list`,
-      options
+      options,
     );
     return result.data;
   }
@@ -40,7 +40,7 @@ export class PortalServerAPI {
     const options = await this.getRequestConfig();
     const result = await this.portalapi.get(
       `${this.baseURL}/dataset?datasetId=${datasetId}`,
-      options
+      options,
     );
     const body = result.data;
     return {
@@ -51,7 +51,7 @@ export class PortalServerAPI {
 
   async getUserArtifactSequenceNextval(
     datasetId: string,
-    serviceName: UserArtifactServiceNames
+    serviceName: UserArtifactServiceNames,
   ) {
     const options = await this.getRequestConfig();
     const params = new URLSearchParams();
@@ -61,14 +61,14 @@ export class PortalServerAPI {
       {
         params,
         ...options,
-      }
+      },
     );
     return result.data;
   }
 
   async createAtlasCohortDefinition(
     datasetId: string,
-    atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto
+    atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto,
   ): Promise<PortalUserArtifacts> {
     try {
       const options = await this.getRequestConfig();
@@ -91,7 +91,7 @@ export class PortalServerAPI {
 
   async updateAtlasCohortDefinition(
     datasetId: string,
-    atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto
+    atlasCohortDefinition: IUserArtifactAtlasCohortDefinitionDto,
   ): Promise<PortalUserArtifacts> {
     try {
       const options = await this.getRequestConfig();
@@ -115,10 +115,7 @@ export class PortalServerAPI {
     }
   }
 
-  async deleteAtlasCohortDefinition(
-    datasetId: string,
-    atlasCohortDefinitionId: number
-  ) {
+  async deleteAtlasCohortDefinition(atlasCohortDefinitionId: number) {
     try {
       // Validate atlasCohortDefinitionId
       if (
@@ -131,7 +128,6 @@ export class PortalServerAPI {
       const options = await this.getRequestConfig();
 
       const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
 
       const url = `${this.baseURL}/user-artifact/${
         UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS
@@ -144,14 +140,13 @@ export class PortalServerAPI {
     }
   }
 
-  async getAtlasCohortDefinitionList(
-    datasetId: string
-  ): Promise<IUserArtifactAtlasCohortDefinitionDto[]> {
+  async getAtlasCohortDefinitionList(): Promise<
+    IUserArtifactAtlasCohortDefinitionDto[]
+  > {
     try {
       const options = await this.getRequestConfig();
 
       const params = new URLSearchParams();
-      params.append("datasetId", datasetId);
 
       const url = `${this.baseURL}/user-artifact/${UserArtifactServiceNames.ATLAS_COHORT_DEFINITIONS}/list`;
       const result = await this.portalapi.get(url, { params, ...options });
@@ -165,7 +160,7 @@ export class PortalServerAPI {
 
   async getAtlasCohortDefinition(
     datasetId: string,
-    atlasCohortDefinitionId: number
+    atlasCohortDefinitionId: number,
   ): Promise<IUserArtifactAtlasCohortDefinitionDto> {
     try {
       // Validate atlasCohortDefinitionId
@@ -188,7 +183,7 @@ export class PortalServerAPI {
 
       if (!result.data) {
         throw new Error(
-          `No atlas cohort definition user artifact found for id: ${atlasCohortDefinitionId}`
+          `No atlas cohort definition user artifact found for id: ${atlasCohortDefinitionId}`,
         );
       }
 
@@ -205,7 +200,7 @@ export class PortalServerAPI {
     try {
       const options = await this.getRequestConfig();
       const url = `${this.baseURL}/dataset?datasetId=${encodeURIComponent(
-        datasetId
+        datasetId,
       )}`;
       const result = await this.portalapi.get(url, options);
       const body = result.data;

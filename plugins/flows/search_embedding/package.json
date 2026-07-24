@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "docker build ../ -f ./Dockerfile -t ghcr.io/ohdsi/d2e/flow-search-embedding:local --build-arg GITHUB_PAT=${GITHUB_PAT} --platform=linux/amd64"
+    "build": "docker build ../../.. -f ../../../services/alp-dataflow-gen-worker/Dockerfile -t d2e-dataflow-gen-worker:local --build-arg GITHUB_PAT=${GITHUB_PAT}",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
   },
   "repository": {
     "type": "git",
@@ -24,7 +26,7 @@
           "name": "search_embedding_plugin",
           "type": "search",
           "entrypoint": "flows.search_embedding_plugin.flow.search_embedding_plugin",
-          "command": "bash -c '/app/install_hana_drivers.sh prefect flow-run execute'",
+          "command": "/app/run-flow.sh search-embedding-flow",
           "tags": [
             "search_embedding"
           ],
@@ -70,5 +72,15 @@
         }
       ]
     }
-  }
+  },
+  "files": [
+    "flows",
+    "_shared_flow_utils",
+    "__init__.py",
+    "pyproject.toml",
+    "pixi.lock",
+    "renv.lock",
+    "setup_assets.sh",
+    "setup_r.sh"
+  ]
 }

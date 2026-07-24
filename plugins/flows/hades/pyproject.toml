@@ -8,16 +8,23 @@ dependencies = [
     "duckdb==1.4.0",
     "genson==1.3.0",
     "httpx==0.27.2",
+    # Undeclared prefect 3.6.x dependency: prefect/workers/base.py imports the
+    # importlib_metadata backport, which opentelemetry-api>=1.43 no longer
+    # provides transitively.
+    "importlib-metadata==8.7.0",
+    # fastapi 0.129+ router internals break prefect.server's PrefectRouter
+    # (ephemeral server, prefect_test_harness); 0.128.0 is what the
+    # prefecthq/prefect:3.6.10 image ships.
+    "fastapi==0.128.0",
     "ibis-framework[duckdb,postgres]==10.0.0",
     "numpy==2.0.0",
     "openai==0.28",
     "pandas==2.2.2",
-    "prefect[docker,shell]==3.0.3",
-    "psycopg2-binary==2.9.6",
+    "prefect[docker,shell]==3.6.10",
+    "psycopg2-binary==2.9.9",
     "pydantic==2.10.6",
     "pyjwt==2.12.0",
     "python-dotenv==1.2.2",
-    "rpy2==3.5.13",
     "sqlalchemy==2.0.38",
 ]
 
@@ -27,3 +34,77 @@ dev = [
     "pytest==9.0.3",
     "uv==0.11.6",
 ]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+r-base = "4.4.3.*"
+# conda rpy2 links against conda r-base; 3.6.x is the earliest series built
+# for r-base 4.4 (bumped from pypi rpy2==3.5.13).
+rpy2 = ">=3.6,<3.7"
+# HADES is validated against Java 11 (JAVA_TOOL_OPTIONS heap tuning below
+# replaces the image's init_rjava.R/.Rprofile mechanism).
+openjdk = "11.*"
+compilers = "*"
+make = "*"
+pkg-config = "*"
+libxml2 = "*"
+libxml2-devel = "*"
+libarchive = "*"
+# libpq headers + pg_config for RPostgres source builds
+libpq = "*"
+# graphics stack headers for systemfonts/textshaping/ragg/svglite/png.
+# expat: fontconfig.pc requires expat.pc — without it the whole
+# `pkg-config --cflags fontconfig freetype2` query fails and configure
+# scripts fall back to system paths that don't exist in the env.
+freetype = "*"
+fontconfig = "*"
+libpng = "*"
+expat = "*"
+cairo = "*"
+libgit2 = "*"
+libsodium = "*"
+krb5 = "*"
+# link-time .so symlinks for -lz/-llzma (conda-forge splits runtime libs
+# libzlib/liblzma from the devel packages; rJava and friends link both)
+zlib = "*"
+liblzma-devel = "*"
+# the xz CLI itself: R package builds unpack vendored .tar.xz sources
+# (e.g. hades' r-duckdb runs `tar xJf`, which execs xz)
+xz = "*"
+glpk = "*"
+# nloptr builds its bundled nlopt with cmake
+cmake = "*"
+sqlite = "*"
+# rpy2's conda dependency chain brings `packaging`; cap it so the conda-pinned
+# version stays inside ibis-framework 10.0.0's `packaging<25` requirement.
+packaging = "<25"
+
+[tool.pixi.activation.env]
+PYTHONPATH = "$PIXI_PROJECT_ROOT"
+# rJava/JNI: libjvm.so sits outside the default linker path of the conda env.
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib/jvm/lib/server:$LD_LIBRARY_PATH"
+JAVA_TOOL_OPTIONS = "-Xms1g -Xmx4g"
+# Aligns rJava's java.parameters with JAVA_TOOL_OPTIONS (see rprofile_java.R);
+# replaces the old image's /app/.Rprofile + init_rjava.R mechanism.
+R_PROFILE_USER = "$PIXI_PROJECT_ROOT/rprofile_java.R"
+# renv must compile from source against the conda toolchain; Posit PPM binary
+# packages link against apt-distro libs.
+RENV_CONFIG_PPM_ENABLED = "FALSE"
+# The global renv cache is shared across environments and serves binaries
+# compiled against a DIFFERENT env's prefix/JDK (rJava from the base env
+# broke the hades env). Each plugin env compiles its own packages.
+RENV_CONFIG_CACHE_ENABLED = "FALSE"
+# Host dotfile isolation: a developer's ~/.R/Makevars would otherwise leak
+# arbitrary flags into every package build (seen: -march=native).
+R_MAKEVARS_USER = "/dev/null"
+# The V8 R package downloads its pinned static libv8 at build time (no
+# conda-forge standalone v8 library exists).
+DOWNLOAD_STATIC_LIBV8 = "1"
+
+[tool.pixi.tasks]
+# GITHUB_PAT should be set for the many GitHub installs (rate limits).
+setup-r = "bash setup_r.sh"

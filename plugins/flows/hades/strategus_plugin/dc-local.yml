@@ -1,8 +1,9 @@
-# docker compose -f flows/hades/strategus_plugin/dc-local.yml up -d
+# docker compose -f ./plugins/flows/hades/strategus_plugin/dc-local.yml up -d
 services:
   app:
     platform: linux/amd64
     image: ghcr.io/ohdsi/d2e/flow-hades:develop
+    # entrypoint: tail -f /dev/null
     # with debugger listening
     # entrypoint: python -m debugpy --listen 0.0.0.0:9234 --wait-for-client -m flows.hades.strategus_plugin.flow
     entrypoint: /app/.venv/bin/python -m pytest /app/flows/hades/strategus_plugin/tests/

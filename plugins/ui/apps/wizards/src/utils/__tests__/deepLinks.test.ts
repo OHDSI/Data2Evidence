@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { generateDeepLink, encodeWizardConfig, decodeWizardConfig, generateFormSubmitDeepLink } from "../deepLinks";
+import {
+  buildWizardSubmitPayload,
+  generateDeepLink,
+  encodeWizardConfig,
+  decodeWizardConfig,
+  generateFormSubmitDeepLink,
+} from "../deepLinks";
 import { decompress } from "../cohortUrlCodec";
 import type { ResultAction, FieldDefinition } from "../../types/wizard";
 import type { ConfigMeta } from "../../config/cdwConfig";
@@ -296,6 +302,16 @@ describe("deepLinks", () => {
     const getWizardConfig = (url: string) =>
       decompress<any>(new URL(url, "https://example.com").searchParams.get("wizards")!);
 
+    it("uses the same payload builder for direct and Cohort Builder flows", () => {
+      const formData = { age: 65 };
+      const directPayload = buildWizardSubmitPayload(defaultFields, formData, defaultMeta, "dataset-123");
+      const deepLink = generateFormSubmitDeepLink(defaultFields, formData, defaultMeta, "dataset-123");
+      const url = new URL(deepLink, "https://example.com");
+
+      expect(decompress(url.searchParams.get("query")!)).toEqual(directPayload.bookmark);
+      expect(decompress(url.searchParams.get("wizards")!)).toEqual(directPayload.wizardConfig);
+    });
+
     it("should generate URL with correct format", () => {
       const formData = { age: 65 };
       const datasetId = "dataset-123";
@@ -377,7 +393,7 @@ describe("deepLinks", () => {
         undefined,
         undefined,
         wizardFields,
-        "test-wizard",
+        "test-wizard"
       );
       const wizards = getWizardConfig(result);
 
@@ -395,7 +411,7 @@ describe("deepLinks", () => {
         undefined,
         undefined,
         wizardFields,
-        "test-wizard",
+        "test-wizard"
       );
       const wizards = getWizardConfig(result);
 
@@ -413,7 +429,7 @@ describe("deepLinks", () => {
         undefined,
         undefined,
         wizardFields,
-        "test-wizard",
+        "test-wizard"
       );
       const wizards = getWizardConfig(result);
 

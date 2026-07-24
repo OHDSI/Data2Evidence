@@ -10,6 +10,7 @@ exports[`KaplanMeier.vue > sets the correct default data 1`] = `
   "chartData": {},
   "errorMessage": "",
   "globalPValue": "",
+  "isUnmounted": false,
   "kmChartStyle": {},
   "kmInterval": "",
   "kmLogRankHelpArrowPosition": {
@@ -27,6 +28,8 @@ exports[`KaplanMeier.vue > sets the correct default data 1`] = `
     0,
     0,
   ],
+  "requestCancel": null,
+  "requestId": 0,
   "selection": [],
   "series": [],
   "showCensoring": false,
