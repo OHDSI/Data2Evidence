@@ -513,7 +513,7 @@ button[name="submit"]{ background: #000080 !important; }`,
         pwned: false,
         repetitionAndSequence: false,
         userInfo: false,
-        words: [],
+        words: [] as string[],
       },
     },
   };
