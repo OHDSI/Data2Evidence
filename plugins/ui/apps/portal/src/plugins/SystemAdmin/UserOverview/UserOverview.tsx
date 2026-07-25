@@ -132,15 +132,16 @@ export const UserOverview: FC<UserOverviewProps> = () => {
 
   const closeEditRole = useCallback(
     async (type: CloseDialogType) => {
+      const username = activeUser?.username;
       closeEditRoleDialog();
       setActiveUser(undefined);
 
       if (type === "success") {
-        setSuccessFeedback(getText(i18nKeys.EDIT_TENANT_ROLE_DIALOG__SUCCESS));
+        setSuccessFeedback(getText(i18nKeys.USER_OVERVIEW__EDIT_ROLE_SUCCESS, [username ?? ""]));
         await fetchUserOverview(true);
       }
     },
-    [fetchUserOverview, closeEditRoleDialog, setSuccessFeedback, getText, i18nKeys]
+    [activeUser, fetchUserOverview, closeEditRoleDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleDelete = useCallback(

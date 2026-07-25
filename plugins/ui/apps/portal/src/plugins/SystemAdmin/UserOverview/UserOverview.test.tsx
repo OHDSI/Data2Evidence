@@ -13,20 +13,26 @@ jest.mock("../../../contexts", () => ({
     setSuccessFeedback: mockSetSuccessFeedback,
   }),
   useTranslation: () => ({
-    getText: (key: string) => key,
+    getText: (key: string, params?: string[]) => (params ? `${key}:${params.join("|")}` : key),
     i18nKeys: new Proxy({}, { get: (_target, prop) => prop }),
   }),
   useUser: () => ({ user: { isUserAdmin: true } }),
 }));
 
 const mockTenants: any[] = [];
-jest.mock("../../../hooks", () => ({
-  // stable reference: a new array per render would recreate fetchUserOverview
-  // and re-fire the mount effect forever
-  useTenants: () => [mockTenants],
-  useGroupCleanUp: () => {},
-  useDialogHelper: () => [false, jest.fn(), jest.fn()],
-}));
+jest.mock("../../../hooks", () => {
+  const MockReact = require("react");
+  return {
+    // stable reference: a new array per render would recreate fetchUserOverview
+    // and re-fire the mount effect forever
+    useTenants: () => [mockTenants],
+    useGroupCleanUp: () => {},
+    useDialogHelper: (initial: boolean) => {
+      const [show, setShow] = MockReact.useState(initial);
+      return [show, () => setShow(true), () => setShow(false)];
+    },
+  };
+});
 
 jest.mock("../../../axios/api", () => ({
   api: {
@@ -57,7 +63,14 @@ jest.mock(
 
 jest.mock("./AddUserDialog/AddUserDialog", () => () => null);
 jest.mock("./DeleteUserDialog/DeleteUserDialog", () => () => null);
-jest.mock("./EditTenantRoleDialog/EditTenantRoleDialog", () => () => null);
+jest.mock("./EditTenantRoleDialog/EditTenantRoleDialog", () => {
+  const MockReact = require("react");
+  return {
+    __esModule: true,
+    default: ({ open, onClose }: any) =>
+      open ? MockReact.createElement("button", { onClick: () => onClose("success") }, "mock-save-success") : null,
+  };
+});
 jest.mock("./ChangeUserPasswordDialog/ChangeUserPasswordDialog", () => ({
   ChangeUserPasswordDialog: () => null,
 }));
@@ -121,4 +134,17 @@ test("shows only the success toast when mutation and refresh succeed", async () 
   await waitFor(() => expect(mockSetSuccessFeedback).toHaveBeenCalledWith("USER_OVERVIEW__DEACTIVATE_SUCCESS"));
   expect(mockSetFeedback).not.toHaveBeenCalled();
   expect(mockSetGenericErrorFeedback).not.toHaveBeenCalled();
+});
+
+test("shows the success toast with the edited user's name after a role edit succeeds", async () => {
+  render(<UserOverview {...({} as any)} />);
+
+  // Open the Edit Roles dialog for alice (IconButton mock exposes the title).
+  fireEvent.click(await screen.findByTitle("USER_OVERVIEW__EDIT"));
+
+  // Stubbed dialog reports a successful save.
+  fireEvent.click(screen.getByText("mock-save-success"));
+
+  await waitFor(() => expect(mockSetSuccessFeedback).toHaveBeenCalledWith("USER_OVERVIEW__EDIT_ROLE_SUCCESS:alice"));
+  expect(mockSetFeedback).not.toHaveBeenCalled();
 });
