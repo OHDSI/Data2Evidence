@@ -1,0 +1,429 @@
+// D2E AI assistant drawer — Figma frames 1475:128982 (default) & 1475:130902 (conversation).
+// Tokens: Primary/Default #000080, Primary/Light #333399, Primary/Xtra lightest #E5E6F2,
+// Neutral/Lighter #DEDCDA, Neutral/Default #595757, Neutral/Light #ACABA8,
+// Neutral/Xtra lightest #FAF8F8, Primary/XX lightest #F8F8FF, Functional/Alarm #D53939.
+
+$ai-navy: #000080;
+$ai-navy-light: #333399;
+$ai-border: #dedcda;
+$ai-neutral: #595757;
+$ai-placeholder: #acaba8;
+$ai-surface: #faf8f8;
+$ai-surface-selected: #f8f8ff;
+$ai-font: "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+
+// Panel geometry. From $ai-dock-min up there is room for the panel to dock: the page content
+// is inset by the panel width so the two sit side by side below the navbar (Figma 1475:128938)
+// and nothing is covered up. Narrower viewports cannot spare the width, so the panel floats
+// above the page instead. This is a desktop-only app; phone widths are not catered for.
+$ai-panel-width: 380px;
+$ai-panel-width-expanded: 640px;
+$ai-dock-min: 1080px;
+$ai-panel-transition: 0.2s ease;
+
+:root {
+  --ai-assistant-panel-width: #{$ai-panel-width};
+  --ai-assistant-panel-width-expanded: min(#{$ai-panel-width-expanded}, 100vw);
+}
+
+.ai-assistant {
+  .ai-assistant__paper {
+    width: var(--ai-assistant-panel-width);
+    max-width: 100vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-left: 1px solid $ai-border;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: $ai-font;
+    transition: width $ai-panel-transition;
+  }
+
+  &.ai-assistant--expanded .ai-assistant__paper {
+    width: var(--ai-assistant-panel-width-expanded);
+  }
+}
+
+// The drawer renders as a sibling of the page's <main>, so the content can be inset from the
+// right to make room for the docked panel. Declared outside the media query so the inset
+// animates in both directions.
+.ai-assistant ~ main {
+  transition: padding-right $ai-panel-transition;
+}
+
+// --- Header (gradient title bar) ---
+.ai-assistant__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  color: #fff;
+  background: linear-gradient(
+    92deg,
+    #000080 8%,
+    #10067e 16%,
+    #200c7b 21%,
+    #401876 32%,
+    #602371 44%,
+    #802f6d 55%,
+    #bf4763 77%,
+    #ff5e59 100%
+  );
+
+  .ai-assistant__header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.2;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Sparkle uses a navy->coral gradient; render it white to sit on the gradient bar.
+  .ai-assistant__header-sparkle {
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
+  }
+
+  .ai-assistant__header-icon.MuiIconButton-root {
+    color: #fff;
+    padding: 2px;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.16);
+    }
+  }
+}
+
+// --- Content region (welcome or conversation) ---
+.ai-assistant__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+// --- Welcome / empty state ---
+.ai-assistant__welcome {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding-bottom: 64px;
+}
+
+.ai-assistant__welcome-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.ai-assistant__greeting {
+  margin: 0;
+  font-family: $ai-font;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+  color: $ai-navy;
+  text-align: center;
+}
+
+.ai-assistant__suggestions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-assistant__suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  background-color: #fcfcfc;
+  border: 1px solid #e5e6f2;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $ai-neutral;
+  text-align: left;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: #f5f6fb;
+    border-color: $ai-navy;
+  }
+
+  .ai-assistant__suggestion-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ai-assistant__suggestion-label {
+    flex: 1 1 auto;
+  }
+}
+
+// --- Conversation ---
+.ai-assistant__conversation {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-assistant__message {
+  display: flex;
+  width: 100%;
+
+  &--user {
+    justify-content: flex-end;
+    padding-left: 32px;
+  }
+
+  &--assistant {
+    justify-content: flex-start;
+    padding-right: 32px;
+  }
+}
+
+.ai-assistant__bubble {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  font-family: $ai-font;
+  font-size: 14px;
+  line-height: 1.5;
+
+  .ai-assistant__message--user & {
+    background-color: $ai-navy-light;
+    color: #fff;
+    border-radius: 24px 24px 4px 24px;
+  }
+
+  .ai-assistant__message--assistant & {
+    background-color: $ai-surface;
+    color: #000;
+    border: 1px solid $ai-border;
+    border-radius: 24px 24px 24px 4px;
+  }
+}
+
+.ai-assistant__rich {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-assistant__bubble-text {
+  margin: 0;
+
+  &--strong {
+    font-weight: 700;
+  }
+}
+
+.ai-assistant__filter-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+// Concept-set / disambiguation cards inside an assistant message
+.ai-assistant__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-assistant__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  text-align: left;
+  background-color: #fff;
+  border: 1px solid $ai-border;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #000;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: $ai-navy-light;
+  }
+
+  &--selected {
+    background-color: $ai-surface-selected;
+    border-color: $ai-navy-light;
+  }
+
+  .ai-assistant__option-title {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .ai-assistant__option-index {
+    margin-right: 4px;
+  }
+
+  .ai-assistant__option-subtitle {
+    font-size: 10px;
+    line-height: 1.4;
+    color: $ai-neutral;
+  }
+}
+
+// --- Composer ---
+.ai-assistant__composer {
+  flex-shrink: 0;
+  border-top: 1px solid $ai-border;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.ai-assistant__quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ai-assistant__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 4px 8px;
+  border-radius: 40px;
+  border: 1px solid #f2f0f1;
+  background-color: $ai-surface;
+  color: $ai-neutral;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: $ai-navy-light;
+  }
+
+  &--selected {
+    background-color: $ai-surface-selected;
+    border-color: $ai-navy-light;
+  }
+
+  .ai-assistant__chip-icon {
+    color: #d53939;
+  }
+}
+
+.ai-assistant__input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 16px;
+  border: 1px solid $ai-border;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  &:focus-within {
+    border-color: $ai-navy;
+  }
+
+  .ai-assistant__input-add.MuiIconButton-root {
+    flex-shrink: 0;
+    color: $ai-navy;
+    padding: 2px;
+  }
+
+  .ai-assistant__input-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #000;
+    max-height: 120px;
+    padding: 0;
+
+    &::placeholder {
+      color: $ai-placeholder;
+    }
+  }
+
+  .ai-assistant__input-send.MuiIconButton-root {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border-radius: 8px;
+    background-color: $ai-navy;
+    color: #fff;
+
+    &:hover {
+      background-color: #1a1a99;
+    }
+
+    &.Mui-disabled {
+      background-color: $ai-placeholder;
+      color: #fff;
+    }
+  }
+}
+
+// --- Docked layout (wide viewports) ---
+// The panel becomes part of the page layout: it keeps its own width and the content next to
+// it shrinks, rather than the panel floating over the content.
+@media (min-width: $ai-dock-min) {
+  .ai-assistant .ai-assistant__paper {
+    // Docked panels sit in the layout, so the "lifted above the page" shadow is dropped and
+    // the left border alone divides the panel from the content.
+    box-shadow: none;
+  }
+
+  .ai-assistant--open ~ main {
+    padding-right: var(--ai-assistant-panel-width);
+  }
+
+  .ai-assistant--open.ai-assistant--expanded ~ main {
+    padding-right: var(--ai-assistant-panel-width-expanded);
+  }
+}
