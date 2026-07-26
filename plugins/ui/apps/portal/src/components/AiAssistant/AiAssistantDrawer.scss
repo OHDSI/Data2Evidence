@@ -254,6 +254,55 @@ $ai-panel-transition: 0.2s ease;
   padding-left: 20px;
 }
 
+// --- Tool activity ---
+// Which cohort tools the assistant ran for this reply. Shown so an edit to the
+// user's cohort is visible as an action, not just a claim in prose.
+.ai-assistant__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ai-assistant__tool {
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  line-height: 1.6;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  background-color: $ai-surface;
+  border: 1px solid $ai-border;
+  color: $ai-neutral;
+
+  &--running {
+    border-color: $ai-navy-light;
+    color: $ai-navy-light;
+  }
+
+  &--ok {
+    background-color: $ai-surface-selected;
+    border-color: $ai-navy-light;
+    color: $ai-navy;
+  }
+
+  &--error {
+    border-color: #d53939;
+    color: #d53939;
+  }
+}
+
+// Standing notice above the composer: no dataset, or no live cohort builder to
+// edit against.
+.ai-assistant__notice {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $ai-neutral;
+  background-color: $ai-surface;
+  border-top: 1px solid $ai-border;
+}
+
 // Concept-set / disambiguation cards inside an assistant message
 .ai-assistant__options {
   display: flex;

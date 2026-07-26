@@ -1,6 +1,19 @@
 import React, { FC } from "react";
 import classNames from "classnames";
-import { ChatMessage, MessageOption } from "./types";
+import { ChatMessage, MessageOption, ToolActivity } from "./types";
+
+// Tool names are the agent's ids (pa_apply_cohort_patch, search_concepts, …).
+// Shown as-is minus the surface prefix: they are the honest record of what the
+// assistant actually did, and inventing friendly names for a set that grows on
+// both the browser and server side would drift out of date silently.
+const ToolBadge: FC<{ tool: ToolActivity }> = ({ tool }) => (
+  <span
+    className={classNames("ai-assistant__tool", `ai-assistant__tool--${tool.state}`)}
+    data-testid={`ai-tool-${tool.name}`}
+  >
+    {tool.name.replace(/^pa_/, "")}
+  </span>
+);
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -38,6 +51,14 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ message, onSelectOption 
       })}
     >
       <div className="ai-assistant__bubble">
+        {message.tools && message.tools.length > 0 && (
+          <div className="ai-assistant__tools">
+            {message.tools.map((tool) => (
+              <ToolBadge key={tool.id} tool={tool} />
+            ))}
+          </div>
+        )}
+
         {message.text &&
           message.text.split("\n").map((line, index) => (
             // eslint-disable-next-line react/no-array-index-key

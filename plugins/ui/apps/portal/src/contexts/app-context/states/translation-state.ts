@@ -157,6 +157,11 @@ export const i18nDefault = {
     AI_ASSISTANT__SUGGESTION_UPDATE_COHORT: "Update a cohort definition",
     AI_ASSISTANT__SUGGESTION_EXTRACT_PAPER: "Extract cohort from a paper",
     AI_ASSISTANT__SUGGESTION_COMPARE_COHORTS: "Help me to compare cohorts",
+    AI_ASSISTANT__NO_DATASET: "Select a dataset to start.",
+    AI_ASSISTANT__NO_LIVE_EDITING:
+      "Open the cohort builder (Cohorts → Create Cohort: D2E) so I can build and edit cohorts live. Until then I can only send you a link.",
+    AI_ASSISTANT__DATASET_MISMATCH:
+      "The cohort builder is on a different dataset, so live editing is paused until they match.",
     ATTRIBUTE_TABLE__ADD_ATTRIBUTE: "Add attribute",
     ATTRIBUTE_TABLE__ATTRIBUTE_ID: "Attribute ID",
     ATTRIBUTE_TABLE__ATTRIBUTE_NAME: "Attribute name",

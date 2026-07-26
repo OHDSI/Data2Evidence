@@ -1,8 +1,17 @@
 // Data model for the D2E AI assistant drawer UI.
-// This is a UI-only proof of concept: messages are held in local component state and
-// assistant replies are canned. Wiring to the LLM / MCP / WebMCP tools comes later.
+// Messages are produced by hooks/useCohortChat from the agent's UI message stream;
+// this is the flattened shape the bubble components render.
 
 export type MessageRole = "user" | "assistant";
+
+// One tool call made while producing an assistant message, shown as a badge so
+// the user can see the assistant reading/editing their cohort rather than just
+// asserting it did.
+export interface ToolActivity {
+  id: string;
+  name: string;
+  state: "running" | "ok" | "error";
+}
 
 // A selectable concept-set / disambiguation card rendered inside an assistant message.
 export interface MessageOption {
@@ -41,4 +50,6 @@ export interface ChatMessage {
   text?: string;
   // Structured content for rich assistant replies.
   rich?: AssistantRichContent;
+  // Tools the assistant called while producing this message.
+  tools?: ToolActivity[];
 }

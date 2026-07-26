@@ -1,4 +1,4 @@
-import React, { FC, KeyboardEvent, useState } from "react";
+import React, { FC, KeyboardEvent, useLayoutEffect, useRef, useState } from "react";
 import classNames from "classnames";
 import { IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
@@ -11,17 +11,19 @@ interface ChatComposerProps {
   quickReplies?: QuickReply[];
   onSend: (text: string) => void;
   onQuickReply?: (reply: QuickReply) => void;
+  // Set while the assistant is answering, or when there is no dataset to answer about.
+  disabled?: boolean;
 }
 
 // Bottom composer: optional quick-reply chips above a text input with add + send controls
 // (Figma nodes 1475:129006 / 1475:130926).
-export const ChatComposer: FC<ChatComposerProps> = ({ quickReplies, onSend, onQuickReply }) => {
+export const ChatComposer: FC<ChatComposerProps> = ({ quickReplies, onSend, onQuickReply, disabled = false }) => {
   const { getText, i18nKeys } = useTranslation();
   const [value, setValue] = useState("");
 
   const submit = () => {
     const trimmed = value.trim();
-    if (!trimmed) return;
+    if (!trimmed || disabled) return;
     onSend(trimmed);
     setValue("");
   };
@@ -67,6 +69,7 @@ export const ChatComposer: FC<ChatComposerProps> = ({ quickReplies, onSend, onQu
           className="ai-assistant__input-field"
           rows={1}
           value={value}
+          disabled={disabled}
           placeholder={getText(i18nKeys.AI_ASSISTANT__INPUT_PLACEHOLDER)}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -77,7 +80,7 @@ export const ChatComposer: FC<ChatComposerProps> = ({ quickReplies, onSend, onQu
           className="ai-assistant__input-send"
           size="small"
           onClick={submit}
-          disabled={!value.trim()}
+          disabled={disabled || !value.trim()}
           aria-label={getText(i18nKeys.AI_ASSISTANT__SEND)}
           title={getText(i18nKeys.AI_ASSISTANT__SEND)}
           data-testid="ai-assistant-send"

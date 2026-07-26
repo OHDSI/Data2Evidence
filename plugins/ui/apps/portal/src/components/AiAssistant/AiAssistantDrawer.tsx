@@ -1,12 +1,12 @@
-import React, { FC, useCallback, useEffect, useLayoutEffect, useState } from "react";
+import React, { FC, useEffect, useLayoutEffect, useState } from "react";
 import classNames from "classnames";
 import { Drawer } from "@portal/components";
-import { ChatMessage, MessageOption, QuickReply } from "./types";
+import { useTranslation } from "../../contexts";
 import { DrawerHeader } from "./DrawerHeader";
 import { WelcomeView } from "./WelcomeView";
 import { ConversationView } from "./ConversationView";
 import { ChatComposer } from "./ChatComposer";
-import { buildAssistantReply, buildQuickReplies, nextId } from "./mockConversation";
+import { useCohortChat } from "./hooks/useCohortChat";
 import { broadcastAiAssistantOpen, PA_LEFT_PANE_OPENED_EVENT } from "./aiAssistantEvents";
 import "./AiAssistantDrawer.scss";
 
@@ -36,39 +36,16 @@ const useHeaderOffset = (): number => {
   return offset;
 };
 
-// The D2E AI assistant side drawer. UI-only proof of concept: conversation state lives
-// here and assistant replies are canned. It is rendered persistently so the conversation
-// survives closing/reopening the drawer (until the page is refreshed).
+// The D2E AI assistant side drawer. Conversation state lives in useCohortChat, which
+// talks to the cohort agent and runs the live Patient Analytics tools in this tab. It
+// is rendered persistently so the conversation survives closing/reopening the drawer
+// (until the page is refreshed).
 export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [quickReplies, setQuickReplies] = useState<QuickReply[]>([]);
+  const { getText, i18nKeys } = useTranslation();
+  const { messages, sendMessage, reset, isStreaming, liveEditing, datasetMismatch, datasetMissing, error } =
+    useCohortChat();
   const [expanded, setExpanded] = useState(false);
   const headerOffset = useHeaderOffset();
-
-  const sendMessage = useCallback((text: string) => {
-    const userMessage: ChatMessage = { id: nextId("user"), role: "user", text };
-    setMessages((prev) => [...prev, userMessage, buildAssistantReply()]);
-    setQuickReplies(buildQuickReplies());
-  }, []);
-
-  const handleNewConversation = useCallback(() => {
-    setMessages([]);
-    setQuickReplies([]);
-  }, []);
-
-  const handleSelectOption = useCallback(
-    (option: MessageOption) => {
-      sendMessage(option.index != null ? `${option.index}` : option.title);
-    },
-    [sendMessage]
-  );
-
-  const handleQuickReply = useCallback(
-    (reply: QuickReply) => {
-      sendMessage(reply.label);
-    },
-    [sendMessage]
-  );
 
   // While docked the panel takes width away from the page content. Embedded plugin apps only
   // re-layout on window resize, so nudge them once the panel has finished sliding. Harmless
@@ -109,6 +86,21 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
 
   const hasConversation = messages.length > 0;
 
+  // Say plainly what the assistant can and cannot do right now. Live cohort
+  // editing depends on Patient Analytics being mounted on the same dataset, which
+  // changes as the user navigates — leaving that implicit means the assistant
+  // looks broken when it is merely out of reach of the builder.
+  let notice: string | undefined;
+  if (error) {
+    notice = error.message;
+  } else if (datasetMissing) {
+    notice = getText(i18nKeys.AI_ASSISTANT__NO_DATASET);
+  } else if (datasetMismatch) {
+    notice = getText(i18nKeys.AI_ASSISTANT__DATASET_MISMATCH);
+  } else if (!liveEditing) {
+    notice = getText(i18nKeys.AI_ASSISTANT__NO_LIVE_EDITING);
+  }
+
   return (
     <Drawer
       variant="persistent"
@@ -129,23 +121,21 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
         expanded={expanded}
         onClose={onClose}
         onToggleExpand={() => setExpanded((prev) => !prev)}
-        onNewConversation={handleNewConversation}
+        onNewConversation={reset}
         data-test="test-build"
       />
 
       <div className="ai-assistant__content">
-        {hasConversation ? (
-          <ConversationView messages={messages} onSelectOption={handleSelectOption} />
-        ) : (
-          <WelcomeView onSelectSuggestion={sendMessage} />
-        )}
+        {hasConversation ? <ConversationView messages={messages} /> : <WelcomeView onSelectSuggestion={sendMessage} />}
       </div>
 
-      <ChatComposer
-        quickReplies={hasConversation ? quickReplies : undefined}
-        onSend={sendMessage}
-        onQuickReply={handleQuickReply}
-      />
+      {notice && (
+        <p className="ai-assistant__notice" role="status" data-testid="ai-assistant-notice">
+          {notice}
+        </p>
+      )}
+
+      <ChatComposer onSend={sendMessage} disabled={isStreaming || datasetMissing} />
     </Drawer>
   );
 };

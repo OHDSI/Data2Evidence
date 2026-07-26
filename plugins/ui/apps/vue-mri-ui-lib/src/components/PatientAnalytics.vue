@@ -168,6 +168,7 @@ const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
 import { registerPaTools } from '@/ai/webmcpServer'
+import { publishPaTools } from '@/ai/paToolBridge'
 import { isAiAssistantOpen, notifyLeftPaneOpened, onAiAssistantToggle } from '@/utils/aiAssistantPaneBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
@@ -295,11 +296,16 @@ export default {
     },
   },
   mounted() {
-    this._unregisterPaTools = registerPaTools(this.$store, {
+    const paToolHooks = {
       // Let pa_new_cohort switch from the saved-cohort list to the builder so a
       // programmatically built cohort renders and computes its count/chart.
       showBuilder: () => this.toggleCohorts(false),
-    })
+    }
+    // Two consumers, one tool set: an external browser agent via Chrome's
+    // modelContext, and the portal's in-page AI assistant drawer via the window
+    // registry. Both wrap the same createPaTools() array.
+    this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
     this._unsubscribeAiAssistant = onAiAssistantToggle(open => {
       this.aiAssistantOpen = open
       this.collapseLeftPaneForAiAssistant()
@@ -309,6 +315,7 @@ export default {
   },
   beforeUnmount() {
     this._unregisterPaTools?.()
+    this._unpublishPaTools?.()
     this._unsubscribeAiAssistant?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
     this.chartBusy = false
