@@ -141,6 +141,7 @@ export const i18nDefault = {
     ANALYSIS_DIALOG__RUN_SUCCESS: "Successfully generated {0} job for {1}",
     ANALYSIS_DIALOG__TITLE: "Run {0} for dataset: {1}",
     ANALYSIS_DIALOG__UNTITLED_DATASET: "Untitled dataset",
+    ASK_AI_BUTTON__LABEL: "Ask D2E AI",
     ATTRIBUTE_TABLE__ADD_ATTRIBUTE: "Add attribute",
     ATTRIBUTE_TABLE__ATTRIBUTE_ID: "Attribute ID",
     ATTRIBUTE_TABLE__ATTRIBUTE_NAME: "Attribute name",

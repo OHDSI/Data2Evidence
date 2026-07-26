@@ -9,7 +9,8 @@ import { isAuthenticated } from "../../containers/auth";
 import { AccountTab } from "./AccountTab/AccountTab";
 import { SelectDataset, SelectPublicDataset } from "./SelectDataset/SelectDataset";
 import { SelectRelease } from "./SelectRelease/SelectRelease";
-import { config } from "../../config";
+import { AskAiButton } from "./AskAiButton/AskAiButton";
+import { config, FeatureGate, FEATURE_AI_ASSISTANT } from "../../config";
 import { useActiveDataset } from "../../contexts";
 import env from "../../env";
 import "./Header.scss";
@@ -132,6 +133,14 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
               }
               return "";
             })}
+
+          {isAuth && portalType === "researcher" && (
+            <FeatureGate featureFlags={[FEATURE_AI_ASSISTANT]}>
+              <li className="ask-ai-tab">
+                <AskAiButton />
+              </li>
+            </FeatureGate>
+          )}
 
           {portalType !== "public" && <AccountTab portalType={portalType} />}
         </ul>
