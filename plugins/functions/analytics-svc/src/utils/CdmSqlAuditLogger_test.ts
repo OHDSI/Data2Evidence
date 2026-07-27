@@ -12,6 +12,11 @@ import {
 
 const context: CdmSqlAuditContext = {
     actorId: "test-user",
+    datasetId: "dataset-2845",
+    configs: {
+        cohortBuilder: { id: "pa-config-2845", version: "A" },
+        cdm: { id: "cdm-config-2845", version: "1" },
+    },
     requestMethod: "POST",
     requestPath: "/analytics-svc/api/services/population",
     correlationId: "correlation-2845",
@@ -46,6 +51,11 @@ Deno.test("createCdmSqlAuditContext captures request and database metadata", () 
                     password: "must-be-redacted",
                     nested: { access_token: "must-also-be-redacted" },
                 },
+                selectedstudyDbMetadata: { id: "canonical-dataset-2845" },
+                paConfigId: "pa-config-2845",
+                paConfigVersion: "A",
+                cdmConfigId: "cdm-config-2845",
+                cdmConfigVersion: "1",
             },
             actorId: "test-user",
             databaseCode: "characterization-db",
@@ -55,6 +65,11 @@ Deno.test("createCdmSqlAuditContext captures request and database metadata", () 
         }),
         {
             actorId: "test-user",
+            datasetId: "canonical-dataset-2845",
+            configs: {
+                cohortBuilder: { id: "pa-config-2845", version: "A" },
+                cdm: { id: "cdm-config-2845", version: "1" },
+            },
             requestMethod: "GET",
             requestPath: "/analytics-svc/api/dataset-filter",
             correlationId: "correlation-2845",
@@ -245,6 +260,11 @@ Deno.test("audited connection writes one successful event per SQL call", async (
             /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
         );
         assert.deepEqual(event.actor, { type: "user", id: "test-user" });
+        assert.equal(event.datasetId, "dataset-2845");
+        assert.deepEqual(event.configs, {
+            cohortBuilder: { id: "pa-config-2845", version: "A" },
+            cdm: { id: "cdm-config-2845", version: "1" },
+        });
         assert.deepEqual(event.request, {
             method: "POST",
             path: "/analytics-svc/api/services/population",

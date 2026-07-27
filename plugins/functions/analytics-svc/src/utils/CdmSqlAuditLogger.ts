@@ -18,6 +18,11 @@ const SQL_METHODS = new Set([
 
 export type CdmSqlAuditContext = {
     actorId: string;
+    datasetId?: string;
+    configs?: {
+        cohortBuilder?: CdmSqlAuditConfigMetadata;
+        cdm?: CdmSqlAuditConfigMetadata;
+    };
     requestMethod: string;
     requestPath: string;
     correlationId?: string;
@@ -28,6 +33,11 @@ export type CdmSqlAuditContext = {
     databaseDialect?: string;
     databaseEngine: "hana" | "duckdb" | "postgresql";
     schemaName?: string;
+};
+
+type CdmSqlAuditConfigMetadata = {
+    id: string;
+    version: string;
 };
 
 type CreateCdmSqlAuditContextOptions = {
@@ -139,6 +149,30 @@ function getErrorDetails(error: unknown): Record<string, string> | undefined {
     return Object.keys(details).length > 0 ? details : undefined;
 }
 
+function getStringValue(value: unknown): string | undefined {
+    if (Array.isArray(value)) {
+        return value.map(getStringValue).find(Boolean);
+    }
+    if (typeof value === "string" && value.length > 0) {
+        return value;
+    }
+    if (typeof value === "number") {
+        return String(value);
+    }
+    return undefined;
+}
+
+function getConfigMetadata(
+    id: unknown,
+    version: unknown
+): CdmSqlAuditConfigMetadata | undefined {
+    const configId = getStringValue(id);
+    const configVersion = getStringValue(version);
+    return configId && configVersion
+        ? { id: configId, version: configVersion }
+        : undefined;
+}
+
 export function createCdmSqlAuditContext({
     request,
     actorId,
@@ -155,15 +189,53 @@ export function createCdmSqlAuditContext({
         requestObject.headers && typeof requestObject.headers === "object"
             ? (requestObject.headers as Record<string, unknown>)
             : {};
+    const query =
+        requestObject.query && typeof requestObject.query === "object"
+            ? (requestObject.query as Record<string, unknown>)
+            : {};
+    const body =
+        requestObject.body && typeof requestObject.body === "object"
+            ? (requestObject.body as Record<string, unknown>)
+            : {};
+    const selectedStudy =
+        requestObject.selectedstudyDbMetadata &&
+        typeof requestObject.selectedstudyDbMetadata === "object"
+            ? (requestObject.selectedstudyDbMetadata as Record<
+                  string,
+                  unknown
+              >)
+            : {};
     const correlationHeader = headers["x-req-correlation-id"];
     const correlationId = Array.isArray(correlationHeader)
         ? correlationHeader.find((value) => typeof value === "string")
         : typeof correlationHeader === "string"
         ? correlationHeader
         : undefined;
+    const datasetId =
+        getStringValue(selectedStudy.id) ??
+        getStringValue(query.datasetId) ??
+        getStringValue(body.datasetId) ??
+        getStringValue(headers.datasetid);
+    const cohortBuilderConfig = getConfigMetadata(
+        requestObject.paConfigId,
+        requestObject.paConfigVersion
+    );
+    const cdmConfig = getConfigMetadata(
+        requestObject.cdmConfigId,
+        requestObject.cdmConfigVersion
+    );
+    const configs =
+        cohortBuilderConfig || cdmConfig
+            ? {
+                  cohortBuilder: cohortBuilderConfig,
+                  cdm: cdmConfig,
+              }
+            : undefined;
 
     return {
         actorId,
+        datasetId,
+        configs,
         requestMethod:
             typeof requestObject.method === "string"
                 ? requestObject.method
@@ -435,6 +507,12 @@ export class CdmSqlAuditLogger implements CdmSqlAuditRecorder {
                 successful: execution.successful,
                 durationMs: execution.durationMs,
             };
+            if (this.context.datasetId) {
+                event.datasetId = this.context.datasetId;
+            }
+            if (this.context.configs) {
+                event.configs = this.context.configs;
+            }
             const error = getErrorDetails(execution.error);
             if (error) {
                 event.error = error;
