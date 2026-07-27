@@ -133,6 +133,88 @@ const confirmConceptsTool = tool({
   // No execute: the SDK forwards the call to the browser, where the user answers it.
 });
 
+/**
+ * Pick between concept sets the user ALREADY has.
+ *
+ * The counterpart to `ui_confirm_concepts`: that one gates writing a new set, this
+ * one exists so a new set is not written at all when a suitable one is already
+ * there. Two sets named for the same condition rarely mean the same cohort — one
+ * may exclude complications, another may be broader — so which one is used changes
+ * the clinical result, and that choice is the user's.
+ *
+ * Also has no `execute`, so the turn parks here until the user answers.
+ */
+export const CHOOSE_CONCEPT_SET_TOOL = "ui_choose_concept_set";
+
+const chooseConceptSetTool = tool({
+  description:
+    "Ask the user WHICH existing concept set to use for a clinical term, when `list_concept_sets` returned " +
+    "more than one plausible match. Renders the candidates as numbered cards in the assistant panel with " +
+    "quick-reply chips, and returns { chosen, conceptSetIds, conceptSetNames }. Call this INSTEAD of guessing " +
+    "between near-identical sets and INSTEAD of creating a duplicate. " +
+    "`conceptSetIds` may hold ONE set, SEVERAL (the user ticked a subset and wants them combined), or all of " +
+    "them — use exactly what comes back, never a superset. `chosen:false` with an empty list means none of " +
+    "them fit, so build a new set. The panel supplies its own 'include all' and 'neither fits' choices — do " +
+    "not put them in `options`.",
+  inputSchema: jsonSchema({
+    type: "object",
+    properties: {
+      term: {
+        type: "string",
+        description: "The clinical term being disambiguated, e.g. 'Type 2 diabetes'.",
+      },
+      intro: {
+        type: "string",
+        description:
+          "One short lead-in sentence, e.g. 'Got it. I found a few things to clarify before building your cohort.'",
+      },
+      filterLabel: {
+        type: "string",
+        description:
+          "Heading for the filters you have already worked out, e.g. 'This is the basic filter:'. Omit when there are none.",
+      },
+      filterItems: {
+        type: "array",
+        description: "Those filters, one per line, e.g. ['Gender: Female', 'Age: 60 and above'].",
+        items: { type: "string" },
+      },
+      question: {
+        type: "string",
+        description:
+          "The question itself, e.g. 'For \"Type 2 diabetes\", I found 2 similar concept sets. Which one did you mean?'",
+      },
+      options: {
+        type: "array",
+        description:
+          "The candidate EXISTING concept sets, in the order they should be numbered. Two to five — a longer list is not reviewable.",
+        items: {
+          type: "object",
+          properties: {
+            conceptSetId: { type: "number", description: "Id as returned by list_concept_sets." },
+            name: { type: "string", description: "The concept set's name, shown as the card title." },
+            note: {
+              type: "string",
+              description:
+                "One short line on how this option differs from the others, e.g. 'More specific — excludes patients with diabetic complications'.",
+            },
+            shortLabel: {
+              type: "string",
+              description: "Abbreviated name for the quick-reply chip, e.g. 'T2DM without complications'. Defaults to `name`.",
+            },
+          },
+          required: ["conceptSetId", "name"],
+        },
+      },
+      footer: {
+        type: "string",
+        description: "Closing line, e.g. 'Reply with 1 or 2, or let me know if neither fits.'",
+      },
+    },
+    required: ["term", "options"],
+  }),
+  // No execute: answered by the user in the panel.
+});
+
 export class AgentUnavailableError extends Error {}
 
 /**
@@ -173,7 +255,12 @@ export async function streamCohortAgent(
     const browserTools = toClientTools(clientTools);
     // Last, so a page-supplied descriptor can never shadow it — belt and braces over
     // the `pa_` prefix check in toClientTools.
-    const tools = { ...serverTools, ...browserTools, [CONFIRM_CONCEPTS_TOOL]: confirmConceptsTool };
+    const tools = {
+      ...serverTools,
+      ...browserTools,
+      [CONFIRM_CONCEPTS_TOOL]: confirmConceptsTool,
+      [CHOOSE_CONCEPT_SET_TOOL]: chooseConceptSetTool,
+    };
     const paToolNames = Object.keys(browserTools);
 
     console.log(

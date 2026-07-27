@@ -8,6 +8,9 @@ import {
   FetchTemplatesInput,
 } from "../types/tool-schemas";
 import { createStructuredResponse } from "../utils/request-helpers";
+// The matches themselves, as text. A bare count is not something the model can pick
+// an id from, and its only recourse is to re-search or invent one.
+import { formatPhenotypeListing } from "../lib/toolText";
 
 /**
  * Register phenotype library tools
@@ -23,6 +26,9 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
       description:
         "Search for phenotypes by medical condition name to find their IDs and definitions. When user asks for a phenotype ID (e.g., 'phenotype ID of diabetes'), extract the condition name ('diabetes') and use it as searchTerm. Returns phenotype IDs, names, and logic descriptions from OHDSI Phenotype Library. Supports semantic search for finding conceptually similar phenotypes.",
       inputSchema: SearchPhenotypeLibraryInput,
+      // No outputSchema — see ../lib/toolText.ts. structuredContent does not reach
+      // the model, which is why "Analyze this list" used to refer to a list it could
+      // not see; the phenotypes are written into the text below instead.
     },
     async ({ searchTerm, useSemanticSearch = true, topK = 5 }) => {
       try {
@@ -33,9 +39,12 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
           topK,
         );
 
-        const message = searchTerm
-          ? `Found ${phenotypeData.length} phenotype(s) ${useSemanticSearch ? "semantically similar to" : "matching"} "${searchTerm}". Analyze this list to identify relevant phenotype IDs for the cohort definition.`
-          : "Retrieved all phenotypes. Analyze this list to identify relevant phenotype IDs for the cohort definition.";
+        const message =
+          (searchTerm
+            ? `Found ${phenotypeData.length} phenotype(s) ${useSemanticSearch ? "semantically similar to" : "matching"} "${searchTerm}".`
+            : "Retrieved all phenotypes.") +
+          ` Pick the relevant phenotype id(s) from this list — these are the only ones that matched, so do ` +
+          `not invent an id or re-run the same search.\n${formatPhenotypeListing(phenotypeData)}`;
 
         console.log(
           `[MCP-TIMING] [search_phenotype_library] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
@@ -53,7 +62,8 @@ export function registerPhenotypeLibraryTools(server: McpServer) {
           );
           const phenotypeData = await searchPhenotypes(searchTerm, false, topK);
           return createStructuredResponse(
-            `Found ${phenotypeData.length} phenotype(s) using substring matching. For better results, configure semantic search by generating embeddings (developer task).`,
+            `Found ${phenotypeData.length} phenotype(s) using substring matching. For better results, configure ` +
+              `semantic search by generating embeddings (developer task).\n${formatPhenotypeListing(phenotypeData)}`,
             { phenotypes: phenotypeData },
           );
         }

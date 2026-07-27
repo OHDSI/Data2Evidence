@@ -46,6 +46,17 @@ export class TerminologyAPI extends BaseAPI {
       // Re-throw prose-looking message from upstream verbatim
       throw new Error(bodyMessage);
     }
+    // A 4xx means the service answered and REJECTED the request — the opposite of
+    // unreachable. Falling through to "the service may be down" (below) told the
+    // model a deterministic failure was transient: get_concept_set with an id that
+    // does not exist 400s, and the model read that as "retry".
+    if (status && status >= 400 && status < 500) {
+      throw new Error(
+        `terminology-svc rejected the request (${status}). The service is up, so retrying it unchanged will ` +
+          `fail the same way. For get_concept_set this almost always means the concept set id does not exist ` +
+          `in this dataset — use an id returned by list_concept_sets, never a guessed or incremented one.`,
+      );
+    }
     if (status && status >= 500) {
       throw new Error(
         "terminology-svc returned a server error. Retry; if it persists, the service may be down.",

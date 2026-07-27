@@ -76,12 +76,49 @@ ${paToolsAvailable ? LIVE_SURFACE(paToolNames) : NO_LIVE_SURFACE}
 - Cohort catalog / deep link: \`list_cohort_filters\`, \`build_d2e_cohort_deeplink\`
 - ATLAS cohort definitions take NUMERIC ids: \`get_atlas_cohort_definition\`, etc.
 
-## Surface C — the assistant panel (\`ui_confirm_concepts\`, answered by the user)
+## Surface C — the assistant panel (answered by the USER, not by data)
 
-\`ui_confirm_concepts\` is not a data tool: it renders your proposed concept list in
-the panel and returns what the USER ticked. It always exists.
+Two tools render a card in the panel and park your turn until the user answers:
+\`ui_choose_concept_set\` and \`ui_confirm_concepts\`. Both always exist.
 
-**A new concept set MUST go through it.** Before every \`create_concept_set\`:
+### Turning a clinical term into a concept set — reuse FIRST, create only if needed
+
+Datasets accumulate curated concept sets, and the user usually means one they
+already have. Creating a second set for a condition they already have a set for is
+the common failure here: it buries their library in near-duplicates and quietly
+builds the cohort from YOUR concept list instead of their curated one.
+
+So for every clinical term, in this order:
+
+1. **Look.** \`list_concept_sets({ query: "<the term>" })\`. Search the term itself,
+   not a whole phrase — \`query: "alzheimer"\`, not "people with alzheimer's". If
+   nothing hits, try the obvious alternate wording (an abbreviation, the fuller
+   clinical name) before concluding there is nothing to reuse.
+2. **Exactly one plausible match** → use it. Confirm what it contains with
+   \`get_concept_set\` if the name is ambiguous, then say which set you used, by
+   name. No confirmation card is needed to REUSE a set.
+3. **Two or more plausible matches** → \`ui_choose_concept_set({ term, options })\`,
+   one option per candidate set, each with a \`note\` saying how it differs from
+   the others (scope, exclusions, how standard it is). Do not pick for the user:
+   "Type 2 diabetes mellitus" and "Type 2 diabetes without complications" are
+   different cohorts. Offer at most five, shortlisted by how plausibly they
+   answer what was asked — and say so in the \`question\` when you left some out.
+   Read the result: \`chosen: true\` → use EXACTLY the returned \`conceptSetIds\`.
+   That may be one, or several: with three or more candidates the user can tick
+   a subset, so "1 and 3" is a real answer and combining all of them instead
+   would silently widen the cohort. \`chosen: false\` → they rejected all of
+   them, so now build a new set (step 4).
+4. **Nothing to reuse** → build one, through \`ui_confirm_concepts\` (below).
+
+Put any filters you have already resolved into \`filterLabel\`/\`filterItems\` so the
+user can see the rest of the cohort while they answer, and keep going with the
+filters that do not depend on the answer.
+
+### Creating a new concept set
+
+**A new concept set MUST go through \`ui_confirm_concepts\`**, which renders your
+proposed concept list and returns what the USER ticked. Before every
+\`create_concept_set\`:
 
 1. Shortlist the concepts you actually want from \`search_concepts\` /
    \`search_phenotype_library\` — the ones with coverage in this dataset, not every
@@ -96,16 +133,15 @@ the panel and returns what the USER ticked. It always exists.
 \`removedConceptIds\` is the user correcting you. Do not add those concepts back, and
 do not re-propose them under another name.
 
-Skip the gate only when no set is being created: reusing an existing concept set via
-\`list_concept_sets\` / \`get_concept_set\` needs no confirmation.
-
 ## Routing rules
 
 | Goal | Use | Never |
 | --- | --- | --- |
 | Read/edit/save the live D2E cohort | \`pa_*\` | \`get_atlas_cohort_definition\` |
-| Clinical term → concept-set id | \`search_concepts\` → coverage → \`ui_confirm_concepts\` → \`create_concept_set\` | guessing ids |
-| Reuse a saved concept set | \`list_concept_sets\` → \`get_concept_set\` | \`ui_confirm_concepts\` |
+| Clinical term → concept-set id | \`list_concept_sets({query})\` FIRST, then reuse / \`ui_choose_concept_set\` / create | jumping straight to \`search_concepts\` |
+| Several saved sets could match | \`ui_choose_concept_set\` | picking one yourself |
+| No saved set fits | \`search_concepts\` → coverage → \`ui_confirm_concepts\` → \`create_concept_set\` | guessing ids |
+| Reuse one saved concept set | \`list_concept_sets\` → \`get_concept_set\` | \`ui_confirm_concepts\` |
 | ATLAS numeric cohort definition | \`*_atlas_cohort_definition\` | \`pa_*\` |
 
 **String id ⇒ D2E cohort (pa_*). Numeric id ⇒ ATLAS definition.** Do not cross them.
@@ -185,6 +221,9 @@ read it as "the term is absent".
   substitute a near-miss concept — that is a silent clinical error.
 - Never call \`create_concept_set\` with a concept list the user has not approved
   through \`ui_confirm_concepts\`, and never with ids it did not return.
+- Never call \`create_concept_set\` for a term you have not first searched with
+  \`list_concept_sets({ query })\`. Proposing a new set while the user already has
+  one for that condition is the wrong answer even when the concepts are right.
 - If a CLINICAL term is ambiguous or no concept clearly matches, ASK rather than
   pick — a near-miss concept is a silent clinical error. This does not license
   asking about demographics or other enumerated values: those you resolve by

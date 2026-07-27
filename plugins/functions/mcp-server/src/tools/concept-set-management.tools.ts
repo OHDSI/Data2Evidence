@@ -15,6 +15,10 @@ import {
   createTextResponse,
   getUserName,
 } from "../utils/request-helpers";
+import {
+  formatConceptSetExpression,
+  formatConceptSetListing,
+} from "../lib/toolText";
 
 const terminologyApi = new TerminologyAPI();
 const vocabularyApi = new VocabularyAPI();
@@ -40,10 +44,17 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "List Concept Sets",
       description:
-        "List all concept sets in the current dataset that the user owns or that are shared. Returns id, name, shared flag, last-modified date. Pages to 50 items; if more exist, the response asks the user to narrow.",
+        "List the concept sets in the current dataset that the user owns or that are shared, optionally " +
+        "filtered by name with `query`. Returns id, name, shared flag, last-modified date. Call this with " +
+        "`query` set to the clinical term BEFORE building a new concept set — reusing a set the user already " +
+        "has beats creating a near-duplicate. Pages to 50 items; narrow with `query` if more exist.",
       inputSchema: ListConceptSetsInput,
+      // No outputSchema on purpose, matching list_cohort_filters: the adapter hands
+      // the model the text below, and structuredContent never reaches it. See the
+      // note in ../lib/toolText.ts — putting the ids only in structuredContent is
+      // what made this tool unusable in the first place.
     },
-    async ({}, { requestInfo }) => {
+    async ({ query }, { requestInfo }) => {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
 
@@ -51,8 +62,14 @@ export function registerConceptSetManagementTools(server: McpServer) {
         authorization,
         datasetId,
       );
-      const totalCount = all.length;
-      const page = all.slice(0, LIST_PAGE_SIZE).map((cs) => ({
+      // Filtered here rather than in the API call: /concept-set has no name
+      // parameter, and the list is per-dataset and small enough to scan.
+      const needle = query?.trim().toLowerCase();
+      const matched = needle
+        ? all.filter((cs) => cs.name.toLowerCase().includes(needle))
+        : all;
+      const totalCount = matched.length;
+      const page = matched.slice(0, LIST_PAGE_SIZE).map((cs) => ({
         id: cs.id,
         name: cs.name,
         shared: cs.shared,
@@ -60,13 +77,36 @@ export function registerConceptSetManagementTools(server: McpServer) {
       }));
 
       console.log(
-        `[MCP-TIMING] [list_concept_sets] END total=${(performance.now() - toolStart).toFixed(1)}ms items=${page.length} totalCount=${totalCount}`,
+        `[MCP-TIMING] [list_concept_sets] END total=${(performance.now() - toolStart).toFixed(1)}ms ` +
+          `items=${page.length} totalCount=${totalCount} query=${needle ?? "-"}`,
       );
 
-      const text =
-        totalCount > LIST_PAGE_SIZE
-          ? `Showing ${LIST_PAGE_SIZE} of ${totalCount} concept sets. Ask the user to narrow by name or shared/private.`
-          : `Found ${totalCount} concept set${totalCount === 1 ? "" : "s"} in this dataset.`;
+      // The list itself, in the text. A count alone is unusable: the model cannot
+      // reuse, disambiguate or fetch a set whose id it has never been told, and its
+      // only remaining moves are to re-call this tool or to guess an id.
+      const listing = formatConceptSetListing(page);
+
+      let text: string;
+      if (needle && totalCount === 0) {
+        // Say the search ran and came back empty, so this reads as a cleared
+        // reuse check rather than as "the tool didn't work" — the model's next
+        // step is legitimately to build a new set.
+        text =
+          `No existing concept set matches "${query}" (searched ${all.length} set${all.length === 1 ? "" : "s"} ` +
+          `in this dataset). Nothing to reuse — build a new set from the vocabulary instead. Do NOT call this ` +
+          `tool again with the same query.`;
+      } else if (totalCount > LIST_PAGE_SIZE) {
+        text =
+          `Showing ${LIST_PAGE_SIZE} of ${totalCount} concept sets. Narrow with the \`query\` argument ` +
+          `(a substring of the name) rather than asking the user.\n${listing}`;
+      } else {
+        text =
+          `Found ${totalCount} concept set${totalCount === 1 ? "" : "s"}` +
+          (needle ? ` matching "${query}"` : " in this dataset") +
+          `. These are the ONLY ids that exist for this query — use one of them verbatim and never invent ` +
+          `or increment an id. Prefer reusing one over creating a near-duplicate. If more than one could ` +
+          `plausibly be what the user meant, ask them which — do not pick for them.\n${listing}`;
+      }
 
       return createStructuredResponse(text, { conceptSets: page, totalCount });
     },
@@ -78,8 +118,12 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "Get Concept Set",
       description:
-        "Get one concept set by ID. Returns the SAVED definition: name, shared, and the concept expression (rule with descendants/excludes flags). Does NOT return the resolved concept-id list — only the saved expression.",
+        "Get one concept set by ID — the id must come from `list_concept_sets`, never guessed. Returns the " +
+        "SAVED definition: name, shared, and the concept expression (rule with descendants/excludes flags). " +
+        "Does NOT return the resolved concept-id list — only the saved expression.",
       inputSchema: GetConceptSetInput,
+      // No outputSchema — see list_concept_sets. The expression is written into the
+      // text below, which is the only part the model receives.
     },
     async ({ conceptSetId }, { requestInfo }) => {
       const toolStart = performance.now();
@@ -95,8 +139,17 @@ export function registerConceptSetManagementTools(server: McpServer) {
         `[MCP-TIMING] [get_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms`,
       );
 
+      // Spell the expression out. "3 concepts in expression" tells the model nothing
+      // it can act on — whether this set is the right one for the user's term is
+      // exactly the judgement the concept rows support and the count does not.
+      const concepts: unknown[] = Array.isArray(conceptSet?.concepts)
+        ? conceptSet.concepts
+        : [];
+
       return createStructuredResponse(
-        `Retrieved concept set ID ${conceptSet.id}, name '${conceptSet.name}', ${conceptSet.concepts?.length ?? 0} concepts in expression.`,
+        `Concept set ${conceptSet.id} '${conceptSet.name}'${conceptSet.shared ? " (shared)" : ""} — ` +
+          `${concepts.length} item${concepts.length === 1 ? "" : "s"} in the expression.\n` +
+          formatConceptSetExpression(concepts),
         { conceptSet },
       );
     },
@@ -232,7 +285,10 @@ export function registerConceptSetManagementTools(server: McpServer) {
             conceptName: z.string(),
             domainId: z.string(),
             vocabularyId: z.string(),
-            standardConcept: z.string(),
+            // NULL in OMOP for non-standard concepts, which is precisely what the
+            // source-concept fallback below returns. Declaring it required made the
+            // client reject the payload and fail the whole search on that path.
+            standardConcept: z.string().nullish(),
             conceptCode: z.string().optional(),
           }),
         ),
