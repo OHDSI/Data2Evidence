@@ -57,11 +57,10 @@ describe('createPaTools', () => {
     // payload from live store state given { name } (insert) or { bookmarkId } (update),
     // and still accepts a raw `params` escape hatch — the handler validates the combo.
     expect((byName(tools, 'pa_save_current_cohort').inputSchema as any).required).toBeUndefined()
-    // pa_search_attribute_values does require its two search inputs.
-    expect((byName(tools, 'pa_search_attribute_values').inputSchema as any).required).toEqual([
-      'attributePath',
-      'query',
-    ])
+    // pa_search_attribute_values requires only the attribute: omitting `query`
+    // lists the column's complete value domain, which is the reliable route for a
+    // low-cardinality attribute (gender/race) where a word search can false-negative.
+    expect((byName(tools, 'pa_search_attribute_values').inputSchema as any).required).toEqual(['attributePath'])
   })
 
   describe('pa_get_current_cohort', () => {
@@ -217,7 +216,7 @@ describe('createPaTools', () => {
         isExclusion: false,
       })
       expect(store.dispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())
-      expect(parse(res)).toEqual({ applied: true, createdCards: ['fc1'] })
+      expect(parse(res)).toEqual({ applied: true, createdCards: ['fc1'], appliedConstraints: [] })
     })
 
     it('returns applied:false with an error when neither patchOps nor bookmark is given', async () => {
@@ -232,7 +231,7 @@ describe('createPaTools', () => {
       const store = makeStore()
       store.getters.getMriFrontendConfig = {
         getFilterCards: () => [
-          { getConfigPath: () => 'patient', getName: () => 'Basic Data', getAllAttributes: () => [] },
+          { getConfigPath: () => 'patient', getName: () => 'Basic Data', getFilterAttributes: () => [] },
         ],
       }
       // Force the applier to throw (addFilterCard rejects).
@@ -247,6 +246,46 @@ describe('createPaTools', () => {
       const parsed = parse(res)
       expect(parsed.applied).toBe(false)
       expect(parsed.validFilterOptions).toEqual([{ cardConfigPath: 'patient', cardName: 'Basic Data', attributes: [] }])
+    })
+
+    it('scopes the failure catalog to the cards the patch named, listing the rest by path only', async () => {
+      const store = makeStore()
+      const card = (path: string, name: string) => ({
+        getConfigPath: () => path,
+        getName: () => name,
+        getFilterAttributes: () => [
+          { getConfigPath: () => `${path}.attributes.a`, getName: () => 'A', getType: () => 'text' },
+        ],
+      })
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [card('patient', 'Basic Data'), card('patient.interactions.priDiag', 'Diagnoses')],
+      }
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'addFilterCardConstraint' ? Promise.reject(new Error('boom')) : Promise.resolve(undefined)
+      )
+      store.getters.getFilterCards = () => ({ fc1: {} })
+
+      const res = await byName(createPaTools(store), 'pa_apply_cohort_patch').execute({
+        patchOps: [
+          { op: 'add_constraint', card: 'fc1', attributePath: 'patient.interactions.priDiag.attributes.a', value: 'x' },
+        ],
+      })
+
+      const parsed = parse(res)
+      expect(parsed.applied).toBe(false)
+      // The named card keeps its attributes (that's what fixes a bad attributePath);
+      // every other card is path + name + a count, so the whole catalog is not
+      // duplicated into the transcript on every failed patch.
+      expect(parsed.validFilterOptions).toEqual([
+        { cardConfigPath: 'patient', cardName: 'Basic Data', attributeCount: 1 },
+        {
+          cardConfigPath: 'patient.interactions.priDiag',
+          cardName: 'Diagnoses',
+          attributes: [
+            { attributePath: 'patient.interactions.priDiag.attributes.a', name: 'A', type: 'text', valueKind: 'text' },
+          ],
+        },
+      ])
     })
 
     it('rejects a malformed bookmark, restores the active cohort, and steers to patchOps', async () => {
@@ -284,7 +323,7 @@ describe('createPaTools', () => {
           {
             getConfigPath: () => 'patient',
             getName: () => 'Basic Data',
-            getAllAttributes: () => [
+            getFilterAttributes: () => [
               { getConfigPath: () => 'patient.attributes.age', getName: () => 'Age', getType: () => 'num' },
             ],
           },
@@ -304,13 +343,41 @@ describe('createPaTools', () => {
               name: 'Age',
               type: 'num',
               valueKind: 'numeric',
-              howTo: expect.stringContaining('operator'),
             },
           ],
         },
       ])
+      // How-to prose is hoisted into a single guide keyed by valueKind rather than
+      // repeated per attribute — the catalog is resent in the agent transcript on
+      // every turn, and inlining it doubled the payload.
+      expect(parsed.valueKindGuide.numeric).toContain('operator')
       // the routing note steers value shape on non-OMOP configs
       expect(parsed.note).toContain('valueKind')
+    })
+
+    it('lists only filter-card attributes, not measure/category-only ones', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
+          {
+            getConfigPath: () => 'patient',
+            getName: () => 'Basic Data',
+            // getAllAttributes() would also include pcount, which add_constraint
+            // cannot target — a path the model would only ever fail on.
+            getFilterAttributes: () => [
+              { getConfigPath: () => 'patient.attributes.age', getName: () => 'Age', getType: () => 'num' },
+            ],
+            getAllAttributes: () => [
+              { getConfigPath: () => 'patient.attributes.age', getName: () => 'Age', getType: () => 'num' },
+              { getConfigPath: () => 'patient.attributes.pcount', getName: () => 'Patient Count', getType: () => 'num' },
+            ],
+          },
+        ],
+      }
+
+      const attrs = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).filterCards[0]
+        .attributes
+      expect(attrs.map((a: any) => a.attributePath)).toEqual(['patient.attributes.age'])
     })
 
     it('classifies a coded catalog attribute (useRefValue) as valueKind "catalog"', async () => {
@@ -320,7 +387,7 @@ describe('createPaTools', () => {
           {
             getConfigPath: () => 'patient.interactions.conditionoccurrence',
             getName: () => 'Conditions',
-            getAllAttributes: () => [
+            getFilterAttributes: () => [
               {
                 getConfigPath: () => 'patient.interactions.conditionoccurrence.attributes.condsourcecode',
                 getName: () => 'Condition Source concept code',
@@ -338,12 +405,36 @@ describe('createPaTools', () => {
         ],
       }
 
-      const attrs = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).filterCards[0]
-        .attributes
+      const parsed = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute())
+      const attrs = parsed.filterCards[0].attributes
       expect(attrs[0].valueKind).toBe('catalog')
-      expect(attrs[0].howTo).toContain('pa_search_attribute_values')
       expect(attrs[1].valueKind).toBe('conceptSet')
-      expect(attrs[1].howTo).toContain('conceptSetId')
+      expect(parsed.valueKindGuide.catalog).toContain('pa_search_attribute_values')
+      expect(parsed.valueKindGuide.conceptSet).toContain('conceptSetId')
+    })
+
+    it('returns just one card when `card` is given, and the valid paths when it is unknown', async () => {
+      const store = makeStore()
+      const card = (path: string, name: string) => ({
+        getConfigPath: () => path,
+        getName: () => name,
+        getFilterAttributes: () => [
+          { getConfigPath: () => `${path}.attributes.a`, getName: () => 'A', getType: () => 'text' },
+        ],
+      })
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [card('patient', 'Basic Data'), card('patient.interactions.priDiag', 'Diagnoses')],
+      }
+      const tool = byName(createPaTools(store), 'pa_list_filter_options')
+
+      const scoped = parse(await tool.execute({ card: 'patient.interactions.priDiag' }))
+      expect(scoped.filterCards).toHaveLength(1)
+      expect(scoped.filterCards[0].cardConfigPath).toBe('patient.interactions.priDiag')
+
+      const unknown = parse(await tool.execute({ card: 'patient.interactions.nope' }))
+      expect(unknown.filterCards).toEqual([])
+      expect(unknown.error).toContain('patient.interactions.nope')
+      expect(unknown.validCardConfigPaths).toEqual(['patient', 'patient.interactions.priDiag'])
     })
 
     it('degrades gracefully when the frontend config is not loaded', async () => {
@@ -491,11 +582,15 @@ describe('createPaTools', () => {
       // A small clean result: no truncation, no note, counts reported.
       expect(parse(res)).toEqual({
         attributePath: 'patient.interactions.priDiag.attributes.icd10',
+        query: 'sinusitis',
+        matchedVia: 'search',
         total: 1,
         returned: 1,
         truncated: false,
         values,
       })
+      // The search hit, so the domain is never re-read.
+      expect(store.dispatch).toHaveBeenCalledOnce()
     })
 
     it('caps a large result to `limit`, flags truncation, and returns a routing note', async () => {
@@ -552,12 +647,182 @@ describe('createPaTools', () => {
       expect(parsed.note).toContain('Narrow the query')
     })
 
-    it('errors without dispatching when attributePath or query is missing', async () => {
+    it('errors without dispatching when attributePath is missing', async () => {
       const store = makeStore()
       const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({ attributePath: '', query: '' })
 
-      expect(parse(res)).toEqual({ values: [], error: 'Provide attributePath and query.' })
+      expect(parse(res)).toEqual({
+        values: [],
+        error: 'Provide an attributePath (from pa_list_filter_options).',
+      })
       expect(store.dispatch).not.toHaveBeenCalled()
+    })
+
+    // The "build me a cohort of women…" regression. The /values search runs in the
+    // database (case- and token-sensitive), so the English word misses the stored
+    // token and the assistant used to report the value as absent and ask the user
+    // for a synonym. A miss now costs one extra request and resolves itself.
+    describe('a zero-hit search falls back to the attribute domain', () => {
+      // Mock /values the way the backend behaves: an exact, case-sensitive token
+      // match, and the full list when searchQuery is empty.
+      const makeValuesStore = (domain: any[]) => {
+        const store = makeStore()
+        store.getters.getDomainValues = () => ({ loadedStatus: 'HAS_RESULTS', values: [] })
+        store.dispatch.mockImplementation((type: string, payload: any) => {
+          if (type !== 'loadValuesForAttributePath') return Promise.resolve(undefined)
+          const q = payload.searchQuery
+          if (!q) return Promise.resolve(domain)
+          return Promise.resolve(domain.filter(v => v.text.includes(q) || v.value.includes(q)))
+        })
+        return store
+      }
+      const GENDER = [
+        { value: '8532', text: 'Female', display_value: 'Female' },
+        { value: '8507', text: 'Male', display_value: 'Male' },
+      ]
+
+      it('matches case-insensitively against the full list when the search misses', async () => {
+        const store = makeValuesStore(GENDER)
+        const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+          attributePath: 'patient.attributes.gender',
+          query: 'female',
+        })
+
+        const parsed = parse(res)
+        expect(parsed.matchedVia).toBe('domain-scan')
+        expect(parsed.values).toEqual([GENDER[0]])
+        expect(parsed.domainTotal).toBe(2)
+        expect(parsed.note).toContain('never proof a value is absent')
+        // The stale "loaded with zero values" cache is busted before re-reading,
+        // or the store would serve it back instead of fetching the full domain.
+        expect(store.commit).toHaveBeenCalledWith('DOMAIN_SET_VALUES', {
+          attributePath: 'patient.attributes.gender',
+          data: { values: [], isLoaded: false, isLoading: false },
+        })
+      })
+
+      it('resolves a demographic synonym ("women" → the stored "F") on exact tokens only', async () => {
+        const store = makeValuesStore([
+          { value: 'F', text: 'F', display_value: 'F' },
+          { value: 'M', text: 'M', display_value: 'M' },
+          // Would be a false positive if synonyms matched as substrings ("f").
+          { value: 'UNK', text: 'Info not available', display_value: 'Info not available' },
+        ])
+        const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+          attributePath: 'patient.attributes.gender',
+          query: 'women',
+        })
+
+        const parsed = parse(res)
+        expect(parsed.matchedVia).toBe('domain-scan')
+        expect(parsed.values).toEqual([{ value: 'F', text: 'F', display_value: 'F' }])
+      })
+
+      it('returns the COMPLETE value list when nothing matches, instead of "not found"', async () => {
+        const store = makeValuesStore(GENDER)
+        const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+          attributePath: 'patient.attributes.gender',
+          query: 'nonbinary',
+        })
+
+        const parsed = parse(res)
+        expect(parsed.matchedVia).toBe('domain')
+        expect(parsed.values).toEqual(GENDER)
+        expect(parsed.domainTotal).toBe(2)
+        expect(parsed.note).toContain('COMPLETE value list')
+        expect(parsed.note).toContain('do NOT ask the user to suggest a synonym')
+      })
+
+      it('retries other casings when the domain is too large to enumerate', async () => {
+        const store = makeStore()
+        const hit = [{ value: '461', text: 'Sinusitis' }]
+        store.getters.getDomainValues = () => ({ loadedStatus: 'HAS_RESULTS', values: [] })
+        store.dispatch.mockImplementation((type: string, payload: any) =>
+          type === 'loadValuesForAttributePath'
+            ? // Only the title-cased term matches; the unfiltered call returns nothing,
+              // as a /values endpoint that refuses to dump a huge catalog does.
+              Promise.resolve(payload.searchQuery === 'Sinusitis' ? hit : [])
+            : Promise.resolve(undefined)
+        )
+        const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+          attributePath: 'p.attr',
+          query: 'sinusitis',
+        })
+
+        const parsed = parse(res)
+        expect(parsed.matchedVia).toBe('case-variant')
+        expect(parsed.values).toEqual(hit)
+        expect(parsed.note).toContain('case-sensitive')
+      })
+
+      it('does not re-read the domain when the search was merely TOO_MANY_RESULTS', async () => {
+        const store = makeStore()
+        store.dispatch.mockImplementation((type: string) =>
+          type === 'loadValuesForAttributePath' ? Promise.resolve([]) : Promise.resolve(undefined)
+        )
+        store.getters.getDomainValues = () => ({ loadedStatus: 'TOO_MANY_RESULTS', values: [] })
+
+        await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+          attributePath: 'p.attr',
+          query: 'aspirin',
+        })
+        // "Narrow the query" is already the right answer — enumerating a domain the
+        // endpoint just refused to return would only burn a request.
+        expect(store.dispatch).toHaveBeenCalledOnce()
+      })
+    })
+
+    it('lists the whole domain when `query` is omitted', async () => {
+      const store = makeStore()
+      const domain = [
+        { value: '8532', text: 'Female' },
+        { value: '8507', text: 'Male' },
+      ]
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'loadValuesForAttributePath' ? Promise.resolve(domain) : Promise.resolve(undefined)
+      )
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'patient.attributes.gender',
+      })
+
+      expect(store.dispatch).toHaveBeenCalledWith('loadValuesForAttributePath', {
+        attributePathUid: 'patient.attributes.gender',
+        searchQuery: '',
+        attributeType: 'text',
+      })
+      // Every unfiltered read busts the cache first: a previous search on this
+      // attribute leaves it cached as loaded-with-its-own-rows, and the store would
+      // serve those back instead of the domain.
+      expect(store.commit).toHaveBeenCalledWith('DOMAIN_SET_VALUES', {
+        attributePath: 'patient.attributes.gender',
+        data: { values: [], isLoaded: false, isLoading: false },
+      })
+      const parsed = parse(res)
+      expect(parsed.matchedVia).toBe('domain')
+      expect(parsed.domainTotal).toBe(2)
+      expect(parsed.values).toEqual(domain)
+      expect(parsed.query).toBeUndefined()
+    })
+
+    // The store cancels an in-flight /values call when a newer one targets the same
+    // attributePath and resolves the loser with `undefined`. Read as "no values",
+    // that is another route to telling the user a value doesn't exist.
+    it('retries once when the store resolves undefined (a superseded request)', async () => {
+      const store = makeStore()
+      const values = [{ value: '8532', text: 'Female' }]
+      let calls = 0
+      store.dispatch.mockImplementation((type: string) => {
+        if (type !== 'loadValuesForAttributePath') return Promise.resolve(undefined)
+        calls += 1
+        return Promise.resolve(calls === 1 ? undefined : values)
+      })
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'patient.attributes.gender',
+        query: 'Female',
+      })
+
+      expect(calls).toBe(2)
+      expect(parse(res).values).toEqual(values)
     })
   })
 

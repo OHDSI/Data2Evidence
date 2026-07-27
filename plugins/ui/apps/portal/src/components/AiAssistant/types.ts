@@ -4,13 +4,19 @@
 
 export type MessageRole = "user" | "assistant";
 
-// One tool call made while producing an assistant message, shown as a badge so
-// the user can see the assistant reading/editing their cohort rather than just
-// asserting it did.
+// One tool call made while producing an assistant message, shown as its own row
+// above the reply so the user can see the assistant reading/editing their cohort
+// rather than just asserting it did.
 export interface ToolActivity {
   id: string;
   name: string;
   state: "running" | "ok" | "error";
+  // Call arguments and result, revealed when the row is expanded. Arbitrary JSON:
+  // the shape is whatever the tool declares, so it is rendered, not interpreted.
+  input?: unknown;
+  output?: unknown;
+  // Why the call failed, when it did.
+  errorText?: string;
 }
 
 // A selectable concept-set / disambiguation card rendered inside an assistant message.

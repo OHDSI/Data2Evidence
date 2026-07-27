@@ -109,13 +109,20 @@ $ai-panel-transition: 0.2s ease;
 }
 
 // --- Content region (welcome or conversation) ---
+// The scroll container for the conversation. Deliberately NOT justify-content: flex-end —
+// that bottom-aligns the content by overflowing it past the container's *start* edge, and
+// start-edge overflow is not part of the scrollable area, so a long conversation had its
+// earlier messages pushed above the panel with nothing to scroll back to. The bottom
+// alignment comes from margin-top: auto on the conversation instead, which collapses to 0
+// as soon as the content overflows and lets the overflow fall to the scrollable end.
 .ai-assistant__content {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  // Reaching the end of the conversation should not start scrolling the page behind the panel.
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
   padding: 16px;
   box-sizing: border-box;
 }
@@ -198,17 +205,22 @@ $ai-panel-transition: 0.2s ease;
   gap: 8px;
 }
 
+// A column, not a row: the tool rows stack above the bubble as part of the same turn
+// (see .ai-assistant__tools), and align-items does the left/right placement the
+// bubble used to get from justify-content.
 .ai-assistant__message {
   display: flex;
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
 
   &--user {
-    justify-content: flex-end;
+    align-items: flex-end;
     padding-left: 32px;
   }
 
   &--assistant {
-    justify-content: flex-start;
+    align-items: flex-start;
     padding-right: 32px;
   }
 }
@@ -254,39 +266,271 @@ $ai-panel-transition: 0.2s ease;
   padding-left: 20px;
 }
 
-// --- Tool activity ---
-// Which cohort tools the assistant ran for this reply. Shown so an edit to the
-// user's cohort is visible as an action, not just a claim in prose.
-.ai-assistant__tools {
+// --- Markdown (assistant replies) ---
+// Bubble-scale versions of the block elements the model writes. The panel is 380px wide,
+// so anything that cannot wrap (code, tables) scrolls inside its own box instead of
+// stretching the bubble. Column flex + gap gives every block the same rhythm without
+// having to chase margin collapsing per element.
+.ai-assistant__markdown {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
+  gap: 10px;
+  overflow-wrap: break-word;
+
+  p {
+    margin: 0;
+    // CommonMark folds a single newline into a space, but chat models write one line per
+    // thought and mean the break — which is also how this text read before it was markdown.
+    white-space: pre-wrap;
+  }
+
+  ul,
+  ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  li {
+    white-space: pre-wrap;
+
+    + li {
+      margin-top: 2px;
+    }
+
+    // Loose lists wrap each item in a paragraph; the <li> already spaces them.
+    > p {
+      margin: 0;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 16px;
+  }
+
+  h2 {
+    font-size: 15px;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: 14px;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+
+  a {
+    color: $ai-navy;
+    text-decoration: underline;
+  }
+
+  code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background-color: $ai-surface-selected;
+    border: 1px solid $ai-border;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 12px;
+  }
+
+  pre {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid $ai-border;
+    overflow-x: auto;
+
+    code {
+      padding: 0;
+      border: none;
+      background: none;
+      white-space: pre;
+    }
+  }
+
+  blockquote {
+    margin: 0;
+    padding-left: 10px;
+    border-left: 2px solid $ai-border;
+    color: $ai-neutral;
+  }
+
+  hr {
+    margin: 0;
+    border: none;
+    border-top: 1px solid $ai-border;
+  }
+}
+
+// --- Tool activity ---
+// Which cohort tools the assistant ran for this reply. These sit in the conversation
+// flow ABOVE the reply bubble rather than inside it: they are the work, not part of
+// the answer, and as badges on the bubble a cohort edit read like a label on a
+// sentence. Each row is one quiet line that unfolds into the actual call.
+.ai-assistant__tools {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .ai-assistant__tool {
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  line-height: 1.6;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
-  background-color: $ai-surface;
-  border: 1px solid $ai-border;
+  font-size: 12px;
+  line-height: 1.5;
   color: $ai-neutral;
 
-  &--running {
-    border-color: $ai-navy-light;
+  &--error {
+    color: #d53939;
+  }
+}
+
+.ai-assistant__tool-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+button.ai-assistant__tool-summary {
+  cursor: pointer;
+
+  &:hover {
+    background-color: $ai-surface;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $ai-navy-light;
+    outline-offset: -2px;
+  }
+}
+
+.ai-assistant__tool-status {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+
+  .ai-assistant__tool--ok & {
     color: $ai-navy-light;
   }
+}
 
-  &--ok {
-    background-color: $ai-surface-selected;
-    border-color: $ai-navy-light;
-    color: $ai-navy;
+// A ring rather than a MUI spinner: at 11px the progress component's stroke and
+// padding are heavier than the text it sits next to.
+.ai-assistant__tool-spinner {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid $ai-border;
+  border-top-color: $ai-navy-light;
+  border-radius: 50%;
+  animation: ai-assistant-tool-spin 0.7s linear infinite;
+}
+
+@keyframes ai-assistant-tool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// The "Running" label already carries the state, so the motion is decoration.
+@media (prefers-reduced-motion: reduce) {
+  .ai-assistant__tool-spinner {
+    animation: none;
+  }
+}
+
+.ai-assistant__tool-verb {
+  flex-shrink: 0;
+}
+
+.ai-assistant__tool-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+  color: #000;
+
+  .ai-assistant__tool--error & {
+    color: inherit;
+  }
+}
+
+.ai-assistant__tool-chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 16px;
+  color: $ai-placeholder;
+  transition: transform 0.15s ease;
+
+  .ai-assistant__tool--open & {
+    transform: rotate(90deg);
+  }
+}
+
+// The verbatim call. Indented to line up with the tool name so it reads as detail
+// hanging off that row.
+.ai-assistant__tool-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 6px 6px 26px;
+
+  .ai-assistant__tool-detail-label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: $ai-placeholder;
   }
 
-  &--error {
-    border-color: #d53939;
-    color: #d53939;
+  pre {
+    margin: 0;
+    max-height: 200px;
+    padding: 6px 8px;
+    border: 1px solid $ai-border;
+    border-radius: 6px;
+    background-color: $ai-surface;
+    overflow: auto;
+    // JSON has no soft wrap points, and a 380px panel cannot show a long line of it.
+    // Wrapping keeps the payload readable without a horizontal scrollbar per row.
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #000;
   }
 }
 
@@ -401,10 +645,16 @@ $ai-panel-transition: 0.2s ease;
 
 .ai-assistant__input {
   display: flex;
-  align-items: center;
+  // The field grows with the typed text (see ChatComposer), so the controls stay pinned to
+  // the last line rather than floating beside the middle of a tall input.
+  align-items: flex-end;
   gap: 10px;
   min-height: 48px;
-  padding: 6px 16px;
+  // The row is as tall as the 24px icon buttons, so 11px + 24px + 11px + 2px of border is
+  // the 48px single-line box from the Figma spec. Padding rather than min-height has to
+  // set that height: with the controls bottom-aligned, height borrowed from min-height
+  // would all land above the text as dead space.
+  padding: 11px 16px;
   border: 1px solid $ai-border;
   border-radius: 8px;
   box-sizing: border-box;
@@ -419,6 +669,8 @@ $ai-panel-transition: 0.2s ease;
     padding: 2px;
   }
 
+  // Height is set inline by ChatComposer as the user types; these bounds are the floor
+  // (one line) and the ceiling (MAX_INPUT_HEIGHT, past which the field scrolls).
   .ai-assistant__input-field {
     flex: 1 1 auto;
     min-width: 0;
@@ -430,7 +682,9 @@ $ai-panel-transition: 0.2s ease;
     font-size: 14px;
     line-height: 1.5;
     color: #000;
-    max-height: 120px;
+    min-height: 1.5em;
+    max-height: 126px;
+    overflow-y: auto;
     padding: 0;
 
     &::placeholder {

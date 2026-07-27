@@ -33,12 +33,14 @@ export interface CohortChatState {
   error?: Error;
 }
 
-// Tool part states from the AI SDK, collapsed to what the badge shows.
+// Tool part states from the AI SDK, collapsed to what the tool row shows. The
+// input/output travel with it so the row can be expanded into the actual call —
+// "it edited my cohort" is worth being able to check.
 function toToolActivity(part: any): ToolActivity {
-  const name = getToolOrDynamicToolName(part);
-  if (part.state === "output-error") return { id: part.toolCallId, name, state: "error" };
-  if (part.state === "output-available") return { id: part.toolCallId, name, state: "ok" };
-  return { id: part.toolCallId, name, state: "running" };
+  const base = { id: part.toolCallId, name: getToolOrDynamicToolName(part), input: part.input };
+  if (part.state === "output-error") return { ...base, state: "error", errorText: part.errorText };
+  if (part.state === "output-available") return { ...base, state: "ok", output: part.output };
+  return { ...base, state: "running" };
 }
 
 // The drawer renders its own bubble model; flatten UIMessage parts into it.

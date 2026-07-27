@@ -4,6 +4,7 @@ import { AiAssistantDrawer } from "../AiAssistantDrawer";
 import { AI_ASSISTANT_TOGGLE_EVENT, PA_LEFT_PANE_OPENED_EVENT } from "../aiAssistantEvents";
 import { AppProvider } from "../../../contexts";
 import type { CohortChatState } from "../hooks/useCohortChat";
+import type { ChatMessage, ToolActivity } from "../types";
 
 // The drawer is a shell around useCohortChat; the hook owns the agent round trip.
 // Stubbing it keeps these tests about what the drawer renders and which callbacks
@@ -94,6 +95,163 @@ describe("AiAssistantDrawer", () => {
     expect(queryByText("Hi, how can I help you?")).not.toBeInTheDocument();
   });
 
+  // The tools are what the assistant did, not part of what it said. Rendering them
+  // inside the reply bubble made a cohort edit read like a badge on a sentence.
+  describe("tool calls", () => {
+    const toolMessage = (tool: ToolActivity): ChatMessage => ({
+      id: "m1",
+      role: "assistant",
+      text: "Done.",
+      tools: [tool],
+    });
+
+    it("renders tool rows outside the reply bubble", () => {
+      setChat({ messages: [toolMessage({ id: "t1", name: "pa_apply_cohort_patch", state: "ok" })] });
+      const { getByTestId } = renderDrawer();
+
+      const row = getByTestId("ai-tool-pa_apply_cohort_patch");
+      expect(row.closest(".ai-assistant__bubble")).toBeNull();
+      expect(row.closest(".ai-assistant__message")).toBeInTheDocument();
+      expect(row).toHaveTextContent("Ran");
+    });
+
+    it("labels a call that is still running", () => {
+      setChat({ messages: [toolMessage({ id: "t1", name: "pa_get_cohort_state", state: "running" })] });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-tool-pa_get_cohort_state")).toHaveTextContent("Running");
+    });
+
+    // Seeing the arguments and the result is what makes "it edited my cohort" checkable.
+    it("expands to show the call arguments and result", () => {
+      setChat({
+        messages: [
+          toolMessage({
+            id: "t1",
+            name: "pa_apply_cohort_patch",
+            state: "ok",
+            input: { op: "add", attribute: "gender" },
+            output: { patients: 412 },
+          }),
+        ],
+      });
+      const { getByTestId, queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-tool-detail-pa_apply_cohort_patch")).not.toBeInTheDocument();
+
+      fireEvent.click(getByTestId("ai-tool-toggle-pa_apply_cohort_patch"));
+
+      const detail = getByTestId("ai-tool-detail-pa_apply_cohort_patch");
+      expect(detail).toHaveTextContent('"attribute": "gender"');
+      expect(detail).toHaveTextContent('"patients": 412');
+
+      fireEvent.click(getByTestId("ai-tool-toggle-pa_apply_cohort_patch"));
+      expect(queryByTestId("ai-tool-detail-pa_apply_cohort_patch")).not.toBeInTheDocument();
+    });
+
+    it("shows why a call failed", () => {
+      setChat({
+        messages: [
+          toolMessage({
+            id: "t1",
+            name: "pa_apply_cohort_patch",
+            state: "error",
+            input: { op: "add" },
+            errorText: "Patient Analytics is not open.",
+          }),
+        ],
+      });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-tool-pa_apply_cohort_patch")).toHaveTextContent("Failed");
+      fireEvent.click(getByTestId("ai-tool-toggle-pa_apply_cohort_patch"));
+      expect(getByTestId("ai-tool-detail-pa_apply_cohort_patch")).toHaveTextContent("Patient Analytics is not open.");
+    });
+
+    // A turn that has only called tools so far has no prose to put in a bubble.
+    it("renders no empty bubble while a tool runs before any text", () => {
+      setChat({
+        messages: [{ id: "m1", role: "assistant", text: "", tools: [{ id: "t1", name: "pa_x", state: "running" }] }],
+      });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-assistant-conversation").querySelector(".ai-assistant__bubble")).toBeNull();
+    });
+  });
+
+  // The model answers in markdown. Rendering it verbatim showed users the asterisks and
+  // hashes instead of the formatting they stand for.
+  it("renders an assistant reply as markdown", () => {
+    setChat({
+      messages: [
+        {
+          id: "m1",
+          role: "assistant",
+          text: "**412 patients** matched:\n\n- Female\n- Age over 60\n\nRun `pa_apply_cohort_patch` to apply.",
+        },
+      ],
+    });
+    const { getByTestId } = renderDrawer();
+
+    const conversation = getByTestId("ai-assistant-conversation");
+    expect(conversation.querySelector("strong")).toHaveTextContent("412 patients");
+    expect([...conversation.querySelectorAll("li")].map((li) => li.textContent)).toEqual(["Female", "Age over 60"]);
+    expect(conversation.querySelector("code")).toHaveTextContent("pa_apply_cohort_patch");
+    // The markdown source itself must not leak through.
+    expect(conversation.textContent).not.toContain("**");
+  });
+
+  // A user's prompt is not markdown: typed asterisks are theirs to keep.
+  it("keeps a user message as plain text", () => {
+    setChat({ messages: [{ id: "m1", role: "user", text: "**not** bold" }] });
+    const { getByTestId } = renderDrawer();
+
+    const conversation = getByTestId("ai-assistant-conversation");
+    expect(conversation.querySelector("strong")).toBeNull();
+    expect(conversation).toHaveTextContent("**not** bold");
+  });
+
+  // The composer is a one-row textarea, so without this a multi-line prompt scrolls
+  // inside a single visible line.
+  describe("input growth", () => {
+    const withContentHeight = (height: number) =>
+      jest.spyOn(HTMLTextAreaElement.prototype, "scrollHeight", "get").mockReturnValue(height);
+
+    afterEach(() => jest.restoreAllMocks());
+
+    it("grows the input to fit the typed text", () => {
+      withContentHeight(63);
+      const { getByTestId } = renderDrawer();
+      const input = getByTestId("ai-assistant-input");
+
+      fireEvent.change(input, { target: { value: "line one\nline two\nline three" } });
+
+      expect(input).toHaveStyle({ height: "63px" });
+    });
+
+    it("stops growing at the maximum height and scrolls instead", () => {
+      withContentHeight(400);
+      const { getByTestId } = renderDrawer();
+      const input = getByTestId("ai-assistant-input");
+
+      fireEvent.change(input, { target: { value: "a\n".repeat(40) } });
+
+      expect(input).toHaveStyle({ height: "126px" });
+    });
+
+    it("shrinks back to one line after sending", () => {
+      const contentHeight = withContentHeight(63);
+      const { getByTestId } = renderDrawer();
+      const input = getByTestId("ai-assistant-input");
+      fireEvent.change(input, { target: { value: "line one\nline two\nline three" } });
+
+      contentHeight.mockReturnValue(21);
+      fireEvent.click(getByTestId("ai-assistant-send"));
+
+      expect(input).toHaveStyle({ height: "21px" });
+    });
+  });
+
   it("blocks sending while the assistant is answering", () => {
     setChat({ isStreaming: true });
     const { getByTestId } = renderDrawer();
@@ -141,6 +299,23 @@ describe("AiAssistantDrawer", () => {
       const { getByTestId } = renderDrawer();
 
       expect(getByTestId("ai-assistant-notice")).toHaveTextContent("AI_MODEL is not configured");
+    });
+
+    it("reduces an HTML error page to its message instead of rendering the markup", () => {
+      // What a 413 from express looks like on the wire — the transport hands the
+      // response body straight to error.message.
+      setChat({
+        error: new Error(
+          '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n' +
+            "<body>\n<pre>PayloadTooLargeError: request entity too large<br> &nbsp; &nbsp;at IncomingMessage.onData " +
+            "(file:///var/tmp/sb-compile-trex/node_modules/localhost/raw-body/2.5.3/index.js:260:12)</pre>\n</body>\n</html>"
+        ),
+      });
+      const { getByTestId } = renderDrawer();
+
+      const notice = getByTestId("ai-assistant-notice");
+      expect(notice).toHaveTextContent("PayloadTooLargeError: request entity too large");
+      expect(notice.textContent).not.toMatch(/DOCTYPE|<pre>|IncomingMessage/);
     });
 
     it("shows no notice when everything is wired up", () => {

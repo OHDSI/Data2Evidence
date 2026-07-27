@@ -25,6 +25,12 @@ export type PatchOp =
 export interface ApplyCohortPatchResult {
   applied: boolean
   createdCards: string[]
+  /**
+   * What each add_constraint actually put on the cohort, read back from the store.
+   * The caller is an LLM that has to report the filters it applied — give it the
+   * committed state to report rather than its own intent.
+   */
+  appliedConstraints?: Array<{ card: string; attributePath: string; value: any }>
   error?: string
 }
 
@@ -36,11 +42,99 @@ const isConceptSetValue = (
 ): v is { conceptSetId: string | number; includeDescendants?: boolean; displayValue?: string } =>
   !!v && typeof v === 'object' && (typeof v.conceptSetId === 'string' || typeof v.conceptSetId === 'number')
 
-// Rollback bookkeeping: created cards are deleted, prior constraint values restored.
+// Rollback bookkeeping: created cards are deleted, prior constraint values and
+// the chart's axis selection restored.
 interface Rollback {
   createdCardIds: string[]
   priorConstraintValues: Array<{ constraintId: string; value: any }>
   createdConstraints: Array<{ filterCardId: string; constraintId: string }>
+  priorAxes: AxisSnapshot[]
+}
+
+interface AxisSnapshot {
+  id: number
+  props: { attributeId: string; filterCardId: string; key: string; binsize?: any }
+}
+
+// The store's deleteFilterCard clears every axis bound to the card id it is given,
+// so a rolled-back add_card takes the chart's axis selection with it. An axis-less
+// cohort is not a cosmetic problem: the bar-chart query then goes out with an empty
+// axisSelection and analytics-svc generates `MeasurePopulation AS (SELECT  FROM …)`,
+// which the DB rejects ("SELECT clause without selection list") — the cohort renders
+// "--" for every later edit until the builder is reset. Snapshot before, restore after.
+const snapshotAxes = (store: Store<any>): AxisSnapshot[] =>
+  ((store.getters.getAllAxes as any[]) ?? []).map((axis, id) => ({
+    id,
+    props: {
+      attributeId: axis?.props?.attributeId ?? '',
+      filterCardId: axis?.props?.filterCardId ?? '',
+      key: axis?.props?.key ?? '',
+      ...(typeof axis?.props?.binsize === 'undefined' ? {} : { binsize: axis.props.binsize }),
+    },
+  }))
+
+type AddConstraintOp = Extract<PatchOp, { op: 'add_constraint' }>
+
+// Fields that carry a constraint value but are only meaningful INSIDE `value`.
+// Seeing one at the top level of the op is the tell for the mistake below.
+const MISPLACED_VALUE_KEYS = ['conceptSetId', 'conceptSetIds', 'conceptId', 'conceptIds', 'from', 'to', 'values']
+
+const VALUE_SHAPE_HELP =
+  'Pass value: <number|string> for a basic attribute, { from, to } for a date range, or ' +
+  '{ conceptSetId, includeDescendants? } for a conceptSet attribute. ' +
+  'To clear a filter use remove_constraint, not an empty value.'
+
+/**
+ * Reject an add_constraint that carries nothing to set.
+ *
+ * This is the single most dangerous op shape in the applier: applyConstraintValue
+ * reads an empty value on a text/conceptSet attribute as "clear this filter", so
+ * the patch reports success and leaves a filter card with no constraint — the
+ * cohort then silently keeps every patient the filter was supposed to exclude.
+ * That is a clinical error dressed as a working cohort, so fail loudly instead.
+ */
+function assertHasValue(op: AddConstraintOp): void {
+  const v: any = op.value
+  const isEmpty =
+    typeof v === 'undefined' ||
+    v === null ||
+    (typeof v === 'string' && v.trim() === '') ||
+    (Array.isArray(v) && v.length === 0) ||
+    (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
+  if (!isEmpty) return
+
+  const misplaced = MISPLACED_VALUE_KEYS.filter(k => k in (op as any))
+  throw new Error(
+    `add_constraint for "${op.attributePath}" has no value. ` +
+      (misplaced.length
+        ? `Found ${misplaced.join(', ')} at the top level of the op — ${
+            misplaced.length > 1 ? 'they belong' : 'it belongs'
+          } inside \`value\`. `
+        : '') +
+      VALUE_SHAPE_HELP
+  )
+}
+
+/**
+ * Post-condition for add_constraint: the value is really on the constraint now.
+ *
+ * The input check above catches the shapes we know about; this catches the rest.
+ * Any normalization that quietly resolves to "no value" must fail the patch rather
+ * than leave an empty filter behind and report success.
+ */
+function assertValueLanded(store: Store<any>, filterCardId: string, key: string, op: AddConstraintOp): any {
+  const props = store.getters.getConstraintForAttribute?.({ filterCardId, key })?.props
+  // Date constraints live in fromDate/toDate, everything else in a value array.
+  if (Array.isArray(props?.value) && props.value.length > 0) {
+    return props.value
+  }
+  if (typeof props?.fromDate?.value !== 'undefined' || typeof props?.toDate?.value !== 'undefined') {
+    return { from: props?.fromDate?.value, to: props?.toDate?.value }
+  }
+  throw new Error(
+    `Constraint for "${op.attributePath}" ended up empty after applying ${JSON.stringify(op.value)}. ` +
+      VALUE_SHAPE_HELP
+  )
 }
 
 /**
@@ -56,7 +150,12 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
   // ref (local handle from add_card) -> real filterCardId, so later ops can
   // target a card created earlier in the same patch.
   const refMap = new Map<string, string>()
-  const rollback: Rollback = { createdCardIds: [], priorConstraintValues: [], createdConstraints: [] }
+  const rollback: Rollback = {
+    createdCardIds: [],
+    priorConstraintValues: [],
+    createdConstraints: [],
+    priorAxes: snapshotAxes(store),
+  }
 
   const resolveCard = (card: string): string => {
     const id = refMap.get(card) ?? card
@@ -67,10 +166,12 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
     return id
   }
 
+  const appliedConstraints: NonNullable<ApplyCohortPatchResult['appliedConstraints']> = []
+
   await dispatch('holdFireRequest')
   try {
     for (const rawOp of patchOps) {
-      await applyOne(dispatch, store, rawOp, refMap, rollback, resolveCard)
+      await applyOne(dispatch, store, rawOp, refMap, rollback, resolveCard, appliedConstraints)
     }
   } catch (err) {
     await revert(dispatch, rollback)
@@ -81,7 +182,7 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
   await dispatch('releaseFireRequest')
   await dispatch('setFireRequest')
   await dispatch('refreshPatientCount')
-  return { applied: true, createdCards: [...rollback.createdCardIds] }
+  return { applied: true, createdCards: [...rollback.createdCardIds], appliedConstraints }
 }
 
 async function applyOne(
@@ -90,7 +191,8 @@ async function applyOne(
   op: PatchOp,
   refMap: Map<string, string>,
   rollback: Rollback,
-  resolveCard: (card: string) => string
+  resolveCard: (card: string) => string,
+  applied: NonNullable<ApplyCohortPatchResult['appliedConstraints']>
 ): Promise<void> {
   switch (op.op) {
     case 'add_card': {
@@ -106,6 +208,20 @@ async function applyOne(
           )
         }
       }
+      // Single-instance cards (Basic Data) must never be added twice. An indexed
+      // card gets an instance id with a trailing number
+      // ("…conditionoccurrence.1"), so a card whose instance id IS the config path
+      // is the singleton — and the store would happily create a SECOND card under
+      // that same id. The IFR then carries "patient" in two bool containers, so
+      // every constraint on it is emitted twice (`age < 100 AND age < 100`) and
+      // deleting either copy clears the chart axes bound to the id that survives.
+      // A model that adds Basic Data before constraining Age/Gender is doing the
+      // reasonable thing; reuse what is already there.
+      const existing = store.getters.getFilterCards?.() ?? {}
+      if (existing[op.cardConfigPath]) {
+        if (op.ref) refMap.set(op.ref, op.cardConfigPath)
+        return
+      }
       const filterCardId = (await dispatch('addFilterCard', {
         configPath: op.cardConfigPath,
         isExclusion: op.exclude ?? false,
@@ -115,6 +231,7 @@ async function applyOne(
       return
     }
     case 'add_constraint': {
+      assertHasValue(op)
       const filterCardId = resolveCard(op.card)
       const key = getFieldAttrKey(op.attributePath)
       let constraint = store.getters.getConstraintForAttribute?.({ filterCardId, key })
@@ -143,6 +260,11 @@ async function applyOne(
       } else {
         await applyConstraintValue(dispatch, constraint, op.value, op.operator ?? '=')
       }
+      applied.push({
+        card: filterCardId,
+        attributePath: op.attributePath,
+        value: assertValueLanded(store, filterCardId, key, op),
+      })
       return
     }
     case 'remove_constraint': {
@@ -166,8 +288,9 @@ async function applyOne(
 
 // Undo a partially-applied patch, mirroring revertFieldChanges in
 // useDashboardFlow: restore prior constraint values, drop constraints and cards
-// created during this patch. Best-effort — individual failures are swallowed so
-// one bad undo can't mask the original error.
+// created during this patch, and put the chart's axis selection back the way it
+// was. Best-effort — individual failures are swallowed so one bad undo can't
+// mask the original error.
 async function revert(dispatch: (a: string, p?: unknown) => Promise<any>, rollback: Rollback): Promise<void> {
   for (const { constraintId, value } of rollback.priorConstraintValues.reverse()) {
     if (typeof value !== 'undefined') {
@@ -190,6 +313,15 @@ async function revert(dispatch: (a: string, p?: unknown) => Promise<any>, rollba
       await dispatch('deleteFilterCard', { filterCardId })
     } catch (e) {
       console.error('[cohortPatch] revert deleteFilterCard failed', e)
+    }
+  }
+  // Last: deleteFilterCard above cleared any axis pointing at a card it removed,
+  // so the axis selection is restored after the cards, not before.
+  for (const { id, props } of rollback.priorAxes) {
+    try {
+      await dispatch('setAxisValue', { id, props })
+    } catch (e) {
+      console.error('[cohortPatch] revert setAxisValue failed', e)
     }
   }
 }

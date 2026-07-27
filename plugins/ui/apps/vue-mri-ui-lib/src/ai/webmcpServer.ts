@@ -46,19 +46,105 @@ const textResult = (payload: unknown): PaToolResult => ({
 const DEFAULT_VALUE_LIMIT = 50
 const MAX_VALUE_LIMIT = 200
 
+// How the returned values were arrived at. Reported to the model because
+// "these are matches" and "these are every value the column can take" call for
+// completely different next moves.
+type MatchedVia =
+  /** The /values endpoint's own search returned these rows. */
+  | 'search'
+  /** No query: the attribute's complete (unfiltered) value list. */
+  | 'domain'
+  /** The search found nothing; these matched when we scanned the full list here. */
+  | 'domain-scan'
+  /** The search found nothing until it was retried with a different casing. */
+  | 'case-variant'
+
+// A zero-row search is NOT evidence that a value is absent, and treating it as
+// such is exactly how "build a cohort of women…" ended with the assistant asking
+// the user whether "female" might be spelled some other way. The /values search
+// is executed by the backend (a HANA/SQL LIKE is case-sensitive) and matches the
+// stored token, not the clinical word for it — so "female" misses "Female", and
+// "women" misses "FEMALE" on every backend. When a search comes back empty we
+// re-fetch the attribute's UNFILTERED domain and match it here, where the rules
+// are ours and, for a low-cardinality column, the entire list is visible.
+const normalizeToken = (raw: unknown): string =>
+  String(raw ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s._\-/()]+/g, ' ')
+    .trim()
+
+// Interchangeable tokens for the low-cardinality demographic columns every
+// cohort starts from. A dataset stores sex as "FEMALE", "Female", "F" or a
+// concept id depending on the backend, and the user says "women".
+// Deliberately narrow — demographics and booleans only. Clinical terms are NOT
+// synonym-expanded: a near-miss concept is a silent clinical error, so those
+// still route through concept sets / the vocabulary tools.
+const SYNONYM_GROUPS: string[][] = [
+  ['female', 'f', 'fem', 'woman', 'women', 'girl', 'girls'],
+  ['male', 'm', 'man', 'men', 'boy', 'boys'],
+  ['unknown', 'u', 'unk', 'not known', 'no matching concept'],
+  ['other', 'o'],
+  ['yes', 'y', 'true'],
+  ['no', 'n', 'false'],
+]
+
+const synonymsFor = (query: string): string[] => {
+  const q = normalizeToken(query)
+  const group = SYNONYM_GROUPS.find(g => g.includes(q))
+  return group ? group.filter(s => s !== q) : []
+}
+
+// Rank a candidate row against the query: 0 exact, 1 substring, 2 synonym.
+// undefined = no match. Ranked so an exact "F" outranks a substring hit.
+function matchRank(row: any, query: string, synonyms: string[]): number | undefined {
+  const haystacks = [row?.text, row?.display_value, row?.value].map(normalizeToken).filter(Boolean)
+  if (!haystacks.length) return undefined
+  const q = normalizeToken(query)
+  if (q && haystacks.includes(q)) return 0
+  if (q && haystacks.some(h => h.includes(q))) return 1
+  // Synonyms match on EQUALITY only. As a substring rule, "f" (for female) would
+  // match every token containing the letter f.
+  if (synonyms.some(s => haystacks.includes(s))) return 2
+  return undefined
+}
+
+function matchDomainLocally(rows: any[], query: string): any[] {
+  const synonyms = synonymsFor(query)
+  return rows
+    .map(row => ({ row, rank: matchRank(row, query, synonyms) }))
+    .filter((m): m is { row: any; rank: number } => m.rank !== undefined)
+    .sort((a, b) => a.rank - b.rank)
+    .map(m => m.row)
+}
+
+// Casing variants to retry a failed search with, for attributes whose domain is
+// too large to enumerate (so the domain scan above can't run).
+const caseVariants = (query: string): string[] => {
+  const lower = query.toLowerCase()
+  const upper = query.toUpperCase()
+  const title = lower.replace(/\b[a-z]/g, c => c.toUpperCase())
+  return [...new Set([lower, upper, title])].filter(v => v !== query)
+}
+
 // Turn the /values result shape into an actionable hint so the model narrows the
 // query or routes to a concept set, rather than picking one product token (which
-// is clinically incomplete for "any form of X") or misreading TOO_MANY_RESULTS as
-// "term absent". The store computes `loadedStatus` (a 204 → TOO_MANY_RESULTS) but
-// its action only returns the value array, so we read it from getDomainValues.
+// is clinically incomplete for "any form of X"), misreading TOO_MANY_RESULTS as
+// "term absent", or — the failure this note set exists to close — asking the user
+// to guess a synonym for a value whose complete list is sitting in the response.
+// The store computes `loadedStatus` (a 204 → TOO_MANY_RESULTS) but its action
+// only returns the value array, so we read it from getDomainValues.
 function attributeValuesNote(opts: {
+  matchedVia: MatchedVia
   total: number
   returned: number
   truncated: boolean
   loadedStatus?: string
   query: string
+  matchedQuery: string
+  domainTotal?: number
 }): string | undefined {
-  const { total, returned, truncated, loadedStatus, query } = opts
+  const { matchedVia, total, returned, truncated, loadedStatus, query, matchedQuery, domainTotal } = opts
   if (loadedStatus === 'TOO_MANY_RESULTS' && total === 0) {
     return (
       `The /values endpoint reported TOO_MANY_RESULTS and returned no rows for "${query}". ` +
@@ -68,17 +154,41 @@ function attributeValuesNote(opts: {
   }
   if (truncated) {
     return (
-      `Showing the first ${returned} of ${total} matching tokens. A broad term can match many tokens across ` +
-      'code systems (RxNorm/NDC/ATC/SNOMED) and every strength/form — picking one product token is clinically ' +
-      `incomplete for "any form of ${query}". Prefer a concept set with descendants (backend d2e-mcp) when the ` +
-      'dataset supports it, or pick the ingredient/standard-level token (e.g. an RxNorm ingredient), and narrow ' +
-      'the query to disambiguate. Raise `limit` only if you genuinely need the full list.'
+      `Showing the first ${returned} of ${total} ${matchedVia === 'domain' ? 'values' : 'matching tokens'}. ` +
+      'A broad term can match many tokens across code systems (RxNorm/NDC/ATC/SNOMED) and every strength/form — ' +
+      `picking one product token is clinically incomplete for "any form of ${query}". Prefer a concept set with ` +
+      'descendants (backend d2e-mcp) when the dataset supports it, or pick the ingredient/standard-level token ' +
+      '(e.g. an RxNorm ingredient), and narrow the query to disambiguate. Raise `limit` only if you genuinely ' +
+      'need the full list.'
+    )
+  }
+  if (matchedVia === 'domain-scan') {
+    return (
+      `The /values search for "${query}" returned no rows, but scanning this attribute's full value list ` +
+      `(${domainTotal} values) matched ${total}. The endpoint's search is case- and token-sensitive, so an empty ` +
+      'search result is never proof a value is absent. Use the `value` field of the row you want.'
+    )
+  }
+  if (matchedVia === 'case-variant') {
+    return (
+      `"${query}" returned nothing but "${matchedQuery}" matched — the /values search is case-sensitive. ` +
+      'Treat casing, not absence, as the default explanation for an empty search result.'
+    )
+  }
+  if (matchedVia === 'domain' && query) {
+    return (
+      `No value matched "${query}". The rows below are this attribute's COMPLETE value list (${domainTotal} ` +
+      'values), so no further search will find anything else here. Pick the row that expresses ' +
+      `"${query}" — do NOT ask the user to suggest a synonym; the whole list is right here. If genuinely none ` +
+      'fits, this is the wrong attribute (a card often exposes both a *source concept code* and a ' +
+      '*concept-name* attribute) or the filter is not expressible on this dataset — say so explicitly.'
     )
   }
   if (total === 0) {
     return (
-      `No tokens matched "${query}". Try a broader or alternate term, or a different attributePath — a card often ` +
-      'exposes both a *source concept code* and a *concept-name* attribute; the term may live on the other one.'
+      `No tokens matched "${query}", and this attribute's unfiltered value list came back empty too, so its ` +
+      'domain could not be enumerated. Try a different attributePath — a card often exposes both a *source ' +
+      'concept code* and a *concept-name* attribute; the term may live on the other one.'
     )
   }
   return undefined
@@ -91,41 +201,56 @@ function attributeValuesNote(opts: {
 // resolved via pa_search_attribute_values) and on *concept set* attributes
 // (type "conceptSet", taking a { conceptSetId }) — NOT on OMOP standard concept
 // ids. A bare "text" type alone doesn't tell these apart, so surface the routing.
-function describeAttributeValue(attr: any): { valueKind: string; howTo: string } {
+function describeAttributeValue(attr: any): string {
   const type = attr.getType?.()
   const isCatalog =
     (typeof attr.isCatalogAttribute === 'function' && attr.isCatalogAttribute()) ||
     // useRefText-only catalogs (coded columns shown by their ref text) also need /values.
     !!attr.oInternalConfigAttribute?.useRefText
   if (type === 'conceptSet') {
-    return {
-      valueKind: 'conceptSet',
-      howTo: 'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools.',
-    }
+    return 'conceptSet'
   }
   if (type === 'num') {
-    return { valueKind: 'numeric', howTo: 'add_constraint value:<number> with operator ("<",">","=",…).' }
+    return 'numeric'
   }
   if (type === 'time' || type === 'datetime') {
-    return { valueKind: 'date', howTo: 'add_constraint value:{ from, to } (date range).' }
+    return 'date'
   }
   if (isCatalog) {
-    return {
-      valueKind: 'catalog',
-      howTo:
-        'Coded catalog value — resolve the EXACT stored token with pa_search_attribute_values, then pass its ' +
-        'returned `value`. Dataset-specific: never hardcode or invent the token.',
-    }
+    return 'catalog'
   }
-  return { valueKind: 'text', howTo: 'add_constraint value:<string> (free text).' }
+  return 'text'
+}
+
+// The valueKind → how-to-supply-the-value legend, sent ONCE per response instead
+// of repeated on every attribute. A dataset can expose 170+ filter attributes, and
+// inlining ~150 chars of identical prose per attribute more than doubled this
+// tool's output (≈60KB → ≈27KB when hoisted). That output lands in the agent
+// transcript, which /agent resends whole on every turn — so it was the single
+// biggest driver of both context burn and the 413 the drawer used to hit.
+const VALUE_KIND_GUIDE: Record<string, string> = {
+  numeric: 'add_constraint value:<number> with operator ("<",">","=",…).',
+  date: 'add_constraint value:{ from, to } (date range).',
+  conceptSet: 'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools.',
+  catalog:
+    'Coded catalog value — resolve the EXACT stored token with pa_search_attribute_values, then pass its ' +
+    'returned `value`. Dataset-specific: never hardcode or invent the token. For a small enumerated column ' +
+    '(gender, race, ethnicity, status flags) call pa_search_attribute_values with NO `query` to list every ' +
+    'value it can take, and pick from that — do not guess a search term.',
+  text: 'add_constraint value:<string> (free text).',
 }
 
 // The valid filter-card / attribute catalog from the frontend config (SAP-MRI or
 // OMOP alike). Shared by pa_list_filter_options AND used to enrich patch failures,
 // so a bad path is self-correcting from the error alone — no Vue/Pinia scraping.
-// Each attribute carries a `valueKind` + `howTo` so the model routes its value
-// correctly on a non-OMOP config (see describeAttributeValue).
-function listFilterOptions(store: Store<any>): { filterCards: any[]; note?: string; error?: string } {
+// Each attribute carries a `valueKind`; `valueKindGuide` says how to supply each
+// kind's value, so the model routes it correctly on a non-OMOP config.
+function listFilterOptions(store: Store<any>): {
+  filterCards: any[]
+  valueKindGuide?: Record<string, string>
+  note?: string
+  error?: string
+} {
   const config = store.getters.getMriFrontendConfig
   if (!config?.getFilterCards) {
     return { filterCards: [], error: 'Frontend config not loaded.' }
@@ -133,15 +258,21 @@ function listFilterOptions(store: Store<any>): { filterCards: any[]; note?: stri
   const filterCards = (config.getFilterCards() ?? []).map((card: any) => ({
     cardConfigPath: card.getConfigPath(),
     cardName: card.getName(),
-    attributes: (card.getAllAttributes() ?? []).map((attr: any) => ({
+    // getFilterAttributes(), not getAllAttributes(): the latter also includes
+    // measure/category-only attributes that are NOT visible in the filter card, so
+    // add_constraint cannot target them. Listing them padded the payload AND
+    // invited the model to pick a path that always fails.
+    attributes: ((card.getFilterAttributes?.() ?? card.getAllAttributes?.() ?? []) as any[]).map((attr: any) => ({
       attributePath: attr.getConfigPath(),
       name: attr.getName(),
       type: attr.getType(),
-      ...describeAttributeValue(attr),
+      valueKind: describeAttributeValue(attr),
     })),
   }))
   return {
     filterCards,
+    // Per-attribute how-to lives here, keyed by valueKind — see VALUE_KIND_GUIDE.
+    valueKindGuide: VALUE_KIND_GUIDE,
     note:
       'Route each add_constraint value by `valueKind`: numeric→number+operator, date→{from,to}, ' +
       'conceptSet→{conceptSetId} (build via d2e-mcp), catalog→resolve the exact token with ' +
@@ -151,6 +282,37 @@ function listFilterOptions(store: Store<any>): { filterCards: any[]; note?: stri
       'If a measurement/lab card exposes no numeric value attribute here, a value threshold ' +
       '(e.g. BMI < 18.5) is NOT expressible — use a diagnosis/concept-set instead.',
   }
+}
+
+// The recovery catalog attached to a FAILED patch. Deliberately NOT the whole
+// catalog: a patch failure is almost always one wrong path, and re-sending every
+// card's attributes on every failure duplicated ~30KB into a transcript that
+// /agent resends in full each turn (two of those and the request blew the body
+// limit). So: every card by path+name — enough to fix a wrong cardConfigPath —
+// plus the attributes of only the card(s) the failing ops actually named, which is
+// what fixes a wrong attributePath.
+function recoveryFilterOptions(store: Store<any>, patchOps: PatchOp[]): any[] {
+  const { filterCards } = listFilterOptions(store)
+  // `card` on a constraint op is a runtime filterCardId, not a config path, so the
+  // usable signal is add_card's cardConfigPath and the card prefix of an
+  // attributePath ("<cardConfigPath>.attributes.<key>").
+  const named = new Set<string>()
+  for (const op of patchOps ?? []) {
+    const cardConfigPath = (op as any).cardConfigPath
+    if (typeof cardConfigPath === 'string') named.add(cardConfigPath)
+    const attributePath = (op as any).attributePath
+    if (typeof attributePath === 'string') named.add(attributePath.split('.attributes.')[0])
+  }
+  return filterCards.map((card: any) =>
+    named.has(card.cardConfigPath)
+      ? card
+      : {
+          cardConfigPath: card.cardConfigPath,
+          cardName: card.cardName,
+          // Attributes omitted to keep the transcript small — ask for them by name.
+          attributeCount: card.attributes.length,
+        }
+  )
 }
 
 // Build the Patient Analytics WebMCP tool definitions against a Vuex store.
@@ -295,8 +457,42 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
               '{ op:"add_card", cardConfigPath, exclude?, ref? } | ' +
               '{ op:"add_constraint", card, attributePath, value, operator? } | ' +
               '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath }. ' +
-              'value is a number/string, { from, to } date range, or { conceptSetId, includeDescendants? }.',
-            items: { type: 'object' },
+              'The Basic Data card ("patient") always exists — constrain it directly, never add_card it.',
+            items: {
+              type: 'object',
+              properties: {
+                op: {
+                  type: 'string',
+                  enum: ['add_card', 'add_constraint', 'remove_card', 'remove_constraint'],
+                },
+                cardConfigPath: {
+                  type: 'string',
+                  description: 'add_card: the card to add, from pa_list_filter_options.',
+                },
+                exclude: { type: 'boolean', description: 'add_card: make it an exclusion card.' },
+                ref: { type: 'string', description: 'add_card: local handle later ops can use as `card`.' },
+                card: {
+                  type: 'string',
+                  description:
+                    'add_constraint / remove_*: a filterCardId ("patient", "…conditionoccurrence.1") or an ' +
+                    'add_card `ref` from earlier in this same patch.',
+                },
+                attributePath: {
+                  type: 'string',
+                  description: 'add_constraint / remove_constraint: exact path from pa_list_filter_options.',
+                },
+                value: {
+                  description:
+                    'add_constraint: REQUIRED, and the concept-set id goes HERE, not beside it. ' +
+                    'numeric -> a number (with `operator`); catalog/text -> the exact stored string; ' +
+                    'date -> { from, to }; conceptSet -> { conceptSetId, includeDescendants? } where ' +
+                    'conceptSetId came from create_concept_set / list_concept_sets. An empty or missing ' +
+                    'value is rejected — use remove_constraint to clear a filter.',
+                },
+                operator: { type: 'string', description: 'add_constraint: "=", "<", ">", "<=", ">=". Default "=".' },
+              },
+              required: ['op'],
+            },
           },
           bookmark: { type: 'object', description: 'Legacy: parsed bookmark object (back-compat)' },
           chartType: { type: 'string', description: 'Target chart type, e.g. "bar"' },
@@ -319,13 +515,15 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             hooks.showBuilder?.()
             return textResult(result)
           } catch (err) {
-            // Attach the valid catalog so a wrong card/attribute path is recoverable
+            // Attach the valid paths so a wrong card/attribute path is recoverable
             // straight from the error — no need to call pa_list_filter_options separately
-            // or scrape the app's internals.
+            // or scrape the app's internals. Scoped to the cards this patch named
+            // (see recoveryFilterOptions); call pa_list_filter_options({ card }) for
+            // the attributes of any other card.
             return textResult({
               applied: false,
               error: err instanceof Error ? err.message : String(err),
-              validFilterOptions: listFilterOptions(store).filterCards,
+              validFilterOptions: recoveryFilterOptions(store, patchOps),
             })
           }
         }
@@ -360,14 +558,40 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       name: 'pa_list_filter_options',
       description:
         'List the valid filter cards and attributes for the current dataset as ' +
-        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type, valueKind, howTo }] } plus a ' +
-        'routing `note`. `valueKind` (numeric | date | conceptSet | catalog | text) + `howTo` tell you how to ' +
-        'supply each add_constraint value — essential on non-OMOP (SAP HANA / LEAF) datasets whose coded ' +
-        'filters use source concept codes/concept sets, not OMOP standard concept ids. ' +
+        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type, valueKind }] }, plus a ' +
+        '`valueKindGuide` map and a routing `note`. `valueKind` (numeric | date | conceptSet | catalog | text) ' +
+        'keys into valueKindGuide, which says how to supply that add_constraint value — essential on non-OMOP ' +
+        '(SAP HANA / LEAF) datasets whose coded filters use source concept codes/concept sets, not OMOP standard ' +
+        'concept ids. Pass `card` (a cardConfigPath) to get just that card\'s attributes; the full catalog is ' +
+        'large, so prefer the scoped call once you know the card. ' +
         'Use these exact paths in pa_apply_cohort_patch patchOps — never invent paths.',
-      inputSchema: { type: 'object', properties: {} },
-      async execute() {
-        return textResult(listFilterOptions(store))
+      inputSchema: {
+        type: 'object',
+        properties: {
+          card: {
+            type: 'string',
+            description:
+              'Optional cardConfigPath (e.g. "patient.interactions.priDiag") — return only this card, with its ' +
+              'attributes. Omit for the whole catalog.',
+          },
+        },
+      },
+      async execute({ card }: { card?: string } = {}) {
+        const options = listFilterOptions(store)
+        if (!card || options.error) {
+          return textResult(options)
+        }
+        const match = options.filterCards.find((c: any) => c.cardConfigPath === card)
+        if (!match) {
+          // A wrong path is the common case here, so answer it with the thing that
+          // fixes it (the valid paths) rather than an error the model must chase.
+          return textResult({
+            filterCards: [],
+            error: `Unknown card "${card}".`,
+            validCardConfigPaths: options.filterCards.map((c: any) => c.cardConfigPath),
+          })
+        }
+        return textResult({ ...options, filterCards: [match] })
       },
     },
     {
@@ -376,14 +600,20 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         "Resolve the EXACT stored value token for any categorical/text attribute via the app's /values " +
         'endpoint — no auth/token handling needed. Use it for demographics too: gender/race/etc. tokens are ' +
         'dataset-specific (e.g. "FEMALE" vs "Female" vs "F"), so NEVER hardcode them — look them up here. ' +
-        'Also resolves a term like "sinusitis" to selectable diagnosis values. Returns { total, returned, ' +
-        'truncated, loadedStatus, values:[{ value, text, display_value }], note }; pass a returned `value` as an ' +
-        'add_constraint value in pa_apply_cohort_patch. The list is CAPPED (default 50, `limit` to change) — when ' +
-        '`truncated` or loadedStatus is "TOO_MANY_RESULTS", NARROW the query rather than paging: a broad drug/' +
-        'condition term matches thousands of tokens across code systems and strengths, and one product token is ' +
-        'clinically incomplete. For "any form of X", prefer a concept set with descendants (backend d2e-mcp). Read ' +
-        'the `note`. attributePath comes from pa_list_filter_options. This returns raw attribute values, not a ' +
-        'concept-set id.',
+        'Also resolves a term like "sinusitis" to selectable diagnosis values. OMIT `query` to list the ' +
+        "attribute's COMPLETE value list — the fastest and most reliable route for a low-cardinality column " +
+        '(gender, race, ethnicity, status flags). Returns { matchedVia, total, returned, truncated, loadedStatus, ' +
+        'domainTotal?, values:[{ value, text, display_value }], note }; pass a returned `value` as an ' +
+        'add_constraint value in pa_apply_cohort_patch. `matchedVia` says what you are looking at: "search"/' +
+        '"domain-scan"/"case-variant" = matches for your query; "domain" = the attribute\'s whole value list ' +
+        '(returned when nothing matched, so you can pick from it). A zero-result search is NEVER proof the value ' +
+        'is absent — this tool already rechecked the full domain for you, so read `note` and decide from the ' +
+        'rows returned instead of asking the user for a synonym. The list is CAPPED (default 50, `limit` to ' +
+        'change) — when `truncated` or loadedStatus is "TOO_MANY_RESULTS", NARROW the query rather than paging: ' +
+        'a broad drug/condition term matches thousands of tokens across code systems and strengths, and one ' +
+        'product token is clinically incomplete. For "any form of X", prefer a concept set with descendants ' +
+        '(backend d2e-mcp). attributePath comes from pa_list_filter_options. This returns raw attribute values, ' +
+        'not a concept-set id.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -392,7 +622,12 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             description:
               'Attribute config path from pa_list_filter_options, e.g. "patient.interactions.priDiag.attributes.icd10".',
           },
-          query: { type: 'string', description: 'Search text, e.g. "sinusitis".' },
+          query: {
+            type: 'string',
+            description:
+              'Search text, e.g. "sinusitis". OMIT it to list every value the attribute can take — do that for ' +
+              'demographics and other small enumerated columns instead of guessing a search term.',
+          },
           attributeType: {
             type: 'string',
             description: 'Optional value-type hint: "text" (default) or "conceptSet".',
@@ -404,7 +639,7 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
               'instead of raising this when results span many code systems/strengths.',
           },
         },
-        required: ['attributePath', 'query'],
+        required: ['attributePath'],
       },
       async execute({
         attributePath,
@@ -413,34 +648,115 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         limit,
       }: {
         attributePath: string
-        query: string
+        query?: string
         attributeType?: string
         limit?: number
       }) {
-        if (!attributePath || !query) {
-          return textResult({ values: [], error: 'Provide attributePath and query.' })
+        if (!attributePath) {
+          return textResult({ values: [], error: 'Provide an attributePath (from pa_list_filter_options).' })
         }
-        const all: any[] =
-          (await store.dispatch('loadValuesForAttributePath', {
-            attributePathUid: attributePath,
-            searchQuery: query,
-            attributeType: attributeType ?? 'text',
-          })) ?? []
-        // The store's action returns only the value array, but it records WHY a list
-        // is empty/short as `loadedStatus` (a 204 → "TOO_MANY_RESULTS"). Read it from
-        // the getter so the model can tell "no such token" from "narrow the query".
-        const loadedStatus: string | undefined = store.getters.getDomainValues?.(attributePath)?.loadedStatus
+        const trimmedQuery = typeof query === 'string' ? query.trim() : ''
         const cap = Math.max(1, Math.min(limit ?? DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT))
+
+        const fetchValues = async (searchQuery: string): Promise<{ rows?: any[]; loadedStatus?: string }> => {
+          if (!searchQuery) {
+            // Bust the store's "already loaded" short-circuit before every
+            // unfiltered read. Any earlier search on this attributePath left it
+            // cached as loaded — with that search's (possibly empty) rows — and the
+            // action would serve exactly those back instead of fetching the domain,
+            // turning the fallback below into a no-op that confirms its own miss.
+            store.commit('DOMAIN_SET_VALUES', {
+              attributePath,
+              data: { values: [], isLoaded: false, isLoading: false },
+            })
+          }
+          const rows = await store.dispatch('loadValuesForAttributePath', {
+            attributePathUid: attributePath,
+            searchQuery,
+            attributeType: attributeType ?? 'text',
+          })
+          // The store's action returns only the value array, but it records WHY a
+          // list is empty/short as `loadedStatus` (a 204 → "TOO_MANY_RESULTS").
+          // Read it from the getter so the model can tell "no such token" from
+          // "narrow the query".
+          const loadedStatus: string | undefined = store.getters.getDomainValues?.(attributePath)?.loadedStatus
+          return { rows: Array.isArray(rows) ? rows : undefined, loadedStatus }
+        }
+
+        // The store resolves `undefined` when a newer request for the same
+        // attributePath superseded this one (it cancels the in-flight call and
+        // drops the late response). That is a race, not an empty domain, and
+        // reporting it as "no values" is another way the assistant ends up telling
+        // the user a value doesn't exist. Retry once — the retry is uncontended.
+        const fetchValuesRetrying = async (searchQuery: string) => {
+          const first = await fetchValues(searchQuery)
+          return first.rows ? first : fetchValues(searchQuery)
+        }
+
+        let matchedVia: MatchedVia = trimmedQuery ? 'search' : 'domain'
+        let matchedQuery = trimmedQuery
+        const searched = await fetchValuesRetrying(trimmedQuery)
+        let all: any[] = searched.rows ?? []
+        let loadedStatus = searched.loadedStatus
+        let domainTotal: number | undefined = trimmedQuery ? undefined : all.length
+
+        if (trimmedQuery && all.length === 0 && loadedStatus !== 'TOO_MANY_RESULTS') {
+          const domain = await fetchValuesRetrying('')
+          const domainRows = domain.rows ?? []
+          domainTotal = domainRows.length
+          const localMatches = matchDomainLocally(domainRows, trimmedQuery)
+          if (localMatches.length > 0) {
+            all = localMatches
+            loadedStatus = domain.loadedStatus
+            matchedVia = 'domain-scan'
+          } else if (domainRows.length > 0) {
+            // Hand back the COMPLETE list rather than "not found", so the model can
+            // pick a value (or rule the attribute out) in this same step instead of
+            // asking the user to guess a spelling.
+            all = domainRows
+            loadedStatus = domain.loadedStatus
+            matchedVia = 'domain'
+          } else {
+            // The domain isn't enumerable (too large, or the endpoint only answers
+            // searches), so the scan above can't decide it. Retry the search with
+            // other casings — a backend LIKE is case-sensitive, so "female" can
+            // miss a stored "Female".
+            for (const variant of caseVariants(trimmedQuery)) {
+              const alt = await fetchValuesRetrying(variant)
+              if ((alt.rows?.length ?? 0) > 0) {
+                all = alt.rows as any[]
+                loadedStatus = alt.loadedStatus
+                matchedVia = 'case-variant'
+                matchedQuery = variant
+                break
+              }
+            }
+            if (matchedVia === 'search') loadedStatus = domain.loadedStatus ?? loadedStatus
+          }
+        }
+
         const total = all.length
         const values = all.slice(0, cap)
         const truncated = total > values.length
-        const note = attributeValuesNote({ total, returned: values.length, truncated, loadedStatus, query })
-        return textResult({
-          attributePath,
+        const note = attributeValuesNote({
+          matchedVia,
           total,
           returned: values.length,
           truncated,
           loadedStatus,
+          query: trimmedQuery,
+          matchedQuery,
+          domainTotal,
+        })
+        return textResult({
+          attributePath,
+          ...(trimmedQuery ? { query: trimmedQuery } : {}),
+          matchedVia,
+          total,
+          returned: values.length,
+          truncated,
+          loadedStatus,
+          ...(domainTotal !== undefined ? { domainTotal } : {}),
           values,
           ...(note ? { note } : {}),
         })
@@ -466,6 +782,9 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
               measures: chartData.measures,
               data: chartData.data,
               noDataReason: chartData.noDataReason,
+              // Set when the last chart query errored (see fireQuery). Without it a
+              // failed query reads as an empty cohort and the count "--" has no cause.
+              ...(chartData.error ? { error: chartData.error } : {}),
             }
           : null
         return textResult({
@@ -473,6 +792,11 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
           totalPatientCount: g.getDisplayTotalGuardedPatientCount ? g.getTotalPatientListCount : g.getTotalPatientCount,
           chartType: g.getActiveChart,
           chart,
+          ...(chartData?.error
+            ? {
+                error: `The last chart query failed, so the count is not a real result: ${chartData.error}`,
+              }
+            : {}),
         })
       },
     },

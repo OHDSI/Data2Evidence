@@ -36,6 +36,26 @@ const useHeaderOffset = (): number => {
   return offset;
 };
 
+// The agent transport surfaces a failed response's BODY as error.message, and not
+// every failure comes from our JSON error handler: a 413/502 from the express or
+// proxy layer is an HTML page, which rendered here as a wall of markup that buried
+// the actual reason. Pull the readable text out and cap it.
+export const toNoticeText = (message: string): string => {
+  let text = message.trim();
+  if (/^<(!doctype|html)/i.test(text)) {
+    // Express's error page puts the message + stack in a <pre>; the first line is
+    // the error itself ("PayloadTooLargeError: request entity too large").
+    const pre = /<pre>([\s\S]*?)<\/pre>/i.exec(text);
+    text = (pre ? pre[1] : text.replace(/<[^>]*>/g, " "))
+      .replace(/<br\s*\/?>[\s\S]*/i, "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  return text.length > 300 ? `${text.slice(0, 300)}…` : text;
+};
+
 // The D2E AI assistant side drawer. Conversation state lives in useCohortChat, which
 // talks to the cohort agent and runs the live Patient Analytics tools in this tab. It
 // is rendered persistently so the conversation survives closing/reopening the drawer
@@ -92,7 +112,7 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
   // looks broken when it is merely out of reach of the builder.
   let notice: string | undefined;
   if (error) {
-    notice = error.message;
+    notice = toNoticeText(error.message);
   } else if (datasetMissing) {
     notice = getText(i18nKeys.AI_ASSISTANT__NO_DATASET);
   } else if (datasetMismatch) {
