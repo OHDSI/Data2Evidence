@@ -8,7 +8,8 @@
     "build:dev": "tsc -b && vite build --mode=development",
     "build": "tsc -b && vite build --mode=production",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "tsc -b && vite build && vite preview"
+    "preview": "tsc -b && vite build && vite preview",
+    "test:unit": "vitest"
   },
   "dependencies": {
     "@fontsource-variable/ibm-plex-sans": "^5.2.8",
@@ -26,6 +27,10 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.5.0",
+    "@types/jsdom": "^21.1.6",
     "@types/lodash": "^4.17.6",
     "@types/pako": "^1.0.1",
     "@types/react": "^18.0.0",
@@ -34,9 +39,11 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-react-refresh": "^0.4.7",
+    "jsdom": "^24.0.0",
     "sass": "^1.77.8",
     "typescript": "^5.2.2",
     "vite": "^6.4.2",
-    "vite-plugin-css-injected-by-js": "^3.5.1"
+    "vite-plugin-css-injected-by-js": "^3.5.1",
+    "vitest": "^4.0.18"
   }
 }
