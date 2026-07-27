@@ -998,6 +998,12 @@ export function useDashboardFlow(
     }
     const rawValue = rawInput?.value ?? rawInput
     if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
+      if (constraintType === 'text' || constraintType === 'conceptSet') {
+        return dispatch('updateConstraintValue', {
+          constraintId: constraint.id,
+          value: [],
+        })
+      }
       return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
     }
     const finalDisplayValue = displayValue || rawInput?.displayName || String(rawValue)
