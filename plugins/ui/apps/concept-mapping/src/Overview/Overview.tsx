@@ -1,28 +1,27 @@
 import React, { FC, useState, useContext, useCallback, useEffect } from "react";
 import pako from "pako";
-import { useDatasets, useDialogHelper, useFeedback } from "../hooks";
+import { useDatasets, useFeedback } from "../hooks";
 import { Snackbar, Button } from "@portal/components";
 import { api } from "../axios/api";
-import { CsvReader } from "../components/CsvReader/CsvReader";
-import { ImportDialog } from "../components/ImportDialog/ImportDialog";
-import { MappingTable } from "../components/MappingTable/MappingTable";
-import { MappingDrawer } from "../components/MappingDrawer/MappingDrawer";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { FormControl, MenuItem, Select, SelectChangeEvent, Tabs, Tab } from "@mui/material";
 import { useTranslation } from "../hooks/use-translation";
-import { ConceptMappingState, csvData, Study } from "../types";
+import { ConceptMappingState, Study } from "../types";
+import { SourceNodeDTO } from "../types/source";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { i18nKeys } from "../Context/state";
 import { SavedMappingsTable } from "../components/SavedMappingsTable/SavedMappingsTable";
+import { WizardStepper } from "../Wizard/WizardStepper";
 import "./Overview.scss";
 
 interface OverviewProps {
   locale?: string;
   data?: ConceptMappingState;
   onChange?: (data: Partial<ConceptMappingState>) => void;
+  sourceNode?: SourceNodeDTO;
 }
 
-export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) => {
+export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sourceNode }) => {
   const { getText, changeLocale } = useTranslation();
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
@@ -41,12 +40,10 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
   }, [feedback, clearFeedback]);
 
   // local states
-  const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedDataset, setSelectedDataset] = useState<Study>();
   const selectedDatasetId = selectedDataset?.id;
   const [tabIndex, setTabIndex] = useState(0);
-  const [showImportDialog, openImportDialog, closeImportDialog] = useDialogHelper(false);
 
   useEffect(() => {
     if (data) {
@@ -59,7 +56,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
   }, [data]);
 
   useEffect(() => {
-    const { columnMapping, csvData } = conceptMappingState;
+    const { columnMapping, csvData, wizard } = conceptMappingState;
     typeof onChange === "function" &&
       onChange({
         columnMapping,
@@ -67,20 +64,9 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
         databaseCode: selectedDataset?.databaseCode,
         schemaName: selectedDataset?.schemaName,
         sourceVocabularyId: csvData.name,
+        wizard,
       });
   }, [onChange, conceptMappingState, selectedDataset]);
-
-  const handleCloseImportDialog = useCallback(() => {
-    closeImportDialog();
-  }, [closeImportDialog]);
-
-  const handleOnFileLoaded = useCallback(
-    (data: csvData) => {
-      dispatch({ type: ACTION_TYPES.SET_IMPORT_DATA, payload: data });
-      openImportDialog();
-    },
-    [dispatch, openImportDialog]
-  );
 
   const mappings = conceptMappingState.csvData.data.filter((d) => d.status === "checked");
 
@@ -182,29 +168,13 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
 
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} sx={{ mt: 2, mb: 1 }}>
-          <Tab label={getText(i18nKeys.OVERVIEW__MAPPING_TAB)} />
+          <Tab label={getText(i18nKeys.WIZARD__CONFIGURATION_TAB)} />
           <Tab label={getText(i18nKeys.OVERVIEW__SAVED_MAPPINGS_TAB)} />
         </Tabs>
       </div>
 
       {tabIndex === 0 && (
-        <div>
-          {conceptMappingState.importData.data.length !== 0 && (
-            <ImportDialog
-              open={showImportDialog}
-              onClose={handleCloseImportDialog}
-              loading={loading}
-              setLoading={setLoading}
-              selectedDatasetId={selectedDatasetId}
-            />
-          )}
-          {conceptMappingState.csvData.data.length == 0 && (
-            <CsvReader onFileLoaded={handleOnFileLoaded} parseOptions={{ header: true }}></CsvReader>
-          )}
-          <br></br>
-          {conceptMappingState.csvData.data.length !== 0 && <MappingTable selectedDatasetId={selectedDatasetId} />}
-          <MappingDrawer selectedDatasetId={selectedDatasetId} />
-        </div>
+        <WizardStepper sourceNode={sourceNode} datasets={datasets ?? []} selectedDatasetId={selectedDatasetId} />
       )}
 
       {tabIndex === 1 && selectedDataset?.databaseCode && selectedDataset?.schemaName && (
