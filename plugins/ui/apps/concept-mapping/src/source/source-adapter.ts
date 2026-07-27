@@ -1,5 +1,6 @@
 import { SourceData, SourceNodeDTO } from "../types/source";
 
+// Sentinel constant reserved for column-mapping "Not applicable" option (Task 4+)
 export const NOT_APPLICABLE = "__NOT_APPLICABLE__";
 
 export function parseSqlResultColumns(result?: string): string[] | null {
@@ -41,7 +42,7 @@ export function buildNodeSourceData(node: SourceNodeDTO): SourceData {
 }
 
 export function buildCsvSourceData(
-  name: string,
+  _name: string,
   columns: string[],
   rows: Array<Record<string, any>>
 ): SourceData {
