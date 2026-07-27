@@ -595,6 +595,124 @@ button.ai-assistant__tool-summary {
   }
 }
 
+// --- Concept review card (Figma 1478:110682) ---
+// The concepts the assistant proposes for a concept set, sitting inside the assistant
+// bubble as a white card so it reads as an object to act on rather than more prose.
+.ai-assistant__concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  // Answered: the card is now a record of what was sent, so it steps back visually
+  // and the rows stop looking clickable.
+  &--resolved .ai-assistant__concept-card {
+    background-color: $ai-surface;
+  }
+}
+
+.ai-assistant__concept-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid $ai-border;
+  border-radius: 8px;
+}
+
+.ai-assistant__concept-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #000;
+  overflow-wrap: break-word;
+}
+
+.ai-assistant__concept-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-assistant__concept {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid $ai-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // Unticked, not deleted: the row stays in place so the user can see what they took
+  // out and put it back, and so the list does not jump under the pointer mid-review.
+  &--excluded .ai-assistant__concept-text {
+    text-decoration: line-through;
+    color: $ai-placeholder;
+  }
+}
+
+.ai-assistant__concept-text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: #000;
+  overflow-wrap: break-word;
+}
+
+.ai-assistant__concept-name {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ai-assistant__concept-code {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ai-assistant__concept-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 1px solid #ffa8a8;
+  border-radius: 4px;
+  color: #d53939;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: #fff5f5;
+  }
+
+  &--restore {
+    border-color: $ai-border;
+    color: $ai-neutral;
+
+    &:hover {
+      background-color: $ai-surface;
+      border-color: $ai-navy-light;
+    }
+  }
+}
+
+.ai-assistant__concept-count {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: $ai-neutral;
+  text-align: right;
+}
+
 // --- Composer ---
 .ai-assistant__composer {
   flex-shrink: 0;
@@ -629,8 +747,13 @@ button.ai-assistant__tool-summary {
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     border-color: $ai-navy-light;
+  }
+
+  &:disabled {
+    color: $ai-placeholder;
+    cursor: not-allowed;
   }
 
   &--selected {
@@ -640,6 +763,15 @@ button.ai-assistant__tool-summary {
 
   .ai-assistant__chip-icon {
     color: #d53939;
+
+    // Functional/Success — the affirmative half of the pair.
+    &--confirm {
+      color: #00855f;
+    }
+  }
+
+  &:disabled .ai-assistant__chip-icon {
+    color: inherit;
   }
 }
 

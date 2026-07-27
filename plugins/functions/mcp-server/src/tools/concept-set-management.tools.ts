@@ -233,6 +233,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
             domainId: z.string(),
             vocabularyId: z.string(),
             standardConcept: z.string(),
+            conceptCode: z.string().optional(),
           }),
         ),
         sourceFallback: z.boolean().optional(),
@@ -277,7 +278,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
             .slice(0, 10)
             .map(
               (c) =>
-                `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}/${c.standardConcept || "non-standard"}]`,
+                `- ${c.conceptId} ${c.conceptName} [${c.domainId}/${c.vocabularyId}${c.conceptCode ? ` ${c.conceptCode}` : ""}/${c.standardConcept || "non-standard"}]`,
             )
             .join("\n")
         : `No concepts found for "${query}"${domain ? ` in ${domain}` : ""} (standard or source). ` +

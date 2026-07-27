@@ -7,6 +7,7 @@ import { WelcomeView } from "./WelcomeView";
 import { ConversationView } from "./ConversationView";
 import { ChatComposer } from "./ChatComposer";
 import { useCohortChat } from "./hooks/useCohortChat";
+import { QuickReply } from "./types";
 import { broadcastAiAssistantOpen, PA_LEFT_PANE_OPENED_EVENT } from "./aiAssistantEvents";
 import "./AiAssistantDrawer.scss";
 
@@ -62,8 +63,19 @@ export const toNoticeText = (message: string): string => {
 // (until the page is refreshed).
 export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
-  const { messages, sendMessage, reset, isStreaming, liveEditing, datasetMismatch, datasetMissing, error } =
-    useCohortChat();
+  const {
+    messages,
+    sendMessage,
+    reset,
+    isStreaming,
+    liveEditing,
+    datasetMismatch,
+    datasetMissing,
+    pendingConceptSelection,
+    toggleConcept,
+    submitConceptSelection,
+    error,
+  } = useCohortChat();
   const [expanded, setExpanded] = useState(false);
   const headerOffset = useHeaderOffset();
 
@@ -113,6 +125,8 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
   let notice: string | undefined;
   if (error) {
     notice = toNoticeText(error.message);
+  } else if (pendingConceptSelection) {
+    notice = getText(i18nKeys.AI_ASSISTANT__CONCEPTS_AWAITING_REVIEW);
   } else if (datasetMissing) {
     notice = getText(i18nKeys.AI_ASSISTANT__NO_DATASET);
   } else if (datasetMismatch) {
@@ -120,6 +134,24 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
   } else if (!liveEditing) {
     notice = getText(i18nKeys.AI_ASSISTANT__NO_LIVE_EDITING);
   }
+
+  // While a concept list is awaiting review the agent's turn is parked on that tool
+  // call, and a free-text message sent into that gap would reach the model as a
+  // transcript with an unanswered call in it. So the chips ARE the reply: answering
+  // is the only way on, and it takes one click either way.
+  const quickReplies: QuickReply[] | undefined = pendingConceptSelection
+    ? [
+        {
+          id: "approve-concepts",
+          label: getText(i18nKeys.AI_ASSISTANT__CONCEPTS_APPROVE),
+          confirm: true,
+          // Untick everything and "approve" would mean the opposite of what it says;
+          // "None of these fit" is the button for that.
+          disabled: pendingConceptSelection.selectedIds.length === 0,
+        },
+        { id: "reject-concepts", label: getText(i18nKeys.AI_ASSISTANT__CONCEPTS_REJECT), dismiss: true },
+      ]
+    : undefined;
 
   return (
     <Drawer
@@ -146,7 +178,11 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
       />
 
       <div className="ai-assistant__content">
-        {hasConversation ? <ConversationView messages={messages} /> : <WelcomeView onSelectSuggestion={sendMessage} />}
+        {hasConversation ? (
+          <ConversationView messages={messages} onToggleConcept={toggleConcept} />
+        ) : (
+          <WelcomeView onSelectSuggestion={sendMessage} />
+        )}
       </div>
 
       {notice && (
@@ -155,7 +191,12 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
         </p>
       )}
 
-      <ChatComposer onSend={sendMessage} disabled={isStreaming || datasetMissing} />
+      <ChatComposer
+        quickReplies={quickReplies}
+        onQuickReply={(reply) => submitConceptSelection(reply.id === "approve-concepts")}
+        onSend={sendMessage}
+        disabled={isStreaming || datasetMissing || Boolean(pendingConceptSelection)}
+      />
     </Drawer>
   );
 };

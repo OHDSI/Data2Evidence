@@ -3,6 +3,7 @@ import classNames from "classnames";
 import { IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "../../contexts";
 import { QuickReply } from "./types";
@@ -61,8 +62,13 @@ export const ChatComposer: FC<ChatComposerProps> = ({ quickReplies, onSend, onQu
               className={classNames("ai-assistant__chip", {
                 "ai-assistant__chip--selected": reply.selected,
               })}
+              disabled={reply.disabled}
               onClick={() => onQuickReply?.(reply)}
+              data-testid={`ai-quick-reply-${reply.id}`}
             >
+              {reply.confirm && (
+                <CheckIcon className="ai-assistant__chip-icon ai-assistant__chip-icon--confirm" sx={{ fontSize: 12 }} />
+              )}
               {reply.dismiss && <CloseIcon className="ai-assistant__chip-icon" sx={{ fontSize: 12 }} />}
               {reply.label}
             </button>

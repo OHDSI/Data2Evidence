@@ -82,6 +82,57 @@ function toClientTools(descriptors: ClientToolDescriptor[]): Record<string, any>
   return tools;
 }
 
+/**
+ * Concept review, run by the user rather than by code.
+ *
+ * Declared here (not forwarded from the page like the `pa_*` tools) because the
+ * drawer always provides it: the assistant panel IS the surface it renders on. Like
+ * the browser tools it has no `execute`, so the SDK streams the call to the client
+ * and ends the turn — and the drawer deliberately leaves it unanswered until the
+ * user has ticked the concepts they want. That pause is the point: a near-miss
+ * concept in a set produces a wrong cohort that still looks like a valid result.
+ */
+export const CONFIRM_CONCEPTS_TOOL = "ui_confirm_concepts";
+
+const confirmConceptsTool = tool({
+  description:
+    "Show the user the exact list of OMOP concepts you intend to put in a concept set and wait for " +
+    "their approval. Renders an interactive list in the assistant panel where they can remove " +
+    "concepts. Returns { approved, conceptIds } — the concepts they kept. Call this BEFORE " +
+    "create_concept_set and build the set from the returned conceptIds ONLY. Do not call it for a " +
+    "concept set that already exists.",
+  inputSchema: jsonSchema({
+    type: "object",
+    properties: {
+      conceptSetName: {
+        type: "string",
+        description: "Name of the concept set you will create, e.g. 'Type 2 diabetes mellitus'.",
+      },
+      intro: {
+        type: "string",
+        description: "One short sentence introducing the list. Omit to use the panel's default wording.",
+      },
+      concepts: {
+        type: "array",
+        description: "The concepts you propose to include — the shortlist, not every search hit.",
+        items: {
+          type: "object",
+          properties: {
+            conceptId: { type: "number", description: "OMOP concept id." },
+            conceptName: { type: "string" },
+            vocabularyId: { type: "string", description: "e.g. SNOMED, ICD10CM." },
+            conceptCode: { type: "string", description: "Source code within that vocabulary, when known." },
+            domainId: { type: "string" },
+          },
+          required: ["conceptId", "conceptName"],
+        },
+      },
+    },
+    required: ["conceptSetName", "concepts"],
+  }),
+  // No execute: the SDK forwards the call to the browser, where the user answers it.
+});
+
 export class AgentUnavailableError extends Error {}
 
 /**
@@ -120,7 +171,9 @@ export async function streamCohortAgent(
       Object.entries(allServerTools).filter(([name]) => COHORT_AGENT_SERVER_TOOLS.has(name)),
     );
     const browserTools = toClientTools(clientTools);
-    const tools = { ...serverTools, ...browserTools };
+    // Last, so a page-supplied descriptor can never shadow it — belt and braces over
+    // the `pa_` prefix check in toClientTools.
+    const tools = { ...serverTools, ...browserTools, [CONFIRM_CONCEPTS_TOOL]: confirmConceptsTool };
     const paToolNames = Object.keys(browserTools);
 
     console.log(

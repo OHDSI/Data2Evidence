@@ -2,11 +2,14 @@ import React, { FC } from "react";
 import classNames from "classnames";
 import ReactMarkdown from "react-markdown";
 import { ToolCallRow } from "./ToolCallRow";
+import { ConceptSelectionCard } from "./ConceptSelectionCard";
 import { ChatMessage, MessageOption } from "./types";
 
 interface MessageBubbleProps {
   message: ChatMessage;
   onSelectOption?: (option: MessageOption) => void;
+  // Ticks or unticks one concept in this message's concept-review card.
+  onToggleConcept?: (toolCallId: string, conceptId: number) => void;
 }
 
 const OptionCard: FC<{ option: MessageOption; onSelect?: (option: MessageOption) => void }> = ({
@@ -29,12 +32,13 @@ const OptionCard: FC<{ option: MessageOption; onSelect?: (option: MessageOption)
 
 // A single chat bubble. User messages are plain text; assistant messages support
 // rich structured content (Figma node 1475:130902).
-export const MessageBubble: FC<MessageBubbleProps> = ({ message, onSelectOption }) => {
+export const MessageBubble: FC<MessageBubbleProps> = ({ message, onSelectOption, onToggleConcept }) => {
   const isUser = message.role === "user";
   const tools = message.tools ?? [];
+  const conceptSelection = message.conceptSelection;
   // A turn that is still calling tools has no prose yet, and an empty bubble is just
   // a stray rounded box under the tool rows.
-  const hasBubble = Boolean(message.text || message.rich);
+  const hasBubble = Boolean(message.text || message.rich || conceptSelection);
 
   return (
     <div
@@ -103,6 +107,15 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ message, onSelectOption 
 
               {message.rich.footer && <p className="ai-assistant__bubble-text">{message.rich.footer}</p>}
             </div>
+          )}
+
+          {conceptSelection && (
+            <ConceptSelectionCard
+              selection={conceptSelection}
+              onToggleConcept={
+                onToggleConcept ? (conceptId) => onToggleConcept(conceptSelection.toolCallId, conceptId) : undefined
+              }
+            />
           )}
         </div>
       )}

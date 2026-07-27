@@ -4,7 +4,7 @@ import { AiAssistantDrawer } from "../AiAssistantDrawer";
 import { AI_ASSISTANT_TOGGLE_EVENT, PA_LEFT_PANE_OPENED_EVENT } from "../aiAssistantEvents";
 import { AppProvider } from "../../../contexts";
 import type { CohortChatState } from "../hooks/useCohortChat";
-import type { ChatMessage, ToolActivity } from "../types";
+import type { ChatMessage, ConceptSelection, ToolActivity } from "../types";
 
 // The drawer is a shell around useCohortChat; the hook owns the agent round trip.
 // Stubbing it keeps these tests about what the drawer renders and which callbacks
@@ -17,6 +17,9 @@ const mockChatState: CohortChatState = {
   liveEditing: true,
   datasetMismatch: false,
   datasetMissing: false,
+  pendingConceptSelection: undefined,
+  toggleConcept: jest.fn(),
+  submitConceptSelection: jest.fn(),
   error: undefined,
 };
 
@@ -45,6 +48,9 @@ describe("AiAssistantDrawer", () => {
       liveEditing: true,
       datasetMismatch: false,
       datasetMissing: false,
+      pendingConceptSelection: undefined,
+      toggleConcept: jest.fn(),
+      submitConceptSelection: jest.fn(),
       error: undefined,
     });
   });
@@ -176,6 +182,128 @@ describe("AiAssistantDrawer", () => {
       const { getByTestId } = renderDrawer();
 
       expect(getByTestId("ai-assistant-conversation").querySelector(".ai-assistant__bubble")).toBeNull();
+    });
+  });
+
+  // The concept list is the cohort's clinical meaning, so it is the user's to correct
+  // before a set is written. The card and the approve chip are two halves of one gate:
+  // the card is in the conversation, the chip is down in the composer.
+  describe("concept selection", () => {
+    const selection = (overrides: Partial<ConceptSelection> = {}): ConceptSelection => ({
+      toolCallId: "call-1",
+      name: "Type 2 diabetes mellitus",
+      intro: "Here is the list of concepts I will include.",
+      concepts: [
+        { conceptId: 201826, conceptName: "Type 2 diabetes mellitus", vocabularyId: "SNOMED", conceptCode: "44054006" },
+        { conceptId: 443729, conceptName: "Diabetes mellitus type 2", vocabularyId: "ICD10CM", conceptCode: "E11" },
+      ],
+      selectedIds: [201826, 443729],
+      resolved: false,
+      ...overrides,
+    });
+
+    const pending = (overrides: Partial<ConceptSelection> = {}) => {
+      const conceptSelection = selection(overrides);
+      setChat({
+        messages: [{ id: "m1", role: "assistant", text: "", conceptSelection }],
+        pendingConceptSelection: conceptSelection,
+      });
+      return conceptSelection;
+    };
+
+    it("lists the proposed concepts with their vocabulary code", () => {
+      pending();
+      const { getByTestId } = renderDrawer();
+
+      const card = getByTestId("ai-concept-selection");
+      expect(card).toHaveTextContent("Type 2 diabetes mellitus");
+      expect(within(card).getByTestId("ai-concept-201826")).toHaveTextContent("SNOMED 44054006");
+      expect(within(card).getByTestId("ai-concept-443729")).toHaveTextContent("ICD10CM E11");
+      expect(getByTestId("ai-concept-count")).toHaveTextContent("2 of 2 concepts selected");
+    });
+
+    // search_concepts does not always carry a source code, and the OMOP id is what the
+    // set is actually built from — so it is the fallback rather than a blank line.
+    it("falls back to the OMOP concept id when there is no source code", () => {
+      pending({
+        concepts: [{ conceptId: 201826, conceptName: "Type 2 diabetes mellitus", vocabularyId: "SNOMED" }],
+        selectedIds: [201826],
+      });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-concept-201826")).toHaveTextContent("SNOMED 201826");
+    });
+
+    it("unticks a concept through the remove button", () => {
+      pending();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-concept-toggle-443729"));
+
+      expect(mockChatState.toggleConcept).toHaveBeenCalledWith("call-1", 443729);
+    });
+
+    // A removed row stays put so a stray click costs one more click, not a round trip
+    // through the model.
+    it("shows an unticked concept as struck through with a restore control", () => {
+      pending({ selectedIds: [201826] });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-concept-443729")).toHaveClass("ai-assistant__concept--excluded");
+      expect(getByTestId("ai-concept-toggle-443729")).toHaveClass("ai-assistant__concept-toggle--restore");
+      expect(getByTestId("ai-concept-count")).toHaveTextContent("1 of 2 concepts selected");
+    });
+
+    it("approves the set from the composer chip", () => {
+      pending();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-quick-reply-approve-concepts"));
+
+      expect(mockChatState.submitConceptSelection).toHaveBeenCalledWith(true);
+    });
+
+    it("rejects the set from the composer chip", () => {
+      pending();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-quick-reply-reject-concepts"));
+
+      expect(mockChatState.submitConceptSelection).toHaveBeenCalledWith(false);
+    });
+
+    // "Approve concept set" with nothing ticked would do the opposite of what it says.
+    it("cannot approve an empty selection", () => {
+      pending({ selectedIds: [] });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-quick-reply-approve-concepts")).toBeDisabled();
+      expect(getByTestId("ai-quick-reply-reject-concepts")).toBeEnabled();
+    });
+
+    // The agent's turn is parked on the confirmation tool call, so a free-text message
+    // sent into that gap would reach the model as a transcript with an unanswered call.
+    it("parks the composer until the request is answered", () => {
+      pending();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-assistant-input")).toBeDisabled();
+      expect(getByTestId("ai-assistant-notice")).toHaveTextContent("Review the concepts above");
+    });
+
+    // Once answered the card is a record of what was sent, not a live prompt.
+    it("locks the card and drops the chips once answered", () => {
+      const conceptSelection = selection({ selectedIds: [201826], resolved: true });
+      setChat({
+        messages: [{ id: "m1", role: "assistant", text: "Created the concept set.", conceptSelection }],
+        pendingConceptSelection: undefined,
+      });
+      const { getByTestId, queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-concept-toggle-201826")).not.toBeInTheDocument();
+      expect(queryByTestId("ai-quick-reply-approve-concepts")).not.toBeInTheDocument();
+      expect(getByTestId("ai-assistant-input")).toBeEnabled();
+      expect(getByTestId("ai-concept-count")).toHaveTextContent("Confirmed with 1 of 2 concepts");
     });
   });
 

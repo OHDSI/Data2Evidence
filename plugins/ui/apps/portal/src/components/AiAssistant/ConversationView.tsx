@@ -5,6 +5,7 @@ import { MessageBubble } from "./MessageBubble";
 interface ConversationViewProps {
   messages: ChatMessage[];
   onSelectOption?: (option: MessageOption) => void;
+  onToggleConcept?: (toolCallId: string, conceptId: number) => void;
 }
 
 // How close to the bottom still counts as "following along". A couple of lines of
@@ -13,7 +14,7 @@ const FOLLOW_THRESHOLD_PX = 48;
 
 // List of chat bubbles that keeps the latest message in view. The surrounding
 // .ai-assistant__content is the scroll container.
-export const ConversationView: FC<ConversationViewProps> = ({ messages, onSelectOption }) => {
+export const ConversationView: FC<ConversationViewProps> = ({ messages, onSelectOption, onToggleConcept }) => {
   const rootRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   // The reply streams in a chunk at a time, so this effect runs on every token. Pinning to
@@ -41,7 +42,12 @@ export const ConversationView: FC<ConversationViewProps> = ({ messages, onSelect
   return (
     <div className="ai-assistant__conversation" ref={rootRef} data-testid="ai-assistant-conversation">
       {messages.map((message) => (
-        <MessageBubble key={message.id} message={message} onSelectOption={onSelectOption} />
+        <MessageBubble
+          key={message.id}
+          message={message}
+          onSelectOption={onSelectOption}
+          onToggleConcept={onToggleConcept}
+        />
       ))}
       <div ref={endRef} />
     </div>

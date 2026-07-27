@@ -1,14 +1,16 @@
 import React from "react";
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { AppProvider } from "../../../../contexts";
 import { getAuthToken } from "../../../../containers/auth/auth";
-import { useCohortChat } from "../useCohortChat";
+import { CohortChatState, useCohortChat } from "../useCohortChat";
 
 // Capture what the hook hands useChat so the client-side tool round trip can be
 // driven directly: the agent asking for a pa_* tool is the crux of this feature,
 // and it is not reachable through the DOM.
 const mockAddToolOutput = jest.fn();
 let capturedInit: any;
+// The transcript useChat reports back, so tests can stand up an in-flight tool call.
+let mockMessages: any[] = [];
 
 jest.mock("../../../../containers/auth/auth", () => ({
   getAuthToken: jest.fn(),
@@ -18,7 +20,7 @@ jest.mock("@ai-sdk/react", () => ({
   useChat: (init: any) => {
     capturedInit = init;
     return {
-      messages: [],
+      messages: mockMessages,
       status: "ready",
       error: undefined,
       sendMessage: jest.fn(),
@@ -29,8 +31,11 @@ jest.mock("@ai-sdk/react", () => ({
   },
 }));
 
+// The latest hook value, so assertions can read derived state and call its actions.
+let state: CohortChatState;
+
 const Probe = () => {
-  useCohortChat();
+  state = useCohortChat();
   return null;
 };
 
@@ -53,6 +58,7 @@ const publishPaTools = (call: jest.Mock) => {
 describe("useCohortChat", () => {
   beforeEach(() => {
     capturedInit = undefined;
+    mockMessages = [];
     mockAddToolOutput.mockClear();
     // react-scripts runs jest with resetMocks, which strips mock implementations
     // between tests — so this has to be (re)applied here, not at mock definition.
@@ -170,5 +176,123 @@ describe("useCohortChat", () => {
     expect(mockAddToolOutput).toHaveBeenCalledWith(
       expect.objectContaining({ toolCallId: "call-3", state: "output-error" })
     );
+  });
+
+  // ui_confirm_concepts is answered by the user, so the hook's job is to NOT answer
+  // it, hold the edits, and send back exactly what was ticked.
+  describe("concept confirmation", () => {
+    const CONCEPTS = [
+      { conceptId: 201826, conceptName: "Type 2 diabetes mellitus", vocabularyId: "SNOMED", conceptCode: "44054006" },
+      { conceptId: 443729, conceptName: "Diabetes mellitus type 2", vocabularyId: "ICD10CM", conceptCode: "E11" },
+    ];
+
+    const confirmPart = (overrides: any = {}) => ({
+      type: "tool-ui_confirm_concepts",
+      toolCallId: "call-9",
+      state: "input-available",
+      input: { conceptSetName: "Type 2 diabetes mellitus", concepts: CONCEPTS },
+      ...overrides,
+    });
+
+    const withConfirmCall = (overrides: any = {}) => {
+      mockMessages = [{ id: "m1", role: "assistant", parts: [confirmPart(overrides)] }];
+      renderHook();
+    };
+
+    it("leaves the call unanswered so the turn waits for the user", async () => {
+      renderHook();
+
+      await capturedInit.onToolCall({
+        toolCall: { toolCallId: "call-9", toolName: "ui_confirm_concepts", input: { concepts: CONCEPTS } },
+      });
+
+      expect(mockAddToolOutput).not.toHaveBeenCalled();
+    });
+
+    it("surfaces the call as a pending selection with everything ticked", () => {
+      withConfirmCall();
+
+      expect(state.pendingConceptSelection).toMatchObject({
+        toolCallId: "call-9",
+        name: "Type 2 diabetes mellitus",
+        selectedIds: [201826, 443729],
+        resolved: false,
+      });
+    });
+
+    // The card is the message; a "Ran ui_confirm_concepts" line above it is noise.
+    it("keeps the confirmation out of the tool rows", () => {
+      withConfirmCall();
+
+      expect(state.messages[0].tools).toHaveLength(0);
+      expect(state.messages[0].conceptSelection).toBeDefined();
+    });
+
+    // Model-authored input: a row with no id cannot be turned into a concept set
+    // entry, and a duplicate would collide with its twin on the toggle.
+    it("drops concepts it cannot identify and de-duplicates the rest", () => {
+      withConfirmCall({
+        input: {
+          conceptSetName: "T2DM",
+          concepts: [...CONCEPTS, { conceptName: "No id here" }, { conceptId: 201826, conceptName: "Duplicate" }],
+        },
+      });
+
+      expect(state.pendingConceptSelection?.concepts.map((c) => c.conceptId)).toEqual([201826, 443729]);
+    });
+
+    it("sends back only the concepts left ticked", () => {
+      withConfirmCall();
+
+      act(() => state.toggleConcept("call-9", 443729));
+      act(() => state.submitConceptSelection(true));
+
+      expect(mockAddToolOutput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: "ui_confirm_concepts",
+          toolCallId: "call-9",
+          output: expect.objectContaining({
+            approved: true,
+            conceptIds: [201826],
+            removedConceptIds: [443729],
+          }),
+        })
+      );
+    });
+
+    it("puts an unticked concept back", () => {
+      withConfirmCall();
+
+      act(() => state.toggleConcept("call-9", 443729));
+      act(() => state.toggleConcept("call-9", 443729));
+
+      expect(state.pendingConceptSelection?.selectedIds).toEqual([201826, 443729]);
+    });
+
+    // Approving nothing is a rejection with extra steps — the model gets one signal.
+    it("reports an all-unticked approval as a rejection", () => {
+      withConfirmCall();
+
+      act(() => state.toggleConcept("call-9", 201826));
+      act(() => state.toggleConcept("call-9", 443729));
+      act(() => state.submitConceptSelection(true));
+
+      expect(mockAddToolOutput.mock.calls[0][0].output).toMatchObject({ approved: false, conceptIds: [] });
+    });
+
+    it("reports a rejection without any concepts", () => {
+      withConfirmCall();
+
+      act(() => state.submitConceptSelection(false));
+
+      expect(mockAddToolOutput.mock.calls[0][0].output).toMatchObject({ approved: false, conceptIds: [] });
+    });
+
+    it("stops treating the call as pending once it has output", () => {
+      withConfirmCall({ state: "output-available", output: { approved: true, conceptIds: [201826] } });
+
+      expect(state.pendingConceptSelection).toBeUndefined();
+      expect(state.messages[0].conceptSelection?.resolved).toBe(true);
+    });
   });
 });
