@@ -228,6 +228,61 @@ describe("useCohortChat", () => {
       expect(state.messages[0].conceptSelection).toBeDefined();
     });
 
+    // Answering the card resumes the SAME UIMessage, so the reply arrives as another
+    // text part on the message that asked the question. Concatenating them printed
+    // "your cohort has been created" above the concept list it was created from.
+    it("puts the reply to an answered card in a new bubble below it", () => {
+      mockMessages = [
+        {
+          id: "m1",
+          role: "assistant",
+          parts: [
+            { type: "text", text: "Pick the concepts to include." },
+            confirmPart({ state: "output-available", output: { approved: true, conceptIds: [201826] } }),
+            { type: "text", text: "Your cohort has been created. It contains 21 patients." },
+          ],
+        },
+      ];
+      renderHook();
+
+      expect(state.messages).toHaveLength(2);
+      expect(state.messages[0].text).toBe("Pick the concepts to include.");
+      expect(state.messages[0].conceptSelection).toBeDefined();
+      expect(state.messages[1].text).toBe("Your cohort has been created. It contains 21 patients.");
+      expect(state.messages[1].conceptSelection).toBeUndefined();
+      expect(state.messages[0].id).not.toBe(state.messages[1].id);
+    });
+
+    // Same reason: a tool called after the review belongs to the bubble it produced.
+    it("attributes tools to the bubble they were called for", () => {
+      mockMessages = [
+        {
+          id: "m1",
+          role: "assistant",
+          parts: [
+            { type: "tool-search_concepts", toolCallId: "c1", state: "output-available", output: {} },
+            confirmPart({ state: "output-available", output: { approved: true, conceptIds: [201826] } }),
+            { type: "tool-create_concept_set", toolCallId: "c2", state: "output-available", output: {} },
+            { type: "text", text: "Done." },
+          ],
+        },
+      ];
+      renderHook();
+
+      expect(state.messages.map((m) => m.tools?.map((t) => t.name))).toEqual([
+        ["search_concepts"],
+        ["create_concept_set"],
+      ]);
+    });
+
+    // A turn opens as an empty message and fills in as it streams.
+    it("renders nothing for a message with no content yet", () => {
+      mockMessages = [{ id: "m1", role: "assistant", parts: [] }];
+      renderHook();
+
+      expect(state.messages).toHaveLength(0);
+    });
+
     // Model-authored input: a row with no id cannot be turned into a concept set
     // entry, and a duplicate would collide with its twin on the toggle.
     it("drops concepts it cannot identify and de-duplicates the rest", () => {

@@ -106,28 +106,53 @@ function toConceptSelection(part: any, edits: Record<string, number[]>, fallback
   };
 }
 
-// The drawer renders its own bubble model; flatten UIMessage parts into it.
-// Text parts are concatenated (the model may emit several around tool calls) and
-// tool parts become badges.
-function toChatMessage(message: UIMessage, edits: Record<string, number[]>, fallbackName: string): ChatMessage {
-  const text = message.parts
-    .filter(isTextUIPart)
-    .map((part) => part.text)
-    .join("");
-  const toolParts = message.parts.filter(isToolUIPart);
-  // The confirmation call is rendered as the interactive card, so keep it out of the
-  // tool rows too — a "Ran ui_confirm_concepts" line above its own card is noise.
-  const confirmPart = toolParts.find((part) => getToolOrDynamicToolName(part) === CONFIRM_CONCEPTS_TOOL);
-  const tools = toolParts
-    .filter((part) => getToolOrDynamicToolName(part) !== CONFIRM_CONCEPTS_TOOL)
-    .map(toToolActivity);
-  return {
-    id: message.id,
-    role: message.role === "user" ? "user" : "assistant",
-    text,
-    tools,
-    conceptSelection: confirmPart ? toConceptSelection(confirmPart, edits, fallbackName) : undefined,
+/**
+ * The drawer renders its own bubble model; flatten one UIMessage's parts into it.
+ *
+ * Usually that is one bubble, but a concept review SPLITS the turn. Answering the
+ * card resumes the same UIMessage, so the reply the user gets back — "your cohort
+ * has been created" — is another text part on the message that asked the question.
+ * Concatenating every text part would print that answer above the question that
+ * produced it. So the card closes a bubble: text before it belongs with it, and
+ * anything after it starts a new bubble underneath, which is also how the exchange
+ * actually went.
+ *
+ * Tool rows follow the same order, so a tool called after the review is attributed
+ * to the bubble it produced rather than to the one before it.
+ */
+function toChatMessages(message: UIMessage, edits: Record<string, number[]>, fallbackName: string): ChatMessage[] {
+  const role = message.role === "user" ? "user" : "assistant";
+  const bubbles: ChatMessage[] = [];
+  let text = "";
+  let tools: ToolActivity[] = [];
+
+  const flush = (conceptSelection?: ConceptSelection) => {
+    // An assistant turn opens with an empty message and fills in as it streams;
+    // until something lands there is nothing to show.
+    if (!text && tools.length === 0 && !conceptSelection) return;
+    // Index-suffixed so the key is stable as the turn streams: earlier bubbles keep
+    // their position, and only the one being written to changes.
+    bubbles.push({ id: `${message.id}:${bubbles.length}`, role, text, tools, conceptSelection });
+    text = "";
+    tools = [];
   };
+
+  for (const part of message.parts) {
+    if (isTextUIPart(part)) {
+      text += part.text;
+    } else if (isToolUIPart(part)) {
+      // The confirmation call is rendered as the interactive card, so keep it out of
+      // the tool rows too — a "Ran ui_confirm_concepts" line above its own card is noise.
+      if (getToolOrDynamicToolName(part) === CONFIRM_CONCEPTS_TOOL) {
+        flush(toConceptSelection(part, edits, fallbackName));
+      } else {
+        tools.push(toToolActivity(part));
+      }
+    }
+  }
+  flush();
+
+  return bubbles;
 }
 
 /**
@@ -254,7 +279,7 @@ export function useCohortChat(): CohortChatState {
   const fallbackName = getText(i18nKeys.AI_ASSISTANT__CONCEPTS_SET_FALLBACK_NAME);
 
   const messages = useMemo(
-    () => chat.messages.map((message) => toChatMessage(message, conceptEdits, fallbackName)),
+    () => chat.messages.flatMap((message) => toChatMessages(message, conceptEdits, fallbackName)),
     [chat.messages, conceptEdits, fallbackName]
   );
 
