@@ -50,6 +50,32 @@ def test_flow_persists_artifact_then_hard_fails_on_child_error():
     assert "unsupported rule" in json.dumps(payload["errors"])
 
 
+def test_icd_main_task_hard_fails_with_error_in_artifact():
+    """ICD-MAIN is rejected by Bunny itself (NotImplementedError in execute_query
+    before any solver runs), so it surfaces as a child error. There is no config
+    that enables it — this pins that it hard-fails rather than silently
+    returning an empty/partial result."""
+    from cohort_discovery_plugin import flow as flowmod
+    child_json = json.dumps({"results": [], "error": (
+        "NotImplementedError: ICD-MAIN queries are not yet supported. "
+        "See: https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30")})
+    with prefect_test_harness():
+        with patch.object(flowmod, "_resolve_credentials", return_value=(_fake_creds(), "cdm", "omop")), \
+             patch.object(flowmod, "_run_child", return_value=child_json), \
+             patch.object(flowmod, "create_markdown_artifact") as art, \
+             pytest.raises(RuntimeError):
+            flowmod.cohort_discovery_plugin(
+                CohortDiscoveryOptions(datasetId="ds1", databaseCode="pg1", schemaName="cdm"))
+
+    art.assert_called_once()
+    payload = json.loads(
+        art.call_args.kwargs["markdown"].split("```json\n", 1)[1].rsplit("\n```", 1)[0])
+    assert "ICD-MAIN" in json.dumps(payload["errors"])
+    # No result is fabricated for the rejected task.
+    assert payload["availability"]["count"] is None
+    assert payload["distributions"] == {}
+
+
 def _dao(dialect, database_name, cache_id):
     dao = MagicMock()
     dao.cache_id = cache_id
