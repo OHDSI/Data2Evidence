@@ -66,15 +66,47 @@ Therefore `bunny_runner.py` **MUST set all required env before importing any
 Bunny module**. Do not place a Bunny import at module top before env is
 populated.
 
-## Still to pin during implementation
+## Cachedb access decision: Trex over the PostgreSQL wire protocol
 
-Record these placeholders now and confirm from source during Tasks 5–7:
+**Decision:** `TrexDao` resolves the connection details (host / port / user /
+password / `cache_id`) and Bunny then connects with **its own PostgreSQL
+client** against Trex's pgwire endpoint. No DuckDB file path, no adapter.
 
-- The `DBDao` `CacheDBCredentialsType` attribute holding the **DuckDB file path**
-  — TODO: confirm exact attribute name from source.
-- The exact `RquestResult.to_dict()` keys for **`count`** and **distribution rows**
-  — TODO: confirm exact key names from source. (`RquestResult.to_dict` confirmed
-  to exist on `hutch_bunny.core.rquest_models.result.RquestResult`.)
+Why an adapter is not possible:
+
+- `BaseDBClient` (`hutch_bunny/core/db/base.py`) is built around a SQLAlchemy
+  `engine` + `inspector` and takes `Executable` statements. The psycopg2-based
+  `TrexDao` exposes none of these, so it **cannot be injected** as a db client.
+- Trex speaks the PostgreSQL wire protocol — `TrexDao._get_connection()` itself
+  just does `psycopg2.connect(host, port, user, password, dbname=cache_id)`.
+
+So the mapping is `DATASOURCE_DB_DRIVERNAME=postgresql` with
+`DATASOURCE_DB_DATABASE=<cache_id>` (the pgwire dbname).
+
+Also note: `SyncDBClient.__init__` runs `_check_tables_exist()` **and**
+`_check_indexes_exist()` at construction time, so a misconfigured schema or a
+cachedb missing OMOP tables fails at client construction, not at first query.
+
+## ICD-MAIN is not executable at this pin
+
+`hutch_bunny.core.execute_query.execute_query` (v1.7.0, `execute_query.py:63`)
+raises `NotImplementedError` **unconditionally** when the distribution code is
+`DistributionQueryType.ICD_MAIN`, before any solver runs. The enum value is the
+string **`"ICD-MAIN"`** (hyphen), not `ICD_MAIN`.
+
+There is therefore no toggle that could enable it, and no feature flag was
+implemented: an ICD-MAIN task hard-fails the run. Upstream tracking issue:
+<https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30>.
+
+## `RquestResult.to_dict()` shape (confirmed from source)
+
+Top-level keys are `uuid` / `status` / `collection_id` / `message` /
+`protocolVersion` / `queryResult`. There is **no top-level `count`** and **no
+`distributions` key at all**:
+
+- `count` <- `to_dict()["queryResult"]["count"]`
+- `files` <- `to_dict()["queryResult"]["files"]` (distribution payloads, base64
+  TSV per Bunny's `File` model)
 
 ## Actual observed signatures (verified against installed pin `a4121dc`)
 

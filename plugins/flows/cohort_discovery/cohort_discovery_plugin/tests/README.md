@@ -33,13 +33,26 @@ integration"`) runs without an "unknown marker" warning.
 
 `test_integration.py::test_child_runs_against_duckdb` boots the Bunny child
 (`pixi run --frozen -e bunny python -m cohort_discovery_plugin.bunny_runner`)
-against a real DuckDB OMOP database and a stub Relay Task API. It **skips**
-unless BOTH of these env vars are set:
+against a real DuckDB OMOP database and a stub Relay Task API.
+
+> **This is NOT the production path.** The DuckDB file is only a cheap,
+> self-contained **Bunny-level fixture** for local testing: it drives Bunny's
+> own DuckDB client directly. In production the flow never uses a DuckDB file —
+> cachedb is reached over **Trex's PostgreSQL wire protocol**, with `TrexDao`
+> resolving the connection details and Bunny connecting via its PostgreSQL
+> client (`DATASOURCE_DB_DRIVERNAME=postgresql`, `DATASOURCE_DB_DATABASE` =
+> the `cache_id`). See the group README's "Datasource / cachedb access".
+
+It **skips** unless BOTH of these env vars are set:
 
 | Env var           | Meaning                                                        |
 | ----------------- | ------------------------------------------------------------- |
-| `TEST_OMOP_DUCKDB`| Path to a DuckDB file containing an OMOP CDM (cachedb) schema. |
+| `TEST_OMOP_DUCKDB`| Path to a DuckDB file containing an OMOP CDM schema (local fixture only). |
 | `TEST_RELAY_URL`  | Base URL of a stub relay Task API (used as `TASK_API_BASE_URL`).|
+
+The test also sets `DATASOURCE_DB_SCHEMA` (Bunny requires it for **every**
+driver — it has no default; override with `TEST_OMOP_SCHEMA`, default `main`)
+and `TASK_API_ENFORCE_HTTPS=false` (stub relays are plain HTTP).
 
 Example:
 
@@ -72,8 +85,9 @@ hardcode a real deployment URL.
 
 ## Building a DuckDB OMOP fixture
 
-`TEST_OMOP_DUCKDB` must be a DuckDB database with an OMOP CDM (the same shape a
-cachedb exposes). Options:
+`TEST_OMOP_DUCKDB` must be a DuckDB database with an OMOP CDM. This is a
+**local test fixture only** — it stands in for a real OMOP datasource so the
+child can be exercised without a live Trex/Postgres. Options:
 
 - Export/copy an existing OMOP dataset into a DuckDB file (e.g. via the d2e
   cachedb tooling, or `duckdb` `IMPORT`/`COPY` from OMOP CSVs).

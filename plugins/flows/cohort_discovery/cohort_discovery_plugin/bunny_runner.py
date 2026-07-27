@@ -25,14 +25,20 @@ def run() -> None:
         result = execute_query(task_data, modifiers, db_client, settings)  # RquestResult
         client.send_results(result)                                        # submit to Relay
         d = result.to_dict()
+        # Bunny's RquestResult.to_dict() nests the payload under "queryResult";
+        # there is no top-level "count" and no "distributions" key.
+        query_result = d.get("queryResult") or {}
         collected.append({
             "analysis": task_data.get("analysis"),
-            "count": d.get("count"),
-            "distributions": d.get("distributions", {}),
+            "code": task_data.get("code"),
+            "count": query_result.get("count"),
+            "files": query_result.get("files", []),
             "raw": d,
         })
 
     try:
+        # One poll per scheduled run by design: cadence is owned by the Prefect
+        # deployment schedule, not by an in-process loop.
         PollingService(client, handler, settings).poll_for_tasks(max_iterations=1)
         print(json.dumps({"results": collected, "error": None}))
     except Exception as exc:  # hard-fail: emit error JSON + non-zero exit
