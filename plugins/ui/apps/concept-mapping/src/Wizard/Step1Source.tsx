@@ -6,7 +6,7 @@ import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { useTranslation } from "../hooks";
 import { i18nKeys } from "../Context/state";
 import { CsvReader } from "../components/CsvReader/CsvReader";
-import { buildCsvSourceData, buildNodeSourceData, extractColumns } from "../source/source-adapter";
+import { buildCsvSourceData, buildNodeSourceData, extractColumns, sourceDataToCsvData } from "../source/source-adapter";
 import { SourceData, SourceNodeDTO } from "../types/source";
 import { Study, csvData } from "../types";
 
@@ -48,6 +48,20 @@ export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onRese
   const state = useContext(ConceptMappingContext);
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
   const nodeColumns = useMemo(() => (sourceNode ? extractColumns(sourceNode) : null), [sourceNode]);
+
+  // Set the wizard source AND bridge its rows into csvData so Step 3's MappingTable,
+  // auto-populate and Save (which all read conceptMappingState.csvData.data) have real
+  // rows. Callers MUST have already run onResetDownstream() (which clears csvData) so this
+  // population is not immediately wiped. Only CSV sources carry rows client-side; node
+  // sources have columns only (their output rows require backend execution, out of scope),
+  // so for a node source csvData.data stays empty and Step 3 shows no rows - a known,
+  // accepted limitation, not something to fabricate.
+  const applySource = (source: SourceData) => {
+    dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: source });
+    if (source.rows && source.rows.length > 0) {
+      dispatch({ type: ACTION_TYPES.SET_INITAL_DATA, payload: sourceDataToCsvData(source) });
+    }
+  };
   // On first mount, if context already holds SourceData for this exact connected node (a
   // reopen of the drawer, not a fresh connection), rehydrate the manual-columns text from
   // it instead of starting blank - otherwise the effect below would see `columns: []` and
@@ -114,14 +128,14 @@ export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onRese
     }
 
     onResetDownstream();
-    dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: intended });
+    applySource(intended);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceNode, nodeColumns, manualColumns]);
 
   const handleCsvLoaded = (loaded: csvData) => {
     onResetDownstream();
     const columns = loaded.data.meta.fields ?? [];
-    dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: buildCsvSourceData(loaded.name, columns, loaded.data.data) });
+    applySource(buildCsvSourceData(loaded.name, columns, loaded.data.data));
   };
 
   const handleDataset = (e: SelectChangeEvent) => {

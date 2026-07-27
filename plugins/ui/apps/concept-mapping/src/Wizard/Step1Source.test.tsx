@@ -18,6 +18,22 @@ vi.mock("@portal/components", () => ({
   ),
 }));
 
+// Stub CsvReader so a test can drive its `onFileLoaded` callback deterministically without
+// wiring up a real File/FileReader - we only care that a CSV load bridges into csvData.
+vi.mock("../components/CsvReader/CsvReader", () => ({
+  CsvReader: (props: any) => (
+    <button
+      data-testid="mock-csv-load"
+      onClick={() =>
+        props.onFileLoaded({
+          name: "codes.csv",
+          data: { meta: { fields: ["code", "name"] }, data: [{ code: "A1", name: "Aspirin" }] },
+        })
+      }
+    />
+  ),
+}));
+
 import { Step1Source } from "./Step1Source";
 import { ConceptMappingContext, ConceptMappingDispatchContext, initialState } from "../Context/ConceptMappingContext";
 import { ACTION_TYPES } from "../Context/reducers";
@@ -29,6 +45,29 @@ describe("Step1Source", () => {
     renderWithProviders(<Step1Source datasets={datasets} onResetDownstream={vi.fn()} />);
     expect(screen.getByText(/Upload a CSV file/i)).toBeInTheDocument();
     expect(screen.getByText(/Connect a Database Query/i)).toBeInTheDocument();
+  });
+
+  test("loading a CSV bridges rows into csvData with status 'unchecked' so Step 3 is non-empty", () => {
+    const { dispatch } = renderWithProviders(<Step1Source datasets={datasets} onResetDownstream={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("mock-csv-load"));
+
+    const actions = dispatch.mock.calls.map((c: any[]) => c[0]);
+
+    // Source data is stored on the wizard slice (with the file name threaded through)...
+    expect(actions).toContainEqual({
+      type: ACTION_TYPES.SET_SOURCE_DATA,
+      payload: { type: "csv", name: "codes.csv", columns: ["code", "name"], rows: [{ code: "A1", name: "Aspirin" }] },
+    });
+    // ...and the rows are bridged into csvData (what Step 3's MappingTable/Save read),
+    // each tagged status: "unchecked".
+    expect(actions).toContainEqual({
+      type: ACTION_TYPES.SET_INITAL_DATA,
+      payload: {
+        name: "codes.csv",
+        columns: ["code", "name"],
+        data: [{ code: "A1", name: "Aspirin", status: "unchecked" }],
+      },
+    });
   });
 
   test("connected node shows name/type/description card and the CSV-removal hint", () => {

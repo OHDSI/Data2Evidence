@@ -10,6 +10,7 @@ export interface SourceNodeDTO {
 
 export interface SourceData {
   type: SourceKind;
+  name?: string; // CSV file name; carried through to csvData.name (source vocabulary id)
   columns: string[];
   rows?: Array<Record<string, any>>;
   nodeMeta?: { name: string; type: string; description: string };

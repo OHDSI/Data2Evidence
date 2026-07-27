@@ -4,9 +4,9 @@ import { useDatasets, useFeedback } from "../hooks";
 import { Snackbar, Button } from "@portal/components";
 import { api } from "../axios/api";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
-import { FormControl, MenuItem, Select, SelectChangeEvent, Tabs, Tab } from "@mui/material";
+import { Tabs, Tab } from "@mui/material";
 import { useTranslation } from "../hooks/use-translation";
-import { ConceptMappingState, Study } from "../types";
+import { ConceptMappingState } from "../types";
 import { SourceNodeDTO } from "../types/source";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { i18nKeys } from "../Context/state";
@@ -41,14 +41,26 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
 
   // local states
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedDataset, setSelectedDataset] = useState<Study>();
-  const selectedDatasetId = selectedDataset?.id;
   const [tabIndex, setTabIndex] = useState(0);
+
+  // Single source of truth for the reference dataset: the Step 1 selection
+  // (wizard.datasetId). The Overview header no longer carries its own dataset dropdown -
+  // both Step 3's concept lookup and the Save button derive from this.
+  const selectedDataset = datasets?.find((d) => d.id === conceptMappingState.wizard.datasetId);
+  const selectedDatasetId = selectedDataset?.id;
 
   useEffect(() => {
     if (data) {
       dispatch({ type: ACTION_TYPES.SET_COLUMN_MAPPING, payload: data.columnMapping });
       dispatch({ type: ACTION_TYPES.SET_INITAL_DATA, payload: data.csvData });
+      // Rehydrate the wizard slice too, so a reopened config restores its source, dataset
+      // and load-recommendation choice (without this, a CSV-sourced config lands stuck on
+      // Step 1 with no sourceData/datasetId). SET_SOURCE_DATA also re-derives sourceType.
+      if (data.wizard) {
+        dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: data.wizard.sourceData });
+        dispatch({ type: ACTION_TYPES.SET_DATASET_ID, payload: data.wizard.datasetId });
+        dispatch({ type: ACTION_TYPES.SET_LOAD_RECOMMENDATION, payload: data.wizard.loadRecommendationByDefault });
+      }
     } else {
       dispatch({ type: ACTION_TYPES.SET_COLUMN_MAPPING, payload: {} });
       dispatch({ type: ACTION_TYPES.CLEAR_DATA });
@@ -115,17 +127,6 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
     }
   }, [selectedDataset, conceptMappingState.csvData, conceptMappingState.columnMapping, setFeedback]);
 
-  useEffect(() => {
-    if (!datasets || selectedDataset) return;
-    if (datasets?.[0]) {
-      setSelectedDataset(datasets[0]);
-    }
-  }, [datasets, selectedDataset]);
-
-  if (!selectedDatasetId) {
-    return null;
-  }
-
   return (
     <div className="concept-mapping__overview">
       <Snackbar
@@ -135,24 +136,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
         description={feedback?.description}
         visible={feedback?.message != null}
       />
-      <div style={{ display: "flex", alignItems: "center" }}>
-        <div style={{ marginRight: "10px" }}>{getText(i18nKeys.OVERVIEW__REFERENCE_CONCEPTS)}: </div>
-        <FormControl sx={{ marginRight: "20px" }}>
-          <Select
-            value={selectedDatasetId ?? ""}
-            onChange={(e: SelectChangeEvent) => {
-              const dataset = datasets?.find((d) => d.id === e.target.value);
-              if (dataset) setSelectedDataset(dataset);
-            }}
-            sx={{ "& .MuiSelect-outlined": { paddingTop: "8px", paddingBottom: "8px" } }}
-          >
-            {datasets?.map((dataset) => (
-              <MenuItem value={dataset.id} key={dataset.id} sx={{}} disableRipple>
-                {dataset.studyDetail?.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
         <Button
           text={getText(i18nKeys.OVERVIEW__SAVE_TO_DATABASE)}
           onClick={handleSave}
@@ -174,7 +158,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
       </div>
 
       {tabIndex === 0 && (
-        <WizardStepper sourceNode={sourceNode} datasets={datasets ?? []} selectedDatasetId={selectedDatasetId} />
+        <WizardStepper sourceNode={sourceNode} datasets={datasets ?? []} selectedDatasetId={selectedDatasetId ?? ""} />
       )}
 
       {tabIndex === 1 && selectedDataset?.databaseCode && selectedDataset?.schemaName && (

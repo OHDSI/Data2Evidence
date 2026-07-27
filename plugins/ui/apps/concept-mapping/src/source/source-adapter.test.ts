@@ -4,8 +4,9 @@ import {
   parseSqlResultColumns,
   buildNodeSourceData,
   buildCsvSourceData,
+  sourceDataToCsvData,
 } from "./source-adapter";
-import { SourceNodeDTO } from "../types/source";
+import { SourceData, SourceNodeDTO } from "../types/source";
 
 describe("extractColumns", () => {
   test("py2table_node → map keys", () => {
@@ -102,11 +103,43 @@ describe("buildSourceData", () => {
     expect(buildNodeSourceData(node).columns).toEqual([]);
   });
 
-  test("csv source carries columns + rows", () => {
+  test("csv source carries name + columns + rows", () => {
     expect(buildCsvSourceData("f.csv", ["a"], [{ a: 1 }])).toEqual({
       type: "csv",
+      name: "f.csv",
       columns: ["a"],
       rows: [{ a: 1 }],
     });
+  });
+});
+
+describe("sourceDataToCsvData", () => {
+  test("csv source with rows becomes csvData with every row tagged status 'unchecked'", () => {
+    const source: SourceData = {
+      type: "csv",
+      name: "codes.csv",
+      columns: ["code", "name"],
+      rows: [
+        { code: "A1", name: "Aspirin" },
+        { code: "B2", name: "Bacitracin" },
+      ],
+    };
+    expect(sourceDataToCsvData(source)).toEqual({
+      name: "codes.csv",
+      columns: ["code", "name"],
+      data: [
+        { code: "A1", name: "Aspirin", status: "unchecked" },
+        { code: "B2", name: "Bacitracin", status: "unchecked" },
+      ],
+    });
+  });
+
+  test("node source (no rows client-side) yields an empty data array - a known, accepted limitation", () => {
+    const source: SourceData = {
+      type: "node",
+      columns: ["a", "b"],
+      nodeMeta: { name: "N", type: "py2table_node", description: "" },
+    };
+    expect(sourceDataToCsvData(source)).toEqual({ name: "", columns: ["a", "b"], data: [] });
   });
 });

@@ -1,4 +1,5 @@
 import { SourceData, SourceNodeDTO } from "../types/source";
+import { csvDataType, mappingData } from "../types";
 
 // Sentinel constant reserved for column-mapping "Not applicable" option (Task 4+)
 export const NOT_APPLICABLE = "__NOT_APPLICABLE__";
@@ -42,9 +43,22 @@ export function buildNodeSourceData(node: SourceNodeDTO): SourceData {
 }
 
 export function buildCsvSourceData(
-  _name: string,
+  name: string,
   columns: string[],
   rows: Array<Record<string, any>>
 ): SourceData {
-  return { type: "csv", columns, rows };
+  return { type: "csv", name, columns, rows };
+}
+
+// Bridge a SourceData into the mapping-table csvData that Step 3 (MappingTable,
+// auto-populate, Save) operates on. Rows are tagged `status: "unchecked"`, mirroring the
+// old ImportDialog.handleImport semantics. NOTE: only CSV sources carry rows client-side;
+// node sources expose columns only (their actual output rows require backend execution,
+// which is out of scope), so `data` is legitimately empty for a node source.
+export function sourceDataToCsvData(source: SourceData): csvDataType {
+  return {
+    name: source.name ?? "",
+    columns: source.columns,
+    data: (source.rows ?? []).map((r) => ({ ...r, status: "unchecked" })) as mappingData[],
+  };
 }
