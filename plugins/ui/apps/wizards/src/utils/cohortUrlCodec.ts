@@ -5,12 +5,17 @@ import pako from "pako";
  * Compatible with vue-mri CohortUrlCodec.
  */
 export function compress(obj: unknown): string {
+  const base64 = compressBase64(obj);
+  // Convert to base64url
+  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+/** Compress an object to the standard Base64 format expected by analytics APIs. */
+export function compressBase64(obj: unknown): string {
   const jsonString = JSON.stringify(obj);
   const deflated = pako.deflate(new TextEncoder().encode(jsonString));
   const binaryString = Array.from(deflated, (byte) => String.fromCharCode(byte)).join("");
-  const base64 = btoa(binaryString);
-  // Convert to base64url
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binaryString);
 }
 
 /**
