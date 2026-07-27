@@ -12,6 +12,10 @@ export interface MappingMetadataParams {
   data: ConceptMappingState;
   onChange: (data: Partial<ConceptMappingState>) => void;
   sourceNode?: SourceNodeDTO;
+  // Removes the incoming canvas edge from this Concept Mapping node's upstream source node.
+  // Wired up by the flow app's ConceptMappingDrawer; a no-op host (e.g. this app's own
+  // local dev harness below) can simply omit it.
+  onDisconnectSource?: () => void;
 }
 
 const mockMetadata: SystemAdminPageMetadata<MappingMetadataParams> = {

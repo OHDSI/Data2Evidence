@@ -58,6 +58,7 @@ describe("Overview", () => {
         sourceData: { type: "csv", name: "codes.csv", columns: ["code", "name"], rows: [{ code: "A1", name: "Aspirin" }] },
         datasetId: "ds-B",
         loadRecommendationByDefault: true,
+        mappingStarted: true,
       },
     };
 

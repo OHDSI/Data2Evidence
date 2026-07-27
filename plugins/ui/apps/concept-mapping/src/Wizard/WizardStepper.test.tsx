@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders } from "../test/render";
 import { initialState } from "../Context/ConceptMappingContext";
 import { ACTION_TYPES } from "../Context/reducers";
@@ -59,5 +59,49 @@ describe("WizardStepper", () => {
 
     expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.RESET_DOWNSTREAM });
     expect(dispatch.mock.calls.some((call: any[]) => call[0]?.type === ACTION_TYPES.SET_FEEDBACK)).toBe(false);
+  });
+
+  test("no MUI Stepper is rendered on any step (the 3-step stepper was removed)", () => {
+    for (const currentStep of [0, 1, 2]) {
+      const state = { ...initialState, wizard: { ...initialState.wizard, currentStep } };
+      const { unmount } = renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, {
+        state,
+      });
+      expect(document.querySelector(".MuiStepper-root")).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  test("the back icon button is hidden on step 0", () => {
+    renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
+    expect(screen.queryByRole("button", { name: /Back/i })).not.toBeInTheDocument();
+  });
+
+  test("the back icon button is shown on step 1 and step 2 and navigates back one step", () => {
+    const state = { ...initialState, wizard: { ...initialState.wizard, currentStep: 1 } };
+    const { dispatch } = renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, {
+      state,
+    });
+    const back = screen.getByRole("button", { name: /Back/i });
+    expect(back).toBeInTheDocument();
+
+    fireEvent.click(back);
+    expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: 0 });
+  });
+
+  test("advancing from step 0 to step 1 marks mapping as started", () => {
+    const state = {
+      ...initialState,
+      wizard: { ...initialState.wizard, datasetId: "ds-1", sourceData: { type: "csv" as const, columns: ["a"] } },
+    };
+    const { dispatch } = renderWithProviders(
+      <WizardStepper datasets={datasets} selectedDatasetId="ds-1" />,
+      { state }
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Next/i }));
+
+    expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.SET_MAPPING_STARTED, payload: true });
+    expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: 1 });
   });
 });

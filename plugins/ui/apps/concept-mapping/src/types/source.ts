@@ -22,4 +22,7 @@ export interface WizardState {
   sourceData: SourceData | null;
   datasetId: string | null;
   loadRecommendationByDefault: boolean;
+  // Becomes true the first time the user advances from Step 1 to Step 2. Once true, the
+  // Step 1 dataset selection is locked (read-only) since mapping work now depends on it.
+  mappingStarted: boolean;
 }

@@ -17,6 +17,7 @@ import {
   setDatasetId,
   setLoadRecommendation,
   resetDownstream,
+  setMappingStarted,
 } from "./wizard";
 
 export enum ACTION_TYPES {
@@ -37,6 +38,7 @@ export enum ACTION_TYPES {
   SET_DATASET_ID = "SET_DATASET_ID",
   SET_LOAD_RECOMMENDATION = "SET_LOAD_RECOMMENDATION",
   RESET_DOWNSTREAM = "RESET_DOWNSTREAM",
+  SET_MAPPING_STARTED = "SET_MAPPING_STARTED",
 }
 
 type ActionType = keyof typeof ACTION_TYPES;
@@ -60,6 +62,7 @@ const actionMap = new Map<ActionType, ActionFunction>([
   [ACTION_TYPES.SET_DATASET_ID, setDatasetId],
   [ACTION_TYPES.SET_LOAD_RECOMMENDATION, setLoadRecommendation],
   [ACTION_TYPES.RESET_DOWNSTREAM, resetDownstream],
+  [ACTION_TYPES.SET_MAPPING_STARTED, setMappingStarted],
 ]);
 
 export interface DispatchType {

@@ -26,3 +26,8 @@ export const resetDownstream = (state: ConceptMappingState): ConceptMappingState
   columnMapping: { sourceCode: "", sourceName: "", sourceFrequency: "", description: "" },
   csvData: { name: "", columns: [], data: [] },
 });
+
+export const setMappingStarted = (state: ConceptMappingState, payload: boolean): ConceptMappingState => ({
+  ...state,
+  wizard: { ...state.wizard, mappingStarted: payload },
+});

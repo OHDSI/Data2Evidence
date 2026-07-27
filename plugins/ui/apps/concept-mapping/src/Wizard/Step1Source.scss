@@ -1,0 +1,165 @@
+.concept-mapping__step1 {
+  &-columns {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+    }
+  }
+
+  &-panel {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid #dad7d7;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+  }
+
+  &-panel-title {
+    margin: 0;
+    padding: 10px 16px;
+    background-color: #e5e6f2;
+    color: #000080;
+    font-weight: 700;
+  }
+
+  &-panel-body {
+    padding: 16px;
+  }
+
+  &-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border: 1px solid #dad7d7;
+    border-radius: 8px;
+    background-color: #fafbfe;
+
+    &-icon {
+      color: #000080;
+      margin-bottom: 4px;
+    }
+
+    &-title {
+      font-weight: 700;
+      color: #000080;
+    }
+
+    &--connected {
+      position: relative;
+    }
+  }
+
+  &-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &-card-unlink {
+    // Functional: removes the incoming canvas edge (see onDisconnectSource).
+    color: #acaba8;
+
+    &:hover {
+      color: #c62828;
+    }
+  }
+
+  &-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: #595757;
+    margin: 12px 0;
+
+    &::before,
+    &::after {
+      content: "";
+      flex: 1;
+      border-bottom: 1px solid #dad7d7;
+    }
+
+    span {
+      padding: 0 12px;
+      font-size: 13px;
+      text-transform: uppercase;
+    }
+  }
+
+  // The uploaded-CSV file card (states: uploading / success / failed). `&-file-card` is
+  // layered on top of the base `&-card` styling (border/radius/padding) - see the combined
+  // classNames in Step1Source.tsx.
+  &-file-card {
+    gap: 0;
+
+    &-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    &-icon {
+      color: #000080;
+      flex-shrink: 0;
+    }
+
+    &-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-name {
+      font-weight: 700;
+      color: #000080;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-sub {
+      color: #595757;
+    }
+
+    &-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    &-success-icon {
+      color: #2e7d32;
+    }
+
+    &--failed {
+      background-color: #fdecea;
+      border-color: #f5c2c0;
+
+      .concept-mapping__step1-file-card-icon,
+      .concept-mapping__step1-file-card-name,
+      .concept-mapping__step1-file-card-sub {
+        color: #c62828;
+      }
+    }
+  }
+
+  &-info-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    margin: 8px 0 16px;
+    background-color: #e5e6f2;
+    border-radius: 6px;
+    color: #000080;
+
+    svg {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+  }
+}

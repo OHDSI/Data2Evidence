@@ -1,19 +1,58 @@
 import React, { FC, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { Box, FormControl, MenuItem, Select, SelectChangeEvent, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  CircularProgress,
+  FormControl,
+  IconButton,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import UploadFileOutlinedIcon from "@mui/icons-material/UploadFileOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import LinkOffOutlinedIcon from "@mui/icons-material/LinkOffOutlined";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Checkbox } from "@portal/components";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
 import { useTranslation } from "../hooks";
 import { i18nKeys } from "../Context/state";
-import { CsvReader } from "../components/CsvReader/CsvReader";
+import { CsvFileInfo, CsvReader } from "../components/CsvReader/CsvReader";
 import { buildCsvSourceData, buildNodeSourceData, extractColumns, sourceDataToCsvData } from "../source/source-adapter";
 import { SourceData, SourceNodeDTO } from "../types/source";
 import { Study, csvData } from "../types";
+import "./Step1Source.scss";
+
+// A CSV upload goes through 3 states in the UI: "uploading" (file picked, FileReader parse in
+// flight), "success" (parsed - a source has been set) and "failed" (unsupported type / parse
+// error - no source is set, so Step 1 stays gated). Kept local to this component: it's purely
+// presentational card state, not something downstream steps or a reopened drawer need beyond
+// what's already rehydrated from wizard.sourceData below.
+interface CsvUploadState {
+  name: string;
+  size: number;
+  status: "uploading" | "success" | "failed";
+  error?: string;
+}
+
+function formatFileSize(bytes: number): string {
+  return `${Math.round(bytes / 1024)}kb`;
+}
 
 interface Step1SourceProps {
   sourceNode?: SourceNodeDTO;
   datasets: Study[];
   onResetDownstream: () => void;
+  // Removes the incoming canvas edge from the connected upstream node (wired up by the flow
+  // app's ConceptMappingDrawer). Undefined in hosts that don't support it (e.g. this app's
+  // own local dev harness) - the unlink icon then renders but does nothing, same as before.
+  onDisconnectSource?: () => void;
 }
 
 // Structural equality for the subset of SourceData that a connected node can produce
@@ -43,7 +82,23 @@ function matchesPersistedNode(sourceNode: SourceNodeDTO | undefined, sourceData:
   return !!sourceNode && sourceData?.type === "node" && isSameConnectedNode(sourceData.nodeMeta, sourceNode);
 }
 
-export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onResetDownstream }) => {
+// Friendly display names for the raw reactflow node types a source can be connected to.
+// Anything not listed here (future node types) falls back to the raw type string.
+const NODE_TYPE_LABELS: Record<string, string> = {
+  sql_node: "Database query node",
+  py2table_node: "Python to table node",
+};
+
+function friendlyNodeType(type: string): string {
+  return NODE_TYPE_LABELS[type] ?? type;
+}
+
+export const Step1Source: FC<Step1SourceProps> = ({
+  sourceNode,
+  datasets,
+  onResetDownstream,
+  onDisconnectSource,
+}) => {
   const { getText } = useTranslation();
   const state = useContext(ConceptMappingContext);
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
@@ -97,6 +152,17 @@ export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onRese
   useEffect(() => {
     if (!sourceNode) {
       prevNodeKeyRef.current = null;
+      // Consistency fix: the source node can disappear out from under us - the unlink icon
+      // below, or the user deleting the canvas edge while this drawer is open - leaving
+      // wizard.sourceData pointed at a node that's no longer connected (Next would stay
+      // wrongly enabled). Clear it once on that transition. Reading state.wizard.sourceType
+      // here (rather than adding it as a dependency) is deliberate: this effect only re-runs
+      // when sourceNode/nodeColumns/manualColumns change, so clearing sourceType to null
+      // doesn't retrigger it - no loop.
+      if (state.wizard.sourceType === "node") {
+        onResetDownstream();
+        dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: null });
+      }
       return;
     }
 
@@ -132,10 +198,45 @@ export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onRese
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceNode, nodeColumns, manualColumns]);
 
+  // Rehydrate the CSV upload card on a drawer reopen for an already-uploaded CSV source, so
+  // it doesn't fall back to the empty dropzone. The original file size isn't persisted on
+  // SourceData (only columns/rows are), so it's shown as 0kb here - an accepted, cosmetic-only
+  // limitation of a reopen.
+  const [csvUpload, setCsvUpload] = useState<CsvUploadState | null>(() =>
+    state.wizard.sourceData?.type === "csv"
+      ? { name: state.wizard.sourceData.name ?? "", size: 0, status: "success" }
+      : null
+  );
+
+  const handleCsvFileSelected = (fileInfo: CsvFileInfo) => {
+    setCsvUpload({ name: fileInfo.name, size: fileInfo.size, status: "uploading" });
+  };
+
   const handleCsvLoaded = (loaded: csvData) => {
     onResetDownstream();
     const columns = loaded.data.meta.fields ?? [];
     applySource(buildCsvSourceData(loaded.name, columns, loaded.data.data));
+    setCsvUpload({ name: loaded.name, size: loaded.size ?? 0, status: "success" });
+  };
+
+  const handleCsvError = (error: Error, fileInfo?: CsvFileInfo) => {
+    // A failed upload must never leave a stale source behind (e.g. re-uploading a bad file
+    // after a prior successful one) - canProceedStep1 has to see sourceData go back to null.
+    onResetDownstream();
+    dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: null });
+    const isUnsupportedType = error.message === getText(i18nKeys.CSV_READER__UNSUPPORTED_FILE_TYPE);
+    setCsvUpload({
+      name: fileInfo?.name ?? "",
+      size: fileInfo?.size ?? 0,
+      status: "failed",
+      error: isUnsupportedType ? getText(i18nKeys.CSV_CARD__UNSUPPORTED_FORMAT) : error.message,
+    });
+  };
+
+  const handleDeleteCsvUpload = () => {
+    setCsvUpload(null);
+    onResetDownstream();
+    dispatch({ type: ACTION_TYPES.SET_SOURCE_DATA, payload: null });
   };
 
   const handleDataset = (e: SelectChangeEvent) => {
@@ -145,66 +246,169 @@ export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onRese
 
   return (
     <div className="concept-mapping__step1">
-      <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-        {getText(i18nKeys.STEP1__CONNECTED_SOURCE)}
-      </Typography>
+      <div className="concept-mapping__step1-columns">
+        <div className="concept-mapping__step1-panel">
+          <Typography variant="subtitle1" className="concept-mapping__step1-panel-title">
+            {getText(i18nKeys.STEP1__DATA_SOURCE_TITLE)}
+          </Typography>
+          <div className="concept-mapping__step1-panel-body">
+            {sourceNode ? (
+              <>
+                <Box className="concept-mapping__step1-card concept-mapping__step1-card--connected">
+                  <div className="concept-mapping__step1-card-header">
+                    <AccountTreeOutlinedIcon className="concept-mapping__step1-card-icon" />
+                    {/* Removes the incoming canvas edge (wired up by the host flow app). */}
+                    <Tooltip title={getText(i18nKeys.STEP1__REMOVE_CONNECTION_LABEL)}>
+                      <IconButton
+                        size="small"
+                        aria-label={getText(i18nKeys.STEP1__REMOVE_CONNECTION_LABEL)}
+                        className="concept-mapping__step1-card-unlink"
+                        onClick={() => onDisconnectSource?.()}
+                      >
+                        <LinkOffOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </div>
+                  <Typography className="concept-mapping__step1-card-title">{sourceNode.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {getText(i18nKeys.STEP1__NODE_TYPE_LABEL)} {friendlyNodeType(sourceNode.type)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {getText(i18nKeys.STEP1__NODE_DESCRIPTION_LABEL)} {sourceNode.description}
+                  </Typography>
+                </Box>
 
-      {sourceNode ? (
-        <Box sx={{ p: 2, border: "1px solid #dad7d7", borderRadius: 1, mb: 2 }}>
-          <Typography sx={{ fontWeight: 600 }}>{sourceNode.name}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {sourceNode.type}
+                {(!nodeColumns || nodeColumns.length === 0) && (
+                  <TextField
+                    // `variant="standard"` avoids MUI's outlined-variant behavior of rendering the
+                    // label a second time inside a <legend> (for the notched-border effect), which
+                    // would otherwise make this label text match twice.
+                    variant="standard"
+                    fullWidth
+                    size="small"
+                    sx={{ mt: 1 }}
+                    label={getText(i18nKeys.STEP1__MANUAL_COLUMNS_LABEL)}
+                    value={manualColumns}
+                    onChange={(e) => setManualColumns(e.target.value)}
+                  />
+                )}
+
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                  {getText(i18nKeys.STEP1__CONNECTED_NODE_HINT)}
+                </Typography>
+              </>
+            ) : (
+              <>
+                <Typography sx={{ mb: 2 }}>{getText(i18nKeys.STEP1__IMPORT_TWO_WAYS)}</Typography>
+
+                <Box className="concept-mapping__step1-card">
+                  <AccountTreeOutlinedIcon className="concept-mapping__step1-card-icon" />
+                  <Typography className="concept-mapping__step1-card-title">
+                    {getText(i18nKeys.STEP1__CONNECT_NODE_OPTION)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {getText(i18nKeys.STEP1__CONNECT_NODE_DESC)}
+                  </Typography>
+                </Box>
+
+                <div className="concept-mapping__step1-divider">
+                  <span>{getText(i18nKeys.STEP1__OR)}</span>
+                </div>
+
+                {csvUpload ? (
+                  <>
+                    <Box
+                      className={`concept-mapping__step1-card concept-mapping__step1-file-card${
+                        csvUpload.status === "failed" ? " concept-mapping__step1-file-card--failed" : ""
+                      }`}
+                    >
+                      <div className="concept-mapping__step1-file-card-row">
+                        <InsertDriveFileOutlinedIcon className="concept-mapping__step1-file-card-icon" />
+                        <div className="concept-mapping__step1-file-card-info">
+                          <Typography className="concept-mapping__step1-file-card-name">
+                            {csvUpload.status === "failed" ? getText(i18nKeys.CSV_CARD__UPLOAD_FAILED) : csvUpload.name}
+                          </Typography>
+                          <Typography variant="body2" className="concept-mapping__step1-file-card-sub">
+                            {csvUpload.status === "failed"
+                              ? `${csvUpload.error} · ${getText(i18nKeys.CSV_CARD__FAILED)}`
+                              : csvUpload.status === "uploading"
+                              ? `${formatFileSize(csvUpload.size)} · ${getText(i18nKeys.CSV_CARD__UPLOADING)}`
+                              : formatFileSize(csvUpload.size)}
+                          </Typography>
+                        </div>
+                        <div className="concept-mapping__step1-file-card-actions">
+                          {csvUpload.status === "uploading" && <CircularProgress size={20} />}
+                          {csvUpload.status === "success" && (
+                            <CheckCircleIcon className="concept-mapping__step1-file-card-success-icon" />
+                          )}
+                          <IconButton size="small" aria-label="Remove uploaded file" onClick={handleDeleteCsvUpload}>
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </div>
+                      </div>
+                    </Box>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {getText(i18nKeys.CSV_CARD__HELPER)}
+                    </Typography>
+                  </>
+                ) : (
+                  <Box className="concept-mapping__step1-card">
+                    <UploadFileOutlinedIcon className="concept-mapping__step1-card-icon" />
+                    <Typography className="concept-mapping__step1-card-title">
+                      {getText(i18nKeys.STEP1__UPLOAD_CSV_OPTION)}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {getText(i18nKeys.STEP1__UPLOAD_CSV_DESC)}
+                    </Typography>
+                    <CsvReader
+                      onFileSelected={handleCsvFileSelected}
+                      onFileLoaded={handleCsvLoaded}
+                      onError={handleCsvError}
+                      parseOptions={{ header: true }}
+                    />
+                  </Box>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="concept-mapping__step1-panel">
+          <Typography variant="subtitle1" className="concept-mapping__step1-panel-title">
+            {getText(i18nKeys.STEP1__SELECT_DATASET_TITLE)}
           </Typography>
-          <Typography variant="body2">{sourceNode.description}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {getText(i18nKeys.STEP1__CONNECTED_NODE_HINT)}
-          </Typography>
-          {(!nodeColumns || nodeColumns.length === 0) && (
-            <TextField
-              // `variant="standard"` avoids MUI's outlined-variant behavior of rendering the
-              // label a second time inside a <legend> (for the notched-border effect), which
-              // would otherwise make this label text match twice.
-              variant="standard"
-              fullWidth
-              size="small"
-              sx={{ mt: 1 }}
-              label={getText(i18nKeys.STEP1__MANUAL_COLUMNS_LABEL)}
-              value={manualColumns}
-              onChange={(e) => setManualColumns(e.target.value)}
+          <div className="concept-mapping__step1-panel-body">
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <Typography sx={{ mb: 0.5 }}>{getText(i18nKeys.STEP1__DATASET_LABEL)}</Typography>
+              <Select
+                value={state.wizard.datasetId ?? ""}
+                onChange={handleDataset}
+                disabled={state.wizard.mappingStarted}
+              >
+                {datasets.map((d) => (
+                  <MenuItem value={d.id} key={d.id}>
+                    {d.studyDetail?.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box className="concept-mapping__step1-info-callout">
+              <InfoOutlinedIcon fontSize="small" />
+              <Typography variant="body2">{getText(i18nKeys.STEP1__DATASET_LOCK_INFO)}</Typography>
+            </Box>
+
+            <Checkbox
+              checked={state.wizard.loadRecommendationByDefault}
+              label={getText(i18nKeys.STEP1__LOAD_RECOMMENDATION)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                dispatch({ type: ACTION_TYPES.SET_LOAD_RECOMMENDATION, payload: e.target.checked })
+              }
             />
-          )}
-        </Box>
-      ) : (
-        <Box sx={{ mb: 2 }}>
-          <Typography sx={{ mb: 1 }}>{getText(i18nKeys.STEP1__CONNECT_NODE_OPTION)}</Typography>
-          <Typography sx={{ mb: 1 }}>{getText(i18nKeys.STEP1__UPLOAD_CSV_OPTION)}</Typography>
-          <CsvReader onFileLoaded={handleCsvLoaded} parseOptions={{ header: true }} />
-          {state.wizard.sourceData?.type === "csv" && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              ✓ {state.wizard.sourceData.columns.length} columns
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      <FormControl sx={{ minWidth: 260, mb: 2 }}>
-        <Typography sx={{ mb: 0.5 }}>{getText(i18nKeys.OVERVIEW__REFERENCE_CONCEPTS)}</Typography>
-        <Select value={state.wizard.datasetId ?? ""} onChange={handleDataset}>
-          {datasets.map((d) => (
-            <MenuItem value={d.id} key={d.id}>
-              {d.studyDetail?.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      <Checkbox
-        checked={state.wizard.loadRecommendationByDefault}
-        label={getText(i18nKeys.STEP1__LOAD_RECOMMENDATION)}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          dispatch({ type: ACTION_TYPES.SET_LOAD_RECOMMENDATION, payload: e.target.checked })
-        }
-      />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

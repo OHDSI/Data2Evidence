@@ -8,6 +8,8 @@ import { dispatch, RootState } from "~/store";
 import { pluginMetadata } from "~/FlowApp";
 import {
   markStatusAsDraft,
+  replaceEdges,
+  selectEdges,
   selectNodeById,
   setNode,
 } from "~/features/flow/reducers";
@@ -46,6 +48,15 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     shallowEqual
   );
   const upstream = sourceNodes[0];
+  const edges = useSelector(selectEdges);
+
+  // Disconnects this Concept Mapping node from its upstream source by removing every edge
+  // whose target is this node (its incoming connection) - triggered from the plugin's
+  // connected-node card (the unlink icon).
+  const onDisconnectSource = useCallback(() => {
+    dispatch(replaceEdges(edges.filter((e) => e.target !== node.id)));
+    dispatch(markStatusAsDraft());
+  }, [edges, node.id]);
 
   useEffect(() => {
     if (node.data) {
@@ -88,8 +99,9 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
       data: node.data.data,
       sourceNode,
       onChange: (data: any) => onFormDataChange({ data }),
+      onDisconnectSource,
     };
-  }, [node.data.data, pluginMetadata.data.mappingSuggestion, upstream]);
+  }, [node.data.data, pluginMetadata.data.mappingSuggestion, upstream, onDisconnectSource]);
 
   return (
     <NodeDrawer

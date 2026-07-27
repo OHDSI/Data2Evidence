@@ -19,9 +19,10 @@ interface OverviewProps {
   data?: ConceptMappingState;
   onChange?: (data: Partial<ConceptMappingState>) => void;
   sourceNode?: SourceNodeDTO;
+  onDisconnectSource?: () => void;
 }
 
-export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sourceNode }) => {
+export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sourceNode, onDisconnectSource }) => {
   const { getText, changeLocale } = useTranslation();
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
@@ -158,7 +159,12 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
       </div>
 
       {tabIndex === 0 && (
-        <WizardStepper sourceNode={sourceNode} datasets={datasets ?? []} selectedDatasetId={selectedDatasetId ?? ""} />
+        <WizardStepper
+          sourceNode={sourceNode}
+          datasets={datasets ?? []}
+          selectedDatasetId={selectedDatasetId ?? ""}
+          onDisconnectSource={onDisconnectSource}
+        />
       )}
 
       {tabIndex === 1 && selectedDataset?.databaseCode && selectedDataset?.schemaName && (

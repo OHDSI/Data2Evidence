@@ -1,5 +1,6 @@
 import React, { FC, useContext } from "react";
-import { Step, StepLabel, Stepper } from "@mui/material";
+import { IconButton } from "@mui/material";
+import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import { Button } from "@portal/components";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
@@ -16,20 +17,20 @@ interface WizardStepperProps {
   sourceNode?: SourceNodeDTO;
   datasets: Study[];
   selectedDatasetId: string;
+  onDisconnectSource?: () => void;
 }
 
-export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, selectedDatasetId }) => {
+export const WizardStepper: FC<WizardStepperProps> = ({
+  sourceNode,
+  datasets,
+  selectedDatasetId,
+  onDisconnectSource,
+}) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
   const state = useContext(ConceptMappingContext);
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
   const step = state.wizard.currentStep;
-
-  const stepLabels = [
-    getText(i18nKeys.WIZARD__STEP1_TITLE),
-    getText(i18nKeys.WIZARD__STEP2_TITLE),
-    getText(i18nKeys.WIZARD__STEP3_TITLE),
-  ];
 
   // Reset atomically with the source/dataset change (no cancelable confirm - a
   // confirm dialog would leave the new source paired with the old, now-stale
@@ -51,32 +52,40 @@ export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, se
   const canNext = step === 0 ? canProceedStep1(state) : step === 1 ? canProceedStep2(state) : false;
   const goTo = (n: number) => dispatch({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: n });
 
+  // Leaving Step 1 for the first time locks the dataset selection in (see mappingStarted on
+  // WizardState) - mapping work from here on depends on the chosen dataset staying fixed.
+  const handleNext = () => {
+    if (step === 0) {
+      dispatch({ type: ACTION_TYPES.SET_MAPPING_STARTED, payload: true });
+    }
+    goTo(step + 1);
+  };
+
   return (
     <div className="concept-mapping__wizard">
-      <Stepper activeStep={step} sx={{ mb: 3 }}>
-        {stepLabels.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
+      {step > 0 && (
+        <IconButton
+          aria-label={getText(i18nKeys.WIZARD__BACK)}
+          onClick={() => goTo(step - 1)}
+          sx={{ mb: 1 }}
+        >
+          <ArrowBackOutlinedIcon />
+        </IconButton>
+      )}
 
       {step === 0 && (
-        <Step1Source sourceNode={sourceNode} datasets={datasets} onResetDownstream={handleResetDownstream} />
+        <Step1Source
+          sourceNode={sourceNode}
+          datasets={datasets}
+          onResetDownstream={handleResetDownstream}
+          onDisconnectSource={onDisconnectSource}
+        />
       )}
-      {step === 1 && <Step2ColumnMapping />}
+      {step === 1 && <Step2ColumnMapping selectedDatasetId={selectedDatasetId} />}
       {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} />}
 
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24 }}>
-        <Button
-          text={getText(i18nKeys.WIZARD__BACK)}
-          variant="outlined"
-          disabled={step === 0}
-          onClick={() => goTo(step - 1)}
-        />
-        {step < 2 && (
-          <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={() => goTo(step + 1)} />
-        )}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+        {step < 2 && <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={handleNext} />}
       </div>
     </div>
   );

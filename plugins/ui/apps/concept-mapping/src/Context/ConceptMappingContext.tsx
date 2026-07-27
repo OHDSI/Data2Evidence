@@ -33,6 +33,7 @@ export const initialState: ConceptMappingState = {
     sourceData: null,
     datasetId: null,
     loadRecommendationByDefault: false,
+    mappingStarted: false,
   },
 };
 

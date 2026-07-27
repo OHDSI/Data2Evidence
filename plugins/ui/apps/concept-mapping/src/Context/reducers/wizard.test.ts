@@ -6,6 +6,7 @@ import {
   setDatasetId,
   setLoadRecommendation,
   resetDownstream,
+  setMappingStarted,
 } from "./wizard";
 import { SourceData } from "../../types/source";
 
@@ -34,6 +35,11 @@ describe("wizard reducers", () => {
 
   test("setLoadRecommendation", () => {
     expect(setLoadRecommendation(initialState, true).wizard.loadRecommendationByDefault).toBe(true);
+  });
+
+  test("setMappingStarted", () => {
+    expect(setMappingStarted(initialState, true).wizard.mappingStarted).toBe(true);
+    expect(setMappingStarted(initialState, false).wizard.mappingStarted).toBe(false);
   });
 
   test("resetDownstream clears columnMapping and csvData", () => {
