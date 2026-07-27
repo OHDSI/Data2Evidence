@@ -77,7 +77,6 @@ downloadable assets.
 | `DATASOURCE_DB_SCHEMA`              | **Required.** Bunny's `DaemonSettings` declares it with **no default**, so `Settings()` raises for every driver if it is unset. |
 | `LOW_NUMBER_SUPPRESSION_THRESHOLD`  | Low-number suppression threshold applied to results (e.g. `10`).                           |
 | `ROUNDING_TARGET`                   | Rounding target applied to results (e.g. `10`).                                            |
-| _(no ICD-MAIN toggle)_              | **ICD-MAIN is not supported by Hutch Bunny v1.7.0 and cannot be enabled.** `execute_query` raises `NotImplementedError` for `code == "ICD-MAIN"` before any solver runs ([hutch-bunny#30](https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30)), so such a task hard-fails the run and no result is returned to Relay. A feature toggle would be inert; revisit if upstream adds support. |
 | `TASK_API_ENFORCE_HTTPS`            | Set **`false`** for a non-HTTPS Relay `TASK_API_BASE_URL`. Bunny's `DaemonSettings` enforces HTTPS by default. |
 
 If `TASK_API_BASE_URL` is not HTTPS, also set `TASK_API_ENFORCE_HTTPS=false`
@@ -85,6 +84,19 @@ If `TASK_API_BASE_URL` is not HTTPS, also set `TASK_API_ENFORCE_HTTPS=false`
 
 The remaining `DATASOURCE_DB_*` connection values are derived by the flow from
 `DBDao` / `TrexDao` at run time and do not need to be set by hand.
+
+### Supported distribution task types
+
+Bunny resolves `DEMOGRAPHICS` and `GENERIC` distribution tasks. **`ICD-MAIN` is
+not executable at the pinned Bunny version and there is no configuration that
+enables it** — `execute_query` raises `NotImplementedError` for
+`code == "ICD-MAIN"` before any solver runs
+([hutch-bunny#30](https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30)).
+
+If the Relay dispatches an ICD-MAIN task, the child exits non-zero, the run
+hard-fails, and the error is recorded in the persisted artifact's `errors[]`.
+No partial or approximated result is returned to the Relay. Revisit if upstream
+adds support.
 
 ### Where deploy-time env is configured
 

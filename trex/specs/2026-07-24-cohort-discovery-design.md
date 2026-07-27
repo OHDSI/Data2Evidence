@@ -55,7 +55,7 @@ Following `data_transformation`'s `ner` convention (`[tool.pixi.feature.<name>]`
 A single scheduled flow run:
 1. Prefect worker runs `flow.py` in the **default (3.12)** env.
 2. The flow resolves the dataset's DB/cachedb credentials via **DBDao** (`datasetId` → `database_code`/`cache_id` → `DATABASE_CREDENTIALS` secret block → `DBCredentialsType`/`CacheDBCredentialsType`).
-3. The flow maps those values to Bunny `DATASOURCE_*` config and invokes `bunny_runner.py` in the **`bunny` (3.13)** env as a child process (`pixi run -e bunny ...`), passing datasource + relay + toggle config via environment/args.
+3. The flow maps those values to Bunny `DATASOURCE_*` config and invokes `bunny_runner.py` in the **`bunny` (3.13)** env as a child process (`pixi run -e bunny ...`), passing datasource + relay config via environment/args.
 4. `bunny_runner.py` builds Bunny `DaemonSettings`, `TaskApiClient`, a `task_handler`, and `PollingService`; calls `poll_for_tasks(max_iterations=1)`. Bunny fetches one native task, `execute_query` resolves/executes it via Bunny's own DB client, and `send_results` posts the `RquestResult` back to the Relay.
 5. `bunny_runner.py` emits a structured JSON summary (the resolved result + metadata, or a structured error) on stdout.
 6. The flow parses that summary and writes the **normalized Prefect artifact** for Jobs-page consumption.
@@ -65,21 +65,22 @@ A single scheduled flow run:
 ### 3.4 Relay-task distribution model (approved interpretation)
 This is a Relay-native poller, so the **Relay decides** which task is delivered each cycle; the flow resolves whatever native task arrives. Task class is governed by Bunny `TASK_API_TYPE` (a=Availability, b=Distribution). Concretely:
 - **Availability** tasks: cohort-scoped; return patient counts (obfuscated per deploy-time protection).
-- **Distribution** tasks: dataset-wide; Bunny distribution codes are exactly `DEMOGRAPHICS`, `GENERIC`, `ICD_MAIN`.
-- `DEMOGRAPHICS` + `GENERIC` are enabled; **`ICD_MAIN` is gated by a deploy-time env toggle defaulting off** — when off, `ICD_MAIN` distribution tasks are not accepted/processed. `ICD_MAIN` additionally depends on mapped ICD vocabulary in the dataset.
+- **Distribution** tasks: dataset-wide; Bunny distribution codes are exactly `DEMOGRAPHICS`, `GENERIC`, `ICD-MAIN`.
+- `DEMOGRAPHICS` + `GENERIC` are supported. **`ICD-MAIN` is not executable at the pinned Bunny version** — `execute_query` raises `NotImplementedError` for `code == "ICD-MAIN"` before any solver runs ([hutch-bunny#30](https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30)), so an `ICD-MAIN` task hard-fails the run. There is no feature toggle: one would be inert. Revisit if upstream adds support.
+
+> **Correction (2026-07-27):** this section originally specified a deploy-time `ICD_MAIN` toggle defaulting off. That toggle was never implementable — upstream rejects `ICD-MAIN` unconditionally — and has been removed from the design rather than shipped as inert config.
 
 ## 4. Interfaces
 
 ### 4.1 Flow parameters (`types.py`)
 - `datasetId: str` — the d2e dataset; also the Relay `COLLECTION_ID`.
 - Derived at runtime: `database_code` / `cache_id` for DBDao resolution.
-- All connection/relay/protection/toggle values come from **deployment environment variables**, not per-run params.
+- All connection/relay/protection values come from **deployment environment variables**, not per-run params.
 
 ### 4.2 Deployment environment variables
 - Relay: `TASK_API_BASE_URL` (incl. `/link_connector_api`), `TASK_API_USERNAME`, `TASK_API_PASSWORD`, `TASK_API_TYPE` (**`a`=availability | `b`=distribution only**), `TASK_API_ENFORCE_HTTPS` (default `true`; set `false` for a non-HTTPS relay), `COLLECTION_ID` (= `datasetId`).
 - Datasource (populated at runtime from DBDao): `DATASOURCE_DB_HOST/PORT/DATABASE/SCHEMA/USERNAME/PASSWORD/DRIVERNAME`, or `DATASOURCE_DB_DRIVERNAME=duckdb` + `DATASOURCE_DUCKDB_PATH_TO_DB` for cachedb. **`DATASOURCE_DB_SCHEMA` is required even for DuckDB.**
 - Protection: `LOW_NUMBER_SUPPRESSION_THRESHOLD`, `ROUNDING_TARGET`.
-- Feature toggle: `COHORT_DISCOVERY_ENABLE_ICD_MAIN` (default off).
 - Schedule cadence: Prefect deployment schedule (cron/interval).
 
 ### 4.3 Bunny API surface used (verified against v1.7.0 in the compat gate)
@@ -94,7 +95,7 @@ This is a Relay-native poller, so the **Relay decides** which task is delivered 
 ```jsonc
 {
   "availability": { "count": <int|null>, "obfuscation": { "suppression": <int>, "rounding": <int> } },
-  "distributions": { "DEMOGRAPHICS": [<rows>], "GENERIC": [<rows>], "ICD_MAIN": [<rows>]? },
+  "distributions": { "DEMOGRAPHICS": [<rows>], "GENERIC": [<rows>] },
   "metadata": { "datasetId": <str>, "cohortName": <str|null>, "generatedAt": <iso8601>, "taskId": <str>, "taskType": "availability|distribution" },
   "errors": [<structured error>]  // present on hard-fail; see §5
 }
@@ -126,5 +127,5 @@ Deferred. A future follow-up could add a `CohortDiscoveryController` at `/jobplu
 
 ## 8. Registration & deployment
 - Group `package.json` `trex.flow` manifest (`type: "cohort_discovery"`, image, `flows[]` entrypoint + command targeting the flow; the flow internally shells to the `bunny` env) — discovered from the `trex.plugins` table at `jobplugins` boot and pre-warmed by the dataflow process worker.
-- A Prefect deployment carrying the configurable schedule; relay/protection/toggle values as deploy-time env.
+- A Prefect deployment carrying the configurable schedule; relay/protection values as deploy-time env.
 - One poller deployment per dataset (single `COLLECTION_ID` per deployment).

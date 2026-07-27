@@ -35,7 +35,7 @@
   "metadata":      { "datasetId": "", "cohortName": "", "generatedAt": "" }
 }
 ```
-(`ICD_MAIN` key present only when the deploy-time toggle is on.)
+(No `ICD_MAIN` key: `ICD-MAIN` is not executable at the pinned Bunny version — see the ICD-MAIN note below.)
 
 ## Verified Bunny wiring (from `hutch_bunny/daemon.py`, main branch)
 
@@ -794,7 +794,7 @@ Run: `python plugins/flows/flowinit.py` (per repo convention) or confirm the han
 
 - [ ] **Step 3: Add `setup_assets.sh` + deployment README**
 
-Create `setup_assets.sh` (no-op if no assets). In `README.md`, document required deploy-time env: `TASK_API_BASE_URL` (incl. `/link_connector_api`), `TASK_API_USERNAME/PASSWORD/TYPE`, `COLLECTION_ID`(=datasetId), `LOW_NUMBER_SUPPRESSION_THRESHOLD`, `ROUNDING_TARGET`, `COHORT_DISCOVERY_ICD_MAIN_ENABLED` (default off), and the Prefect deployment **schedule** (cadence). Note: with `ICD_MAIN` off, `TASK_API_TYPE`/accepted results exclude ICD_MAIN distribution tasks; on, include them.
+Create `setup_assets.sh` (no-op if no assets). In `README.md`, document required deploy-time env: `TASK_API_BASE_URL` (incl. `/link_connector_api`), `TASK_API_USERNAME/PASSWORD/TYPE`, `COLLECTION_ID`(=datasetId), `LOW_NUMBER_SUPPRESSION_THRESHOLD`, `ROUNDING_TARGET`, and the Prefect deployment **schedule** (cadence). Note: there is no ICD-MAIN toggle — `ICD-MAIN` is rejected by Bunny itself and hard-fails the run.
 
 - [ ] **Step 4: Run the whole suite (both envs)**
 
@@ -815,9 +815,9 @@ git commit -m "chore(cohort_discovery): freeze envs, finalize manifest, deployme
 
 ## Self-review (spec coverage)
 
-- New flow group + manifest → Tasks 2, 9. Named 3.13 env isolation (gate-verified) → Task 1. Worker provisioning → Task 3. DBDao→Bunny mapping (Postgres + DuckDB, hard-fail unsupported) → Task 5. Reuse `TaskApiClient`/`PollingService`, `max_iterations=1`, Bunny own client, submit to Relay → Task 6. Parent resolves DBDao, invokes child, persists artifact, hard-fail → Task 7. Availability count + dataset-wide `DEMOGRAPHICS`/`GENERIC` (+`ICD_MAIN` toggle) in envelope → Tasks 4, 7, 9. Tests + compatibility validation → Tasks 1, 4–8.
+- New flow group + manifest → Tasks 2, 9. Named 3.13 env isolation (gate-verified) → Task 1. Worker provisioning → Task 3. DBDao→Bunny mapping (Postgres + DuckDB, hard-fail unsupported) → Task 5. Reuse `TaskApiClient`/`PollingService`, `max_iterations=1`, Bunny own client, submit to Relay → Task 6. Parent resolves DBDao, invokes child, persists artifact, hard-fail → Task 7. Availability count + dataset-wide `DEMOGRAPHICS`/`GENERIC` in envelope → Tasks 4, 7, 9. Tests + compatibility validation → Tasks 1, 4–8.
 - **Scope respected:** this plan is flow-only — **no `jobplugins` API and no Jobs-page UI tasks exist** (excluded from this iteration per the team's decided scope).
-- **`ICD_MAIN` toggle:** enforced at deploy-time env (Task 9); in poller mode Relay decides which distribution tasks are sent, so the toggle governs accepted task types/results (`TASK_API_TYPE` ∈ `a|b`), not client-side generation.
+- **`ICD-MAIN`:** no toggle ships. Hutch Bunny v1.7.0 raises `NotImplementedError` for `code == "ICD-MAIN"` in `execute_query` before any solver runs ([hutch-bunny#30](https://github.com/Health-Informatics-UoN/hutch-bunny/issues/30)), so an `ICD-MAIN` task hard-fails the run like any other unsupported construct. A deploy-time flag would be inert config; it was removed rather than shipped. (Correction 2026-07-27 — earlier revisions of this plan specified such a toggle.)
 
 ## Open items requiring team/environment input (not assumptions)
 
