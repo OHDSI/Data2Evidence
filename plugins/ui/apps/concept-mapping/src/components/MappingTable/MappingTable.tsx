@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from "react";
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { MaterialReactTable, MRT_ColumnDef, MRT_RowData, useMaterialReactTable } from "material-react-table";
 import { Box, Button } from "@portal/components";
 import { useTranslation } from "../../hooks";
@@ -12,9 +12,10 @@ import "./MappingTable.scss";
 
 interface MappingTableProps {
   selectedDatasetId: string;
+  autoPopulate?: boolean;
 }
 
-export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId }) => {
+export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPopulate }) => {
   const { getText } = useTranslation();
   const conceptMappingState = useContext(ConceptMappingContext);
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
@@ -194,6 +195,14 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId }) => {
     dispatch({ type: ACTION_TYPES.SET_MULTIPLE_MAPPING, payload: result });
     setIsLoading(false);
   }, [dispatch, domainId, getAvailableRows, selectedDatasetId, sourceName]);
+
+  const didAutoPopulate = React.useRef(false);
+  useEffect(() => {
+    if (autoPopulate && !didAutoPopulate.current && getAvailableRows().length > 0) {
+      didAutoPopulate.current = true;
+      populateConcepts();
+    }
+  }, [autoPopulate, getAvailableRows, populateConcepts]);
 
   return <MaterialReactTable table={tableInstance} />;
 };
