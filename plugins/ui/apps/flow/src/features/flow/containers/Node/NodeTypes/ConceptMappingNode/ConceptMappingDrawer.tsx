@@ -1,8 +1,9 @@
 import React, { FC, useCallback, useEffect, useMemo } from "react";
-import { NodeProps } from "reactflow";
-import { useSelector } from "react-redux";
+import { Node, NodeProps } from "reactflow";
+import { useSelector, shallowEqual } from "react-redux";
 import { useFormData } from "~/features/flow/hooks";
-import { NodeState } from "~/features/flow/types";
+import { NodeState, NodeDataState } from "~/features/flow/types";
+import { selectSourceNodes } from "~/features/flow/selectors";
 import { dispatch, RootState } from "~/store";
 import { pluginMetadata } from "~/FlowApp";
 import {
@@ -40,6 +41,11 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
   const nodeState = useSelector((state: RootState) =>
     selectNodeById(state, node.id)
   );
+  const sourceNodes = useSelector(
+    (state: RootState) => selectSourceNodes(state, node.id) as Node<NodeDataState>[],
+    shallowEqual
+  );
+  const upstream = sourceNodes[0];
 
   useEffect(() => {
     if (node.data) {
@@ -51,7 +57,7 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     } else {
       setFormData({
         ...EMPTY_FORM_DATA,
-        ...NodeChoiceMap["rabbit_in_a_hat"].defaultData,
+        ...NodeChoiceMap["concept_mapping_node"].defaultData,
       });
     }
   }, [node.data]);
@@ -68,14 +74,22 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
   }, [formData]);
 
   const pluginData = useMemo(() => {
+    const sourceNode = upstream
+      ? {
+          name: upstream.data?.name ?? "",
+          type: upstream.type ?? "",
+          description: upstream.data?.description ?? "",
+          map: (upstream.data as any)?.map,
+          result: (upstream.data as any)?.result,
+        }
+      : undefined;
     return {
-      // TODO: Add locale support when available
-      // locale: "en",
       mappingSuggestion: pluginMetadata.data.mappingSuggestion,
       data: node.data.data,
+      sourceNode,
       onChange: (data: any) => onFormDataChange({ data }),
     };
-  }, [node.data.data, pluginMetadata.data.mappingSuggestion]);
+  }, [node.data.data, pluginMetadata.data.mappingSuggestion, upstream]);
 
   return (
     <NodeDrawer

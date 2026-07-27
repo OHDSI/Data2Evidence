@@ -5,7 +5,7 @@ import { NodeDataState } from "../../../../types";
 import { NodeLayout } from "../../NodeLayout/NodeLayout";
 import { ResultsDrawer } from "../../../Flow/FlowRunResults/ResultsDrawer";
 import { ConceptMappingDrawer } from "./ConceptMappingDrawer";
-import { SourceHandle } from "../../CustomHandle/CustomHandle";
+import { SourceHandle, TargetHandle } from "../../CustomHandle/CustomHandle";
 import { HandleIOType } from "../type";
 import "./ConceptMappingNode.scss";
 
@@ -27,7 +27,7 @@ export const ConceptMappingNode = (node: NodeProps<ConceptMappingNodeData>) => {
         resultType={data.error ? "error" : "success"}
         onResultClick={data.result ? openResult : null}
         node={node}
-        LeftHandle={null}
+        LeftHandle={<TargetHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />}
         RightHandle={
           <SourceHandle ioType={HandleIOType.Dataframe} nodeId={node.id} />
         }

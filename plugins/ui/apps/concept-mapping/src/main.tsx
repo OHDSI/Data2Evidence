@@ -5,11 +5,13 @@ import { SystemAdminPageMetadata } from "@portal/plugin";
 import { App, AppProps } from "./App.tsx";
 import { ConceptMappingState } from "./types/concept-mapping.ts";
 import { initialState } from "./Context/ConceptMappingContext.tsx";
+import { SourceNodeDTO } from "./types/source";
 
 export interface MappingMetadataParams {
   locale?: string;
   data: ConceptMappingState;
   onChange: (data: Partial<ConceptMappingState>) => void;
+  sourceNode?: SourceNodeDTO;
 }
 
 const mockMetadata: SystemAdminPageMetadata<MappingMetadataParams> = {
