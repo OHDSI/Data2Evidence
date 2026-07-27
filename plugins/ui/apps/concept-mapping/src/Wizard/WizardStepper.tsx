@@ -1,9 +1,9 @@
-import React, { FC, useContext, useState } from "react";
+import React, { FC, useContext } from "react";
 import { Step, StepLabel, Stepper } from "@mui/material";
-import { Button, Dialog } from "@portal/components";
+import { Button } from "@portal/components";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../Context/ConceptMappingContext";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
-import { useTranslation } from "../hooks";
+import { useTranslation, useFeedback } from "../hooks";
 import { i18nKeys } from "../Context/state";
 import { Study } from "../types";
 import { SourceNodeDTO } from "../types/source";
@@ -20,10 +20,10 @@ interface WizardStepperProps {
 
 export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, selectedDatasetId }) => {
   const { getText } = useTranslation();
+  const { setFeedback } = useFeedback();
   const state = useContext(ConceptMappingContext);
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
   const step = state.wizard.currentStep;
-  const [pendingReset, setPendingReset] = useState<null | (() => void)>(null);
 
   const stepLabels = [
     getText(i18nKeys.WIZARD__STEP1_TITLE),
@@ -31,13 +31,20 @@ export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, se
     getText(i18nKeys.WIZARD__STEP3_TITLE),
   ];
 
-  // Only prompt+reset once the user has done downstream work worth protecting.
-  const requestReset = () => {
+  // Reset atomically with the source/dataset change (no cancelable confirm - a
+  // confirm dialog would leave the new source paired with the old, now-stale
+  // downstream state if the user dismissed it). When there was downstream work
+  // worth clearing, surface a brief non-blocking notice via the feedback Snackbar;
+  // stay silent on a no-op population (e.g. first mount) to avoid a spurious toast.
+  const handleResetDownstream = () => {
     const hasDownstream = !!state.columnMapping.sourceCode || state.csvData.data.length > 0;
+    dispatch({ type: ACTION_TYPES.RESET_DOWNSTREAM });
     if (hasDownstream) {
-      setPendingReset(() => () => dispatch({ type: ACTION_TYPES.RESET_DOWNSTREAM }));
-    } else {
-      dispatch({ type: ACTION_TYPES.RESET_DOWNSTREAM });
+      setFeedback({
+        type: "success",
+        message: getText(i18nKeys.WIZARD__RESET_CONFIRM_MESSAGE),
+        autoClose: 4000,
+      });
     }
   };
 
@@ -54,7 +61,9 @@ export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, se
         ))}
       </Stepper>
 
-      {step === 0 && <Step1Source sourceNode={sourceNode} datasets={datasets} onResetDownstream={requestReset} />}
+      {step === 0 && (
+        <Step1Source sourceNode={sourceNode} datasets={datasets} onResetDownstream={handleResetDownstream} />
+      )}
       {step === 1 && <Step2ColumnMapping />}
       {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} />}
 
@@ -69,26 +78,6 @@ export const WizardStepper: FC<WizardStepperProps> = ({ sourceNode, datasets, se
           <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={() => goTo(step + 1)} />
         )}
       </div>
-
-      {pendingReset && (
-        <Dialog open title={getText(i18nKeys.WIZARD__RESET_CONFIRM_TITLE)} closable onClose={() => setPendingReset(null)}>
-          <div style={{ padding: 16 }}>{getText(i18nKeys.WIZARD__RESET_CONFIRM_MESSAGE)}</div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: 16 }}>
-            <Button
-              text={getText(i18nKeys.IMPORT_DIALOG__CANCEL)}
-              variant="outlined"
-              onClick={() => setPendingReset(null)}
-            />
-            <Button
-              text={getText(i18nKeys.WIZARD__NEXT)}
-              onClick={() => {
-                pendingReset();
-                setPendingReset(null);
-              }}
-            />
-          </div>
-        </Dialog>
-      )}
     </div>
   );
 };

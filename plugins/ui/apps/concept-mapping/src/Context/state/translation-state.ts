@@ -60,9 +60,7 @@ export const i18nDefault = {
     WIZARD__NEXT: "Next",
     WIZARD__BACK: "Back",
     WIZARD__CONFIGURATION_TAB: "Configuration",
-    WIZARD__RESET_CONFIRM_TITLE: "Change data source?",
-    WIZARD__RESET_CONFIRM_MESSAGE:
-      "Changing the source or dataset will clear your column mapping and concept assignments.",
+    WIZARD__RESET_CONFIRM_MESSAGE: "Column mapping and concepts were cleared because the data source changed.",
     STEP1__CONNECT_NODE_OPTION: "Connect a Database Query (SQL) or Python-to-Table node",
     STEP1__UPLOAD_CSV_OPTION: "Upload a CSV file",
     STEP1__CONNECTED_SOURCE: "Connected data source",
