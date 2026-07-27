@@ -136,30 +136,17 @@
           <d4l-spinner />
         </div>
         <div v-else>
-          <div v-if="getBookmarksLoadError" class="bookmark-empty-state">
-            <svg class="bookmark-empty-state__icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M32 10L58 54H6L32 10Z" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
-              <path d="M32 26V38" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-              <circle cx="32" cy="46" r="1.6" fill="currentColor" />
-            </svg>
+          <div v-if="getBookmarksLoadError" class="bookmark-empty-state bookmark-empty-state--error">
+            <LoadErrorIllustration class="bookmark-empty-state__icon bookmark-empty-state__illustration" />
             <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_ERROR_TITLE') }}</div>
             <div class="bookmark-empty-state__body">{{ getText('MRI_PA_BOOKMARKS_ERROR_TEXT') }}</div>
-            <div class="bookmark-empty-state__refresh">
-              <Button :text="getText('MRI_PA_BOOKMARKS_REFRESH')" :onClick="loadBookmarks" />
-            </div>
+            <button class="bookmark-empty-state__refresh" type="button" @click="loadBookmarks">
+              <RefreshIcon class="bookmark-empty-state__refresh-icon" />
+              {{ getText('MRI_PA_BOOKMARKS_REFRESH') }}
+            </button>
           </div>
           <div v-else-if="!bookmarksDisplay || bookmarksDisplay.length === 0" class="bookmark-empty-state">
-            <svg class="bookmark-empty-state__icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="24" cy="20" r="8" stroke="currentColor" stroke-width="2.5" />
-              <path
-                d="M8 52c0-8.8 7.2-16 16-16s16 7.2 16 16"
-                stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
-              />
-              <path d="M40 12a8 8 0 0 1 0 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-              <path d="M46 36.5c6.6 1.6 10 7 10 15.5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-            </svg>
+            <UsersIcon class="bookmark-empty-state__icon bookmark-empty-state__icon--users" />
             <div class="bookmark-empty-state__title">{{ getText('MRI_PA_BOOKMARKS_EMPTY_TITLE') }}</div>
             <div class="bookmark-empty-state__body">{{ getText('MRI_PA_NO_BOOKMARKS_TEXT') }}</div>
           </div>
@@ -243,6 +230,9 @@ import BookmarkItems from './BookmarkItems.vue'
 import SlideToggle from './SlideToggle.vue'
 import { getBookmarkType } from '../utils/BookmarkUtils'
 import Button from './Button.vue'
+import UsersIcon from './icons/UsersIcon.vue'
+import LoadErrorIllustration from './icons/LoadErrorIllustration.vue'
+import RefreshIcon from './icons/RefreshIcon.vue'
 import ImportAtlasCohortDefinitionDialog from './ImportAtlasCohortDefinitionDialog.vue'
 import { useAtlasStore } from '../stores/atlas'
 import { usePortalContext } from '../composables/usePortalContext'
@@ -806,6 +796,9 @@ export default {
     SlideToggle,
     Button,
     ImportAtlasCohortDefinitionDialog,
+    UsersIcon,
+    LoadErrorIllustration,
+    RefreshIcon,
   },
 }
 </script>
