@@ -377,6 +377,23 @@ $ai-panel-transition: 0.2s ease;
   }
 }
 
+// --- Thinking ---
+// The gaps between the visible signs of work: prompt sent but no tokens back yet, and
+// a tool result being weighed up. Built to the same measurements as a tool row — same
+// spinner, same status slot, same type — so a slow turn reads as one continuous trail
+// of status lines with the labels aligned, rather than a banner that competes with the
+// reply about to land under it.
+.ai-assistant__thinking {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $ai-neutral;
+}
+
 // --- Tool activity ---
 // Which cohort tools the assistant ran for this reply. These sit in the conversation
 // flow ABOVE the reply bubble rather than inside it: they are the work, not part of
@@ -430,7 +447,10 @@ button.ai-assistant__tool-summary {
   }
 }
 
-.ai-assistant__tool-status {
+// A fixed-size slot so the labels line up down the column whatever glyph is in it —
+// including the thinking row's, which stacks in the same trail.
+.ai-assistant__tool-status,
+.ai-assistant__thinking-status {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -445,8 +465,10 @@ button.ai-assistant__tool-summary {
 }
 
 // A ring rather than a MUI spinner: at 11px the progress component's stroke and
-// padding are heavier than the text it sits next to.
-.ai-assistant__tool-spinner {
+// padding are heavier than the text it sits next to. Shared with the thinking row:
+// both mean "working on it", so they should not be two different spinners.
+.ai-assistant__tool-spinner,
+.ai-assistant__thinking-spinner {
   width: 11px;
   height: 11px;
   border: 1.5px solid $ai-border;
@@ -461,9 +483,10 @@ button.ai-assistant__tool-summary {
   }
 }
 
-// The "Running" label already carries the state, so the motion is decoration.
+// The "Running"/"Thinking" label already carries the state, so the motion is decoration.
 @media (prefers-reduced-motion: reduce) {
-  .ai-assistant__tool-spinner {
+  .ai-assistant__tool-spinner,
+  .ai-assistant__thinking-spinner {
     animation: none;
   }
 }

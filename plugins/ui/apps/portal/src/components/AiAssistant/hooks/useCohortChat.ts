@@ -76,6 +76,13 @@ export interface CohortChatState {
   sendMessage: (text: string) => void;
   reset: () => void;
   isStreaming: boolean;
+  /**
+   * A turn is in flight with nothing on screen to show for it: no reply text
+   * arriving and no tool row reading "Running". The panel says "Thinking" for those
+   * gaps — waiting on the first token, and again while the model weighs up a tool
+   * result — which are otherwise indistinguishable from a dead panel.
+   */
+  isThinking: boolean;
   /** Live PA cohort editing is possible right now. */
   liveEditing: boolean;
   /** PA is open but on a different dataset than the portal's active one. */
@@ -119,6 +126,23 @@ function toToolActivity(part: any): ToolActivity {
   if (part.state === "output-error") return { ...base, state: "error", errorText: part.errorText };
   if (part.state === "output-available") return { ...base, state: "ok", output: part.output };
   return { ...base, state: "running" };
+}
+
+// Is the turn already showing its work? Text arriving is its own live signal, and an
+// in-flight tool call has a row that says "Running" — so only the gaps between them
+// need the panel to speak up. The tail part is what the turn is doing NOW: earlier
+// parts are finished work that is already rendered.
+function hasVisibleActivity(message: UIMessage | undefined): boolean {
+  const part = message?.role === "assistant" ? message.parts[message.parts.length - 1] : undefined;
+  if (!part) return false;
+  // A text part with no state at all is not one this turn is streaming, but read it
+  // as live anyway: claiming to be thinking over a reply that is arriving is worse
+  // than staying quiet for one more chunk.
+  if (isTextUIPart(part)) return part.state !== "done";
+  if (isToolUIPart(part)) return part.state === "input-streaming" || part.state === "input-available";
+  // Anything else (reasoning, in particular) is work the panel does not render, so
+  // there is nothing on screen and "Thinking" is exactly right.
+  return false;
 }
 
 // The concept list arrives as model-authored tool input, so nothing about its shape
@@ -630,11 +654,14 @@ export function useCohortChat(): CohortChatState {
     [pendingConceptSelection]
   );
 
+  const isStreaming = chat.status === "submitted" || chat.status === "streaming";
+
   return {
     messages,
     sendMessage,
     reset,
-    isStreaming: chat.status === "submitted" || chat.status === "streaming",
+    isStreaming,
+    isThinking: isStreaming && !hasVisibleActivity(chat.messages[chat.messages.length - 1]),
     liveEditing: available && !datasetMismatch,
     datasetMismatch,
     datasetMissing: !activeDataset?.id,

@@ -162,6 +162,7 @@ export const i18nDefault = {
       "Open the cohort builder (Cohorts → Create Cohort: D2E) so I can build and edit cohorts live. Until then I can only send you a link.",
     AI_ASSISTANT__DATASET_MISMATCH:
       "The cohort builder is on a different dataset, so live editing is paused until they match.",
+    AI_ASSISTANT__THINKING: "Thinking",
     AI_ASSISTANT__TOOL_RUNNING: "Running",
     AI_ASSISTANT__TOOL_RAN: "Ran",
     AI_ASSISTANT__TOOL_FAILED: "Failed",

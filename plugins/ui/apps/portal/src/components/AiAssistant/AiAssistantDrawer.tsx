@@ -74,6 +74,7 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
     sendMessage,
     reset,
     isStreaming,
+    isThinking,
     liveEditing,
     datasetMismatch,
     datasetMissing,
@@ -242,6 +243,7 @@ export const AiAssistantDrawer: FC<AiAssistantDrawerProps> = ({ open, onClose })
         {hasConversation ? (
           <ConversationView
             messages={messages}
+            thinking={isThinking}
             // Cards tick; the chips below are what actually sends the answer.
             onSelectOption={(option) => toggleConceptSetOption(option.id)}
             onToggleConcept={toggleConcept}

@@ -11,6 +11,8 @@ const mockAddToolOutput = jest.fn();
 let capturedInit: any;
 // The transcript useChat reports back, so tests can stand up an in-flight tool call.
 let mockMessages: any[] = [];
+// Where the turn is: "ready" unless a test is standing up one in flight.
+let mockStatus = "ready";
 
 jest.mock("../../../../containers/auth/auth", () => ({
   getAuthToken: jest.fn(),
@@ -21,7 +23,7 @@ jest.mock("@ai-sdk/react", () => ({
     capturedInit = init;
     return {
       messages: mockMessages,
-      status: "ready",
+      status: mockStatus,
       error: undefined,
       sendMessage: jest.fn(),
       setMessages: jest.fn(),
@@ -59,6 +61,7 @@ describe("useCohortChat", () => {
   beforeEach(() => {
     capturedInit = undefined;
     mockMessages = [];
+    mockStatus = "ready";
     mockAddToolOutput.mockClear();
     // react-scripts runs jest with resetMocks, which strips mock implementations
     // between tests — so this has to be (re)applied here, not at mock definition.
@@ -176,6 +179,85 @@ describe("useCohortChat", () => {
     expect(mockAddToolOutput).toHaveBeenCalledWith(
       expect.objectContaining({ toolCallId: "call-3", state: "output-error" })
     );
+  });
+
+  // "Thinking" fills the gaps where the turn is running but rendering nothing: the
+  // wait for the first token, and the wait after a tool returns. It has to be off
+  // whenever something else already shows the work, or it duplicates it.
+  describe("thinking", () => {
+    const userTurn = { id: "m1", role: "user", parts: [{ type: "text", text: "hi", state: "done" }] };
+
+    // A turn mid-flight: the user's message, plus whatever the assistant has produced
+    // so far (nothing at all, before the first chunk lands).
+    const inFlight = (parts: any[], status = "streaming") => {
+      mockStatus = status;
+      mockMessages = parts.length ? [userTurn, { id: "m2", role: "assistant", parts }] : [userTurn];
+      renderHook();
+    };
+
+    it("thinks while the request is out and nothing has come back", () => {
+      inFlight([], "submitted");
+
+      expect(state.isThinking).toBe(true);
+    });
+
+    it("stops as soon as the reply starts streaming", () => {
+      inFlight([{ type: "text", text: "Building the", state: "streaming" }]);
+
+      expect(state.isThinking).toBe(false);
+    });
+
+    // The model often says what it is about to do, then goes quiet to do it.
+    it("thinks again once a finished text part is the last thing said", () => {
+      inFlight([{ type: "text", text: "Let me look that up.", state: "done" }]);
+
+      expect(state.isThinking).toBe(true);
+    });
+
+    // The tool row already says "Running" — two live indicators for one action.
+    it("stays quiet while a tool call is in flight", () => {
+      inFlight([{ type: "tool-search_concepts", toolCallId: "c1", state: "input-available", input: {} }]);
+
+      expect(state.isThinking).toBe(false);
+    });
+
+    it("thinks while the model weighs up a tool result", () => {
+      inFlight(
+        [{ type: "tool-search_concepts", toolCallId: "c1", state: "output-available", output: {} }],
+        "submitted"
+      );
+
+      expect(state.isThinking).toBe(true);
+    });
+
+    it("is off once the turn is over", () => {
+      inFlight([{ type: "text", text: "Done.", state: "done" }], "ready");
+
+      expect(state.isThinking).toBe(false);
+    });
+
+    // A parked review is waiting on the user, not on the model.
+    it("is off while a concept review is open", () => {
+      mockStatus = "ready";
+      mockMessages = [
+        {
+          id: "m1",
+          role: "assistant",
+          parts: [
+            {
+              type: "tool-ui_confirm_concepts",
+              toolCallId: "call-9",
+              state: "input-available",
+              input: { conceptSetName: "T2DM", concepts: [{ conceptId: 1, conceptName: "One" }] },
+            },
+          ],
+        },
+      ];
+      renderHook();
+
+      expect(state.pendingConceptSelection).toBeDefined();
+      expect(state.isThinking).toBe(false);
+    });
   });
 
   // ui_confirm_concepts is answered by the user, so the hook's job is to NOT answer

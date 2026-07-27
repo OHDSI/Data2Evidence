@@ -14,6 +14,7 @@ const mockChatState: CohortChatState = {
   sendMessage: jest.fn(),
   reset: jest.fn(),
   isStreaming: false,
+  isThinking: false,
   liveEditing: true,
   datasetMismatch: false,
   datasetMissing: false,
@@ -51,6 +52,7 @@ describe("AiAssistantDrawer", () => {
       sendMessage: jest.fn(),
       reset: jest.fn(),
       isStreaming: false,
+      isThinking: false,
       liveEditing: true,
       datasetMismatch: false,
       datasetMissing: false,
@@ -563,6 +565,48 @@ describe("AiAssistantDrawer", () => {
       fireEvent.click(getByTestId("ai-assistant-send"));
 
       expect(input).toHaveStyle({ height: "21px" });
+    });
+  });
+
+  // A cohort turn spends seconds between its visible steps — waiting on the first
+  // token, and again after a tool returns. An empty panel through those gaps reads as
+  // a prompt that went nowhere.
+  describe("thinking indicator", () => {
+    it("says Thinking at the tail of the conversation while the model works", () => {
+      setChat({
+        messages: [{ id: "m1", role: "user", text: "Female patients over 60" }],
+        isStreaming: true,
+        isThinking: true,
+      });
+      const { getByTestId } = renderDrawer();
+
+      const thinking = getByTestId("ai-assistant-thinking");
+      expect(thinking).toHaveTextContent("Thinking");
+      // Reads like a tool row's "Running search_concepts" — spinner, then the label.
+      expect(thinking.querySelector(".ai-assistant__thinking-spinner")).toBeInTheDocument();
+      // Last thing in the conversation: it stands in for the reply about to land.
+      expect(getByTestId("ai-assistant-conversation").contains(thinking)).toBe(true);
+    });
+
+    it("drops it once the reply is streaming in", () => {
+      setChat({
+        messages: [
+          { id: "m1", role: "user", text: "Female patients over 60" },
+          { id: "m2", role: "assistant", text: "Building" },
+        ],
+        isStreaming: true,
+        isThinking: false,
+      });
+      const { queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-assistant-thinking")).not.toBeInTheDocument();
+    });
+
+    it("shows nothing while the turn is finished", () => {
+      setChat({ messages: [{ id: "m1", role: "assistant", text: "Done." }] });
+      const { queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-assistant-thinking")).not.toBeInTheDocument();
     });
   });
 
