@@ -130,6 +130,7 @@ export const i18nDefault = {
     ADD_USER_DIALOG__PASSWORD: "Password",
     ADD_USER_DIALOG__REQUIRED: "This is required",
     ADD_USER_DIALOG__SHOW_PASSWORD: "Show password",
+    ADD_USER_DIALOG__SUCCESS: "User added successfully",
     ADD_USER_DIALOG__USERNAME: "Username",
     ADD_USER_DIALOG__USERNAME_HELPER: "3-32 characters; letters, numbers, or underscore; must not start with a number.",
     ADD_USER_DIALOG__USERNAME_MAX_LENGTH: "Username must be at most 32 characters.",
@@ -448,6 +449,7 @@ export const i18nDefault = {
     DELETE_STUDY_DIALOG__ENTER_DATASET_NAME: "Enter dataset name to confirm",
     DELETE_STUDY_DIALOG__ENTER_EXACT_DATASET_NAME: "Please enter the exact dataset name",
     DELETE_STUDY_DIALOG__ERROR: "Study {0} failed to delete",
+    DELETE_STUDY_DIALOG__SUCCESS: "Dataset deleted successfully",
     DELETE_STUDY_DIALOG__WARNING_CHILDREN:
       "Warning: This dataset has {0} cache dataset{1}. Deleting this dataset will also delete all its cache datasets.",
     DELETE_STUDY_DIALOG__YES_DELETE: "Yes, delete",
@@ -472,6 +474,7 @@ export const i18nDefault = {
     DELETE_USER_DIALOG__DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     DELETE_USER_DIALOG__ERROR: "An error has occurred.",
+    DELETE_USER_DIALOG__SUCCESS: "User deleted successfully",
     DELETE_USER_DIALOG__YES: "Yes, delete",
     DEMO_SETUP__DESCRIPTION: "Please execute the following step to setup the demo dataset:",
     DEMO_SETUP__RUN: "Run",
@@ -616,6 +619,7 @@ export const i18nDefault = {
     EDIT_TENANT_ROLE_DIALOG__EDIT: "Edit roles",
     EDIT_TENANT_ROLE_DIALOG__ROLES: "Roles",
     EDIT_TENANT_ROLE_DIALOG__SAVE: "Save",
+    EDIT_TENANT_ROLE_DIALOG__SUCCESS: "User roles updated successfully",
     EXECUTE_FLOW_DIALOG__ERROR_DESCRIPTION:
       "Please try again. To report the error, please send an email to your administrator.",
     FEATURE__ADMIN_ONLY_SHARING: "Admin-only sharing",
@@ -1280,6 +1284,7 @@ export const i18nDefault = {
     UPDATE_STUDY_DIALOG__REQUIRED: "This is required",
     UPDATE_STUDY_DIALOG__RESULT_SCHEMA_NAME: "Result schema name",
     UPDATE_STUDY_DIALOG__SAVE: "Save",
+    UPDATE_STUDY_DIALOG__SUCCESS: "Dataset updated successfully",
     UPDATE_STUDY_DIALOG__TAGS: "Tags",
     UPDATE_STUDY_DIALOG__TOKEN_CODE: "Token dataset code",
     UPDATE_STUDY_DIALOG__TYPE: "Type",
@@ -1289,9 +1294,15 @@ export const i18nDefault = {
     TRANSFORM_TO_WEBAPI__BODY:
       "This merges the cache dataset into the source row and deletes the cache row. Researcher roles on the cache row will be orphaned and must be re-granted on the source after migration. Continue?",
     TRANSFORM_TO_WEBAPI__TITLE: "Convert dataset to WebAPI-managed",
+    USER_OVERVIEW__ACTIVATE_ERROR: "Failed to activate user. Please try again.",
+    USER_OVERVIEW__ACTIVATE_SUCCESS: "User activated successfully",
     USER_OVERVIEW__ADD_USER: "Add user",
+    USER_OVERVIEW__DEACTIVATE_ERROR: "Failed to deactivate user. Please try again.",
+    USER_OVERVIEW__DEACTIVATE_SUCCESS: "User deactivated successfully",
     USER_OVERVIEW__DELETE: "Delete",
     USER_OVERVIEW__EDIT: "Edit",
+    USER_OVERVIEW__EDIT_ROLE_SUCCESS:
+      "User {0} has been granted new roles. Notify the user they must sign in again to apply them",
     USER_OVERVIEW__INACTIVE: "Inactive",
     USER_OVERVIEW__NO_DATA: "No data available",
     USER_OVERVIEW__ROLE: "Role",
