@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/path@1": "1.1.3",
     "npm:@jupyterlab/services@^7.4.3": "7.4.5",
@@ -21,6 +22,12 @@
     "npm:ws@^8.18.0": "8.18.3"
   },
   "jsr": {
+    "@std/assert@1.0.19": {
+      "integrity": "eaada96ee120cb980bc47e040f82814d786fe8162ecc53c91d8df60b8755991e",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
     "@std/internal@1.0.12": {
       "integrity": "972a634fd5bc34b242024402972cd5143eac68d8dffaca5eaa4dba30ce17b027"
     },
@@ -664,6 +671,7 @@
         "package-json-from-dist",
         "path-scurry"
       ],
+      "deprecated": true,
       "bin": true
     },
     "gopd@1.2.0": {
@@ -1410,6 +1418,7 @@
     },
     "uuid@10.0.0": {
       "integrity": "sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==",
+      "deprecated": true,
       "bin": true
     },
     "uuid@11.1.0": {
@@ -1543,7 +1552,9 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@std/assert@1",
       "jsr:@std/path@1",
+      "jsr:@std/testing@1",
       "npm:@jupyterlab/services@^7.4.3",
       "npm:async@*",
       "npm:axios@~0.21.2",
