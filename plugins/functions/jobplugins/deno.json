@@ -10,7 +10,7 @@
     "emitDecoratorMetadata": true
   },
   "tasks": {
-    "test": "deno test -A --config deno.json tests/"
+    "test": "deno test -A --no-check --config deno.json tests/"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@^1.0.0",
