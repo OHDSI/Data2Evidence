@@ -1311,7 +1311,18 @@ def execute(rSpec, rExecutionSettings, rConnectionDetails):
         _patch = "/app/flows/hades/strategus_plugin/patch_treatment_patterns.R"
         if os.path.exists(_patch):
             ro.r(f'source("{_patch}")')
-        ro.r('cat("Max Java Heap Size (GB): ", .jcall(.jnew("java/lang/Runtime"), "J", "maxMemory") / 1e9, "\\n")')
+        # rJava is loaded (DatabaseConnector Imports it, and its .onLoad starts the
+        # JVM) but never attached, so bare .jcall/.jnew do not resolve here -- the
+        # pixi env's R_PROFILE_USER (rprofile_java.R) only sets java.parameters,
+        # unlike the old image's init_rjava.R which ran library(rJava).
+        # Namespace-qualify, and use the Runtime singleton rather than .jnew (which
+        # bypasses the private constructor via JNI). Diagnostic only: never fatal.
+        ro.r('''try({
+  if (requireNamespace("rJava", quietly = TRUE))
+    cat("Max Java Heap Size (GB): ",
+        rJava::.jcall(rJava::.jcall("java/lang/Runtime", "Ljava/lang/Runtime;", "getRuntime"),
+                      "J", "maxMemory") / 1e9, "\\n")
+}, silent = TRUE)''')
         rStrategus = importr('Strategus')
         rStrategus.execute(connectionDetails = rConnectionDetails, analysisSpecifications = rSpec, executionSettings = rExecutionSettings)
 
