@@ -51,5 +51,21 @@
   "SOURCE_TO_CONCEPT_MAP_TABLE__TARGET_VOCABULARY_ID": "Zielvokabular-ID",
   "SOURCE_TO_CONCEPT_MAP_TABLE__VALID_START_DATE": "Startdatum",
   "SOURCE_TO_CONCEPT_MAP_TABLE__VALID_END_DATE": "Enddatum",
-  "SOURCE_TO_CONCEPT_MAP_TABLE__INVALID_REASON": "Ungültiger Grund"
+  "SOURCE_TO_CONCEPT_MAP_TABLE__INVALID_REASON": "Ungültiger Grund",
+  "WIZARD__STEP1_TITLE": "Quelle & Datensatz",
+  "WIZARD__STEP2_TITLE": "Spaltenzuordnung",
+  "WIZARD__STEP3_TITLE": "Konzeptzuordnung",
+  "WIZARD__NEXT": "Weiter",
+  "WIZARD__BACK": "Zurück",
+  "WIZARD__CONFIGURATION_TAB": "Konfiguration",
+  "WIZARD__RESET_CONFIRM_TITLE": "Datenquelle ändern?",
+  "WIZARD__RESET_CONFIRM_MESSAGE": "Beim Ändern der Quelle oder des Datensatzes werden Ihre Spaltenzuordnung und Konzeptzuweisungen gelöscht.",
+  "STEP1__CONNECT_NODE_OPTION": "Datenbankabfrage (SQL)- oder Python-to-Table-Knoten verbinden",
+  "STEP1__UPLOAD_CSV_OPTION": "CSV-Datei hochladen",
+  "STEP1__CONNECTED_SOURCE": "Verbundene Datenquelle",
+  "STEP1__CONNECTED_NODE_HINT": "Um stattdessen eine CSV hochzuladen, entfernen Sie diese Verbindung auf der Arbeitsfläche.",
+  "STEP1__UPLOAD_FAILED": "Upload fehlgeschlagen. Bitte überprüfen Sie die Datei und versuchen Sie es erneut.",
+  "STEP1__MANUAL_COLUMNS_LABEL": "Quellspalten eingeben (durch Komma getrennt)",
+  "STEP1__LOAD_RECOMMENDATION": "Konzeptempfehlung standardmäßig laden",
+  "COLUMN_MAPPING__NOT_APPLICABLE": "Nicht zutreffend"
 }

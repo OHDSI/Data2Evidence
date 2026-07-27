@@ -54,6 +54,23 @@ export const i18nDefault = {
     SOURCE_TO_CONCEPT_MAP_TABLE__VALID_START_DATE: "Start date",
     SOURCE_TO_CONCEPT_MAP_TABLE__VALID_END_DATE: "End date",
     SOURCE_TO_CONCEPT_MAP_TABLE__INVALID_REASON: "Invalid reason",
+    WIZARD__STEP1_TITLE: "Source & dataset",
+    WIZARD__STEP2_TITLE: "Column mapping",
+    WIZARD__STEP3_TITLE: "Concept mapping",
+    WIZARD__NEXT: "Next",
+    WIZARD__BACK: "Back",
+    WIZARD__CONFIGURATION_TAB: "Configuration",
+    WIZARD__RESET_CONFIRM_TITLE: "Change data source?",
+    WIZARD__RESET_CONFIRM_MESSAGE:
+      "Changing the source or dataset will clear your column mapping and concept assignments.",
+    STEP1__CONNECT_NODE_OPTION: "Connect a Database Query (SQL) or Python-to-Table node",
+    STEP1__UPLOAD_CSV_OPTION: "Upload a CSV file",
+    STEP1__CONNECTED_SOURCE: "Connected data source",
+    STEP1__CONNECTED_NODE_HINT: "To upload a CSV instead, remove this connection on the canvas.",
+    STEP1__UPLOAD_FAILED: "Upload failed. Please check the file and try again.",
+    STEP1__MANUAL_COLUMNS_LABEL: "Enter source columns (comma-separated)",
+    STEP1__LOAD_RECOMMENDATION: "Load concept recommendation by default",
+    COLUMN_MAPPING__NOT_APPLICABLE: "Not applicable",
   },
 };
 
