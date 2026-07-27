@@ -14,6 +14,12 @@ vi.mock('@/store', () => ({
     commit: vi.fn(),
   },
 }))
+vi.mock('@/utils/BookmarkUtils', () => ({
+  formatBookmark: vi.fn(bookmark => bookmark),
+  formatCohortDefinition: vi.fn(cohortDefinition => cohortDefinition),
+  formatAtlasCohortDefinition: vi.fn(atlasCohortDefinition => atlasCohortDefinition),
+  processBookmarksData: vi.fn(() => ({ bookmarks: [], materializedCohorts: [], atlasCohortDefinitions: [] })),
+}))
 
 import bookmarkModule from '../bookmark'
 import * as types from '../../mutation-types'
@@ -29,6 +35,7 @@ describe('store - bookmark', () => {
       activeBookmark: any
       addNewCohort: boolean
       loading: boolean
+      loadError: boolean
       canDatasetMaterializeCohorts: boolean
       canMaterializeCohortDatasetId: string
       isRestoringBookmark: boolean
@@ -45,6 +52,7 @@ describe('store - bookmark', () => {
         activeBookmark: null,
         addNewCohort: false,
         loading: false,
+        loadError: false,
         canDatasetMaterializeCohorts: false,
         canMaterializeCohortDatasetId: '',
         isRestoringBookmark: false,
@@ -91,6 +99,13 @@ describe('store - bookmark', () => {
       const baseline = { filter: { foo: 'bar' }, chartType: 'stacked' }
       bookmarkModule.mutations[types.SET_ACTIVE_BOOKMARK_BASELINE](state, baseline)
       expect(state.activeBookmarkBaseline).toEqual(baseline)
+    })
+
+    it('SET_BOOKMARKS_LOAD_ERROR toggles the load error flag', () => {
+      bookmarkModule.mutations[types.SET_BOOKMARKS_LOAD_ERROR](state, { loadError: true })
+      expect(state.loadError).toBe(true)
+      bookmarkModule.mutations[types.SET_BOOKMARKS_LOAD_ERROR](state, { loadError: false })
+      expect(state.loadError).toBe(false)
     })
   })
 
@@ -302,6 +317,43 @@ describe('store - bookmark', () => {
         const moduleGetters = { getBookmarksData: liveData }
         const rootGetters = { getMriFrontendConfig: createConfig(), getIsColorAxisAutoDefaulted: true }
         expect(callGetter(state, moduleGetters, rootGetters)).toBe(false)
+      })
+    })
+  })
+
+  describe('actions', () => {
+    describe('fireBookmarkQuery', () => {
+      const rootGetters = {
+        getMriFrontendConfig: {
+          getPaConfigId: () => 'pa-config-id',
+          _internalConfig: { panelOptions: { atlasCohortDefinition: false } },
+        },
+        getSelectedDataset: { id: 'dataset-1' },
+      }
+
+      it("clears the load error when 'loadAll' succeeds", async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockResolvedValue({ data: {} })
+        await bookmarkModule.actions.fireBookmarkQuery(
+          { commit, dispatch, rootGetters },
+          { method: 'get', params: { cmd: 'loadAll' } }
+        )
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: false })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: true })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
+      })
+
+      it("sets the load error and rethrows when 'loadAll' fails", async () => {
+        const commit = vi.fn()
+        const dispatch = vi.fn().mockRejectedValue(new Error('Network Error'))
+        await expect(
+          bookmarkModule.actions.fireBookmarkQuery(
+            { commit, dispatch, rootGetters },
+            { method: 'get', params: { cmd: 'loadAll' } }
+          )
+        ).rejects.toThrow('Network Error')
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOAD_ERROR, { loadError: true })
+        expect(commit).toHaveBeenCalledWith(types.SET_BOOKMARKS_LOADING, { loading: false })
       })
     })
   })

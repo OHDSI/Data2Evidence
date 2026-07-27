@@ -262,13 +262,33 @@
         }
       }
     }
-    .bookmark-noContent {
+    .bookmark-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 60px 30px;
+      text-align: center;
       color: var(--color-ui-dark-text);
-      font-size: 14px;
-      font-weight: normal;
-      margin: 10px;
-      padding: 30px;
-      white-space: normal;
+      .bookmark-empty-state__icon {
+        width: 64px;
+        height: 64px;
+        opacity: 0.35;
+        margin-bottom: 8px;
+      }
+      .bookmark-empty-state__title {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .bookmark-empty-state__body {
+        font-size: 13px;
+        font-weight: normal;
+        max-width: 420px;
+        opacity: 0.75;
+      }
+      .bookmark-empty-state__refresh {
+        width: 160px;
+      }
     }
     .bookmark-list {
       display: flex;
