@@ -59,7 +59,14 @@
           </div>
         </bs-dropdown>
       </div>
-      <div>
+      <div class="d-flex align-items-center">
+        <appCheckbox
+          v-if="canShare"
+          class="share-checkbox"
+          v-model="shareBookmark"
+          :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
+          :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
+        ></appCheckbox>
         <d4l-button
           ref="saveBookmarkButton"
           :disabled="!hasChanges"
@@ -100,7 +107,7 @@
                       tabindex="0"
                       v-focus
                       required
-                      :maxlength="this.maxLength+1"
+                      :maxlength="this.maxLength + 1"
                       @keydown.enter="saveBookmark"
                     />
                     <div
@@ -120,14 +127,6 @@
                     </div>
                   </div>
                 </div>
-              </div>
-
-              <div v-if="canShare" class="row row-checkbox">
-                <appCheckbox
-                  v-model="shareBookmark"
-                  :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
-                  :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
-                ></appCheckbox>
               </div>
             </div>
           </div>
@@ -240,7 +239,8 @@ export default {
     ]),
     hasChanges() {
       // For regular D2E bookmarks, use existing logic with null checks
-      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges
+      const shareChanged = this.canShare && this.shareBookmark !== !!this.getActiveBookmark?.shared
+      return this.getActiveBookmark?.isNew || this.getCurrentBookmarkHasChanges || shareChanged
     },
     isNewCohort() {
       return this.getActiveBookmark?.isNew

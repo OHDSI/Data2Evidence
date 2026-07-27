@@ -47,6 +47,13 @@
     overflow-y: auto;
   }
 
+  .share-checkbox {
+    display: flex;
+    align-items: center;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+
   .save-bookmark {
     box-sizing: border-box;
 
