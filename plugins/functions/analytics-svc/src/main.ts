@@ -161,6 +161,12 @@ const initRoutes = async (app: express.Application) => {
                         ? await getDBConnections({
                               analyticsCredentials: credentials,
                               userObj,
+                              sessionVariables: {
+                                  paConfigId: req.paConfigId,
+                                  paConfigVersion: req.paConfigVersion,
+                                  cdmConfigId: req.cdmConfigId,
+                                  cdmConfigVersion: req.cdmConfigVersion,
+                              },
                           })
                         : getTrexDbConnection({
                               analyticsCredentials: credentials,
@@ -683,6 +689,7 @@ const getTrexDbConnection = ({
 const getDBConnections = async ({
     analyticsCredentials,
     userObj,
+    sessionVariables,
 }): Promise<{
     analyticsConnection: Connection.ConnectionInterface;
 }> => {
@@ -700,6 +707,22 @@ const getDBConnections = async ({
             `${env.PROJECT_NAME}-cohorts`;
         analyticsCredentials["SESSIONVARIABLE:APPLICATIONUSER"] =
             userObj.getEmail() || userObj.getUser();
+        if (sessionVariables?.paConfigId) {
+            analyticsCredentials["SESSIONVARIABLE:PA_CONFIG_ID"] =
+                sessionVariables.paConfigId;
+        }
+        if (sessionVariables?.paConfigVersion) {
+            analyticsCredentials["SESSIONVARIABLE:PA_CONFIG_VERSION"] =
+                sessionVariables.paConfigVersion;
+        }
+        if (sessionVariables?.cdmConfigId) {
+            analyticsCredentials["SESSIONVARIABLE:CDM_CONFIG_ID"] =
+                sessionVariables.cdmConfigId;
+        }
+        if (sessionVariables?.cdmConfigVersion) {
+            analyticsCredentials["SESSIONVARIABLE:CDM_CONFIG_VERSION"] =
+                sessionVariables.cdmConfigVersion;
+        }
 
         if (analyticsCredentials.authentication_mode === "JWT") {
             delete analyticsCredentials.user;
