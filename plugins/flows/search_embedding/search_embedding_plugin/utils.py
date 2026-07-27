@@ -1,3 +1,4 @@
+import os
 import torch.nn.functional as F
 from torch import Tensor
 import torch
@@ -8,7 +9,7 @@ from typing import List, Dict, Any
 import duckdb
 from _shared_flow_utils.dao.DBDao import DBDao
 
-DUCKDB_EXTENSIONS_FILEPATH = "/app/duckdb_extensions"
+DUCKDB_EXTENSIONS_FILEPATH = os.path.join(os.getcwd(), "duckdb_extensions")
 
 def average_pool(last_hidden_states: Tensor,
                  attention_mask: Tensor) -> Tensor:

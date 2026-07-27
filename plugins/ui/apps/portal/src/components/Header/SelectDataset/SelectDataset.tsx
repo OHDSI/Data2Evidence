@@ -3,6 +3,8 @@ import { Select, SelectChangeEvent, SelectProps } from "@portal/components";
 import { MenuItem } from "@mui/material";
 import { useDatasets, usePublicDatasets } from "../../../hooks";
 import { useActiveDataset, useTranslation } from "../../../contexts";
+import { useGuardedChange } from "../../../hooks/useGuardedChange";
+import { UnsavedChangesDialog } from "../../UnsavedChangesDialog/UnsavedChangesDialog";
 import { Study } from "../../../types";
 
 interface SelectDatasetInternalProps extends Omit<SelectProps, "onChange"> {
@@ -16,20 +18,25 @@ const CURRENT_RELEASE_ID = "";
 const SelectDatasetInternal: FC<SelectDatasetInternalProps> = ({ datasets, loading, onChange, ...props }) => {
   const { getText, i18nKeys } = useTranslation();
   const { activeDataset, setActiveDatasetId, setActiveReleaseId } = useActiveDataset();
+  const guard = useGuardedChange();
 
   const handleChange = useCallback(
     (datasetId: string) => {
-      setActiveDatasetId(datasetId);
-      setActiveReleaseId(CURRENT_RELEASE_ID);
-
-      typeof onChange === "function" && onChange(datasetId);
+      // Defer the switch when a mounted app has unsaved changes; only commit on
+      // confirm so the dropdown stays on the current dataset if the user stays.
+      guard.request(() => {
+        setActiveDatasetId(datasetId);
+        setActiveReleaseId(CURRENT_RELEASE_ID);
+        typeof onChange === "function" && onChange(datasetId);
+      });
     },
-    [onChange]
+    [onChange, guard]
   );
 
   if (datasets.length === 0) return null;
 
   return (
+    <>
     <Select
       className="select-dataset"
       variant="outlined"
@@ -59,6 +66,8 @@ const SelectDatasetInternal: FC<SelectDatasetInternalProps> = ({ datasets, loadi
         </MenuItem>
       ))}
     </Select>
+    <UnsavedChangesDialog open={guard.open} onLeave={guard.onLeave} onCancel={guard.onCancel} />
+    </>
   );
 };
 

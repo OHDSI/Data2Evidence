@@ -31,6 +31,25 @@ const noCache = (req, res, next) => {
   next();
 };
 
+const sendCDWServiceError = (res, action) => {
+  if (
+    action === "column_suggestion_service" ||
+    action === "table_suggestion_service"
+  ) {
+    return res.status(200).send({ data: [] });
+  }
+
+  return res.status(500).send({});
+};
+
+const closeConnection = (connection) => {
+  try {
+    connection?.close?.();
+  } catch (err) {
+    log.error(err);
+  }
+};
+
 export const main = () => {
   const app = express();
   app.use("/check-liveness", healthCheckMiddleware);
@@ -275,50 +294,69 @@ const initRoutes = (
   app.post(
     "/hc/hph/cdw/services/cdw_services.xsjs",
     async (req: ICDWRequest, res) => {
-      const { configConnection } = req.dbConnections;
-      const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
-      const user = getUser(req);
-      const token = req.headers.authorization;
-      const datasetId = getDatasetIdFromConfig(req.body.config);
-      const settings = new Settings();
-      let analyticsConnection = await getAnalyticsConnection(
-        user,
-        token,
-        datasetId
-      );
-
-      // Determine if user has end-user privilege (system admin access)
-      let hasEndUserPrivilege = false;
+      let analyticsConnection;
       try {
-        const userMgmtUrl = env.SERVICE_ROUTES?.usermgmt;
-        if (userMgmtUrl && token && user) {
-          const userMgmtApi = new UserMgmtAPI(userMgmtUrl);
-          const userId = user.getUser();
-          const userRoles = await userMgmtApi.getUserGroups(token, userId);
-          hasEndUserPrivilege = userRoles?.alp_role_system_admin === true;
-        }
-      } catch (err) {
-        log.warn(`Failed to fetch user permissions: ${err.message}`);
-        hasEndUserPrivilege = false;
-      }
-
-      new CDWServicesFacade(
-        analyticsConnection,
-        new FfhQeConfig(
+        const { configConnection } = req.dbConnections;
+        const assignment = new AssignmentProxy(req.assignment); //TODO: Send http req instead of getting it from req.
+        const user = getUser(req);
+        const token = req.headers.authorization;
+        const settings = new Settings();
+        const ffhQeConfig = new FfhQeConfig(
           configConnection,
           assignment,
           settings,
           user,
-          isTestEnvironment
-        ),
-        isTestEnvironment
-      ).invokeService(req.query.action, req.body, hasEndUserPrivilege, (err, result) => {
-        if (err) {
-          log.error(err);
-          return res.status(500).send({});
+          isTestEnvironment,
+        );
+
+        if (req.query.action === "attributeType_service") {
+          return res.status(200).send(ffhQeConfig.getAttributeTypes());
         }
-        res.status(200).send(result);
-      });
+
+        const datasetId = getDatasetIdFromConfig(req.body.config);
+        analyticsConnection = await getAnalyticsConnection(
+          user,
+          token,
+          datasetId,
+        );
+
+        // Determine if user has end-user privilege (system admin access)
+        let hasEndUserPrivilege = false;
+        try {
+          const userMgmtUrl = env.SERVICE_ROUTES?.usermgmt;
+          if (userMgmtUrl && token && user) {
+            const userMgmtApi = new UserMgmtAPI(userMgmtUrl);
+            const userId = user.getUser();
+            const userRoles = await userMgmtApi.getUserGroups(token, userId);
+            hasEndUserPrivilege = userRoles?.alp_role_system_admin === true;
+          }
+        } catch (err) {
+          log.warn(`Failed to fetch user permissions: ${err.message}`);
+          hasEndUserPrivilege = false;
+        }
+
+        new CDWServicesFacade(
+          analyticsConnection,
+          ffhQeConfig,
+          isTestEnvironment,
+        ).invokeService(
+          req.query.action,
+          req.body,
+          hasEndUserPrivilege,
+          (err, result) => {
+            closeConnection(analyticsConnection);
+            if (err) {
+              log.error(err);
+              return sendCDWServiceError(res, req.query.action);
+            }
+            res.status(200).send(result);
+          },
+        );
+      } catch (err) {
+        closeConnection(analyticsConnection);
+        log.error(err);
+        sendCDWServiceError(res, req.query.action);
+      }
     }
   );
 

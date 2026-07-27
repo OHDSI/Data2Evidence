@@ -1,0 +1,6 @@
+{
+  "name": "@data2evidence/notebook-schema",
+  "version": "0.0.1",
+  "description": "Provisions the notebook schema (analysis_definition, document) + GraphQL grants",
+  "trex": { "migrations": { "schema": "notebook", "database": "_config" } }
+}

@@ -46,4 +46,5 @@ set -a && source .env && set +a && npm run report
 |---|---|---|
 | `PERF_WARN_THRESHOLD` | `0.10` | Prints a warning if p95 grows by more than 10% |
 | `PERF_FAIL_THRESHOLD` | `0.20` | Fails the test if p95 grows by more than 20% |
+| `PERF_MIN_DELTA_MS` | `15` | p95 growth below this many ms never warns/fails (guards small baselines against runner jitter) |
 | `PERF_REPETITIONS` | `3` | Number of times each request is repeated per run |

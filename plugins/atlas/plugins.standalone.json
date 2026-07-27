@@ -20,6 +20,61 @@
         "author": "Atlas Team",
         "description": "Pythia — AI-assisted cohort design advisor for ATLAS v3.0"
       }
+    },
+    {
+      "id": "results-viewer",
+      "name": "Analysis Results",
+      "version": "0.2.0",
+      "entryPoint": "results-viewer/index.system.js",
+      "menuItems": [],
+      "metadata": {
+        "author": "OHDSI",
+        "description": "OHDSI HADES analysis results viewer — runs OhdsiShinyModules via WebR + DuckDB-WASM in-browser"
+      }
+    },
+    {
+      "id": "strategus-plugin",
+      "name": "Strategus",
+      "version": "0.1.0",
+      "entryPoint": "strategus-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Strategus Analysis Specification Builder" }
+    },
+    {
+      "id": "notebook-plugin",
+      "name": "Notebooks",
+      "version": "0.1.0",
+      "entryPoint": "notebook-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Create, store and run Python/R/Markdown notebooks (Pyodide/WebR)" }
+    },
+    {
+      "id": "network-plugin",
+      "name": "Network",
+      "version": "0.1.0",
+      "entryPoint": "network-plugin/index.system.js",
+      "menuItems": [],
+      "metadata": { "author": "OHDSI", "description": "Federated network studies — site plugin. Loads inactive until NETWORK_* config is provided." }
+    },
+    {
+      "id": "studies-plugin",
+      "name": "Studies",
+      "version": "0.1.0",
+      "entryPoint": "studies-plugin/index.system.js",
+      "menuItems": [
+        { "id": "studies.main", "name": "Studies", "route": "/plugins/studies-plugin/", "icon": "mdi-flask-outline", "order": 40 }
+      ],
+      "metadata": { "author": "OHDSI", "description": "Studies shell: Local / Network / Results" }
+    },
+    {
+      "id": "patient-analytics",
+      "name": "Data Exploration",
+      "version": "2.0.0",
+      "entryPoint": "patient-analytics/index.system.js",
+      "menuItems": [
+        { "id": "pa.main", "name": "Data Exploration", "route": "/plugins/patient-analytics/", "icon": "mdi-account-search-outline", "order": 45, "insertBefore": "cohorts" }
+      ],
+      "metadata": { "author": "D2E", "description": "Data Exploration (Patient Analytics/MRI) — visual cohort exploration against the selected data source" }
     }
   ],
   "settings": {
