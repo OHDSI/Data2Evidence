@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { FeedbackState, TranslationState } from "../Context/state";
+import { WizardState } from "./source";
 
 export type mappingData = conceptData & {
   status: string;
@@ -47,4 +48,5 @@ export type ConceptMappingState = {
   databaseCode?: string;
   schemaName?: string;
   sourceVocabularyId?: string;
+  wizard: WizardState;
 };

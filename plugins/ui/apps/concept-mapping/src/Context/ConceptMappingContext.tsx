@@ -27,6 +27,13 @@ export const initialState: ConceptMappingState = {
     description: "",
   },
   filters: {},
+  wizard: {
+    currentStep: 0,
+    sourceType: null,
+    sourceData: null,
+    datasetId: null,
+    loadRecommendationByDefault: false,
+  },
 };
 
 export const ConceptMappingContext = createContext<ConceptMappingState>(initialState);
