@@ -29,17 +29,48 @@ function isSameNodeSourceData(current: SourceData | null, intended: SourceData):
   return a.name === b.name && a.type === b.type && a.description === b.description;
 }
 
+// Same connected node, by identity (name + type) - used to tell whether persisted
+// SourceData in context belongs to the currently-connected node (a reopen) vs. a
+// different one (a genuine reconnect).
+function isSameConnectedNode(nodeMeta: SourceData["nodeMeta"], sourceNode: SourceNodeDTO): boolean {
+  return !!nodeMeta && nodeMeta.name === sourceNode.name && nodeMeta.type === sourceNode.type;
+}
+
+// Whether the SourceData already in context was produced by the given (currently
+// connected) node - i.e. this is a reopen/remount of the same node, not a fresh
+// connection or a reconnect to a different one.
+function matchesPersistedNode(sourceNode: SourceNodeDTO | undefined, sourceData: SourceData | null): boolean {
+  return !!sourceNode && sourceData?.type === "node" && isSameConnectedNode(sourceData.nodeMeta, sourceNode);
+}
+
 export const Step1Source: FC<Step1SourceProps> = ({ sourceNode, datasets, onResetDownstream }) => {
   const { getText } = useTranslation();
   const state = useContext(ConceptMappingContext);
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
   const nodeColumns = useMemo(() => (sourceNode ? extractColumns(sourceNode) : null), [sourceNode]);
-  const [manualColumns, setManualColumns] = useState("");
+  // On first mount, if context already holds SourceData for this exact connected node (a
+  // reopen of the drawer, not a fresh connection), rehydrate the manual-columns text from
+  // it instead of starting blank - otherwise the effect below would see `columns: []` and
+  // wrongly treat an unchanged manual-columns node as a genuine change (fix for task-7
+  // review finding 1, manual-columns residual). Read via the initializer form so this only
+  // runs once, against the context value present at mount.
+  const [manualColumns, setManualColumns] = useState<string>(() =>
+    matchesPersistedNode(sourceNode, state.wizard.sourceData) && state.wizard.sourceData?.type === "node"
+      ? state.wizard.sourceData.columns.join(", ")
+      : ""
+  );
   // Tracks the previously-seen connected node's identity (across renders, not across
   // remounts) so a genuine reconnect - to a *different* node - can be told apart from
   // this same node re-rendering, and so stale manually-typed columns from a prior node
-  // are never carried over onto a new one (fix for task-7 review finding 2).
-  const prevNodeKeyRef = useRef<string | null>(null);
+  // are never carried over onto a new one (fix for task-7 review finding 2). Seeded to the
+  // current node's key (rather than null) when context already matches it on mount, so the
+  // very first effect pass below doesn't mistake this reopen for a new connection and clobber
+  // the manualColumns just rehydrated above.
+  const prevNodeKeyRef = useRef<string | null>(
+    matchesPersistedNode(sourceNode, state.wizard.sourceData) && sourceNode
+      ? `${sourceNode.type}::${sourceNode.name}`
+      : null
+  );
 
   // Node source: (re)build SourceData only when the connected node's derived SourceData
   // actually differs from what's already in context. Guarding on "did the intended value

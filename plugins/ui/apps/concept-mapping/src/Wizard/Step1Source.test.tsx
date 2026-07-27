@@ -146,4 +146,30 @@ describe("Step1Source", () => {
       nodeMeta: { name: "SQL B", type: "sql_node", description: "" },
     });
   });
+
+  test("reopening a manual-columns node rehydrates its persisted columns instead of resetting them", () => {
+    const sourceNode = { name: "SQL", type: "sql_node", description: "" }; // no result → null columns
+    // Pre-seeded exactly as this node's derived SourceData would already look, with columns
+    // the user had previously typed in by hand - simulating a drawer reopen.
+    const state = {
+      ...initialState,
+      wizard: {
+        ...initialState.wizard,
+        sourceData: {
+          type: "node" as const,
+          columns: ["col1", "col2"],
+          nodeMeta: { name: "SQL", type: "sql_node", description: "" },
+        },
+      },
+    };
+    const onResetDownstream = vi.fn();
+    const { dispatch } = renderWithProviders(
+      <Step1Source datasets={datasets} onResetDownstream={onResetDownstream} sourceNode={sourceNode} />,
+      { state }
+    );
+
+    expect(onResetDownstream).not.toHaveBeenCalled();
+    expect(dispatch.mock.calls.some((call: any[]) => call[0]?.type === ACTION_TYPES.SET_SOURCE_DATA)).toBe(false);
+    expect(screen.getByLabelText(/Enter source columns/i)).toHaveValue("col1, col2");
+  });
 });
