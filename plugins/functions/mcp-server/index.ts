@@ -19,7 +19,13 @@ export class App {
     // Initialize embeddings on startup
     await initializeEmbeddings(env.MCP_GENERATE_EMBEDDINGS);
 
-    this.app.use(express.json());
+    // A tools/call body is model-generated and usually small, but not bounded:
+    // create_concept_set / build_d2e_cohort_deeplink can carry long concept and
+    // clause lists. express.json()'s 100kb default answers those with a 413 whose
+    // HTML body reaches the caller as the "tool result" — the same failure the
+    // cohort agent hit on its own transcript. Match the limit the other d2e
+    // functions use.
+    this.app.use(express.json({ limit: "50mb" }));
     this.app.use("/mcp", new mcpServerRouter().router);
     this.app.listen(port, () => {
       this.logger.log(`Server is listening on port ${port}`);
