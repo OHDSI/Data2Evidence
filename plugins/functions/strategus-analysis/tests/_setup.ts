@@ -4,7 +4,15 @@ import { installTrexGlobal } from "../../_shared/testing/trex-global.ts";
 // knexfile.ts all read Deno.env at module scope, and JSON.parse(PG__SSL) throws
 // if PG__SSL is unset.
 Deno.env.set("PG__SSL", "false");
-Deno.env.set("SERVICE_ROUTES", JSON.stringify({ portal: "http://portal.test" }));
+// `portalServer` is the key both PortalAPI and PortalServerAPI read; their
+// constructors throw "No url is set for ..." when it is absent.
+Deno.env.set(
+  "SERVICE_ROUTES",
+  JSON.stringify({
+    portal: "http://portal.test",
+    portalServer: "http://portal-server.test",
+  }),
+);
 Deno.env.set("PG_HOST", "localhost");
 Deno.env.set("PG_PORT", "5432");
 Deno.env.set("PG_DATABASE", "test");
