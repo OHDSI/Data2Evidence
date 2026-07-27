@@ -18,9 +18,14 @@ const OptionCard: FC<{ option: MessageOption; onSelect?: (option: MessageOption)
 }) => (
   <button
     type="button"
-    className={classNames("ai-assistant__option", { "ai-assistant__option--selected": option.selected })}
+    className={classNames("ai-assistant__option", {
+      "ai-assistant__option--selected": option.selected,
+      "ai-assistant__option--resolved": option.disabled,
+    })}
     onClick={() => onSelect?.(option)}
+    disabled={option.disabled}
     aria-pressed={option.selected}
+    data-testid={`ai-option-${option.id}`}
   >
     <span className="ai-assistant__option-title">
       {option.index != null && <span className="ai-assistant__option-index">{option.index}.</span>}

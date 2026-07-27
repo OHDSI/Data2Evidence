@@ -574,6 +574,17 @@ button.ai-assistant__tool-summary {
     border-color: $ai-navy-light;
   }
 
+  // Answered: the cards become a record of what was picked, so they stop inviting a
+  // click the hook would ignore anyway.
+  &--resolved {
+    cursor: default;
+    background-color: $ai-surface;
+
+    &:hover {
+      border-color: $ai-border;
+    }
+  }
+
   &--selected {
     background-color: $ai-surface-selected;
     border-color: $ai-navy-light;

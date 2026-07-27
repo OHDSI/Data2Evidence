@@ -4,7 +4,7 @@ import { AiAssistantDrawer } from "../AiAssistantDrawer";
 import { AI_ASSISTANT_TOGGLE_EVENT, PA_LEFT_PANE_OPENED_EVENT } from "../aiAssistantEvents";
 import { AppProvider } from "../../../contexts";
 import type { CohortChatState } from "../hooks/useCohortChat";
-import type { ChatMessage, ConceptSelection, ToolActivity } from "../types";
+import type { ChatMessage, ConceptSelection, ConceptSetChoice, ToolActivity } from "../types";
 
 // The drawer is a shell around useCohortChat; the hook owns the agent round trip.
 // Stubbing it keeps these tests about what the drawer renders and which callbacks
@@ -20,10 +20,16 @@ const mockChatState: CohortChatState = {
   pendingConceptSelection: undefined,
   toggleConcept: jest.fn(),
   submitConceptSelection: jest.fn(),
+  pendingConceptSetChoice: undefined,
+  toggleConceptSetOption: jest.fn(),
+  submitConceptSetChoice: jest.fn(),
   error: undefined,
 };
 
+// Only the hook is stubbed: the drawer also imports the choice-id helpers from this
+// module to build its chips, and a bare factory would leave those undefined.
 jest.mock("../hooks/useCohortChat", () => ({
+  ...jest.requireActual("../hooks/useCohortChat"),
   useCohortChat: () => mockChatState,
 }));
 
@@ -51,6 +57,9 @@ describe("AiAssistantDrawer", () => {
       pendingConceptSelection: undefined,
       toggleConcept: jest.fn(),
       submitConceptSelection: jest.fn(),
+      pendingConceptSetChoice: undefined,
+      toggleConceptSetOption: jest.fn(),
+      submitConceptSetChoice: jest.fn(),
       error: undefined,
     });
   });
@@ -304,6 +313,183 @@ describe("AiAssistantDrawer", () => {
       expect(queryByTestId("ai-quick-reply-approve-concepts")).not.toBeInTheDocument();
       expect(getByTestId("ai-assistant-input")).toBeEnabled();
       expect(getByTestId("ai-concept-count")).toHaveTextContent("Confirmed with 1 of 2 concepts");
+    });
+  });
+
+  // Picking between concept sets the user ALREADY has (Figma 1475:126506) — the answer
+  // to "build me an Alzheimer's cohort" when they have three Alzheimer's sets already.
+  describe("existing concept set choice", () => {
+    const OPTIONS = [
+      { conceptSetId: 11, name: "Alzheimer's disease", note: "Broadest", shortLabel: "AD" },
+      { conceptSetId: 12, name: "Early-onset Alzheimer's", note: "Age < 65" },
+      { conceptSetId: 13, name: "Alzheimer's + dementia", note: "Adds unspecified dementia" },
+    ];
+
+    const choice = (overrides: Partial<ConceptSetChoice> = {}): ConceptSetChoice => ({
+      toolCallId: "call-9",
+      term: "Alzheimer's",
+      options: OPTIONS,
+      selectedIds: [],
+      rejected: false,
+      resolved: false,
+      ...overrides,
+    });
+
+    const pendingChoice = (overrides: Partial<ConceptSetChoice> = {}) => {
+      const conceptSetChoice = choice(overrides);
+      setChat({
+        messages: [
+          {
+            id: "m1",
+            role: "assistant",
+            rich: {
+              question: 'For "Alzheimer\'s", I found 3 similar concept sets. Which one did you mean?',
+              options: [
+                ...conceptSetChoice.options.map((option, index) => ({
+                  id: `call-9|cs:${option.conceptSetId}`,
+                  index: index + 1,
+                  title: option.name,
+                  subtitle: option.note,
+                  selected: conceptSetChoice.selectedIds.includes(option.conceptSetId),
+                  disabled: conceptSetChoice.resolved,
+                })),
+                {
+                  id: "call-9|all",
+                  index: 4,
+                  title: "Include all 3 concept sets",
+                  selected: conceptSetChoice.selectedIds.length === 3,
+                  disabled: conceptSetChoice.resolved,
+                },
+              ],
+            },
+            conceptSetChoice,
+          },
+        ],
+        pendingConceptSetChoice: conceptSetChoice.resolved ? undefined : conceptSetChoice,
+      });
+      return conceptSetChoice;
+    };
+
+    it("numbers every candidate and appends an include-all card", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-option-call-9|cs:11")).toHaveTextContent("1.Alzheimer's disease");
+      expect(getByTestId("ai-option-call-9|cs:13")).toHaveTextContent("3.Alzheimer's + dementia");
+      expect(getByTestId("ai-option-call-9|all")).toHaveTextContent("4.Include all 3 concept sets");
+    });
+
+    // The whole point of the card: the user's own sets are offered instead of a
+    // proposal to create a fourth one.
+    it("shows how each candidate differs so they can be told apart", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-option-call-9|cs:12")).toHaveTextContent("Age < 65");
+    });
+
+    it("ticks a candidate rather than answering when its card is clicked", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-option-call-9|cs:11"));
+
+      expect(mockChatState.toggleConceptSetOption).toHaveBeenCalledWith("call-9|cs:11");
+      expect(mockChatState.submitConceptSetChoice).not.toHaveBeenCalled();
+    });
+
+    it("answers immediately from a numbered chip", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-quick-reply-call-9|cs:12"));
+
+      expect(mockChatState.submitConceptSetChoice).toHaveBeenCalledWith("call-9|cs:12");
+    });
+
+    it("uses the model's short label on the chip where it gave one", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-quick-reply-call-9|cs:11")).toHaveTextContent("1. AD");
+      // No shortLabel — the full name is better than nothing.
+      expect(getByTestId("ai-quick-reply-call-9|cs:12")).toHaveTextContent("2. Early-onset Alzheimer's");
+    });
+
+    // With three or more candidates "one, or all of them" cannot express "1 and 3",
+    // and combining sets the user did not pick would silently widen the cohort.
+    it("offers a confirm chip only once a genuine subset is ticked", () => {
+      pendingChoice({ selectedIds: [11, 13] });
+      const { getByTestId } = renderDrawer();
+
+      const confirm = getByTestId("ai-quick-reply-call-9|selected");
+      expect(confirm).toHaveTextContent("Use selected (2)");
+
+      fireEvent.click(confirm);
+      expect(mockChatState.submitConceptSetChoice).toHaveBeenCalledWith("call-9|selected");
+    });
+
+    it("hides the confirm chip when nothing is ticked", () => {
+      pendingChoice();
+      const { queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-quick-reply-call-9|selected")).not.toBeInTheDocument();
+    });
+
+    // Everything ticked is what the "All 3" chip already says.
+    it("hides the confirm chip when every candidate is ticked", () => {
+      pendingChoice({ selectedIds: [11, 12, 13] });
+      const { queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-quick-reply-call-9|selected")).not.toBeInTheDocument();
+    });
+
+    it("says All 3 rather than Both once past two candidates", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-quick-reply-call-9|all")).toHaveTextContent("4. All 3");
+    });
+
+    it("says Both for exactly two candidates", () => {
+      pendingChoice({ options: OPTIONS.slice(0, 2) });
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-quick-reply-call-9|all")).toHaveTextContent("3. Both");
+    });
+
+    // One candidate is not a choice between sets, so there is nothing to combine.
+    it("drops the include-all chip for a single candidate", () => {
+      pendingChoice({ options: OPTIONS.slice(0, 1) });
+      const { queryByTestId } = renderDrawer();
+
+      expect(queryByTestId("ai-quick-reply-call-9|all")).not.toBeInTheDocument();
+    });
+
+    it("lets the user reject every candidate", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      fireEvent.click(getByTestId("ai-quick-reply-call-9|none"));
+
+      expect(mockChatState.submitConceptSetChoice).toHaveBeenCalledWith("call-9|none");
+    });
+
+    it("parks the composer until the question is answered", () => {
+      pendingChoice();
+      const { getByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-assistant-input")).toBeDisabled();
+      expect(getByTestId("ai-assistant-notice")).toHaveTextContent("Pick one of the concept sets above");
+    });
+
+    it("locks the cards and drops the chips once answered", () => {
+      pendingChoice({ selectedIds: [11], resolved: true });
+      const { getByTestId, queryByTestId } = renderDrawer();
+
+      expect(getByTestId("ai-option-call-9|cs:11")).toBeDisabled();
+      expect(queryByTestId("ai-quick-reply-call-9|none")).not.toBeInTheDocument();
+      expect(getByTestId("ai-assistant-input")).toBeEnabled();
     });
   });
 

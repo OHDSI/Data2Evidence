@@ -27,6 +27,8 @@ export interface MessageOption {
   title: string;
   subtitle?: string;
   selected?: boolean;
+  // The card is a record of an answered question, not a live control.
+  disabled?: boolean;
 }
 
 // Structured content for a rich assistant message, mirroring the Figma layout
@@ -70,6 +72,38 @@ export interface ConceptSelection {
   resolved: boolean;
 }
 
+// One existing concept set the assistant is offering as a candidate for a clinical
+// term, as handed to the `ui_choose_concept_set` tool.
+export interface ConceptSetOption {
+  conceptSetId: number;
+  name: string;
+  // How this option differs from the others ("excludes complications"), shown as the
+  // card's second line. Model-authored, so it may be absent.
+  note?: string;
+  // Abbreviated name for the quick-reply chip, where the full name rarely fits.
+  shortLabel?: string;
+}
+
+// An open request for the user to say WHICH of their existing concept sets a term
+// means (Figma node 1475:126506). Like ConceptSelection, the agent's turn is parked
+// on the tool call until this is answered, so at most one is unresolved at a time.
+//
+// The cards multi-select rather than answering on the first click: with three or
+// more candidates "one, or all of them" cannot express "1 and 3", and picking the
+// wrong combination here changes which patients end up in the cohort.
+export interface ConceptSetChoice {
+  toolCallId: string;
+  // The clinical term being disambiguated, e.g. "Type 2 diabetes".
+  term: string;
+  options: ConceptSetOption[];
+  // Ticked concept set ids. Starts EMPTY — this asks which set they meant, it is not
+  // a proposed list to review — and holds what was actually sent once resolved.
+  selectedIds: number[];
+  // The user answered, but none of the offered sets fit.
+  rejected: boolean;
+  resolved: boolean;
+}
+
 // A quick-reply chip shown above the composer.
 export interface QuickReply {
   id: string;
@@ -95,4 +129,7 @@ export interface ChatMessage {
   tools?: ToolActivity[];
   // Concepts the assistant wants confirmed before it creates the concept set.
   conceptSelection?: ConceptSelection;
+  // The existing-concept-set choice this bubble is asking for. The cards themselves
+  // are rendered from `rich.options`; this carries the state needed to answer them.
+  conceptSetChoice?: ConceptSetChoice;
 }

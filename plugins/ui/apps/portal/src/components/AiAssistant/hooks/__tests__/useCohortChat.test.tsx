@@ -350,4 +350,232 @@ describe("useCohortChat", () => {
       expect(state.messages[0].conceptSelection?.resolved).toBe(true);
     });
   });
+
+  // ui_choose_concept_set is the reuse gate: the user already has sets for this term,
+  // so the hook renders them as the design's numbered cards and sends back exactly
+  // which ones were picked — including a subset, once there are three or more.
+  describe("existing concept set choice", () => {
+    const OPTIONS = [
+      { conceptSetId: 11, name: "Alzheimer's disease", note: "Broadest", shortLabel: "AD" },
+      { conceptSetId: 12, name: "Early-onset Alzheimer's", note: "Age < 65" },
+      { conceptSetId: 13, name: "Alzheimer's + dementia" },
+    ];
+
+    const choosePart = (overrides: any = {}) => ({
+      type: "tool-ui_choose_concept_set",
+      toolCallId: "call-9",
+      state: "input-available",
+      input: {
+        term: "Alzheimer's",
+        intro: "Got it. I found a few things to clarify before building your cohort.",
+        filterLabel: "This is the basic filter:",
+        filterItems: ["Gender: Female", "Age: 60 and above"],
+        question: 'For "Alzheimer\'s", I found 3 similar concept sets. Which one did you mean?',
+        options: OPTIONS,
+        footer: "Reply with 1, 2 or 3, or let me know if neither fits.",
+      },
+      ...overrides,
+    });
+
+    const withChooseCall = (overrides: any = {}) => {
+      mockMessages = [{ id: "m1", role: "assistant", parts: [choosePart(overrides)] }];
+      renderHook();
+    };
+
+    it("leaves the call unanswered so the turn waits for the user", async () => {
+      renderHook();
+
+      await capturedInit.onToolCall({
+        toolCall: { toolCallId: "call-9", toolName: "ui_choose_concept_set", input: { options: OPTIONS } },
+      });
+
+      expect(mockAddToolOutput).not.toHaveBeenCalled();
+    });
+
+    // A card with nothing to choose between cannot be rendered, so leaving the call
+    // open would park the turn on a question the user never sees.
+    it("answers a call with no usable options instead of hanging the turn", async () => {
+      renderHook();
+
+      await capturedInit.onToolCall({
+        toolCall: { toolCallId: "call-9", toolName: "ui_choose_concept_set", input: { options: [{ name: "x" }] } },
+      });
+
+      expect(mockAddToolOutput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: "ui_choose_concept_set",
+          output: expect.objectContaining({ chosen: false, conceptSetIds: [] }),
+        })
+      );
+    });
+
+    it("surfaces the call as a pending choice with nothing ticked yet", () => {
+      withChooseCall();
+
+      expect(state.pendingConceptSetChoice).toMatchObject({
+        toolCallId: "call-9",
+        term: "Alzheimer's",
+        selectedIds: [],
+        resolved: false,
+      });
+      expect(state.pendingConceptSetChoice?.options).toHaveLength(3);
+    });
+
+    // The Figma layout, straight off the tool input.
+    it("builds the rich card the design specifies", () => {
+      withChooseCall();
+
+      expect(state.messages[0].rich).toMatchObject({
+        intro: "Got it. I found a few things to clarify before building your cohort.",
+        filterLabel: "This is the basic filter:",
+        filterItems: ["Gender: Female", "Age: 60 and above"],
+        footer: "Reply with 1, 2 or 3, or let me know if neither fits.",
+      });
+      expect(state.messages[0].rich?.options?.map((option) => [option.index, option.title])).toEqual([
+        [1, "Alzheimer's disease"],
+        [2, "Early-onset Alzheimer's"],
+        [3, "Alzheimer's + dementia"],
+        [4, "Include all 3 concept sets"],
+      ]);
+    });
+
+    it("keeps the choice out of the tool rows", () => {
+      withChooseCall();
+
+      expect(state.messages[0].tools).toHaveLength(0);
+      expect(state.messages[0].conceptSetChoice).toBeDefined();
+    });
+
+    it("drops an option with no usable id or name", () => {
+      withChooseCall({ input: { term: "x", options: [...OPTIONS, { name: "no id" }, { conceptSetId: 14 }] } });
+
+      expect(state.pendingConceptSetChoice?.options.map((option) => option.conceptSetId)).toEqual([11, 12, 13]);
+    });
+
+    it("says Include both for exactly two candidates", () => {
+      withChooseCall({ input: { term: "x", options: OPTIONS.slice(0, 2) } });
+
+      expect(state.messages[0].rich?.options?.at(-1)?.title).toBe("Include both concept sets");
+    });
+
+    it("offers no combine card for a single candidate", () => {
+      withChooseCall({ input: { term: "x", options: OPTIONS.slice(0, 1) } });
+
+      expect(state.messages[0].rich?.options).toHaveLength(1);
+    });
+
+    it("ticks and unticks a candidate", () => {
+      withChooseCall();
+
+      act(() => state.toggleConceptSetOption("call-9|cs:11"));
+      act(() => state.toggleConceptSetOption("call-9|cs:13"));
+      expect(state.pendingConceptSetChoice?.selectedIds).toEqual([11, 13]);
+
+      act(() => state.toggleConceptSetOption("call-9|cs:11"));
+      expect(state.pendingConceptSetChoice?.selectedIds).toEqual([13]);
+    });
+
+    it("ticks everything from the include-all card, and clears it again", () => {
+      withChooseCall();
+
+      act(() => state.toggleConceptSetOption("call-9|all"));
+      expect(state.pendingConceptSetChoice?.selectedIds).toEqual([11, 12, 13]);
+
+      act(() => state.toggleConceptSetOption("call-9|all"));
+      expect(state.pendingConceptSetChoice?.selectedIds).toEqual([]);
+    });
+
+    // The reason the cards multi-select at all: "1 and 3 but not 2".
+    it("sends exactly the ticked subset", () => {
+      withChooseCall();
+
+      act(() => state.toggleConceptSetOption("call-9|cs:11"));
+      act(() => state.toggleConceptSetOption("call-9|cs:13"));
+      act(() => state.submitConceptSetChoice("call-9|selected"));
+
+      expect(mockAddToolOutput).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: "ui_choose_concept_set",
+          toolCallId: "call-9",
+          output: expect.objectContaining({
+            chosen: true,
+            conceptSetIds: [11, 13],
+            conceptSetNames: ["Alzheimer's disease", "Alzheimer's + dementia"],
+          }),
+        })
+      );
+    });
+
+    it("answers with one set straight from its chip, ignoring what was ticked", () => {
+      withChooseCall();
+
+      act(() => state.toggleConceptSetOption("call-9|cs:11"));
+      act(() => state.submitConceptSetChoice("call-9|cs:12"));
+
+      expect(mockAddToolOutput.mock.calls[0][0].output).toMatchObject({ chosen: true, conceptSetIds: [12] });
+    });
+
+    it("answers with every candidate from the include-all chip", () => {
+      withChooseCall();
+
+      act(() => state.submitConceptSetChoice("call-9|all"));
+
+      expect(mockAddToolOutput.mock.calls[0][0].output).toMatchObject({ chosen: true, conceptSetIds: [11, 12, 13] });
+    });
+
+    // "Neither fits" is what sends the model on to build a new set.
+    it("reports a rejection with no sets and tells the model to build one", () => {
+      withChooseCall();
+
+      act(() => state.submitConceptSetChoice("call-9|none"));
+
+      const { output } = mockAddToolOutput.mock.calls[0][0];
+      expect(output).toMatchObject({ chosen: false, conceptSetIds: [] });
+      expect(output.note).toMatch(/ui_confirm_concepts/);
+    });
+
+    // An empty tick list is "I have not picked yet", not "none of these fit".
+    it("does not answer an empty selection", () => {
+      withChooseCall();
+
+      act(() => state.submitConceptSetChoice("call-9|selected"));
+
+      expect(mockAddToolOutput).not.toHaveBeenCalled();
+    });
+
+    // A click on a card belonging to an already-answered question further up the
+    // transcript must not overwrite the live one.
+    it("ignores an answer aimed at a different tool call", () => {
+      withChooseCall();
+
+      act(() => state.submitConceptSetChoice("call-OLD|cs:11"));
+      act(() => state.toggleConceptSetOption("call-OLD|cs:11"));
+
+      expect(mockAddToolOutput).not.toHaveBeenCalled();
+      expect(state.pendingConceptSetChoice?.selectedIds).toEqual([]);
+    });
+
+    it("ignores an id naming a set that is not on offer", () => {
+      withChooseCall();
+
+      act(() => state.submitConceptSetChoice("call-9|cs:999"));
+
+      expect(mockAddToolOutput).not.toHaveBeenCalled();
+    });
+
+    it("shows what was sent once the call has output", () => {
+      withChooseCall({ state: "output-available", output: { chosen: true, conceptSetIds: [11, 13] } });
+
+      expect(state.pendingConceptSetChoice).toBeUndefined();
+      expect(state.messages[0].conceptSetChoice).toMatchObject({ resolved: true, selectedIds: [11, 13] });
+      expect(state.messages[0].rich?.options?.map((option) => option.selected)).toEqual([true, false, true, false]);
+      expect(state.messages[0].rich?.options?.every((option) => option.disabled)).toBe(true);
+    });
+
+    it("marks a rejected question as resolved with nothing selected", () => {
+      withChooseCall({ state: "output-available", output: { chosen: false, conceptSetIds: [] } });
+
+      expect(state.messages[0].conceptSetChoice).toMatchObject({ resolved: true, rejected: true, selectedIds: [] });
+    });
+  });
 });
