@@ -1,10 +1,13 @@
-import type { CohortClause, ClauseConstraint } from "./cohortClause";
 import type {
+  CohortClause,
+  ClauseConstraint,
   CohortCatalog,
   CatalogCard,
   CatalogAttribute,
-} from "./cohortCatalog";
+} from "./cohortModel";
 import type { CohortConstraint, CohortExpression } from "./cohortBookmarkTree";
+import { AnalyticsAPI } from "../api/AnalyticsAPI";
+import { TerminologyAPI } from "../api/TerminologyAPI";
 
 /**
  * Resolve card-centric clauses (LLM intent, by name) into the resolved
@@ -34,6 +37,60 @@ export interface ResolverDeps {
    * id — a positive integer alone cannot be distinguished from a concept id.
    */
   conceptSetExists: (id: number) => Promise<boolean>;
+}
+
+export interface ResolverContext {
+  authorization: string;
+  datasetId: string;
+  configId: string;
+  configVersion: string;
+}
+
+/**
+ * Build the live resolver adapter; tests provide an in-memory ResolverDeps
+ * implementation through the same seam.
+ */
+export function buildResolverDeps(
+  analyticsApi: AnalyticsAPI,
+  terminologyApi: TerminologyAPI,
+  context: ResolverContext,
+): ResolverDeps {
+  let conceptSetIds: Promise<Set<number>> | null = null;
+  const loadConceptSetIds = (): Promise<Set<number>> => {
+    if (!conceptSetIds) {
+      conceptSetIds = terminologyApi
+        .listConceptSets(context.authorization, context.datasetId)
+        .then((sets) => new Set(sets.map((set) => Number(set.id))));
+    }
+    return conceptSetIds;
+  };
+
+  return {
+    resolveValue: async (_card, attribute, raw) => {
+      const values = await analyticsApi.getAttributeValues(
+        context.authorization,
+        context.datasetId,
+        attribute.configPath,
+        context.configId,
+        context.configVersion,
+        raw,
+      );
+      if (values.length === 0) {
+        throw new Error(`No value for "${attribute.name}" matching "${raw}".`);
+      }
+      const normalized = raw.trim().toLowerCase();
+      const exact = values.find(
+        (value) =>
+          value.label.toLowerCase() === normalized ||
+          value.value.toLowerCase() === normalized,
+      );
+      return (exact ?? values[0]).value;
+    },
+    conceptSetExists: async (id) => {
+      const ids = await loadConceptSetIds();
+      return ids.has(Number(id));
+    },
+  };
 }
 
 const NUM_OPS = new Set([">=", "<=", "<", ">", "=", "!="]);

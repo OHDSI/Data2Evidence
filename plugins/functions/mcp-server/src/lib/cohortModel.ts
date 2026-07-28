@@ -56,10 +56,39 @@ export type CohortCatalog = {
   cards: CatalogCard[];
 };
 
+/**
+ * The card-centric clause contract the LLM produces using names from
+ * list_cohort_filters; the resolver maps these requests onto the catalog.
+ */
+export interface ClauseConstraint {
+  /** Catalog attribute name, e.g. "Age", "Value As Number", "Gender". */
+  attribute: string;
+  /** ">=" | "<=" | "=" | "<" | ">" | "!=" | "range". */
+  op: string;
+  /** Number, string, or [low, high] for op "range". */
+  value: number | string | (number | string)[];
+}
+
+export interface CohortClause {
+  /** Catalog card name, e.g. "Basic Data", "Condition Occurrence". */
+  card: string;
+  /** Card-level include/exclude (exclude becomes a NOT container). */
+  exclude?: boolean;
+  /**
+   * Persisted concept-set id for an event card, resolved by the agent before
+   * the clause reaches the deterministic pipeline.
+   */
+  conceptSetId?: number;
+  /** Value constraints on this card's attributes. */
+  constraints?: ClauseConstraint[];
+}
+
 /** Config stores names as a string or an array of { lang, value }. */
 function resolveName(nameVal: unknown, fallbackKey: string): string {
   if (typeof nameVal === "string" && nameVal) return nameVal;
-  if (Array.isArray(nameVal) && nameVal.length > 0 && (nameVal[0] as any)?.value) {
+  if (
+    Array.isArray(nameVal) && nameVal.length > 0 && (nameVal[0] as any)?.value
+  ) {
     return String((nameVal[0] as any).value);
   }
   return fallbackKey.charAt(0).toUpperCase() + fallbackKey.slice(1);

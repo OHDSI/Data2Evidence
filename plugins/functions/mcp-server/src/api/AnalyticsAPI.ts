@@ -1,5 +1,5 @@
 import { env } from "../env";
-import { extractConfigStamp, type ConfigStamp } from "../lib/cohortBuilder";
+import { extractConfigStamp, type ConfigStamp } from "../lib/cohortDeepLink";
 
 /**
  * Thin client for analytics-svc, used to fetch the PA config stamp

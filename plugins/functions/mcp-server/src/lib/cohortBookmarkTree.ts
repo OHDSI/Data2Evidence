@@ -1,4 +1,4 @@
-import type { ConfigStamp } from "./cohortBuilder";
+import type { ConfigStamp } from "./cohortDeepLink";
 
 /**
  * Multi-card bookmark serializer for the PA cohort builder deep link.

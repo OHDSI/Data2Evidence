@@ -6,17 +6,19 @@
  * tree loads the WRONG cohort, so we pin the exact shape (cards, paths,
  * instanceIDs, NOT for exclusion, compound measurement card).
  *
- * Run: deno test --allow-read --sloppy-imports --no-check src/lib/cohort_pipeline.test.ts
+ * Run: deno test --allow-read --sloppy-imports --no-check src/lib/cohortPipeline.test.ts
  */
 
-import { buildCohortCatalog } from "./cohortCatalog.ts";
+import {
+  buildCohortCatalog,
+  type CohortClause,
+} from "./cohortModel.ts";
 import {
   resolveClausesToConstraints,
   type ResolverDeps,
 } from "./cohortResolver.ts";
 import { buildCohortBookmarkTree } from "./cohortBookmarkTree.ts";
-import type { CohortClause } from "./cohortClause.ts";
-import { compress, decompress } from "./cohortUrlCodec.ts";
+import { compress, decompress } from "./cohortDeepLink.ts";
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error("ASSERT FAILED: " + msg);

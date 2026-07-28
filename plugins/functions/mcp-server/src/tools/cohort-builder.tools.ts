@@ -2,12 +2,17 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { AnalyticsAPI } from "../api/AnalyticsAPI";
 import { TerminologyAPI } from "../api/TerminologyAPI";
-import { buildDeepLinkUrl } from "../lib/cohortBuilder";
-import { buildCohortCatalog, summarizeCatalog } from "../lib/cohortCatalog";
-import { resolveClausesToConstraints } from "../lib/cohortResolver";
+import { buildDeepLinkUrl } from "../lib/cohortDeepLink";
+import {
+  buildCohortCatalog,
+  summarizeCatalog,
+  type CohortClause,
+} from "../lib/cohortModel";
+import {
+  buildResolverDeps,
+  resolveClausesToConstraints,
+} from "../lib/cohortResolver";
 import { buildCohortBookmarkTree } from "../lib/cohortBookmarkTree";
-import { buildResolverDeps } from "../lib/cohortResolverDeps";
-import type { CohortClause } from "../lib/cohortClause";
 import {
   requireAuthAndDataset,
   createStructuredResponse,

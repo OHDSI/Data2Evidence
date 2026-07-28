@@ -1,5 +1,30 @@
 import pako from "pako";
 
+export interface ConfigStamp {
+  configId: string;
+  configVersion: string;
+}
+
+const COHORT_ROUTE = "/d2e/portal/researcher/cohort";
+const LINK_TYPE = "cohort-definition";
+const URL_WARN_THRESHOLD = 2048;
+
+/**
+ * Extract the active Patient Analytics configuration stamp from getMyConfig,
+ * which may return either a list containing one configuration or a bare entry.
+ */
+export function extractConfigStamp(data: unknown): ConfigStamp | null {
+  const entry = Array.isArray(data) ? data[0] : data;
+  const meta = (entry as any)?.meta;
+  if (!meta?.configId || !meta?.configVersion) {
+    return null;
+  }
+  return {
+    configId: String(meta.configId),
+    configVersion: String(meta.configVersion),
+  };
+}
+
 /**
  * Compress an object to a pako-deflated base64url string.
  *
@@ -16,7 +41,10 @@ import pako from "pako";
 export function compress(obj: unknown): string {
   const jsonString = JSON.stringify(obj);
   const deflated = pako.deflate(new TextEncoder().encode(jsonString));
-  const binaryString = Array.from(deflated, (byte: number) => String.fromCharCode(byte)).join("");
+  const binaryString = Array.from(
+    deflated,
+    (byte: number) => String.fromCharCode(byte),
+  ).join("");
   const base64 = btoa(binaryString);
   // Convert to base64url
   return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -38,4 +66,16 @@ export function decompress<T = unknown>(str: string): T {
   const inflated = pako.inflate(bytes);
   const jsonString = new TextDecoder().decode(inflated);
   return JSON.parse(jsonString) as T;
+}
+
+/** Compress a bookmark and assemble the Patient Analytics cohort deep link. */
+export function buildDeepLinkUrl(
+  bookmark: unknown,
+  datasetId: string,
+): { url: string; tooLong: boolean } {
+  const query = compress(bookmark);
+  const params = new URLSearchParams({ datasetId, linkType: LINK_TYPE });
+  const url = `${COHORT_ROUTE}?${params.toString()}&query=${query}`;
+  console.log(`Built cohort deep link URL (len=${url.length}): ${url}`);
+  return { url, tooLong: url.length > URL_WARN_THRESHOLD };
 }
