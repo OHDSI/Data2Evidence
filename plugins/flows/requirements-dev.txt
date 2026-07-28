@@ -1,2 +1,0 @@
-prefect==3.6.10
-pydantic==2.10.6
