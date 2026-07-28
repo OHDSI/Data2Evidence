@@ -12,22 +12,57 @@ $share-row-height: 40px;
     display: flex;
     align-items: center;
     height: $share-row-height;
-    // `div.app-checkbox` already carries the 8px left margin the design calls for.
     background-color: var(--color-ui-lightest-bg);
     white-space: nowrap;
+  }
+
+  // Vuetify checkbox trimmed to the Figma row: 18px outline box 8px from the
+  // panel edge, label in Body 1 next to it, no helper-text gutter.
+  .filters-footer__share-checkbox {
+    flex: 0 0 auto;
+
+    .v-selection-control {
+      min-height: 24px;
+    }
+
+    .v-selection-control__wrapper {
+      width: 24px;
+      height: 24px;
+      margin-left: 8px;
+    }
+
+    .v-selection-control__input {
+      width: 24px;
+      height: 24px;
+
+      // Figma "text/secondary" for the unchecked outline.
+      .v-icon {
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 20px;
+      }
+    }
+
+    .v-label {
+      margin-left: 8px;
+      color: var(--color-ui-dark-text);
+      font-size: 1rem;
+      line-height: 1.5;
+      opacity: 1;
+    }
+
+    // Checked state follows the theme primary, as elsewhere in the app.
+    .v-selection-control--dirty .v-selection-control__input .v-icon {
+      color: var(--color-mri-brand);
+    }
   }
 
   .filters-footer__share-info {
     display: flex;
     align-items: center;
-    margin-left: 4px;
+    margin-left: 8px;
     // Figma "Neutral/Default" (#595757) for the info affordance.
     color: var(--color-ui-light-text);
     cursor: help;
-
-    .app-icon {
-      font-size: 1rem;
-    }
   }
 
   .filters-footer__actions {
@@ -120,4 +155,19 @@ $share-row-height: 40px;
       }
     }
   }
+}
+
+// Vuetify teleports overlay content to the document root, so the "Allow sharing"
+// tooltip is styled globally. Figma: white surface, Neutral/Default text,
+// Caption 1 type, 12px padding, 4px radius. The `.v-tooltip >` prefix is needed
+// to outrank Vuetify's own dark-surface tooltip rule.
+.v-tooltip > .v-overlay__content.filters-footer__share-tooltip {
+  padding: 12px;
+  border-radius: 4px;
+  background-color: var(--color-ui-lightest-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  color: var(--color-ui-light-text);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  opacity: 1;
 }

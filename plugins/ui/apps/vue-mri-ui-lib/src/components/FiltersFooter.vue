@@ -2,13 +2,19 @@
   <div class="filters-footer">
     <!-- "Allow sharing" sits in its own row at the bottom of the side panel, directly above the action buttons. -->
     <div v-if="canShare" class="filters-footer__share" data-testid="pa-share-cohort-row">
-      <appCheckbox
+      <v-checkbox
         v-model="shareBookmark"
-        :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
-        :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
-      ></appCheckbox>
-      <span class="filters-footer__share-info" :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP')">
-        <appIcon icon="information"></appIcon>
+        :label="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
+        density="compact"
+        hide-details
+        class="filters-footer__share-checkbox"
+        data-testid="pa-share-cohort-checkbox"
+      ></v-checkbox>
+      <span class="filters-footer__share-info" data-testid="pa-share-cohort-info">
+        <v-icon icon="mdi-information-outline" size="16"></v-icon>
+        <v-tooltip activator="parent" location="right" max-width="222" content-class="filters-footer__share-tooltip">
+          {{ getText('MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP') }}
+        </v-tooltip>
       </span>
     </div>
     <div class="filters-footer__actions d-flex align-items-center" style="justify-content: space-between; width: 100%">
@@ -182,8 +188,6 @@
 <script lang="ts">
 import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
-import appCheckbox from '../lib/ui/app-checkbox.vue'
-import appIcon from '../lib/ui/app-icon.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
@@ -389,8 +393,6 @@ export default {
   },
   components: {
     appButton,
-    appCheckbox,
-    appIcon,
     bsDropdown,
     bsDropdownItemButton,
     DialogBox,
