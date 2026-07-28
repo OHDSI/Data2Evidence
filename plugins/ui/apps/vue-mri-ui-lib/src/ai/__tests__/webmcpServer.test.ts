@@ -68,9 +68,12 @@ describe('createPaTools', () => {
       const store = makeStore()
       const res = await byName(createPaTools(store), 'pa_get_current_cohort').execute()
 
-      expect(parse(res)).toEqual({
+      expect(parse(res)).toMatchObject({
         bookmarkData: store.getters.getBookmarksData,
         ifr: store.getters.getBookmarkFromIFR,
+        // The AND/OR grouping: cards within a group are OR-ed, groups AND-ed.
+        // Empty here because this store has no bool-container tree.
+        cardGroups: [],
       })
       expect(store.dispatch).not.toHaveBeenCalled()
     })
@@ -216,7 +219,13 @@ describe('createPaTools', () => {
         isExclusion: false,
       })
       expect(store.dispatch).not.toHaveBeenCalledWith('loadBookmarkDataToState', expect.anything())
-      expect(parse(res)).toEqual({ applied: true, createdCards: ['fc1'], appliedConstraints: [] })
+      expect(parse(res)).toEqual({
+        applied: true,
+        createdCards: ['fc1'],
+        appliedConstraints: [],
+        // No bool-container tree on this minimal store, so nothing to group.
+        cardGroups: [],
+      })
     })
 
     it('returns applied:false with an error when neither patchOps nor bookmark is given', async () => {
@@ -411,6 +420,42 @@ describe('createPaTools', () => {
       expect(attrs[1].valueKind).toBe('conceptSet')
       expect(parsed.valueKindGuide.catalog).toContain('pa_search_attribute_values')
       expect(parsed.valueKindGuide.conceptSet).toContain('conceptSetId')
+    })
+
+    it('reports the OMOP domain a concept-set attribute takes, and omits it when unset', async () => {
+      // Without conceptDomain the model reuses whatever concept-set id it is
+      // already holding: an Alzheimer's (Condition) set on a Visit card builds a
+      // cohort that computes and answers the wrong question.
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
+          {
+            getConfigPath: () => 'patient.interactions.visit',
+            getName: () => 'Visit',
+            getFilterAttributes: () => [
+              {
+                getConfigPath: () => 'patient.interactions.visit.attributes.visitconceptset',
+                getName: () => 'Encounter Concept set',
+                getType: () => 'conceptSet',
+                getDomainFilter: () => 'Visit',
+              },
+              {
+                getConfigPath: () => 'patient.interactions.visit.attributes.startdate',
+                getName: () => 'Start date',
+                getType: () => 'time',
+                getDomainFilter: () => '',
+              },
+            ],
+          },
+        ],
+      }
+
+      const attrs = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).filterCards[0]
+        .attributes
+      expect(attrs[0]).toMatchObject({ valueKind: 'conceptSet', conceptDomain: 'Visit' })
+      expect(attrs[1]).not.toHaveProperty('conceptDomain')
+      expect(parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).valueKindGuide.conceptSet)
+        .toContain('conceptDomain')
     })
 
     it('returns just one card when `card` is given, and the valid paths when it is unknown', async () => {

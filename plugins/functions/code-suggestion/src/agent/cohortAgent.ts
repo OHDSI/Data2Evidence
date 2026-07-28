@@ -30,6 +30,7 @@ import { getCohortAgentPrompt } from "./cohortAgentPrompt";
 // degrades tool choice and adds latency to every step.
 const COHORT_AGENT_SERVER_TOOLS = new Set([
   "list_cohort_filters",
+  "list_cohort_filter_values",
   "build_d2e_cohort_deeplink",
   "search_concepts",
   "check_concept_coverage_in_dataset",

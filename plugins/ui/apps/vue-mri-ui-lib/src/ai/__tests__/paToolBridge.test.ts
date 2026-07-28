@@ -79,7 +79,7 @@ describe('publishPaTools', () => {
 
     const result = await registry().call('pa_get_current_cohort')
 
-    expect(JSON.parse(result.content[0].text)).toEqual({
+    expect(JSON.parse(result.content[0].text)).toMatchObject({
       bookmarkData: store.getters.getBookmarksData,
       ifr: store.getters.getBookmarkFromIFR,
     })

@@ -6,7 +6,7 @@
 //   Chrome 150+:    document.modelContext    (current spec)
 // We try document first, then fall back to navigator for older builds.
 import type { Store } from 'vuex'
-import { applyCohortPatch, type PatchOp } from './cohortPatch'
+import { applyCohortPatch, describeCardGroups, type PatchOp } from './cohortPatch'
 
 export interface PaToolResult {
   content: Array<{ type: 'text'; text: string }>
@@ -231,7 +231,11 @@ function describeAttributeValue(attr: any): string {
 const VALUE_KIND_GUIDE: Record<string, string> = {
   numeric: 'add_constraint value:<number> with operator ("<",">","=",…).',
   date: 'add_constraint value:{ from, to } (date range).',
-  conceptSet: 'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools.',
+  conceptSet:
+    'add_constraint value:{ conceptSetId } — build/find the concept set with the d2e-mcp concept tools. The ' +
+    "attribute's `conceptDomain` (when present) is the OMOP domain its concepts must come from: a set built " +
+    'for another domain matches nothing, so resolve each term against the domain of the card you are filtering ' +
+    '(a Visit card needs a Visit concept set, not the Condition set from an earlier filter).',
   catalog:
     'Coded catalog value — resolve the EXACT stored token with pa_search_attribute_values, then pass its ' +
     'returned `value`. Dataset-specific: never hardcode or invent the token. For a small enumerated column ' +
@@ -262,12 +266,20 @@ function listFilterOptions(store: Store<any>): {
     // measure/category-only attributes that are NOT visible in the filter card, so
     // add_constraint cannot target them. Listing them padded the payload AND
     // invited the model to pick a path that always fails.
-    attributes: ((card.getFilterAttributes?.() ?? card.getAllAttributes?.() ?? []) as any[]).map((attr: any) => ({
-      attributePath: attr.getConfigPath(),
-      name: attr.getName(),
-      type: attr.getType(),
-      valueKind: describeAttributeValue(attr),
-    })),
+    attributes: ((card.getFilterAttributes?.() ?? card.getAllAttributes?.() ?? []) as any[]).map((attr: any) => {
+      // The OMOP domain a conceptSet attribute's concepts must come from
+      // (config `domainFilter`, what the UI picker filters the vocabulary by).
+      // Without it the model happily reuses a Condition set on a Visit card —
+      // a cohort that computes and answers the wrong question.
+      const conceptDomain = attr.getDomainFilter?.()
+      return {
+        attributePath: attr.getConfigPath(),
+        name: attr.getName(),
+        type: attr.getType(),
+        valueKind: describeAttributeValue(attr),
+        ...(conceptDomain ? { conceptDomain } : {}),
+      }
+    }),
   }))
   return {
     filterCards,
@@ -358,12 +370,21 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
     },
     {
       name: 'pa_get_current_cohort',
-      description: 'Return the active cohort / bookmark definition as JSON.',
+      description:
+        'Return the active cohort / bookmark definition as JSON, plus `cardGroups`: the filter cards as the ' +
+        'builder groups them. Cards in the SAME group are OR-ed; the groups are AND-ed. Read cardGroups before ' +
+        'editing — it gives you the real filterCardIds to target and tells you whether the cohort currently ' +
+        'means "A and B" or "A or B".',
       inputSchema: { type: 'object', properties: {} },
       async execute() {
         return textResult({
           bookmarkData: store.getters.getBookmarksData,
           ifr: store.getters.getBookmarkFromIFR,
+          cardGroups: describeCardGroups(store),
+          cardGroupsNote:
+            'Cards within one group are OR-ed; groups are AND-ed. To add an OR alternative use ' +
+            'add_card with orWith:"<an existing filterCardId in that group>"; to change how two cards already ' +
+            'on the cohort combine use set_card_join on the LATER card.',
         })
       },
     },
@@ -444,9 +465,12 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       name: 'pa_apply_cohort_patch',
       description:
         'Edit the live cohort. Preferred (and the ONLY way to add/remove a filter): pass `patchOps` — typed intent ' +
-        'applied deterministically in-place (add_card / add_constraint / remove_card / remove_constraint). Discover ' +
-        'valid paths with pa_list_filter_options. Legacy `bookmark`: a full tree, accepted ONLY from a trusted builder — ' +
-        'a hand-authored tree is validated and rejected (it silently loads the wrong cohort). Never hand-author one.',
+        'applied deterministically in-place (add_card / add_constraint / remove_card / remove_constraint / ' +
+        'set_card_join). Discover valid paths with pa_list_filter_options. AND/OR: cards are AND-ed by default; ' +
+        'to express "A OR B" add the second card with orWith:"<the other card>" (or regroup existing cards with ' +
+        'set_card_join). The result reports `cardGroups` — the grouping that actually landed. Legacy `bookmark`: ' +
+        'a full tree, accepted ONLY from a trusted builder — a hand-authored tree is validated and rejected (it ' +
+        'silently loads the wrong cohort). Never hand-author one.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -454,16 +478,19 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             type: 'array',
             description:
               'Typed patch operations. Each: ' +
-              '{ op:"add_card", cardConfigPath, exclude?, ref? } | ' +
+              '{ op:"add_card", cardConfigPath, exclude?, ref?, orWith? } | ' +
               '{ op:"add_constraint", card, attributePath, value, operator? } | ' +
-              '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath }. ' +
-              'The Basic Data card ("patient") always exists — constrain it directly, never add_card it.',
+              '{ op:"remove_card", card } | { op:"remove_constraint", card, attributePath } | ' +
+              '{ op:"set_card_join", card, join }. ' +
+              'The Basic Data card ("patient") always exists — constrain it directly, never add_card it. ' +
+              'Separate filter cards are AND-ed; two cards are OR-ed by putting them in the same group ' +
+              '(add_card orWith, or set_card_join).',
             items: {
               type: 'object',
               properties: {
                 op: {
                   type: 'string',
-                  enum: ['add_card', 'add_constraint', 'remove_card', 'remove_constraint'],
+                  enum: ['add_card', 'add_constraint', 'remove_card', 'remove_constraint', 'set_card_join'],
                 },
                 cardConfigPath: {
                   type: 'string',
@@ -471,11 +498,27 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
                 },
                 exclude: { type: 'boolean', description: 'add_card: make it an exclusion card.' },
                 ref: { type: 'string', description: 'add_card: local handle later ops can use as `card`.' },
+                orWith: {
+                  type: 'string',
+                  description:
+                    'add_card: OR the new card with this existing one (a filterCardId, or a `ref` from earlier ' +
+                    'in this patch) by putting both in the same group — use it for "patients with X OR Y", one ' +
+                    'condition per card. Omit for the default, which AND-s the new card with the rest. Cannot ' +
+                    'reference the Basic Data card, and cannot mix an exclusion card with an inclusion one.',
+                },
                 card: {
                   type: 'string',
                   description:
-                    'add_constraint / remove_*: a filterCardId ("patient", "…conditionoccurrence.1") or an ' +
-                    'add_card `ref` from earlier in this same patch.',
+                    'add_constraint / remove_* / set_card_join: a filterCardId ("patient", ' +
+                    '"…conditionoccurrence.1") or an add_card `ref` from earlier in this same patch.',
+                },
+                join: {
+                  type: 'string',
+                  enum: ['AND', 'OR'],
+                  description:
+                    'set_card_join: how `card` combines with the card before it. "OR" merges it into the ' +
+                    'preceding group, "AND" splits it into its own. Apply it to the LATER card of the pair; the ' +
+                    'first card on the cohort has nothing before it to join with.',
                 },
                 attributePath: {
                   type: 'string',
@@ -558,7 +601,7 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
       name: 'pa_list_filter_options',
       description:
         'List the valid filter cards and attributes for the current dataset as ' +
-        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type, valueKind }] }, plus a ' +
+        '{ cardConfigPath, cardName, attributes: [{ attributePath, name, type, valueKind, conceptDomain? }] }, plus a ' +
         '`valueKindGuide` map and a routing `note`. `valueKind` (numeric | date | conceptSet | catalog | text) ' +
         'keys into valueKindGuide, which says how to supply that add_constraint value — essential on non-OMOP ' +
         '(SAP HANA / LEAF) datasets whose coded filters use source concept codes/concept sets, not OMOP standard ' +

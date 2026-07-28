@@ -3,6 +3,7 @@ import classNames from "classnames";
 import ReactMarkdown from "react-markdown";
 import { ToolCallRow } from "./ToolCallRow";
 import { ConceptSelectionCard } from "./ConceptSelectionCard";
+import { resolveAssistantHref } from "./cohortDeepLink";
 import { ChatMessage, MessageOption } from "./types";
 
 interface MessageBubbleProps {
@@ -11,6 +12,18 @@ interface MessageBubbleProps {
   // Ticks or unticks one concept in this message's concept-review card.
   onToggleConcept?: (toolCallId: string, conceptId: number) => void;
 }
+
+// Links the model writes. The cohort deep link it hands back is a path, so resolve it
+// against this deployment before it becomes an href — see cohortDeepLink.ts. Opened in a
+// new tab because following it in place unmounts the drawer and takes the conversation
+// with it. `href` has already been through react-markdown's uri sanitiser by this point.
+const markdownComponents = {
+  a: ({ node, href, children, ...props }: any) => (
+    <a {...props} href={href ? resolveAssistantHref(href) : href}>
+      {children}
+    </a>
+  ),
+};
 
 const OptionCard: FC<{ option: MessageOption; onSelect?: (option: MessageOption) => void }> = ({
   option,
@@ -77,7 +90,7 @@ export const MessageBubble: FC<MessageBubbleProps> = ({ message, onSelectOption,
               // such. Untrusted content: react-markdown escapes raw HTML by default and no
               // rehype-raw is added here.
               <div className="ai-assistant__markdown">
-                <ReactMarkdown>{message.text}</ReactMarkdown>
+                <ReactMarkdown components={markdownComponents}>{message.text}</ReactMarkdown>
               </div>
             ))}
 
