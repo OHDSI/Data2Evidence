@@ -2,22 +2,57 @@ import { vi } from 'vitest'
 import { applyCohortPatch, type PatchOp } from '../cohortPatch'
 
 // A store stand-in that models just enough of the query module for the applier:
-// filter cards, constraints, and the actions/getters it calls. Cards and
-// constraints are held in plain maps so tests can assert the resulting state.
-const makeStore = ({ existingCards = [] as string[], axes = [] as any[] } = {}) => {
-  const cards: Record<string, { props: { excludeFilter: boolean } }> = {}
-  for (const id of existingCards) cards[id] = { props: { excludeFilter: false } }
+// filter cards, constraints, the bool-container tree that carries the AND/OR
+// structure, and the actions/getters it calls. Cards and constraints are held in
+// plain maps so tests can assert the resulting state.
+//
+// `existingCards` is a flat list (one card per group, i.e. all AND-ed) unless
+// `existingGroups` is passed, which spells the grouping out: each inner array is
+// one bool-filter container, so cards listed together are OR-ed.
+const makeStore = ({
+  existingCards = [] as string[],
+  existingGroups,
+  axes = [] as any[],
+  // attributePath -> config `domainFilter`, the OMOP domain a conceptSet
+  // attribute's concepts must come from. Only set in the tests that exercise it.
+  domains,
+}: {
+  existingCards?: string[]
+  existingGroups?: string[][]
+  axes?: any[]
+  domains?: Record<string, string>
+} = {}) => {
+  const cards: Record<string, { props: { excludeFilter: boolean; name?: string } }> = {}
+  const groups: string[][] = existingGroups ?? existingCards.map(id => [id])
+  for (const id of groups.flat()) cards[id] = { props: { excludeFilter: false } }
   const constraints: Record<string, any> = {}
   // Instance numbers continue past whatever is already on the cohort, as they do live.
-  let cardSeq = existingCards.filter(id => id !== 'patient').length
+  let cardSeq = Object.keys(cards).filter(id => id !== 'patient').length
   let conSeq = 0
+
+  // Bool containers are addressed by id in the store, so index them the way the
+  // real entity map does: group N is container "bfc<N>", stable across splices.
+  const containerIds = () => groups.map((_, i) => `bfc${i}`)
+  const groupOf = (containerId: string) => groups[Number(containerId.replace('bfc', ''))]
 
   const store: any = {
     getters: {
       getFilterCards: () => cards,
+      getFilterCard: (id: string) => cards[id],
+      getFilterCardConstraints: (cardId: string) => Object.values(constraints).filter((c: any) => c.parent === cardId),
       getAllAxes: axes,
+      getBoolContainerRoot: () => 'root',
+      getBoolContainer: (id: string) => (id === 'root' ? { props: { boolfiltercontainers: containerIds() } } : null),
+      getBoolFilterContainer: (id: string) => ({ props: { filterCards: groupOf(id) ?? [] } }),
       getConstraintForAttribute: ({ filterCardId, key }: { filterCardId: string; key: string }) =>
         Object.values(constraints).find((c: any) => c.parent === filterCardId && c.props.attrKey === key) ?? null,
+      ...(domains
+        ? {
+            getMriFrontendConfig: {
+              getAttributeByPath: (path: string) => ({ getDomainFilter: () => domains[path] ?? '' }),
+            },
+          }
+        : {}),
     },
     dispatch: vi.fn(),
   }
@@ -39,13 +74,47 @@ const makeStore = ({ existingCards = [] as string[], axes = [] as any[] } = {}) 
         // config path as its instance id, interaction cards get an index suffix.
         const id = payload.configPath === 'patient' ? 'patient' : `${payload.configPath}.${++cardSeq}`
         cards[id] = { props: { excludeFilter: payload.isExclusion ?? false } }
+        // No container id → a NEW group (AND). With one → join that group (OR).
+        const target = payload.boolFilterContainerId ? groupOf(payload.boolFilterContainerId) : undefined
+        if (target) {
+          target.push(id)
+        } else {
+          groups.push([id])
+        }
         return Promise.resolve(id)
+      }
+      // AND → OR: fold this container into the nearest preceding one.
+      case 'toggleFilterContainerBooleanCondition': {
+        const index = Number(payload.filterContainerId.replace('bfc', ''))
+        groups[index - 1].push(...groups[index])
+        groups.splice(index, 1)
+        return Promise.resolve(undefined)
+      }
+      // OR → AND: split the card (and everything after it) into its own container.
+      case 'toggleFilterBooleanCondition': {
+        const index = Number(payload.parentId.replace('bfc', ''))
+        const group = groups[index]
+        const moved = group.splice(group.indexOf(payload.filterCardId))
+        groups.splice(index + 1, 0, moved)
+        return Promise.resolve(undefined)
       }
       case 'addFilterCardConstraint': {
         const id = `con${++conSeq}`
         // type derived from key for test purposes: age -> num, else conceptSet/text
-        const type = payload.key === 'age' ? 'num' : payload.key === 'condition' ? 'conceptSet' : 'text'
-        constraints[id] = { id, parent: payload.filterCardId, props: { attrKey: payload.key, type, value: undefined } }
+        const type =
+          payload.key === 'age'
+            ? 'num'
+            : payload.key === 'condition' || /conceptset$/i.test(payload.key)
+              ? 'conceptSet'
+              : 'text'
+        // The real constraint carries the attribute's config path; the card's
+        // instance id is its config path plus an index suffix.
+        const attributePath = `${payload.filterCardId.replace(/\.\d+$/, '')}.attributes.${payload.key}`
+        constraints[id] = {
+          id,
+          parent: payload.filterCardId,
+          props: { attrKey: payload.key, attributePath, type, value: undefined },
+        }
         return Promise.resolve(id)
       }
       case 'updateConstraintValue': {
@@ -58,6 +127,13 @@ const makeStore = ({ existingCards = [] as string[], axes = [] as any[] } = {}) 
       }
       case 'deleteFilterCard': {
         delete cards[payload.filterCardId]
+        // Mirror FILTERCARD_DELETE: the card leaves its container, and a container
+        // left empty is dropped from the tree.
+        for (let i = groups.length - 1; i >= 0; i -= 1) {
+          const at = groups[i].indexOf(payload.filterCardId)
+          if (at > -1) groups[i].splice(at, 1)
+          if (groups[i].length === 0) groups.splice(i, 1)
+        }
         // Mirror the real query-module action: deleting a card clears every axis
         // bound to that card id.
         for (const axis of axes) {
@@ -72,7 +148,7 @@ const makeStore = ({ existingCards = [] as string[], axes = [] as any[] } = {}) 
     }
   })
 
-  return { store, cards, constraints }
+  return { store, cards, constraints, groups }
 }
 
 describe('applyCohortPatch', () => {
@@ -296,6 +372,242 @@ describe('applyCohortPatch', () => {
       key: 'Gender',
     })
     expect(axes[1].props).toMatchObject({ attributeId: 'patient.attributes.Age', filterCardId: 'patient', binsize: 10 })
+  })
+
+  describe('AND / OR grouping', () => {
+    const DX = 'patient.interactions.conditionoccurrence'
+
+    it('AND-s a new card by default (each card in its own group)', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      const res = await applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: DX }])
+
+      expect(groups).toEqual([['patient'], [`${DX}.1`], [`${DX}.2`]])
+      expect(res.cardGroups).toHaveLength(3)
+    })
+
+    it('ORs a new card with an existing one via orWith — "Alzheimer\'s OR sinusitis"', async () => {
+      // The reported bug: asked to widen an Alzheimer's cohort to "Alzheimer's OR
+      // sinusitis", the assistant could only add a second AND-ed card, which reads
+      // as "had both". The second condition has to land in the FIRST card's group.
+      const { store, groups, constraints } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      const res = await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: DX, ref: 'dx2', orWith: `${DX}.1` },
+        {
+          op: 'add_constraint',
+          card: 'dx2',
+          attributePath: `${DX}.attributes.conditionconceptset`,
+          value: { conceptSetId: 42, displayValue: 'Sinusitis' },
+        },
+      ])
+
+      expect(store.dispatch).toHaveBeenCalledWith('addFilterCard', {
+        configPath: DX,
+        isExclusion: false,
+        boolFilterContainerId: 'bfc1',
+      })
+      // One group holding both condition cards = Or(A, B) in the IFR.
+      expect(groups).toEqual([['patient'], [`${DX}.1`, `${DX}.2`]])
+      expect(res.cardGroups).toEqual([
+        { cards: [{ filterCardId: 'patient', name: 'patient' }] },
+        {
+          cards: [
+            { filterCardId: `${DX}.1`, name: `${DX}.1` },
+            { filterCardId: `${DX}.2`, name: `${DX}.2` },
+          ],
+        },
+      ])
+      // ...and the sinusitis filter is on the NEW card only — the first card's
+      // concept set is not restated, which would have made it "both conditions".
+      const con = Object.values(constraints).find((c: any) => c.parent === `${DX}.2`) as any
+      expect(con.props.value).toEqual([
+        { value: '42', text: 'Sinusitis', display_value: 'Sinusitis', includeDescendants: false },
+      ])
+      expect(Object.values(constraints)).toHaveLength(1)
+    })
+
+    it('resolves orWith against a ref created earlier in the same patch', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient'] })
+      await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: DX, ref: 'a' },
+        { op: 'add_card', cardConfigPath: DX, ref: 'b', orWith: 'a' },
+      ])
+      expect(groups).toEqual([['patient'], [`${DX}.1`, `${DX}.2`]])
+    })
+
+    it('refuses to OR a card with Basic Data (it would match every patient)', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient'] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: DX, orWith: 'patient' }])
+      ).rejects.toThrow(/Basic Data/)
+      expect(groups).toEqual([['patient']])
+    })
+
+    it('refuses to OR an exclusion card with an inclusion one', async () => {
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: DX, exclude: true, orWith: `${DX}.1` }])
+      ).rejects.toThrow(/exclusion/)
+    })
+
+    it('set_card_join OR merges a card already on the cohort into the preceding group', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`, `${DX}.2`] })
+      const res = await applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.2`, join: 'OR' }])
+
+      expect(groups).toEqual([['patient'], [`${DX}.1`, `${DX}.2`]])
+      expect(res.cardGroups?.[1].cards.map(c => c.filterCardId)).toEqual([`${DX}.1`, `${DX}.2`])
+    })
+
+    it('set_card_join AND splits an OR-ed card back into its own group', async () => {
+      const { store, groups } = makeStore({ existingGroups: [['patient'], [`${DX}.1`, `${DX}.2`]] })
+      await applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.2`, join: 'AND' }])
+
+      expect(groups).toEqual([['patient'], [`${DX}.1`], [`${DX}.2`]])
+    })
+
+    it('is a no-op when the requested join is already in place', async () => {
+      const { store, groups } = makeStore({ existingGroups: [['patient'], [`${DX}.1`, `${DX}.2`]] })
+      await applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.2`, join: 'OR' }])
+      expect(groups).toEqual([['patient'], [`${DX}.1`, `${DX}.2`]])
+      expect(store.dispatch).not.toHaveBeenCalledWith('toggleFilterContainerBooleanCondition', expect.anything())
+    })
+
+    it('refuses to OR the first filter card with Basic Data before it', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.1`, join: 'OR' }])
+      ).rejects.toThrow(/Basic Data/)
+      expect(groups).toEqual([['patient'], [`${DX}.1`]])
+    })
+
+    it('rejects an invalid join value', async () => {
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`, `${DX}.2`] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.2`, join: 'XOR' } as any])
+      ).rejects.toThrow(/must be "AND" or "OR"/)
+    })
+
+    it('undoes a grouping change when a later op fails (atomic)', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`, `${DX}.2`] })
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'set_card_join', card: `${DX}.2`, join: 'OR' },
+          { op: 'add_constraint', card: 'ghost', attributePath: `${DX}.attributes.condition`, value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      expect(groups).toEqual([['patient'], [`${DX}.1`], [`${DX}.2`]])
+    })
+
+    it('keeps the chart axes when OR-ing clears them (resetAxes fires on grouped cards)', async () => {
+      // resetAxes clears every axis bound to a card in a container that now holds
+      // more than one card. Left cleared, the chart query goes out with an empty
+      // axisSelection and the patient count renders "--".
+      const axes = [{ props: { attributeId: `${DX}.attributes.startdate`, filterCardId: `${DX}.1`, key: 'startdate' } }]
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`], axes })
+      // The real resetAxes runs inside addFilterCard; the mock triggers it here.
+      store.dispatch.mockImplementation(
+        (
+          (inner: any) => (type: string, payload: any) => {
+            const res = inner(type, payload)
+            if (type === 'addFilterCard' && payload.boolFilterContainerId) {
+              axes[0].props = { attributeId: '', filterCardId: '', key: '' }
+            }
+            return res
+          }
+        )(store.dispatch.getMockImplementation())
+      )
+
+      await applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: DX, orWith: `${DX}.1` }])
+
+      expect(axes[0].props).toMatchObject({
+        attributeId: `${DX}.attributes.startdate`,
+        filterCardId: `${DX}.1`,
+      })
+    })
+  })
+
+  describe('concept-set domain', () => {
+    const DX = 'patient.interactions.conditionoccurrence'
+    const VISIT = 'patient.interactions.visit'
+    const DX_SET = `${DX}.attributes.conditionconceptset`
+    const VISIT_SET = `${VISIT}.attributes.visitconceptset`
+    const domains = { [DX_SET]: 'Condition', [VISIT_SET]: 'Visit' }
+
+    // "Alzheimer's OR an ER visit": the model OR-ed the Visit card correctly and
+    // then filled its concept set with the Alzheimer's set it already had in
+    // context, never resolving "ER visit". The cohort computes, so nothing looks
+    // wrong — it just answers a different question.
+    const carriedOverPatch: PatchOp[] = [
+      { op: 'add_card', cardConfigPath: VISIT, ref: 'v', orWith: `${DX}.1` },
+      { op: 'add_constraint', card: 'v', attributePath: VISIT_SET, value: { conceptSetId: 41 } },
+    ]
+
+    const withAlzheimers = async () => {
+      const made = makeStore({ existingCards: ['patient', `${DX}.1`], domains })
+      await applyCohortPatch(made.store, [
+        {
+          op: 'add_constraint',
+          card: `${DX}.1`,
+          attributePath: DX_SET,
+          value: { conceptSetId: 41, displayValue: "Alzheimer's disease" },
+        },
+      ])
+      return made
+    }
+
+    it("rejects carrying a Condition concept set onto a Visit card's concept set", async () => {
+      const { store, constraints } = await withAlzheimers()
+
+      await expect(applyCohortPatch(store, carriedOverPatch)).rejects.toThrow(
+        /Concept set 41 is already filtered on .*conditionconceptset.*Condition-domain.*Visit-domain/s
+      )
+      // Atomic: the half-built Visit card is gone, and the Alzheimer's filter stands.
+      const visitConstraint = Object.values(constraints).find((c: any) => c.parent.startsWith(VISIT))
+      expect(visitConstraint).toBeUndefined()
+      expect(Object.values(constraints)).toHaveLength(1)
+    })
+
+    it('rolls the OR-ed card back out of the group when its value is rejected', async () => {
+      const { store, groups } = await withAlzheimers()
+      await expect(applyCohortPatch(store, carriedOverPatch)).rejects.toThrow(/Concept set 41/)
+      expect(groups).toEqual([['patient'], [`${DX}.1`]])
+    })
+
+    it('allows the same concept set on two cards of the SAME domain (primary + secondary diagnosis)', async () => {
+      const { store } = await withAlzheimers()
+      const res = await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: DX, ref: 'dx2', orWith: `${DX}.1` },
+        { op: 'add_constraint', card: 'dx2', attributePath: DX_SET, value: { conceptSetId: 41 } },
+      ])
+      expect(res.applied).toBe(true)
+    })
+
+    it('allows a different concept set on the Visit card — the correct fix', async () => {
+      const { store, constraints } = await withAlzheimers()
+      const res = await applyCohortPatch(store, [
+        { op: 'add_card', cardConfigPath: VISIT, ref: 'v', orWith: `${DX}.1` },
+        {
+          op: 'add_constraint',
+          card: 'v',
+          attributePath: VISIT_SET,
+          value: { conceptSetId: 88, displayValue: 'Emergency Room Visit' },
+        },
+      ])
+      expect(res.applied).toBe(true)
+      const visitConstraint = Object.values(constraints).find((c: any) => c.parent.startsWith(VISIT)) as any
+      expect(visitConstraint.props.value[0]).toMatchObject({ value: '88', text: 'Emergency Room Visit' })
+    })
+
+    it('skips the check when the config exposes no domain for the attribute', async () => {
+      // domainFilter is empty on plenty of attributes (and absent on non-OMOP
+      // configs); an unknown domain must not block a legitimate patch.
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      await applyCohortPatch(store, [
+        { op: 'add_constraint', card: `${DX}.1`, attributePath: DX_SET, value: { conceptSetId: 41 } },
+      ])
+      const res = await applyCohortPatch(store, carriedOverPatch)
+      expect(res.applied).toBe(true)
+    })
   })
 
   it('rolls back created cards/constraints when a later op fails (atomic)', async () => {
