@@ -43,27 +43,34 @@ export default class PortalServerAPI {
     }
 
     async getPublicStudies() {
-        const result = await this.portalapi.get(`${this.baseUrl}/dataset/public/list`);
+        const result = await this.portalapi.get(
+            `${this.baseUrl}/dataset/public/list`
+        );
         return result.data;
     }
 
     async getStudy(datasetId: string) {
         const result = await this.portalapi.get(
-            `${this.baseUrl}/dataset?datasetId=${datasetId}`,
-            
+            `${this.baseUrl}/dataset?datasetId=${datasetId}`
         );
         return result.data;
     }
 
     async getStudies() {
-        const result = await this.portalapi.get(`${this.baseUrl}/dataset/list/systemadmin`);
+        const result = await this.portalapi.get(
+            `${this.baseUrl}/dataset/list/systemadmin`
+        );
         return result.data;
     }
 
-    async getBookmarkById(
-        bookmarkId: string,
-        datasetId: string
-    ): Promise<any> {
+    async getPABackendConfig(datasetId: string) {
+        const result = await this.portalapi.get(
+            `${this.baseUrl}/dataset/pa-config/backend?datasetId=${encodeURIComponent(datasetId)}`
+        );
+        return result.data;
+    }
+
+    async getBookmarkById(bookmarkId: string, datasetId: string): Promise<any> {
         try {
             const url = `${this.baseUrl}/user-artifact/bookmarks/${encodeURIComponent(bookmarkId)}?datasetId=${encodeURIComponent(datasetId)}`;
             const result = await this.portalapi.get(url);
@@ -75,10 +82,7 @@ export default class PortalServerAPI {
         }
     }
 
-    async updateBookmark(
-        bookmark: any,
-        datasetId: string
-    ): Promise<any> {
+    async updateBookmark(bookmark: any, datasetId: string): Promise<any> {
         try {
             const updateBookmarkDto = {
                 id: bookmark.id,
