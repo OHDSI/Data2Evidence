@@ -209,8 +209,8 @@ export const getCohortPrompting = () => {
          includes.
        • Then a bullet list of the active filters. Basic Data filters
          (like age, gender, race) may be written in everyday terms
-         (e.g. "Age: over 50"). For clinical filters, show the exact concept / 
-         concept-set name as resolved (e.g. "Condition: Type 2 diabetes mellitus"), 
+         (e.g. "Age: over 50"). For clinical filters, show the exact concept /
+         concept-set name as resolved (e.g. "Condition: Type 2 diabetes mellitus"),
          not a paraphrase. Group related criteria so the list is easy to read.
        • Note any unmappable criteria or blocking ambiguities only (skip minor
          assumptions).
