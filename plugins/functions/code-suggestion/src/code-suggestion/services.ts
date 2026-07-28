@@ -210,7 +210,7 @@ export const getCohortResponse = async (req: any) => {
       );
 
     const messages = [
-      new SystemMessage(getCohortPrompting(uiChat.userInput)),
+      new SystemMessage(getCohortPrompting()),
       ...historyMessages,
       new HumanMessage(uiChat.userInput),
     ];

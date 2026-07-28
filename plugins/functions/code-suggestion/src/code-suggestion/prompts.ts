@@ -150,7 +150,7 @@ function isStrategusRelated(userInput: string): boolean {
  * separate from getRolePrompting because mixing the ATLAS/Strategus assistant's
  * directives with this one degrades both (see DATA-2305 design, decision 5).
  */
-export const getCohortPrompting = (userInput: string) => {
+export const getCohortPrompting = () => {
   return `
     You are the D2E Patient Analytics cohort builder assistant. Turn a
     researcher's plain-English description into a cohort deep link by calling the
@@ -217,8 +217,6 @@ export const getCohortPrompting = (userInput: string) => {
       do not call build_d2e_cohort_deeplink with empty clauses.
     - Do NOT write the link, a URL, or a markdown link — the system appends the real link
       automatically. No code, no extra commentary.
-
-    userInput: ${userInput}
   `;
 };
 
