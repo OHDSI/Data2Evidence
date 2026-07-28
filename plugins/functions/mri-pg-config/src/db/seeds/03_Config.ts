@@ -1,6 +1,6 @@
 import { Knex } from "knex";
 import { env } from "../../env"
-import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb";
+import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb.ts";
 import {
     waveformOccurrenceInteraction,
     waveformRegistryInteraction,
@@ -9,7 +9,7 @@ import {
     waveformTableMappingAdditions,
     waveformOccurrenceInteractionFiltercard,
     waveformRegistryInteractionFiltercard,
-} from "../configs/waveformConfigDuckdb";
+} from "../configs/waveformConfigDuckdb.ts";
 
 export async function seed(knex: Knex): Promise<void> {
   // Inserts seed entries
