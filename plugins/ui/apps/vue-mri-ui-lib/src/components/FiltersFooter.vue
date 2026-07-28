@@ -1,6 +1,17 @@
 <template>
-  <div class="filters-footer d-flex justify-content-center">
-    <div class="d-flex align-items-center" style="justify-content: space-between; width: 100%">
+  <div class="filters-footer">
+    <!-- "Allow sharing" sits in its own row at the bottom of the side panel, directly above the action buttons. -->
+    <div v-if="canShare" class="filters-footer__share" data-testid="pa-share-cohort-row">
+      <appCheckbox
+        v-model="shareBookmark"
+        :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
+        :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
+      ></appCheckbox>
+      <span class="filters-footer__share-info" :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TOOLTIP')">
+        <appIcon icon="information"></appIcon>
+      </span>
+    </div>
+    <div class="filters-footer__actions d-flex align-items-center" style="justify-content: space-between; width: 100%">
       <div>
         <d4l-button
           class="unicode-icon"
@@ -60,13 +71,6 @@
         </bs-dropdown>
       </div>
       <div class="d-flex align-items-center">
-        <appCheckbox
-          v-if="canShare"
-          class="share-checkbox"
-          v-model="shareBookmark"
-          :text="getText('MRI_PA_BMK_SHARED_BOOKMARK_TEXT')"
-          :title="getText('MRI_PA_BMK_SHARED_BOOKMARK_TITLE')"
-        ></appCheckbox>
         <d4l-button
           ref="saveBookmarkButton"
           :disabled="!hasChanges"
@@ -179,6 +183,7 @@
 import { mapActions, mapGetters, mapMutations, useStore } from 'vuex'
 import appButton from '../lib/ui/app-button.vue'
 import appCheckbox from '../lib/ui/app-checkbox.vue'
+import appIcon from '../lib/ui/app-icon.vue'
 import bsDropdown from '../lib/ui/bs-dropdown.vue'
 import bsDropdownItemButton from '../lib/ui/bs-dropdown-item-button.vue'
 import * as types from '../store/mutation-types'
@@ -260,6 +265,10 @@ export default {
       const username = this.portalContext.username
       return this.getActiveBookmark.shared && username !== this.getActiveBookmark.user_id
     },
+    needsSaveDialog() {
+      // Only flows that create a new cohort record require a name from the user.
+      return this.isNewCohort || this.isNotUserSharedBookmark
+    },
   },
   watch: {
     getActiveBookmark: {
@@ -280,7 +289,13 @@ export default {
       })
     },
     openSaveBookmark() {
-      this.showSaveBookmark = true
+      // An already-saved cohort owned by the current user saves straight away and reports
+      // via the success toast. The dialog is only needed when a name has to be supplied.
+      if (this.needsSaveDialog) {
+        this.showSaveBookmark = true
+        return
+      }
+      this.saveBookmark()
     },
     closeSaveBookmark() {
       this.showSaveBookmark = false
@@ -375,6 +390,7 @@ export default {
   components: {
     appButton,
     appCheckbox,
+    appIcon,
     bsDropdown,
     bsDropdownItemButton,
     DialogBox,

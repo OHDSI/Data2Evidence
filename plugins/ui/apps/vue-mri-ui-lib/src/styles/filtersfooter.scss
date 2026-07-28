@@ -1,10 +1,40 @@
+// Height of the optional "Allow sharing" row. Kept in sync with the
+// `.filters-content` bottom offset in filters.scss.
+$share-row-height: 40px;
+
 .filters-footer {
-  height: 4rem;
-  background-color: var(--color-mri-footer-container-bg);
   border-top: 1px solid lightgray;
   bottom: 0px;
   position: absolute;
   width: 100%;
+
+  .filters-footer__share {
+    display: flex;
+    align-items: center;
+    height: $share-row-height;
+    // `div.app-checkbox` already carries the 8px left margin the design calls for.
+    background-color: var(--color-ui-lightest-bg);
+    white-space: nowrap;
+  }
+
+  .filters-footer__share-info {
+    display: flex;
+    align-items: center;
+    margin-left: 4px;
+    // Figma "Neutral/Default" (#595757) for the info affordance.
+    color: var(--color-ui-light-text);
+    cursor: help;
+
+    .app-icon {
+      font-size: 1rem;
+    }
+  }
+
+  .filters-footer__actions {
+    height: 4rem;
+    background-color: var(--color-mri-footer-container-bg);
+  }
+
   .unicode-icon {
     button {
       width: 39px;
@@ -45,13 +75,6 @@
   .dropdown-scroll {
     max-height: calc(100vh - 200px);
     overflow-y: auto;
-  }
-
-  .share-checkbox {
-    display: flex;
-    align-items: center;
-    margin-right: 8px;
-    white-space: nowrap;
   }
 
   .save-bookmark {
