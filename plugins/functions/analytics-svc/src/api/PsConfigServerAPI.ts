@@ -1,5 +1,4 @@
 import axios, { AxiosRequestConfig } from "axios";
-import https from "https";
 import { env } from "../env";
 export default class PsConfigServerAPI {
     private readonly baseUrl: string;
@@ -42,15 +41,6 @@ export default class PsConfigServerAPI {
             client_secret: env.IDP__ALP_SVC__CLIENT_SECRET,
         };
 
-        const options: AxiosRequestConfig = {
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-            }
-        };
-        if (env.NODE_ENV === "development") {
-            options.httpsAgent = new https.Agent({ rejectUnauthorized: false });
-        }
-
         const data = Object.keys(params)
             .map(
                 (key) =>
@@ -60,7 +50,20 @@ export default class PsConfigServerAPI {
             )
             .join("&");
 
-        const result = await axios.post(this.oauthUrl, data, options);
+        // External-capable IdP/OAuth endpoint — native fetch, not axios.
+        // See trex/plans/2026-07-27-axios-to-fetch-minimal-v3.md
+        const res = await fetch(this.oauthUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: data,
+            signal: AbortSignal.timeout(30000),
+        });
+        if (!res.ok) {
+            throw new Error(
+                `OAuth token request failed with status ${res.status}: ${await res.text()}`
+            );
+        }
+        const result = { data: await res.json() };
 
         return `Bearer ${result.data.access_token}`;
     }
@@ -73,6 +76,8 @@ export default class PsConfigServerAPI {
             configVersion,
             lang,
         };
+        // Internal service (SERVICE_ROUTES.psConfig). Intentionally still axios:
+        // not on the external-HTTPS failure path.
         const result = await axios.post(
             `${this.baseUrl}/hc/hph/patient/app/services/config.xsjs`,
             body,

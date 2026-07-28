@@ -1,7 +1,5 @@
-import { AxiosResponse } from 'axios'
 import jwt from 'jsonwebtoken'
 import https from 'https'
-import { post } from './request-util'
 
 interface IClientMetadata {
   issuerUrl: string
@@ -43,14 +41,22 @@ export class OpenIDAPI {
       .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
       .join('&')
 
-    let result: AxiosResponse<ITokenResponse> | undefined
+    let result: { data: ITokenResponse } | undefined
     try {
-      result = await post<ITokenResponse>(`${this.issuerUrl}token`, body, {
-        // httpsAgent: this.httpsAgent,
+      // External-capable IdP — bypasses request-util (axios) deliberately.
+      // See trex/plans/2026-07-27-axios-to-fetch-minimal-v3.md
+      const res = await fetch(`${this.issuerUrl}token`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        body,
+        signal: AbortSignal.timeout(30000)
       })
+      if (!res.ok) {
+        throw new Error(`IdP token request failed with status ${res.status}: ${await res.text()}`)
+      }
+      result = { data: (await res.json()) as ITokenResponse }
     } catch (err) {
       console.error('Error when getting client credentials token', err)
     }

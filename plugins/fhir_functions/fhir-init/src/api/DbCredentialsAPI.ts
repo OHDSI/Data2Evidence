@@ -30,18 +30,28 @@ export class DbCredentialsAPI {
         client_secret: env.IDP__ALP_DATA__CLIENT_SECRET,
       };
 
-      const options = {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      };
       const data = Object.keys(params)
         .map(
           (key) =>
             `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
         )
         .join("&");
-      const result = await post(this.oauthUrl, data, options);
+      // External-capable OAuth gateway — native fetch, not the axios shim.
+      // See trex/plans/2026-07-27-axios-to-fetch-minimal-v3.md
+      const res = await fetch(this.oauthUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: data,
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) {
+        throw new Error(
+          `OAuth token request failed with status ${res.status}: ${await res.text()}`
+        );
+      }
+      const result = { data: await res.json() };
       this.accessToken = `Bearer ${result.data.access_token}`;
       return this.accessToken;
     } catch (error: any) {
@@ -62,6 +72,8 @@ export class DbCredentialsAPI {
     try {
       this.logger.info("Get database list");
       const options = await this.getRequestConfig();
+      // Internal (services.trex). Intentionally still axios via request-util:
+      // not on the external-HTTPS failure path.
       const url = `${this.baseURL}/trex/db/`;
       const result = await get(url, options);
       return result.data;

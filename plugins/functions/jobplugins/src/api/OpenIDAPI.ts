@@ -1,5 +1,4 @@
 import { env, services } from "../env.ts";
-import { post } from "./request-util.ts";
 
 export class OpenIDAPI {
   private readonly baseURL: string;
@@ -20,21 +19,27 @@ export class OpenIDAPI {
     };
 
     try {
-      const options = this.createOptions("GET");
-      const result = await post(`${this.baseURL}/token`, body, options);
+      // External-capable IdP — bypasses request-util (axios) deliberately.
+      // Body stays JSON-encoded, matching the previous createOptions() headers.
+      // See trex/plans/2026-07-27-axios-to-fetch-minimal-v3.md
+      const res = await fetch(`${this.baseURL}/token`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(30000),
+      });
+      if (!res.ok) {
+        throw new Error(
+          `IdP token request failed with status ${res.status}: ${await res.text()}`
+        );
+      }
+      const result = { data: await res.json() };
       return result.data.access_token;
     } catch (err) {
       console.error("Error when getting client credentials token", err);
       throw err;
     }
-  }
-
-  private createOptions(method: string): RequestInit {
-    return {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
   }
 }
