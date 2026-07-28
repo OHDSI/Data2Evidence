@@ -3,6 +3,9 @@ import type { WizardState, WizardStepConfig } from "../types/wizard";
 import type { PortalProps } from "../types/portal";
 import { getWizardById } from "../config/wizardDefinitions";
 import { setTokenGetter } from "../axios/request";
+import { useWizardBookmarkCache } from "../hooks/useWizardBookmarkCache";
+import type { PatientAnalyticsCohortListItem } from "../api/wizardCohortApi";
+import type { WizardBookmarkCacheSnapshot } from "../services/WizardBookmarkCacheController";
 
 /**
  * Context value for wizard state and navigation.
@@ -23,6 +26,10 @@ interface WizardContextValue extends WizardState {
   getCurrentStepConfig: () => WizardStepConfig | null;
   // Portal props from parent
   portalProps: PortalProps;
+  // Background bookmark cache used only by the direct dashboard flow
+  bookmarkCache: WizardBookmarkCacheSnapshot;
+  ensureBookmarkCache: () => Promise<PatientAnalyticsCohortListItem[]>;
+  refreshBookmarkCache: () => Promise<PatientAnalyticsCohortListItem[]>;
 }
 
 const WizardContext = createContext<WizardContextValue | undefined>(undefined);
@@ -48,6 +55,12 @@ export function WizardProvider({
       setTokenGetter(portalProps.getToken);
     }
   }, [portalProps.getToken]);
+
+  const {
+    snapshot: bookmarkCache,
+    ensureReady: ensureBookmarkCache,
+    refresh: refreshBookmarkCache,
+  } = useWizardBookmarkCache(portalProps.datasetId);
 
   // Reset wizard state when dataset changes
   const datasetIdRef = React.useRef(portalProps.datasetId);
@@ -206,6 +219,9 @@ export function WizardProvider({
     goForward,
     getCurrentStepConfig,
     portalProps,
+    bookmarkCache,
+    ensureBookmarkCache,
+    refreshBookmarkCache,
   };
 
   return <WizardContext.Provider value={value}>{children}</WizardContext.Provider>;
