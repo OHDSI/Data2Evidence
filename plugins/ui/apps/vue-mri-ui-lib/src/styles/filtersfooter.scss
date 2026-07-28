@@ -43,8 +43,11 @@ $share-row-height: 40px;
     }
 
     .v-label {
-      margin-left: 8px;
-      color: var(--color-ui-dark-text);
+      // Bootstrap gives every `label` a 0.5rem bottom margin, which pushes the
+      // text off the row's vertical centre. Reset it and keep only the gap to
+      // the box. Colour is inherited (the app's near-black body text), matching
+      // the Figma label instead of the navy heading colour.
+      margin: 0 0 0 8px;
       font-size: 1rem;
       line-height: 1.5;
       opacity: 1;
