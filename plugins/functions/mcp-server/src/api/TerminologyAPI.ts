@@ -32,7 +32,7 @@ export class TerminologyAPI extends BaseAPI {
         (bodyMessage && /already exists|duplicate|unique/i.test(bodyMessage)))
     ) {
       throw new Error(
-        `A concept set named '${nameHint}' already exists in this dataset. Use update_concept_set or pick a different name.`,
+        `A concept set named '${nameHint}' already exists in this dataset. Pick a different name.`,
       );
     }
     if (status === 404) {

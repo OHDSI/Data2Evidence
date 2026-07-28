@@ -49,9 +49,7 @@ export class CodeSuggestionRouter {
         res.setHeader("Content-Type", "text/event-stream");
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
-        // req.body.model = AI_MODEL;
-        // req.body.model = "ollama:lfm2.5";
-        req.body.model = "anthropic:claude-sonnet-4-5";
+        req.body.model = AI_MODEL;
 
         // Stream the response chunks to the client as they are received.
         // NOTE: This logic depends on the Langchain Agent streaming format

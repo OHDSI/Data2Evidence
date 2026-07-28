@@ -20,7 +20,6 @@
     "./src/api/WebAPIAPI": "./src/api/WebAPIAPI.ts",
     "./src/api/TerminologyAPI": "./src/api/TerminologyAPI.ts",
     "./src/api/VocabularyAPI": "./src/api/VocabularyAPI.ts",
-    "./src/tools/concept-search.tools": "./src/tools/concept-search.tools.ts",
     "./src/tools/cohort-management.tools": "./src/tools/cohort-management.tools.ts",
     "./src/tools/cohort-instruction.tools": "./src/tools/cohort-instruction.tools.ts",
     "./src/tools/cohort-validation.tools": "./src/tools/cohort-validation.tools.ts",
