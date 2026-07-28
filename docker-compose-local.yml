@@ -13,6 +13,9 @@ services:
         mkdir -p /usr/src/cert
         printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
         printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
+        printf '%s' "$$TLS__INTERNAL__CA_CRT" > /usr/src/cert/ca.pem
+        cp /usr/src/cert/ca.pem /usr/local/share/ca-certificates/d2e-internal-ca.crt
+        update-ca-certificates
         if [ "$${TREX_DX_ENABLED:-}" = "true" ] && [ -n "$${TREX_ROOT_KEY:-}" ]; then
           mkdir -p /trex-secrets
           printf 'TREX_ROOT_KEY=%s\n' "$$TREX_ROOT_KEY" > /trex-secrets/root.env
@@ -95,7 +98,8 @@ services:
       EDGE_FUNCTIONS_MANAGEMENT_FOLDER: /app/edge-functions
       # Bind-mounted source plugins win over bundled ones with the same package name.
       # /usr/src/plugins-dev first so trex's own web/studio/notebook plugins load too.
-      PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
+      # PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins:/usr/src/plugins"
+      PLUGINS_DEV_PATH: "/usr/src/bundled-plugins"
       SQL_QUERY_TEMPLATES: '{"cohort-members": "SELECT {{COHORT_ID}} AS cohort_id, CURRENT_TIMESTAMP AS exported_at", "patient-count": "SELECT COUNT(*) AS patient_count FROM {{SCHEMA}}.person"}'
       # PhysioNet auto-provision / entitlements sync are OFF by default for local
       # dev. To exercise the flow, set USERMGMT__AUTO_PROVISION_ENABLED=true and
@@ -171,6 +175,9 @@ services:
       CADDY__CORS_LOCAL_UI: "import cors"
 
   alp-dataflow-gen:
+    build:
+      context: ./services/alp-dataflow-gen
+      dockerfile: Dockerfile
     ports:
       - 41120:41120
     environment:
