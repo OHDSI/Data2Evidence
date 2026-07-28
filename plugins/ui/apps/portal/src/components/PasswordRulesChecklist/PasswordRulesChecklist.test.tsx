@@ -20,24 +20,22 @@ const renderChecklist = (password: string, showErrors = false) =>
   );
 
 describe("PasswordRulesChecklist", () => {
-  it("renders all four rules", () => {
+  it("renders both rules", () => {
     renderChecklist("");
-    expect(screen.getAllByRole("listitem")).toHaveLength(4);
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
 
   it("marks satisfied rules as met", () => {
-    renderChecklist("abcdefgh"); // meets minLength + letter only
+    renderChecklist("abcdefgh"); // long enough, but only one character category
     const items = screen.getAllByRole("listitem");
-    expect(items[0]).toHaveClass("password-rules-checklist__item--met"); // min length
-    expect(items[1]).toHaveClass("password-rules-checklist__item--met"); // letter
-    expect(items[2]).not.toHaveClass("password-rules-checklist__item--met"); // number
-    expect(items[3]).not.toHaveClass("password-rules-checklist__item--met"); // special
+    expect(items[0]).toHaveClass("password-rules-checklist__item--met"); // length
+    expect(items[1]).not.toHaveClass("password-rules-checklist__item--met"); // character types
   });
 
   it("marks unmet rules as errors only when showErrors is set", () => {
     renderChecklist("abcdefgh", true);
     const items = screen.getAllByRole("listitem");
-    expect(items[2]).toHaveClass("password-rules-checklist__item--error");
+    expect(items[1]).toHaveClass("password-rules-checklist__item--error");
     expect(items[0]).not.toHaveClass("password-rules-checklist__item--error");
   });
 });

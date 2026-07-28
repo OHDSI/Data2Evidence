@@ -1,4 +1,10 @@
-import { PASSWORD_RULES, isPasswordValid, validateUsername, PASSWORD_MAX_LENGTH } from "./credential-validation";
+import {
+  PASSWORD_RULES,
+  isPasswordValid,
+  validateUsername,
+  countCharacterTypes,
+  PASSWORD_MAX_LENGTH,
+} from "./credential-validation";
 import { generateRandom } from "./utils";
 
 describe("generateRandom (D5: must satisfy password rules)", () => {
@@ -20,35 +26,57 @@ describe("generateRandom (D5: must satisfy password rules)", () => {
 describe("PASSWORD_RULES", () => {
   const byId = Object.fromEntries(PASSWORD_RULES.map((r) => [r.id, r]));
 
-  it("defines exactly the four checklist rules", () => {
-    expect(PASSWORD_RULES.map((r) => r.id)).toEqual(["minLength", "letter", "number", "special"]);
+  it("defines exactly the two checklist rules mirroring the Logto policy", () => {
+    expect(PASSWORD_RULES.map((r) => r.id)).toEqual(["length", "characterTypes"]);
   });
 
-  it("minLength requires 8 characters", () => {
-    expect(byId.minLength.test("Ab1!efg")).toBe(false);
-    expect(byId.minLength.test("Ab1!efgh")).toBe(true);
+  it("length enforces the 8-64 window", () => {
+    expect(byId.length.test("Ab1efgh")).toBe(false);
+    expect(byId.length.test("Ab1efghi")).toBe(true);
+    expect(byId.length.test(`Ab1${"e".repeat(61)}`)).toBe(true);
+    expect(byId.length.test(`Ab1${"e".repeat(62)}`)).toBe(false);
   });
 
-  it("letter / number / special detect their character class", () => {
-    expect(byId.letter.test("12345678!")).toBe(false);
-    expect(byId.number.test("Abcdefg!")).toBe(false);
-    expect(byId.special.test("Abcdefg1")).toBe(false);
-    expect(byId.special.test("Abcdefg1_")).toBe(true); // underscore counts as special
+  it("characterTypes requires 3 of the 4 categories, not a symbol", () => {
+    expect(byId.characterTypes.test("abcdefgh")).toBe(false); // 1 category
+    expect(byId.characterTypes.test("Abcdefgh")).toBe(false); // 2 categories
+    expect(byId.characterTypes.test("Abcdefg1")).toBe(true); // lower+upper+digit
+    expect(byId.characterTypes.test("abcdefg1!")).toBe(true); // lower+digit+symbol
+  });
+});
+
+describe("countCharacterTypes", () => {
+  it("counts the distinct Logto categories, treating space as a symbol", () => {
+    expect(countCharacterTypes("abcdefgh")).toBe(1);
+    expect(countCharacterTypes("Abcdefg1")).toBe(3);
+    expect(countCharacterTypes("Abcdefg1!")).toBe(4);
+    expect(countCharacterTypes("Abcdef 1")).toBe(4); // space counts as a symbol
   });
 
-  it("whitespace is not a special character", () => {
-    expect(byId.special.test("Abcdef 1")).toBe(false);
+  it("returns null for characters Logto does not support", () => {
+    expect(countCharacterTypes("Abcdefg1é")).toBeNull();
   });
 });
 
 describe("isPasswordValid", () => {
-  it("rejects whitespace-only, short, and single-class passwords", () => {
-    expect(isPasswordValid("        ")).toBe(false);
-    expect(isPasswordValid("a1!")).toBe(false);
-    expect(isPasswordValid("abcdefgh")).toBe(false);
+  it("rejects short and low-variety passwords", () => {
+    expect(isPasswordValid("        ")).toBe(false); // 1 category
+    expect(isPasswordValid("a1!")).toBe(false); // too short
+    expect(isPasswordValid("abcdefgh")).toBe(false); // 1 category
   });
+
   it("accepts a compliant password", () => {
     expect(isPasswordValid("Passw0rd!")).toBe(true);
+  });
+
+  it("accepts symbol-free passwords that satisfy the Logto policy", () => {
+    // The seeded admin password used across the e2e suite: lower+upper+digit.
+    expect(isPasswordValid("Updatepassword12345")).toBe(true);
+    expect(isPasswordValid("Updatepassword123456")).toBe(true);
+  });
+
+  it("rejects passwords containing unsupported characters", () => {
+    expect(isPasswordValid("Updatepassword12345é")).toBe(false);
   });
 });
 
