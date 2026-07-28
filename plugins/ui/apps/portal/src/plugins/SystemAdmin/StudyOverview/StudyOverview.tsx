@@ -8,7 +8,7 @@ import TableHead from "@mui/material/TableHead";
 import { Button, Loader, TableCell, TableRow, Text, Tooltip } from "@portal/components";
 import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { api } from "../../../axios/api";
-import { useTranslation } from "../../../contexts";
+import { useTranslation, useFeedback } from "../../../contexts";
 import { useDatabases, useDatasets, useDialogHelper } from "../../../hooks";
 import { CloseDialogType, NetworkStrategusStudy, Study, StudyAttribute } from "../../../types";
 import { JobRunTypes } from "../DQD/types";
@@ -43,6 +43,7 @@ const enum StudyAttributeConfigIds {
 }
 const StudyOverview: FC = () => {
   const { getText, i18nKeys } = useTranslation();
+  const { setSuccessFeedback } = useFeedback();
   const [refetch, setRefetch] = useState(0);
   const [fetchUpdatesLoading, setFetchUpdatesLoading] = useState(false);
   const [datasets, loadingDatasets, error] = useDatasets("systemAdmin", undefined, undefined, refetch);
@@ -496,10 +497,11 @@ const StudyOverview: FC = () => {
     (type: CloseDialogType) => {
       closeUpdateStudyDialog();
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.UPDATE_STUDY_DIALOG__SUCCESS));
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeUpdateStudyDialog]
+    [closeUpdateStudyDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleCloseCopyStudyDialog = useCallback(
@@ -516,10 +518,11 @@ const StudyOverview: FC = () => {
     (type: CloseDialogType) => {
       closeDeleteStudyDialog();
       if (type === "success") {
+        setSuccessFeedback(getText(i18nKeys.DELETE_STUDY_DIALOG__SUCCESS));
         setRefetch((refetch) => refetch + 1);
       }
     },
-    [closeDeleteStudyDialog]
+    [closeDeleteStudyDialog, setSuccessFeedback, getText, i18nKeys]
   );
 
   const handleCloseAddStrategusStudyDialog = useCallback(
