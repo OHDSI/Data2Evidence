@@ -303,7 +303,9 @@ export class DatasetRouter {
                 `Create CDM schema ${schemaName} with ${dataModel} on ${databaseCode}`,
               );
 
-              const { cacheId } = await portalAPI.getDataset(id);
+              const { cacheId } = (await portalAPI.getDataset(id)) as {
+                cacheId?: string;
+              };
 
               const options = {
                 options: {
@@ -329,7 +331,9 @@ export class DatasetRouter {
               flowRunId =
                 await jobpluginsAPI.createDatamodelFlowRun(datamodelFlowRunDto);
             } catch (error) {
-              this.logger.error(`Error while creating new CDM schema! ${error}`);
+              this.logger.error(
+                `Error while creating new CDM schema! ${error}`,
+              );
               try {
                 await portalAPI.deleteDataset(id);
               } catch (deleteError) {
