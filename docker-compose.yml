@@ -900,6 +900,15 @@ services:
       PREFECT_FLOW_RUN_CACHE_ENABLED: false
       PREFECT_RESULTS_PERSIST_BY_DEFAULT: false
       PREFECT_EVENTS_ENABLED: false
+      # cohort_discovery: Hutch Relay Task API connection, shared across every
+      # dataset's poller runs
+      TASK_API_BASE_URL: ${TASK_API_BASE_URL:-}
+      TASK_API_USERNAME: ${TASK_API_USERNAME:-}
+      TASK_API_PASSWORD: ${TASK_API_PASSWORD:-}
+      TASK_API_TYPE: ${TASK_API_TYPE:-a}
+      TASK_API_ENFORCE_HTTPS: ${TASK_API_ENFORCE_HTTPS:-true}
+      LOW_NUMBER_SUPPRESSION_THRESHOLD: ${LOW_NUMBER_SUPPRESSION_THRESHOLD:-10}
+      ROUNDING_TARGET: ${ROUNDING_TARGET:-10}
 
   # Needed only for future alterations of schema when version upgrades
   # alp-logto-db-post-alterations-init:
