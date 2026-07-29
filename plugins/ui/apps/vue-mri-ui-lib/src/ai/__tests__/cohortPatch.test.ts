@@ -193,6 +193,9 @@ describe('applyCohortPatch', () => {
     ])
 
     expect(res.applied).toBe(true)
+    // The `ref` resolved across ops, so the constraint landed on the card the
+    // preceding add_card created.
+    expect(res.createdCards).toHaveLength(1)
     const con = Object.values(constraints).find((c: any) => c.props.attrKey === 'age') as any
     expect(con.props.value).toEqual([{ op: '>=', value: 65 }])
   })
@@ -215,27 +218,6 @@ describe('applyCohortPatch', () => {
     ])
   })
 
-  it('accepts a NUMERIC conceptSetId (d2e-mcp create_concept_set) — no "[object Object]"', async () => {
-    const { store, constraints } = makeStore()
-    await applyCohortPatch(store, [
-      { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
-      {
-        op: 'add_constraint',
-        card: 'dx',
-        attributePath: 'patient.interactions.conditionoccurrence.attributes.condition',
-        // conceptSetId as a number, exactly as create_concept_set returns it
-        value: { conceptSetId: 29, includeDescendants: true, displayValue: 'Sinusitis' },
-      },
-    ])
-
-    const con = Object.values(constraints).find((c: any) => c.props.attrKey === 'condition') as any
-    // value must be the stringified concept-set id (the filter Expression reads .value),
-    // NOT the object stringified to "[object Object]".
-    expect(con.props.value).toEqual([
-      { value: '29', text: 'Sinusitis', display_value: 'Sinusitis', includeDescendants: true },
-    ])
-  })
-
   it('reports the constraint values that actually landed, read back from the store', async () => {
     const { store } = makeStore()
     const res = await applyCohortPatch(store, [
@@ -244,6 +226,10 @@ describe('applyCohortPatch', () => {
         op: 'add_constraint',
         card: 'dx',
         attributePath: 'patient.interactions.conditionoccurrence.attributes.condition',
+        // conceptSetId as a NUMBER, exactly as d2e-mcp create_concept_set returns it:
+        // it has to land as the stringified id (the filter Expression reads .value),
+        // never as the object stringified to "[object Object]" — a broken filter that
+        // renders an empty chart and a patient count of "--".
         value: { conceptSetId: 37, displayValue: "Alzheimer's disease" },
       },
     ])
@@ -264,22 +250,30 @@ describe('applyCohortPatch', () => {
     ])
   })
 
-  it('rejects an add_constraint with no value instead of silently clearing the filter', async () => {
-    const { store, cards } = makeStore()
-    await expect(
-      applyCohortPatch(store, [
-        { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
-        {
-          op: 'add_constraint',
-          card: 'dx',
-          attributePath: 'patient.interactions.conditionoccurrence.attributes.conditionconceptset',
-        } as any,
-      ])
-    ).rejects.toThrow(/has no value/)
+  // Every empty shape is caught by the same input check, before anything is
+  // mutated: applyConstraintValue reads an empty value on a text/conceptSet
+  // attribute as "clear this filter", so the patch would report success and leave
+  // a filter card with no constraint on the cohort.
+  it.each([[undefined], [''], [[]], [{}], [null]])(
+    'rejects an add_constraint whose value is %p instead of silently clearing the filter',
+    async value => {
+      const { store, cards } = makeStore()
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence', ref: 'dx' },
+          {
+            op: 'add_constraint',
+            card: 'dx',
+            attributePath: 'patient.interactions.conditionoccurrence.attributes.conditionconceptset',
+            value,
+          } as any,
+        ])
+      ).rejects.toThrow(/has no value/)
 
-    // The half-built card must not survive as an unfiltered Condition Occurrence.
-    expect(Object.keys(cards)).toHaveLength(0)
-  })
+      // The half-built card must not survive as an unfiltered Condition Occurrence.
+      expect(Object.keys(cards)).toHaveLength(0)
+    }
+  )
 
   it('names the mistake when the concept-set id sits beside `value` instead of inside it', async () => {
     const { store } = makeStore()
@@ -294,23 +288,6 @@ describe('applyCohortPatch', () => {
         } as any,
       ])
     ).rejects.toThrow(/conceptSetId at the top level of the op — it belongs inside `value`/)
-  })
-
-  it('rejects an empty-string / empty-array value on a text attribute', async () => {
-    for (const value of ['', [], {}, null]) {
-      const { store } = makeStore()
-      await expect(
-        applyCohortPatch(store, [
-          { op: 'add_card', cardConfigPath: 'patient.interactions.priDiag', ref: 'dx' },
-          {
-            op: 'add_constraint',
-            card: 'dx',
-            attributePath: 'patient.interactions.priDiag.attributes.icd',
-            value,
-          } as any,
-        ])
-      ).rejects.toThrow(/has no value/)
-    }
   })
 
   it('rejects an unknown cardConfigPath with a recoverable message when config is loaded', async () => {
@@ -331,15 +308,6 @@ describe('applyCohortPatch', () => {
       isExclusion: true,
     })
     expect(Object.values(cards)[0].props.excludeFilter).toBe(true)
-  })
-
-  it('resolves a ref across a multi-op patch and reports created cards', async () => {
-    const { store } = makeStore()
-    const res = await applyCohortPatch(store, [
-      { op: 'add_card', cardConfigPath: 'patient', ref: 'p' },
-      { op: 'add_constraint', card: 'p', attributePath: 'patient.attributes.age', value: 65 },
-    ])
-    expect(res.createdCards).toHaveLength(1)
   })
 
   it('reuses the Basic Data card instead of adding a second copy of it', async () => {
@@ -494,6 +462,14 @@ describe('applyCohortPatch', () => {
       await expect(
         applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.1`, join: 'OR' }])
       ).rejects.toThrow(/Basic Data/)
+      expect(groups).toEqual([['patient'], [`${DX}.1`]])
+    })
+
+    it('refuses to change the join on the Basic Data card itself', async () => {
+      const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      await expect(
+        applyCohortPatch(store, [{ op: 'set_card_join', card: 'patient', join: 'OR' }])
+      ).rejects.toThrow(/Basic Data card is always AND-ed/)
       expect(groups).toEqual([['patient'], [`${DX}.1`]])
     })
 
@@ -676,6 +652,98 @@ describe('applyCohortPatch', () => {
       fromDateValue: before.from,
       toDateValue: before.to,
       isUTC: true,
+    })
+  })
+
+  describe('removals', () => {
+    const DX = 'patient.interactions.conditionoccurrence'
+    const DX_SET = `${DX}.attributes.conditionconceptset`
+
+    const withAlzheimers = async () => {
+      const made = makeStore({ existingCards: ['patient', `${DX}.1`] })
+      await applyCohortPatch(made.store, [
+        { op: 'add_constraint', card: 'patient', attributePath: 'patient.attributes.age', value: '>=65' },
+        {
+          op: 'add_constraint',
+          card: `${DX}.1`,
+          attributePath: DX_SET,
+          value: { conceptSetId: 41, displayValue: "Alzheimer's disease" },
+        },
+      ])
+      return made
+    }
+
+    it('removes one constraint and leaves the card\'s other filters alone', async () => {
+      const { store, constraints } = await withAlzheimers()
+      const res = await applyCohortPatch(store, [{ op: 'remove_constraint', card: `${DX}.1`, attributePath: DX_SET }])
+
+      expect(res.applied).toBe(true)
+      expect(Object.values(constraints).map((c: any) => c.props.attrKey)).toEqual(['age'])
+    })
+
+    it('is a no-op when the constraint to remove is not on the card', async () => {
+      const { store } = makeStore({ existingCards: ['patient'] })
+      const res = await applyCohortPatch(store, [
+        { op: 'remove_constraint', card: 'patient', attributePath: 'patient.attributes.age' },
+      ])
+
+      expect(res.applied).toBe(true)
+      expect(store.dispatch).not.toHaveBeenCalledWith('deleteFilterCardConstraint', expect.anything())
+    })
+
+    it('puts a removed constraint back — value and all — when a later op fails', async () => {
+      // Atomic has to mean the filter the user had comes back, not merely that
+      // nothing new was added. A patch that widens a cohort by dropping a filter and
+      // then fails would otherwise leave it permanently widened while telling the
+      // user nothing was applied.
+      const { store, constraints } = await withAlzheimers()
+
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'remove_constraint', card: `${DX}.1`, attributePath: DX_SET },
+          { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      const con = Object.values(constraints).find((c: any) => c.props.attrKey === 'conditionconceptset') as any
+      expect(con.props.value).toEqual([
+        { value: '41', text: "Alzheimer's disease", display_value: "Alzheimer's disease", includeDescendants: false },
+      ])
+    })
+
+    it('removes a card — and leaves it removed when a later op fails', async () => {
+      // The one op revert cannot undo: re-adding the card would mint a new instance
+      // id and lose the constraints that hung off it. Pinned here so the limitation
+      // stays a decision (documented on applyCohortPatch) rather than a surprise.
+      const { store, cards, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'remove_card', card: `${DX}.1` },
+          { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      expect(Object.keys(cards)).toEqual(['patient'])
+      expect(groups).toEqual([['patient']])
+    })
+
+    it('does not re-point the chart axes at a card the patch removed', async () => {
+      const axes = [
+        { props: { attributeId: `${DX}.attributes.startdate`, filterCardId: `${DX}.1`, key: 'startdate' } },
+      ]
+      const { store } = makeStore({ existingCards: ['patient', `${DX}.1`], axes })
+
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'remove_card', card: `${DX}.1` },
+          { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      // Restoring the snapshot here would leave the chart querying an axis bound to
+      // a filterCardId the IFR no longer contains.
+      expect(axes[0].props).toMatchObject({ attributeId: '', filterCardId: '', key: '' })
     })
   })
 
