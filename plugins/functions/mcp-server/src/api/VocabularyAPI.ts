@@ -17,7 +17,7 @@ export type ConceptHit = {
   conceptName: string;
   domainId: string;
   vocabularyId: string;
-  standardConcept: string;
+  standardConcept: string | null;
 };
 
 export class VocabularyAPI extends BaseAPI {

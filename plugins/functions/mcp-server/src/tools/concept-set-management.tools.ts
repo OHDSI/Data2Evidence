@@ -217,7 +217,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
             conceptName: z.string(),
             domainId: z.string(),
             vocabularyId: z.string(),
-            standardConcept: z.string(),
+            standardConcept: z.string().nullable(),
           }),
         ),
       },

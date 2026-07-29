@@ -76,6 +76,5 @@ export function buildDeepLinkUrl(
   const query = compress(bookmark);
   const params = new URLSearchParams({ datasetId, linkType: LINK_TYPE });
   const url = `${COHORT_ROUTE}?${params.toString()}&query=${query}`;
-  console.log(`Built cohort deep link URL (len=${url.length}): ${url}`);
   return { url, tooLong: url.length > URL_WARN_THRESHOLD };
 }

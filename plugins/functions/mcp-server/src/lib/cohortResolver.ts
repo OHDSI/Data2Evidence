@@ -283,9 +283,15 @@ export async function resolveClausesToConstraints(
       if (attr.kind === "num") {
         ({ expressions, combine } = numExpressions(cc));
       } else if (attr.kind === "category") {
+        if (cc.op !== "=" && cc.op !== "!=") {
+          throw new Error(
+            `Unsupported operator "${cc.op}" for category attribute "${cc.attribute}". ` +
+              `Use "=" or "!=".`,
+          );
+        }
         const resolved = await deps.resolveValue(card, attr, String(cc.value));
         expressions = [
-          { operator: cc.op === "!=" ? "!=" : "=", value: resolved },
+          { operator: cc.op, value: resolved },
         ];
         combine = "OR";
       } else if (attr.kind === "conceptSet") {
