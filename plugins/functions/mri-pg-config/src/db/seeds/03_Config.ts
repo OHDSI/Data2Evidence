@@ -9622,7 +9622,7 @@ export const cdwConfig = {
             "@PROC.START": "\"PROCEDURE_DATE\"",
             "@PROC.END": "\"PROCEDURE_DATE\"",
             "@PROC.INTERACTION_TYPE": "\"PROCEDURE_TYPE_CONCEPT_ID\"",
-            "@COHORT": "$$SCHEMA$$.\"COHORT\"",
+            "@COHORT": "$$RESULT_SCHEMA$$.\"COHORT\"",
             "@COHORT.PATIENT_ID": "\"SUBJECT_ID\"",
             "@COHORT.INTERACTION_ID": "\"COHORT_DEFINITION_ID\"",
             "@COHORT.CONDITION_ID": "\"COHORT_DEFINITION_ID\"",
