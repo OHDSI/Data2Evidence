@@ -8,6 +8,11 @@
 import type { Store } from 'vuex'
 import { getFieldAttrKey } from '../utils/dashboardFlowUtils'
 import { applyConstraintValue } from '../utils/applyConstraintValue'
+import {
+  restoreConstraintValue,
+  snapshotConstraintValue,
+  type ConstraintValueSnapshot,
+} from '../utils/constraintValueSnapshot'
 
 export type ConstraintValue =
   | number
@@ -50,12 +55,22 @@ const isConceptSetValue = (
 ): v is { conceptSetId: string | number; includeDescendants?: boolean; displayValue?: string } =>
   !!v && typeof v === 'object' && (typeof v.conceptSetId === 'string' || typeof v.conceptSetId === 'number')
 
-// Rollback bookkeeping: created cards are deleted, prior constraint values and
-// the chart's axis selection restored, grouping changes undone.
+// Rollback bookkeeping: created cards are deleted, removed constraints re-created,
+// prior constraint values and the chart's axis selection restored, grouping changes
+// undone. Cards removed by remove_card are the one thing revert cannot put back —
+// see applyCohortPatch.
 interface Rollback {
   createdCardIds: string[]
-  priorConstraintValues: Array<{ constraintId: string; value: any }>
+  priorConstraintValues: ConstraintValueSnapshot[]
   createdConstraints: Array<{ filterCardId: string; constraintId: string }>
+  /**
+   * Constraints this patch DELETED (remove_constraint). Keyed by card + attribute
+   * key rather than by constraint id: the id dies with the constraint, so revert
+   * re-adds it and restores the snapshot onto whatever id the store hands back.
+   */
+  removedConstraints: Array<{ filterCardId: string; key: string; snapshot: ConstraintValueSnapshot }>
+  /** Cards this patch DELETED (remove_card). Not undone; see applyCohortPatch. */
+  removedCardIds: string[]
   priorAxes: AxisSnapshot[]
   /**
    * Grouping (AND/OR) changes, newest last. Undone by applying the inverse
@@ -204,12 +219,16 @@ function attributeDomain(store: Store<any>, attributePath: string): string {
   }
 }
 
-/** Every place this concept-set id is already filtered on, with that attribute's domain. */
-function conceptSetUses(
+/**
+ * The first place this concept-set id is already filtered on under a DIFFERENT
+ * domain, or undefined when there is none. Same-domain reuse is legal, and an
+ * attribute whose domain the config doesn't state can't be judged either way.
+ */
+function findConceptSetDomainConflict(
   store: Store<any>,
-  conceptSetId: string
-): Array<{ card: string; attributePath: string; domain: string }> {
-  const uses: Array<{ card: string; attributePath: string; domain: string }> = []
+  conceptSetId: string,
+  targetDomain: string
+): { card: string; attributePath: string; domain: string } | undefined {
   for (const cardId of Object.keys(store.getters.getFilterCards?.() ?? {})) {
     const constraints: any[] = store.getters.getFilterCardConstraints?.(cardId) ?? []
     for (const constraint of constraints) {
@@ -217,16 +236,17 @@ function conceptSetUses(
       const values: any[] = Array.isArray(constraint.props.value) ? constraint.props.value : []
       if (!values.some(v => String(v?.value) === conceptSetId)) continue
       const attributePath = constraint.props.attributePath
-      uses.push({ card: cardId, attributePath, domain: attributeDomain(store, attributePath) })
+      const domain = attributeDomain(store, attributePath)
+      if (domain && domain !== targetDomain) return { card: cardId, attributePath, domain }
     }
   }
-  return uses
+  return undefined
 }
 
 function assertConceptSetDomain(store: Store<any>, op: AddConstraintOp, conceptSetId: string): void {
   const targetDomain = attributeDomain(store, op.attributePath)
   if (!targetDomain) return
-  const conflict = conceptSetUses(store, conceptSetId).find(use => use.domain && use.domain !== targetDomain)
+  const conflict = findConceptSetDomainConflict(store, conceptSetId, targetDomain)
   if (!conflict) return
   throw new Error(
     `Concept set ${conceptSetId} is already filtered on "${conflict.attributePath}" (card "${conflict.card}"), ` +
@@ -303,8 +323,14 @@ function assertValueLanded(store: Store<any>, filterCardId: string, key: string,
 }
 
 /**
- * Apply a list of typed patch ops to the live cohort in `store`. Atomic: if any
- * op fails the whole patch is rolled back and the error is rethrown.
+ * Apply a list of typed patch ops to the live cohort in `store`.
+ *
+ * Atomic, with one documented exception: if any op fails, everything this patch
+ * added (cards, constraints, values) or regrouped is undone, a constraint it
+ * removed is put back, and the error is rethrown. A card removed by `remove_card`
+ * is NOT restored — re-adding it would mint a new instance id and lose the
+ * constraints that hung off it, and a half-restored card is a worse lie than a
+ * missing one. So put `remove_card` last in a patch, or send it on its own.
  */
 export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): Promise<ApplyCohortPatchResult> {
   if (!Array.isArray(patchOps) || patchOps.length === 0) {
@@ -319,6 +345,8 @@ export async function applyCohortPatch(store: Store<any>, patchOps: PatchOp[]): 
     createdCardIds: [],
     priorConstraintValues: [],
     createdConstraints: [],
+    removedConstraints: [],
+    removedCardIds: [],
     priorAxes: snapshotAxes(store),
     joinChanges: [],
   }
@@ -535,7 +563,8 @@ async function applyOne(
       const key = getFieldAttrKey(op.attributePath)
       let constraint = store.getters.getConstraintForAttribute?.({ filterCardId, key })
       if (constraint) {
-        rollback.priorConstraintValues.push({ constraintId: constraint.id, value: constraint.props?.value })
+        // Snapshots the date slot as well as `value` — see ConstraintValueSnapshot.
+        rollback.priorConstraintValues.push(snapshotConstraintValue(constraint))
       } else {
         const constraintId = (await dispatch('addFilterCardConstraint', { filterCardId, key })) as string
         rollback.createdConstraints.push({ filterCardId, constraintId })
@@ -571,6 +600,11 @@ async function applyOne(
       const key = getFieldAttrKey(op.attributePath)
       const constraint = store.getters.getConstraintForAttribute?.({ filterCardId, key })
       if (constraint) {
+        // Snapshot before deleting: a later op can still fail the patch, and atomic
+        // has to mean the filter the user had comes back — not merely that nothing
+        // new was added. A dropped filter that survives a failed patch leaves the
+        // cohort permanently wider than the user was told it is.
+        rollback.removedConstraints.push({ filterCardId, key, snapshot: snapshotConstraintValue(constraint) })
         await dispatch('deleteFilterCardConstraint', { filterCardId, constraintId: constraint.id })
       }
       return
@@ -578,6 +612,7 @@ async function applyOne(
     case 'remove_card': {
       const filterCardId = resolveCard(op.card)
       await dispatch('deleteFilterCard', { filterCardId })
+      rollback.removedCardIds.push(filterCardId)
       return
     }
     default:
@@ -614,13 +649,20 @@ async function revert(
       console.error('[cohortPatch] revert join change failed', e)
     }
   }
-  for (const { constraintId, value } of rollback.priorConstraintValues.reverse()) {
-    if (typeof value !== 'undefined') {
-      try {
-        await dispatch('updateConstraintValue', { constraintId, value })
-      } catch (e) {
-        console.error('[cohortPatch] revert updateConstraintValue failed', e)
+  for (const snapshot of rollback.priorConstraintValues.reverse()) {
+    await restoreConstraintValue(dispatch, snapshot)
+  }
+  // Put back what remove_constraint took. Before the created cards are deleted
+  // below, so the card a constraint belongs to is still there to re-add it to.
+  for (const { filterCardId, key, snapshot } of rollback.removedConstraints.reverse()) {
+    try {
+      await dispatch('addFilterCardConstraint', { filterCardId, key })
+      const recreated = store.getters.getConstraintForAttribute?.({ filterCardId, key })
+      if (recreated) {
+        await restoreConstraintValue(dispatch, { ...snapshot, constraintId: recreated.id })
       }
+    } catch (e) {
+      console.error('[cohortPatch] revert remove_constraint failed', e)
     }
   }
   for (const { filterCardId, constraintId } of rollback.createdConstraints.reverse()) {
@@ -640,6 +682,10 @@ async function revert(
   // Last: deleteFilterCard above cleared any axis pointing at a card it removed,
   // so the axis selection is restored after the cards, not before.
   for (const { id, props } of rollback.priorAxes) {
+    // Except an axis bound to a card remove_card deleted: that card is gone for
+    // good (see applyCohortPatch), and re-pointing the chart at it would send the
+    // query out with a filterCardId the IFR no longer contains.
+    if (props.filterCardId && rollback.removedCardIds.includes(props.filterCardId)) continue
     try {
       await dispatch('setAxisValue', { id, props })
     } catch (e) {

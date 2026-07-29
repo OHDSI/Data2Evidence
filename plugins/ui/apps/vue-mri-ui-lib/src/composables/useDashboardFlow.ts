@@ -15,6 +15,11 @@ import { constraintContainsExpression, type Constraint } from '../services/dashb
 import BinaryToString from '../utils/BinaryToString'
 import { useNotificationStore } from '../stores/notifications'
 import { applyConstraintValue as applyConstraintValueShared } from '../utils/applyConstraintValue'
+import {
+  restoreConstraintValue,
+  snapshotConstraintValue,
+  type ConstraintValueSnapshot,
+} from '../utils/constraintValueSnapshot'
 
 export interface WizardFieldValue {
   value: string | number | boolean | object
@@ -203,13 +208,7 @@ export function useDashboardFlow(
   const initialDisplayValues = ref<Record<string, string>>({})
   const fieldToCardMap = ref<Record<string, string>>({})
   const createdCards = ref<string[]>([])
-  const originalConstraintValues = ref<
-    Array<{
-      filterCardId: string
-      constraintId: string
-      oldValue: any
-    }>
-  >([])
+  const originalConstraintValues = ref<ConstraintValueSnapshot[]>([])
   // Flag to prevent bookmark watcher from resetting state during flow
   let isProcessingDashboardFlow = false
 
@@ -568,12 +567,10 @@ export function useDashboardFlow(
         })
 
         if (constraint) {
-          // Store original value for revert
-          originalConstraintValues.value.push({
-            filterCardId: op.filterCardId,
-            constraintId: constraint.id,
-            oldValue: constraint.props?.value,
-          })
+          // Store original value for revert. snapshotConstraintValue also captures
+          // the fromDate/toDate slot, which a year-range field writes and which
+          // `value`-only bookkeeping could not put back.
+          originalConstraintValues.value.push(snapshotConstraintValue(constraint))
 
           await applyConstraintValue(constraint, op.value, '=', op.displayValue)
         } else {
@@ -662,19 +659,17 @@ export function useDashboardFlow(
   }
 
   async function revertFieldChanges(): Promise<void> {
-    // Restore original constraint values
-    for (const { constraintId, oldValue } of originalConstraintValues.value) {
-      if (oldValue) {
-        await dispatch('updateConstraintValue', {
-          constraintId,
-          value: oldValue,
-        })
-      }
+    // Restore original constraint values (including the date slot, and including a
+    // value that was legitimately empty before the edit).
+    for (const snapshot of originalConstraintValues.value) {
+      await restoreConstraintValue(dispatch, snapshot)
     }
 
-    // Delete created filter cards
+    // Delete created filter cards. 'deleteFilterCard' is the action the query module
+    // defines — 'removeFilterCard' is not one, so this used to leak every card the
+    // wizard created when the user backed out of the required-filters modal.
     for (const cardId of createdCards.value) {
-      await dispatch('removeFilterCard', { filterCardId: cardId })
+      await dispatch('deleteFilterCard', { filterCardId: cardId })
     }
 
     // Clear tracking
