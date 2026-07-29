@@ -15,6 +15,11 @@ server {
     ssl_certificate     /usr/src/cert/cert.pem;
     ssl_certificate_key /usr/src/cert/key.pem;
 
+    # Prefect artifact/result payloads (e.g. DQD reports) routinely exceed
+    # nginx's default 1m limit; Prefect had no such cap before nginx sat in
+    # front of it for TLS termination.
+    client_max_body_size 0;
+
     location / {
         proxy_pass http://127.0.0.1:41121;
         proxy_http_version 1.1;
