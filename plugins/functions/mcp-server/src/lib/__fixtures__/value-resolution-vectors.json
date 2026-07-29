@@ -1,0 +1,123 @@
+{
+  "$comment": [
+    "Shared contract for query -> stored-value matching. TWO implementations read this file:",
+    "  - plugins/functions/mcp-server/src/lib/cohortValueResolver.ts   (Deno, deep-link surface)",
+    "  - plugins/ui/apps/vue-mri-ui-lib/src/ai/valueResolution.ts      (browser, pa_* WebMCP tools)",
+    "They cannot share a module (different runtimes, nothing crosses that boundary in this repo), so",
+    "this table is what keeps them in step. A ranking change belongs HERE first, then in both files —",
+    "if you add it to only one suite, the other surface silently degrades and nothing fails.",
+    "",
+    "`rows` use a neutral shape { value, label }; each side maps it onto its own row type.",
+    "`expectedOrder` lists the `value` of every row that must match, best first. An empty list means",
+    "nothing may match. `alternateQueries` cases assert the retry queries used when the attribute's",
+    "domain cannot be enumerated."
+  ],
+  "ranking": [
+    {
+      "name": "\"ER Visit\" reaches the stored emergency-room token it is not a substring of",
+      "why": "The reported failure: the /values search found nothing and the assistant reported the value absent.",
+      "query": "ER Visit",
+      "rows": [
+        { "value": "9203", "label": "Emergency Room Visit" },
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "9202", "label": "Outpatient Visit" }
+      ],
+      "expectedOrder": ["9203"]
+    },
+    {
+      "name": "an exact token beats a longer value that merely contains it",
+      "query": "F",
+      "rows": [
+        { "value": "FEMALE_RELATIVE", "label": "Female relative" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": ["F", "FEMALE_RELATIVE"]
+    },
+    {
+      "name": "a demographic synonym resolves to the stored token",
+      "why": "The user says \"women\"; the column stores \"F\". Never ask the user how their data spells it.",
+      "query": "women",
+      "rows": [
+        { "value": "M", "label": "Male" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": ["F"]
+    },
+    {
+      "name": "casing alone never hides a value",
+      "query": "female",
+      "rows": [{ "value": "8532", "label": "FEMALE" }],
+      "expectedOrder": ["8532"]
+    },
+    {
+      "name": "a filler word does not stop the distinctive words from matching",
+      "why": "\"visit\"/\"encounter\" carry no discriminating power in a value column.",
+      "query": "intensive care visit",
+      "rows": [
+        { "value": "581379", "label": "Inpatient Intensive Care" },
+        { "value": "9202", "label": "Outpatient Visit" }
+      ],
+      "expectedOrder": ["581379"]
+    },
+    {
+      "name": "ICU expands to the stored intensive-care token",
+      "query": "ICU",
+      "rows": [
+        { "value": "32037", "label": "Intensive Care" },
+        { "value": "9201", "label": "Inpatient Visit" }
+      ],
+      "expectedOrder": ["32037"]
+    },
+    {
+      "name": "a row sharing only one distinctive word ranks below the phrase matches",
+      "query": "emergency room",
+      "rows": [
+        { "value": "8870", "label": "Emergency Room - Hospital" },
+        { "value": "9203", "label": "Emergency Room and Inpatient Visit" },
+        { "value": "4021", "label": "Operating Room" }
+      ],
+      "expectedOrder": ["8870", "9203", "4021"]
+    },
+    {
+      "name": "the value column is matched too, not only the label",
+      "query": "sinusitis",
+      "rows": [{ "value": "Acute sinusitis", "label": "" }],
+      "expectedOrder": ["Acute sinusitis"]
+    },
+    {
+      "name": "an unrelated term matches nothing rather than something close",
+      "why": "A near-miss clinical concept is a silent clinical error; better to return the whole column.",
+      "query": "diabetes",
+      "rows": [
+        { "value": "9201", "label": "Inpatient Visit" },
+        { "value": "F", "label": "Female" }
+      ],
+      "expectedOrder": []
+    },
+    {
+      "name": "an empty query matches nothing (the caller asks for the whole domain instead)",
+      "query": "",
+      "rows": [{ "value": "F", "label": "Female" }],
+      "expectedOrder": []
+    }
+  ],
+  "alternateQueries": [
+    {
+      "name": "a phrase the endpoint cannot match is retried by its expansions",
+      "why": "Title case first: a stored concept name usually looks like \"Emergency Room Visit\".",
+      "query": "ER visit",
+      "mustInclude": ["Emergency Room Visit", "Emergency Room", "ER VISIT"],
+      "mustNotInclude": ["visit", "Visit", "VISIT"]
+    },
+    {
+      "name": "casings are swept for a case-sensitive LIKE",
+      "query": "female",
+      "mustInclude": ["Female", "FEMALE"]
+    },
+    {
+      "name": "bounded, so a failed search cannot fan out into many endpoint calls",
+      "query": "acute upper respiratory infection of the intensive care unit",
+      "maxLength": 9
+    }
+  ]
+}

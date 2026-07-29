@@ -76,6 +76,20 @@ const SYNONYM_GROUPS: string[][] = [
   ["no", "n", "false"],
 ];
 
+// ---------------------------------------------------------------------------
+// The matching below has a browser-side twin:
+// plugins/ui/apps/vue-mri-ui-lib/src/ai/valueResolution.ts, which does the same
+// job for the pa_* WebMCP tools (the surface that exists while Patient Analytics
+// IS mounted). The two cannot share a module — that one is bundled by Vite, this
+// one runs on Deno, and nothing crosses that boundary in this repo — so they are
+// kept in step by a shared table of query→expected-row vectors that BOTH suites
+// read: ./__fixtures__/value-resolution-vectors.json.
+//
+// Exported names deliberately match the FE file so the two are diffable side by
+// side. If you change the ranking here, change it there, and add the case to the
+// vectors rather than to only one suite.
+// ---------------------------------------------------------------------------
+
 /**
  * Everyday care-SETTING abbreviations. These are administrative vocabulary, not
  * clinical judgement: "ER" is an emergency room encounter on every dataset, and
@@ -222,7 +236,7 @@ function casings(phrase: string): string[] {
  * Each retry is another 20s-timeout call to the values endpoint, so this branch
  * (domain not enumerable AND the direct search failed) has to stay bounded.
  */
-const MAX_ALTERNATE_QUERIES = 9;
+export const MAX_ALTERNATE_QUERIES = 9;
 
 /**
  * Queries to retry the endpoint with when the domain can't be enumerated: the
@@ -231,7 +245,7 @@ const MAX_ALTERNATE_QUERIES = 9;
  * user's phrase ("ER visit") is not a substring of, and the casing sweep covers
  * a backend whose LIKE is case-sensitive.
  */
-function alternateQueries(query: string): string[] {
+export function alternateQueries(query: string): string[] {
   const ex = expandQuery(query);
   const phrases: string[] = [ex.normalized];
   const add = (p: string) => {

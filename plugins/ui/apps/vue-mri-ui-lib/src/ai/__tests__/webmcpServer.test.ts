@@ -778,7 +778,7 @@ describe('createPaTools', () => {
         expect(parsed.note).toContain('do NOT ask the user to suggest a synonym')
       })
 
-      it('retries other casings when the domain is too large to enumerate', async () => {
+      it('retries rewritten queries when the domain is too large to enumerate', async () => {
         const store = makeStore()
         const hit = [{ value: '461', text: 'Sinusitis' }]
         store.getters.getDomainValues = () => ({ loadedStatus: 'HAS_RESULTS', values: [] })
@@ -795,9 +795,54 @@ describe('createPaTools', () => {
         })
 
         const parsed = parse(res)
-        expect(parsed.matchedVia).toBe('case-variant')
+        expect(parsed.matchedVia).toBe('alternate-query')
         expect(parsed.values).toEqual(hit)
         expect(parsed.note).toContain('case-sensitive')
+      })
+
+      // The retry sweep is not casing-only: "ER visit" is not a substring of the
+      // stored "Emergency Room Visit" in ANY casing, so the term's expansions and
+      // its distinctive words have to be searched too. This is the case the
+      // backend resolver handled and this surface did not.
+      it('retries an expanded term, not just other casings', async () => {
+        const store = makeStore()
+        const hit = [{ value: '9203', text: 'Emergency Room Visit' }]
+        store.getters.getDomainValues = () => ({ loadedStatus: 'HAS_RESULTS', values: [] })
+        store.dispatch.mockImplementation((type: string, payload: any) =>
+          type === 'loadValuesForAttributePath'
+            ? Promise.resolve(payload.searchQuery === 'Emergency Room Visit' ? hit : [])
+            : Promise.resolve(undefined)
+        )
+
+        const parsed = parse(
+          await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+            attributePath: 'p.attr',
+            query: 'ER visit',
+          })
+        )
+
+        expect(parsed.matchedVia).toBe('alternate-query')
+        expect(parsed.values).toEqual(hit)
+      })
+
+      it('reports matchedVia "none" when neither the search nor any retry matched', async () => {
+        const store = makeStore()
+        store.getters.getDomainValues = () => ({ loadedStatus: 'HAS_RESULTS', values: [] })
+        store.dispatch.mockImplementation((type: string) =>
+          type === 'loadValuesForAttributePath' ? Promise.resolve([]) : Promise.resolve(undefined)
+        )
+
+        const parsed = parse(
+          await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+            attributePath: 'p.attr',
+            query: 'telehealth',
+          })
+        )
+
+        // Distinct from "the whole column is below, pick one": nothing could be read
+        // at all, so the next move is a different attributePath.
+        expect(parsed.matchedVia).toBe('none')
+        expect(parsed.note).toContain('different attributePath')
       })
 
       it('does not re-read the domain when the search was merely TOO_MANY_RESULTS', async () => {

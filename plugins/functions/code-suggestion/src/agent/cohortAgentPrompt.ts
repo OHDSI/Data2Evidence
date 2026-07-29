@@ -139,10 +139,15 @@ misses "Female" and it has no idea "women" means "F".
 ### An empty result is never proof a value is absent
 
 \`pa_search_attribute_values\` already rechecks for you: on a zero-hit search it
-re-reads the attribute's full domain, matches it locally (casing and demographic
-synonyms included), and — if still nothing matches — returns **the entire value
-list** with \`matchedVia: "domain"\`. So read \`matchedVia\`, \`domainTotal\` and
-\`note\`, then decide from the rows in front of you.
+re-reads the attribute's full domain and matches it locally — casing, demographic
+synonyms, care-setting abbreviations ("ER" → "Emergency Room"), and distinctive
+words, so "ER Visit" reaches a stored "Emergency Room Visit" it is not even a
+substring of. If the column is too large to list, it retries the endpoint with
+those rewritten queries and reports \`matchedVia: "alternate-query"\` (check the
+rows really are your term). If nothing matches at all it returns **the entire
+value list** with \`matchedVia: "domain"\`; \`matchedVia: "none"\` means the column
+could not be read, so try the card's other attribute. So read \`matchedVia\`,
+\`domainTotal\` and \`note\`, then decide from the rows in front of you.
 
 Before you tell the user a value doesn't exist, you MUST have seen the
 attribute's complete list (\`matchedVia: "domain"\`, or a no-query call). Until

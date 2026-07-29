@@ -27,7 +27,9 @@ import {
   type ResolverDeps,
 } from "./cohortResolver.ts";
 import {
+  alternateQueries,
   formatValueRows,
+  MAX_ALTERNATE_QUERIES,
   rankValues,
   renderValueListing,
   resolveCategoryValue,
@@ -440,3 +442,70 @@ Deno.test(
     assert(STAMP.configId, "stamp present");
   },
 );
+
+// ---------------------------------------------------------------------------
+// The contract shared with the browser-side twin
+// (plugins/ui/apps/vue-mri-ui-lib/src/ai/valueResolution.ts). Both suites read
+// the SAME vectors, so a ranking change cannot improve one surface and silently
+// leave the other behind — which is what had happened: this resolver handled
+// "ER visit" and the pa_* tools did not.
+// ---------------------------------------------------------------------------
+
+interface RankingVector {
+  name: string;
+  query: string;
+  rows: Array<{ value: string; label: string }>;
+  expectedOrder: string[];
+}
+
+interface AlternateQueryVector {
+  name: string;
+  query: string;
+  mustInclude?: string[];
+  mustNotInclude?: string[];
+  maxLength?: number;
+}
+
+const VECTORS: {
+  ranking: RankingVector[];
+  alternateQueries: AlternateQueryVector[];
+} = JSON.parse(
+  Deno.readTextFileSync(
+    new URL("./__fixtures__/value-resolution-vectors.json", import.meta.url),
+  ),
+);
+
+Deno.test("shared vectors: ranking matches the browser-side twin", () => {
+  assert(VECTORS.ranking.length > 0, "vectors loaded");
+  for (const v of VECTORS.ranking) {
+    const ranked = rankValues(v.rows, v.query).map((m) => String(m.row.value));
+    eq(
+      ranked.join("|"),
+      v.expectedOrder.join("|"),
+      `ranking vector "${v.name}"`,
+    );
+  }
+});
+
+Deno.test("shared vectors: retry queries match the browser-side twin", () => {
+  assert(VECTORS.alternateQueries.length > 0, "vectors loaded");
+  for (const v of VECTORS.alternateQueries) {
+    const queries = alternateQueries(v.query);
+    for (const expected of v.mustInclude ?? []) {
+      assert(
+        queries.includes(expected),
+        `retry vector "${v.name}" — expected to retry ${JSON.stringify(expected)}, got ${JSON.stringify(queries)}`,
+      );
+    }
+    for (const forbidden of v.mustNotInclude ?? []) {
+      assert(
+        !queries.includes(forbidden),
+        `retry vector "${v.name}" — must not retry ${JSON.stringify(forbidden)}`,
+      );
+    }
+    assert(
+      queries.length <= (v.maxLength ?? MAX_ALTERNATE_QUERIES),
+      `retry vector "${v.name}" — ${queries.length} queries exceeds the bound`,
+    );
+  }
+});
