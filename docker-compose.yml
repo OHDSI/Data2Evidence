@@ -840,7 +840,12 @@ services:
       PREFECT_API_DEFAULT_LIMIT: 5000
       PREFECT_SERVER_API_BASE_PATH: /d2e/api
       PREFECT_UI_SERVE_BASE: /d2e
-      PREFECT_UI_API_URL: https://127.0.0.1:41120/d2e/api
+      # Relative API URL: the UI calls whatever origin it was loaded from
+      # (localhost, 127.0.0.1, or the Caddy public FQDN), so API calls stay
+      # same-origin and avoid the cross-origin CORS preflight that the
+      # in-container nginx answers with 503. Must line up with
+      # PREFECT_SERVER_API_BASE_PATH (/d2e/api) above.
+      PREFECT_UI_API_URL: /d2e/api
       PREFECT_UI_URL: https://127.0.0.1:41120/d2e
       PREFECT_LOGGING_LEVEL: DEBUG
       PREFECT_LOGGING_SERVER_LEVEL: WARNING
