@@ -108,8 +108,7 @@ export async function applyConstraintValue(
     return Promise.reject(
       new Error(
         `Unsupported object value for ${constraint.props.name || constraint.id}: ` +
-          'pass a scalar value (string or number), { from, to } for a date range, or ' +
-          '{ conceptSetId } for a concept set.'
+          'pass a scalar value (string or number).'
       )
     )
   }
