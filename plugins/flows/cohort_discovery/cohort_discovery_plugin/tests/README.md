@@ -10,20 +10,30 @@ Two layers of tests live here:
 
 ## Running the unit suite
 
-From the group directory, using the project test venv:
+`test_flow.py` needs a separate venv — it imports `prefect.testing.utilities`,
+and `prefect` is only a `default`-feature dependency, which doesn't have
+`pip`/`pytest` available in the worker image. Use a venv with `prefect`,
+`pydantic`, and `pytest` installed (referred to below as `/tmp/cdvenv`;
+provision it however your CI/dev setup normally installs Python deps):
 
 ```sh
 cd plugins/flows/cohort_discovery
-PYTHONPATH="$PWD:$PWD/..:$PWD/../.." /tmp/cdvenv/bin/pytest cohort_discovery_plugin/tests/ -v
+PYTHONPATH="$PWD:$PWD/..:$PWD/../.." /tmp/cdvenv/bin/pytest cohort_discovery_plugin/tests/test_flow.py -v
 ```
 
-Or inside the pixi `bunny` environment (which has `pytest` and hutch-bunny
-installed):
+`test_types.py`, `test_bunny_config.py`, `test_bunny_runner.py`, and
+`test_integration.py` have no `prefect` dependency and run inside the pixi
+`bunny` environment (which has `pytest` and hutch-bunny installed):
 
 ```sh
 cd plugins/flows/cohort_discovery
-pixi run -e bunny pytest cohort_discovery_plugin/tests/ -v
+pixi run --frozen -e bunny pytest cohort_discovery_plugin/tests/ -v \
+  --ignore=cohort_discovery_plugin/tests/test_flow.py
 ```
+
+(Running the full directory — including `test_flow.py` — under `-e bunny`
+fails collection with `ModuleNotFoundError: No module named 'prefect'`, since
+that env has no `prefect`.)
 
 The `integration` marker is registered in `pyproject.toml`
 (`[tool.pytest.ini_options] markers`), so `-m integration` (or `-m "not

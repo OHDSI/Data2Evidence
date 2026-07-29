@@ -1,6 +1,9 @@
 import os, json, subprocess, pathlib, pytest
 
 BUNNY = ["pixi", "run", "--frozen", "-e", "bunny", "python", "-m", "cohort_discovery_plugin.bunny_runner"]
+# Group dir (contains pyproject.toml / pixi.lock), so this works regardless of
+# which directory pytest is invoked from.
+GROUP_DIR = pathlib.Path(__file__).resolve().parents[2]
 
 @pytest.mark.integration
 def test_child_runs_against_duckdb():
@@ -27,7 +30,7 @@ def test_child_runs_against_duckdb():
         "TASK_API_ENFORCE_HTTPS": "false",
         "LOW_NUMBER_SUPPRESSION_THRESHOLD": "10", "ROUNDING_TARGET": "10",
     }
-    proc = subprocess.run(BUNNY, cwd="plugins/flows/cohort_discovery", env=env, capture_output=True, text=True)
+    proc = subprocess.run(BUNNY, cwd=GROUP_DIR, env=env, capture_output=True, text=True)
     assert proc.returncode == 0, proc.stderr[-2000:]
     out = json.loads(proc.stdout.strip().splitlines()[-1])
     assert out["error"] is None
