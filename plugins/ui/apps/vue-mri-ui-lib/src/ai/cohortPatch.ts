@@ -54,7 +54,7 @@ const isConceptSetValue = (
 // the chart's axis selection restored, grouping changes undone.
 interface Rollback {
   createdCardIds: string[]
-  priorConstraintValues: Array<{ constraintId: string; value: any }>
+  priorConstraintValues: Array<{ constraintId: string; value: any; dates?: { from: any; to: any } }>
   createdConstraints: Array<{ filterCardId: string; constraintId: string }>
   priorAxes: AxisSnapshot[]
   /**
@@ -535,7 +535,14 @@ async function applyOne(
       const key = getFieldAttrKey(op.attributePath)
       let constraint = store.getters.getConstraintForAttribute?.({ filterCardId, key })
       if (constraint) {
-        rollback.priorConstraintValues.push({ constraintId: constraint.id, value: constraint.props?.value })
+        rollback.priorConstraintValues.push({
+          constraintId: constraint.id,
+          value: constraint.props?.value,
+          // Snapshot the date slot too when the constraint has one — see Rollback.
+          ...(constraint.props?.fromDate || constraint.props?.toDate
+            ? { dates: { from: constraint.props?.fromDate?.value, to: constraint.props?.toDate?.value } }
+            : {}),
+        })
       } else {
         const constraintId = (await dispatch('addFilterCardConstraint', { filterCardId, key })) as string
         rollback.createdConstraints.push({ filterCardId, constraintId })
@@ -614,7 +621,24 @@ async function revert(
       console.error('[cohortPatch] revert join change failed', e)
     }
   }
-  for (const { constraintId, value } of rollback.priorConstraintValues.reverse()) {
+  for (const { constraintId, value, dates } of rollback.priorConstraintValues.reverse()) {
+    if (dates) {
+      try {
+        // isUTC:true is the pass-through branch of updateDateConstraintValue: the
+        // snapshot is already normalized, and the only transform it applies there
+        // (toUTCEndOfDay on a 'time' attribute) is idempotent on a Date and returns
+        // '' — an unset constraint — untouched. The isUTC:false branch would shift
+        // the range by the timezone offset every time it ran.
+        await dispatch('updateDateConstraintValue', {
+          constraintId,
+          fromDateValue: dates.from,
+          toDateValue: dates.to,
+          isUTC: true,
+        })
+      } catch (e) {
+        console.error('[cohortPatch] revert updateDateConstraintValue failed', e)
+      }
+    }
     if (typeof value !== 'undefined') {
       try {
         await dispatch('updateConstraintValue', { constraintId, value })

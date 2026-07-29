@@ -100,25 +100,43 @@ const makeStore = ({
       }
       case 'addFilterCardConstraint': {
         const id = `con${++conSeq}`
-        // type derived from key for test purposes: age -> num, else conceptSet/text
+        // type derived from key for test purposes: age -> num, *date -> time,
+        // else conceptSet/text
         const type =
           payload.key === 'age'
             ? 'num'
-            : payload.key === 'condition' || /conceptset$/i.test(payload.key)
-              ? 'conceptSet'
-              : 'text'
+            : /date$/i.test(payload.key)
+              ? 'time'
+              : payload.key === 'condition' || /conceptset$/i.test(payload.key)
+                ? 'conceptSet'
+                : 'text'
         // The real constraint carries the attribute's config path; the card's
         // instance id is its config path plus an index suffix.
         const attributePath = `${payload.filterCardId.replace(/\.\d+$/, '')}.attributes.${payload.key}`
         constraints[id] = {
           id,
           parent: payload.filterCardId,
-          props: { attrKey: payload.key, attributePath, type, value: undefined },
+          props: {
+            attrKey: payload.key,
+            attributePath,
+            type,
+            value: undefined,
+            // Mirror DateConstraintModel: a date constraint keeps NO value of its
+            // own — its state is fromDate/toDate, initialized to ''.
+            ...(type === 'time' ? { fromDate: { value: '' }, toDate: { value: '' } } : {}),
+          },
         }
         return Promise.resolve(id)
       }
       case 'updateConstraintValue': {
         constraints[payload.constraintId].props.value = payload.value
+        return Promise.resolve(undefined)
+      }
+      // Mirrors CONSTRAINTS_DATETIME_SET_VALUE — a slot entirely separate from
+      // props.value, which props.value-only bookkeeping cannot restore.
+      case 'updateDateConstraintValue': {
+        constraints[payload.constraintId].props.fromDate.value = payload.fromDateValue
+        constraints[payload.constraintId].props.toDate.value = payload.toDateValue
         return Promise.resolve(undefined)
       }
       case 'deleteFilterCardConstraint': {
@@ -607,6 +625,57 @@ describe('applyCohortPatch', () => {
       ])
       const res = await applyCohortPatch(store, carriedOverPatch)
       expect(res.applied).toBe(true)
+    })
+  })
+
+  it('restores a date range when a later op fails — the state lives in fromDate/toDate', async () => {
+    // Date/time constraints are written by updateDateConstraintValue into
+    // props.fromDate.value / props.toDate.value and have no props.value at all, so
+    // rollback bookkeeping that snapshots only `value` recorded undefined and
+    // restored nothing: the patch threw, and the widened window stayed on the
+    // cohort. The user is told nothing was applied, and a later save persists a
+    // date range nobody asked for.
+    const DX = 'patient.interactions.conditionoccurrence'
+    const STARTDATE = `${DX}.attributes.startdate`
+    const { store, constraints } = makeStore({ existingCards: ['patient', `${DX}.1`] })
+
+    // Patch 1 commits the window the cohort arrives with (as opening a saved
+    // cohort would) — the constraint therefore pre-exists patch 2.
+    await applyCohortPatch(store, [
+      {
+        op: 'add_constraint',
+        card: `${DX}.1`,
+        attributePath: STARTDATE,
+        value: { from: '2019-01-01', to: '2019-12-31' },
+      },
+    ])
+    const con = Object.values(constraints).find((c: any) => c.props.attrKey === 'startdate') as any
+    const before = { from: con.props.fromDate.value, to: con.props.toDate.value }
+    expect(before.from).toBeInstanceOf(Date)
+    expect(con.props.value).toBeUndefined()
+
+    // Patch 2 widens the window, then fails on the next op.
+    await expect(
+      applyCohortPatch(store, [
+        {
+          op: 'add_constraint',
+          card: `${DX}.1`,
+          attributePath: STARTDATE,
+          value: { from: '2015-01-01', to: '2020-12-31' },
+        },
+        { op: 'add_constraint', card: 'ghost', attributePath: `${DX}.attributes.condition`, value: 1 },
+      ])
+    ).rejects.toThrow(/Unknown card/)
+
+    expect(con.props.fromDate.value).toEqual(before.from)
+    expect(con.props.toDate.value).toEqual(before.to)
+    // isUTC:true is the pass-through branch; isUTC:false shifts by the timezone
+    // offset on every call, so a revert using it would move the restored range.
+    expect(store.dispatch).toHaveBeenCalledWith('updateDateConstraintValue', {
+      constraintId: con.id,
+      fromDateValue: before.from,
+      toDateValue: before.to,
+      isUTC: true,
     })
   })
 
