@@ -100,25 +100,43 @@ const makeStore = ({
       }
       case 'addFilterCardConstraint': {
         const id = `con${++conSeq}`
-        // type derived from key for test purposes: age -> num, else conceptSet/text
+        // type derived from key for test purposes: age -> num, *date -> time,
+        // else conceptSet/text
         const type =
           payload.key === 'age'
             ? 'num'
-            : payload.key === 'condition' || /conceptset$/i.test(payload.key)
-              ? 'conceptSet'
-              : 'text'
+            : /date$/i.test(payload.key)
+              ? 'time'
+              : payload.key === 'condition' || /conceptset$/i.test(payload.key)
+                ? 'conceptSet'
+                : 'text'
         // The real constraint carries the attribute's config path; the card's
         // instance id is its config path plus an index suffix.
         const attributePath = `${payload.filterCardId.replace(/\.\d+$/, '')}.attributes.${payload.key}`
         constraints[id] = {
           id,
           parent: payload.filterCardId,
-          props: { attrKey: payload.key, attributePath, type, value: undefined },
+          props: {
+            attrKey: payload.key,
+            attributePath,
+            type,
+            value: undefined,
+            // Mirror DateConstraintModel: a date constraint keeps NO value of its
+            // own — its state is fromDate/toDate, initialized to ''.
+            ...(type === 'time' ? { fromDate: { value: '' }, toDate: { value: '' } } : {}),
+          },
         }
         return Promise.resolve(id)
       }
       case 'updateConstraintValue': {
         constraints[payload.constraintId].props.value = payload.value
+        return Promise.resolve(undefined)
+      }
+      // Mirrors CONSTRAINTS_DATETIME_SET_VALUE — a slot entirely separate from
+      // props.value, which props.value-only bookkeeping cannot restore.
+      case 'updateDateConstraintValue': {
+        constraints[payload.constraintId].props.fromDate.value = payload.fromDateValue
+        constraints[payload.constraintId].props.toDate.value = payload.toDateValue
         return Promise.resolve(undefined)
       }
       case 'deleteFilterCardConstraint': {
