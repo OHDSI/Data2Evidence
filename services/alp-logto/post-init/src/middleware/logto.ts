@@ -1,5 +1,5 @@
 let LOGTO__ADMIN_SERVER__FQDN_URL =
-  process.env.LOGTO__ADMIN_SERVER__FQDN_URL || "http://alp-logto-1:3002";
+  process.env.LOGTO__ADMIN_SERVER__FQDN_URL || "https://alp-logto-1.d2e.local:3002";
 let LOGTO__CLIENTID_PASSWORD__BASIC_AUTH =
   process.env.LOGTO__CLIENTID_PASSWORD__BASIC_AUTH;
 

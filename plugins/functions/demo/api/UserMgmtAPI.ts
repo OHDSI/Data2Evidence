@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from "axios";
+import { AxiosRequestConfig } from "./_axios.ts";
 import { services } from "../env.ts";
 import { get } from "./request-util.ts";
 

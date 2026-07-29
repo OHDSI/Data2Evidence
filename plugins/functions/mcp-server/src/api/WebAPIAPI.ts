@@ -1,5 +1,5 @@
 import { env } from "../env";
-import axios from "axios";
+import axios from "./_axios.ts";
 import { D2ECohortDefinition } from "../types/tool-schemas";
 import { getUserName } from "../utils/request-helpers";
 

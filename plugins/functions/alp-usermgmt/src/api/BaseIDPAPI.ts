@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from 'axios'
+import { AxiosRequestConfig } from "./_axios.ts"
 import { Service } from 'typedi'
 import https from 'https'
 import { createLogger } from '../Logger'

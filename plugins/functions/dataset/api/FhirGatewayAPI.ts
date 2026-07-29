@@ -1,4 +1,4 @@
-import { AxiosRequestConfig } from "npm:axios";
+import { AxiosRequestConfig } from "./_axios.ts";
 import { services } from "../env.ts";
 
 export class FhirGatewayAPI {

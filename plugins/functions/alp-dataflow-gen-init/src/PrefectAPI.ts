@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./_axios.ts";
 import { env } from "./env";
 import { BlockType } from "./types";
 import { PrefectVariable } from "./types";
@@ -14,7 +14,7 @@ export class PrefectAPI {
     }
   }
 
-  private async createOptions() {
+  private createOptions() {
     return {
       headers: { "Content-Type": "application/json" },
     };
@@ -23,7 +23,7 @@ export class PrefectAPI {
   public async createPrefectVariable(
     variableObj: PrefectVariable
   ): Promise<string> {
-    let url = `${this.baseURL}/variables`;
+    let url = `${this.baseURL}/variables/`;
     const successMsg = `Successfully created/updated Prefect variable '${variableObj.name}'!`;
     const variableOptions = {
       name: variableObj.name,
@@ -64,7 +64,7 @@ export class PrefectAPI {
     blockType: BlockType
   ): Promise<string> {
     const slugName = blockType;
-    let url = `${this.baseURL}/block_documents`;
+    let url = `${this.baseURL}/block_documents/`;
     const successMsg = `Successfully created/updated Prefect ${blockType} block '${blockName}'!`;
     const blockTypeId = await this.getBlockTypeID(slugName);
     const blockSchemaId = await this.getBlockSchemaId(blockTypeId);

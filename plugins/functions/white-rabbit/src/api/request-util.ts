@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig } from "./_axios.ts";
 import * as dotenv from "dotenv";
 dotenv.config();
 

@@ -1,5 +1,4 @@
-import axios, { AxiosRequestConfig } from "axios";
-import https from "https";
+import axios, { AxiosRequestConfig } from "./_axios.ts";
 import { env } from "../env";
 export default class PsConfigServerAPI {
     private readonly baseUrl: string;
@@ -47,9 +46,6 @@ export default class PsConfigServerAPI {
                 "Content-Type": "application/x-www-form-urlencoded",
             }
         };
-        if (env.NODE_ENV === "development") {
-            options.httpsAgent = new https.Agent({ rejectUnauthorized: false });
-        }
 
         const data = Object.keys(params)
             .map(

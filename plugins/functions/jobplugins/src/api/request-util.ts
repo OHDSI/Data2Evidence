@@ -1,5 +1,5 @@
 import https from "node:https";
-import axios, { AxiosRequestConfig } from "axios";
+import axios, { AxiosRequestConfig } from "./_axios.ts";
 import * as dotenv from "dotenv";
 import { env } from "../env.ts";
 dotenv.config();

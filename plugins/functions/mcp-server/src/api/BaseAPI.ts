@@ -1,5 +1,5 @@
 import { env } from "../env";
-import axios from "axios";
+import axios from "./_axios.ts";
 
 export interface CallOptions {
   authorization?: string;

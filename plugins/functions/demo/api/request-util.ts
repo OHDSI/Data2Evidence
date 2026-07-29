@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig } from "npm:axios";
+import axios, { AxiosRequestConfig } from "./_axios.ts";
 //import { createLogger } from '../Logger'
 import * as dotenv from "npm:dotenv";
 import https from "node:https";
