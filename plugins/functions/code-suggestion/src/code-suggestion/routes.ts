@@ -89,8 +89,6 @@ export class CodeSuggestionRouter {
         res.setHeader("Cache-Control", "no-cache");
         res.setHeader("Connection", "keep-alive");
         req.body.model = AI_MODEL;
-        // req.body.model = "ollama:lfm2.5";
-        // req.body.model = "anthropic:claude-sonnet-4-5";
 
         const { stream, linkRef } = await getCohortResponse(req);
         let lastChar = "\n";
