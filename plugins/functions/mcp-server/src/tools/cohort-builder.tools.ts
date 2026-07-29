@@ -104,7 +104,9 @@ export function registerCohortBuilderTools(server: McpServer) {
         "column (gender, race, ethnicity, visit/encounter type) instead of " +
         "guessing a search term. With a `query` this already rechecks for you: " +
         "an empty search is re-matched against the attribute's full domain " +
-        "(casing, demographic synonyms, care-setting abbreviations like ER/ICU) " +
+        "(casing, demographic synonyms, any acronym the values spell out — ER, " +
+        "ICU, NICU — a stored code like F for Female, and the words that " +
+        "actually tell that column's rows apart) " +
         "and, failing that, the whole list is returned. So a zero-hit search is " +
         "NEVER proof a value is absent, and you must never ask the user for a " +
         "spelling or synonym instead of calling this. Pass a returned value " +

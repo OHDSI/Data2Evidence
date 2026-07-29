@@ -140,9 +140,11 @@ misses "Female" and it has no idea "women" means "F".
 
 \`pa_search_attribute_values\` already rechecks for you: on a zero-hit search it
 re-reads the attribute's full domain and matches it locally — casing, demographic
-synonyms, care-setting abbreviations ("ER" → "Emergency Room"), and distinctive
-words, so "ER Visit" reaches a stored "Emergency Room Visit" it is not even a
-substring of. If the column is too large to list, it retries the endpoint with
+synonyms, any acronym the stored value spells out ("ER" → "Emergency Room",
+"NICU" → "Neonatal Intensive Care Unit"), a bare code the term abbreviates to
+("F" → Female, "S" → Single), and whichever words actually tell that column's
+rows apart, so "ER Visit" reaches a stored "Emergency Room Visit" it is not even
+a substring of. If the column is too large to list, it retries the endpoint with
 those rewritten queries and reports \`matchedVia: "alternate-query"\` (check the
 rows really are your term). If nothing matches at all it returns **the entire
 value list** with \`matchedVia: "domain"\`; \`matchedVia: "none"\` means the column
