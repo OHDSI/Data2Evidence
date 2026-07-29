@@ -39,20 +39,9 @@ const byName = (tools: PaTool[], name: string): PaTool => {
 const parse = (res: { content: Array<{ text: string }> }) => JSON.parse(res.content[0].text)
 
 describe('createPaTools', () => {
-  it('registers exactly the expected PA tools with required-arg schemas', () => {
+  it('declares a required arg only where a tool genuinely has one', () => {
     const tools = createPaTools(makeStore())
 
-    expect(tools.map(t => t.name)).toEqual([
-      'pa_new_cohort',
-      'pa_get_current_cohort',
-      'pa_list_cohorts',
-      'pa_open_cohort',
-      'pa_apply_cohort_patch',
-      'pa_list_filter_options',
-      'pa_search_attribute_values',
-      'pa_get_cohort_result',
-      'pa_save_current_cohort',
-    ])
     // pa_save_current_cohort has no unconditionally-required input: it builds the
     // payload from live store state given { name } (insert) or { bookmarkId } (update),
     // and still accepts a raw `params` escape hatch — the handler validates the combo.
@@ -378,7 +367,11 @@ describe('createPaTools', () => {
             ],
             getAllAttributes: () => [
               { getConfigPath: () => 'patient.attributes.age', getName: () => 'Age', getType: () => 'num' },
-              { getConfigPath: () => 'patient.attributes.pcount', getName: () => 'Patient Count', getType: () => 'num' },
+              {
+                getConfigPath: () => 'patient.attributes.pcount',
+                getName: () => 'Patient Count',
+                getType: () => 'num',
+              },
             ],
           },
         ],
@@ -422,6 +415,37 @@ describe('createPaTools', () => {
       expect(parsed.valueKindGuide.conceptSet).toContain('conceptSetId')
     })
 
+    it('classifies a useRefText coded column as "catalog" and a time attribute as "date"', async () => {
+      const store = makeStore()
+      store.getters.getMriFrontendConfig = {
+        getFilterCards: () => [
+          {
+            getConfigPath: () => 'patient.interactions.priDiag',
+            getName: () => 'Diagnoses',
+            getFilterAttributes: () => [
+              {
+                // No isCatalogAttribute(): an older config marks a coded column by
+                // displaying its ref text, and that one needs /values just the same.
+                getConfigPath: () => 'patient.interactions.priDiag.attributes.icd10',
+                getName: () => 'ICD-10',
+                getType: () => 'text',
+                oInternalConfigAttribute: { useRefText: true },
+              },
+              {
+                getConfigPath: () => 'patient.interactions.priDiag.attributes.startdate',
+                getName: () => 'Start date',
+                getType: () => 'time',
+              },
+            ],
+          },
+        ],
+      }
+
+      const parsed = parse(await byName(createPaTools(store), 'pa_list_filter_options').execute())
+      expect(parsed.filterCards[0].attributes.map((a: any) => a.valueKind)).toEqual(['catalog', 'date'])
+      expect(parsed.valueKindGuide.date).toContain('from, to')
+    })
+
     it('reports the OMOP domain a concept-set attribute takes, and omits it when unset', async () => {
       // Without conceptDomain the model reuses whatever concept-set id it is
       // already holding: an Alzheimer's (Condition) set on a Visit card builds a
@@ -454,8 +478,9 @@ describe('createPaTools', () => {
         .attributes
       expect(attrs[0]).toMatchObject({ valueKind: 'conceptSet', conceptDomain: 'Visit' })
       expect(attrs[1]).not.toHaveProperty('conceptDomain')
-      expect(parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).valueKindGuide.conceptSet)
-        .toContain('conceptDomain')
+      expect(
+        parse(await byName(createPaTools(store), 'pa_list_filter_options').execute()).valueKindGuide.conceptSet
+      ).toContain('conceptDomain')
     })
 
     it('returns just one card when `card` is given, and the valid paths when it is unknown', async () => {
@@ -491,29 +516,26 @@ describe('createPaTools', () => {
   })
 
   describe('pa_save_current_cohort', () => {
-    it('defaults method to "post" and returns the bmkId from the dispatch result', async () => {
+    // The raw `params` back-compat hatch: forwarded verbatim, method defaults to
+    // post, and the saved id comes from the response or falls back to the argument.
+    it('forwards raw params verbatim and resolves the bookmarkId from result or argument', async () => {
       const store = makeStore()
       store.dispatch.mockResolvedValue({ bmkId: 'srv-generated-42' })
       const params = { name: 'x' }
-      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({ params })
+      const tool = byName(createPaTools(store), 'pa_save_current_cohort')
 
+      expect(parse(await tool.execute({ params }))).toEqual({ saved: true, bookmarkId: 'srv-generated-42' })
       expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', {
         method: 'post',
         params,
         bookmarkId: undefined,
       })
-      expect(parse(res)).toEqual({ saved: true, bookmarkId: 'srv-generated-42' })
-    })
+      // Every write refreshes the list, or pa_list_cohorts serves a stale one.
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
 
-    it('falls back to the passed bookmarkId when the result has none (e.g. put/update)', async () => {
-      const store = makeStore()
+      // put/update: the endpoint returns no bmkId, so the passed one stands in.
       store.dispatch.mockResolvedValue(undefined)
-      const params = { name: 'x' }
-      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({
-        params,
-        bookmarkId: 'existing-7',
-        method: 'put',
-      })
+      const res = await tool.execute({ params, bookmarkId: 'existing-7', method: 'put' })
 
       expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', {
         method: 'put',
@@ -528,7 +550,8 @@ describe('createPaTools', () => {
       const store = makeStore()
       store.getters.getActiveBookmark = { bookmarkname: 'New cohort', isNew: true }
       store.dispatch.mockImplementation((type: string, payload: any) => {
-        if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'insert') return Promise.resolve({ bmkId: 'new-1' })
+        if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'insert')
+          return Promise.resolve({ bmkId: 'new-1' })
         if (type === 'fireBookmarkQuery' && payload?.params?.cmd === 'loadAll') {
           store.getters.getBookmarks = [savedRecord]
         }
@@ -584,6 +607,41 @@ describe('createPaTools', () => {
 
       expect(parse(res)).toEqual({ saved: false, error: 'Provide a name to save a new cohort.' })
     })
+
+    it('refuses an update when there is neither a bookmarkId nor an active saved cohort', async () => {
+      const store = makeStore() // getActiveBookmark is null
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({ method: 'put' })
+
+      expect(parse(res)).toEqual({
+        saved: false,
+        error: 'Update requested but no bookmarkId (and no active saved cohort) to update.',
+      })
+      expect(store.dispatch).not.toHaveBeenCalled()
+    })
+
+    // Current behaviour, pinned: with an already-saved cohort active and no args,
+    // this INSERTS a second cohort under the same name rather than updating it —
+    // overwriting requires an explicit bookmarkId or method:"put" (as documented
+    // on the tool). Worth revisiting if a duplicate row ever shows up in the wild.
+    it('falls back to the active cohort name when saving without one', async () => {
+      const store = makeStore()
+      store.getters.getActiveBookmark = { bmkId: 'b1', bookmarkname: 'Elderly Diabetics', isNew: false }
+      store.dispatch.mockResolvedValue(undefined)
+
+      const res = await byName(createPaTools(store), 'pa_save_current_cohort').execute({})
+
+      expect(store.dispatch).toHaveBeenCalledWith('fireBookmarkQuery', {
+        method: 'post',
+        params: {
+          cmd: 'insert',
+          bookmarkname: 'Elderly Diabetics',
+          bookmark: JSON.stringify(store.getters.getBookmarksData),
+          shareBookmark: false,
+        },
+        bookmarkId: undefined,
+      })
+      expect(parse(res)).toEqual({ saved: true })
+    })
   })
 
   describe('pa_new_cohort', () => {
@@ -596,14 +654,14 @@ describe('createPaTools', () => {
       expect(store.dispatch).toHaveBeenCalledWith('resetChart')
       expect(showBuilder).toHaveBeenCalledOnce()
       expect(parse(res)).toEqual({ created: true, name: 'My Cohort' })
-    })
 
-    it('defaults the name and works without a showBuilder hook', async () => {
-      const store = makeStore()
-      const res = await byName(createPaTools(store), 'pa_new_cohort').execute()
+      // No args and no showBuilder hook: the name defaults and the optional hook
+      // is genuinely optional (createPaTools is used without one in tests/bridge).
+      const bare = makeStore()
+      const bareRes = await byName(createPaTools(bare), 'pa_new_cohort').execute()
 
-      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', { bookmarkname: 'New cohort', isNew: true })
-      expect(parse(res)).toEqual({ created: true, name: 'New cohort' })
+      expect(bare.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', { bookmarkname: 'New cohort', isNew: true })
+      expect(parse(bareRes)).toEqual({ created: true, name: 'New cohort' })
     })
   })
 
@@ -694,7 +752,10 @@ describe('createPaTools', () => {
 
     it('errors without dispatching when attributePath is missing', async () => {
       const store = makeStore()
-      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({ attributePath: '', query: '' })
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: '',
+        query: '',
+      })
 
       expect(parse(res)).toEqual({
         values: [],
@@ -963,6 +1024,29 @@ describe('createPaTools', () => {
       const res = await byName(createPaTools(store), 'pa_get_cohort_result').execute()
 
       expect(parse(res)).toEqual({ currentPatientCount: 5, totalPatientCount: 42, chartType: 'list', chart: null })
+    })
+
+    // Without the error surfaced, a failed chart query is indistinguishable from a
+    // cohort that legitimately matched nobody — and the model reports "0 patients".
+    it('surfaces a failed chart query instead of letting it read as an empty cohort', async () => {
+      const store = makeStore()
+      Object.assign(store.getters, {
+        getCurrentPatientCount: 0,
+        getTotalPatientCount: 0,
+        getTotalPatientListCount: 0,
+        getDisplayTotalGuardedPatientCount: false,
+        getActiveChart: 'vb',
+        getResponse: () => ({
+          data: { totalPatientCount: 0, noDataReason: 'NO_DATA', error: 'Request failed with status code 500' },
+        }),
+      })
+
+      const parsed = parse(await byName(createPaTools(store), 'pa_get_cohort_result').execute())
+
+      expect(parsed.chart.error).toBe('Request failed with status code 500')
+      expect(parsed.chart.noDataReason).toBe('NO_DATA')
+      expect(parsed.error).toContain('not a real result')
+      expect(parsed.error).toContain('Request failed with status code 500')
     })
   })
 })

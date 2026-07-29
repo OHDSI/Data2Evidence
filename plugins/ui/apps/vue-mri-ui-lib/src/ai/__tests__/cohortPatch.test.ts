@@ -99,6 +99,12 @@ const makeStore = ({
         return Promise.resolve(undefined)
       }
       case 'addFilterCardConstraint': {
+        const existing = Object.values(constraints).find(
+          (c: any) => c.parent === payload.filterCardId && c.props.attrKey === payload.key
+        ) as any
+        if (existing) {
+          return Promise.resolve(existing.id)
+        }
         const id = `con${++conSeq}`
         // type derived from key for test purposes: age -> num, *date -> time,
         // else conceptSet/text
@@ -295,9 +301,9 @@ describe('applyCohortPatch', () => {
     store.getters.getMriFrontendConfig = {
       getFilterCards: () => [{ getConfigPath: () => 'patient' }],
     }
-    await expect(
-      applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: 'patient.bogus' }])
-    ).rejects.toThrow(/Unknown cardConfigPath/)
+    await expect(applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: 'patient.bogus' }])).rejects.toThrow(
+      /Unknown cardConfigPath/
+    )
   })
 
   it('creates an exclusion card when exclude is set', async () => {
@@ -330,9 +336,7 @@ describe('applyCohortPatch', () => {
 
   it('still creates a second instance of an indexed (interaction) card', async () => {
     const { store, cards } = makeStore({ existingCards: ['patient.interactions.conditionoccurrence.1'] })
-    await applyCohortPatch(store, [
-      { op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence' },
-    ])
+    await applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: 'patient.interactions.conditionoccurrence' }])
     expect(Object.keys(cards)).toHaveLength(2)
   })
 
@@ -459,17 +463,17 @@ describe('applyCohortPatch', () => {
 
     it('refuses to OR the first filter card with Basic Data before it', async () => {
       const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
-      await expect(
-        applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.1`, join: 'OR' }])
-      ).rejects.toThrow(/Basic Data/)
+      await expect(applyCohortPatch(store, [{ op: 'set_card_join', card: `${DX}.1`, join: 'OR' }])).rejects.toThrow(
+        /Basic Data/
+      )
       expect(groups).toEqual([['patient'], [`${DX}.1`]])
     })
 
     it('refuses to change the join on the Basic Data card itself', async () => {
       const { store, groups } = makeStore({ existingCards: ['patient', `${DX}.1`] })
-      await expect(
-        applyCohortPatch(store, [{ op: 'set_card_join', card: 'patient', join: 'OR' }])
-      ).rejects.toThrow(/Basic Data card is always AND-ed/)
+      await expect(applyCohortPatch(store, [{ op: 'set_card_join', card: 'patient', join: 'OR' }])).rejects.toThrow(
+        /Basic Data card is always AND-ed/
+      )
       expect(groups).toEqual([['patient'], [`${DX}.1`]])
     })
 
@@ -500,15 +504,13 @@ describe('applyCohortPatch', () => {
       const { store } = makeStore({ existingCards: ['patient', `${DX}.1`], axes })
       // The real resetAxes runs inside addFilterCard; the mock triggers it here.
       store.dispatch.mockImplementation(
-        (
-          (inner: any) => (type: string, payload: any) => {
-            const res = inner(type, payload)
-            if (type === 'addFilterCard' && payload.boolFilterContainerId) {
-              axes[0].props = { attributeId: '', filterCardId: '', key: '' }
-            }
-            return res
+        ((inner: any) => (type: string, payload: any) => {
+          const res = inner(type, payload)
+          if (type === 'addFilterCard' && payload.boolFilterContainerId) {
+            axes[0].props = { attributeId: '', filterCardId: '', key: '' }
           }
-        )(store.dispatch.getMockImplementation())
+          return res
+        })(store.dispatch.getMockImplementation())
       )
 
       await applyCohortPatch(store, [{ op: 'add_card', cardConfigPath: DX, orWith: `${DX}.1` }])
@@ -673,7 +675,7 @@ describe('applyCohortPatch', () => {
       return made
     }
 
-    it('removes one constraint and leaves the card\'s other filters alone', async () => {
+    it("removes one constraint and leaves the card's other filters alone", async () => {
       const { store, constraints } = await withAlzheimers()
       const res = await applyCohortPatch(store, [{ op: 'remove_constraint', card: `${DX}.1`, attributePath: DX_SET }])
 
@@ -711,6 +713,29 @@ describe('applyCohortPatch', () => {
       ])
     })
 
+    it('puts the ORIGINAL value back when the patch replaced the same constraint and then failed', async () => {
+      const { store, constraints } = await withAlzheimers()
+
+      await expect(
+        applyCohortPatch(store, [
+          { op: 'remove_constraint', card: `${DX}.1`, attributePath: DX_SET },
+          {
+            op: 'add_constraint',
+            card: `${DX}.1`,
+            attributePath: DX_SET,
+            value: { conceptSetId: 99, displayValue: 'Something else' },
+          },
+          { op: 'add_constraint', card: 'ghost', attributePath: 'patient.attributes.age', value: 1 },
+        ])
+      ).rejects.toThrow(/Unknown card/)
+
+      const cons = Object.values(constraints).filter((c: any) => c.props.attrKey === 'conditionconceptset')
+      expect(cons).toHaveLength(1)
+      expect((cons[0] as any).props.value).toEqual([
+        { value: '41', text: "Alzheimer's disease", display_value: "Alzheimer's disease", includeDescendants: false },
+      ])
+    })
+
     it('removes a card — and leaves it removed when a later op fails', async () => {
       // The one op revert cannot undo: re-adding the card would mint a new instance
       // id and lose the constraints that hung off it. Pinned here so the limitation
@@ -729,9 +754,7 @@ describe('applyCohortPatch', () => {
     })
 
     it('does not re-point the chart axes at a card the patch removed', async () => {
-      const axes = [
-        { props: { attributeId: `${DX}.attributes.startdate`, filterCardId: `${DX}.1`, key: 'startdate' } },
-      ]
+      const axes = [{ props: { attributeId: `${DX}.attributes.startdate`, filterCardId: `${DX}.1`, key: 'startdate' } }]
       const { store } = makeStore({ existingCards: ['patient', `${DX}.1`], axes })
 
       await expect(

@@ -652,6 +652,14 @@ async function revert(
   for (const snapshot of rollback.priorConstraintValues.reverse()) {
     await restoreConstraintValue(dispatch, snapshot)
   }
+  // Drop what the patch created BEFORE putting back what it removed.
+  for (const { filterCardId, constraintId } of rollback.createdConstraints.reverse()) {
+    try {
+      await dispatch('deleteFilterCardConstraint', { filterCardId, constraintId })
+    } catch (e) {
+      console.error('[cohortPatch] revert deleteFilterCardConstraint failed', e)
+    }
+  }
   // Put back what remove_constraint took. Before the created cards are deleted
   // below, so the card a constraint belongs to is still there to re-add it to.
   for (const { filterCardId, key, snapshot } of rollback.removedConstraints.reverse()) {
@@ -663,13 +671,6 @@ async function revert(
       }
     } catch (e) {
       console.error('[cohortPatch] revert remove_constraint failed', e)
-    }
-  }
-  for (const { filterCardId, constraintId } of rollback.createdConstraints.reverse()) {
-    try {
-      await dispatch('deleteFilterCardConstraint', { filterCardId, constraintId })
-    } catch (e) {
-      console.error('[cohortPatch] revert deleteFilterCardConstraint failed', e)
     }
   }
   for (const filterCardId of rollback.createdCardIds.reverse()) {
