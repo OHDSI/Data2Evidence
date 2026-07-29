@@ -8,6 +8,7 @@ import {
   IWebapiConceptSetExpression,
 } from "../Terminology/utils/types";
 import { getPortalAPI } from "../utils/PortalUtils";
+import { getInvalidReasonFilter } from "./concept-search-filter";
 
 export class PublicWebapiProxyAPI {
   private readonly baseURL: string;
@@ -114,13 +115,14 @@ export class PublicWebapiProxyAPI {
     }
 
     try {
+      const invalidReason = getInvalidReasonFilter(validity);
       const data = {
         QUERY: searchText,
         CONCEPT_CLASS_ID: conceptClassId,
         DOMAIN_ID: domainId,
         VOCABULARY_ID: vocabularyId,
         STANDARD_CONCEPT: standardConcept[0],
-        INVALID_REASON: validity[0],
+        ...(invalidReason && { INVALID_REASON: invalidReason }),
       };
 
       const result = await request({
