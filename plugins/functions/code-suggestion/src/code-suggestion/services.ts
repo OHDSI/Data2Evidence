@@ -1,4 +1,5 @@
 import { IUICodeSnippet, IChatSnippet } from "../type";
+import { compactCohortHistory } from "./cohortMemory.ts";
 import {
   AIMessage,
   HumanMessage,
@@ -6,6 +7,7 @@ import {
 } from "@langchain/core/messages";
 import { getModels } from "../utils/utils";
 import { createMcpClient } from "../mcp/client";
+import { env } from "../env";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { createAgent } from "langchain";
 import { getRolePrompting, getCohortPrompting } from "./prompts";
@@ -264,13 +266,13 @@ export const getCohortResponse = async (req: any) => {
     console.log(
       `[MCP-TIMING] [cohort-builder] MCP tools and Agent created ${(performance.now() - chatStart).toFixed(1)}ms`,
     );
-    // Map prior conversation turns to LangChain message objects so the agent
-    // has full multi-turn context (oldest first, capped at 20 turns to bound
-    // token/payload size).
-    const MAX_HISTORY = 20;
-    const historyMessages = (uiChat.history ?? [])
-      .slice(-MAX_HISTORY)
-      .filter((m) => m.content?.trim())
+    // Bound history by estimated tokens rather than message count. When older
+    // turns are compacted, keep the latest omitted cohort plan as a memory
+    // anchor so an unchanged filter is not silently forgotten.
+    const historyMessages = compactCohortHistory(
+      uiChat.history ?? [],
+      env.COHORT_HISTORY_MAX_TOKENS,
+    )
       .map((m) =>
         m.role === "assistant"
           ? new AIMessage(m.content)

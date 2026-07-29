@@ -530,7 +530,8 @@
           "OLLAMA_BASE_URL": "${OLLAMA_BASE_URL:-null}",
           "OLLAMA_API_KEY": "${OLLAMA_API_KEY:-null}",
           "GOOGLE_API_KEY": "${GOOGLE_API_KEY:-null}",
-          "AI_MODEL": "${AI_MODEL:-null}"
+          "AI_MODEL": "${AI_MODEL:-null}",
+          "COHORT_HISTORY_MAX_TOKENS": "${COHORT_HISTORY_MAX_TOKENS:-4000}"
         },
         "data-mapping": {
           "OPENAI_API_KEY": "${OPENAI_API_KEY:-null}",
