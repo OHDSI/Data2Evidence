@@ -183,6 +183,9 @@ export const getCohortPrompting = () => {
     use an OMOP concept id (from search_concepts) or any phenotype / library /
     cohort id (from the phenotype library) as a conceptSetId — those are not
     concept sets and the link will fail.
+    If create_concept_set reports that a same-name concept set has a different
+    definition, never reuse or overwrite it; create the requested definition
+    under a different descriptive name.
 
     ─────────────────────────────────────────────
     PLAN & REFINE  (repeat for as many turns as needed)

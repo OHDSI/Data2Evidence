@@ -21,6 +21,26 @@ const vocabularyApi = new VocabularyAPI();
 
 const LIST_PAGE_SIZE = 50;
 
+function sameConceptDefinition(
+  left: ConceptItem[],
+  right: ConceptItem[],
+): boolean {
+  const normalize = (items: ConceptItem[]) =>
+    items
+      .map((item) =>
+        JSON.stringify({
+          id: Number(item.id),
+          useDescendants: Boolean(item.useDescendants),
+          useMapped: Boolean(item.useMapped),
+          isExcluded: Boolean(item.isExcluded),
+        })
+      )
+      .sort();
+  const a = normalize(left);
+  const b = normalize(right);
+  return a.length === b.length && a.every((item, index) => item === b[index]);
+}
+
 /**
  * Register concept set tools.
  * - search_concepts                  (clinical term -> candidate OMOP concept ids)
@@ -108,7 +128,11 @@ export function registerConceptSetManagementTools(server: McpServer) {
     {
       title: "Create Concept Set",
       description:
-        "Create a new private concept set from a list of OMOP concepts. Returns the new concept set ID. Defaults to private (shared=false).",
+        "Create a new private concept set from a list of OMOP concepts. Returns " +
+        "the new concept set ID and defaults to private (shared=false). An " +
+        "identical same-name definition is reused automatically; a same-name " +
+        "concept set with a different definition is rejected and requires a " +
+        "different name.",
       inputSchema: CreateConceptSetInput,
     },
     async ({ name, concepts }, { requestInfo }) => {
@@ -132,11 +156,30 @@ export function registerConceptSetManagementTools(server: McpServer) {
       );
       const match = existing.find((cs) => cs.name.trim() === wanted);
       if (match) {
+        const saved = await terminologyApi.getConceptSet(
+          authorization,
+          datasetId,
+          match.id,
+        );
+        const savedConcepts = Array.isArray(saved?.concepts)
+          ? saved.concepts as ConceptItem[]
+          : [];
+        const definitionsMatch = sameConceptDefinition(
+          savedConcepts,
+          conceptItems,
+        );
+        if (!definitionsMatch) {
+          throw new Error(
+            `A concept set named '${name}' already exists (ID ${match.id}) but ` +
+              `contains a different concept definition. Do not reuse or overwrite ` +
+              `it; create the requested definition with a different name.`,
+          );
+        }
         console.log(
           `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms reused=true`,
         );
         return createTextResponse(
-          `A concept set named '${name}' already exists (ID ${match.id}); reusing it. Use concept-set id ${match.id} in your clause.`,
+          `An identical concept set named '${name}' already exists (ID ${match.id}); reusing it. Use concept-set id ${match.id} in your clause.`,
         );
       }
 
