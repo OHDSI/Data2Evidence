@@ -133,7 +133,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
       const match = existing.find((cs) => cs.name.trim() === wanted);
       if (match) {
         console.log(
-          `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms reused id=${match.id}`,
+          `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms reused=true`,
         );
         return createTextResponse(
           `A concept set named '${name}' already exists (ID ${match.id}); reusing it. Use concept-set id ${match.id} in your clause.`,
@@ -147,7 +147,7 @@ export function registerConceptSetManagementTools(server: McpServer) {
       );
 
       console.log(
-        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms id=${newId} concepts=${concepts.length}`,
+        `[MCP-TIMING] [create_concept_set] END total=${(performance.now() - toolStart).toFixed(1)}ms concepts=${concepts.length}`,
       );
 
       return createTextResponse(

@@ -67,8 +67,8 @@ export function registerCohortBuilderTools(server: McpServer) {
         0,
       );
       console.log(
-        `[cohort-builder] list_cohort_filters: dataset=${datasetId} ` +
-          `cards=${catalog.cards.length} attributes=${attrCount}`,
+        `[cohort-builder] list_cohort_filters: cards=${catalog.cards.length} ` +
+          `attributes=${attrCount}`,
       );
       return createTextResponse(summarizeCatalog(catalog));
     },
@@ -130,15 +130,12 @@ export function registerCohortBuilderTools(server: McpServer) {
     async ({ clauses }, { requestInfo }) => {
       const toolStart = performance.now();
       const { authorization, datasetId } = requireAuthAndDataset(requestInfo);
-      console.log(
-        `[cohort-builder] START datasetId=${datasetId} clauses=${JSON.stringify(clauses)}`,
-      );
 
       // 1. Fetch the frontend config: the catalog (cards/attributes) + the
       //    config stamp the bookmark must carry, from the same getMyConfig.
       const fe = await analyticsApi.getFrontendConfig(authorization, datasetId);
       if (!fe) {
-        console.error(`[cohort-builder] no PA config for dataset ${datasetId}`);
+        console.error("[cohort-builder] no PA config for requested dataset");
         throw new Error(
           `No Patient Analytics config for dataset ${datasetId}.`,
         );

@@ -19,7 +19,6 @@ export function compactCohortHistory(
   history: ChatHistoryTurn[],
   maxTokens = 4_000,
 ): ChatHistoryTurn[] {
-  console.log("Compacting cohort history with maxTokens:", maxTokens);
   const nonBlank = history.filter((message) => message.content?.trim());
   const totalTokens = nonBlank.reduce(
     (total, message) => total + estimateTokens(message),

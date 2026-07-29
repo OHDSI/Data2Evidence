@@ -44,39 +44,21 @@ export class AnalyticsAPI {
 
     let response: any;
     try {
-      console.log(`[cohort-builder] getConfigStamp GET ${url}`);
       response = await this.channel.get(url, options);
     } catch (error) {
       console.error(
-        `[cohort-builder] getConfigStamp request failed for ${url}: ${error}`,
+        `[cohort-builder] getConfigStamp request failed: ${error}`,
       );
       throw error;
     }
 
     const data = response?.data;
 
-    // Diagnostic: how many configs came back, which one we pick, and whether it
-    // actually contains the Age/Gender attributes our bookmark references. A
-    // config that names these differently (or a wrong list entry) is why a card
-    // fails to restore on some datasets even though the link is valid.
-    if (Array.isArray(data)) {
-      const chosen: any = data[0];
-      const attrKeys = Object.keys(chosen?.config?.patient?.attributes ?? {});
-      console.log(
-        `[cohort-builder] getConfigStamp: ${data.length} config(s); chosen ` +
-          `configId=${chosen?.meta?.configId} version=${chosen?.meta?.configVersion}; ` +
-          `patient.attributes keys=${JSON.stringify(attrKeys)}; ` +
-          `hasAge=${attrKeys.includes("Age")} hasGender=${attrKeys.includes("Gender_concept_name")}`,
-      );
-    }
-
     const stamp = extractConfigStamp(data);
     if (!stamp) {
-      // Log the actual shape so we can see where the stamp really lives.
       console.error(
         `[cohort-builder] getConfigStamp: no meta.configId/configVersion in response. ` +
-          `status=${response?.status} isArray=${Array.isArray(data)} ` +
-          `data=${JSON.stringify(data)?.slice(0, 500)}`,
+          `status=${response?.status} isArray=${Array.isArray(data)}`,
       );
       return null;
     }
@@ -109,7 +91,7 @@ export class AnalyticsAPI {
       response = await this.channel.get(url, options);
     } catch (error) {
       console.error(
-        `[cohort-builder] getFrontendConfig request failed for ${url}: ${error}`,
+        `[cohort-builder] getFrontendConfig request failed: ${error}`,
       );
       throw error;
     }
