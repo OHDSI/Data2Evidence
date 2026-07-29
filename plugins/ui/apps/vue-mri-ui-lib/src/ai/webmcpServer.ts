@@ -7,6 +7,13 @@
 // We try document first, then fall back to navigator for older builds.
 import type { Store } from 'vuex'
 import { applyCohortPatch, describeCardGroups, type PatchOp } from './cohortPatch'
+import {
+  alternateQueries,
+  rankValues,
+  DEFAULT_VALUE_LIMIT,
+  MAX_VALUE_LIMIT,
+  type MatchedVia,
+} from './valueResolution'
 
 export interface PaToolResult {
   content: Array<{ type: 'text'; text: string }>
@@ -36,96 +43,10 @@ const textResult = (payload: unknown): PaToolResult => ({
   content: [{ type: 'text', text: JSON.stringify(payload) }],
 })
 
-// pa_search_attribute_values caps how many tokens it returns. A coded catalog
-// search (a drug/condition on a non-OMOP dataset) routinely matches thousands of
-// tokens across code systems (RxNorm/NDC/ATC/SNOMED) and every strength/form —
-// e.g. "gemfibrozil" resolved to 1,602 tokens — which floods the model's context
-// and makes it guess which one to pick. Return a bounded slice + a count + a
-// routing note instead. Callers can raise `limit` (bounded by MAX) if they truly
-// need the full list.
-const DEFAULT_VALUE_LIMIT = 50
-const MAX_VALUE_LIMIT = 200
-
-// How the returned values were arrived at. Reported to the model because
-// "these are matches" and "these are every value the column can take" call for
-// completely different next moves.
-type MatchedVia =
-  /** The /values endpoint's own search returned these rows. */
-  | 'search'
-  /** No query: the attribute's complete (unfiltered) value list. */
-  | 'domain'
-  /** The search found nothing; these matched when we scanned the full list here. */
-  | 'domain-scan'
-  /** The search found nothing until it was retried with a different casing. */
-  | 'case-variant'
-
-// A zero-row search is NOT evidence that a value is absent, and treating it as
-// such is exactly how "build a cohort of women…" ended with the assistant asking
-// the user whether "female" might be spelled some other way. The /values search
-// is executed by the backend (a HANA/SQL LIKE is case-sensitive) and matches the
-// stored token, not the clinical word for it — so "female" misses "Female", and
-// "women" misses "FEMALE" on every backend. When a search comes back empty we
-// re-fetch the attribute's UNFILTERED domain and match it here, where the rules
-// are ours and, for a low-cardinality column, the entire list is visible.
-const normalizeToken = (raw: unknown): string =>
-  String(raw ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[\s._\-/()]+/g, ' ')
-    .trim()
-
-// Interchangeable tokens for the low-cardinality demographic columns every
-// cohort starts from. A dataset stores sex as "FEMALE", "Female", "F" or a
-// concept id depending on the backend, and the user says "women".
-// Deliberately narrow — demographics and booleans only. Clinical terms are NOT
-// synonym-expanded: a near-miss concept is a silent clinical error, so those
-// still route through concept sets / the vocabulary tools.
-const SYNONYM_GROUPS: string[][] = [
-  ['female', 'f', 'fem', 'woman', 'women', 'girl', 'girls'],
-  ['male', 'm', 'man', 'men', 'boy', 'boys'],
-  ['unknown', 'u', 'unk', 'not known', 'no matching concept'],
-  ['other', 'o'],
-  ['yes', 'y', 'true'],
-  ['no', 'n', 'false'],
-]
-
-const synonymsFor = (query: string): string[] => {
-  const q = normalizeToken(query)
-  const group = SYNONYM_GROUPS.find(g => g.includes(q))
-  return group ? group.filter(s => s !== q) : []
-}
-
-// Rank a candidate row against the query: 0 exact, 1 substring, 2 synonym.
-// undefined = no match. Ranked so an exact "F" outranks a substring hit.
-function matchRank(row: any, query: string, synonyms: string[]): number | undefined {
-  const haystacks = [row?.text, row?.display_value, row?.value].map(normalizeToken).filter(Boolean)
-  if (!haystacks.length) return undefined
-  const q = normalizeToken(query)
-  if (q && haystacks.includes(q)) return 0
-  if (q && haystacks.some(h => h.includes(q))) return 1
-  // Synonyms match on EQUALITY only. As a substring rule, "f" (for female) would
-  // match every token containing the letter f.
-  if (synonyms.some(s => haystacks.includes(s))) return 2
-  return undefined
-}
-
-function matchDomainLocally(rows: any[], query: string): any[] {
-  const synonyms = synonymsFor(query)
-  return rows
-    .map(row => ({ row, rank: matchRank(row, query, synonyms) }))
-    .filter((m): m is { row: any; rank: number } => m.rank !== undefined)
-    .sort((a, b) => a.rank - b.rank)
-    .map(m => m.row)
-}
-
-// Casing variants to retry a failed search with, for attributes whose domain is
-// too large to enumerate (so the domain scan above can't run).
-const caseVariants = (query: string): string[] => {
-  const lower = query.toLowerCase()
-  const upper = query.toUpperCase()
-  const title = lower.replace(/\b[a-z]/g, c => c.toUpperCase())
-  return [...new Set([lower, upper, title])].filter(v => v !== query)
-}
+// Query → stored-value matching lives in ./valueResolution, the browser-side
+// twin of the backend's cohortValueResolver.ts (see the note at the top of that
+// file). Keeping it out of here also keeps this file about tool wiring.
+const matchDomainLocally = (rows: any[], query: string): any[] => rankValues(rows, query).map(m => m.row)
 
 // Turn the /values result shape into an actionable hint so the model narrows the
 // query or routes to a concept set, rather than picking one product token (which
@@ -169,10 +90,11 @@ function attributeValuesNote(opts: {
       'search result is never proof a value is absent. Use the `value` field of the row you want.'
     )
   }
-  if (matchedVia === 'case-variant') {
+  if (matchedVia === 'alternate-query') {
     return (
-      `"${query}" returned nothing but "${matchedQuery}" matched — the /values search is case-sensitive. ` +
-      'Treat casing, not absence, as the default explanation for an empty search result.'
+      `"${query}" returned nothing but "${matchedQuery}" matched — the /values search is case-sensitive and ` +
+      'matches the stored token, not the word for it. Treat a rewritten query, not absence, as the default ' +
+      'explanation for an empty search result. Check the rows are really what you asked for before using one.'
     )
   }
   if (matchedVia === 'domain' && query) {
@@ -184,11 +106,12 @@ function attributeValuesNote(opts: {
       '*concept-name* attribute) or the filter is not expressible on this dataset — say so explicitly.'
     )
   }
-  if (total === 0) {
+  if (matchedVia === 'none' || total === 0) {
     return (
-      `No tokens matched "${query}", and this attribute's unfiltered value list came back empty too, so its ` +
-      'domain could not be enumerated. Try a different attributePath — a card often exposes both a *source ' +
-      'concept code* and a *concept-name* attribute; the term may live on the other one.'
+      `No tokens matched "${query}" — not the search, not the rewritten queries — and this attribute's ` +
+      "unfiltered value list came back empty too, so its domain could not be enumerated. Try a different " +
+      'attributePath: a card often exposes both a *source concept code* and a *concept-name* attribute, and ' +
+      'the term may live on the other one.'
     )
   }
   return undefined
@@ -648,10 +571,13 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         '(gender, race, ethnicity, status flags). Returns { matchedVia, total, returned, truncated, loadedStatus, ' +
         'domainTotal?, values:[{ value, text, display_value }], note }; pass a returned `value` as an ' +
         'add_constraint value in pa_apply_cohort_patch. `matchedVia` says what you are looking at: "search"/' +
-        '"domain-scan"/"case-variant" = matches for your query; "domain" = the attribute\'s whole value list ' +
-        '(returned when nothing matched, so you can pick from it). A zero-result search is NEVER proof the value ' +
-        'is absent — this tool already rechecked the full domain for you, so read `note` and decide from the ' +
-        'rows returned instead of asking the user for a synonym. The list is CAPPED (default 50, `limit` to ' +
+        '"domain-scan"/"alternate-query" = matches for your query (the last one via a rewritten query — check ' +
+        'the rows are really what you asked for); "domain" = the attribute\'s whole value list (returned when ' +
+        'nothing matched, so you can pick from it); "none" = the column could not be read at all, so try a ' +
+        'different attributePath. A zero-result search is NEVER proof the value is absent — this tool already ' +
+        'rechecked the full domain, retried the term\'s casings and its expansions ("ER visit" → "Emergency ' +
+        'Room Visit"), so read `note` and decide from the rows returned instead of asking the user for a ' +
+        'synonym or spelling. The list is CAPPED (default 50, `limit` to ' +
         'change) — when `truncated` or loadedStatus is "TOO_MANY_RESULTS", NARROW the query rather than paging: ' +
         'a broad drug/condition term matches thousands of tokens across code systems and strengths, and one ' +
         'product token is clinically incomplete. For "any form of X", prefer a concept set with descendants ' +
@@ -761,20 +687,25 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
             matchedVia = 'domain'
           } else {
             // The domain isn't enumerable (too large, or the endpoint only answers
-            // searches), so the scan above can't decide it. Retry the search with
-            // other casings — a backend LIKE is case-sensitive, so "female" can
-            // miss a stored "Female".
-            for (const variant of caseVariants(trimmedQuery)) {
+            // searches), so the scan above can't decide it. Retry the search with the
+            // rewritten queries: every casing (a backend LIKE is case-sensitive, so
+            // "female" misses a stored "Female"), then the term's expansions and its
+            // distinctive words — searching "emergency" is what reaches a value that
+            // the user's phrase ("ER visit") is not even a substring of.
+            for (const variant of alternateQueries(trimmedQuery)) {
               const alt = await fetchValuesRetrying(variant)
               if ((alt.rows?.length ?? 0) > 0) {
                 all = alt.rows as any[]
                 loadedStatus = alt.loadedStatus
-                matchedVia = 'case-variant'
+                matchedVia = 'alternate-query'
                 matchedQuery = variant
                 break
               }
             }
-            if (matchedVia === 'search') loadedStatus = domain.loadedStatus ?? loadedStatus
+            if (matchedVia === 'search') {
+              matchedVia = 'none'
+              loadedStatus = domain.loadedStatus ?? loadedStatus
+            }
           }
         }
 
