@@ -10,9 +10,9 @@ import type { ConstraintDispatch } from './applyConstraintValue'
  * nothing. That is how a widened date window survived a failed edit while the
  * user was told nothing had been applied.
  *
- * Shared by the WebMCP cohort-patch applier and the dashboard wizard flow, which
- * both have to unwind a partially-applied set of constraint edits — the same
- * reason applyConstraintValue is shared.
+ * Used by the WebMCP cohort-patch applier's rollback. The dashboard wizard's
+ * revertFieldChanges has the same job and the same two slots to put back (see
+ * useDashboardFlow) — the same reason applyConstraintValue is shared.
  */
 export interface ConstraintValueSnapshot {
   constraintId: string
