@@ -104,7 +104,10 @@ export const mapd2eWebapiConceptSet = (
     concepts: [],
     name: conceptSet.name,
     id: conceptSet.id,
+    externalId: conceptSet.externalId,
     shared: conceptSet.shared,
+    hasWriteAccess: conceptSet.hasWriteAccess,
+    hasReadAccess: conceptSet.hasReadAccess,
     createdBy: conceptSet.createdBy.name,
     createdDate: conceptSet.createdDate
       ? new Date(conceptSet.createdDate).toISOString().split("T")[0]
@@ -114,5 +117,6 @@ export const mapd2eWebapiConceptSet = (
       ? new Date(conceptSet.modifiedDate).toISOString().split("T")[0]
       : undefined,
     userName: conceptSet.createdBy.name,
+    source: conceptSet.source,
   };
 };
