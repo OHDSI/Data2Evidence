@@ -5,15 +5,10 @@
 //   Chrome 146–149: navigator.modelContext   (now deprecated)
 //   Chrome 150+:    document.modelContext    (current spec)
 // We try document first, then fall back to navigator for older builds.
+import { nextTick } from 'vue'
 import type { Store } from 'vuex'
 import { applyCohortPatch, describeCardGroups, type PatchOp } from './cohortPatch'
-import {
-  alternateQueries,
-  rankValues,
-  DEFAULT_VALUE_LIMIT,
-  MAX_VALUE_LIMIT,
-  type MatchedVia,
-} from './valueResolution'
+import { alternateQueries, rankValues, DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT, type MatchedVia } from './valueResolution'
 
 export interface PaToolResult {
   content: Array<{ type: 'text'; text: string }>
@@ -47,6 +42,13 @@ const textResult = (payload: unknown): PaToolResult => ({
 // twin of the backend's cohortValueResolver.ts (see the note at the top of that
 // file). Keeping it out of here also keeps this file about tool wiring.
 const matchDomainLocally = (rows: any[], query: string): any[] => rankValues(rows, query).map(m => m.row)
+
+// Resolve pa_search_attribute_values' `limit` at run time
+const resolveValueLimit = (raw: unknown): number => {
+  const parsed = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN
+  const requested = Number.isFinite(parsed) ? parsed : DEFAULT_VALUE_LIMIT
+  return Math.max(1, Math.min(Math.floor(requested), MAX_VALUE_LIMIT))
+}
 
 // Turn the /values result shape into an actionable hint so the model narrows the
 // query or routes to a concept set, rather than picking one product token (which
@@ -109,7 +111,7 @@ function attributeValuesNote(opts: {
   if (matchedVia === 'none' || total === 0) {
     return (
       `No tokens matched "${query}" — not the search, not the rewritten queries — and this attribute's ` +
-      "unfiltered value list came back empty too, so its domain could not be enumerated. Try a different " +
+      'unfiltered value list came back empty too, so its domain could not be enumerated. Try a different ' +
       'attributePath: a card often exposes both a *source concept code* and a *concept-name* attribute, and ' +
       'the term may live on the other one.'
     )
@@ -288,6 +290,9 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         await store.dispatch('resetChart')
         // Switch list → builder so the chart mounts and the result computes.
         hooks.showBuilder?.()
+        // Snapshot the baseline last, as addNewCohort does
+        await nextTick()
+        store.commit('SET_ACTIVE_BOOKMARK_BASELINE', store.getters.getBookmarksData)
         return textResult({ created: true, name: name || 'New cohort' })
       },
     },
@@ -528,7 +533,7 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         '`valueKindGuide` map and a routing `note`. `valueKind` (numeric | date | conceptSet | catalog | text) ' +
         'keys into valueKindGuide, which says how to supply that add_constraint value — essential on non-OMOP ' +
         '(SAP HANA / LEAF) datasets whose coded filters use source concept codes/concept sets, not OMOP standard ' +
-        'concept ids. Pass `card` (a cardConfigPath) to get just that card\'s attributes; the full catalog is ' +
+        "concept ids. Pass `card` (a cardConfigPath) to get just that card's attributes; the full catalog is " +
         'large, so prefer the scoped call once you know the card. ' +
         'Use these exact paths in pa_apply_cohort_patch patchOps — never invent paths.',
       inputSchema: {
@@ -619,13 +624,15 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
         attributePath: string
         query?: string
         attributeType?: string
-        limit?: number
+        // Typed `unknown`, not `number`: this crosses an unvalidated tool boundary,
+        // so resolveValueLimit — not the declared schema — is what makes it a number.
+        limit?: unknown
       }) {
         if (!attributePath) {
           return textResult({ values: [], error: 'Provide an attributePath (from pa_list_filter_options).' })
         }
         const trimmedQuery = typeof query === 'string' ? query.trim() : ''
-        const cap = Math.max(1, Math.min(limit ?? DEFAULT_VALUE_LIMIT, MAX_VALUE_LIMIT))
+        const cap = resolveValueLimit(limit)
 
         const fetchValues = async (searchQuery: string): Promise<{ rows?: any[]; loadedStatus?: string }> => {
           if (!searchQuery) {
@@ -791,7 +798,10 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
           share: { type: 'boolean', description: 'Share the cohort with other users (default false).' },
           bookmarkId: { type: 'string', description: 'Existing cohort id to overwrite (update). Omit to insert.' },
           method: { type: 'string', enum: ['post', 'put'], description: 'post = insert (default), put = update.' },
-          params: { type: 'object', description: 'Advanced/back-compat: raw fireBookmarkQuery params, forwarded verbatim.' },
+          params: {
+            type: 'object',
+            description: 'Advanced/back-compat: raw fireBookmarkQuery params, forwarded verbatim.',
+          },
         },
       },
       async execute({
@@ -852,7 +862,11 @@ export function createPaTools(store: Store<any>, hooks: PaComponentHooks = {}): 
           httpMethod = 'post'
         }
 
-        const res = await store.dispatch('fireBookmarkQuery', { method: httpMethod, params: builtParams, bookmarkId: targetId })
+        const res = await store.dispatch('fireBookmarkQuery', {
+          method: httpMethod,
+          params: builtParams,
+          bookmarkId: targetId,
+        })
         const savedId = res?.bmkId ?? targetId
 
         // Mirror the in-app dialogs: reload the list so the row is visible, then

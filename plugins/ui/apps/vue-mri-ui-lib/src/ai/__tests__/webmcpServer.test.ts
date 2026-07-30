@@ -663,6 +663,29 @@ describe('createPaTools', () => {
       expect(bare.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK', { bookmarkname: 'New cohort', isNew: true })
       expect(parse(bareRes)).toEqual({ created: true, name: 'New cohort' })
     })
+
+    it('captures the post-reset baseline so an untouched new cohort reports clean', async () => {
+      const store = makeStore()
+      // resetChart replaces the live cohort definition, so the baseline has to be the
+      // RESET state and not the cohort that was open before — which is why
+      // Bookmarks.vue addNewCohort() snapshots after `await this.reset()` + $nextTick.
+      store.dispatch.mockImplementation((type: string) => {
+        if (type === 'resetChart') store.getters.getBookmarksData = { name: 'New cohort', cards: [] }
+        return Promise.resolve(undefined)
+      })
+
+      await byName(createPaTools(store), 'pa_new_cohort').execute({ name: 'New cohort' })
+
+      expect(store.commit).toHaveBeenCalledWith('SET_ACTIVE_BOOKMARK_BASELINE', { name: 'New cohort', cards: [] })
+      // Order matters: SET_ACTIVE_BOOKMARK clears activeBookmarkBaseline, and a new
+      // cohort has no saved `.bookmark` JSON to fall back on — so a baseline captured
+      // first (or not at all) leaves getCurrentBookmarkHasChanges reporting a
+      // zero-edit cohort as dirty, firing the unsaved-changes navigation guard.
+      expect(store.commit.mock.calls.map((c: any[]) => c[0])).toEqual([
+        'SET_ACTIVE_BOOKMARK',
+        'SET_ACTIVE_BOOKMARK_BASELINE',
+      ])
+    })
   })
 
   describe('pa_search_attribute_values', () => {
@@ -729,6 +752,36 @@ describe('createPaTools', () => {
         limit: 10000,
       })
       expect(parse(res).returned).toBe(200)
+    })
+
+    // inputSchema says `limit` is a number, but nothing enforces that at run time:
+    // neither registerTool nor paToolBridge.call() validates arguments against the
+    // schema, so whatever the model emitted arrives verbatim. A quoted number must
+    // still cap, and a non-numeric one must fall back — the old
+    // `Math.min(limit ?? DEFAULT, MAX)` made the cap NaN, and `slice(0, NaN)` is [],
+    // so the tool reported "returned: 0" for a search that had 500 matches.
+    it.each([
+      ['a numeric string', '25', 25],
+      ['a non-numeric string', 'twenty', 50],
+      ['a blank string', '   ', 50],
+      ['null', null, 50],
+      ['a NaN-y object', {}, 50],
+    ])('coerces %s limit rather than capping to zero rows', async (_label, limit, expected) => {
+      const store = makeStore()
+      const values = Array.from({ length: 500 }, (_, i) => ({ value: String(i), text: `t${i}` }))
+      store.dispatch.mockImplementation((type: string) =>
+        type === 'loadValuesForAttributePath' ? Promise.resolve(values) : Promise.resolve(undefined)
+      )
+      const res = await byName(createPaTools(store), 'pa_search_attribute_values').execute({
+        attributePath: 'p.attr',
+        query: 'x',
+        limit,
+      })
+
+      const parsed = parse(res)
+      expect(parsed.returned).toBe(expected)
+      expect(parsed.values).toHaveLength(expected)
+      expect(parsed.total).toBe(500)
     })
 
     it('surfaces loadedStatus TOO_MANY_RESULTS so the model narrows instead of concluding "absent"', async () => {
