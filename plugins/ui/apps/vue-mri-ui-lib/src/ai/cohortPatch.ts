@@ -3,8 +3,7 @@
 // The LLM emits typed *intent* (PatchOp[]) — never a hand-built bookmark tree —
 // and this applier mutates the IFR already in the Vuex store via the app's own
 // query actions. That reuses the exact validation/normalization the UI uses, so
-// AI-driven edits behave identically to wizard-driven ones. See
-// DESIGN_pa_apply_cohort_patch.md and CLAUDE.md ("Never author bookmark JSON").
+// AI-driven edits behave identically to wizard-driven ones.
 import type { Store } from 'vuex'
 import { getFieldAttrKey } from '../utils/dashboardFlowUtils'
 import { applyConstraintValue } from '../utils/applyConstraintValue'
