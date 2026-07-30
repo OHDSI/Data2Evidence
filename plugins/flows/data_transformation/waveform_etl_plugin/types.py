@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 import datetime as dt
 from pathlib import Path
 from dataclasses import dataclass, field
