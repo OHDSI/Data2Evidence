@@ -21,9 +21,6 @@ def get_waveform_data_path(filepath: str) -> Path:
     return waveform_data_path
 
 
-
-
-
 @task(log_prints=True)
 def extract_records(waves_root: Path) -> list[RecordInfo]:
     """Discover WFDB records under `waves_root` and parse their headers, skipping (and logging) any that fail to parse."""
@@ -98,9 +95,6 @@ def build_staging_dataframes(
             )
         )
         channel_rows.extend(build_channel_rows(info, source_uri_prefix, target_uri_prefix))
-
-    print(f"file_rows length: {len(file_rows)}")
-    print(f"channel_rows length: {len(channel_rows)}")
 
     return build_dataframes(file_rows, channel_rows, person_id_map, visit_occurrence_id_map)
 
