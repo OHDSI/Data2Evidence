@@ -27,10 +27,10 @@ export class D2eWebapiService {
     return response.data
   }
 
-  public async getConceptSetExpression(conceptSetId: number, datasetId: string): Promise<ConceptSetExpression> {
+  public async getConceptSetExpression(conceptSetId: string, datasetId: string): Promise<ConceptSetExpression> {
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/expression`,
+      url: `/conceptset/${encodeURIComponent(conceptSetId)}/expression`,
       method: 'GET',
       headers: { datasetid: datasetId },
       params: { datasetId },
@@ -42,7 +42,7 @@ export class D2eWebapiService {
     conceptSetData: CreateConceptSetRequest,
     datasetId: string,
     isAtlas?: boolean
-  ): Promise<number> {
+  ): Promise<string> {
     // Step 1: Create the concept set
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
@@ -74,7 +74,7 @@ export class D2eWebapiService {
   }
 
   public async updateConceptSetItems(
-    conceptSetId: number,
+    conceptSetId: string,
     conceptItems: Array<{
       conceptId: number
       isExcluded: boolean
@@ -97,7 +97,7 @@ export class D2eWebapiService {
 
     const response = await client({
       baseURL: D2E_WEBAPI_BASE_URL,
-      url: `/conceptset/${conceptSetId}/items`,
+      url: `/conceptset/${encodeURIComponent(conceptSetId)}/items`,
       method: 'PUT',
       headers: { datasetid: datasetId },
       data: transformedItems,

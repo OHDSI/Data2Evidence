@@ -234,7 +234,7 @@ export class QueryFilterCriteriaManager {
               }
 
               // Add conceptSetId field with system database ID
-              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+              conceptSetDef.conceptSetId = systemConceptSetId
 
               conceptSets.push(conceptSetDef)
             }
@@ -267,7 +267,7 @@ export class QueryFilterCriteriaManager {
               }
 
               // Add conceptSetId field with system database ID
-              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+              conceptSetDef.conceptSetId = systemConceptSetId
 
               conceptSets.push(conceptSetDef)
             }
@@ -300,7 +300,7 @@ export class QueryFilterCriteriaManager {
               }
 
               // Add conceptSetId field with system database ID
-              conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+              conceptSetDef.conceptSetId = systemConceptSetId
 
               conceptSets.push(conceptSetDef)
             }
@@ -333,7 +333,7 @@ export class QueryFilterCriteriaManager {
             },
           }
 
-          conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+          conceptSetDef.conceptSetId = systemConceptSetId
           conceptSets.push(conceptSetDef)
         } else {
           console.warn('[QueryFilterModel] CONT_DRUG concept set missing details')

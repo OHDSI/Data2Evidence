@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import SearchBar from "../components/SearchBar/SearchBar";
 import {
   MaterialReactTable,
@@ -21,17 +21,17 @@ import "./ConceptSets.scss";
 interface ConceptSetsTableProps {
   data: ConceptSet[];
   isLoading: boolean;
-  userName: string | undefined;
-  onAddEdit: (conceptSetId?: number) => void;
+  onAddEdit: (conceptSetId?: string) => void;
   onDelete: (conceptSet: ConceptSet) => void;
+  userName?: string;
 }
 
 export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   data,
   isLoading,
-  userName,
   onAddEdit,
   onDelete,
+  userName,
 }) => {
   const { getText } = useTranslation();
   const [searchText, setSearchText] = useState<string>("");
@@ -40,18 +40,29 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
   const filteredData = useMemo(
     () =>
       data.filter((row) =>
-        row.name.toLowerCase().includes(searchText.toLowerCase()),
+        row.name.toLowerCase().includes(searchText.toLowerCase())
       ),
-    [data, searchText],
+    [data, searchText]
   );
 
   const columns = useMemo<MRT_ColumnDef<ConceptSet>[]>(
     () => [
       {
-        accessorKey: "id",
+        accessorKey: "externalId",
         header: getText(i18nKeys.CONCEPT_SETS__ID),
         size: 80,
         sortDescFirst: false,
+      },
+      {
+        accessorKey: "source",
+        header: getText(i18nKeys.CONCEPT_SETS__SOURCE),
+        size: 100,
+        Cell: ({ row }) => {
+          const source = row.original.source;
+          return source === "legacy"
+            ? getText(i18nKeys.CONCEPT_SETS__LEGACY)
+            : getText(i18nKeys.CONCEPT_SETS__WEBAPI);
+        },
       },
       {
         accessorKey: "name",
@@ -99,29 +110,34 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
         header: "",
         size: 90,
         enableSorting: false,
-        Cell: ({ row }) => (
-          <>
-            <IconButton
-              startIcon={
-                row.original.createdBy === userName ? (
-                  <EditIcon />
-                ) : (
-                  <VisibilityOnIcon />
-                )
-              }
-              onClick={() => onAddEdit(row.original.id)}
-            />
-            {row.original.createdBy === userName && (
+        Cell: ({ row }) => {
+          const isWritable =
+            row.original.hasWriteAccess ||
+            row.original.createdBy === userName;
+          return (
+            <>
               <IconButton
-                startIcon={<DeleteIcon />}
-                onClick={() => onDelete(row.original)}
+                startIcon={
+                  isWritable ? (
+                    <EditIcon />
+                  ) : (
+                    <VisibilityOnIcon />
+                  )
+                }
+                onClick={() => onAddEdit(row.original.id)}
               />
-            )}
-          </>
-        ),
+              {isWritable && (
+                <IconButton
+                  startIcon={<DeleteIcon />}
+                  onClick={() => onDelete(row.original)}
+                />
+              )}
+            </>
+          );
+        },
       },
     ],
-    [getText, userName, onAddEdit, onDelete],
+    [getText, onAddEdit, onDelete, userName]
   );
 
   const table = useMaterialReactTable({
@@ -170,7 +186,7 @@ export const ConceptSetsTable: FC<ConceptSetsTableProps> = ({
       if (keyword === searchText) return;
       setSearchText(keyword);
     },
-    [searchText],
+    [searchText]
   );
 
   useEffect(() => {
