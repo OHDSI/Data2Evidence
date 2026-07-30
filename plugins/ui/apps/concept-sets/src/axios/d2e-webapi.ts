@@ -9,6 +9,7 @@ import {
 } from "../types/terminology";
 import { api } from "./api";
 import { getPortalAPI } from "../utils/PortalUtils";
+import { getInvalidReasonFilter } from "./concept-search-filter";
 
 const D2E_WEBAPI_BASE_URL = "d2e-webapi";
 
@@ -27,13 +28,14 @@ export class D2eWebapi {
     sortBy?: string,
     sortOrder?: string,
   ): Promise<IWebapiConcept[]> {
+    const invalidReason = getInvalidReasonFilter(validity);
     const data = {
       QUERY: searchText,
       CONCEPT_CLASS_ID: conceptClassId,
       DOMAIN_ID: domainId,
       VOCABULARY_ID: vocabularyId,
       STANDARD_CONCEPT: standardConcept[0],
-      INVALID_REASON: validity[0],
+      ...(invalidReason && { INVALID_REASON: invalidReason }),
     };
     const params = new URLSearchParams();
     params.append("page", String(page));
