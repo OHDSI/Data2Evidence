@@ -20,7 +20,7 @@ const DEFAULT_STEPS: WizardStepConfig[] = [
     id: "form",
     type: "form",
     title: "Form",
-    config: { submitLabel: "Open cohort", submitAction: "deep-link" },
+    config: { submitLabel: "Generate", submitAction: "deep-link" },
   },
 ];
 

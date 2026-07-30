@@ -62,10 +62,16 @@ describe("wizardDefinitions", () => {
         expect(wizard.steps).toHaveLength(1);
         expect(wizard.steps[0].type).toBe("form");
         expect(wizard.steps[0].config).toEqual({
-          submitLabel: "Open cohort",
+          submitLabel: "Generate",
           submitAction: "deep-link",
         });
       });
+    });
+
+    it("does not synthesize sections for development mock wizards", async () => {
+      const wizards = await getWizardDefinitions();
+
+      expect(wizards.every((wizard) => wizard.sections === undefined)).toBe(true);
     });
   });
 

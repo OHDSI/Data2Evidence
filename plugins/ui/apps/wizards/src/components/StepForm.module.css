@@ -99,6 +99,149 @@
   gap: 20px;
 }
 
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  overflow: visible;
+  border: 1px solid #dfe5ef;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  background: #eaf3ff;
+  border-radius: 7px 7px 0 0;
+  color: var(--color-mri-brand, #000080);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sectionNumber {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 20px;
+  border-radius: 50%;
+  background: #d8e8ff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 18px;
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 6px;
+}
+
+.groupHeader h3 {
+  margin: 0;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.groupHeader span {
+  color: #5f6b7a;
+  font-size: 12px;
+}
+
+.fieldGrid {
+  display: grid;
+  gap: 14px 16px;
+}
+
+.oneColumn {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.twoColumns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.threeColumns {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fieldGrid .fieldGroup {
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.fieldGrid .label {
+  width: auto;
+  min-width: 0;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.fieldGrid .fieldLabelRow {
+  width: auto;
+  min-width: 0;
+  justify-content: flex-start;
+}
+
+.fieldGrid .input,
+.fieldGrid .numericInputAnchor,
+.fieldGrid .groupInputs,
+.fieldGrid .typeaheadWrapper {
+  width: 100%;
+}
+
+.fieldGrid .inputWithToggle {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.fieldGrid .inputWithToggle .typeaheadWrapper {
+  flex: 1 1 320px;
+}
+
+.fieldGrid .wildcardToggle {
+  margin-left: 0;
+}
+
+.groupError {
+  padding: 9px 11px;
+  border: 1px solid #e6a5a5;
+  border-radius: 4px;
+  background: #fff4f4;
+  color: #a10f0f;
+  font-size: 12px;
+}
+
 .fieldGroup {
   display: flex;
   flex-direction: row;
@@ -136,6 +279,128 @@
   text-align: right;
 }
 
+.fieldLabelRow {
+  display: flex;
+  width: 220px;
+  min-width: 220px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.fieldLabelRow .label {
+  width: auto;
+  min-width: 0;
+}
+
+.infoTooltip {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.infoButton {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #7b8492;
+  border-radius: 50%;
+  background: #fff;
+  color: #606975;
+  cursor: help;
+  font-family: serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.infoButton:focus-visible {
+  outline: 2px solid var(--color-mri-brand, #000080);
+  outline-offset: 2px;
+}
+
+.infoTooltipContent {
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  z-index: 20;
+  display: none;
+  width: max-content;
+  max-width: 300px;
+  padding: 12px 14px;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.2);
+  color: #555;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  transform: translateX(-18px);
+}
+
+.infoTooltipContent::before {
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  content: "";
+  transform: rotate(45deg);
+}
+
+.threeColumns .fieldGroup:nth-child(3n) .infoTooltipContent {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.threeColumns .fieldGroup:nth-child(3n) .infoTooltipContent::before {
+  right: 12px;
+  left: auto;
+}
+
+.infoTooltipContent ul {
+  margin: 4px 0 10px;
+  padding-left: 20px;
+}
+
+.infoTooltipContent strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-mri-brand, #000080);
+}
+
+.infoTooltip:hover .infoTooltipContent,
+.infoTooltip:focus-within .infoTooltipContent {
+  display: block;
+}
+
+.numericInputAnchor {
+  position: relative;
+  width: 600px;
+  flex: none;
+  box-sizing: border-box;
+}
+
+.numericInputAnchor .input {
+  width: 100%;
+}
+
+.numericInputAnchor:focus-visible {
+  outline: 2px solid var(--color-mri-brand, #000080);
+  outline-offset: 2px;
+}
+
+.numericInputAnchor:hover .limitTooltipContent,
+.numericInputAnchor:focus-within .limitTooltipContent {
+  display: block;
+}
+
 .requiredAsterisk {
   color: #c00;
   font-weight: bold;
@@ -165,8 +430,15 @@
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
-.input:hover:not(:focus) {
+.input:hover:not(:focus):not(:disabled) {
   border-color: #bbb;
+}
+
+.input:disabled {
+  border-color: #e1e3e6;
+  background: #f6f6f6;
+  color: #a0a4aa;
+  cursor: not-allowed;
 }
 
 .inputError {
@@ -346,6 +618,21 @@
 }
 
 @media (max-width: 768px) {
+  .twoColumns,
+  .threeColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sectionContent {
+    padding: 14px;
+  }
+
+  .groupHeader {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
   .fieldGroup {
     flex-direction: column;
     align-items: flex-start;
@@ -357,7 +644,23 @@
     margin-bottom: 6px;
   }
 
+  .fieldLabelRow {
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .fieldLabelRow .label {
+    width: auto;
+    margin-bottom: 0;
+  }
+
   .input {
+    width: 100%;
+  }
+
+  .numericInputAnchor {
     width: 100%;
   }
 
