@@ -1063,6 +1063,15 @@ const actions = {
             data: {
               data: [],
               totalPatientCount: 0,
+              // Keep WHY it failed. The chart component renders the reason locally,
+              // but the store response is what the AI assistant reads back through
+              // pa_get_cohort_result — without this a failed query is indistinguishable
+              // from "no matching patients" and the assistant guesses at a cause.
+              error:
+                error?.response?.data?.errorMessage ||
+                error?.response?.data?.err ||
+                error?.message ||
+                'The chart query failed.',
             },
           },
         })

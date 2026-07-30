@@ -142,6 +142,78 @@ function isStrategusRelated(userInput: string): boolean {
   return STRATEGUS_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
+// Gate for injecting concept/filter-resolution guidance: fires when the ask
+// looks like building or filtering a cohort by a clinical term.
+const COHORT_FILTER_KEYWORDS = [
+  "filter",
+  "cohort",
+  "patients with",
+  "patient with",
+  "condition",
+  "diagnos", // diagnosis / diagnosed
+  "disease",
+  "drug",
+  "medication",
+  "measurement",
+  "lab ",
+  "procedure",
+  "concept set",
+  "concept",
+  "phenotype",
+  "add a filter",
+];
+
+function isCohortFilterRelated(userInput: string): boolean {
+  const lower = userInput.toLowerCase();
+  return COHORT_FILTER_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+// Rung ladder + guardrails for turning a plain clinical term (e.g. "viral
+// sinusitis") into a persisted concept-set id. Injected into the system prompt
+// only when isCohortFilterRelated fires. The tools referenced (search_concepts,
+// check_concept_coverage_in_dataset, list/get/create_concept_set,
+// search_phenotype_library) are all served by mcp-server and already in the
+// agent's tool list via mcpClient.getTools().
+const conceptResolutionGuidance = `
+    CLINICAL CONCEPT & FILTER RESOLUTION
+    When [userInput] asks to filter or define a cohort by a clinical term, resolve
+    that term to a PERSISTED concept-set id before using it in any filter/clause.
+
+    Tools (in resolution order):
+    - search_phenotype_library(query): for a recognized disease/phenotype that
+      DEFINES the cohort (e.g. "type 2 diabetes"), prefer this curated set first.
+    - search_concepts(query, domain?): clinical term -> candidate STANDARD OMOP
+      concepts (conceptId, name, domain), ranked by how common they are in this
+      dataset. Use for a specific condition, measurement, drug, or procedure, or
+      when the phenotype library has no match. Pass 'domain' to scope results:
+      "viral sinusitis" -> Condition; a lab/vital -> Measurement; a drug -> Drug;
+      a procedure -> Procedure; else Observation.
+    - check_concept_coverage_in_dataset(conceptIds): confirm the chosen ids
+      actually have data in this dataset.
+    - list_concept_sets(): call FIRST and reuse an existing set whose name matches
+      (names are unique per dataset). get_concept_set(id) to inspect one.
+    - create_concept_set(name, concepts): only when no existing set matches;
+      returns the persisted concept-set id.
+
+    Resolution steps for a term like "viral sinusitis":
+    1. Try search_phenotype_library if it names a cohort-defining disease.
+    2. Otherwise call search_concepts(term, domain) and pick the best-matching
+       standard concept id(s).
+    3. check_concept_coverage_in_dataset on those ids.
+    4. list_concept_sets first; reuse a name match, else create_concept_set with
+       the chosen ids.
+    5. Use the persisted concept-set id in the filter/clause.
+
+    CONCEPT-SET ID RULES (critical - a wrong id is a silent clinical error):
+    - A concept-set id MUST come from create_concept_set / list_concept_sets /
+      get_concept_set.
+    - NEVER use an OMOP concept id (from search_concepts) or a phenotype / library
+      / cohort id as a concept-set id - those are not concept sets.
+    - NEVER invent concept ids or concept-set ids.
+    - If search_concepts returns no clear match or the term is ambiguous, ask the
+      user to clarify instead of guessing.
+`;
+
 export const getRolePrompting = (userInput: string, context: string) => {
   const includeStrategus = isStrategusRelated(userInput);
   const strategusExpertise = includeStrategus
@@ -149,6 +221,9 @@ export const getRolePrompting = (userInput: string, context: string) => {
     : "";
   const strategusSection = includeStrategus
     ? `\n    4. Assume standard OHDSI configurations, and only verified OHDSI/Strategus functions those are based on ${strategusIntro}.`
+    : "";
+  const conceptSection = isCohortFilterRelated(userInput)
+    ? `\n${conceptResolutionGuidance}`
     : "";
 
   const rolePrompting = `
@@ -166,6 +241,7 @@ export const getRolePrompting = (userInput: string, context: string) => {
         - If [userInput] asks for data from d2e (e.g., "get cohort list", "fetch cohort data", "show cohorts", "get cohort definition", "update/delete/create cohort for"), you MUST use available MCP tools to fetch actual data.
         - **CRITICAL**: When a tool returns step-by-step instructions (e.g., "Strictly follow to-do list below"), you MUST complete ALL steps in sequence. Do not stop after partial completion.
         - When creating/updating cohort definitions, follow the complete workflow: search phenotypes → identify relevant ID → fetch templates → generate definition → validate → create/update.
+${conceptSection}
         - After retrieving data from tools, you MUST process and format the results:
           * Present data in natural language or as a human-readable markdown table
           * DO NOT return raw JSON or unformatted tool output unless explicitly requested

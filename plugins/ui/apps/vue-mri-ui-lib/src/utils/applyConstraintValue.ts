@@ -90,6 +90,14 @@ export async function applyConstraintValue(
   }
   const rawValue = rawInput?.value ?? rawInput
   if (rawValue === null || typeof rawValue === 'undefined' || String(rawValue).trim() === '') {
+    // An emptied free-text or concept-set filter is a *clear*, not an error: the
+    // required-filters modal has to be able to remove a value it previously set.
+    if (constraintType === 'text' || constraintType === 'conceptSet') {
+      return dispatch('updateConstraintValue', {
+        constraintId: constraint.id,
+        value: [],
+      })
+    }
     return Promise.reject(new Error(`Missing value for ${constraint.props.name || constraint.id}`))
   }
   // Never String() an object into "[object Object]" — that silently produces a broken

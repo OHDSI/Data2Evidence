@@ -30,7 +30,8 @@
     "nx": "^18.0.0"
   },
   "overrides": {
-    "vite": "6.4.2"
+    "vite": "6.4.2",
+    "@babel/runtime": "7.29.2"
   },
   "trex": {
     "ui": {
@@ -412,14 +413,6 @@
             "notes": "",
             "pluginPath": "plugins/Setup/DemoSetup/module",
             "route": "demo-setup"
-          },
-          {
-            "description": "Migrate user artifacts to webapi",
-            "visible": true,
-            "name": "Migrate user artifacts",
-            "notes": "",
-            "pluginPath": "plugins/Setup/MigrateUserArtifacts/module",
-            "route": "migrate-user-artifacts"
           }
         ],
         "systemadmin": [

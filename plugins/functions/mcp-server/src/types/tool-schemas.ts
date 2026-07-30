@@ -187,7 +187,18 @@ const ConceptItemSchema = z.object({
   isExcluded: z.boolean().describe("Exclude this concept and its descendants"),
 });
 
-export const ListConceptSetsInput = {};
+export const ListConceptSetsInput = {
+  // Without this the tool can only dump the first 50 sets and ask the caller to
+  // "narrow" — with nothing to narrow BY. A name filter is what makes the
+  // reuse-an-existing-set path usable on a dataset with a real concept-set library.
+  query: z
+    .string()
+    .optional()
+    .describe(
+      "Case-insensitive substring matched against concept set names, e.g. 'alzheimer'. " +
+        "Search the clinical term here BEFORE creating a new set. Omit to list everything.",
+    ),
+};
 
 export const GetConceptSetInput = {
   conceptSetId: z.number().describe("The concept set ID to retrieve"),
@@ -207,5 +218,25 @@ export const CheckConceptCoverageInput = {
   conceptIds: z
     .array(z.number())
     .describe("List of OMOP concept IDs to check against this dataset's vocabulary cache"),
+};
+
+export const SearchConceptsInput = {
+  query: z
+    .string()
+    .describe("Clinical term to search, e.g. 'systolic blood pressure'."),
+  domain: z
+    .string()
+    .optional()
+    .describe("OMOP domain filter: Condition | Measurement | Drug | Procedure | Observation."),
+  standardOnly: z
+    .boolean()
+    .optional()
+    .describe("Restrict to standard concepts (default true)."),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("Max candidates to return (default 20)."),
 };
 

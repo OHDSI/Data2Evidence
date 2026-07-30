@@ -1,0 +1,898 @@
+// D2E AI assistant drawer — Figma frames 1475:128982 (default) & 1475:130902 (conversation).
+// Tokens: Primary/Default #000080, Primary/Light #333399, Primary/Xtra lightest #E5E6F2,
+// Neutral/Lighter #DEDCDA, Neutral/Default #595757, Neutral/Light #ACABA8,
+// Neutral/Xtra lightest #FAF8F8, Primary/XX lightest #F8F8FF, Functional/Alarm #D53939.
+
+$ai-navy: #000080;
+$ai-navy-light: #333399;
+$ai-border: #dedcda;
+$ai-neutral: #595757;
+$ai-placeholder: #acaba8;
+$ai-surface: #faf8f8;
+$ai-surface-selected: #f8f8ff;
+$ai-font: "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+
+// Panel geometry. From $ai-dock-min up there is room for the panel to dock: the page content
+// is inset by the panel width so the two sit side by side below the navbar (Figma 1475:128938)
+// and nothing is covered up. Narrower viewports cannot spare the width, so the panel floats
+// above the page instead. This is a desktop-only app; phone widths are not catered for.
+$ai-panel-width: 380px;
+$ai-panel-width-expanded: 640px;
+$ai-dock-min: 1080px;
+$ai-panel-transition: 0.2s ease;
+
+:root {
+  --ai-assistant-panel-width: #{$ai-panel-width};
+  --ai-assistant-panel-width-expanded: min(#{$ai-panel-width-expanded}, 100vw);
+}
+
+.ai-assistant {
+  .ai-assistant__paper {
+    width: var(--ai-assistant-panel-width);
+    max-width: 100vw;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+    border-left: 1px solid $ai-border;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    font-family: $ai-font;
+    transition: width $ai-panel-transition;
+  }
+
+  &.ai-assistant--expanded .ai-assistant__paper {
+    width: var(--ai-assistant-panel-width-expanded);
+  }
+}
+
+// The drawer renders as a sibling of the page's <main>, so the content can be inset from the
+// right to make room for the docked panel. Declared outside the media query so the inset
+// animates in both directions.
+.ai-assistant ~ main {
+  transition: padding-right $ai-panel-transition;
+}
+
+// --- Header (gradient title bar) ---
+.ai-assistant__header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  color: #fff;
+  background: linear-gradient(
+    92deg,
+    #000080 8%,
+    #10067e 16%,
+    #200c7b 21%,
+    #401876 32%,
+    #602371 44%,
+    #802f6d 55%,
+    #bf4763 77%,
+    #ff5e59 100%
+  );
+
+  .ai-assistant__header-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.2;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // Sparkle uses a navy->coral gradient; render it white to sit on the gradient bar.
+  .ai-assistant__header-sparkle {
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
+  }
+
+  .ai-assistant__header-icon.MuiIconButton-root {
+    color: #fff;
+    padding: 2px;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.16);
+    }
+  }
+}
+
+// --- Content region (welcome or conversation) ---
+// The scroll container for the conversation. Deliberately NOT justify-content: flex-end —
+// that bottom-aligns the content by overflowing it past the container's *start* edge, and
+// start-edge overflow is not part of the scrollable area, so a long conversation had its
+// earlier messages pushed above the panel with nothing to scroll back to. The bottom
+// alignment comes from margin-top: auto on the conversation instead, which collapses to 0
+// as soon as the content overflows and lets the overflow fall to the scrollable end.
+.ai-assistant__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  // Reaching the end of the conversation should not start scrolling the page behind the panel.
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+// --- Welcome / empty state ---
+.ai-assistant__welcome {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding-bottom: 64px;
+}
+
+.ai-assistant__welcome-intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.ai-assistant__greeting {
+  margin: 0;
+  font-family: $ai-font;
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 1.2;
+  color: $ai-navy;
+  text-align: center;
+}
+
+.ai-assistant__suggestions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-assistant__suggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  background-color: #fcfcfc;
+  border: 1px solid #e5e6f2;
+  border-radius: 40px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: $ai-neutral;
+  text-align: left;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background-color: #f5f6fb;
+    border-color: $ai-navy;
+  }
+
+  .ai-assistant__suggestion-icon {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .ai-assistant__suggestion-label {
+    flex: 1 1 auto;
+  }
+}
+
+// --- Conversation ---
+.ai-assistant__conversation {
+  width: 100%;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// A column, not a row: the tool rows stack above the bubble as part of the same turn
+// (see .ai-assistant__tools), and align-items does the left/right placement the
+// bubble used to get from justify-content.
+.ai-assistant__message {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+
+  &--user {
+    align-items: flex-end;
+    padding-left: 32px;
+  }
+
+  &--assistant {
+    align-items: flex-start;
+    padding-right: 32px;
+  }
+}
+
+.ai-assistant__bubble {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  font-family: $ai-font;
+  font-size: 14px;
+  line-height: 1.5;
+
+  .ai-assistant__message--user & {
+    background-color: $ai-navy-light;
+    color: #fff;
+    border-radius: 24px 24px 4px 24px;
+  }
+
+  .ai-assistant__message--assistant & {
+    background-color: $ai-surface;
+    color: #000;
+    border: 1px solid $ai-border;
+    border-radius: 24px 24px 24px 4px;
+  }
+}
+
+.ai-assistant__rich {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-assistant__bubble-text {
+  margin: 0;
+
+  &--strong {
+    font-weight: 700;
+  }
+}
+
+.ai-assistant__filter-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+// --- Markdown (assistant replies) ---
+// Bubble-scale versions of the block elements the model writes. The panel is 380px wide,
+// so anything that cannot wrap (code, tables) scrolls inside its own box instead of
+// stretching the bubble. Column flex + gap gives every block the same rhythm without
+// having to chase margin collapsing per element.
+.ai-assistant__markdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-wrap: break-word;
+
+  p {
+    margin: 0;
+    // CommonMark folds a single newline into a space, but chat models write one line per
+    // thought and mean the break — which is also how this text read before it was markdown.
+    white-space: pre-wrap;
+  }
+
+  ul,
+  ol {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  li {
+    white-space: pre-wrap;
+
+    + li {
+      margin-top: 2px;
+    }
+
+    // Loose lists wrap each item in a paragraph; the <li> already spaces them.
+    > p {
+      margin: 0;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  h1 {
+    font-size: 16px;
+  }
+
+  h2 {
+    font-size: 15px;
+  }
+
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-size: 14px;
+  }
+
+  strong {
+    font-weight: 700;
+  }
+
+  a {
+    color: $ai-navy;
+    text-decoration: underline;
+  }
+
+  code {
+    padding: 1px 4px;
+    border-radius: 4px;
+    background-color: $ai-surface-selected;
+    border: 1px solid $ai-border;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 12px;
+  }
+
+  pre {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: #fff;
+    border: 1px solid $ai-border;
+    overflow-x: auto;
+
+    code {
+      padding: 0;
+      border: none;
+      background: none;
+      white-space: pre;
+    }
+  }
+
+  blockquote {
+    margin: 0;
+    padding-left: 10px;
+    border-left: 2px solid $ai-border;
+    color: $ai-neutral;
+  }
+
+  hr {
+    margin: 0;
+    border: none;
+    border-top: 1px solid $ai-border;
+  }
+}
+
+// --- Thinking ---
+// The gaps between the visible signs of work: prompt sent but no tokens back yet, and
+// a tool result being weighed up. Built to the same measurements as a tool row — same
+// spinner, same status slot, same type — so a slow turn reads as one continuous trail
+// of status lines with the labels aligned, rather than a banner that competes with the
+// reply about to land under it.
+.ai-assistant__thinking {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $ai-neutral;
+}
+
+// --- Tool activity ---
+// Which cohort tools the assistant ran for this reply. These sit in the conversation
+// flow ABOVE the reply bubble rather than inside it: they are the work, not part of
+// the answer, and as badges on the bubble a cohort edit read like a label on a
+// sentence. Each row is one quiet line that unfolds into the actual call.
+.ai-assistant__tools {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-assistant__tool {
+  font-size: 12px;
+  line-height: 1.5;
+  color: $ai-neutral;
+
+  &--error {
+    color: #d53939;
+  }
+}
+
+.ai-assistant__tool-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 3px 6px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+button.ai-assistant__tool-summary {
+  cursor: pointer;
+
+  &:hover {
+    background-color: $ai-surface;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $ai-navy-light;
+    outline-offset: -2px;
+  }
+}
+
+// A fixed-size slot so the labels line up down the column whatever glyph is in it —
+// including the thinking row's, which stacks in the same trail.
+.ai-assistant__tool-status,
+.ai-assistant__thinking-status {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 14px;
+
+  .ai-assistant__tool--ok & {
+    color: $ai-navy-light;
+  }
+}
+
+// A ring rather than a MUI spinner: at 11px the progress component's stroke and
+// padding are heavier than the text it sits next to. Shared with the thinking row:
+// both mean "working on it", so they should not be two different spinners.
+.ai-assistant__tool-spinner,
+.ai-assistant__thinking-spinner {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid $ai-border;
+  border-top-color: $ai-navy-light;
+  border-radius: 50%;
+  animation: ai-assistant-tool-spin 0.7s linear infinite;
+}
+
+@keyframes ai-assistant-tool-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// The "Running"/"Thinking" label already carries the state, so the motion is decoration.
+@media (prefers-reduced-motion: reduce) {
+  .ai-assistant__tool-spinner,
+  .ai-assistant__thinking-spinner {
+    animation: none;
+  }
+}
+
+.ai-assistant__tool-verb {
+  flex-shrink: 0;
+}
+
+.ai-assistant__tool-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 11px;
+  color: #000;
+
+  .ai-assistant__tool--error & {
+    color: inherit;
+  }
+}
+
+.ai-assistant__tool-chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 16px;
+  color: $ai-placeholder;
+  transition: transform 0.15s ease;
+
+  .ai-assistant__tool--open & {
+    transform: rotate(90deg);
+  }
+}
+
+// The verbatim call. Indented to line up with the tool name so it reads as detail
+// hanging off that row.
+.ai-assistant__tool-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 6px 6px 26px;
+
+  .ai-assistant__tool-detail-label {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: $ai-placeholder;
+  }
+
+  pre {
+    margin: 0;
+    max-height: 200px;
+    padding: 6px 8px;
+    border: 1px solid $ai-border;
+    border-radius: 6px;
+    background-color: $ai-surface;
+    overflow: auto;
+    // JSON has no soft wrap points, and a 380px panel cannot show a long line of it.
+    // Wrapping keeps the payload readable without a horizontal scrollbar per row.
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #000;
+  }
+}
+
+// Standing notice above the composer: no dataset, or no live cohort builder to
+// edit against.
+.ai-assistant__notice {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: $ai-neutral;
+  background-color: $ai-surface;
+  border-top: 1px solid $ai-border;
+}
+
+// Concept-set / disambiguation cards inside an assistant message
+.ai-assistant__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ai-assistant__option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  text-align: left;
+  background-color: #fff;
+  border: 1px solid $ai-border;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  color: #000;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    border-color: $ai-navy-light;
+  }
+
+  // Answered: the cards become a record of what was picked, so they stop inviting a
+  // click the hook would ignore anyway.
+  &--resolved {
+    cursor: default;
+    background-color: $ai-surface;
+
+    &:hover {
+      border-color: $ai-border;
+    }
+  }
+
+  &--selected {
+    background-color: $ai-surface-selected;
+    border-color: $ai-navy-light;
+  }
+
+  .ai-assistant__option-title {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .ai-assistant__option-index {
+    margin-right: 4px;
+  }
+
+  .ai-assistant__option-subtitle {
+    font-size: 10px;
+    line-height: 1.4;
+    color: $ai-neutral;
+  }
+}
+
+// --- Concept review card (Figma 1478:110682) ---
+// The concepts the assistant proposes for a concept set, sitting inside the assistant
+// bubble as a white card so it reads as an object to act on rather than more prose.
+.ai-assistant__concepts {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  // Answered: the card is now a record of what was sent, so it steps back visually
+  // and the rows stop looking clickable.
+  &--resolved .ai-assistant__concept-card {
+    background-color: $ai-surface;
+  }
+}
+
+.ai-assistant__concept-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #fff;
+  border: 1px solid $ai-border;
+  border-radius: 8px;
+}
+
+.ai-assistant__concept-card-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: #000;
+  overflow-wrap: break-word;
+}
+
+.ai-assistant__concept-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-assistant__concept {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid $ai-border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  // Unticked, not deleted: the row stays in place so the user can see what they took
+  // out and put it back, and so the list does not jump under the pointer mid-review.
+  &--excluded .ai-assistant__concept-text {
+    text-decoration: line-through;
+    color: $ai-placeholder;
+  }
+}
+
+.ai-assistant__concept-text {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  color: #000;
+  overflow-wrap: break-word;
+}
+
+.ai-assistant__concept-name {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ai-assistant__concept-code {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ai-assistant__concept-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 1px solid #ffa8a8;
+  border-radius: 4px;
+  color: #d53939;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: #fff5f5;
+  }
+
+  &--restore {
+    border-color: $ai-border;
+    color: $ai-neutral;
+
+    &:hover {
+      background-color: $ai-surface;
+      border-color: $ai-navy-light;
+    }
+  }
+}
+
+.ai-assistant__concept-count {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: $ai-neutral;
+  text-align: right;
+}
+
+// --- Composer ---
+.ai-assistant__composer {
+  flex-shrink: 0;
+  border-top: 1px solid $ai-border;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.ai-assistant__quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ai-assistant__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 4px 8px;
+  border-radius: 40px;
+  border: 1px solid #f2f0f1;
+  background-color: $ai-surface;
+  color: $ai-neutral;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    border-color: $ai-navy-light;
+  }
+
+  &:disabled {
+    color: $ai-placeholder;
+    cursor: not-allowed;
+  }
+
+  &--selected {
+    background-color: $ai-surface-selected;
+    border-color: $ai-navy-light;
+  }
+
+  .ai-assistant__chip-icon {
+    color: #d53939;
+
+    // Functional/Success — the affirmative half of the pair.
+    &--confirm {
+      color: #00855f;
+    }
+  }
+
+  &:disabled .ai-assistant__chip-icon {
+    color: inherit;
+  }
+}
+
+.ai-assistant__input {
+  display: flex;
+  // The field grows with the typed text (see ChatComposer), so the controls stay pinned to
+  // the last line rather than floating beside the middle of a tall input.
+  align-items: flex-end;
+  gap: 10px;
+  min-height: 48px;
+  // The row is as tall as the 24px icon buttons, so 11px + 24px + 11px + 2px of border is
+  // the 48px single-line box from the Figma spec. Padding rather than min-height has to
+  // set that height: with the controls bottom-aligned, height borrowed from min-height
+  // would all land above the text as dead space.
+  padding: 11px 16px;
+  border: 1px solid $ai-border;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  &:focus-within {
+    border-color: $ai-navy;
+  }
+
+  .ai-assistant__input-add.MuiIconButton-root {
+    flex-shrink: 0;
+    color: $ai-navy;
+    padding: 2px;
+  }
+
+  // Height is set inline by ChatComposer as the user types; these bounds are the floor
+  // (one line) and the ceiling (MAX_INPUT_HEIGHT, past which the field scrolls).
+  .ai-assistant__input-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: none;
+    outline: none;
+    resize: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #000;
+    min-height: 1.5em;
+    max-height: 126px;
+    overflow-y: auto;
+    padding: 0;
+
+    &::placeholder {
+      color: $ai-placeholder;
+    }
+  }
+
+  .ai-assistant__input-send.MuiIconButton-root {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    padding: 4px;
+    border-radius: 8px;
+    background-color: $ai-navy;
+    color: #fff;
+
+    &:hover {
+      background-color: #1a1a99;
+    }
+
+    &.Mui-disabled {
+      background-color: $ai-placeholder;
+      color: #fff;
+    }
+  }
+}
+
+// --- Docked layout (wide viewports) ---
+// The panel becomes part of the page layout: it keeps its own width and the content next to
+// it shrinks, rather than the panel floating over the content.
+@media (min-width: $ai-dock-min) {
+  .ai-assistant .ai-assistant__paper {
+    // Docked panels sit in the layout, so the "lifted above the page" shadow is dropped and
+    // the left border alone divides the panel from the content.
+    box-shadow: none;
+  }
+
+  .ai-assistant--open ~ main {
+    padding-right: var(--ai-assistant-panel-width);
+  }
+
+  .ai-assistant--open.ai-assistant--expanded ~ main {
+    padding-right: var(--ai-assistant-panel-width-expanded);
+  }
+}
