@@ -140,7 +140,7 @@ def _build_file_row(
     person_id_map: dict[int, int],
     visit_occurrence_id_map: dict[int, int],
 ) -> dict:
-    """Build a single row for waveform_files_all, given the parameters and the source/target URI prefixes.ß"""
+    """Build a single row for waveform_files_all, given the parameters and the source/target URI prefixes."""
     return {
         "group_id": group_id,
         "person_source_id": person_source_id,
