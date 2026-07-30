@@ -80,8 +80,9 @@ def build_file_rows(
         )
     )
 
-    # One row per segment header, plus one per distinct .dat file it references.
     for seg in info.segments:
+        if seg.name == "~":
+            continue
         seg_start = session_start + dt.timedelta(seconds=seg.start_offset_samples / info.fs)
         seg_end = seg_start + dt.timedelta(seconds=seg.n_samples / info.fs)
         for filename in [f"{seg.name}.hea", *seg.files]:
