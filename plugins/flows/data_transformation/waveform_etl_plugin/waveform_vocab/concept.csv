@@ -48,7 +48,7 @@ concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concep
 2081500047,GLOBAL,Metadata,WAVEFORM,Undefined,,WF100023,2025-12-05,2099-12-31,
 2081500048,II,Metadata,WAVEFORM,Undefined,,WF100024,2025-12-05,2099-12-31,
 2081500049,III,Metadata,WAVEFORM,Undefined,,WF100025,2025-12-05,2099-12-31,
-2081500050,WF device firmvare version,Metadata,WAVEFORM,Undefined,,WF100026,2025-12-05,2099-12-31,
+2081500050,WF device firmware version,Metadata,WAVEFORM,Undefined,,WF100026,2025-12-05,2099-12-31,
 2081500051,WFDB,Metadata,WAVEFORM,Undefined,,WFDB,2025-12-05,2099-12-31,
 2081500052,XML,Metadata,WAVEFORM,Undefined,,XML,2025-12-05,2099-12-31,
 2082499941,VX3,Waveform Metadata,WAVEFORM,WFE Lead,S,WF100021,2025-12-05,2099-12-31,
