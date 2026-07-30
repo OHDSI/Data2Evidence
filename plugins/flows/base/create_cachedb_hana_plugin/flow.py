@@ -41,8 +41,8 @@ def create_schema_via_trex(database_code: str, schema_name: str):
     # duckdb_data_folder = Variable.get("duckdb_data_folder")
     # duckdb_file_path = str(Path(duckdb_data_folder) / f"{database_code}.db")
 
-    trex_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)                             
+    trex_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code, cache_id=database_code + "_cache")                             
     trex_dao.execute_sql("CALL pg_clear_cache();") 
-    trex_dao.create_schema(f"{database_code}.{schema_name}")
+    trex_dao.create_schema(f"{database_code}_cache.{schema_name}")
 
     logger.info(f"Schema '{schema_name}' in database '{database_code}' created.")

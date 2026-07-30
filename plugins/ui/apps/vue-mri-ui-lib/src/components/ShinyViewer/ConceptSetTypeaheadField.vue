@@ -127,6 +127,10 @@ const isOpen = ref(false)
 const isCustomValue = ref(false)
 const loading = ref(false)
 const options = ref<Option[]>([])
+// Cached unfiltered value list (from the empty-query fetch). The domain store
+// caches per attribute path and can hand back a previous search's results for an
+// empty query, so we keep our own copy and serve it for empty/cleared input.
+const fullOptions = ref<Option[]>([])
 const suggestionsListRef = ref<HTMLUListElement | null>(null)
 const wrapperRef = ref<HTMLDivElement | null>(null)
 const inputRef = ref<HTMLInputElement | null>(null)
@@ -154,6 +158,13 @@ async function fetchOptions(query: string) {
   if (query === lastQuery.value) return
   lastQuery.value = query
 
+  // Empty query means "the full list". Serve our cached copy instead of the store
+  // response, which may be a prior search's stale results for this path (#2908).
+  if (!query && fullOptions.value.length) {
+    options.value = fullOptions.value
+    return
+  }
+
   loading.value = true
   try {
     const data = await store.dispatch('loadValuesForAttributePath', {
@@ -161,12 +172,23 @@ async function fetchOptions(query: string) {
       searchQuery: query,
       attributeType: 'text',
     })
-    options.value = (data || []).map(domainValueToOption)
+    const mapped = (data || []).map(domainValueToOption)
+    options.value = mapped
+    if (!query) fullOptions.value = mapped
   } catch {
     options.value = []
   } finally {
     loading.value = false
   }
+}
+
+// Restore the full value list immediately (no server round-trip) when the input
+// is emptied, so clearing never shows the previous search's stale results.
+function restoreFullList() {
+  if (fullOptions.value.length) {
+    options.value = fullOptions.value
+  }
+  lastQuery.value = ''
 }
 
 function debouncedFetch(query: string) {
@@ -185,13 +207,29 @@ function updateDropdownPosition() {
   if (!input) return
 
   const rect = input.getBoundingClientRect()
-  dropdownStyle.value = {
+  const MAX_HEIGHT = 200 // keep in sync with .concept-typeahead-dropdown max-height
+  const GAP = 8
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+
+  // Flip above the field when there isn't room below (e.g. fields low in the
+  // modal), so the dropdown never spills past the viewport / behind the footer.
+  const openUp = spaceBelow < Math.min(MAX_HEIGHT, 160) && spaceAbove > spaceBelow
+
+  const style: Record<string, string> = {
     position: 'fixed',
-    top: `${rect.bottom}px`,
     left: `${rect.left}px`,
     width: `${rect.width}px`,
     'z-index': '10002',
   }
+  if (openUp) {
+    style.bottom = `${window.innerHeight - rect.top}px`
+    style['max-height'] = `${Math.max(0, Math.min(MAX_HEIGHT, spaceAbove - GAP))}px`
+  } else {
+    style.top = `${rect.bottom}px`
+    style['max-height'] = `${Math.max(0, Math.min(MAX_HEIGHT, spaceBelow - GAP))}px`
+  }
+  dropdownStyle.value = style
 }
 
 function handleInput() {
@@ -204,6 +242,10 @@ function handleInput() {
   isOpen.value = true
   highlightedIndex.value = -1
   updateDropdownPosition()
+  if (!searchText.value) {
+    restoreFullList()
+    return
+  }
   debouncedFetch(searchText.value)
 }
 
@@ -279,6 +321,7 @@ function clearSelection() {
   selectedItem.value = null
   isCustomValue.value = false
   searchText.value = ''
+  restoreFullList()
   emit('update:modelValue', null)
   emit('update:displayValue', null)
 }

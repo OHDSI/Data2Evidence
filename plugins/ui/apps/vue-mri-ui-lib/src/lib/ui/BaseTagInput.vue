@@ -340,7 +340,9 @@ export default {
     },
     formatValues(values) {
       return values.map(elem => {
-        const displayValue = elem.text || elem.value
+        // Coerce to string: a constraint value may arrive numeric (e.g. a mis-shaped
+        // value from a programmatic edit), and .replace would throw on a number.
+        const displayValue = String(elem.text ?? elem.value ?? '')
         elem.display_value = displayValue.replace('</b>', '').replace('<b>', '')
         return elem
       })

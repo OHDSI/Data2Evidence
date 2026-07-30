@@ -398,6 +398,10 @@ services:
       # Pythia agent (Amazon Bedrock). AWS_BEARER_TOKEN_BEDROCK from the deploy env.
       AWS_REGION: ${AWS_REGION:-us-east-1}
       BAO_AGENT_MODEL: ${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}
+      # WebAPI trexsql.proxy probes localhost:8001 by default; the pythia mount lives on the Deno listener (33001).
+      BAO_AGENT_UPSTREAM_BASE: ${BAO_AGENT_UPSTREAM_BASE:-http://localhost:33001/plugins/ohdsi/pythia}
+      # Agent runtime reads TREX_AGENTS_DEFAULT_MODEL (provider/modelId), not BAO_AGENT_MODEL.
+      TREX_AGENTS_DEFAULT_MODEL: ${TREX_AGENTS_DEFAULT_MODEL:-bedrock/${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}}
       AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:-}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
