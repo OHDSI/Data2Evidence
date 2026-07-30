@@ -77,7 +77,7 @@ def test_get_frontend_config(setup):
     assert frontend_config == mock_frontend_config
 
 
-def _get_mock_response(auth_api, path, params):
+def _get_mock_response(auth_api, path, params, headers=None, **kwargs):
     if path == PA_PATH and params == { 'action': 'getMyConfigList' }:
         return MockResponse(200, mock_config_list)
 

@@ -50,7 +50,7 @@ export const collectNestedConceptSetsFromEvents = (
                 }
 
                 // Add conceptSetId field with system database ID
-                conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+                conceptSetDef.conceptSetId = systemConceptSetId
                 conceptSets.push(conceptSetDef)
               }
             }
@@ -87,7 +87,7 @@ export const collectNestedConceptSetsFromEvents = (
             }
 
             // Add conceptSetId field with system database ID
-            conceptSetDef.conceptSetId = parseInt(systemConceptSetId)
+            conceptSetDef.conceptSetId = systemConceptSetId
             conceptSets.push(conceptSetDef)
           }
         }
