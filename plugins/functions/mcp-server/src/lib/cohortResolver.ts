@@ -218,6 +218,24 @@ export async function resolveClausesToConstraints(
   deps: ResolverDeps,
 ): Promise<CohortConstraint[]> {
   const out: CohortConstraint[] = [];
+  const seenAttributes = new Set<string>();
+
+  const appendConstraint = (
+    constraint: CohortConstraint,
+    attributeName: string,
+  ) => {
+    const key =
+      `${constraint.cardInstanceKey}::${constraint.attributeConfigPath}`;
+    if (seenAttributes.has(key)) {
+      throw new Error(
+        `Attribute "${attributeName}" appears more than once in ` +
+          `"${constraint.cardName}". Use one constraint per attribute; for a ` +
+          `numeric lower and upper bound, use op "range" with [low, high].`,
+      );
+    }
+    seenAttributes.add(key);
+    out.push(constraint);
+  };
 
   for (let i = 0; i < clauses.length; i++) {
     const clause = clauses[i];
@@ -230,6 +248,13 @@ export async function resolveClausesToConstraints(
       );
     }
     const isPatient = card.key === "patient";
+    if (isPatient && clause.exclude) {
+      throw new Error(
+        `Basic Data does not support "exclude: true" because all patient ` +
+          `attributes share one filter card. Use "!=" or an inverse numeric ` +
+          `comparison on the attribute instead.`,
+      );
+    }
     // Patient card always merges into one instance; interactions get one per clause.
     const cardInstanceKey = isPatient ? "patient" : `${card.key}#${i}`;
     const base = {
@@ -259,12 +284,15 @@ export async function resolveClausesToConstraints(
           `Card "${card.name}" has no concept set to attach concept set ${clause.conceptSetId} to.`,
         );
       }
-      out.push({
-        ...base,
-        attributeConfigPath: attr.configPath,
-        expressions: [{ operator: "=", value: String(clause.conceptSetId) }],
-        combine: "OR",
-      });
+      appendConstraint(
+        {
+          ...base,
+          attributeConfigPath: attr.configPath,
+          expressions: [{ operator: "=", value: String(clause.conceptSetId) }],
+          combine: "OR",
+        },
+        attr.name,
+      );
     }
 
     // 2. explicit attribute constraints.
@@ -306,12 +334,15 @@ export async function resolveClausesToConstraints(
         );
       }
 
-      out.push({
-        ...base,
-        attributeConfigPath: attr.configPath,
-        expressions,
-        combine,
-      });
+      appendConstraint(
+        {
+          ...base,
+          attributeConfigPath: attr.configPath,
+          expressions,
+          combine,
+        },
+        attr.name,
+      );
     }
   }
 

@@ -99,7 +99,9 @@ export function registerCohortBuilderTools(server: McpServer) {
               exclude: z
                 .boolean()
                 .optional()
-                .describe("Negate this card (exclude matching patients)."),
+                .describe(
+                  "Negate an interaction card. Never use on Basic Data; use an inverse attribute operator instead.",
+                ),
               conceptSetId: z
                 .number()
                 .int()
@@ -117,7 +119,10 @@ export function registerCohortBuilderTools(server: McpServer) {
                     ]),
                   }),
                 )
-                .optional(),
+                .optional()
+                .describe(
+                  "At most one constraint per attribute; express numeric lower and upper bounds with op 'range'.",
+                ),
             }),
           )
           .describe("One clause per filter card occurrence."),

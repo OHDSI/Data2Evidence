@@ -255,7 +255,9 @@ export const getCohortPrompting = () => {
     "Basic Data" card. Use a constraint, e.g. age over 50 ->
     {attribute:"Age", op:">", value:50}; a range 18-65 -> op:"range",
     value:[18,65]. For category attributes (gender, race) pass the plain word
-    as value; the backend resolves it to the dataset's coded value.
+    as value; the backend resolves it to the dataset's coded value. Use at most
+    one constraint per attribute in a card. Never express a numeric range as
+    separate >= and <= constraints.
 
     Clinical events (conditions, drugs, measurements, procedures): resolve each
     to a concept-set id:
@@ -267,18 +269,20 @@ export const getCohortPrompting = () => {
     - Specific concept (a measurement/lab like "systolic blood pressure", a drug,
       a procedure) OR anything paired with a value: use search_concepts(term,
       domain) and pick the right standard concept.
-    - Then check_concept_coverage_in_dataset. ALWAYS call list_concept_sets FIRST
-      and REUSE the id of any existing set whose name matches what you'd create —
-      concept-set names are unique, so a duplicate create will fail. Only call
-      create_concept_set with those concept ids when no matching set exists. Use
-      the resulting concept-set id in your clause.
+    - Then check_concept_coverage_in_dataset. A same-name concept set may be
+      reused only when its saved concept definition is identical; never reuse a
+      same-name set with different concepts or flags. create_concept_set enforces
+      this and requires a different descriptive name on conflict. Use the
+      resulting concept-set id in your clause.
 
     Compose clauses, one per filter card occurrence:
       { card, conceptSetId?, constraints?:[{attribute, op, value}], exclude? }
     - A measurement with a value is ONE clause: conceptSetId for the concept + a
       constraint on its value attribute (e.g. {attribute:"Value As Number",
       op:"<", value:120}).
-    - "without" / "excluding" / "no <X>" -> that card's clause gets exclude:true.
+    - "without" / "excluding" / "no <X>" -> an INTERACTION card's clause gets
+      exclude:true. Never use exclude:true on Basic Data because all demographic
+      attributes share one card; use != or an inverse numeric operator instead.
     - Two different conditions -> two separate Condition Occurrence clauses.
 
     RULES
