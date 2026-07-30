@@ -593,6 +593,85 @@
           "command": "/app/run-flow.sh data-transformation-flow"
         },
         {
+          "name": "waveform_etl_plugin",
+          "entrypoint": "flows.waveform_etl_plugin.flow.waveform_etl_plugin",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": {
+                "$ref": "#/definitions/WaveformETLOptions",
+                "position": 0,
+                "title": "options"
+              }
+            },
+            "required": [
+              "options"
+            ],
+            "definitions": {
+              "WaveformETLOptions": {
+                "properties": {
+                  "flow_action_type": {
+                    "$ref": "#/definitions/FlowActionType"
+                  },
+                  "database_code": {
+                    "title": "Database Code",
+                    "type": "string"
+                  },
+                  "schema_name": {
+                    "title": "Schema Name",
+                    "type": "string"
+                  },
+                  "vocab_schema_name": {
+                    "title": "Vocab Schema Name",
+                    "type": "string"
+                  },
+                  "waveform_occurrence_concept_id": {
+                    "title": "Waveform Occurrence Concept Id",
+                    "type": "string"
+                  },
+                  "filepath": {
+                    "title": "Filepath",
+                    "type": "string"
+                  },
+                  "to_truncate": {
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "default": false,
+                    "title": "To Truncate"
+                  }
+                },
+                "required": [
+                  "flow_action_type",
+                  "database_code",
+                  "schema_name",
+                  "vocab_schema_name",
+                  "waveform_occurrence_concept_id",
+                  "filepath"
+                ],
+                "title": "WaveformETLOptions",
+                "type": "object"
+              },
+              "FlowActionType": {
+                "enum": [
+                  "load_waveform_data",
+                  "load_vocab"
+                ],
+                "title": "FlowActionType",
+                "type": "string"
+              }
+            }
+          },
+          "type": "waveform_etl",
+          "command": "/app/run-flow.sh data-transformation-flow"
+        },
+        {
           "name": "mimic_omop_conversion_plugin",
           "entrypoint": "flows.mimic_omop_conversion_plugin.flow.mimic_omop_conversion_plugin",
           "parameter_openapi_schema": {
