@@ -39,6 +39,60 @@ describe('useDashboardFlow', () => {
     expect(flow.dashboardCodes.value).toEqual([])
   })
 
+  it('preserves sections configured on each Cohort Builder wizard definition', async () => {
+    const wizardSections = [
+      {
+        id: 'measurement',
+        title: 'Measurement',
+        groups: [{ id: 'body-measurement', fieldIds: ['height', 'weight', 'bmi'], columns: 3 as const }],
+      },
+    ]
+    const dispatch = vi.fn(async (action: string, payload?: unknown) => {
+      const url = (payload as { url?: string } | undefined)?.url || ''
+      if (action === 'ajaxAuth' && url.includes('dashboard-codes')) {
+        return { data: [{ name: 'calculate-incidence' }] }
+      }
+      if (action === 'ajaxAuth' && url.includes('wizards/config')) {
+        return {
+          data: {
+            wizards: [
+              { id: 'calculate-incidence', name: 'Calculate Incidence', fields: [], sections: wizardSections },
+            ],
+          },
+        }
+      }
+      return undefined
+    })
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+
+    await flow.openDashboardModal()
+
+    expect(flow.wizardDefinitions.value[0].sections).toEqual(wizardSections)
+  })
+
+  it('does not apply obsolete root sections to wizards without their own layout', async () => {
+    const dispatch = vi.fn(async (action: string, payload?: unknown) => {
+      const url = (payload as { url?: string } | undefined)?.url || ''
+      if (action === 'ajaxAuth' && url.includes('dashboard-codes')) {
+        return { data: [{ name: 'calculate-incidence' }] }
+      }
+      if (action === 'ajaxAuth' && url.includes('wizards/config')) {
+        return {
+          data: {
+            sections: [{ id: 'obsolete-root', title: 'Obsolete', groups: [] }],
+            wizards: [{ id: 'calculate-incidence', name: 'Calculate Incidence', fields: [] }],
+          },
+        }
+      }
+      return undefined
+    })
+    const flow = useDashboardFlow(dispatch, createDashboardGetters())
+
+    await flow.openDashboardModal()
+
+    expect(flow.wizardDefinitions.value[0].sections).toBeUndefined()
+  })
+
   it('resetDashboardFlowState clears flow state', () => {
     const flow = useDashboardFlow(mockDispatch, mockGetters)
     flow.showDashboardSelectionModal.value = true
@@ -55,13 +109,10 @@ describe('useDashboardFlow', () => {
   })
 
   it('buildTable1WizardConfig normalizes selected concept sets into wizardConfig', () => {
-    const wizardConfig = buildTable1WizardConfig(
-      { id: 'table1' },
-      [
-        { id: ' 1 ', name: ' dm2hana ' },
-        { id: '2', name: '' },
-      ]
-    )
+    const wizardConfig = buildTable1WizardConfig({ id: 'table1' }, [
+      { id: ' 1 ', name: ' dm2hana ' },
+      { id: '2', name: '' },
+    ])
 
     expect(wizardConfig).toEqual({
       dashboardType: 'table1',
