@@ -3,17 +3,26 @@ import { env } from "../../env";
 
 /**
  * Wizards dashboards pass the selected condition identifier to parquet-export.
- * The condition typeahead must return concept_id for non-HANA (duckdb) datasets
- * and concept_code for HANA datasets, while still displaying the concept name.
+ * The condition typeahead returns the SNOMED concept_code for every dialect,
+ * while still displaying the concept name, so the dashboards can send a single
+ * CONCEPT_CODEn payload key regardless of the dataset's database.
  *
  * The 03_Config seed adds these attributes for fresh installs, but the seed is
  * insert-ignore on (Id, Version), so existing environments keep their stored
  * config. This migration patches the stored config JSON in place, adding the new
  * attributes only when absent (non-destructive to any admin customisations).
+ *
+ * An earlier revision of this migration added a duckdb `condition_occ_concept_id`
+ * attribute instead. It never shipped, but it may have run on a developer's
+ * Minerva, so `up()` also removes that attribute — leaving it behind would expose
+ * a raw concept id in the cohort builder's filter card.
  */
 
 const TABLE = "ConfigDbModels_Config";
 const CONDITION_INTERACTION = "patient.interactions.conditionoccurrence";
+
+// Attribute added by the superseded revision of this migration.
+const LEGACY_DUCKDB_ATTRIBUTE = "condition_occ_concept_id";
 
 const disabledLangName = ["en", "de", "fr", "es", "pt", "zh"].map((lang) => ({
   lang,
@@ -21,22 +30,22 @@ const disabledLangName = ["en", "de", "fr", "es", "pt", "zh"].map((lang) => ({
   visible: true,
 }));
 
-// duckdb / non-HANA: return concept_id, search by concept name
-const duckdbConceptIdAttribute = {
-  name: [{ lang: "", value: "Condition concept Id" }],
+// duckdb / non-HANA: return the SNOMED concept_code, search by concept name
+const duckdbConceptCodeAttribute = {
+  name: [{ lang: "", value: "Condition concept code" }],
   disabledLangName,
   type: "text",
-  expression: "@REF.CONCEPT_ID",
+  expression: "@REF.CONCEPT_CODE",
   defaultPlaceholder: "@REF",
   defaultFilter: "@REF.concept_id = @COND.condition_concept_id",
   referenceFilter:
-    "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
-  referenceExpression: "@REF.CONCEPT_ID",
+    "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND @REF.VOCABULARY_ID = 'SNOMED' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+  referenceExpression: "@REF.CONCEPT_CODE",
   order: 11,
   domainFilter: "",
   standardConceptCodeFilter: "",
   cohortDefinitionKey: "CodesetId",
-  conceptIdentifierType: "id",
+  conceptIdentifierType: "code",
   useRefValue: true,
   useRefText: true,
 };
@@ -61,16 +70,25 @@ const hanaConceptCodeAttribute = {
   useRefText: true,
 };
 
-const paEntry = (attributeName: string, order: number, modelName: string) => ({
+const paEntry = (
+  attributeName: string,
+  order: number,
+  modelName: string,
+  // The duckdb attribute exists only so the wizards typeahead can resolve it via
+  // getMyConfig. Hidden everywhere so it never reaches the cohort builder:
+  // MriConfigFilterCard only collects an attribute when filtercard.visible is
+  // true, or when it is a measure/category.
+  visible = true,
+) => ({
   source: `${CONDITION_INTERACTION}.attributes.${attributeName}`,
   ordered: false,
   cached: true,
   useRefText: true,
   useRefValue: true,
-  category: true,
+  category: visible,
   measure: false,
-  filtercard: { initial: false, visible: true, order },
-  patientlist: { initial: false, visible: true, linkColumn: false },
+  filtercard: { initial: false, visible, order },
+  patientlist: { initial: false, visible, linkColumn: false },
   modelName,
 });
 
@@ -84,8 +102,8 @@ const CDW_TARGETS: Array<{
   {
     id: "e10f83a0-ade9-4a33-90ae-cf760813943c", // OMOP_DM (duckdb)
     version: "1",
-    attributeName: "condition_occ_concept_id",
-    attribute: duckdbConceptIdAttribute,
+    attributeName: "conditionconceptcode",
+    attribute: duckdbConceptCodeAttribute,
   },
   {
     id: "d10f83a0-ade9-4a33-90ae-cf760813953b", // OMOP_HANA_DM
@@ -111,8 +129,8 @@ const PA_TARGETS: Array<{
   {
     id: "4fce3cb7-32bf-4b46-8cba-32e4f77a14dd", // OMOP (duckdb)
     version: "A",
-    attributeName: "condition_occ_concept_id",
-    entry: paEntry("condition_occ_concept_id", 12, "Condition concept Id"),
+    attributeName: "conditionconceptcode",
+    entry: paEntry("conditionconceptcode", 12, "Condition concept code", false),
   },
   {
     id: "92d7c6f8-3118-4256-ab22-f2f7fd19d4e7", // OMOP_HANA
@@ -127,6 +145,10 @@ const PA_TARGETS: Array<{
     entry: paEntry("conditionconceptcode", 5, "Condition concept code"),
   },
 ];
+
+// Configs that the superseded revision may have patched with the concept_id attribute.
+const LEGACY_CDW_IDS = [{ id: "e10f83a0-ade9-4a33-90ae-cf760813943c", version: "1" }];
+const LEGACY_PA_IDS = [{ id: "4fce3cb7-32bf-4b46-8cba-32e4f77a14dd", version: "A" }];
 
 function parseData(raw: unknown): any {
   return typeof raw === "string" ? JSON.parse(raw) : raw;
@@ -149,7 +171,46 @@ async function writeData(knex: Knex, id: string, version: string, data: any) {
     .update({ Data: JSON.stringify(data) });
 }
 
+async function removeCdwAttribute(
+  knex: Knex,
+  id: string,
+  version: string,
+  attributeName: string,
+) {
+  const data = await readData(knex, id, version);
+  const attrs = data?.patient?.interactions?.conditionoccurrence?.attributes;
+  if (!attrs || !attrs[attributeName]) return;
+  delete attrs[attributeName];
+  await writeData(knex, id, version, data);
+}
+
+async function removePaAttribute(
+  knex: Knex,
+  id: string,
+  version: string,
+  attributeName: string,
+) {
+  const data = await readData(knex, id, version);
+  const filtercards: any[] = data?.filtercards;
+  if (!Array.isArray(filtercards)) return;
+  const card = filtercards.find((c) => c?.source === CONDITION_INTERACTION);
+  if (!card || !Array.isArray(card.attributes)) return;
+  const sourcePath = `${CONDITION_INTERACTION}.attributes.${attributeName}`;
+  if (!card.attributes.some((a: any) => a?.source === sourcePath)) return;
+  card.attributes = card.attributes.filter((a: any) => a?.source !== sourcePath);
+  await writeData(knex, id, version, data);
+}
+
 export async function up(knex: Knex): Promise<void> {
+  // Drop the concept_id attribute left behind by the superseded revision, so it
+  // stops showing up in the cohort builder's condition filter card.
+  for (const t of LEGACY_CDW_IDS) {
+    await removeCdwAttribute(knex, t.id, t.version, LEGACY_DUCKDB_ATTRIBUTE);
+  }
+  for (const t of LEGACY_PA_IDS) {
+    await removePaAttribute(knex, t.id, t.version, LEGACY_DUCKDB_ATTRIBUTE);
+  }
+
   for (const t of CDW_TARGETS) {
     const data = await readData(knex, t.id, t.version);
     const attrs =
@@ -174,22 +235,10 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   for (const t of CDW_TARGETS) {
-    const data = await readData(knex, t.id, t.version);
-    const attrs =
-      data?.patient?.interactions?.conditionoccurrence?.attributes;
-    if (!attrs || !attrs[t.attributeName]) continue;
-    delete attrs[t.attributeName];
-    await writeData(knex, t.id, t.version, data);
+    await removeCdwAttribute(knex, t.id, t.version, t.attributeName);
   }
 
   for (const t of PA_TARGETS) {
-    const data = await readData(knex, t.id, t.version);
-    const filtercards: any[] = data?.filtercards;
-    if (!Array.isArray(filtercards)) continue;
-    const card = filtercards.find((c) => c?.source === CONDITION_INTERACTION);
-    if (!card || !Array.isArray(card.attributes)) continue;
-    const sourcePath = `${CONDITION_INTERACTION}.attributes.${t.attributeName}`;
-    card.attributes = card.attributes.filter((a: any) => a?.source !== sourcePath);
-    await writeData(knex, t.id, t.version, data);
+    await removePaAttribute(knex, t.id, t.version, t.attributeName);
   }
 }

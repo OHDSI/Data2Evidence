@@ -3,7 +3,6 @@ export interface ShinyDashboardContext {
   cohortId: string
   wizardConfig: Record<string, unknown> | null
   mriquery: string | null
-  dialect: string | null
 }
 
 export interface ShinyDashboardAuthMessage {
@@ -40,7 +39,6 @@ export function buildShinyDashboardAuthMessage({
   cohortId,
   wizardConfig,
   mriquery,
-  dialect,
   timestamp = Date.now(),
 }: {
   token: string
@@ -48,7 +46,6 @@ export function buildShinyDashboardAuthMessage({
   cohortId: string
   wizardConfig?: Record<string, unknown> | null
   mriquery?: string | null
-  dialect?: string | null
   timestamp?: number
 }): ShinyDashboardAuthMessage {
   return {
@@ -60,7 +57,6 @@ export function buildShinyDashboardAuthMessage({
       cohortId,
       wizardConfig: serializeWizardConfig(wizardConfig),
       mriquery: mriquery || null,
-      dialect: dialect || null,
     },
   }
 }

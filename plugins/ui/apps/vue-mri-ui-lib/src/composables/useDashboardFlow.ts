@@ -78,7 +78,6 @@ export interface DashboardContext {
   wizardConfig: WizardConfig | null
   conditions: ConditionValue[] | null
   mriquery: string | null
-  dialect: string | null
 }
 
 export interface Bookmark {
@@ -214,15 +213,12 @@ export function useDashboardFlow(
   >([])
   // Flag to prevent bookmark watcher from resetting state during flow
   let isProcessingDashboardFlow = false
-  // Database dialect (e.g. 'hana', 'duckdb', 'postgres') of the selected dataset.
-  // Determines whether the condition filter is sent as concept_code (HANA) or concept_id (non-HANA).
-  const datasetDialect = ref<string | null>(null)
 
   // Computed
   const dashboardContext = computed(() => {
     const activeBookmark = getters.getActiveBookmark
     if (!activeBookmark) {
-      return { wizardConfig: null, conditions: null, mriquery: null, dialect: datasetDialect.value }
+      return { wizardConfig: null, conditions: null, mriquery: null }
     }
     const localConfig = activeDashboardWizardConfig.value
     const storeConfig = getters.getWizardConfig
@@ -234,7 +230,7 @@ export function useDashboardFlow(
     } catch (e) {
       console.error('Failed to generate mriquery:', e)
     }
-    return { wizardConfig, conditions: null, mriquery, dialect: datasetDialect.value }
+    return { wizardConfig, conditions: null, mriquery }
   })
 
   const confirmedTable1ConceptSets = computed<Table1ConceptSetSelection[]>(() => {
@@ -696,19 +692,6 @@ export function useDashboardFlow(
     return normalizeResponseArray(response.data)
   }
 
-  async function fetchDatasetDialect(datasetId: string): Promise<string | null> {
-    try {
-      const response = (await dispatch('ajaxAuth', {
-        method: 'get',
-        url: `/system-portal/dataset?datasetId=${encodeURIComponent(datasetId)}`,
-      })) as { data?: { dialect?: string } }
-      return response.data?.dialect ?? null
-    } catch (error) {
-      console.error('Failed to fetch dataset dialect:', error)
-      return null
-    }
-  }
-
   async function fetchWizardDefinitions(datasetId: string): Promise<WizardDefinition[]> {
     const query = `datasetId=${encodeURIComponent(datasetId)}`
     const urls = [`/pa-config-svc/wizards/config?${query}`, `/d2e/pa-config-svc/wizards/config?${query}`]
@@ -741,14 +724,12 @@ export function useDashboardFlow(
       if (!datasetId) {
         throw new Error('No dataset selected')
       }
-      const [codes, definitions, dialect] = await Promise.all([
+      const [codes, definitions] = await Promise.all([
         fetchDashboardCodes(datasetId),
         fetchWizardDefinitions(datasetId),
-        fetchDatasetDialect(datasetId),
       ])
       dashboardCodes.value = codes
       wizardDefinitions.value = definitions
-      datasetDialect.value = dialect
     } catch (error) {
       dashboardSelectionError.value = (error as Error)?.message || 'Failed to load dashboard configuration'
     } finally {

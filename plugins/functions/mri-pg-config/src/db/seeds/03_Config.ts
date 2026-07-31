@@ -14366,11 +14366,11 @@ export const cdwConfigDuckdb = {
                         "cohortDefinitionKey": "CodesetId",
                         "conceptIdentifierType": "name"
                     },
-                    "condition_occ_concept_id": {
+                    "conditionconceptcode": {
                         "name": [
                             {
                                 "lang": "",
-                                "value": "Condition concept Id"
+                                "value": "Condition concept code"
                             }
                         ],
                         "disabledLangName": [
@@ -14406,16 +14406,16 @@ export const cdwConfigDuckdb = {
                             }
                         ],
                         "type": "text",
-                        "expression": "@REF.CONCEPT_ID",
+                        "expression": "@REF.CONCEPT_CODE",
                         "defaultPlaceholder": "@REF",
                         "defaultFilter": "@REF.concept_id = @COND.condition_concept_id",
-                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
-                        "referenceExpression": "@REF.CONCEPT_ID",
+                        "referenceFilter": "@REF.DOMAIN_ID = 'Condition' AND @REF.STANDARD_CONCEPT = 'S' AND @REF.VOCABULARY_ID = 'SNOMED' AND JARO_SIMILARITY(lower(@REF.CONCEPT_NAME), lower('@SEARCH_QUERY')) >= 0.65",
+                        "referenceExpression": "@REF.CONCEPT_CODE",
                         "order": 11,
                         "domainFilter": "",
                         "standardConceptCodeFilter": "",
                         "cohortDefinitionKey": "CodesetId",
-                        "conceptIdentifierType": "id",
+                        "conceptIdentifierType": "code",
                         "useRefValue": true,
                         "useRefText": true
                     },
@@ -26423,24 +26423,24 @@ const paConfigDuckdb = {
                     "modelName": "Condition concept Name"
                 },
                 {
-                    "source": "patient.interactions.conditionoccurrence.attributes.condition_occ_concept_id",
+                    "source": "patient.interactions.conditionoccurrence.attributes.conditionconceptcode",
                     "ordered": false,
                     "cached": true,
                     "useRefText": true,
                     "useRefValue": true,
-                    "category": true,
+                    "category": false,
                     "measure": false,
                     "filtercard": {
                         "initial": false,
-                        "visible": true,
+                        "visible": false,
                         "order": 12
                     },
                     "patientlist": {
                         "initial": false,
-                        "visible": true,
+                        "visible": false,
                         "linkColumn": false
                     },
-                    "modelName": "Condition concept Id"
+                    "modelName": "Condition concept code"
                 },
                 {
                     "source": "patient.interactions.conditionoccurrence.attributes.condition_source_concept_code",
