@@ -28,9 +28,14 @@ const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> 
     );
   }
 
+  // Sort data by XCALENDARMONTH
+  const sortedData = [...data].sort((a: any, b: any) => {
+    return Number(a["XCALENDARMONTH"]) - Number(b["XCALENDARMONTH"]);
+  });
+
   // Parse and format line chart data
   // Parse XCALENDARMONTH from e.g 200910 -> 10/2009
-  const lineChartXAxisData = data.map(
+  const lineChartXAxisData = sortedData.map(
     (obj: any) => obj["XCALENDARMONTH"].toString().slice(-2) + "/" + obj["XCALENDARMONTH"].toString().slice(0, 4)
   );
 
