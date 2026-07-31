@@ -52,14 +52,14 @@ data:
 
         # Logto api server
         @logto {
-            path /api/*
-            path /oidc/*
+            path /api/**
+            path /oidc/**
             path /sign-in
             path /consent
-            path /callback/* # For azure connector
+            path /callback/** # For azure connector
             
             path /d2e/logto/index.*
-            path /d2e/logto/assets/* # logto assets are moved to this path
+            path /d2e/logto/assets/** # logto assets are moved to this path
         }
 
         handle @logto {
@@ -129,7 +129,7 @@ data:
 
     :8080 {
         @oidc {
-            path /oidc/*
+            path /oidc/**
         }
         handle @oidc {
             reverse_proxy http://idp.d2e.svc.cluster.local

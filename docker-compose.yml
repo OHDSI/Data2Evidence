@@ -605,14 +605,14 @@ services:
 
           # Logto api server
           @logto {
-            path /api/*
-            path /oidc/*
+            path /api/**
+            path /oidc/**
             path /sign-in
             path /consent
-            path /callback/* # For azure connector
+            path /callback/** # For azure connector
 
             path /d2e/logto/index.*
-            path /d2e/logto/assets/* # logto assets are moved to this path
+            path /d2e/logto/assets/** # logto assets are moved to this path
           }
 
           handle @logto {
@@ -719,7 +719,7 @@ services:
         # Does NOT set X-Forwarded headers - metadata will have internal URLs for token exchange
         :8080 {
           @oidc {
-            path /oidc/*
+            path /oidc/**
           }
           handle @oidc {
             reverse_proxy http://${PROJECT_NAME:-d2e}-logto-1:3001
