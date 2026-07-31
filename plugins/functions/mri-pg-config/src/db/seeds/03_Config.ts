@@ -1,6 +1,15 @@
 import { Knex } from "knex";
 import { env } from "../../env"
-import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb";
+import { cdwFHIRConfigDuckdb, paFHIRConfigDuckdb } from "../configs/fhirConfigDuckdb.ts";
+import {
+    waveformOccurrenceInteraction,
+    waveformRegistryInteraction,
+    dimWaveformOcc,
+    dimWaveformReg,
+    waveformTableMappingAdditions,
+    waveformOccurrenceInteractionFiltercard,
+    waveformRegistryInteractionFiltercard,
+} from "../configs/waveformConfigDuckdb.ts";
 
 export async function seed(knex: Knex): Promise<void> {
   // Inserts seed entries
@@ -35,6 +44,34 @@ export async function seed(knex: Knex): Promise<void> {
         Created: "2025-03-07 19:30:54",
         Modifier: "ALICE",
         Modified: "2025-03-07 20:56:54",
+      },
+      {
+        Id: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        Version: "1",
+        Status: "A",
+        Name: "WAVEFORM_DM",
+        Type: "HC/HPH/CDW",
+        Data: cdwWaveformConfig,
+        ParentId: "",
+        ParentVersion: "",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
+      },
+      {
+        Id: "e618155c-feb0-48a8-9ccc-629e2824a1f7",
+        Version: "A",
+        Status: "",
+        Name: "WAVEFORM",
+        Type: "HC/MRI/PA",
+        Data: paWaveformConfig,
+        ParentId: "8775a19f-0b6f-4e76-9b72-7794a0c66a73",
+        ParentVersion: "1",
+        Creator: "ALICE",
+        Created: "2026-07-20 00:00:00",
+        Modifier: "ALICE",
+        Modified: "2026-07-20 00:00:00",
       },
       {
         Id: "d10f83a0-ade9-4a33-90ae-cf760813953b",
@@ -38218,4 +38255,40 @@ const omopHanaLeanPAConfig = {
         "inclusionReport": false,
         "intersectViewInclusionReport": false,
     }
+};
+
+export const cdwWaveformConfig = {
+    ...cdwConfigDuckdb,
+    patient: {
+        ...cdwConfigDuckdb.patient,
+        interactions: {
+            ...cdwConfigDuckdb.patient.interactions,
+            waveformoccurrence: waveformOccurrenceInteraction,
+            wfreg: waveformRegistryInteraction
+        }
+    },
+    advancedSettings: {
+        ...cdwConfigDuckdb.advancedSettings,
+        tableTypePlaceholderMap: {
+            ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap,
+            dimTables: [
+                ...cdwConfigDuckdb.advancedSettings.tableTypePlaceholderMap.dimTables,
+                dimWaveformOcc,
+                dimWaveformReg
+            ]
+        },
+        tableMapping: {
+            ...cdwConfigDuckdb.advancedSettings.tableMapping,
+            ...waveformTableMappingAdditions
+        }
+    }
+};
+
+export const paWaveformConfig = {
+    ...paConfigDuckdb,
+    filtercards: [
+        ...paConfigDuckdb.filtercards,
+        waveformOccurrenceInteractionFiltercard,
+        waveformRegistryInteractionFiltercard
+    ]
 };

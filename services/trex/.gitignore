@@ -4,3 +4,4 @@ libtrexsql_engine.so
 libwebapi-native.so
 trexas.trex
 webapi.trex
+plugin-artifacts
