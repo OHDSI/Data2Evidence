@@ -39,9 +39,16 @@ data:
         }
 
         @aliasbasepaths {
-            path_regexp portal_basepath ^/(d2e|portal)(/)?$
+            path_regexp portal_basepath ^/(d2e)(/)?$
         }
         redir @aliasbasepaths /d2e/portal
+
+        @portallegacy {
+            method GET HEAD
+            path /portal
+            path /portal/*
+        }
+        redir @portallegacy /d2e/portal 301
 
         # Logto api server
         @logto {
@@ -159,5 +166,4 @@ data:
   CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
   CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL: "https://{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
   LOGTO_ROLES_AZ_GROUPS_MAPPING: {{ .Values.global.idp.LOGTO_ROLES_AZ_GROUPS_MAPPING | quote }}
-
 

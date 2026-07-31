@@ -743,9 +743,16 @@ services:
           $TLS__CADDY_DIRECTIVE
 
           @aliasbasepaths {
-              path_regexp portal_basepath ^/(d2e|portal)(/)?$
+              path_regexp portal_basepath ^/(d2e)(/)?$
           }
           redir @aliasbasepaths /d2e/portal
+
+          @portallegacy {
+              method GET HEAD
+              path /portal
+              path /portal/*
+          }
+          redir @portallegacy /d2e/portal 301
           import portal
         }
 
@@ -756,9 +763,16 @@ services:
         # Access the app at http://localhost:41180.
         http://${CADDY__D2E__PUBLIC_FQDN:-${CADDY__ALP__PUBLIC_FQDN:-localhost}}:41180 {
           @aliasbasepaths2 {
-              path_regexp portal_basepath ^/(d2e|portal)(/)?$
+              path_regexp portal_basepath ^/(d2e)(/)?$
           }
           redir @aliasbasepaths2 /d2e/portal
+
+          @portallegacy2 {
+              method GET HEAD
+              path /portal
+              path /portal/*
+          }
+          redir @portallegacy2 /d2e/portal 301
           import portal
         }
       EOT
