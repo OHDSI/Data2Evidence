@@ -48,7 +48,7 @@ data:
             path /portal
             path /portal/*
         }
-        redir @portallegacy /d2e/portal 301
+        redir @portallegacy /d2e{uri} 301
 
         # Logto api server
         @logto {
@@ -166,4 +166,3 @@ data:
   CADDY__D2E__PUBLIC_FQDN: "{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
   CADDY__D2E__PUBLIC_FQDN_W_PROTOCOL: "https://{{ .Values.global.config.CADDY__D2E__PUBLIC_FQDN }}"
   LOGTO_ROLES_AZ_GROUPS_MAPPING: {{ .Values.global.idp.LOGTO_ROLES_AZ_GROUPS_MAPPING | quote }}
-
