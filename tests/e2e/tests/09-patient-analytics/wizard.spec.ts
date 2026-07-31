@@ -587,7 +587,8 @@ test(TEST_NAME, async ({ page }) => {
                 conditions = wizard_config.get("conditions", []) if wizard_config else []
 
                 # Conditions are matched on the SNOMED concept_code for every dialect.
-                # Unused slots substitute to '' and simply fail the join.
+                # Unused slots send the same "abc123" filler the shipped dashboards use;
+                # it matches no concept, so the INNER JOIN drops the row.
                 condition_filters = []
                 for idx in range(5):
                     filter_item = {}
@@ -595,7 +596,7 @@ test(TEST_NAME, async ({ page }) => {
                         filter_item[f"CONCEPT_CODE{idx+1}"] = sanitize_input(str(conditions[idx].get("value", "")))
                         filter_item[f"WILDCARD_FLAG{idx+1}"] = 1 if conditions[idx].get("useDescendants", False) else 0
                     else:
-                        filter_item[f"CONCEPT_CODE{idx+1}"] = ""
+                        filter_item[f"CONCEPT_CODE{idx+1}"] = "abc123"
                         filter_item[f"WILDCARD_FLAG{idx+1}"] = 0
                     condition_filters.append(filter_item)
                     
