@@ -42,7 +42,7 @@ const DrilldownPrevalenceByMonthChart: FC<DrilldownPrevalenceByMonthChartProps> 
   const series = [
     {
       type: "line",
-      data: data.map((obj: any) => Number(obj["YPREVALENCE1000PP"]).toFixed()),
+      data: sortedData.map((obj: any) => Number(obj["YPREVALENCE1000PP"]).toFixed()),
     },
   ];
 
