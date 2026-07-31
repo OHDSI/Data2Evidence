@@ -79,12 +79,13 @@ def create_embeddings_hana(dbdao_hana, database_code, schema_name, chunksize):
     select_sql = sqla.text(f'SELECT CONCEPT_ID, CONCEPT_NAME FROM {quoted_schema}.CONCEPT')
     count_sql = sqla.text(f'SELECT COUNT(*) FROM {quoted_schema}.CONCEPT')
 
-    cache_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code)
+    # cache_id for HANA is set: database_code + "_cache", according to HANA attachement in trex, otherwise the Trex conncetion will always rounte to HANA instead of the cache
+    cache_dao = DBDao(dialect=SupportedDatabaseDialects.TREX, database_code=database_code, cache_id=database_code + "_cache")
     cache_dao.execute_sql("LOAD vss")
 
     embedding_table = 'concept_name_embeddings'
     embedding_cols = {'concept_id': 'INTEGER', embedding_col_name: 'FLOAT[384]'}
-    db_schema = f"{database_code}.{schema_name}"
+    db_schema = f"{database_code}_cache.{schema_name}"
 
     # Make sure the cache schema exists before writing embeddings. Mirrors create_cachedb_hana_plugin
     cache_dao.execute_sql("CALL pg_clear_cache();")

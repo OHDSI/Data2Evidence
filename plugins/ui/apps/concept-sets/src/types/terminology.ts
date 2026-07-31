@@ -38,7 +38,11 @@ export type ConceptSetConcept = {
 export type ConceptSet = {
   concepts: ConceptSetConcept[];
   name: string;
-  id: number;
+  id: string;
+  externalId: number;
+  source: "legacy" | "webapi";
+  hasWriteAccess: boolean;
+  hasReadAccess: boolean;
   shared: boolean;
   createdBy?: string;
   createdDate?: string;
@@ -51,9 +55,10 @@ export type ConceptSetWithConceptDetails = ConceptSet & {
   concepts: (ConceptSetConcept & FhirValueSetExpansionContainsWithExt)[];
 };
 
-// Vue requires id as a string instead of number because addThis.value in ui/apps/vue-mri-ui-lib/src/lib/ui/app-tag-input.vue
+// Vue requires id as a string (see addThis.value in ui/apps/vue-mri-ui-lib/src/lib/ui/app-tag-input.vue).
+// Compound ids are strings by construction, so no override is needed.
 export type OnCloseReturnValues = {
-  currentConceptSet: (Omit<ConceptSet, "id"> & { id: string }) | null;
+  currentConceptSet: ConceptSet | null;
   selectedConcepts?: FhirValueSetExpansionContainsWithExt[];
 };
 
@@ -216,7 +221,8 @@ export interface IWebapiConceptRelated extends IWebapiConcept {
 export interface IWebapiConceptSet {
   createdDate: number;
   name: string;
-  id: number;
+  id: string;
+  externalId: number;
   modifiedDate: number;
   hasWriteAccess: boolean;
   hasReadAccess: boolean;
@@ -233,6 +239,7 @@ export interface IWebapiConceptSet {
   };
   description?: string | undefined;
   tags?: unknown;
+  source: "legacy" | "webapi";
 }
 
 export interface IWebapiConceptSetExpression {

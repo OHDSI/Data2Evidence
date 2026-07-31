@@ -6,7 +6,7 @@ import { generatePassword } from '../utils'
 import { UserService } from './UserService'
 import { UserGroupService } from './UserGroupService'
 import { UserField } from '../repositories'
-import { LogtoAPI } from '../api'
+import { LogtoAPI, WebAPI } from '../api'
 
 @Service()
 export class MemberService {
@@ -15,7 +15,8 @@ export class MemberService {
   constructor(
     private readonly userService: UserService,
     private readonly userGroupService: UserGroupService,
-    private readonly logtoApi: LogtoAPI
+    private readonly logtoApi: LogtoAPI,
+    private readonly webApi: WebAPI
   ) {}
 
   async addUser(request: UserAddRequest) {
@@ -87,12 +88,27 @@ export class MemberService {
 
     try {
       await this.userService.deleteUser(userId, trx)
-      await this.logtoApi.deleteUser(user.idpUserId)
+      if (user.idpUserId) {
+        await this.logtoApi.deleteUser(user.idpUserId)
+      }
       await trx.commit()
     } catch (err) {
       await trx.rollback()
       this.logger.error(`Error when deleting user: ${JSON.stringify(err)}`)
       throw err
+    }
+
+    const authorizationHeader = Container.get<string>(CONTAINER_KEY.AUTHORIZATION_HEADER)
+    if (user.idpUserId && authorizationHeader) {
+      try {
+        await this.webApi.deleteUserAccess(user.idpUserId, authorizationHeader)
+      } catch (err) {
+        this.logger.warn(
+          `WebAPI access cleanup failed for ${user.idpUserId}; stale access may remain: ${JSON.stringify(err)}`
+        )
+      }
+    } else if (user.idpUserId) {
+      this.logger.warn(`No authorization header for user ${userId}; skipping WebAPI cleanup`)
     }
   }
 

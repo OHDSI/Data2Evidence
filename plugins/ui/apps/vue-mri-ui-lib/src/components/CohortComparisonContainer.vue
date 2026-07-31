@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useStore } from 'vuex'
 import BoxplotCohortCompare from './BoxplotCohortCompare.vue'
 import CohortCompareAxisButton from './CohortCompareAxisButton.vue'
@@ -150,6 +150,13 @@ const props = withDefaults(defineProps<Props>(), {
   bookmarkIds: () => [],
   activeChart: 'stacked',
 })
+
+watch(
+  () => props.activeChart,
+  () => {
+    chartBusy.value = false
+  }
+)
 
 const store = useStore()
 
