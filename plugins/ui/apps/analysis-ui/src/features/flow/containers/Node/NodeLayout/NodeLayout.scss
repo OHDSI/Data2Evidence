@@ -93,6 +93,14 @@
           fill: var(--color-primary);
         }
       }
+
+      &__delete {
+        &:hover {
+          path[fill="navy"] {
+            fill: var(--color-feedback-alarm);
+          }
+        }
+      }
     }
 
     &__result {
