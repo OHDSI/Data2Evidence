@@ -395,6 +395,7 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
+      COHORT_HISTORY_MAX_TOKENS: ${COHORT_HISTORY_MAX_TOKENS:-4000}
       # Pythia agent (Amazon Bedrock). AWS_BEARER_TOKEN_BEDROCK from the deploy env.
       AWS_REGION: ${AWS_REGION:-us-east-1}
       BAO_AGENT_MODEL: ${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}
