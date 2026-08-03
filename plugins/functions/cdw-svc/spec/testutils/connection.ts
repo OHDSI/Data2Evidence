@@ -31,17 +31,31 @@ export function createConnection(
           reject(err);
         } else {
           client = c;
+          const schemaName = credentials.schema;
           dbConnectionUtil.DBConnectionUtil.getConnection(
             credentials.dialect,
             client,
-            credentials.schema,
+            schemaName,
             (err, data) => {
               if (err) {
                 reject(
-                  new Error(`Error in setting schema = ${credentials.schema}`)
+                  new Error(`Error in getting database connection`)
                 );
-              } else {
+                return;
+              } else if (!schemaName) {
                 resolve(data);
+              } else {
+                data.executeUpdate(`SET SCHEMA "${schemaName}"`, [], (setErr) => {
+                  if (setErr) {
+                    reject(
+                      new Error(
+                        `Error in setting schema = ${schemaName}`,
+                      ),
+                    );
+                    return;
+                  }
+                  resolve(data);
+                });
               }
             }
           );
