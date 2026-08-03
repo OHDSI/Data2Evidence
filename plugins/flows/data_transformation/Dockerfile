@@ -124,7 +124,10 @@ RUN uv pip install --upgrade "pip<24" \
     && uv pip install spacy==3.8.2 \
     && uv pip install spacy-transformers==1.3.9 \
     && uv pip install --no-deps https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.4/en_ner_bc5cdr_md-0.5.4.tar.gz \
-    && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378#subdirectory=python_bindings \
+    # Full SHA required: this commit is no longer reachable from any nmslib
+    # branch, so a short rev cannot be resolved. GitHub only serves it by
+    # full SHA, via the pull-request refs that still reference it.
+    && uv pip install git+https://github.com/nmslib/nmslib.git@2ae5378027a107474a952edae1e1c2dc2df941d2#subdirectory=python_bindings \
     # HuggingFace intermittently returns HTTP 429 for this wheel; retry with
     # backoff so a transient rate-limit doesn't fail the image build.
     && ( for i in 1 2 3 4 5 6; do \
