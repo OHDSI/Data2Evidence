@@ -120,7 +120,9 @@ const getConnections = async ({
       userObj,
     });
 
-  await setSchema(configConnection, schemaName);
+  if (configCredentials.dialect === "hana") {
+    await setSchema(configConnection, schemaName);
+  }
 
   return {
     configConnection: configConnection,
