@@ -47,6 +47,67 @@
   }
 }
 
+// Shared geometry for the icon-only buttons of the chart toolbar action group.
+// Chart buttons, drilldown, filter summary and download each used to bring their
+// own box, padding and icon size, so they never lined up with one another.
+@mixin mriToolbarIconButton {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 3.1px;
+  background: none;
+  color: var(--color-mri-header-text-dark);
+  outline: none;
+  cursor: pointer;
+
+  .icon,
+  .app-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    margin: 0;
+    font-size: 17px;
+    font-weight: normal;
+    line-height: 1;
+    color: inherit;
+    cursor: inherit;
+  }
+}
+
+// Single disabled treatment for every icon button of the chart toolbar action
+// group. The disabled colour token carries the state on its own; the extra
+// opacity each button used to set is what made Download render lighter than
+// Filter by Selection once Bootstrap's own `.btn:disabled` opacity stacked on
+// top of it.
+@mixin mriToolbarIconButtonDisabled {
+  color: var(--color-mri-disabled-text);
+  background: none;
+  opacity: 1;
+  cursor: default;
+
+  .icon,
+  .app-icon {
+    color: var(--color-mri-disabled-text);
+    cursor: default;
+  }
+
+  &:hover {
+    background: none;
+    color: var(--color-mri-disabled-text);
+
+    .icon,
+    .app-icon {
+      color: var(--color-mri-disabled-text);
+    }
+  }
+}
+
 @mixin mriTagFocus {
   &:focus {
     outline: none;
