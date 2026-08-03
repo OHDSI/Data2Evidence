@@ -2,6 +2,7 @@
 node_modules
 /target
 /dist
+/dist-atlas
 /coverage
 junit.xml
 
