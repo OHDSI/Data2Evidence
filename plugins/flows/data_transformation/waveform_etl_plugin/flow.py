@@ -11,6 +11,8 @@ from .waveform_reader import parse_record, get_next_record_ids, _discover_record
 
 from _shared_flow_utils.dao.DBDao import DBDao
 
+from .waveform_reader import get_existing_source_id_map
+
 
 def get_waveform_data_path(filepath: str) -> Path:
     """
@@ -28,8 +30,9 @@ def extract_records(waves_root: Path) -> list[RecordInfo]:
 
     records = _discover_records(waves_root)
     logger.info("Found %d records under %s", len(records), waves_root)
+
     for rec in records:
-        logger.info(f"Record: {rec.group_id}")
+        logger.debug("Discovered record: %s", rec.header_path)
 
     infos: list[RecordInfo] = []
     for ref in records:
@@ -49,16 +52,40 @@ def fetch_next_record_ids(schema: str, tables_to_ingest: dict[str, str], dbdao) 
 
 
 @task(log_prints=True)
+def fetch_existing_id_maps(schema: str, dbdao) -> tuple[dict, dict, dict]:
+    """Return existing source→id maps for person, visit_occurrence, and waveform_occurrence from the DB.
+
+    These are used to avoid re-inserting rows that are already present when
+    running in append mode (to_truncate=False).
+    """
+    existing_person_map = get_existing_source_id_map(
+        schema, "person", "person_source_value", "person_id", dbdao
+    )
+    existing_visit_map = get_existing_source_id_map(
+        schema, "visit_occurrence", "visit_source_value", "visit_occurrence_id", dbdao
+    )
+    existing_waveform_occurrence_map = get_existing_source_id_map(
+        schema, "waveform_occurrence", "waveform_occurrence_source_value", "waveform_occurrence_id", dbdao
+    )
+    return existing_person_map, existing_visit_map, existing_waveform_occurrence_map
+
+
+@task(log_prints=True)
 def build_id_maps(
-    infos: list[RecordInfo], next_record_ids: dict[str, int]
+    infos: list[RecordInfo],
+    next_record_ids: dict[str, int],
+    existing_person_map: dict | None = None,
+    existing_visit_map: dict | None = None,
 ) -> tuple[dict[int, int], dict[int, int]]:
     person_id_map = build_sequential_id_map(
         pd.Series([int(info.subject_id) for info in infos]),
         next_record_ids["person"],
+        existing=existing_person_map,
     )
     visit_occurrence_id_map = build_sequential_id_map(
         pd.Series([int(info.hadm_id) if info.hadm_id is not None else None for info in infos]),
         next_record_ids["visit_occurrence"],
+        existing=existing_visit_map,
     )
     return person_id_map, visit_occurrence_id_map
 
@@ -94,7 +121,7 @@ def build_staging_dataframes(
                 visit_occurrence_id_map,
             )
         )
-        channel_rows.extend(build_channel_rows(info, source_uri_prefix, target_uri_prefix))
+        channel_rows.extend(build_channel_rows(info, target_uri_prefix))
 
     return build_dataframes(file_rows, channel_rows, person_id_map, visit_occurrence_id_map)
 
@@ -104,9 +131,13 @@ def build_occurrence_and_registry_dataframes(
     waveform_files_all: pd.DataFrame,
     next_record_ids: dict[str, int],
     waveform_occurrence_concept_id: int,
+    existing_waveform_occurrence_map: dict | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     waveform_occurrence_df = build_wf_occurrence_dataframe(
-        waveform_files_all, next_record_ids["waveform_occurrence"], waveform_occurrence_concept_id
+        waveform_files_all,
+        next_record_ids["waveform_occurrence"],
+        waveform_occurrence_concept_id,
+        existing_waveform_occurrence_map=existing_waveform_occurrence_map,
     )
     waveform_registry_df = build_wf_registry_dataframe(
         waveform_files_all, next_record_ids["waveform_registry"], waveform_occurrence_df
@@ -192,18 +223,18 @@ def waveform_etl_plugin(options: WaveformETLOptions):
         waveform_occurrence_concept_id = int(options.waveform_occurrence_concept_id)
 
         tables_to_ingest = {
-            "person": "person_id",
-            "visit_occurrence": "visit_occurrence_id",
-            "waveform_occurrence": "waveform_occurrence_id",
-            "waveform_registry": "waveform_registry_id",
             "waveform_channel_metadata": "waveform_channel_metadata_id",
+            "waveform_registry": "waveform_registry_id",
+            "waveform_occurrence": "waveform_occurrence_id",
+            "visit_occurrence": "visit_occurrence_id",
+            "person": "person_id",
         }
 
         dbdao = DBDao(database_code=options.database_code, cache_id=options.cache_id)
 
         # --- Extract ---
         waveform_data_path = get_waveform_data_path(options.filepath)
-        logger.info(f"Waveform data path: {waveform_data_path}")
+        logger.info(f"Waveform data path found at: {waveform_data_path}")
 
         infos = extract_records(waveform_data_path)
 
@@ -212,11 +243,15 @@ def waveform_etl_plugin(options: WaveformETLOptions):
 
         # --- Transform ---
         next_record_ids = fetch_next_record_ids(schema, tables_to_ingest, dbdao)
-        logger.info(f"Next record IDs: {next_record_ids}")
 
-        person_id_map, visit_occurrence_id_map = build_id_maps(infos, next_record_ids)
-        logger.info(f"Person ID map: {person_id_map}")
-        logger.info(f"Visit Occurrence ID map: {visit_occurrence_id_map}")
+        existing_person_map, existing_visit_map, existing_waveform_occurrence_map = fetch_existing_id_maps(schema, dbdao)
+        logger.info(f"Existing person IDs in DB: {len(existing_person_map)}")
+        logger.info(f"Existing visit_occurrence IDs in DB: {len(existing_visit_map)}")
+        logger.info(f"Existing waveform_occurrence IDs in DB: {len(existing_waveform_occurrence_map)}")
+
+        person_id_map, visit_occurrence_id_map = build_id_maps(
+            infos, next_record_ids, existing_person_map, existing_visit_map
+        )
 
         person_df, visit_occurrence_df = build_person_and_visit_dataframes(
             infos, person_id_map, visit_occurrence_id_map
@@ -228,10 +263,13 @@ def waveform_etl_plugin(options: WaveformETLOptions):
         waveform_files_all, waveform_channels_all = build_staging_dataframes(
             infos, source_uri_prefix, target_uri_prefix, person_id_map, visit_occurrence_id_map
         )
-        logger.info(f"Waveform files all length: {len(waveform_files_all)}")
+
+        logger.info(f"Total number of waveform files: {len(waveform_files_all)}")
+        logger.info(f"Total number of waveform channels: {len(waveform_channels_all)}")
 
         waveform_occurrence_df, waveform_registry_df = build_occurrence_and_registry_dataframes(
-            waveform_files_all, next_record_ids, waveform_occurrence_concept_id
+            waveform_files_all, next_record_ids, waveform_occurrence_concept_id,
+            existing_waveform_occurrence_map=existing_waveform_occurrence_map,
         )
 
         waveform_channel_metadata_df = build_channel_metadata_dataframe(
@@ -243,9 +281,28 @@ def waveform_etl_plugin(options: WaveformETLOptions):
         )
 
         # --- Load ---
-        load_dataframe(person_df, "person", schema, dbdao)
-        load_dataframe(visit_occurrence_df, "visit_occurrence", schema, dbdao)
-        load_dataframe(waveform_occurrence_df, "waveform_occurrence", schema, dbdao)
+        # Filter out rows that already exist in the DB (append mode: to_truncate=False)
+        new_person_df = person_df[
+            person_df["person_source_value"].apply(
+                lambda v: int(v) not in existing_person_map
+            )
+        ]
+        new_visit_occurrence_df = visit_occurrence_df[
+            visit_occurrence_df["visit_source_value"].apply(
+                lambda v: int(v) not in existing_visit_map
+            )
+        ]
+        logger.info(f"Loading {len(new_person_df)} new person rows (skipping {len(person_df) - len(new_person_df)} existing)")
+        logger.info(f"Loading {len(new_visit_occurrence_df)} new visit_occurrence rows (skipping {len(visit_occurrence_df) - len(new_visit_occurrence_df)} existing)")
+
+        load_dataframe(new_person_df, "person", schema, dbdao)
+        load_dataframe(new_visit_occurrence_df, "visit_occurrence", schema, dbdao)
+
+        new_waveform_occurrence_df = waveform_occurrence_df[
+            ~waveform_occurrence_df["waveform_occurrence_source_value"].isin(existing_waveform_occurrence_map)
+        ]
+        logger.info(f"Loading {len(new_waveform_occurrence_df)} new waveform_occurrence rows (skipping {len(waveform_occurrence_df) - len(new_waveform_occurrence_df)} existing)")
+        load_dataframe(new_waveform_occurrence_df, "waveform_occurrence", schema, dbdao)
         load_dataframe(waveform_registry_df, "waveform_registry", schema, dbdao)
         load_dataframe(waveform_channel_metadata_df, "waveform_channel_metadata", schema, dbdao)
     elif options.flow_action_type == FlowActionType.LOAD_VOCAB:

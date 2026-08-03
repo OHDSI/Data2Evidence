@@ -32,10 +32,21 @@ def _extract_extension(path: str | None) -> str | None:
     return extension[1:].upper()
 
 
-def build_sequential_id_map(source_ids: pd.Series, start_id: int) -> dict:
-    """Build a mapping from each distinct value in `source_ids` to a sequential integer id, starting from `start_id`."""
-    distinct = source_ids.dropna().drop_duplicates()
-    return {value: start_id + offset for offset, value in enumerate(distinct)}
+def build_sequential_id_map(
+    source_ids: pd.Series,
+    start_id: int,
+    existing: dict | None = None,
+) -> dict:
+    """Build a mapping from each distinct value in `source_ids` to a sequential integer id.
+
+    Already-known source values (provided via `existing`) keep their current database id.
+    Only genuinely new source values receive new sequential ids starting from `start_id`.
+    """
+    existing = existing or {}
+    novel = source_ids.dropna().drop_duplicates()
+    novel = novel[~novel.isin(existing)]
+    new_map = {value: start_id + offset for offset, value in enumerate(novel)}
+    return {**existing, **new_map}
 
 
 def rows_to_dataframe(rows: list[dict], fieldnames: list[str]) -> pd.DataFrame:
@@ -165,7 +176,6 @@ def _build_file_row(
 
 def build_channel_rows(
     info: RecordInfo,
-    source_uri_prefix: str,
     target_uri_prefix: str,
 ) -> list[dict]:
     """Build rows for waveform_channels_all, one row per channel in the record's segments."""
@@ -282,7 +292,12 @@ def build_visit_occurrence_dataframe(
     return rows_to_dataframe(rows, VISIT_OCCURRENCE_FIELDNAMES)
 
 
-def build_wf_occurrence_dataframe(waveform_files_all: pd.DataFrame, waveform_occurrence_id: int, waveform_occurrence_concept_id: int) -> pd.DataFrame:
+def build_wf_occurrence_dataframe(
+    waveform_files_all: pd.DataFrame,
+    waveform_occurrence_id: int,
+    waveform_occurrence_concept_id: int,
+    existing_waveform_occurrence_map: dict | None = None,
+) -> pd.DataFrame:
     """Build a staging dataframe for waveform_occurrence ingestion, one row per record (group_id)."""
     occurrence = waveform_files_all.groupby("group_id", as_index=False).agg(
         person_id=("person_id", "max"),
@@ -293,7 +308,11 @@ def build_wf_occurrence_dataframe(waveform_files_all: pd.DataFrame, waveform_occ
         num_of_files=("group_id", "count"),
     )
 
-    waveform_occurrence_id_map = build_sequential_id_map(occurrence["group_id"], waveform_occurrence_id)
+    waveform_occurrence_id_map = build_sequential_id_map(
+        occurrence["group_id"],
+        waveform_occurrence_id,
+        existing=existing_waveform_occurrence_map,
+    )
     occurrence["waveform_occurrence_id"] = occurrence["group_id"].map(waveform_occurrence_id_map)
     occurrence["waveform_occurrence_concept_id"] = waveform_occurrence_concept_id
     occurrence["preceding_waveform_occurrence_id"] = None

@@ -1,8 +1,7 @@
 import wfdb
-from pathlib import Path
-
 import datetime as dt
-
+import sqlalchemy as sql
+from pathlib import Path
 
 from .types import RecordInfo, RecordRef, SegmentInfo, ChannelSpec
 
@@ -32,6 +31,38 @@ def get_next_record_ids(schema: str, table_id: dict[str, str], dbdao) -> dict[st
         last_id = dbdao.get_next_record_id(schema, table, id_column)
         last_ids[table] = last_id
     return last_ids
+
+
+def get_existing_source_id_map(
+    schema: str,
+    table: str,
+    source_value_col: str,
+    id_col: str,
+    dbdao,
+) -> dict:
+    """Fetch the existing source_value → id mapping for a table from the database.
+
+    Returns an empty dict if the table does not yet exist or is empty.
+    The source values are cast to int where possible so they match the in-memory
+    representation produced by the waveform reader.
+    """
+    try:
+        meta = sql.MetaData(schema=schema)
+        t = sql.Table(table, meta, autoload_with=dbdao.engine)
+        stmt = sql.select(t.c[source_value_col], t.c[id_col])
+        with dbdao.engine.connect() as conn:
+            rows = conn.execute(stmt).fetchall()
+    except Exception:
+        return {}
+
+    result = {}
+    for source_val, db_id in rows:
+        try:
+            key = int(source_val)
+        except (TypeError, ValueError):
+            key = source_val
+        result[key] = db_id
+    return result
 
 
 def _parse_comments(comments: list[str]) -> dict[str, str]:
