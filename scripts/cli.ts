@@ -1005,6 +1005,7 @@ class D2ECli {
             console.log("Process completed successfully.");
           } else {
             console.log(`Process exited with code ${code}`);
+            process.exitCode = code ?? 1;
           }
         });
       });
