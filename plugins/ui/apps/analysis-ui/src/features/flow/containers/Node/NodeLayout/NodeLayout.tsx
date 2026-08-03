@@ -51,13 +51,29 @@ export const NodeLayout = <T extends NodeDataState>({
 
   const PLAIN_NODES = ["patient_level_prediction_node"];
 
+  const deleteNode = useCallback(async () => {
+    await deleteElements({ nodes: [{ id: node.id }] });
+    dispatch(markStatusAsDraft());
+  }, [deleteElements, node.id]);
+
   const handleDeleteClick = useCallback(
-    async (event: React.MouseEvent<SVGSVGElement>) => {
+    (event: React.MouseEvent<SVGSVGElement>) => {
       event.stopPropagation();
-      await deleteElements({ nodes: [{ id: node.id }] });
-      dispatch(markStatusAsDraft());
+      deleteNode();
     },
-    [deleteElements, node.id]
+    [deleteNode]
+  );
+
+  const handleDeleteKeyDown = useCallback(
+    (event: React.KeyboardEvent<SVGSVGElement>) => {
+      // Activate on Enter/Space like a native button (Space would otherwise scroll).
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        event.stopPropagation();
+        deleteNode();
+      }
+    },
+    [deleteNode]
   );
 
   const inputHandles = useMemo(() => {
@@ -114,6 +130,10 @@ export const NodeLayout = <T extends NodeDataState>({
           <Box display="inline-flex">
             <TrashIcon
               onClick={handleDeleteClick}
+              onKeyDown={handleDeleteKeyDown}
+              role="button"
+              tabIndex={0}
+              aria-label="Delete node"
               className="node__setting node__delete nodrag"
             />
           </Box>

@@ -94,11 +94,23 @@
         }
       }
 
-      &__delete {
-        &:hover {
-          path[fill="navy"] {
-            fill: var(--color-feedback-alarm);
-          }
+      // Keyboard focus: reveal the icon (opacity is 0 until node hover) and show
+      // a visible focus ring so keyboard users can see and operate it.
+      &:focus-visible {
+        opacity: 1;
+        outline: 2px solid var(--color-primary);
+        outline-offset: 2px;
+      }
+    }
+
+    // Direct child of `.node` → compiles to `.node__delete` (matching the
+    // TrashIcon className). Previously nested under `&__setting`, which wrongly
+    // produced `.node__setting__delete` and never matched. Kept after
+    // `&__setting` so the alarm-red hover wins the equal-specificity tie.
+    &__delete {
+      &:hover {
+        path[fill="navy"] {
+          fill: var(--color-feedback-alarm);
         }
       }
     }
