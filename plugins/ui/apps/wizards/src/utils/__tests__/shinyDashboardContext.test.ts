@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { buildShinyDashboardAuthMessage, buildShinyDashboardIframeUrl } from "../shinyDashboardContext";
+import {
+  buildShinyDashboardAuthMessage,
+  buildShinyDashboardIframeUrl,
+  resolveShinyDashboardMessageSource,
+} from "../shinyDashboardContext";
+
+function createWindow(children: Window[] = []): Window {
+  const window = { frames: children } as unknown as Window;
+  children.forEach((child) => {
+    Object.defineProperty(child, "parent", { value: window });
+  });
+  return window;
+}
 
 describe("Wizards Shiny dashboard context", () => {
   it("matches the established dataset and dashboard-type route", () => {
@@ -48,5 +60,34 @@ describe("Wizards Shiny dashboard context", () => {
 
     expect(message.context.wizardConfig).toBeNull();
     expect(message.context.cohortId).toBe("42");
+  });
+
+  it("accepts readiness messages from the outer ShinyLive iframe", () => {
+    const iframeWindow = createWindow();
+
+    expect(resolveShinyDashboardMessageSource(iframeWindow, iframeWindow)).toBe(iframeWindow);
+  });
+
+  it("accepts readiness messages from a dashboard nested inside the ShinyLive iframe", () => {
+    const dashboardWindow = createWindow();
+    const iframeWindow = createWindow([dashboardWindow]);
+
+    expect(resolveShinyDashboardMessageSource(dashboardWindow, iframeWindow)).toBe(dashboardWindow);
+  });
+
+  it("rejects messages from a window outside the ShinyLive iframe tree", () => {
+    const iframeWindow = createWindow([createWindow()]);
+    const unrelatedWindow = createWindow();
+
+    expect(resolveShinyDashboardMessageSource(unrelatedWindow, iframeWindow)).toBeNull();
+    expect(resolveShinyDashboardMessageSource(null, iframeWindow)).toBeNull();
+  });
+
+  it("rejects messages nested more deeply than the ShinyLive dashboard", () => {
+    const nestedWindow = createWindow();
+    const dashboardWindow = createWindow([nestedWindow]);
+    const iframeWindow = createWindow([dashboardWindow]);
+
+    expect(resolveShinyDashboardMessageSource(nestedWindow, iframeWindow)).toBeNull();
   });
 });

@@ -30,7 +30,10 @@
 
   .logo {
     display: block;
-    padding: 8px 0;
+    height: 24px;
+    width: auto;
+    aspect-ratio: 3495 / 404;
+    flex: none;
     margin-left: 2rem;
     cursor: pointer;
   }

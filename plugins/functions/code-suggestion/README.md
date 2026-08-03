@@ -38,7 +38,11 @@ The provider is selected by the prefix on `AI_MODEL`:
 # AI Model Configuration
 AI_MODEL=gpt-4o
 OPENAI_API_KEY=sk-...
+COHORT_HISTORY_MAX_TOKENS=4000
 ```
+
+`COHORT_HISTORY_MAX_TOKENS` controls the approximate conversation-history
+budget used by the cohort builder and defaults to `4000`.
 
 ### POST /code-suggestion/chat
 Interactive chat with AI assistant, with optional MCP integration.
