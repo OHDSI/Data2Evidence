@@ -169,9 +169,15 @@
   text-transform: uppercase;
 }
 
-.groupHeader span {
-  color: #5f6b7a;
-  font-size: 12px;
+.groupTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.groupRequiredAsterisk {
+  margin-left: 2px;
+  color: var(--color-feedback-error, #a3293d);
 }
 
 .fieldGrid {
@@ -231,15 +237,6 @@
 
 .fieldGrid .wildcardToggle {
   margin-left: 0;
-}
-
-.groupError {
-  padding: 9px 11px;
-  border: 1px solid #e6a5a5;
-  border-radius: 4px;
-  background: #fff4f4;
-  color: #a10f0f;
-  font-size: 12px;
 }
 
 .fieldGroup {

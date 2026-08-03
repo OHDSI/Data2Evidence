@@ -26,6 +26,7 @@ const sections: WizardFormSection[] = [
         validation: {
           minAnswered: 1,
           maxAnswered: 2,
+          message: "Enter 1 or 2 of Height, Weight, and BMI.",
           minMessage: "Choose at least one measurement.",
           maxMessage: "Choose no more than two measurements.",
         },
@@ -70,7 +71,7 @@ describe("getFieldGroupValidationMessage", () => {
   });
 
   it("describes the configured completion range", () => {
-    expect(getFieldGroupCompletionHint(group)).toBe("Complete 1 to 2 fields");
+    expect(getFieldGroupCompletionHint(group)).toBe("Enter 1 or 2 of Height, Weight, and BMI.");
   });
 
   it("disables only unanswered fields after the group reaches its maximum", () => {

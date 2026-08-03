@@ -1,5 +1,11 @@
 import { describe, it, expect, vi } from "vitest";
-import { getWizardDefinitions, getWizardById, isWizardVisibleOnSurface } from "../wizardDefinitions";
+import {
+  DEFAULT_WIZARD_FORM_NOTE,
+  getWizardDefinitions,
+  getWizardById,
+  isWizardVisibleOnSurface,
+  resolveWizardFormNote,
+} from "../wizardDefinitions";
 
 // Mock cdwConfig - tests run in dev mode so they use hardcoded definitions
 vi.mock("../cdwConfig", () => ({
@@ -11,6 +17,18 @@ vi.mock("../cdwConfig", () => ({
 }));
 
 describe("wizardDefinitions", () => {
+  describe("resolveWizardFormNote", () => {
+    it("preserves the legacy note when the config omits formNote", () => {
+      expect(resolveWizardFormNote(undefined)).toBe(DEFAULT_WIZARD_FORM_NOTE);
+    });
+
+    it("supports custom and hidden form notes", () => {
+      expect(resolveWizardFormNote("Custom note")).toBe("Custom note");
+      expect(resolveWizardFormNote(null)).toBeNull();
+      expect(resolveWizardFormNote("   ")).toBeNull();
+    });
+  });
+
   describe("getWizardDefinitions", () => {
     it("should return an array with exactly 5 wizards", async () => {
       const wizards = await getWizardDefinitions();

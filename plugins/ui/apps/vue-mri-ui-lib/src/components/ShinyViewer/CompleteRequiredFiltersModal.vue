@@ -8,6 +8,8 @@
           {{ getText('MRI_PA_REQUIRED_FILTERS_DESC') }}
         </p>
 
+        <p v-if="displayedFormNote" class="form-note">{{ displayedFormNote }}</p>
+
         <p v-if="error" class="error-text">{{ error }}</p>
 
         <section
@@ -23,7 +25,25 @@
           <div class="section-content">
             <div v-for="group in section.groups" :key="group.id" class="form-group">
               <div v-if="group.label" class="group-header">
-                <h4>{{ group.label }}</h4>
+                <div class="group-title-row">
+                  <h4 :aria-label="isGroupRequired(group) ? `${group.label}, required group` : undefined">
+                    {{ group.label
+                    }}<span v-if="isGroupRequired(group)" class="group-required-indicator" aria-hidden="true">*</span>
+                  </h4>
+                  <span v-if="getGroupCompletionHint(group)" class="info-tooltip">
+                    <button
+                      type="button"
+                      class="info-button"
+                      :aria-label="`${group.label} requirements`"
+                      :aria-describedby="`${group.id}-requirements`"
+                    >
+                      i
+                    </button>
+                    <span :id="`${group.id}-requirements`" role="tooltip" class="info-tooltip-content">
+                      {{ getGroupCompletionHint(group) }}
+                    </span>
+                  </span>
+                </div>
               </div>
               <div class="field-grid" :class="getColumnsClass(group.columns)">
                 <div v-for="field in group.fields" :key="field.id" class="field-row">
@@ -190,9 +210,6 @@
                   </div>
                 </div>
               </div>
-              <p v-if="getGroupValidationMessage(group)" class="group-error" role="alert">
-                {{ getGroupValidationMessage(group) }}
-              </p>
             </div>
           </div>
         </section>
@@ -224,6 +241,7 @@ import type {
   WizardFormSection,
 } from '@/utils/dashboardFlowUtils'
 import {
+  getWizardGroupCompletionHint,
   getWizardGroupValidationMessage,
   isWizardFieldDisabledByGroupLimit,
   isConditionField,
@@ -241,6 +259,7 @@ const props = defineProps<{
   isOpen: boolean
   allFields: WizardFieldDefinition[]
   sections?: WizardFormSection[]
+  formNote?: string | null
   initialValues: Record<string, any>
   initialDisplayValues: Record<string, string>
   loading: boolean
@@ -269,6 +288,7 @@ interface DisplayWizardSection extends ResolvedWizardFormSection {
 }
 
 const resolvedLayout = computed(() => resolveWizardFormLayout(props.allFields, props.sections))
+const displayedFormNote = computed(() => props.formNote?.trim() || null)
 const displaySections = computed<DisplayWizardSection[]>(() => {
   if (resolvedLayout.value.sections.length === 0) {
     return [
@@ -311,8 +331,12 @@ function getColumnsClass(columns: number = 2): string {
   return `columns-${columns}`
 }
 
-function getGroupValidationMessage(group: ResolvedWizardFieldGroup): string | null {
-  return getWizardGroupValidationMessage(group, formValues)
+function isGroupRequired(group: ResolvedWizardFieldGroup): boolean {
+  return (group.validation?.minAnswered ?? 0) > 0
+}
+
+function getGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
+  return getWizardGroupCompletionHint(group)
 }
 
 function isFieldDisabled(group: ResolvedWizardFieldGroup, fieldId: string): boolean {
@@ -745,6 +769,13 @@ function validateYearRange(fieldId: string): void {
   margin-bottom: 14px;
 }
 
+.form-note {
+  margin: -4px 0 14px;
+  color: #333;
+  font-style: italic;
+  line-height: 1.45;
+}
+
 .error-text {
   color: var(--color-feedback-error, #a3293d);
   margin-bottom: 12px;
@@ -813,9 +844,15 @@ function validateYearRange(fieldId: string): void {
   text-transform: uppercase;
 }
 
-.group-header span {
-  color: #5f6b7a;
-  font-size: 0.75rem;
+.group-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-required-indicator {
+  margin-left: 2px;
+  color: var(--color-feedback-error, #a3293d);
 }
 
 .field-grid {
@@ -845,16 +882,6 @@ function validateYearRange(fieldId: string): void {
 
 .configured-section .field-label-wrapper {
   padding-top: 0;
-}
-
-.group-error {
-  margin: 0;
-  padding: 8px 10px;
-  border: 1px solid #e6a5a5;
-  border-radius: 4px;
-  background: #fff4f4;
-  color: #a10f0f;
-  font-size: 0.75rem;
 }
 
 .legacy-section {

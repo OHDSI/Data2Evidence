@@ -4,6 +4,7 @@
       "id": "calculate-incidence",
       "name": "Calculate Incidence",
       "description": "This wizard will calculate the incidence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of the condition (the diagnostic code) and determining if it occurs between a particular set of dates that you specify.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
       "sections": [
         {
           "id": "person",
@@ -22,8 +23,7 @@
               "validation": {
                 "minAnswered": 1,
                 "maxAnswered": 2,
-                "minMessage": "Enter at least 1 of Height, Weight, and BMI.",
-                "maxMessage": "Only 2 of the three fields (Height, Weight, BMI) can be filled in at the same time."
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
             },
             {
@@ -245,6 +245,7 @@
       "id": "calculate-prevalence",
       "name": "Calculate Prevalence",
       "description": "This wizard will calculate the prevalence for a particular clinical condition. This calculation is done in SQL, and this works by finding the first instance of a condition.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
       "sections": [
         {
           "id": "person",
@@ -263,8 +264,7 @@
               "validation": {
                 "minAnswered": 1,
                 "maxAnswered": 2,
-                "minMessage": "Enter at least 1 of Height, Weight, and BMI.",
-                "maxMessage": "Only 2 of the three fields (Height, Weight, BMI) can be filled in at the same time."
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
             },
             {
@@ -486,6 +486,7 @@
       "id": "calculate-mortality",
       "name": "Calculate Mortality",
       "description": "This wizard will calculate the mortality rate for a particular clinical condition, and works by death dates that co-occur with a condition between a particular set of dates that you specify.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
       "sections": [
         {
           "id": "person",
@@ -504,8 +505,7 @@
               "validation": {
                 "minAnswered": 1,
                 "maxAnswered": 2,
-                "minMessage": "Enter at least 1 of Height, Weight, and BMI.",
-                "maxMessage": "Only 2 of the three fields (Height, Weight, BMI) can be filled in at the same time."
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
             },
             {
@@ -727,6 +727,7 @@
       "id": "cross-sectional-demographics",
       "name": "Cross sectional Demographics",
       "description": "Assessment of hypertension and cholesterol levels in post-operative patients.",
+      "formNote": "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.",
       "sections": [
         {
           "id": "conditions",
@@ -756,8 +757,7 @@
               "validation": {
                 "minAnswered": 1,
                 "maxAnswered": 2,
-                "minMessage": "Enter at least 1 of Height, Weight, and BMI.",
-                "maxMessage": "Only 2 of the three fields (Height, Weight, BMI) can be filled in at the same time."
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
               }
             },
             {

@@ -7,7 +7,7 @@ export interface WizardFieldGroupValidation {
   minAnswered?: number;
   /** Maximum number of fields in the group that may contain a value. */
   maxAnswered?: number;
-  /** Optional validation message shown when the group constraint is violated. */
+  /** Optional requirement guidance shown from the group information icon. */
   message?: string;
   /** Optional message shown when fewer than minAnswered fields contain values. */
   minMessage?: string;
@@ -115,6 +115,8 @@ export interface WizardConfig {
   id: string;
   name: string;
   description: string;
+  /** Optional form note. Missing preserves the legacy default; null or empty hides it. */
+  formNote?: string | null;
   /** Optional UI surfaces. Missing means visible in all wizard-aware surfaces. */
   surfaces?: WizardSurface[];
   /** Optional flow override. Missing means use the default required-fields flow. */

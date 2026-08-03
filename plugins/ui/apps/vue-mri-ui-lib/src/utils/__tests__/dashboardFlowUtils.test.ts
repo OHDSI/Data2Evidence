@@ -283,7 +283,28 @@ describe('wizard form sections', () => {
     expect(getWizardGroupValidationMessage(group, { height: '170', weight: '70', bmi: '24.2' })).toBe(
       'Complete no more than 2 fields in this group.'
     )
-    expect(getWizardGroupCompletionHint(group)).toBe('Complete 1 to 2 fields')
+    expect(getWizardGroupCompletionHint(group)).toBe('Enter 1 to 2 of Height, Weight, and BMI.')
+  })
+
+  it('uses configured group guidance when provided', () => {
+    const configuredSections: WizardFormSection[] = [
+      {
+        ...sections[0],
+        groups: [
+          {
+            ...sections[0].groups[0],
+            validation: {
+              minAnswered: 1,
+              maxAnswered: 2,
+              message: 'Enter 1 or 2 of Height, Weight, and BMI.',
+            },
+          },
+        ],
+      },
+    ]
+    const group = resolveWizardFormLayout(fields, configuredSections).sections[0].groups[0]
+
+    expect(getWizardGroupCompletionHint(group)).toBe('Enter 1 or 2 of Height, Weight, and BMI.')
   })
 
   it('disables only unanswered fields after the group reaches its maximum', () => {

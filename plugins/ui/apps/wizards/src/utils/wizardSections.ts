@@ -96,18 +96,28 @@ export function getFieldGroupValidationMessage(
 export function getFieldGroupCompletionHint(group: ResolvedWizardFieldGroup): string | null {
   const minAnswered = group.validation?.minAnswered;
   const maxAnswered = group.validation?.maxAnswered;
+  const configuredHint = group.validation?.message?.trim();
+  if (configuredHint) return configuredHint;
+
+  const labels = group.fields.map((field) => field.label);
+  const fieldList =
+    labels.length < 2
+      ? labels[0] || "this group"
+      : labels.length === 2
+        ? labels.join(" and ")
+        : `${labels.slice(0, -1).join(", ")}, and ${labels[labels.length - 1]}`;
 
   if (minAnswered !== undefined && maxAnswered !== undefined) {
     if (minAnswered === maxAnswered) {
-      return `Complete exactly ${minAnswered} ${minAnswered === 1 ? "field" : "fields"}`;
+      return `Enter ${minAnswered} of ${fieldList}.`;
     }
-    return `Complete ${minAnswered} to ${maxAnswered} fields`;
+    return `Enter ${minAnswered} to ${maxAnswered} of ${fieldList}.`;
   }
   if (minAnswered !== undefined) {
-    return `Complete at least ${minAnswered} ${minAnswered === 1 ? "field" : "fields"}`;
+    return `Enter at least ${minAnswered} of ${fieldList}.`;
   }
   if (maxAnswered !== undefined) {
-    return `Complete up to ${maxAnswered} ${maxAnswered === 1 ? "field" : "fields"}`;
+    return `Enter up to ${maxAnswered} of ${fieldList}.`;
   }
 
   return null;

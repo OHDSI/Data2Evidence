@@ -10,11 +10,13 @@ import { AnalyticsIcon } from "./icons/AnalyticsIcon";
 import { WizardDashboardModal } from "./WizardDashboardModal";
 import { useWizardDashboardFlow } from "../hooks/useWizardDashboardFlow";
 import {
+  getFieldGroupCompletionHint,
   getFieldGroupValidationMessage,
   isFieldDisabledByGroupLimit,
   resolveWizardFormLayout,
 } from "../utils/wizardSections";
 import type { ResolvedWizardFieldGroup } from "../utils/wizardSections";
+import { resolveWizardFormNote } from "../config/wizardDefinitions";
 import styles from "./StepForm.module.css";
 
 // Keep the legacy Cohort Builder action available for a one-line re-enable.
@@ -470,6 +472,7 @@ export function StepForm() {
   }
 
   const submitLabel = stepConfig ? (stepConfig.config as FormStepConfig)?.submitLabel || "Next" : "Next";
+  const formNote = resolveWizardFormNote(selectedWizard.formNote);
 
   const renderFields = (fields: FieldDefinition[], containingGroup?: ResolvedWizardFieldGroup) => {
     return fields.map((field) => renderField(field, containingGroup));
@@ -482,23 +485,43 @@ export function StepForm() {
   };
 
   const renderFieldGroup = (group: ResolvedWizardFieldGroup) => {
-    const validationMessage = getFieldGroupValidationMessage(group, formValues);
+    const completionHint = getFieldGroupCompletionHint(group);
+    const isRequiredGroup = (group.validation?.minAnswered ?? 0) > 0;
 
     return (
       <div key={group.id} className={styles.sectionGroup}>
         {group.label && (
           <div className={styles.groupHeader}>
-            <h3>{group.label}</h3>
+            <div className={styles.groupTitleRow}>
+              <h3 aria-label={isRequiredGroup ? `${group.label}, required group` : undefined}>
+                {group.label}
+                {isRequiredGroup && (
+                  <span className={styles.groupRequiredAsterisk} aria-hidden="true">
+                    *
+                  </span>
+                )}
+              </h3>
+              {completionHint && (
+                <span className={styles.infoTooltip}>
+                  <button
+                    type="button"
+                    className={styles.infoButton}
+                    aria-label={`${group.label} requirements`}
+                    aria-describedby={`${group.id}-requirements`}
+                  >
+                    i
+                  </button>
+                  <span id={`${group.id}-requirements`} role="tooltip" className={styles.infoTooltipContent}>
+                    {completionHint}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
         )}
         <div className={`${styles.fieldGrid} ${getColumnsClass(group.columns)}`}>
           {renderFields(group.fields, group)}
         </div>
-        {validationMessage && (
-          <div className={styles.groupError} role="alert">
-            {validationMessage}
-          </div>
-        )}
       </div>
     );
   };
@@ -555,9 +578,7 @@ export function StepForm() {
 
       {selectedWizard.description && <div className={styles.description}>{selectedWizard.description}</div>}
 
-      <div className={styles.note}>
-        Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.
-      </div>
+      {formNote && <div className={styles.note}>{formNote}</div>}
 
       <hr className={styles.divider} />
 

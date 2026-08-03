@@ -1,15 +1,18 @@
-import type {
-  WizardDefinition,
-  WizardConfig,
-  FieldDefinition,
-  WizardStepConfig,
-  WizardSurface,
-} from "../types/wizard";
+import type { WizardDefinition, WizardConfig, FieldDefinition, WizardStepConfig, WizardSurface } from "../types/wizard";
 import { fetchCdwConfig, getAttributeByPath } from "./cdwConfig";
 import type { CdwConfig } from "./cdwConfig";
 import client from "../axios/request";
 
 const isDev = import.meta.env.DEV;
+
+export const DEFAULT_WIZARD_FORM_NOTE =
+  "Note: this is a very rough approximation that is just a starting point for a more comprehensive analysis.";
+
+export function resolveWizardFormNote(formNote: string | null | undefined): string | null {
+  if (formNote === undefined) return DEFAULT_WIZARD_FORM_NOTE;
+  const trimmedNote = formNote?.trim();
+  return trimmedNote || null;
+}
 
 /**
  * Default steps used by all wizards.

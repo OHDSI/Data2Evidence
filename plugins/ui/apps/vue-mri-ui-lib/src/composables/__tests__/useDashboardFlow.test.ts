@@ -39,7 +39,7 @@ describe('useDashboardFlow', () => {
     expect(flow.dashboardCodes.value).toEqual([])
   })
 
-  it('preserves sections configured on each Cohort Builder wizard definition', async () => {
+  it('preserves form presentation configured on each Cohort Builder wizard definition', async () => {
     const wizardSections = [
       {
         id: 'measurement',
@@ -56,7 +56,13 @@ describe('useDashboardFlow', () => {
         return {
           data: {
             wizards: [
-              { id: 'calculate-incidence', name: 'Calculate Incidence', fields: [], sections: wizardSections },
+              {
+                id: 'calculate-incidence',
+                name: 'Calculate Incidence',
+                formNote: 'Configured note',
+                fields: [],
+                sections: wizardSections,
+              },
             ],
           },
         }
@@ -68,6 +74,7 @@ describe('useDashboardFlow', () => {
     await flow.openDashboardModal()
 
     expect(flow.wizardDefinitions.value[0].sections).toEqual(wizardSections)
+    expect(flow.wizardDefinitions.value[0].formNote).toBe('Configured note')
   })
 
   it('does not apply obsolete root sections to wizards without their own layout', async () => {
