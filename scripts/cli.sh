@@ -2,7 +2,7 @@
 set -o errexit
 
 version=0.17.0 #default/base version
-LATEST_DOCKER_TAG_NAME=0.17.0-beta
+LATEST_DOCKER_TAG_NAME=0.17.1-beta
 
 
 cmd=""
