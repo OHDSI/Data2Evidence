@@ -12,6 +12,21 @@ export interface ShinyDashboardAuthMessage {
   context: ShinyDashboardContext;
 }
 
+export function resolveShinyDashboardMessageSource(
+  source: MessageEventSource | null,
+  iframeWindow: Window | null | undefined
+): Window | null {
+  if (!source || !iframeWindow) return null;
+  if (source === iframeWindow) return iframeWindow;
+
+  try {
+    const sourceWindow = source as Window;
+    return sourceWindow.parent === iframeWindow ? sourceWindow : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildShinyDashboardIframeUrl(datasetId: string, wizardConfig?: Record<string, unknown> | null): string {
   const dashboardType = String(wizardConfig?.dashboardType ?? "").trim();
   if (!datasetId || !dashboardType) return "";
