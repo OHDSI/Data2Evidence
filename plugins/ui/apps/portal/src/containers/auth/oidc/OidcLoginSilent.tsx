@@ -1,6 +1,6 @@
 import { FC, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useOidcIdToken } from "@axa-fr/react-oidc";
+import { useOidc, useOidcAccessToken, useOidcIdToken } from "@axa-fr/react-oidc";
 import { api } from "../../../axios/api";
 import { config } from "../../../config";
 import { useToken, useUser } from "../../../contexts";
@@ -9,48 +9,53 @@ import env from "../../../env";
 
 const subProp = env.REACT_APP_IDP_SUBJECT_PROP;
 
+const RELOGIN_GUARD_KEY = "d2e_first_login_role_refresh";
+
+interface OidcLoginSilentProps {
+  onReady?: () => void;
+}
+
 let firstTimeLoggedIn = false;
-export const OidcLoginSilent: FC = () => {
+let bootstrapSettled = false;
+
+export const OidcLoginSilent: FC<OidcLoginSilentProps> = ({ onReady }) => {
   const navigate = useNavigate();
   const { idToken, idTokenPayload } = useOidcIdToken();
+  const { accessTokenPayload } = useOidcAccessToken();
+  const { login } = useOidc();
   const { setIdToken, setIdTokenClaim } = useToken();
   const { setUserGroup, clearUser } = useUser();
   useDisclaimerHook();
 
   const loggedIn = useCallback(
-    async (idpUserId: string | undefined) => {
-      if (idpUserId) {
-        // On first federated login, auto-provisioning runs inside the
-        // user-group/list middleware. Concurrent portal requests can race
-        // and fail with 500 until provisioning commits. Retry with backoff.
-        let lastErr: any;
-        for (let attempt = 0; attempt < 4; attempt++) {
-          try {
-            if (attempt > 0) {
-              await new Promise((r) => setTimeout(r, attempt * 1500));
-            }
-            const sync = attempt === 0;
-            const userGroups = await api.userMgmt.getUserGroupList(idpUserId, sync);
-            const hasRole = userGroups?.alp_role_study_researcher?.length > 0
-              || userGroups?.alp_role_tenant_viewer?.length > 0
-              || userGroups?.alp_role_system_admin
-              || userGroups?.alp_role_user_admin;
-            if (hasRole || attempt === 3) {
-              setUserGroup(idpUserId, userGroups);
-              api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
-              return;
-            }
-          } catch (err: any) {
-            lastErr = err;
-            if (err?.status === 403) break;
-          }
+    async (idpUserId: string) => {
+      try {
+        const userGroups = await api.userMgmt.getUserGroupList(idpUserId, true);
+        const currentRoles = (accessTokenPayload as { roles?: string[] } | undefined)?.roles;
+        const tokenMissingRoles = (currentRoles?.length || 0) === 0;
+        const alreadyReloggedIn = sessionStorage.getItem(RELOGIN_GUARD_KEY) === "1";
+
+        if (tokenMissingRoles && !alreadyReloggedIn) {
+          console.info("[OidcLoginSilent] token has no roles after sync; re-login to refresh claims");
+          sessionStorage.setItem(RELOGIN_GUARD_KEY, "1");
+          login();
+
+          await new Promise<void>((resolve) => setTimeout(resolve, 8000));
+          return;
         }
-        console.error("Error when getting user info after retries", lastErr);
-        navigate(lastErr?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
+
+        sessionStorage.removeItem(RELOGIN_GUARD_KEY);
+        setUserGroup(idpUserId, userGroups);
+
+        await api.userMgmt.syncWebApiRoles().catch((err) => console.warn("WebAPI role sync failed", err));
+      } catch (err: any) {
+        console.error("Error getting user info on login", err);
+        sessionStorage.removeItem(RELOGIN_GUARD_KEY);
         clearUser();
+        navigate(err?.status === 403 ? config.ROUTES.noAccess : config.ROUTES.logout);
       }
     },
-    [navigate, setUserGroup, clearUser]
+    [navigate, setUserGroup, clearUser, login, accessTokenPayload]
   );
 
   useEffect(() => {
@@ -58,11 +63,21 @@ export const OidcLoginSilent: FC = () => {
     setIdTokenClaim(idTokenPayload);
 
     if (!firstTimeLoggedIn) {
-      firstTimeLoggedIn = true;
-      const idpUserId = idTokenPayload[subProp];
-      loggedIn(idpUserId);
+      const idpUserId = idTokenPayload?.[subProp];
+      if (idpUserId) {
+        firstTimeLoggedIn = true;
+        loggedIn(idpUserId).finally(() => {
+          bootstrapSettled = true;
+          onReady?.();
+        });
+      }
+      return;
     }
-  }, [idToken, idTokenPayload, loggedIn]);
+
+    if (bootstrapSettled) {
+      onReady?.();
+    }
+  }, [idToken, idTokenPayload, loggedIn, onReady]);
 
   return null;
 };
