@@ -619,20 +619,44 @@
                     "type": "string"
                   },
                   "schema_name": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "title": "Schema Name",
-                    "type": "string"
+                    "default": ""
                   },
                   "vocab_schema_name": {
                     "title": "Vocab Schema Name",
                     "type": "string"
                   },
                   "waveform_occurrence_concept_id": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "title": "Waveform Occurrence Concept Id",
-                    "type": "string"
+                    "default": ""
                   },
                   "filepath": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
                     "title": "Filepath",
-                    "type": "string"
+                    "default": ""
                   },
                   "to_truncate": {
                     "anyOf": [
@@ -650,10 +674,7 @@
                 "required": [
                   "flow_action_type",
                   "database_code",
-                  "schema_name",
-                  "vocab_schema_name",
-                  "waveform_occurrence_concept_id",
-                  "filepath"
+                  "vocab_schema_name"
                 ],
                 "title": "WaveformETLOptions",
                 "type": "object"
