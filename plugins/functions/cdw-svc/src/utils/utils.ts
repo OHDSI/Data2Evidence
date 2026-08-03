@@ -567,7 +567,7 @@ export async function getAnalyticsConnection(
   return analyticsConnection;
 }
 
-const setSchema = async (connection, schema) => {
+export const setSchema = async (connection, schema) => {
   const escapedSchema = String(schema).replace(/"/g, '""'); // Escape double quotes for a quoted identifier
   await new Promise<void>((resolve, reject) => {
     connection.execute(`SET SCHEMA "${escapedSchema}"`, [], (err) => {

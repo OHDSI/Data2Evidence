@@ -19,7 +19,7 @@ import { FfhQeConfig, MESSAGES } from "./qe/config/config";
 import { AssignmentProxy } from "./AssignmentProxy";
 import { Settings } from "./qe/settings/Settings";
 import type { ICDWRequest, IDBCredentialsType } from "./types";
-import { getAnalyticsConnection } from "./utils/utils";
+import { getAnalyticsConnection, setSchema } from "./utils/utils";
 import { getDatasetIdFromConfig } from "./qe/settings/Utils";
 
 const log = Logger.CreateLogger("cdw-log");
@@ -112,12 +112,15 @@ const getConnections = async ({
 }): Promise<{
   configConnection: Connection.ConnectionInterface;
 }> => {
+  const schemaName = configCredentials.schema;
   const configConnection =
     await dbConnectionUtil.DBConnectionUtil.getDBConnection({
       credentials: configCredentials,
-      schemaName: configCredentials.schema,
+      schemaName,
       userObj,
     });
+
+  await setSchema(configConnection, schemaName);
 
   return {
     configConnection: configConnection,
