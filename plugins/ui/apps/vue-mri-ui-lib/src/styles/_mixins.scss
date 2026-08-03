@@ -65,6 +65,12 @@
   outline: none;
   cursor: pointer;
 
+  // `outline: none` must not leave keyboard users blind: show a focus ring
+  // when the button is focused via keyboard.
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--color-focus);
+  }
+
   .icon,
   .app-icon {
     display: inline-flex;

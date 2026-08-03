@@ -163,7 +163,9 @@
 
       // DownloadMenu renders its toolbar button inside a Bootstrap dropdown
       // trigger. Reduce that trigger to a transparent wrapper so it contributes
-      // no box, colour, focus ring or `.btn:disabled` opacity of its own.
+      // no box, colour or `.btn:disabled` opacity of its own. Bootstrap's
+      // `.btn:focus` ring is switched off as well, so a replacement
+      // keyboard-focus ring is provided below.
       .bs-dropdown {
         display: inline-flex;
         align-items: center;
@@ -179,6 +181,10 @@
         color: inherit;
         box-shadow: none;
         line-height: inherit;
+
+        &:focus-visible {
+          box-shadow: 0 0 0 2px var(--color-focus);
+        }
 
         &:disabled {
           opacity: 1;
