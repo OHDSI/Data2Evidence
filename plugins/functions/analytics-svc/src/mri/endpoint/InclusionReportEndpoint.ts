@@ -551,22 +551,18 @@ export class InclusionReportEndpoint extends BaseQueryEngineEndpoint {
             return [];
         }
 
-        let basicDataInclusionReportFilters;
-        if (basicDataFilters.length === 1) {
-            basicDataInclusionReportFilters = [
-                structuredClone(basicDataFiltercard),
+        // Split Basic Data into distinct filtercards, one per constrained attribute.
+        // This must also happen for a single constrained attribute
+        const basicDataInclusionReportFilters = basicDataFilters.map((e) => {
+            // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
+            const basicDataFiltercardClone =
+                structuredClone(basicDataFiltercard);
+            basicDataFiltercardClone.content[0].attributes.content = [
+                structuredClone(e),
             ];
-        } else {
-            // Split Basic Data into distinct filtercards
-            basicDataInclusionReportFilters = basicDataFilters.map((e) => {
-                // Clone overall structure of Basic Data filter card and replace attributes.content with individual Basic Data attributes.content
-                const basicDataFiltercardClone =
-                    structuredClone(basicDataFiltercard);
-                basicDataFiltercardClone.content[0].attributes.content = [e];
 
-                return basicDataFiltercardClone;
-            });
-        }
+            return basicDataFiltercardClone;
+        });
 
         // Update basic data to use dynamically generated interactions.basicdata in cdm config
         basicDataInclusionReportFilters.forEach((e, idx) => {

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { getWizardFlow, isWizardVisibleOnSurface, parseNumericInput, validateRequiredFields } from '../dashboardFlowUtils'
+import {
+  getWizardFlow,
+  isWizardVisibleOnSurface,
+  normalizeWizardFieldValueForComparison,
+  parseNumericInput,
+  validateRequiredFields,
+} from '../dashboardFlowUtils'
 
 const createExpression = (operator: string, value: string | number) => ({
   type: 'Expression' as const,
@@ -212,5 +218,17 @@ describe('wizard metadata helpers', () => {
   it('defaults missing flow to required-fields', () => {
     expect(getWizardFlow({})).toBe('required-fields')
     expect(getWizardFlow({ flow: 'table1-config' })).toBe('table1-config')
+  })
+})
+
+describe('wizard field value helpers', () => {
+  it('treats null, undefined, and an empty string as the same empty form value', () => {
+    expect(normalizeWizardFieldValueForComparison(null)).toBe('')
+    expect(normalizeWizardFieldValueForComparison(undefined)).toBe('')
+    expect(normalizeWizardFieldValueForComparison('')).toBe('')
+  })
+
+  it('preserves non-empty field values', () => {
+    expect(normalizeWizardFieldValueForComparison('FEMALE')).toBe('FEMALE')
   })
 })
