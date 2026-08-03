@@ -184,10 +184,26 @@ describe('applyConstraintValue', () => {
       })
     })
 
-    it.each([[null], [undefined], [''], ['   ']])('rejects a missing value (%p)', async input => {
-      await expect(applyConstraintValue(dispatch, constraint(), input)).rejects.toThrow('Missing value for Age')
-      expect(dispatch).not.toHaveBeenCalled()
+    // Regression (#2913): emptying an optional text / concept-set filter clears it
+    // (dispatches an empty value) instead of erroring, so the required-filters modal can
+    // remove a previously-set optional value.
+    it.each([['text'], ['conceptSet']])('clears an empty %s constraint instead of rejecting', async type => {
+      await applyConstraintValue(dispatch, constraint({}, { type }), '')
+      expect(dispatch).toHaveBeenCalledWith('updateConstraintValue', {
+        constraintId: 'constraint-1',
+        value: [],
+      })
     })
+
+    it.each([[null], [undefined], [''], ['   ']])(
+      'rejects a missing value for a non-clearable constraint type (%p)',
+      async input => {
+        await expect(applyConstraintValue(dispatch, constraint({}, { type: 'attribute' }), input)).rejects.toThrow(
+          'Missing value for Age'
+        )
+        expect(dispatch).not.toHaveBeenCalled()
+      }
+    )
 
     it('rejects an unsupported object value instead of stringifying it', async () => {
       await expect(applyConstraintValue(dispatch, constraint(), { foo: 'bar' })).rejects.toThrow(
