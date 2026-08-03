@@ -66,9 +66,9 @@ async function navigateToCohorts(page) {
   await expect(page.getByText('Create Cohort:')).toBeVisible()
 }
 
-async function dismissDiscardDialog(page) {
+async function dismissUnsavedChangesDialog(page) {
   try {
-    await page.getByRole('button', { name: 'Discard' }).click({ timeout: 3000 })
+    await page.getByRole('button', { name: 'Leave without saving' }).click({ timeout: 3000 })
   } catch {
     // Dialog not present, continue
   }
@@ -76,7 +76,7 @@ async function dismissDiscardDialog(page) {
 
 async function navigateBackToCohortList(page) {
   await page.locator('#pane-left').getByRole('link', { name: 'Cohorts' }).click()
-  await dismissDiscardDialog(page)
+  await dismissUnsavedChangesDialog(page)
   await page.waitForTimeout(500)
 }
 
@@ -144,7 +144,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create second cohort with FEMALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await dismissDiscardDialog(page)
+  await dismissUnsavedChangesDialog(page)
 
   await page.waitForTimeout(500)
   await page.getByText('All').first().click()
@@ -167,8 +167,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
 
   // Select both cohorts and verify Compare
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
-  await page.getByRole('img').nth(4).click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_1}`).getByTestId('pa-cohort-select-btn').click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_2}`).getByTestId('pa-cohort-select-btn').click()
 
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()

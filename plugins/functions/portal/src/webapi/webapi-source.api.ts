@@ -165,6 +165,7 @@ export class WebApiSourceApi {
   ): Promise<{
     cacheExists: boolean
     cacheAttached: boolean
+    lastModified?: number | null
     activeJob?: { status: string; error?: string } | null
   }> {
     const databaseCode = sanitizeIdForCacheId(sourceKey)

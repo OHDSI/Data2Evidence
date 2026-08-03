@@ -8,6 +8,7 @@ export const useFeedback = (): {
   clearFeedback: () => void;
   getFeedback: () => Feedback | undefined;
   setGenericErrorFeedback: () => void;
+  setSuccessFeedback: (message: string) => void;
 } => {
   const { feedback } = useContext(AppContext);
   const dispatch = useContext(AppDispatchContext);
@@ -32,5 +33,17 @@ export const useFeedback = (): {
     });
   }, [setFeedback]);
 
-  return { setFeedback, clearFeedback, getFeedback, setGenericErrorFeedback };
+  const setSuccessFeedback = useCallback(
+    (message: string) => {
+      setFeedback({
+        variant: "alert",
+        type: "success",
+        message,
+        autoClose: 5000,
+      });
+    },
+    [setFeedback]
+  );
+
+  return { setFeedback, clearFeedback, getFeedback, setGenericErrorFeedback, setSuccessFeedback };
 };

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signing in…</title>
+    <style>
+      body { font-family: system-ui, sans-serif; display: flex; align-items: center;
+             justify-content: center; height: 100vh; margin: 0; color: #1f2937; }
+      .box { text-align: center; }
+      .spinner { width: 36px; height: 36px; border: 4px solid #e5e7eb;
+                 border-top-color: #000080; border-radius: 50%;
+                 animation: spin 1s linear infinite; margin: 0 auto 16px; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .err { color: #b91c1c; max-width: 640px; white-space: pre-wrap; text-align: left; }
+    </style>
+    <!-- Reuse the d2e portal's runtime OIDC config (client_id, endpoints, scope). -->
+    <script src="/d2e/portal/env.js"></script>
+  </head>
+  <body>
+    <div class="box">
+      <div class="spinner" id="spinner"></div>
+      <div id="status">Signing in…</div>
+    </div>
+    <script src="./bridge.js"></script>
+  </body>
+</html>

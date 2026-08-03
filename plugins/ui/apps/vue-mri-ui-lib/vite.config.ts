@@ -44,6 +44,10 @@ export default defineConfig(({ command, mode }) => {
       const path = url.split('?')[0] || ''
       const isAtlasAsset = path === '/atlas' || path.startsWith('/atlas/')
 
+      if (/^\/plugins\/[^/]+\/devx-api\/apps\/[^/]+\/proxy(\/|$)/.test(path)) {
+        return url
+      }
+
       if (url.startsWith('/@') || url.startsWith('/node_modules/') || url.startsWith('/src/')) {
         return url
       }
@@ -231,6 +235,11 @@ export default defineConfig(({ command, mode }) => {
       environment: 'happy-dom',
       setupFiles: ['./vitest.setup.ts'],
       include: ['src/**/__tests__/*.test.ts'],
+      server: {
+        deps: {
+          inline: ['vuetify'],
+        },
+      },
       coverage: {
         reporter: ['text', 'html', 'cobertura'],
         include: ['src/**/*.ts', 'src/**/*.vue'],

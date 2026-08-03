@@ -271,7 +271,7 @@ export default {
   },
   methods: {
     ...mapActions(['fireBookmarkQuery', 'loadbookmarkToState', 'resetChart', 'queryReset']),
-    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK]),
+    ...mapMutations([types.CONFIG_SET_HAS_ASSIGNED, types.SET_ACTIVE_BOOKMARK, types.SET_ACTIVE_BOOKMARK_BASELINE]),
     onAddFilterCardMenuItemSelected(configPath, isExclusion = false) {
       this.$emit('add', {
         configPath,
@@ -346,6 +346,7 @@ export default {
           await this.fireBookmarkQuery({ method: 'get', params: { cmd: 'loadAll' } })
           const savedBookmark = this.getBookmarkByNameAndUsername(bookmarkName, username)
           this[types.SET_ACTIVE_BOOKMARK](savedBookmark)
+          this[types.SET_ACTIVE_BOOKMARK_BASELINE](this.getBookmarksData)
         } catch (error) {
           console.error('Error during bookmark save or reload:', error)
         } finally {

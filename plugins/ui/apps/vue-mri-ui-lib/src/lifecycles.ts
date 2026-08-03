@@ -9,6 +9,7 @@ import { createPortalContextStore, usePortalContextStore } from './stores/portal
 import { installDatasetChangeWatcher } from './bootstrap/datasetWatcher'
 import { installPortalPropsListener } from './bootstrap/portalPropsListener'
 import { initGlobalsOnce, registerDirectivesAndComponents } from './bootstrap/registerGlobals'
+import { useUnsavedChanges } from './composables/useUnsavedChanges'
 import type { PortalContextState } from './types/portal-props'
 import { applyAppTheme } from './bootstrap/themeBootstrap'
 
@@ -54,9 +55,12 @@ const lifecycles = singleSpaVue({
     registerDirectivesAndComponents(app)
 
     watcherStop = installDatasetChangeWatcher(portalContextStore, vuexStore)
+
+    const unsavedChanges = useUnsavedChanges(vuexStore)
     propsListenerStop = installPortalPropsListener(portalContextStore, {
       expectedAppId: (props as any)?.appId,
       expectedContainerId: (props as any)?.containerId,
+      guardChange: (_incoming, apply) => unsavedChanges.guard(apply),
     })
 
     if (import.meta.env.VITE_DEBUG !== 'true') {

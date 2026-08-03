@@ -46,4 +46,10 @@ for dir in "$ROOT_DIR"/plugins/fhir_functions/*/; do
 done
 
 echo ""
+echo "Generating deno.lock files for sibyl_functions..."
+for dir in "$ROOT_DIR"/plugins/sibyl_functions/*/; do
+    [[ -d "$dir" ]] && generate_lock "$dir"
+done
+
+echo ""
 echo "Done!"
