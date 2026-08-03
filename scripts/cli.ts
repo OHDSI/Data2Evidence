@@ -39,7 +39,7 @@ interface CliOptions {
 
 class D2ECli {
   version: string;
-  LATEST_DOCKER_TAG_NAME: string = "0.17.0-beta"; // Update this as needed
+  LATEST_DOCKER_TAG_NAME: string = "0.17.1-beta"; // Update this as needed
   default_version: string = "0.17.0"; // Update this as needed default/base version
   CADDY__CONFIG: string;
   ENV_TYPE: string;
@@ -1005,6 +1005,7 @@ class D2ECli {
             console.log("Process completed successfully.");
           } else {
             console.log(`Process exited with code ${code}`);
+            process.exitCode = code ?? 1;
           }
         });
       });
