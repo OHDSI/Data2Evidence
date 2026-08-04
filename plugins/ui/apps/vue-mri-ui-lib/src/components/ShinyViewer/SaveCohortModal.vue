@@ -529,30 +529,18 @@ export default {
       const url = '/analytics-svc/api/services/cohort'
 
       this.savingStep = 'materializing-cohort'
-      await this.onAddCohortOkButtonPress({ params, url })
+      const materializeResponse = await this.onAddCohortOkButtonPress({ params, url })
+      const cohortDefinitionId = materializeResponse?.cohortDefinitionId
 
-      this.savingStep = 'refreshing-cohort'
-      const materializedBookmark = await this.refreshAndFindBookmark()
-
-      if (!materializedBookmark.cohortDefinitionId) {
+      if (!cohortDefinitionId) {
         throw new Error(this.getText('MRI_PA_BOOKMARK_MISSING_COHORT_DEFINITION'))
       }
 
-      const materializedCohorts = this.getMaterializedCohorts
-      const materializedCohort = materializedCohorts.find(
-        cohort =>
-          materializedBookmark.bookmarkname === cohort?.cohortDefinitionName &&
-          cohort.id === materializedBookmark.cohortDefinitionId
-      )
+      this.savedCohortId = cohortDefinitionId
 
-      if (!materializedCohort) {
-        console.error('[SaveCohort] Bookmark name:', materializedBookmark.bookmarkname)
-        console.error('[SaveCohort] Bookmark cohortDefinitionId:', materializedBookmark.cohortDefinitionId)
-        console.error('[SaveCohort] Available materialized cohorts:', materializedCohorts)
-        throw new Error(this.getText('MRI_PA_MATERIALIZED_COHORT_NOT_FOUND'))
-      }
+      this.savingStep = 'refreshing-cohort'
+      await this.refreshAndFindBookmark()
 
-      this.savedCohortId = materializedCohort.id
       this.savingStep = 'complete'
     },
     ensureSavedBookmarkIdForMaterialization() {
