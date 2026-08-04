@@ -6,6 +6,25 @@ import { WebApiSourceApi } from './webapi-source.api.ts'
 import { IDbCredentials, IDaimonRequest, ISourceRequest } from './types.ts'
 import { findRoleByName, sourceUserRoleName } from './webapi-role.util.ts'
 
+// Mirrors org.ohdsi.webapi.common.DBMSType. A source whose dialect is absent there throws from
+// DataSourceDTOParser during WebAPI's connection check, and that exception escapes
+// SourceService.checkConnectionSafe — aborting priority daimon resolution for every source, not
+// just this one.
+const WEBAPI_SUPPORTED_DIALECTS = new Set([
+  'postgresql',
+  'sql server',
+  'pdw',
+  'redshift',
+  'oracle',
+  'impala',
+  'bigquery',
+  'netezza',
+  'hive',
+  'spark',
+  'snowflake',
+  'synapse',
+])
+
 @Injectable()
 export class WebApiSourceService {
   private readonly logger = createLogger(this.constructor.name)
@@ -18,6 +37,12 @@ export class WebApiSourceService {
     dbCredentials: IDbCredentials,
     authToken?: string
   ): Promise<void> {
+    const dialect = this.mapDialect(dataset.dialect)
+    if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
+      await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
+      return
+    }
+
     try {
       const sourceRequest = this.buildSourceRequest(dataset, datasetDetail, dbCredentials)
       const existing = await this.webApiSourceApi.getSourceByKey(dataset.id, authToken)
@@ -35,6 +60,20 @@ export class WebApiSourceService {
       this.logger.error(`Failed to sync WebAPI source for dataset ${dataset.id}: ${error}`)
       throw error
     }
+  }
+
+  private async warnUnsupportedDialect(
+    datasetId: string,
+    dialect: string,
+    authToken?: string
+  ): Promise<void> {
+    const existing = await this.webApiSourceApi.getSourceByKey(datasetId, authToken)
+    const suffix = existing
+      ? `; existing source ${existing.sourceId} left in place and must be removed manually`
+      : ''
+    this.logger.warn(
+      `Skipping WebAPI sync for dataset ${datasetId}: WebAPI does not support dialect '${dialect}'${suffix}`
+    )
   }
 
   // Manual cache (re)build for a webapi dataset. Unlike the private
