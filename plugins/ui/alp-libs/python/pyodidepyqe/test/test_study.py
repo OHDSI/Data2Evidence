@@ -41,7 +41,7 @@ def test_get_user_study_list(setup):
     assert study_list == mock_study_list
 
 
-def _get_mock_response(auth_api, path, params):
+def _get_mock_response(auth_api, path, params, headers=None, **kwargs):
     if path == STUDY_LIST_PATH:
         return MockResponse(200, mock_study_list)
 

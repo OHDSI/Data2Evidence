@@ -305,6 +305,18 @@ function _getValidDefinition(cdwConfig) {
                         type: "boolean",
                     },
                     {
+                        name: "link",
+                        mandatory: false,
+                        type: "object",
+                        children: [
+                            {
+                                name: "label",
+                                mandatory: false,
+                                type: "string",
+                            },
+                        ],
+                    },
+                    {
                         name: "order",
                         mandatory: false,
                         type: "number",

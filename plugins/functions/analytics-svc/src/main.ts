@@ -32,6 +32,11 @@ import PortalServerAPI from "./api/PortalServerAPI";
 import { env } from "./env";
 import addCorrelationIDToHeader from "./middleware/AddCorrelationId.ts";
 import { parseValueForPrototypePollutingAssignment } from "./utils/utils";
+import { getAuditUserIdFromRequest } from "./utils/AuditLogger.ts";
+import {
+    createCdmSqlAuditConnection,
+    createCdmSqlAuditContext,
+} from "./utils/CdmSqlAuditLogger.ts";
 dotenv.config();
 const log = console; //Logger.CreateLogger("analytics-log");
 const mriConfigConnection = new MriConfigConnection(
@@ -151,22 +156,43 @@ const initRoutes = async (app: express.Application) => {
                     credentials = req.dbCredentials.studyAnalyticsCredential;
                 }
 
-                if (credentials.dialect === ANALYTICS_DB_DIALECTS.HANA) {
-                    req.dbConnections = await getDBConnections({
-                        analyticsCredentials: credentials,
-                        userObj,
-                        sessionVariables: {
-                            paConfigId: req.paConfigId,
-                            paConfigVersion: req.paConfigVersion,
-                            cdmConfigId: req.cdmConfigId,
-                            cdmConfigVersion: req.cdmConfigVersion,
-                        },
-                    });
-                } else {
-                    req.dbConnections = getTrexDbConnection({
-                        analyticsCredentials: credentials,
-                    });
-                }
+                const dbConnections =
+                    credentials.dialect === ANALYTICS_DB_DIALECTS.HANA
+                        ? await getDBConnections({
+                              analyticsCredentials: credentials,
+                              userObj,
+                              sessionVariables: {
+                                  paConfigId: req.paConfigId,
+                                  paConfigVersion: req.paConfigVersion,
+                                  cdmConfigId: req.cdmConfigId,
+                                  cdmConfigVersion: req.cdmConfigVersion,
+                              },
+                          })
+                        : getTrexDbConnection({
+                              analyticsCredentials: credentials,
+                          });
+
+                req.dbConnections = {
+                    ...dbConnections,
+                    analyticsConnection: createCdmSqlAuditConnection(
+                        dbConnections.analyticsConnection,
+                        createCdmSqlAuditContext({
+                            request: req,
+                            actorId:
+                                userObj?.getUser() ??
+                                getAuditUserIdFromRequest(req) ??
+                                "unknown",
+                            databaseCode: credentials.code,
+                            databaseDialect: credentials.dialect,
+                            databaseEngine:
+                                credentials.dialect ===
+                                ANALYTICS_DB_DIALECTS.HANA
+                                    ? "hana"
+                                    : "duckdb",
+                            schemaName: credentials.schema,
+                        })
+                    ),
+                };
             }
 
             next();

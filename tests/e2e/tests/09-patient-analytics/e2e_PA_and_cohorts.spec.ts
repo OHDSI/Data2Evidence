@@ -167,8 +167,8 @@ test(TEST_NAME, async ({ page }) => {
   await expect(page.locator('#pane-left')).toContainText(COHORT_2)
 
   // Select both cohorts and verify Compare
-  await page.locator('div:nth-child(2) > .footer > div > svg').first().click()
-  await page.getByRole('img').nth(4).click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_1}`).getByTestId('pa-cohort-select-btn').click()
+  await page.getByTestId(`pa-cohort-card-${COHORT_2}`).getByTestId('pa-cohort-select-btn').click()
 
   await expect(page.getByRole('button', { name: 'Compare' })).toBeEnabled()
   await page.getByRole('button', { name: 'Compare' }).click()

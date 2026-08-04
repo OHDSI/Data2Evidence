@@ -38,7 +38,7 @@ it("render correctly", () => {
   expect(queryByTestId("header")).toBeTruthy();
 });
 
-it("has 2 navigation menu", () => {
+it("renders the account tab as the only nav item when unauthenticated", () => {
   const { queryByTestId } = render(
     <AppProvider>
       <MemoryRouter>
@@ -48,4 +48,28 @@ it("has 2 navigation menu", () => {
   );
 
   expect(queryByTestId("nav")?.childElementCount).toBe(1);
+});
+
+it("renders the long Data2Evidence logo", () => {
+  const { getByAltText } = render(
+    <AppProvider>
+      <MemoryRouter>
+        <Header portalType="researcher" />
+      </MemoryRouter>
+    </AppProvider>
+  );
+
+  expect(getByAltText("Data2Evidence").getAttribute("src")).toContain("/assets/d2e-data2evidence.png");
+});
+
+it("pins the account tab to the right of the nav", () => {
+  const { queryByTestId } = render(
+    <AppProvider>
+      <MemoryRouter>
+        <Header portalType="researcher" />
+      </MemoryRouter>
+    </AppProvider>
+  );
+
+  expect(queryByTestId("nav")?.lastElementChild?.className).toContain("header__menu-item--pin-right");
 });
