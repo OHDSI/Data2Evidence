@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useState } from "react";
+import { FC, useCallback, useState } from "react";
 import { Feedback } from "../types";
 import Divider from "@mui/material/Divider";
 import { Button, Dialog } from "@portal/components";
@@ -8,7 +8,7 @@ import { i18nKeys } from "../context/state";
 import "./ConceptSetDeleteDialog.scss";
 
 interface ConceptSetDeleteDialogProps {
-  conceptSet?: { id: number; name: string };
+  conceptSet?: { id: string; name: string };
   open: boolean;
   datasetId: string;
   setMainFeedback: (feedback: Feedback) => void;

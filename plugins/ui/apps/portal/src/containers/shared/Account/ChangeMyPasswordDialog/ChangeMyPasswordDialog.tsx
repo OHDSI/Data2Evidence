@@ -1,20 +1,18 @@
 import React, { FC, useCallback, useEffect, useState } from "react";
-import FormControl from "@mui/material/FormControl";
-import Divider from "@mui/material/Divider";
 import {
   Button,
   Dialog,
+  Feedback,
+  FormControl,
   IconButton,
   TextField,
   Tooltip,
   VisibilityOffIcon,
   VisibilityOnIcon,
 } from "@portal/components";
-import { Feedback } from "../../../../types";
 import { generateRandom } from "../../../../utils";
-import { useTranslation } from "../../../../contexts";
+import { useFeedback, useTranslation } from "../../../../contexts";
 import { api } from "../../../../axios/api";
-import "./ChangeMyPassword.scss";
 
 interface ChangeMyPasswordDialogProps {
   open: boolean;
@@ -30,19 +28,21 @@ const EMPTY_FORM_DATA: FormData = { oldPassword: "", password: "" };
 
 export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, onClose }) => {
   const { getText, i18nKeys } = useTranslation();
+  const { setFeedback } = useFeedback();
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM_DATA);
   const [loading, setLoading] = useState(false);
   const [passwordShown, setPasswordShown] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback>({});
+  const [dialogFeedback, setDialogFeedback] = useState<Feedback>({});
 
   useEffect(() => {
     setFormData(EMPTY_FORM_DATA);
-    setFeedback({});
+    setDialogFeedback({});
+    setPasswordShown(false);
     setLoading(false);
   }, [open]);
 
   const handleClose = useCallback(() => {
-    setFeedback({});
+    setDialogFeedback({});
     typeof onClose === "function" && onClose();
   }, [onClose]);
 
@@ -60,117 +60,97 @@ export const ChangeMyPasswordDialog: FC<ChangeMyPasswordDialogProps> = ({ open, 
       setLoading(true);
       await api.userMgmt.changeMyPassword(formData.oldPassword, formData.password);
       setFeedback({
+        variant: "alert",
         type: "success",
         message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED),
+        autoClose: 5000,
       });
+      typeof onClose === "function" && onClose();
     } catch (err: any) {
-      const code = err?.data?.code;
-      const message = err?.data?.message || err?.data?.error_description;
-      if (code === "session.invalid_credentials") {
-        setFeedback({
-          type: "error",
-          message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__OLD_PASSWORD_INCORRECT),
-        });
-      } else if (message) {
-        setFeedback({ type: "error", message });
-      } else {
-        console.log("There is an error in updating password", err);
-        setFeedback({
-          type: "error",
-          message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_MESSAGE),
-          description: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION),
-        });
-      }
+      console.log("There is an error in updating password", err);
+      setDialogFeedback({
+        type: "error",
+        title: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_MESSAGE),
+        message: getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__PASSWORD_UPDATED_ERROR_DESCRIPTION),
+      });
     } finally {
       setLoading(false);
     }
-  }, [formData.oldPassword, formData.password, getText]);
-
-  const handleSubmit = useCallback(
-    (e: React.FormEvent) => {
-      e.preventDefault();
-      handleUpdate();
-    },
-    [handleUpdate]
-  );
+  }, [formData.oldPassword, formData.password, getText, setFeedback, onClose, i18nKeys]);
 
   return (
     <Dialog
-      className="change-my-password-dialog"
       title={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TITLE)}
       closable
+      bodyPadded
       open={open}
       onClose={handleClose}
-      feedback={feedback}
-    >
-      <form onSubmit={handleSubmit}>
-        <Divider />
-        <div className="change-my-password-dialog__content">
-        <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <TextField
-                fullWidth
-                type="password"
-                variant="standard"
-                label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_1)}
-                value={formData.oldPassword}
-                onChange={(event) => setFormData((formData) => ({ ...formData, oldPassword: event.target.value }))}
-                autoFocus
-              />
-            </div>
-          </FormControl>
-        </div>
-        <div className="u-padding-vertical--normal">
-          <FormControl fullWidth>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <TextField
-                fullWidth
-                type={passwordShown ? "text" : "password"}
-                variant="standard"
-                label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_2)}
-                value={formData.password}
-                onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
-              />
-              <Tooltip
-                title={
-                  passwordShown
-                    ? getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_1)
-                    : getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_2)
-                }
-              >
-                <IconButton
-                  startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
-                  onClick={handleTogglePassword}
-                />
-              </Tooltip>
-              <Button
-                text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_GENERATE)}
-                variant="text"
-                onClick={handleGeneratePassword}
-              />
-            </div>
-          </FormControl>
-        </div>
-        </div>
-        <Divider />
-        <div className="button-group-actions">
+      feedback={dialogFeedback}
+      footerSlots={{
+        block: true,
+        secondary: (
           <Button
             text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_CANCEL)}
             onClick={handleClose}
             variant="outlined"
-            block
             disabled={loading}
           />
+        ),
+        primary: (
           <Button
             text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_UPDATE)}
             onClick={handleUpdate}
-            block
             loading={loading}
-            type="submit"
           />
-        </div>
-      </form>
+        ),
+      }}
+    >
+      <div className="u-padding-vertical--normal">
+        <FormControl fullWidth>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <TextField
+              fullWidth
+              type="password"
+              variant="standard"
+              label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_1)}
+              value={formData.oldPassword}
+              onChange={(event) => setFormData((formData) => ({ ...formData, oldPassword: event.target.value }))}
+              autoFocus
+            />
+          </div>
+        </FormControl>
+      </div>
+      <div className="u-padding-vertical--normal">
+        <FormControl fullWidth>
+          <div style={{ display: "flex", alignItems: "flex-end" }}>
+            <TextField
+              fullWidth
+              type={passwordShown ? "text" : "password"}
+              variant="standard"
+              label={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TEXT_FIELD_LABEL_2)}
+              value={formData.password}
+              onChange={(event) => setFormData((formData) => ({ ...formData, password: event.target.value }))}
+            />
+            <Tooltip
+              title={
+                passwordShown
+                  ? getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_1)
+                  : getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__DIALOG_TOOLTIP_TITLE_2)
+              }
+            >
+              <IconButton
+                startIcon={passwordShown ? <VisibilityOffIcon /> : <VisibilityOnIcon />}
+                onClick={handleTogglePassword}
+              />
+            </Tooltip>
+            <Button
+              text={getText(i18nKeys.CHANGE_MY_PASSWORD_DIALOG__BUTTON_GENERATE)}
+              variant="text"
+              onClick={handleGeneratePassword}
+            />
+          </div>
+        </FormControl>
+      </div>
     </Dialog>
   );
 };
