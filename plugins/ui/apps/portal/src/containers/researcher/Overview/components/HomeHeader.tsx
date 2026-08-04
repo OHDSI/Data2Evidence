@@ -29,7 +29,7 @@ export const HomeHeader: FC<HomeHeaderProps> = ({ searchKeyword, onSearchEnter, 
 
   return (
     <div className={classes}>
-      <img alt="Data2Evidence" className="logo" src={`${env.PUBLIC_URL}/assets/d2e.svg`} height={56} />
+      <img alt="Data2Evidence" className="logo" src={`${env.PUBLIC_URL}/assets/d2e-data2evidence.png`} />
       <SearchBarDataset keyword={searchKeyword} onEnter={onSearchEnter} onChange={onSearchChange} />
       <AccountButton />
     </div>

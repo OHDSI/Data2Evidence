@@ -182,6 +182,8 @@ services:
     build:
       context: .
       dockerfile: ./services/alp-dataflow-gen-worker/Dockerfile
+      secrets:
+        - github_pat
     # flows-dev overlay: devx/trex writes flow source here, worker executes it.
     # Local-dev only; inert unless D2E_FLOWS_DEV_DIR is set. See run-flow.sh.
     volumes:
@@ -368,3 +370,5 @@ volumes:
 secrets:
   github_token:
     environment: GITHUB_TOKEN
+  github_pat:
+    environment: GITHUB_PAT

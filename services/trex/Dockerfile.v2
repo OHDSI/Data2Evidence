@@ -6,7 +6,7 @@
 # env-gated D2E_COMPAT layer (merged upstream), so the core is NOT vendored here —
 # this image only adds d2e's plugins, CDW data, logto, ONNX and DuckDB extensions.
 
-FROM ghcr.io/ohdsi/trexsql:sha-666aa4a2201b59039d180cc0eee37721b0da5a9c@sha256:12e37dd83b61c6e7b342b7b0edf41e3d5b5348b6e80504c3a514b009c81e5bbc AS base
+FROM ghcr.io/ohdsi/trexsql:sha-5541894bf73d70b805a48bfb7122e27c93c516f1@sha256:dff6d3794078618aa4b8ca197a97eac711336de715ab731e7a66bb6b5bb278ae AS base
 
 USER root
 WORKDIR /usr/src
@@ -40,7 +40,7 @@ RUN mkdir -p /root/.duckdb/extensions/v${DUCKDB_VERSION}/linux_${TARGETARCH} && 
         gzip -df ${lib}.duckdb_extension.gz; \
     done
 
-RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert
+RUN mkdir -p /usr/src/data/cache /usr/src/data/plugins /usr/src/cdw_data/built_in ./cert /var/log/d2e/audit
 
 # Bundle CI-built plugins from plugin-artifacts/*.tgz. Two-pass extract handles
 # cross-directory hardlinks in Deno-packed tarballs that GNU tar -x rejects.

@@ -17,6 +17,7 @@ volumes:
   hana-data:
   supabase-storage-data:
   hades-data:
+  audit-logs:
 
 x-envs:
   env_converter: &x-converter
@@ -95,6 +96,7 @@ services:
       - trex:/usr/src/data
       - cdw-config-cachedb-data-1:/usr/src/cdw_data/dynamically_generated
       - hades-data:/data/hades
+      - audit-logs:/var/log/d2e/audit
     ports:
       - "8090:8080"
     healthcheck:
@@ -395,9 +397,14 @@ services:
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
       OLLAMA_API_KEY: ${OLLAMA_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
+      COHORT_HISTORY_MAX_TOKENS: ${COHORT_HISTORY_MAX_TOKENS:-4000}
       # Pythia agent (Amazon Bedrock). AWS_BEARER_TOKEN_BEDROCK from the deploy env.
       AWS_REGION: ${AWS_REGION:-us-east-1}
       BAO_AGENT_MODEL: ${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}
+      # WebAPI trexsql.proxy probes localhost:8001 by default; the pythia mount lives on the Deno listener (33001).
+      BAO_AGENT_UPSTREAM_BASE: ${BAO_AGENT_UPSTREAM_BASE:-http://localhost:33001/plugins/ohdsi/pythia}
+      # Agent runtime reads TREX_AGENTS_DEFAULT_MODEL (provider/modelId), not BAO_AGENT_MODEL.
+      TREX_AGENTS_DEFAULT_MODEL: ${TREX_AGENTS_DEFAULT_MODEL:-bedrock/${BAO_AGENT_MODEL:-us.anthropic.claude-sonnet-4-6}}
       AWS_BEARER_TOKEN_BEDROCK: ${AWS_BEARER_TOKEN_BEDROCK:-}
       D2E_MEMORY_LIMIT: ${D2E_MEMORY_LIMIT:-}
       D2E_SWAP_LIMIT: ${D2E_SWAP_LIMIT:-}
@@ -440,6 +447,8 @@ services:
       CACHE_TASK_TIMEOUT: ${CACHE_TASK_TIMEOUT:-10800}
       ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT: '${ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT:-{"hana": 10000}}'
       IS_AUDIT_LOG_ENABLED: ${IS_AUDIT_LOG_ENABLED:-false}
+      IS_CDM_SQL_AUDIT_LOG_ENABLED: ${IS_CDM_SQL_AUDIT_LOG_ENABLED:-false}
+      AUDIT_LOG_TO_CONSOLE: ${AUDIT_LOG_TO_CONSOLE:-false}
       ANALYTICS_HANA_STREAMING_ENABLED: ${ANALYTICS_HANA_STREAMING_ENABLED:-false}
       # TREX_DEBUG_GC: ${TREX_DEBUG_GC:-0}
       # RUST_LOG: ${RUST_LOG:-info}
