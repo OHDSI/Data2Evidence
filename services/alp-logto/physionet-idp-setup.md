@@ -126,7 +126,7 @@ JSON describing the PhysioNet connector. Example against a real PhysioNet host:
     "issuer": "https://physionet.org",
     "scope": "openid profile email credentialing:read",
     "responseType": "code",
-    "tokenEndpointAuthMethod": "client_secret_basic"
+    "tokenEndpointAuthMethod": "client_secret_post"
   },
   "syncProfile": true
 }
@@ -358,7 +358,7 @@ connector accordingly:
     "issuer": "http://localhost:8000",
     "scope": "openid profile email credentialing:read",
     "responseType": "code",
-    "tokenEndpointAuthMethod": "client_secret_basic"
+    "tokenEndpointAuthMethod": "client_secret_post"
   },
   "syncProfile": true
 }
