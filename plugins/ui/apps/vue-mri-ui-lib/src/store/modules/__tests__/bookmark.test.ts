@@ -305,4 +305,102 @@ describe('store - bookmark', () => {
       })
     })
   })
+
+  describe('actions', () => {
+    const createDeferred = () => {
+      let resolve!: (value?: any) => void
+      let reject!: (reason?: any) => void
+      const promise = new Promise((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      return { promise, resolve, reject }
+    }
+
+    const flushMicrotasks = () => new Promise(resolve => setTimeout(resolve, 0))
+
+    describe('refreshBookmarksForDatasetSwitch', () => {
+      it('does not block the cohort-definition load on the can-materialize-cohort check', async () => {
+        const canMaterialize = createDeferred()
+        const dispatched: string[] = []
+        const dispatch = vi.fn((name: string) => {
+          dispatched.push(name)
+          if (name === 'fireCheckIfDatasetCanMaterializeCohorts') {
+            return canMaterialize.promise
+          }
+          return Promise.resolve()
+        })
+        const rootGetters = { getAllChartConfigs: { shared: { enabled: false } } }
+
+        let settled = false
+        const run = bookmarkModule.actions
+          .refreshBookmarksForDatasetSwitch({ dispatch, rootGetters })
+          .then(() => {
+            settled = true
+          })
+
+        await flushMicrotasks()
+
+        expect(dispatched).toContain('fireCheckIfDatasetCanMaterializeCohorts')
+        expect(dispatched).toContain('fireBookmarkQuery')
+        expect(settled).toBe(true)
+
+        canMaterialize.resolve()
+        await run
+      })
+    })
+
+    describe('fireCheckIfDatasetCanMaterializeCohorts', () => {
+      const createAjaxDispatcher = () => {
+        const request = createDeferred()
+        const dispatch = vi.fn((name: string) => {
+          if (name === 'ajaxAuth') {
+            return request.promise
+          }
+          return Promise.resolve()
+        })
+        return { dispatch, request }
+      }
+
+      it('commits the result when the selected dataset is unchanged', async () => {
+        const { dispatch, request } = createAjaxDispatcher()
+        const commit = vi.fn()
+        const state = { canMaterializeCohortDatasetId: '' }
+        const rootGetters = { getSelectedDataset: { id: 'ds-1' }, getText: (key: string) => key }
+
+        const run = bookmarkModule.actions.fireCheckIfDatasetCanMaterializeCohorts({
+          state,
+          commit,
+          dispatch,
+          rootGetters,
+        })
+        request.resolve({ data: true })
+        await run
+
+        expect(commit).toHaveBeenCalledWith(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
+          canDatasetMaterializeCohorts: true,
+          datasetId: 'ds-1',
+        })
+      })
+
+      it('ignores the result when the selected dataset changed before the response resolved', async () => {
+        const { dispatch, request } = createAjaxDispatcher()
+        const commit = vi.fn()
+        const state = { canMaterializeCohortDatasetId: '' }
+        const rootGetters = { getSelectedDataset: { id: 'ds-1' }, getText: (key: string) => key }
+
+        const run = bookmarkModule.actions.fireCheckIfDatasetCanMaterializeCohorts({
+          state,
+          commit,
+          dispatch,
+          rootGetters,
+        })
+        rootGetters.getSelectedDataset = { id: 'ds-2' }
+        request.resolve({ data: true })
+        await run
+
+        expect(commit).not.toHaveBeenCalled()
+      })
+    })
+  })
 })

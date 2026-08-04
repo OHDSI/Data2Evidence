@@ -368,6 +368,8 @@ export const i18n = {
     MRI_PA_DRILL_DOWN: 'Drill Down',
     MRI_PA_CHART_NO_DATA_DEFAULT_MESSAGE:
       'Data cannot be displayed due to an internal error. Please contact your system administrator.',
+    MRI_PA_CHART_NO_AXIS_SELECTED:
+      'No axis is selected, so there is nothing to aggregate. Choose at least one attribute for an axis.',
     MRI_PA_MENUITEM_INTERACTIONS_GENERAL: 'Basic Data',
     MRI_PA_TITLE_FILTER_SUMMARY: 'Filter Summary',
     MRI_PA_TITLE_FILTER_SUMMARY_TOOLTIP: 'View Filter Summary',

@@ -12,6 +12,8 @@ class ConceptSetConcept:
 @dataclass
 class ConceptSet:
     id: int
+    source: str
+    ref: str
     name: str
     shared: bool
     concepts: List[ConceptSetConcept]

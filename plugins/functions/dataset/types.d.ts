@@ -94,6 +94,9 @@ export interface Dataset {
   type?: string
   dialect: string
   databaseCode: string
+  // Portal-assigned cache catalog id (sanitized dataset id; databaseCode for
+  // HANA). Nullable in the portal entity, so keep it optional here.
+  cacheId?: string | null
   schemaName: string
   resultsSchemaName: string
   dashboards: DatasetDashboard[]
