@@ -2,6 +2,9 @@
   "workspace": [],
   "nodeModulesDir": "auto",
   "unstable": ["sloppy-imports"],
+  "tasks": {
+    "test": "deno test --allow-read --allow-env --allow-net --no-check"
+  },
   "compilerOptions": {
     "lib": [
       "deno.window"
@@ -19,6 +22,8 @@
     "pg-promise": "npm:pg-promise@^10.10.1",
     "axios": "npm:axios@^1.7.7",
     "@sap/textbundle": "npm:@sap/textbundle@4.2.0",
+    "@std/assert": "jsr:@std/assert@1",
+    "@std/testing": "jsr:@std/testing@1",
     "./src/env": "./src/env.ts",
     "./src/types": "./src/types.ts",
     "./src/constants": "./src/constants.ts",

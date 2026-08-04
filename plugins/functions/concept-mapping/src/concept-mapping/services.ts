@@ -13,38 +13,18 @@ function validateIdentifierForSchemaOrTableName(identifier: string): void {
 class TrexConnection {
   private readonly conn: any;
 
-  constructor(databaseCode: string, schemaName: string) {
+  constructor(cacheId: string, schemaName: string) {
     try {
-      validateIdentifierForSchemaOrTableName(databaseCode);
+      validateIdentifierForSchemaOrTableName(cacheId);
       validateIdentifierForSchemaOrTableName(schemaName);
     } catch (err) {
-      console.error("Invalid identifier for database or schema name, ", err);
+      console.error("Invalid identifier for cache id or schema name, ", err);
       throw err;
     }
 
     try {
       // @ts-ignore Cannot find name 'Trex'
       const dbm = Trex.databaseManager();
-      // getDatabaseCredentials() returns an array of objects with:
-      //   code: string      (= databaseCode)
-      //   id: string        (= dataset UUID)
-      //   dialect: string   (e.g. "hana", "postgres", "duckdb")
-      const allCredentials = dbm.getDatabaseCredentials() as Array<{
-        code: string;
-        id: string;
-        dialect: string;
-        [key: string]: any;
-      }>;
-      const cred = allCredentials.find((c) => c.code === databaseCode);
-      // For HANA: cacheId === databaseCode.
-      // For others: cacheId is computed from the dataset UUID (hyphens → underscores, leading digit → underscore prefix).
-      const normalized = cred ? cred.id.replace(/-/g, "_") : "";
-      const cacheId = cred
-        ? cred.dialect === "hana"
-          ? cred.code
-          : (normalized.match(/^[0-9]/) ? `_${normalized}` : normalized)
-        : databaseCode; // fallback: use databaseCode as-is (pre-restructure behaviour)
-
       this.conn = dbm.getConnection(
         cacheId,
         schemaName,
@@ -84,11 +64,80 @@ export class EmptyMappingsError extends Error {
   }
 }
 
-export const getSourceToConceptMappings = async (
+/**
+ * Raised when a datasetId was supplied but its cacheId could not be resolved.
+ * Never fall back to a guessed cacheId here: a wrong cacheId points trex at a
+ * different cache catalog, so we would silently read or write the wrong
+ * database. Surfacing this (→ 502) is the safe behaviour.
+ */
+export class CacheIdResolutionError extends Error {
+  constructor(datasetId: string, options?: { cause?: unknown }) {
+    super(`Unable to resolve cacheId for dataset ${datasetId}`, options);
+  }
+}
+
+/** The subset of the portal dataset record needed to resolve a cacheId. */
+export interface DatasetCacheRecord {
+  cacheId?: string | null;
+  databaseCode?: string | null;
+}
+
+export type DatasetFetcher = (datasetId: string) => Promise<DatasetCacheRecord>;
+
+/**
+ * Resolve the cache catalog alias to open a trex connection against.
+ *
+ * `portal.dataset.cache_id` is the single source of truth. It is NOT derivable:
+ * the migration backfills legacy rows with `database_code`, snapshots inherit
+ * their source's cacheId, and operators may set it explicitly. The entity's
+ * `applyCacheIdDefault()` is an insert-time default generator, not a lookup —
+ * recomputing it here would diverge for all three of those populations, and
+ * could not distinguish two datasets sharing a databaseCode with different
+ * schemas at all.
+ *
+ * Resolution order (matches every other trex consumer, e.g.
+ * d2e-webapi/src/dao/trex.dao.ts and terminology-svc/src/api/portal-api.ts):
+ *   1. no datasetId supplied  → databaseCode (pre-dataset / infra path, unchanged)
+ *   2. dataset.cacheId        → authoritative
+ *   3. dataset.databaseCode   → guarded fallback, only when cacheId is genuinely absent
+ *   4. request databaseCode   → last resort when the record carries neither
+ */
+export const resolveCacheId = async (
   databaseCode: string,
+  datasetId?: string,
+  fetchDataset?: DatasetFetcher,
+): Promise<string> => {
+  if (!datasetId) {
+    return databaseCode;
+  }
+
+  if (!fetchDataset) {
+    throw new CacheIdResolutionError(datasetId, {
+      cause: new Error("No dataset fetcher configured"),
+    });
+  }
+
+  let dataset: DatasetCacheRecord | undefined;
+  try {
+    dataset = await fetchDataset(datasetId);
+  } catch (error) {
+    throw new CacheIdResolutionError(datasetId, { cause: error });
+  }
+
+  if (!dataset) {
+    throw new CacheIdResolutionError(datasetId, {
+      cause: new Error("Dataset not found"),
+    });
+  }
+
+  return dataset.cacheId ?? dataset.databaseCode ?? databaseCode;
+};
+
+export const getSourceToConceptMappings = async (
+  cacheId: string,
   schemaName: string,
 ) => {
-  const client = new TrexConnection(databaseCode, schemaName);
+  const client = new TrexConnection(cacheId, schemaName);
   try {
     const sql = `SELECT * FROM ${schemaName}.${SOURCE_TO_CONCEPT_MAP_TABLE}`;
     const result = await client.query(sql);
@@ -102,14 +151,14 @@ export const getSourceToConceptMappings = async (
 };
 
 export const saveSourceToConceptMappings = async (
-  databaseCode: string,
+  resolveCacheIdFor: () => Promise<string>,
   schemaName: string,
   sourceVocabularyId: string,
   conceptMappings: string,
 ) => {
-  // Decode and validate mappings BEFORE opening a DB connection so that an
-  // empty payload is always rejected with EmptyMappingsError (→ 400), even
-  // when the database is unavailable.
+  // Decode and validate mappings BEFORE resolving the cacheId or opening a DB
+  // connection, so that an empty payload is always rejected with
+  // EmptyMappingsError (→ 400) even when portal or the database is unavailable.
   const parsedMappings = convertZlibBase64ToJson(conceptMappings).map(
     (mapping: any) => ({
       ...mapping,
@@ -121,7 +170,8 @@ export const saveSourceToConceptMappings = async (
     throw new EmptyMappingsError();
   }
 
-  const client = new TrexConnection(databaseCode, schemaName);
+  const cacheId = await resolveCacheIdFor();
+  const client = new TrexConnection(cacheId, schemaName);
   try {
     const columns = SOURCE_TO_CONCEPT_MAP_COLUMNS;
     const valuePlaceholders = parsedMappings

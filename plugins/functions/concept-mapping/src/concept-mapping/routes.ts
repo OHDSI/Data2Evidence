@@ -3,16 +3,30 @@ import { validationResult, matchedData } from "express-validator";
 import {
   getSourceToConceptMappings,
   saveSourceToConceptMappings,
+  resolveCacheId,
+  CacheIdResolutionError,
   EmptyMappingsError,
+  DatasetFetcher,
 } from "./services";
 import { GetConceptMappingDto, ConceptMappingDto } from "./middleware";
+
+/**
+ * Builds a dataset lookup bound to the caller's token. Injected so the router
+ * stays importable (and testable) without the env-dependent PortalAPI module.
+ */
+export type DatasetFetcherFactory = (token: string) => DatasetFetcher;
 
 export class ConceptMappingRouter {
   public router = express.Router();
   private readonly logger = console;
 
-  constructor() {
+  constructor(private readonly datasetFetcherFactory?: DatasetFetcherFactory) {
     this.registerRoutes();
+  }
+
+  private fetcherFor(req: Request): DatasetFetcher | undefined {
+    if (!this.datasetFetcherFactory) return undefined;
+    return this.datasetFetcherFactory(req.headers.authorization ?? "");
   }
 
   private registerRoutes() {
@@ -28,16 +42,26 @@ export class ConceptMappingRouter {
         }
 
         try {
-          const { databaseCode, schemaName } = matchedData(req, {
+          const { databaseCode, schemaName, datasetId } = matchedData(req, {
             locations: ["query"],
           });
 
-          const response = await getSourceToConceptMappings(
+          const cacheId = await resolveCacheId(
             databaseCode,
+            datasetId,
+            this.fetcherFor(req),
+          );
+
+          const response = await getSourceToConceptMappings(
+            cacheId,
             schemaName,
           );
           res.status(200).json(response);
         } catch (error) {
+          if (error instanceof CacheIdResolutionError) {
+            console.error(error);
+            return res.status(502).send("Failed to resolve dataset cache id");
+          }
           console.error(error);
           res.status(500).send("Failed to retrieve concept mappings");
         }
@@ -56,15 +80,16 @@ export class ConceptMappingRouter {
         }
 
         try {
-          const { databaseCode, schemaName } = matchedData(req, {
+          const { databaseCode, schemaName, datasetId } = matchedData(req, {
             locations: ["query"],
           });
           const { conceptMappings, sourceVocabularyId } = matchedData(req, {
             locations: ["body"],
           });
 
+          const fetchDataset = this.fetcherFor(req);
           const rows = await saveSourceToConceptMappings(
-            databaseCode,
+            () => resolveCacheId(databaseCode, datasetId, fetchDataset),
             schemaName,
             sourceVocabularyId,
             conceptMappings,
@@ -74,6 +99,10 @@ export class ConceptMappingRouter {
         } catch (error) {
           if (error instanceof EmptyMappingsError) {
             return res.status(400).send("No concept mappings to save");
+          }
+          if (error instanceof CacheIdResolutionError) {
+            console.error(error);
+            return res.status(502).send("Failed to resolve dataset cache id");
           }
           console.error(error);
           res.status(500).send("Failed to save concept mappings");

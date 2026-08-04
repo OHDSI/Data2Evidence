@@ -17,6 +17,7 @@ export class PortalAPI {
     }
     if (env.SERVICE_ROUTES.portalServer) {
       this.baseURL = env.SERVICE_ROUTES.portalServer;
+      // @ts-ignore Cannot find name 'Trex'
       this.channel = Trex.tokioChannel("d2e-functions/portal");
       // this.httpsAgent = new https.Agent({
       //   rejectUnauthorized: true,

@@ -9,6 +9,12 @@ export const GetConceptMappingDto = () => [
     .isString()
     .notEmpty()
     .withMessage("schemaName is required"),
+  // Optional: when supplied, the dataset's persisted cacheId is authoritative.
+  // Omitted by pre-dataset / infra callers, which keep the databaseCode path.
+  query("datasetId")
+    .optional()
+    .isUUID()
+    .withMessage("datasetId must be a UUID"),
 ];
 
 export const ConceptMappingDto = () => [

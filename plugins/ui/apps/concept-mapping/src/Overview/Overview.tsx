@@ -113,7 +113,13 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
       }));
 
       const encoded = window.btoa(pako.deflate(JSON.stringify(parsedMappings), { to: "string" }));
-      await api.conceptMapping.saveConceptMappings(databaseCode, schemaName, csvData.name || "", encoded);
+      await api.conceptMapping.saveConceptMappings(
+        databaseCode,
+        schemaName,
+        csvData.name || "",
+        encoded,
+        selectedDataset?.id
+      );
       setFeedback({
         type: "success",
         message: `Saved to ${databaseCode}`,
@@ -208,7 +214,11 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange }) =
       )}
 
       {tabIndex === 1 && selectedDataset?.databaseCode && selectedDataset?.schemaName && (
-        <SavedMappingsTable databaseCode={selectedDataset.databaseCode} schemaName={selectedDataset.schemaName} />
+        <SavedMappingsTable
+          databaseCode={selectedDataset.databaseCode}
+          schemaName={selectedDataset.schemaName}
+          datasetId={selectedDatasetId}
+        />
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import { api } from "../../axios/api";
 interface SavedMappingsTableProps {
   databaseCode: string;
   schemaName: string;
+  datasetId?: string;
 }
 
 type SavedMappingRow = {
@@ -35,7 +36,11 @@ const COLUMNS: { key: keyof SavedMappingRow; label: string }[] = [
   { key: "invalid_reason", label: "Invalid Reason" },
 ];
 
-export const SavedMappingsTable: FC<SavedMappingsTableProps> = ({ databaseCode, schemaName }) => {
+export const SavedMappingsTable: FC<SavedMappingsTableProps> = ({
+  databaseCode,
+  schemaName,
+  datasetId,
+}) => {
   const [data, setData] = useState<SavedMappingRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export const SavedMappingsTable: FC<SavedMappingsTableProps> = ({ databaseCode, 
       setLoading(true);
       setError(null);
       try {
-        const result = await api.conceptMapping.getConceptMappings(databaseCode, schemaName);
+        const result = await api.conceptMapping.getConceptMappings(databaseCode, schemaName, datasetId);
         setData(result);
       } catch {
         setError("Failed to load saved mappings");
@@ -55,7 +60,7 @@ export const SavedMappingsTable: FC<SavedMappingsTableProps> = ({ databaseCode, 
     };
 
     fetchData();
-  }, [databaseCode, schemaName]);
+  }, [databaseCode, schemaName, datasetId]);
 
   if (loading) return <Loader />;
   if (error) return <div style={{ padding: "16px", color: "red" }}>{error}</div>;
