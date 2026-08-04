@@ -9,6 +9,7 @@ async function create(
 ) {
   try {
     console.log(`Request creation ${path}`);
+    console.log(`${JSON.stringify(data)}`);
     const resp = await logto.post(path, headers, data);
     console.log(`Responded with ${resp.status}`);
 
