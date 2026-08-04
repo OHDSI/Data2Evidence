@@ -231,7 +231,7 @@ export interface SelectedConceptSetConcept {
 }
 
 export interface SelectedConceptSet {
-  value: number
+  value: string
   text: string
   display_value: string
   conceptIds: number[]
@@ -243,9 +243,9 @@ export interface SelectedConceptSet {
 }
 
 export interface GetConceptSetsResponse {
-  id: number
+  id: string
   name: string
-  value: number
+  value: string
   text: string
   display_value: string
   conceptIds: number[]
@@ -306,7 +306,7 @@ export interface ConceptSetExpression {
 
 // WebAPI interface for d2e-webapi endpoints (matching portal's format)
 export interface IWebapiConceptSet {
-  id: number
+  id: string
   name: string
   createdDate?: string
   modifiedDate?: string
