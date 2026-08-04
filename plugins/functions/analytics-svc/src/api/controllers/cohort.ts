@@ -329,7 +329,9 @@ export async function createCohort(req: IMRIRequest, res: Response) {
         // visible to the reading connection.
         res.status(200).json({
             message: `Cohort successfully materialized`,
-            cohortDefinitionId,
+            // Coerced: the driver may hand the id back as a string, and
+            // consumers reject anything that is not an integer.
+            cohortDefinitionId: Number(cohortDefinitionId),
         });
     } catch (err) {
         logger.error(err);
