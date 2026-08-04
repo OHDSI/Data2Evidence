@@ -12,6 +12,7 @@ import { Step1Source } from "./Step1Source";
 import { Step2ColumnMapping } from "./Step2ColumnMapping";
 import { Step3ConceptMapping } from "./Step3ConceptMapping";
 import { canProceedStep1, canProceedStep2 } from "./gating";
+import "./WizardStepper.scss";
 
 interface WizardStepperProps {
   sourceNode?: SourceNodeDTO;
@@ -67,24 +68,28 @@ export const WizardStepper: FC<WizardStepperProps> = ({
         <IconButton
           aria-label={getText(i18nKeys.WIZARD__BACK)}
           onClick={() => goTo(step - 1)}
-          sx={{ mb: 1 }}
+          // Pin top-left; without alignSelf the flex column's stretch makes the button span
+          // full width and its icon renders centered.
+          sx={{ mb: 1, alignSelf: "flex-start" }}
         >
           <ArrowBackOutlinedIcon />
         </IconButton>
       )}
 
-      {step === 0 && (
-        <Step1Source
-          sourceNode={sourceNode}
-          datasets={datasets}
-          onResetDownstream={handleResetDownstream}
-          onDisconnectSource={onDisconnectSource}
-        />
-      )}
-      {step === 1 && <Step2ColumnMapping selectedDatasetId={selectedDatasetId} />}
-      {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} />}
+      <div className="concept-mapping__wizard-body">
+        {step === 0 && (
+          <Step1Source
+            sourceNode={sourceNode}
+            datasets={datasets}
+            onResetDownstream={handleResetDownstream}
+            onDisconnectSource={onDisconnectSource}
+          />
+        )}
+        {step === 1 && <Step2ColumnMapping selectedDatasetId={selectedDatasetId} />}
+        {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} />}
+      </div>
 
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+      <div className="concept-mapping__wizard-footer">
         {step < 2 && <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={handleNext} />}
       </div>
     </div>

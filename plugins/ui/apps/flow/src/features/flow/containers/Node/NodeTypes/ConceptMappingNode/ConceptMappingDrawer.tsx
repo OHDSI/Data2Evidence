@@ -73,7 +73,9 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     }
   }, [node.data]);
 
-  const handleOk = useCallback(() => {
+  // No "Apply" button: the node auto-persists on close. Closing the drawer commits the
+  // latest formData into the redux node (mirrors DataMappingDrawer's persist-on-close).
+  const persistAndClose = useCallback(() => {
     const updated: NodeState<ConceptMappingNodeData> = {
       ...nodeState,
       data: formData,
@@ -107,9 +109,9 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     <NodeDrawer
       {...props}
       disableEnforceFocus
-      width="1400px"
-      onOk={handleOk}
-      onClose={onClose}
+      width="90%"
+      hideFooter
+      onClose={persistAndClose}
     >
       <PluginRenderer
         path="/resources/concept-mapping/module.js"

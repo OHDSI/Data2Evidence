@@ -1,8 +1,20 @@
 .concept-mapping__step1 {
+  // Fills whatever height the wizard body hands it (see WizardStepper.scss), so the columns
+  // row below can, in turn, use flex: 1 to occupy all of that space rather than just
+  // sizing to its own content.
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
   &-columns {
     display: flex;
     gap: 24px;
-    align-items: flex-start;
+    // `stretch` (the flex default - overriding it is what caused the two panels to sit at
+    // unequal, content-sized heights) makes both panels match the row's full height.
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
 
     @media (max-width: 900px) {
       flex-direction: column;
@@ -10,8 +22,10 @@
   }
 
   &-panel {
-    flex: 1;
+    flex: 1 1 0;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
     border: 1px solid #dad7d7;
     border-radius: 8px;
     overflow: hidden;
@@ -24,10 +38,17 @@
     background-color: #e5e6f2;
     color: #000080;
     font-weight: 700;
+    flex-shrink: 0;
   }
 
   &-panel-body {
     padding: 16px;
+    // Grows to fill the panel below its title bar (so both panels are tall, content-at-top
+    // boxes per the design) while staying independently scrollable if its own content is
+    // ever taller than the stretched panel height.
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   &-card {

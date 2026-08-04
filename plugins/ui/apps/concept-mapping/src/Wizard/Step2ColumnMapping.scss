@@ -48,6 +48,10 @@
   &-grid-checkbox {
     display: flex;
     align-items: center;
+    // The grid has no row-gap (rows are spaced by each select's margin-bottom), so give the
+    // checkbox its own top spacing - otherwise, when unchecked (no domain select beside it),
+    // it sits tight against the "Source name column" dropdown above.
+    margin-top: 8px;
   }
 
   &-field {

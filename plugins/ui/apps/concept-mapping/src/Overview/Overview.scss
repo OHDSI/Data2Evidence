@@ -1,6 +1,9 @@
 .concept-mapping__overview {
   height: 100%;
+  min-height: 0;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 
   .alp-card {
     flex: 1;
@@ -8,5 +11,12 @@
     &__header {
       justify-content: center;
     }
+  }
+
+  // The wizard (Step 1/2/3 shell) is the only tab body that needs to grow and fill the
+  // remaining vertical space below the save-button row and tabs above it.
+  .concept-mapping__wizard {
+    flex: 1;
+    min-height: 0;
   }
 }

@@ -17,6 +17,8 @@ export interface NodeDrawerProps extends DrawerProps {
   onOk?: () => void;
   onClose?: () => void;
   className?: string;
+  /** Hide the footer "Apply" button (e.g. for drawers that auto-persist on close). */
+  hideFooter?: boolean;
   children: React.ReactNode;
 }
 
@@ -27,6 +29,7 @@ export const NodeDrawer: FC<NodeDrawerProps> = ({
   children,
   onOk,
   onClose,
+  hideFooter = false,
   ...drawerProps
 }) => {
   const classes = classNames("node-drawer", className);
@@ -55,16 +58,18 @@ export const NodeDrawer: FC<NodeDrawerProps> = ({
         </Box>
       </div>
       <div className="node-drawer__content">{children}</div>
-      <div className="node-drawer__footer">
-        <Box display="flex" justifyContent="flex-end">
-          <Button
-            type="submit"
-            className="node-drawer__submit"
-            text="Apply"
-            onClick={onOk}
-          />
-        </Box>
-      </div>
+      {!hideFooter && (
+        <div className="node-drawer__footer">
+          <Box display="flex" justifyContent="flex-end">
+            <Button
+              type="submit"
+              className="node-drawer__submit"
+              text="Apply"
+              onClick={onOk}
+            />
+          </Box>
+        </div>
+      )}
     </Drawer>
   );
 };
