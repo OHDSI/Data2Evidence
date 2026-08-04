@@ -530,9 +530,9 @@ export default {
 
       this.savingStep = 'materializing-cohort'
       const materializeResponse = await this.onAddCohortOkButtonPress({ params, url })
-      const cohortDefinitionId = materializeResponse?.cohortDefinitionId
+      const cohortDefinitionId = Number(materializeResponse?.cohortDefinitionId)
 
-      if (!cohortDefinitionId) {
+      if (!Number.isInteger(cohortDefinitionId)) {
         throw new Error(this.getText('MRI_PA_BOOKMARK_MISSING_COHORT_DEFINITION'))
       }
 
