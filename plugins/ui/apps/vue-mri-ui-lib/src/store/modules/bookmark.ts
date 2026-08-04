@@ -14,7 +14,6 @@ import {
 import { getEffectiveBarChartMode, modeOrder } from '@/components/StackBarModes/modes'
 
 const CancelToken = axios.CancelToken
-let cancel
 // initial state
 const state = {
   bookmarks: [],
@@ -342,14 +341,8 @@ const actions = {
   setAddNewCohort({ commit }, { addNewCohort }) {
     commit(types.SET_ADD_NEW_COHORT, { addNewCohort })
   },
-  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId }) {
+  fireBookmarkQuery({ commit, dispatch, rootGetters }, { method = 'post', params, bookmarkId, cancelToken }) {
     commit(types.SET_BOOKMARKS_LOADING, { loading: true })
-    if (cancel) {
-      cancel()
-    }
-    const cancelToken = new CancelToken(c => {
-      cancel = c
-    })
     let url = ''
     if (params.cmd === 'loadAll') {
       url = `${webApiCohortDefinitionURL}?source=pa`
@@ -427,7 +420,8 @@ const actions = {
       })
   },
   async refreshBookmarksForDatasetSwitch({ dispatch, rootGetters }) {
-    await dispatch('fireCheckIfDatasetCanMaterializeCohorts')
+    // Non-blocking: buttons stay disabled until the check resolves and commits.
+    dispatch('fireCheckIfDatasetCanMaterializeCohorts')
     await dispatch('fireBookmarkQuery', { method: 'get', params: { cmd: 'loadAll' } })
 
     const chartConfig = rootGetters.getAllChartConfigs
@@ -701,6 +695,11 @@ const actions = {
       method: 'GET',
     })
       .then(response => {
+        // Ignore stale responses: the user may have switched datasets while this
+        // non-blocking request was in flight.
+        if (rootGetters.getSelectedDataset.id !== currentDatasetId) {
+          return
+        }
         commit(types.SET_CAN_DATASET_MATERIALIZE_COHORTS, {
           canDatasetMaterializeCohorts: response.data,
           datasetId: currentDatasetId,

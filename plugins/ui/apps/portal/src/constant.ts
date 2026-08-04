@@ -86,6 +86,7 @@ export const ActionSelectorMap: Record<DatasetType, ActionValue[]> = {
     "data-characterization",
     "setup-semantic-search",
     "manage-dashboard",
+    "refresh-cache",
   ],
   i2b2: ["metadata", "permissions", "resources", "delete"],
 };

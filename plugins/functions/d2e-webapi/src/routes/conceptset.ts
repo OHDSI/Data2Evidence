@@ -10,6 +10,8 @@ import {
   ConceptSetCreateDto,
   ConceptSetInUseErrorDto,
   IConceptSetCheckResponseDto,
+  IncludedConceptsRequestDto,
+  IncludedConceptsResponseDto,
 } from "../dto/conceptset.ts";
 import { ConceptSetInUseError } from "../errors/ConceptSetErrors.ts";
 
@@ -22,7 +24,9 @@ import {
   updateConceptSetItems,
   getConceptSetExpression,
   deleteConceptSet,
+  getIncludedConcepts,
 } from "../services/conceptset.service.ts";
+import { ConceptSetIdParamSchema } from "../utils/conceptSetRef.ts";
 
 // deno-lint-ignore require-await
 export const conceptset: FastifyPluginAsyncZod = async function (app) {
@@ -74,6 +78,33 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
   );
 
   app.post(
+    "/included-concepts",
+    {
+      schema: {
+        description:
+          "Resolve one or more concept sets to their included concepts. Accepts compound ids (legacy:N / webapi:N) and bare-numeric back-compat values.",
+        tags: ["conceptset"],
+        body: IncludedConceptsRequestDto,
+        response: { 200: IncludedConceptsResponseDto },
+        security: [
+          {
+            bearerAuth: [],
+            datasetid: [],
+          },
+        ],
+      },
+    },
+    async (req, res) => {
+      const result = await getIncludedConcepts(
+        req.token,
+        req.datasetId,
+        req.body.conceptSetIds,
+      );
+      res.send(result);
+    }
+  );
+
+  app.post(
     "/check",
     {
       schema: {
@@ -103,7 +134,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Get the concept set based in the identifier",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         response: { 200: ConceptSetResponseDto },
         security: [
           {
@@ -126,7 +157,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Updates the concept set for the selected concept set.",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         body: ConceptSetCreateDto,
         response: { 200: z.boolean() },
         security: [
@@ -156,7 +187,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         description:
           "Check if a concept set with the same name exists in the WebAPIdatabase. The name is checked against the selected concept set IDto ensure that only the selected concept set ID has the name specified.",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         querystring: z.object({ name: z.string() }),
         response: { 200: z.number() },
         security: [
@@ -186,7 +217,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
       schema: {
         description: "Get the concept set expression by identifier",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         response: { 200: ConceptSetItemsResponseDto },
         security: [
           {
@@ -213,7 +244,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         description:
           "Update the concept set items for the selected concept set ID in the database.",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         body: ConceptSetItemListDto,
         response: { 200: z.boolean() },
         security: [
@@ -242,7 +273,7 @@ export const conceptset: FastifyPluginAsyncZod = async function (app) {
         description:
           "Delete the concept set by identifier. Returns 409 if concept set is in use by cohort definitions or bookmarks.",
         tags: ["conceptset"],
-        params: z.object({ id: z.coerce.number() }),
+        params: z.object({ id: ConceptSetIdParamSchema }),
         response: {
           204: z.null(),
           409: ConceptSetInUseErrorDto,

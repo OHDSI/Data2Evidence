@@ -167,6 +167,8 @@ declare var sap
 const myWindow: any = window
 
 import { mapActions, mapGetters } from 'vuex'
+import { registerPaTools } from '@/ai/webmcpServer'
+import { publishPaTools } from '@/ai/paToolBridge'
 import icon from '../lib/ui/app-icon.vue'
 import appButton from '../lib/ui/app-button.vue'
 import appIcon from '../lib/ui/app-icon.vue'
@@ -250,6 +252,9 @@ export default {
         this.setFireRequest()
       }
     },
+    getActiveChart() {
+      this.chartBusy = false
+    },
     getHasAssignedConfig(val) {
       if (val) {
         this.completeInitialLoad()
@@ -267,11 +272,24 @@ export default {
     },
   },
   mounted() {
+    const paToolHooks = {
+      // Let pa_new_cohort switch from the saved-cohort list to the builder so a
+      // programmatically built cohort renders and computes its count/chart.
+      showBuilder: () => this.toggleCohorts(false),
+    }
+    // Two consumers, one tool set: an external browser agent via Chrome's
+    // modelContext, and an in-page consumer via the window registry. Both wrap
+    // the same createPaTools() array.
+    this._unregisterPaTools = registerPaTools(this.$store, paToolHooks)
+    this._unpublishPaTools = publishPaTools(this.$store, paToolHooks)
     this.updateMinSplitterWidth()
     window.addEventListener('resize', this.updateMinSplitterWidth)
   },
   beforeUnmount() {
+    this._unregisterPaTools?.()
+    this._unpublishPaTools?.()
     window.removeEventListener('resize', this.updateMinSplitterWidth)
+    this.chartBusy = false
   },
   computed: {
     ...mapGetters([
