@@ -336,7 +336,13 @@ export async function createCohort(req: IMRIRequest, res: Response) {
             );
         }
 
-        res.status(200).send(`Cohort successfully materialized`);
+        // Return the id so callers do not have to re-read it from the bookmark
+        // list, where it is only derived once the materialized cohort is
+        // visible to the reading connection.
+        res.status(200).json({
+            message: `Cohort successfully materialized`,
+            cohortDefinitionId,
+        });
     } catch (err) {
         logger.error(err);
         res.status(500).send(MRIEndpointErrorHandler({ err, language }));
