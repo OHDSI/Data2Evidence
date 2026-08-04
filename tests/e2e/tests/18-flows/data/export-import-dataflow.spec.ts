@@ -3,19 +3,23 @@ import fs from 'fs/promises'
 import path from 'path'
 
 let exportedFilePath = ''
-let createdDataflowName = ''
+let createdDataflowNames: string[] = []
 
 test.afterEach(async ({ page }) => {
-  if (createdDataflowName) {
+  for (const name of createdDataflowNames) {
     try {
+      // Select the flow first — delete always acts on the currently open one
+      await page.getByRole('combobox').first().click({ timeout: 3000 })
+      await page.getByRole('option', { name, exact: true }).click({ timeout: 3000 })
       await page.getByLabel('Delete flow').getByRole('button').click({ timeout: 3000 })
-      await page.getByRole('textbox').fill(createdDataflowName)
+      await page.getByRole('dialog').getByRole('textbox').fill(name)
       await page.getByRole('button', { name: 'Delete' }).click()
+      await expect(page.getByRole('button', { name: 'Delete' })).not.toBeVisible({ timeout: 5000 })
     } catch {
       // best-effort cleanup — flow may have already been deleted by the test
     }
-    createdDataflowName = ''
   }
+  createdDataflowNames = []
 
   if (exportedFilePath) {
     await fs
@@ -29,6 +33,7 @@ test.afterEach(async ({ page }) => {
 test('export-import-dataflow', async ({ page }) => {
   const timestamp = Date.now()
   const dataflowName = `ExportImportFlow_${timestamp}`
+  const importedDataflowName = `ImportedFlow_${timestamp}`
   const nodeTitle = page.locator('.node__title').filter({ hasText: 'python_node_0' })
 
   await test.step('Authenticate and navigate to Admin portal', async () => {
@@ -45,10 +50,14 @@ test('export-import-dataflow', async ({ page }) => {
 
     // Handle both scenarios: no flows (Create your first dataflow) or existing flows (Create new dataflow)
     const firstFlowBtn = page.getByRole('button', { name: 'Create your first dataflow' })
-    if (await firstFlowBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    const newFlowBtn = page.getByLabel('Create new dataflow').getByRole('button')
+    // Wait for one of the two entry points to render before choosing — isVisible()
+    // does not retry, so branching too early picks the wrong one.
+    await expect(firstFlowBtn.or(newFlowBtn)).toBeVisible()
+    if (await firstFlowBtn.isVisible().catch(() => false)) {
       await firstFlowBtn.click()
     } else {
-      await page.getByLabel('Create new dataflow').getByRole('button').click()
+      await newFlowBtn.click()
     }
     await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible()
     await page.getByRole('textbox', { name: 'Name' }).fill(dataflowName)
@@ -56,7 +65,7 @@ test('export-import-dataflow', async ({ page }) => {
     await expect(page.getByRole('button', { name: 'Create' })).toBeVisible()
     await page.getByRole('button', { name: 'Create' }).click()
     await expect(page.getByRole('button', { name: 'Create' })).not.toBeVisible()
-    createdDataflowName = dataflowName
+    createdDataflowNames.push(dataflowName)
   })
 
   await test.step('Export the flow', async () => {
@@ -79,26 +88,33 @@ test('export-import-dataflow', async ({ page }) => {
     await download.saveAs(exportedFilePath)
   })
 
-  await test.step('Import the flow and verify', async () => {
-    // Import the exported flow
+  await test.step('Import the flow into a new dataflow', async () => {
+    // Importing lives in the Add-dataflow dialog and must create a NEW dataflow,
+    // leaving the currently open flow untouched.
+    await page.getByLabel('Create new dataflow').getByRole('button').click()
+    await expect(page.getByRole('textbox', { name: 'Name' })).toBeVisible()
+    await page.getByRole('radio', { name: 'Import a dataflow' }).check()
+
     const fileChooserPromise = page.waitForEvent('filechooser')
-    await page.getByLabel('Import flow').getByRole('button').click()
+    await page.getByRole('button', { name: 'Browse' }).click()
     const fileChooser = await fileChooserPromise
     await fileChooser.setFiles(exportedFilePath)
 
-    // Verify the imported node is present on the canvas
+    // The dialog confirms the accepted file before it can be created
+    await expect(page.getByText(path.basename(exportedFilePath))).toBeVisible()
+
+    await page.getByRole('textbox', { name: 'Name' }).fill(importedDataflowName)
+    await page.getByRole('button', { name: 'Create' }).click()
+    await expect(page.getByRole('button', { name: 'Create' })).not.toBeVisible()
+    createdDataflowNames.push(importedDataflowName)
+  })
+
+  await test.step('Verify the imported flow opened as a new dataflow', async () => {
+    // The newly created dataflow is now the open one ...
+    await expect(page.getByRole('combobox', { name: importedDataflowName })).toBeVisible()
+    // ... pre-populated with the imported node
     await expect(nodeTitle).toBeVisible()
 
-    // Close dialog
-    const visibleDialogs = page.locator('[role="dialog"]:visible')
-    const activeDialog = visibleDialogs.last()
-    const closeButton = activeDialog.getByRole('button', { name: /cancel/i }).first()
-    if (await closeButton.isVisible().catch(() => false)) {
-      await closeButton.click()
-    } else {
-      await page.keyboard.press('Escape')
-    }
-    await expect(page.locator('[role="dialog"]:visible')).toHaveCount(0, { timeout: 5000 })
     // Hover to reveal edit button, then click it
     await nodeTitle.hover()
     const editBtn = page.locator('.node__setting')
@@ -116,5 +132,15 @@ test('export-import-dataflow', async ({ page }) => {
     expect(importedCode).toBe(exportedScript)
 
     await page.getByRole('button', { name: 'Close' }).click()
+  })
+
+  await test.step('Verify the originally open dataflow was not overwritten', async () => {
+    // Importing must not touch the flow that was open at the time — it still
+    // exists as its own dataflow with its own content.
+    await page.getByRole('combobox').first().click()
+    await page.getByRole('option', { name: dataflowName, exact: true }).click()
+
+    await expect(page.getByRole('combobox', { name: dataflowName })).toBeVisible()
+    await expect(nodeTitle).toBeVisible()
   })
 })

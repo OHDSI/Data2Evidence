@@ -11,7 +11,7 @@ export const SaveNewFlowButton: FC<SaveNewFlowButtonProps> = () => {
   }, []);
 
   return (
-    <Tooltip title="Add dataflow">
+    <Tooltip title="Create new dataflow">
       <div>
         <IconButton startIcon={<EmptyFileIcon />} onClick={handleClick} />
       </div>
