@@ -3,6 +3,7 @@ from typing import Any
 from psycopg2 import connect
 
 from prefect import task
+from prefect.cache_policies import NONE
 from prefect.variables import Variable
 from prefect.blocks.system import Secret
 from prefect.context import TaskRunContext
@@ -29,7 +30,7 @@ def get_trex_connection(database_code: str):
     return conn
 
 
-@task(log_prints=True, task_run_name="create_cache_status_table")
+@task(log_prints=True, task_run_name="create_cache_status_table", cache_policy=NONE)
 def create_cache_status_table(con, copy_params):
     # Create status table
     execute_statement(con, f'''
@@ -73,7 +74,7 @@ def cleanup(con, table: str, copy_params):
     )
 
 
-@task(log_prints=True, task_run_name="drop_cache_status_table")
+@task(log_prints=True, task_run_name="drop_cache_status_table", cache_policy=NONE)
 def drop_cache_status_table(con, copy_params):
     execute_statement(con, f'DROP TABLE "{copy_params.target_database}"."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}";') 
 
@@ -126,7 +127,8 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")))
+      timeout_seconds=int(Variable.get("cache_task_timeout")),
+      cache_policy=NONE)
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
 
@@ -282,7 +284,7 @@ def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns
     insert_sql = f"""INSERT INTO "{copy_params.target_database}"."{copy_params.target_schema}"."{query_columns.table}"{select_sql};"""
     execute_statement(write_conn, insert_sql)
 
-@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"])
+@task(log_prints=True, task_run_name="copy_table_{query_columns.table}", tags=["table-level-concurrency"], cache_policy=NONE)
 def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
     logger = get_run_logger()
     copy_table(write_conn, read_conn, copy_params, query_columns, source_schema, logger)
