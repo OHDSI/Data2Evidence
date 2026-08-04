@@ -1,6 +1,5 @@
 import React, { FC, useCallback, useMemo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowCircleLeftIcon, IconButton } from "@portal/components";
 import { IPlugin, NavLink, Plugins } from "../../types";
 import MenuTab from "./MenuTab/MenuTab";
 import PublicStudyOverviewNav from "./PublicStudyOverviewNav/PublicStudyOverviewNav";
@@ -59,13 +58,12 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
 
   return (
     <header className="portal__header" data-testid="header">
-      <div className="header__logo-group header__menu-group">
+      <div className="header__logo-group">
         <img
           alt="Data2Evidence"
           className="logo"
-          src={`${env.PUBLIC_URL}/assets/d2e.svg`}
+          src={`${env.PUBLIC_URL}/assets/d2e-data2evidence.png`}
           onClick={handleLogoClick}
-          height={56}
         />
       </div>
 
@@ -74,7 +72,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {portalType === "public" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectPublicDataset />
               </li>
               <PublicStudyOverviewNav />
@@ -84,7 +81,6 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
           {isAuth && portalType === "researcher" && (
             <>
               <li className="active-dataset-container">
-                <IconButton startIcon={<ArrowCircleLeftIcon />} onClick={handleLogoClick} />
                 <SelectDataset />
                 <SelectRelease />
               </li>
@@ -108,16 +104,22 @@ export const Header: FC<HeaderProps> = ({ nav, portalType, plugins, systemAdminP
             ))}
 
           {nav &&
-            nav.map((link: NavLink) => {
+            nav.map((link: NavLink, index: number) => {
+              // The public portal has no Account tab; its last nav item (Login) takes over the
+              // right-most slot so the header does not end with an empty right half.
+              const className = `${getClassNames(link)}${
+                portalType === "public" && index === nav.length - 1 ? " header__menu-item--pin-right" : ""
+              }`.trim();
+
               if (link.submenu) {
                 // Navigation with onhover submenu
                 if (link.submenu?.length !== 0) {
-                  return <MenuTab key={link.id} link={link} className={getClassNames(link)} />;
+                  return <MenuTab key={link.id} link={link} className={className} />;
                 }
               } else {
                 // Clickable navigation. The behavior depends on the path value
                 return (
-                  <li key={link.id} className={getClassNames(link)}>
+                  <li key={link.id} className={className}>
                     {link.path.indexOf("http://") === 0 || link.path.indexOf("https://") === 0 ? (
                       <a href={link.path} target="_blank" rel="noopener noreferrer" data-text={link.title}>
                         {link.title}

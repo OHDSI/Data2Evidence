@@ -7,6 +7,7 @@
         class="stackbar-legend-entry"
         tabindex="0"
         :aria-label="item.ariaLabel"
+        :data-full-name="item.fullName"
         @mouseenter="item.isTruncated && showTooltip($event, item.fullName)"
         @mouseleave="hideTooltip"
         @focus="item.isTruncated && showTooltip($event, item.fullName)"
