@@ -5,6 +5,7 @@ import { LogtoAPI, PortalAPI } from '../api'
 import { ROLES } from '../const'
 import { B2cGroupService, MemberService, UserService } from '../services'
 import { UserActivateRequest, UserAddRequest, UserDeleteRequest } from '../types'
+import { validatePasswordPolicy } from './password-policy'
 
 @Service()
 export class MemberRouter {
@@ -56,19 +57,12 @@ export class MemberRouter {
         return res.status(400).send({ message: `Param 'password' is required` })
       }
 
-      try {
-        const policyCheck = await this.logtoAPI.checkPasswordPolicy(password)
-        if (!policyCheck.accepted) {
-          this.logger.warn(`Password rejected by policy: ${JSON.stringify(policyCheck.rejection)}`)
-          return res.status(400).send({
-            message: `Password does not meet the policy: at least 8 characters, at most 64, and at least 3 of: lowercase, uppercase, number, symbol.`
-          })
-        }
-      } catch (err) {
-        // Do not serialize the error: AxiosError.toJSON() includes the request config
-        // (password body and Authorization header)
-        this.logger.error(`Error when checking password policy: ${err?.message} (status: ${err?.response?.status ?? 'n/a'})`)
-        return next(err)
+      const policyResult = await validatePasswordPolicy(this.logtoAPI, this.logger, password)
+      if (policyResult.status === 'rejected') {
+        return res.status(400).send({ message: policyResult.message })
+      }
+      if (policyResult.status === 'error') {
+        return next(policyResult.error)
       }
 
       const tenants = await this.portalAPI.getTenants()
