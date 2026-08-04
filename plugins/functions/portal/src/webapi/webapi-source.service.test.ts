@@ -1,6 +1,7 @@
 import { describe, it } from '@std/testing/bdd'
 import { assertEquals } from '@std/assert'
 import { WebApiSourceService } from './webapi-source.service.ts'
+import type { WebApiSourceApi } from './webapi-source.api.ts'
 import type { Dataset } from '../dataset/entity/index.ts'
 import type { DatasetDetail } from '../dataset/entity/dataset-detail.entity.ts'
 import type { IDbCredentials } from './types.ts'
@@ -79,7 +80,7 @@ function createApiStub(existingSource: unknown = null) {
     if (method === 'createCache') return Promise.resolve({ success: true })
     return Promise.resolve(undefined)
   }
-  const api = {
+  const api: Partial<WebApiSourceApi> = {
     getSourceByKey: record('getSourceByKey'),
     createSource: record('createSource'),
     updateSource: record('updateSource'),
@@ -160,6 +161,27 @@ describe('WebApiSourceService.syncSourceForDataset', () => {
     assertEquals(methods().includes('createSource'), false)
     assertEquals(methods().includes('updateSource'), false)
     assertEquals(methods().includes('deleteSource'), false)
+  })
+
+  it('updates an existing source for a postgres dataset instead of creating one', async () => {
+    const { api, methods } = createApiStub({ sourceId: 42, sourceKey: 'ds-1' })
+    const service = new WebApiSourceService(api as never)
+
+    await service.syncSourceForDataset(datasetWithDialect('postgres'), detail, credentials)
+
+    assertEquals(methods().includes('updateSource'), true)
+    assertEquals(methods().includes('createSource'), false)
+  })
+
+  it('still builds the TrexSQL cache for a hana dataset despite skipping source registration', async () => {
+    const { api, methods } = createApiStub()
+    const service = new WebApiSourceService(api as never)
+
+    await service.syncSourceForDataset(datasetWithDialect('hana'), detail, credentials)
+
+    assertEquals(methods().includes('createCache'), true)
+    assertEquals(methods().includes('createSource'), false)
+    assertEquals(methods().includes('updateSource'), false)
   })
 })
 

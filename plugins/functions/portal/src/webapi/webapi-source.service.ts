@@ -40,6 +40,9 @@ export class WebApiSourceService {
     const dialect = this.mapDialect(dataset.dialect)
     if (!WEBAPI_SUPPORTED_DIALECTS.has(dialect)) {
       await this.warnUnsupportedDialect(dataset.id, dialect, authToken)
+      if (dataset.schemaName) {
+        await this.triggerCacheCreation(dataset.id, dataset.schemaName, authToken)
+      }
       return
     }
 
@@ -67,7 +70,7 @@ export class WebApiSourceService {
     dialect: string,
     authToken?: string
   ): Promise<void> {
-    const existing = await this.webApiSourceApi.getSourceByKey(datasetId, authToken)
+    const existing = await this.webApiSourceApi.getSourceByKey(datasetId, authToken).catch(() => null)
     const suffix = existing
       ? `; existing source ${existing.sourceId} left in place and must be removed manually`
       : ''
@@ -192,7 +195,8 @@ export class WebApiSourceService {
       hana: 'hana',
       duckdb: 'duckdb',
     }
-    return dialectMap[dialect?.toLowerCase()] || dialect
+    const key = dialect?.toLowerCase()
+    return dialectMap[key] ?? key
   }
 
   private buildJdbcUrl(credentials: IDbCredentials): string {
