@@ -48,6 +48,7 @@ import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import VSnackbar from './vuetify/VSnackbar.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import Constants from '../utils/Constants'
+import { formatNumber } from '../utils/NumberUtils'
 
 export default {
   name: 'downloadMenu',
@@ -120,9 +121,9 @@ export default {
     },
     popoverMessage() {
       if (this.exceedsExportLimit) {
-        return this.getText('MRI_PA_EXPORT_LIMIT_MESSAGE', String(this.maxPatientsExport))
+        return this.getText('MRI_PA_EXPORT_LIMIT_MESSAGE', formatNumber(this.maxPatientsExport))
       }
-      return this.getText('MRI_PA_MIN_COHORT_SIZE_MESSAGE', String(this.minCohortSize))
+      return this.getText('MRI_PA_MIN_COHORT_SIZE_MESSAGE', formatNumber(this.minCohortSize))
     },
     list() {
       const menuData = []

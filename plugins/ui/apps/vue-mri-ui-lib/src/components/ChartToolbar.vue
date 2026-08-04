@@ -38,7 +38,7 @@
           <DisabledHoverPopover
             :disabled="isBelowMinCohortSize"
             :header="getText('MRI_PA_CHART_UNAVAILABLE', getText(chart.tooltip))"
-            :message="getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', String(minCohortSize))"
+            :message="minCohortSizeMessage"
           >
             <chartButton
               @clickEv="switchChart(chart)"
@@ -205,6 +205,7 @@ import DropDownMenu from './DropDownMenu.vue'
 import patientCount from './PatientCount.vue'
 import DisabledHoverPopover from './DisabledHoverPopover.vue'
 import Constants from '../utils/Constants'
+import { formatNumber } from '../utils/NumberUtils'
 import icon from '../lib/ui/app-icon.vue'
 import appIcon from '../lib/ui/app-icon.vue'
 import DownloadMenu from './DownloadMenu.vue'
@@ -384,6 +385,9 @@ export default {
     },
     minCohortSize() {
       return this.getAllChartConfigs?.minCohortSize
+    },
+    minCohortSizeMessage() {
+      return this.getText('MRI_PA_MIN_COHORT_SIZE_DISPLAY_MESSAGE', formatNumber(this.minCohortSize))
     },
   },
   methods: {
