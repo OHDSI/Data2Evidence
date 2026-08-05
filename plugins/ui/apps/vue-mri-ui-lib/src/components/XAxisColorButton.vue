@@ -100,37 +100,35 @@ onBeforeUnmount(() => {
 })
 
 // Watchers
+// Immediate: the menu must exist from the first render on, otherwise a selection the store
+// already holds (restored bookmark, or this button remounting into a loaded cohort) cannot be
+// matched against it and would never reach the label.
 watch(
   getAllAxes,
   () => {
     buildMenuData()
+    reconcileSelection()
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
 watch(getMriFrontendConfig, () => {
   buildMenuData()
+  reconcileSelection()
 })
 
+// Rebuild only: the menu's trailing "None" entry depends on whether something is selected.
+// Reconciling here too would re-enter while resetSelection() is still unwinding.
 watch(selectedAxisIndex, () => {
   buildMenuData()
 })
 
 // Sync internal state when parent changes selectedAxis prop
-watch(
-  () => props.selectedAxis,
-  newVal => {
-    if (newVal === null && selectedAxisIndex.value !== null) {
-      resetSelection()
-    } else if (newVal !== null && newVal !== selectedAxisIndex.value) {
-      selectAxisInternal(newVal)
-    }
-  }
-)
+watch(() => props.selectedAxis, reconcileSelection)
 
 // Methods
 function buildMenuData() {
-  const allAxes = getAllAxes.value
+  const allAxes = getAllAxes.value || []
   const menuData: any[] = []
   if (!getMriFrontendConfig.value) {
     axisMenuData.value = menuData
@@ -197,18 +195,40 @@ function buildMenuData() {
     })
   }
   axisMenuData.value = menuData
+}
 
-  // Reset selection if the selected option is no longer among the available menu items
-  if (selectedAxisIndex.value !== null) {
-    const axis = allAxes[selectedAxisIndex.value]
-    const stillValid =
-      menuData.some((item: any) => item.data && item.data.axisIndex === selectedAxisIndex.value) &&
-      axis?.props?.filterCardId === selectedFilterCardId.value &&
-      axis?.props?.key === selectedKey.value
-    if (!stillValid) {
+// Keep this button and the store-owned selection (props.selectedAxis) in agreement.
+// The chart resolves the color attribute from that index at render time, so an index the button
+// silently fails to adopt would still color the bars — with the button reading as empty and the
+// user unable to clear it. Adopt what the menu can offer, reject what it cannot.
+function reconcileSelection() {
+  // Menu not built yet (config still loading): nothing to reconcile against.
+  if (!getMriFrontendConfig.value) return
+
+  const storeAxisIndex = props.selectedAxis
+  if (storeAxisIndex === null || storeAxisIndex === undefined) {
+    if (selectedAxisIndex.value !== null) {
       resetSelection()
-      emit('colorAxisSelected', null)
     }
+    return
+  }
+
+  const axis = getAllAxes.value?.[storeAxisIndex]
+  const menuItem = axisMenuData.value.find((item: any) => item.data && item.data.axisIndex === storeAxisIndex)
+  // An already-adopted axis that now carries a different attribute is not the selection the user
+  // made: the coloring must not follow the axis onto whatever was put there instead.
+  const repointed =
+    selectedAxisIndex.value === storeAxisIndex &&
+    (axis?.props?.filterCardId !== selectedFilterCardId.value || axis?.props?.key !== selectedKey.value)
+
+  if (!menuItem || repointed) {
+    resetSelection()
+    emit('colorAxisSelected', null)
+    return
+  }
+
+  if (selectedAxisIndex.value !== storeAxisIndex) {
+    selectAxisInternal(storeAxisIndex)
   }
 }
 
