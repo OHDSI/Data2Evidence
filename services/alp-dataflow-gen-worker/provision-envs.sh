@@ -37,6 +37,10 @@ install_env() { # $1 = plugin dir
   if grep -qE '^ner *= \{' "$manifest"; then
     pixi install --frozen -e ner --manifest-path "$manifest" || return 1
   fi
+  # Cohort Discovery isolates Hutch Bunny in a Python 3.13 child env.
+  if grep -qE '^bunny *= \{' "$manifest"; then
+    pixi install --frozen -e bunny --manifest-path "$manifest" || return 1
+  fi
   if grep -q '^setup-assets' "$manifest"; then
     (cd "$dir" && pixi run --frozen --manifest-path "$manifest" setup-assets) || return 1
   fi

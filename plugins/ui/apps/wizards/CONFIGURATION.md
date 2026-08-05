@@ -51,6 +51,65 @@ Search the JSON response for the interaction name to find available attribute na
 1. Download the appropriate template (`wizards-config.json` or `wizards-config-hana-lean.json`)
 2. Replace attribute paths using the names discovered in the previous step
 
+## Form Notes
+
+Use `formNote` on an individual wizard to customize the italic note displayed with its form:
+
+```json
+{
+  "id": "calculate-incidence",
+  "formNote": "Note: this is a starting point for a more comprehensive analysis."
+}
+```
+
+- A missing `formNote` preserves the standalone Wizards app's legacy approximation note.
+- A string displays the configured note. Cohort Builder also displays explicitly configured notes.
+- `null`, an empty string, or whitespace hides the note.
+
+## Form Sections And Groups
+
+Define `sections` on each wizard because the section presence and order can differ between analyses. Groups reference existing field IDs, so field definitions do not need section properties:
+
+```json
+{
+  "wizards": [
+    {
+      "id": "calculate-incidence",
+      "sections": [
+        {
+          "id": "measurement",
+          "title": "Measurement",
+          "groups": [
+            {
+              "id": "body-measurement",
+              "label": "Body measurement",
+              "fieldIds": ["height", "weight", "bmi"],
+              "columns": 3,
+              "validation": {
+                "minAnswered": 1,
+                "maxAnswered": 2,
+                "message": "Enter 1 or 2 of Height, Weight, and BMI."
+              }
+            }
+          ]
+        }
+      ],
+      "fields": []
+    }
+  ]
+}
+```
+
+- Missing field IDs are ignored.
+- Fields not referenced by that wizard's layout appear in an automatically generated **Additional** section.
+- A wizard without `sections` uses the legacy flat field layout.
+- `columns` supports `1`, `2`, or `3` columns on desktop and collapses to one column on small screens.
+- `validation.minAnswered` and `validation.maxAnswered` constrain how many fields in the group contain values.
+- A positive `minAnswered` marks the group as required, disables the form action until the minimum is met, and adds a required marker to the group label.
+- `validation.message` is optional guidance displayed from the group's information icon. Without it, guidance is generated from the limits and field labels.
+- Once `maxAnswered` is reached, unanswered fields in the group are disabled and explain the limit on hover or focus.
+- Individual field `required` rules remain independent. For an interchangeable group such as Height/Weight/BMI, keep the fields optional and express the required count on the group.
+
 ## Uploading the Config
 
 ### Via Portal
@@ -88,6 +147,7 @@ After uploading the configuration:
 ### Rollback
 
 If you need to revert to the previous configuration:
+
 - Via Portal: Settings → PA Config → Wizards tab → Restore previous version
 - Via API: Re-upload the previous working config file
 

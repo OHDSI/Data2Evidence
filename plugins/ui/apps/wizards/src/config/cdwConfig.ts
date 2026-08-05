@@ -86,14 +86,16 @@ const mockMeta: ConfigMeta = {
   dependentConfig: { configId: "mock-cdm", configVersion: "1" },
 };
 
-let cachedResult: CdwConfigResult | null = null;
+const cachedResults = new Map<string | undefined, CdwConfigResult>();
 
 export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResult> {
+  const cachedResult = cachedResults.get(datasetId);
   if (cachedResult) return cachedResult;
 
   if (isDev) {
-    cachedResult = { config: mockConfig, meta: mockMeta };
-    return cachedResult;
+    const result = { config: mockConfig, meta: mockMeta };
+    cachedResults.set(datasetId, result);
+    return result;
   }
 
   const response = await client.get("/d2e/analytics-svc/pa/services/analytics.xsjs", {
@@ -105,11 +107,12 @@ export async function fetchCdwConfig(datasetId?: string): Promise<CdwConfigResul
 
   const data = response.data;
   const configEntry = Array.isArray(data) ? data[0] : data;
-  cachedResult = {
+  const result = {
     config: configEntry.config as CdwConfig,
     meta: configEntry.meta as ConfigMeta,
   };
-  return cachedResult;
+  cachedResults.set(datasetId, result);
+  return result;
 }
 
 const mockAttributeValues: Record<string, Array<{ label: string; value: string }>> = {
@@ -128,7 +131,7 @@ export async function fetchAttributeValues(
   attributePath: string,
   meta: ConfigMeta,
   datasetId?: string,
-  searchQuery?: string
+  searchQuery?: string,
 ): Promise<Array<{ label: string; value: string }>> {
   if (isDev) {
     const values = mockAttributeValues[attributePath] || [];

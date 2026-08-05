@@ -6,7 +6,7 @@
   background-color: var(--color-ui-lightest-bg);
   border-radius: 2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  font-family: Helvetica, Arial, sans-serif;
+  font-family: $font-family-sans-serif;
   width: 190px;
   border: 1px solid var(--color-ui-medium-border);
   .popover-header-container {
