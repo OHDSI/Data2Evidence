@@ -53,6 +53,18 @@ function extractSessionVars(dbCredential: any): Record<string, string> {
     return out;
 }
 
+/**
+ * trex_hana_materialize_cohort's source_params_json is a JSON array of bare bind
+ * values, not the {key, type, value} placeholder objects _prepareQuery() returns.
+ * Handing it the objects binds them as JSON text, so every `?` comparison silently
+ * fails to match and the cohort materializes to 0 rows with no error.
+ */
+function flattenBindParameters(placeholders: any[]): any[] {
+    return (placeholders ?? []).map((placeholder: any) =>
+        placeholder?.value === undefined ? null : placeholder.value
+    );
+}
+
 export class CohortEndpoint {
     private constructor(
         public connection: ConnectionInterface,
@@ -611,7 +623,9 @@ export class CohortEndpoint {
 
             const url = buildHanaConnectionUrl(metadata.dbCredential);
             const sessionVars = extractSessionVars(metadata.dbCredential);
-
+            const sourceParams = flattenBindParameters(
+                preparedQuery.placeholders
+            );
             // The hana extension's trex_hana_materialize_cohort is registered on the
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
             // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
@@ -626,7 +640,7 @@ export class CohortEndpoint {
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
                     url,
                     translatedSql,
-                    JSON.stringify(preparedQuery.placeholders ?? []),
+                    JSON.stringify(sourceParams),
                     this.schemaName,
                     Number(cohortDefinitionId),
                     JSON.stringify(sessionVars)
