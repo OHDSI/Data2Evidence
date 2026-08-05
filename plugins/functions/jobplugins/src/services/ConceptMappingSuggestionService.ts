@@ -1,0 +1,206 @@
+import { Repository } from "typeorm";
+import { v4 as uuidv4 } from "uuid";
+
+import dataSource from "../db/datasource.ts";
+import { ConceptMappingRowFlag } from "../entities/ConceptMappingRowFlag.ts";
+import { ConceptMappingSuggestion } from "../entities/ConceptMappingSuggestion.ts";
+
+const UNIQUE_VIOLATION_CODE = "23505";
+
+// Typed conflict error. jobplugins otherwise reports HTTP errors by throwing
+// a plain Error with a `.statusCode` property set on it (see
+// DataTransformationService.validateTemplateData /
+// DataTransformationController), so this exposes the same `.statusCode`
+// field for controllers that already know that convention, while still
+// being `instanceof`-checkable for callers/tests that want a typed error.
+export class ConflictError extends Error {
+  statusCode = 409;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ConflictError";
+  }
+}
+
+export interface ConceptInput {
+  conceptId: number;
+  conceptName: string;
+  conceptCode: string;
+  domainId: string;
+  vocabularyId: string;
+}
+
+export interface SuggestionDto {
+  id: string;
+  conceptId: number;
+  conceptName: string;
+  conceptCode: string;
+  domainId: string;
+  vocabularyId: string;
+  suggestedBy: string;
+  createdAt: Date;
+  isApproved: boolean;
+}
+
+export interface NodeSuggestionsRow {
+  sourceRowId: string;
+  flagged: boolean;
+  suggestions: SuggestionDto[];
+}
+
+function toDto(suggestion: ConceptMappingSuggestion): SuggestionDto {
+  return {
+    id: suggestion.id,
+    conceptId: suggestion.targetConceptId,
+    conceptName: suggestion.conceptName,
+    conceptCode: suggestion.conceptCode,
+    domainId: suggestion.domainId,
+    vocabularyId: suggestion.vocabularyId,
+    suggestedBy: suggestion.suggestedBy,
+    createdAt: suggestion.createdDate,
+    isApproved: suggestion.isApproved,
+  };
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const anyErr = err as { code?: string; driverError?: { code?: string } };
+  return anyErr.code === UNIQUE_VIOLATION_CODE || anyErr.driverError?.code === UNIQUE_VIOLATION_CODE;
+}
+
+export class ConceptMappingSuggestionService {
+  private suggestionRepo: Repository<ConceptMappingSuggestion>;
+  private flagRepo: Repository<ConceptMappingRowFlag>;
+
+  constructor(
+    suggestionRepo?: Repository<ConceptMappingSuggestion>,
+    flagRepo?: Repository<ConceptMappingRowFlag>,
+  ) {
+    this.suggestionRepo = suggestionRepo ?? dataSource.getRepository(ConceptMappingSuggestion);
+    this.flagRepo = flagRepo ?? dataSource.getRepository(ConceptMappingRowFlag);
+  }
+
+  async listByNode(dataflowId: string, nodeId: string): Promise<NodeSuggestionsRow[]> {
+    const [suggestions, flags] = await Promise.all([
+      this.suggestionRepo.find({ where: { dataflowId, nodeId } }),
+      this.flagRepo.find({ where: { dataflowId, nodeId } }),
+    ]);
+
+    const flaggedByRow = new Map(flags.map((flag) => [flag.sourceRowId, flag.flagged]));
+    const suggestionsByRow = new Map<string, ConceptMappingSuggestion[]>();
+    for (const suggestion of suggestions) {
+      const rowSuggestions = suggestionsByRow.get(suggestion.sourceRowId) ?? [];
+      rowSuggestions.push(suggestion);
+      suggestionsByRow.set(suggestion.sourceRowId, rowSuggestions);
+    }
+
+    // A row has "activity" if it has a suggestion and/or a flag record.
+    const rowIds = new Set<string>([...suggestionsByRow.keys(), ...flaggedByRow.keys()]);
+
+    return Array.from(rowIds).map((sourceRowId) => ({
+      sourceRowId,
+      flagged: flaggedByRow.get(sourceRowId) ?? false,
+      suggestions: (suggestionsByRow.get(sourceRowId) ?? []).map(toDto),
+    }));
+  }
+
+  async addSuggestion(
+    dataflowId: string,
+    nodeId: string,
+    sourceRowId: string,
+    concept: ConceptInput,
+    userSub: string,
+  ): Promise<SuggestionDto> {
+    const rowSuggestions = await this.suggestionRepo.find({
+      where: { dataflowId, nodeId, sourceRowId },
+    });
+    const approved = rowSuggestions.find((s) => s.isApproved);
+    if (approved) {
+      await this.suggestionRepo.update(approved.id, { isApproved: false, modifiedBy: userSub });
+    }
+
+    const entity = {
+      id: uuidv4(),
+      dataflowId,
+      nodeId,
+      sourceRowId,
+      targetConceptId: concept.conceptId,
+      conceptName: concept.conceptName,
+      conceptCode: concept.conceptCode,
+      domainId: concept.domainId,
+      vocabularyId: concept.vocabularyId,
+      suggestedBy: userSub,
+      isApproved: false,
+      createdBy: userSub,
+      modifiedBy: userSub,
+    } as ConceptMappingSuggestion;
+
+    try {
+      await this.suggestionRepo.insert(entity);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        throw new ConflictError(
+          `A suggestion for concept ${concept.conceptId} already exists on row ${sourceRowId}`,
+        );
+      }
+      throw err;
+    }
+
+    return toDto(entity);
+  }
+
+  async approve(id: string, userSub: string): Promise<void> {
+    const suggestion = await this.suggestionRepo.findOne({ where: { id } });
+    if (!suggestion) {
+      throw new Error(`Suggestion ${id} not found`);
+    }
+
+    const siblings = await this.suggestionRepo.find({
+      where: {
+        dataflowId: suggestion.dataflowId,
+        nodeId: suggestion.nodeId,
+        sourceRowId: suggestion.sourceRowId,
+      },
+    });
+    const otherIds = siblings.map((s) => s.id).filter((siblingId) => siblingId !== id);
+
+    await this.suggestionRepo.update(id, { isApproved: true, modifiedBy: userSub });
+    if (otherIds.length > 0) {
+      await this.suggestionRepo.delete(otherIds);
+    }
+  }
+
+  async unapprove(id: string, userSub: string): Promise<void> {
+    await this.suggestionRepo.update(id, { isApproved: false, modifiedBy: userSub });
+  }
+
+  async setRowFlag(
+    dataflowId: string,
+    nodeId: string,
+    sourceRowId: string,
+    flagged: boolean,
+    userSub: string,
+  ): Promise<void> {
+    const existing = await this.flagRepo.findOne({ where: { dataflowId, nodeId, sourceRowId } });
+    if (existing) {
+      await this.flagRepo.update({ dataflowId, nodeId, sourceRowId }, {
+        flagged,
+        modifiedBy: userSub,
+      });
+    } else {
+      await this.flagRepo.insert({
+        dataflowId,
+        nodeId,
+        sourceRowId,
+        flagged,
+        createdBy: userSub,
+        modifiedBy: userSub,
+      } as ConceptMappingRowFlag);
+    }
+  }
+
+  async clearNode(dataflowId: string, nodeId: string): Promise<void> {
+    await this.suggestionRepo.delete({ dataflowId, nodeId });
+    await this.flagRepo.delete({ dataflowId, nodeId });
+  }
+}
