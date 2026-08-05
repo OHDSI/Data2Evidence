@@ -90,7 +90,7 @@ services:
       DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
-      # Local dev defaults to exporting traces to the `jaeger` profile's collector.
+      # Local dev defaults to exporting traces to the jaeger service below.
       TREX_OTEL_ENABLED: ${TREX_OTEL_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
       OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
@@ -302,14 +302,11 @@ services:
       retries: 3
       start_period: 10s
 
-  # Jaeger UI for local trace inspection. Opt-in: `docker compose --profile
-  # jaeger up`. trex is pre-wired to export to it by default (see the trex
-  # environment override above); without this profile running, those exports
-  # just fail quietly with connection-refused.
+  # Jaeger UI for local trace inspection, on http://localhost:16686. Starts with
+  # the local stack because trex defaults to exporting traces here; gating it
+  # behind a profile would leave those exports pointing at nothing.
   jaeger:
     image: jaegertracing/all-in-one:1.62.0
-    profiles:
-      - jaeger
     networks:
       alp:
     environment:
