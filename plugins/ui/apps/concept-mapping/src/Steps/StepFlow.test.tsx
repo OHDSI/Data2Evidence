@@ -1,18 +1,34 @@
-import { describe, expect, test } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, test } from "vitest";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../test/render";
 import { initialState } from "../Context/ConceptMappingContext";
 import { ACTION_TYPES } from "../Context/reducers";
 import { StepFlow } from "./StepFlow";
+import { api } from "../axios/api";
 
 vi.mock("../axios/api", () => ({
-  api: { terminology: { getStandardConcepts: vi.fn().mockResolvedValue([]), getAllFilterOptions: vi.fn() } },
+  api: {
+    terminology: { getStandardConcepts: vi.fn().mockResolvedValue([]), getAllFilterOptions: vi.fn() },
+    conceptMappingSuggestions: {
+      getSuggestions: vi.fn().mockResolvedValue([]),
+      clearSuggestions: vi.fn().mockResolvedValue(undefined),
+    },
+  },
 }));
 import { vi } from "vitest";
+
+const getSuggestions = api.conceptMappingSuggestions.getSuggestions as ReturnType<typeof vi.fn>;
+const clearSuggestions = api.conceptMappingSuggestions.clearSuggestions as ReturnType<typeof vi.fn>;
 
 const datasets = [{ id: "ds-1", studyDetail: { name: "Demo" }, databaseCode: "db", schemaName: "s" } as any];
 
 describe("StepFlow", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getSuggestions.mockResolvedValue([]);
+    clearSuggestions.mockResolvedValue(undefined);
+  });
+
   test("Next is disabled on step 1 until source + dataset chosen", () => {
     renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
     const next = screen.getByRole("button", { name: /Next/i });
@@ -59,6 +75,31 @@ describe("StepFlow", () => {
 
     expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.RESET_DOWNSTREAM });
     expect(dispatch.mock.calls.some((call: any[]) => call[0]?.type === ACTION_TYPES.SET_FEEDBACK)).toBe(false);
+  });
+
+  test("resetting downstream also clears backend suggestions when dataflowId and nodeId are present", async () => {
+    const sourceNode = { name: "SQL Node", type: "sql_node", description: "" };
+    renderWithProviders(
+      <StepFlow
+        sourceNode={sourceNode}
+        datasets={datasets}
+        selectedDatasetId="ds-1"
+        dataflowId="df-1"
+        nodeId="node-1"
+      />,
+      { state: initialState }
+    );
+
+    await waitFor(() => expect(clearSuggestions).toHaveBeenCalledWith("df-1", "node-1"));
+  });
+
+  test("resetting downstream does not call clearSuggestions when dataflowId/nodeId are missing", () => {
+    const sourceNode = { name: "SQL Node", type: "sql_node", description: "" };
+    renderWithProviders(<StepFlow sourceNode={sourceNode} datasets={datasets} selectedDatasetId="ds-1" />, {
+      state: initialState,
+    });
+
+    expect(clearSuggestions).not.toHaveBeenCalled();
   });
 
   test("no MUI Stepper is rendered on any step (the 3-step stepper was removed)", () => {
@@ -127,7 +168,13 @@ describe("StepFlow", () => {
     expect(screen.getByRole("button", { name: /Download as CSV/i })).toBeDisabled();
   });
 
-  test("step 2's Download as CSV button is enabled when an approved, unflagged row exists", () => {
+  // Approved/flagged status is now derived from the backend suggestions list (Task 10),
+  // not the local `status` field, so this needs a dataflowId/nodeId + a matching backend
+  // row with an approved suggestion for the CSV button to consider the row approved.
+  test("step 2's Download as CSV button is enabled when an approved, unflagged row exists", async () => {
+    getSuggestions.mockResolvedValue([
+      { sourceRowId: "r1", flagged: false, suggestions: [{ id: "s1", isApproved: true }] },
+    ]);
     const state = {
       ...initialState,
       wizard: { ...initialState.wizard, currentStep: 2 },
@@ -137,7 +184,7 @@ describe("StepFlow", () => {
         columns: ["code", "name"],
         data: [
           {
-            status: "approved" as const,
+            status: "unchecked" as const,
             conceptId: 1,
             conceptName: "Aspirin",
             domainId: "Drug",
@@ -147,13 +194,17 @@ describe("StepFlow", () => {
             validity: null,
             code: "A1",
             name: "Aspirin",
+            sourceRowId: "r1",
           },
         ],
       },
     };
-    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state });
+    renderWithProviders(
+      <StepFlow datasets={datasets} selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />,
+      { state }
+    );
 
-    expect(screen.getByRole("button", { name: /Download as CSV/i })).toBeEnabled();
+    await waitFor(() => expect(screen.getByRole("button", { name: /Download as CSV/i })).toBeEnabled());
   });
 
   test("steps 0 and 1 still show Next (not Save)", () => {

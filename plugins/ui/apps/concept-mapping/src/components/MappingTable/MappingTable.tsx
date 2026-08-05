@@ -13,24 +13,138 @@ import { ConceptMappingContext, ConceptMappingDispatchContext } from "../../Cont
 import { DispatchType, ACTION_TYPES } from "../../Context/reducers";
 import { i18nKeys } from "../../Context/state";
 import { api } from "../../axios/api";
+import { ConceptInput, NodeSuggestionsRow, SuggestionDto } from "../../axios/concept-mapping-suggestions";
+import { deriveRowStatus } from "../../utils/deriveRowStatus";
 import "./MappingTable.scss";
 
 interface MappingTableProps {
   selectedDatasetId: string;
   autoPopulate?: boolean;
   datasetName?: string;
-  // Not yet consumed here; scopes the concept-recommendation backend calls in a later task.
+  // Scopes the backend suggestions this table loads/writes; absent when the node hasn't
+  // been persisted yet, in which case the table falls back to purely client-side behavior.
   dataflowId?: string;
   nodeId?: string;
+  // Bumped by a sibling (MappingDrawer, after it persists a new suggestion) to make this
+  // table refetch even though its own dataflowId/nodeId props haven't changed.
+  refreshSignal?: number;
+  // Mirrors the freshly-loaded suggestions map up to an ancestor (e.g. StepFlow, which needs
+  // it to decide whether the CSV download button should be enabled) without that ancestor
+  // having to duplicate the fetch.
+  onSuggestionsChange?: (suggestionsByRowId: Record<string, NodeSuggestionsRow>) => void;
 }
 
-export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPopulate, datasetName }) => {
+export const MappingTable: FC<MappingTableProps> = ({
+  selectedDatasetId,
+  autoPopulate,
+  datasetName,
+  dataflowId,
+  nodeId,
+  refreshSignal,
+  onSuggestionsChange,
+}) => {
   const { getText } = useTranslation();
   const conceptMappingState = useContext(ConceptMappingContext);
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const { sourceCode, sourceName, sourceFrequency, description, domainId } = conceptMappingState.columnMapping;
   const csvData = conceptMappingState.csvData.data;
   const [isLoading, setIsLoading] = useState(false);
+
+  // Multi-user suggestions loaded from the backend, keyed by sourceRowId. This - not the
+  // local reducer's `status`/`flagged` fields - is now the source of truth for the Status
+  // chip and Flag icon (see deriveRowStatus below); the reducer fields still exist on
+  // mappingData but are effectively stale once a dataflowId/nodeId are wired up.
+  const [suggestionsByRowId, setSuggestionsByRowId] = useState<Record<string, NodeSuggestionsRow>>({});
+
+  const loadSuggestions = useCallback(async () => {
+    if (!dataflowId || !nodeId) {
+      return;
+    }
+    const rows = await api.conceptMappingSuggestions.getSuggestions(dataflowId, nodeId);
+    const map: Record<string, NodeSuggestionsRow> = {};
+    rows.forEach((row) => {
+      map[row.sourceRowId] = row;
+    });
+    setSuggestionsByRowId(map);
+  }, [dataflowId, nodeId]);
+
+  useEffect(() => {
+    loadSuggestions();
+    // refreshSignal is a pure trigger (its value is never read) - bumping it is how a
+    // sibling component asks this table to refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadSuggestions, refreshSignal]);
+
+  useEffect(() => {
+    onSuggestionsChange?.(suggestionsByRowId);
+  }, [suggestionsByRowId, onSuggestionsChange]);
+
+  // Rows as rendered/acted on: csvData merged with the backend suggestions for that row's
+  // sourceRowId. Concept columns (conceptId/conceptName/...) still come from csvData
+  // (Recommend fills them client-side) - only status/flagged/suggestion-id resolution come
+  // from the backend merge.
+  const mergedData = useMemo(
+    () =>
+      csvData.map((row) => {
+        const backendRow = row.sourceRowId ? suggestionsByRowId[row.sourceRowId] : undefined;
+        const derived = deriveRowStatus({ flagged: backendRow?.flagged, suggestions: backendRow?.suggestions });
+        return {
+          ...row,
+          status: derived.status,
+          flagged: derived.flagged,
+          _suggestions: backendRow?.suggestions ?? [],
+        };
+      }),
+    [csvData, suggestionsByRowId]
+  );
+
+  const handleApprove = useCallback(
+    async (row: { [key: string]: any }) => {
+      if (!dataflowId || !nodeId || !row.sourceRowId) {
+        return;
+      }
+      let suggestionId: string | undefined = row._suggestions?.[0]?.id;
+      if (!suggestionId) {
+        // No backend suggestion yet - this is a Recommend-filled, client-only concept.
+        // Persist it first, then approve the suggestion just created.
+        const concept: ConceptInput = {
+          conceptId: row.conceptId,
+          conceptName: row.conceptName,
+          conceptCode: row.conceptCode,
+          domainId: row.domainId,
+          vocabularyId: row.vocabularyId,
+        };
+        const dto = await api.conceptMappingSuggestions.addSuggestion(dataflowId, nodeId, row.sourceRowId, concept);
+        suggestionId = dto.id;
+      }
+      await api.conceptMappingSuggestions.approve(suggestionId);
+      await loadSuggestions();
+    },
+    [dataflowId, nodeId, loadSuggestions]
+  );
+
+  const handleUncheck = useCallback(
+    async (row: { [key: string]: any }) => {
+      const suggestionId: string | undefined = row._suggestions?.find((s: SuggestionDto) => s.isApproved)?.id;
+      if (!suggestionId) {
+        return;
+      }
+      await api.conceptMappingSuggestions.unapprove(suggestionId);
+      await loadSuggestions();
+    },
+    [loadSuggestions]
+  );
+
+  const handleFlag = useCallback(
+    async (row: { [key: string]: any }) => {
+      if (!dataflowId || !nodeId || !row.sourceRowId) {
+        return;
+      }
+      await api.conceptMappingSuggestions.setRowFlag(dataflowId, nodeId, row.sourceRowId, !row.flagged);
+      await loadSuggestions();
+    },
+    [dataflowId, nodeId, loadSuggestions]
+  );
 
   // Status is displayed as a chip (unchecked/suggested/approved) plus an optional flag
   // indicator. Colors/icons are intentionally simple - no external design tokens exist for
@@ -62,6 +176,9 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
   const renderActionsCell = useCallback(
     (original: { [key: string]: any }) => {
       const isApproved = original.status === "approved";
+      // Enabled once there's *something* to approve: a concept filled in client-side by
+      // Recommend, or a suggestion already persisted on the backend (e.g. via Suggest).
+      const canApprove = !!original.conceptId || (original._suggestions?.length ?? 0) > 0;
       return (
         <Box sx={{ display: "flex", gap: "2px" }}>
           {isApproved ? (
@@ -70,7 +187,7 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
                 size="small"
                 sx={{ color: "#000080" }}
                 aria-label={getText(i18nKeys.ACTION__UNCHECK)}
-                onClick={() => dispatch({ type: ACTION_TYPES.UNCHECK_ROW, payload: original })}
+                onClick={() => handleUncheck(original)}
               >
                 <BackspaceOutlinedIcon fontSize="small" />
               </IconButton>
@@ -83,8 +200,8 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
                   size="small"
                   sx={{ color: "#000080" }}
                   aria-label={getText(i18nKeys.ACTION__APPROVE)}
-                  disabled={!original.conceptId}
-                  onClick={() => dispatch({ type: ACTION_TYPES.APPROVE_ROW, payload: original })}
+                  disabled={!canApprove}
+                  onClick={() => handleApprove(original)}
                 >
                   <TaskAltIcon fontSize="small" />
                 </IconButton>
@@ -107,7 +224,7 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
               size="small"
               sx={{ color: original.flagged ? "#ed6c02" : "#000080" }}
               aria-label={getText(i18nKeys.ACTION__FLAG)}
-              onClick={() => dispatch({ type: ACTION_TYPES.TOGGLE_ROW_FLAG, payload: original })}
+              onClick={() => handleFlag(original)}
             >
               {original.flagged ? <FlagIcon fontSize="small" /> : <FlagOutlinedIcon fontSize="small" />}
             </IconButton>
@@ -115,7 +232,7 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
         </Box>
       );
     },
-    [dispatch, getText]
+    [dispatch, getText, handleApprove, handleUncheck, handleFlag]
   );
 
   const columns = useMemo<MRT_ColumnDef<{ [key: string]: any }>[]>(
@@ -214,7 +331,7 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
     initialState: { density: "compact", columnPinning: { right: ["actions"] } },
     enableDensityToggle: false,
     columns,
-    data: csvData,
+    data: mergedData,
     enableColumnResizing: true,
     layoutMode: "grid",
     muiTableHeadCellProps: {

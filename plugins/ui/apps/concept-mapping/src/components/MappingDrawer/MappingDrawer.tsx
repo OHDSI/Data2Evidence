@@ -1,38 +1,47 @@
 import React, { FC, useCallback, useContext, useEffect } from "react";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../../Context/ConceptMappingContext";
-import { conceptData, TerminologyProps } from "../../types";
+import { TerminologyProps } from "../../types";
 import { DispatchType, ACTION_TYPES } from "../../Context/reducers";
+import { api } from "../../axios/api";
+import { ConceptInput } from "../../axios/concept-mapping-suggestions";
 
 interface MappingDrawerProps {
   selectedDatasetId: string;
+  dataflowId?: string;
+  nodeId?: string;
+  // Called after a suggestion has been persisted, so a sibling MappingTable (which owns its
+  // own suggestions fetch) knows to refetch.
+  onSuggestionAdded?: () => void;
 }
 
-export const MappingDrawer: FC<MappingDrawerProps> = ({ selectedDatasetId }) => {
+export const MappingDrawer: FC<MappingDrawerProps> = ({ selectedDatasetId, dataflowId, nodeId, onSuggestionAdded }) => {
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
   const selectedData = conceptMappingState.selectedData;
   const { sourceCode, sourceName, sourceFrequency, description, domainId } =
     conceptMappingState.columnMapping;
 
-  // get data from terminology
-  // passes data to reducer to update list
+  // A concept was picked in the terminology drawer: persist it as a suggestion on the
+  // backend (rather than writing straight into the local reducer, as before) so other users
+  // see it too, then close the drawer. The concept columns on the row itself are still only
+  // filled client-side by Recommend (see MappingTable) - Suggest only affects Status.
   const handleTerminologySelect = useCallback(
-    (conceptData: conceptData) => {
-      dispatch({
-        type: ACTION_TYPES.SET_SINGLE_MAPPING,
-        payload: {
-          conceptId: conceptData.conceptId,
-          conceptName: conceptData.conceptName,
-          domainId: conceptData.domainId,
-          system: conceptData.system,
-          validStartDate: conceptData.validStartDate,
-          validEndDate: new Date(),
-          validity: conceptData.validity === "Valid" ? null : "D",
-        },
-      });
+    (concept: ConceptInput) => {
+      const sourceRowId = selectedData.sourceRowId;
+      if (dataflowId && nodeId && sourceRowId) {
+        api.conceptMappingSuggestions
+          .addSuggestion(dataflowId, nodeId, sourceRowId, {
+            conceptId: concept.conceptId,
+            conceptName: concept.conceptName,
+            conceptCode: concept.conceptCode,
+            domainId: concept.domainId,
+            vocabularyId: concept.vocabularyId,
+          })
+          .then(() => onSuggestionAdded?.());
+      }
       dispatch({ type: ACTION_TYPES.CLEAR_SELECTED_DATA });
     },
-    [dispatch]
+    [dataflowId, nodeId, selectedData, dispatch, onSuggestionAdded]
   );
 
   const getDefaultFilters = useCallback(() => {

@@ -1,4 +1,4 @@
-import React, { FC, useContext } from "react";
+import React, { FC, useContext, useMemo, useState } from "react";
 import { IconButton } from "@mui/material";
 import ArrowBackOutlinedIcon from "@mui/icons-material/ArrowBackOutlined";
 import { Button } from "@portal/components";
@@ -9,6 +9,9 @@ import { i18nKeys } from "../Context/state";
 import { Study } from "../types";
 import { SourceNodeDTO } from "../types/source";
 import { buildApprovedConceptMappingCsv, downloadFile, DownloadColumn } from "../utils/Export";
+import { deriveRowStatus } from "../utils/deriveRowStatus";
+import { api } from "../axios/api";
+import { NodeSuggestionsRow } from "../axios/concept-mapping-suggestions";
 import { Step1Source } from "./Step1Source";
 import { Step2ColumnMapping } from "./Step2ColumnMapping";
 import { Step3ConceptMapping } from "./Step3ConceptMapping";
@@ -42,6 +45,10 @@ export const StepFlow: FC<StepFlowProps> = ({
   const dispatch = useContext<React.Dispatch<DispatchType>>(ConceptMappingDispatchContext);
   const step = state.wizard.currentStep;
 
+  // Mirrors the suggestions map MappingTable loads (Task 10), so the CSV download button
+  // below can decide whether an approved/unflagged row exists without re-fetching itself.
+  const [suggestionsByRowId, setSuggestionsByRowId] = useState<Record<string, NodeSuggestionsRow>>({});
+
   // Reset atomically with the source/dataset change (no cancelable confirm - a
   // confirm dialog would leave the new source paired with the old, now-stale
   // downstream state if the user dismissed it). When there was downstream work
@@ -50,6 +57,9 @@ export const StepFlow: FC<StepFlowProps> = ({
   const handleResetDownstream = () => {
     const hasDownstream = !!state.columnMapping.sourceCode || state.csvData.data.length > 0;
     dispatch({ type: ACTION_TYPES.RESET_DOWNSTREAM });
+    if (dataflowId && nodeId) {
+      api.conceptMappingSuggestions.clearSuggestions(dataflowId, nodeId).catch(() => undefined);
+    }
     if (hasDownstream) {
       setFeedback({
         type: "success",
@@ -74,10 +84,22 @@ export const StepFlow: FC<StepFlowProps> = ({
     { header: getText(i18nKeys.OVERVIEW__CONCEPT_NAME), accessor: "conceptName" },
     { header: getText(i18nKeys.OVERVIEW__DOMAIN), accessor: "domainId" },
   ];
-  const hasApprovedRows = state.csvData.data.some((row) => row.status === "approved" && !row.flagged);
+  // Approved/flagged status is now derived from the backend suggestions list (see
+  // MappingTable), not the local reducer's status/flagged fields - merge the two here so
+  // the CSV export keeps filtering on the same, current, source of truth.
+  const derivedCsvRows = useMemo(
+    () =>
+      state.csvData.data.map((row) => {
+        const backendRow = row.sourceRowId ? suggestionsByRowId[row.sourceRowId] : undefined;
+        const derived = deriveRowStatus({ flagged: backendRow?.flagged, suggestions: backendRow?.suggestions });
+        return { ...row, status: derived.status, flagged: derived.flagged };
+      }),
+    [state.csvData.data, suggestionsByRowId]
+  );
+  const hasApprovedRows = derivedCsvRows.some((row) => row.status === "approved" && !row.flagged);
   const handleDownloadCsv = () => {
     downloadFile({
-      data: buildApprovedConceptMappingCsv(state.csvData.data, downloadColumns),
+      data: buildApprovedConceptMappingCsv(derivedCsvRows, downloadColumns),
       fileName: "concept_mappings",
       fileType: "text/csv",
     });
@@ -122,6 +144,7 @@ export const StepFlow: FC<StepFlowProps> = ({
             datasetName={datasetName}
             dataflowId={dataflowId}
             nodeId={nodeId}
+            onSuggestionsChange={setSuggestionsByRowId}
           />
         )}
       </div>
