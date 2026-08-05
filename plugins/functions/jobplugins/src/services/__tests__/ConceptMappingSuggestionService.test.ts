@@ -62,9 +62,50 @@ class FakeRepository<T extends Record<string, any>> {
     if (Array.isArray(criteria)) {
       this.items = this.items.filter((i) => !criteria.includes(i.id));
     } else {
+      // Object criteria must match ALL provided keys (not just some) - this
+      // is what makes the "approve() only deletes siblings in its own row"
+      // regression test below meaningful.
       this.items = this.items.filter((i) => !matches(i, criteria as Record<string, unknown>));
     }
     return Promise.resolve();
+  }
+}
+
+// A simple pass-through transaction runner: it has no real atomicity (this
+// is an in-memory fake, there's nothing to roll back), but it exercises the
+// same call shape the service uses in production
+// (`transactionRunner.transaction(async (manager) => manager.getRepository(Entity))`)
+// so the service code path under test is identical to the real one. The
+// manager here just hands back the same fake repo instance the test seeded.
+class FakeTransactionRunner {
+  constructor(private repoByEntity: Map<unknown, unknown>) {}
+
+  transaction<T>(work: (manager: { getRepository: (entity: unknown) => unknown }) => Promise<T>): Promise<T> {
+    return work({
+      getRepository: (entity: unknown) => this.repoByEntity.get(entity),
+    });
+  }
+}
+
+// A repository whose `insert` simulates losing a find-then-insert race: the
+// first call throws a unique-violation (as Postgres would when a concurrent
+// request's insert lands first) while also landing that concurrent row into
+// `items`, so the subsequent calls behave like the real DB state after a
+// lost race.
+class RacyInsertRepository<T extends Record<string, any>> extends FakeRepository<T> {
+  private triggered = false;
+
+  override insert(entity: T): Promise<void> {
+    if (!this.triggered) {
+      this.triggered = true;
+      this.items.push({ ...entity, flagged: !entity.flagged } as T);
+      const err = new Error("duplicate key value violates unique constraint") as Error & {
+        code?: string;
+      };
+      err.code = "23505";
+      throw err;
+    }
+    return super.insert(entity);
   }
 }
 
@@ -101,11 +142,16 @@ beforeEach(() => {
       a.targetConceptId === b.targetConceptId,
   );
   flagRepo = new FakeRepository<ConceptMappingRowFlag>();
+  const transactionRunner = new FakeTransactionRunner(
+    new Map([[ConceptMappingSuggestion, suggestionRepo]]),
+  );
   service = new ConceptMappingSuggestionService(
     // deno-lint-ignore no-explicit-any
     suggestionRepo as any,
     // deno-lint-ignore no-explicit-any
     flagRepo as any,
+    // deno-lint-ignore no-explicit-any
+    transactionRunner as any,
   );
 });
 
@@ -167,6 +213,52 @@ describe("ConceptMappingSuggestionService.approve", () => {
     assertEquals(suggestionRepo.items[0].id, first.id);
     assertEquals(suggestionRepo.items[0].isApproved, true);
   });
+
+  it("only deletes competitors within the same row, leaving other rows in the same node untouched", async () => {
+    const rowASuggestion = await service.addSuggestion(
+      DATAFLOW_ID,
+      NODE_ID,
+      "row-A",
+      CONCEPT_A,
+      "user-a",
+    );
+    await service.addSuggestion(DATAFLOW_ID, NODE_ID, "row-A", CONCEPT_B, "user-b");
+    const rowBSuggestion1 = await service.addSuggestion(
+      DATAFLOW_ID,
+      NODE_ID,
+      "row-B",
+      CONCEPT_A,
+      "user-a",
+    );
+    const rowBSuggestion2 = await service.addSuggestion(
+      DATAFLOW_ID,
+      NODE_ID,
+      "row-B",
+      CONCEPT_B,
+      "user-b",
+    );
+    const rowBSnapshotBefore = suggestionRepo.items
+      .filter((s) => s.sourceRowId === "row-B")
+      .map((s) => ({ ...s }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+
+    await service.approve(rowASuggestion.id, "user-a");
+
+    // row-A collapsed to just the approved suggestion.
+    const rowARemaining = suggestionRepo.items.filter((s) => s.sourceRowId === "row-A");
+    assertEquals(rowARemaining.length, 1);
+    assertEquals(rowARemaining[0].id, rowASuggestion.id);
+
+    // row-B (same dataflow/node, different sourceRowId) must be completely
+    // unaffected: this fails if approve()'s sibling-delete query were ever
+    // widened to (dataflowId, nodeId) only, dropping the sourceRowId filter.
+    const rowBRemaining = suggestionRepo.items
+      .filter((s) => s.sourceRowId === "row-B")
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const expectedRowBIds = [rowBSuggestion1.id, rowBSuggestion2.id].sort();
+    assertEquals(rowBRemaining.map((s) => s.id), expectedRowBIds);
+    assertEquals(rowBRemaining, rowBSnapshotBefore);
+  });
 });
 
 describe("ConceptMappingSuggestionService.unapprove", () => {
@@ -197,6 +289,25 @@ describe("ConceptMappingSuggestionService.setRowFlag", () => {
     assertEquals(flagRepo.items.length, 1);
     assertEquals(flagRepo.items[0].flagged, false);
     assertEquals(flagRepo.items[0].modifiedBy, "user-b");
+  });
+
+  it("falls back to update instead of throwing when a concurrent request wins the first-flag race", async () => {
+    const racyFlagRepo = new RacyInsertRepository<ConceptMappingRowFlag>();
+    const racyService = new ConceptMappingSuggestionService(
+      // deno-lint-ignore no-explicit-any
+      suggestionRepo as any,
+      // deno-lint-ignore no-explicit-any
+      racyFlagRepo as any,
+    );
+
+    // racyFlagRepo.insert() throws a simulated unique-violation on its first
+    // call (as if another request's insert for the same row landed first);
+    // setRowFlag must not let that raw error escape.
+    await racyService.setRowFlag(DATAFLOW_ID, NODE_ID, ROW_ID, true, "user-a");
+
+    assertEquals(racyFlagRepo.items.length, 1);
+    assertEquals(racyFlagRepo.items[0].flagged, true);
+    assertEquals(racyFlagRepo.items[0].modifiedBy, "user-a");
   });
 });
 

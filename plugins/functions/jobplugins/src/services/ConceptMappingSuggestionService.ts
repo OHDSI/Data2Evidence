@@ -68,16 +68,30 @@ function isUniqueViolation(err: unknown): boolean {
   return anyErr.code === UNIQUE_VIOLATION_CODE || anyErr.driverError?.code === UNIQUE_VIOLATION_CODE;
 }
 
+// Minimal shape of a transactional entity manager: just enough to fetch a
+// repository bound to the transaction. `DataSource` and TypeORM's
+// `EntityManager` both satisfy this structurally.
+interface TransactionalManager {
+  getRepository(entity: typeof ConceptMappingSuggestion): Repository<ConceptMappingSuggestion>;
+}
+
+interface TransactionRunner {
+  transaction<T>(work: (manager: TransactionalManager) => Promise<T>): Promise<T>;
+}
+
 export class ConceptMappingSuggestionService {
   private suggestionRepo: Repository<ConceptMappingSuggestion>;
   private flagRepo: Repository<ConceptMappingRowFlag>;
+  private transactionRunner: TransactionRunner;
 
   constructor(
     suggestionRepo?: Repository<ConceptMappingSuggestion>,
     flagRepo?: Repository<ConceptMappingRowFlag>,
+    transactionRunner?: TransactionRunner,
   ) {
     this.suggestionRepo = suggestionRepo ?? dataSource.getRepository(ConceptMappingSuggestion);
     this.flagRepo = flagRepo ?? dataSource.getRepository(ConceptMappingRowFlag);
+    this.transactionRunner = transactionRunner ?? (dataSource as unknown as TransactionRunner);
   }
 
   async listByNode(dataflowId: string, nodeId: string): Promise<NodeSuggestionsRow[]> {
@@ -146,28 +160,36 @@ export class ConceptMappingSuggestionService {
       throw err;
     }
 
-    return toDto(entity);
+    // Re-fetch the persisted row so the returned DTO reflects DB-populated
+    // audit columns (e.g. createdAt) rather than the pre-insert in-memory
+    // object, which never has createdDate set.
+    const persisted = await this.suggestionRepo.findOne({ where: { id: entity.id } });
+    return toDto(persisted ?? entity);
   }
 
+  // Marking a suggestion approved and clearing out its competitors must be
+  // atomic: a failure between the two steps would otherwise leave the row
+  // with more than one suggestion (violating the "an approved row has
+  // exactly one suggestion" invariant the frontend relies on), or with none
+  // approved at all.
   async approve(id: string, userSub: string): Promise<void> {
     const suggestion = await this.suggestionRepo.findOne({ where: { id } });
     if (!suggestion) {
       throw new Error(`Suggestion ${id} not found`);
     }
+    const { dataflowId, nodeId, sourceRowId } = suggestion;
 
-    const siblings = await this.suggestionRepo.find({
-      where: {
-        dataflowId: suggestion.dataflowId,
-        nodeId: suggestion.nodeId,
-        sourceRowId: suggestion.sourceRowId,
-      },
+    await this.transactionRunner.transaction(async (manager) => {
+      const repo = manager.getRepository(ConceptMappingSuggestion);
+
+      const siblings = await repo.find({ where: { dataflowId, nodeId, sourceRowId } });
+      const otherIds = siblings.map((s) => s.id).filter((siblingId) => siblingId !== id);
+
+      await repo.update(id, { isApproved: true, modifiedBy: userSub });
+      if (otherIds.length > 0) {
+        await repo.delete(otherIds);
+      }
     });
-    const otherIds = siblings.map((s) => s.id).filter((siblingId) => siblingId !== id);
-
-    await this.suggestionRepo.update(id, { isApproved: true, modifiedBy: userSub });
-    if (otherIds.length > 0) {
-      await this.suggestionRepo.delete(otherIds);
-    }
   }
 
   async unapprove(id: string, userSub: string): Promise<void> {
@@ -187,7 +209,10 @@ export class ConceptMappingSuggestionService {
         flagged,
         modifiedBy: userSub,
       });
-    } else {
+      return;
+    }
+
+    try {
       await this.flagRepo.insert({
         dataflowId,
         nodeId,
@@ -196,6 +221,18 @@ export class ConceptMappingSuggestionService {
         createdBy: userSub,
         modifiedBy: userSub,
       } as ConceptMappingRowFlag);
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        // Lost the find-then-insert race to a concurrent first flag on this
+        // row: fall back to updating the row a competing request just
+        // created instead of surfacing a raw PK-violation error.
+        await this.flagRepo.update({ dataflowId, nodeId, sourceRowId }, {
+          flagged,
+          modifiedBy: userSub,
+        });
+        return;
+      }
+      throw err;
     }
   }
 
