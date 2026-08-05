@@ -19,7 +19,9 @@ services:
           TREX_SECRETS_DIR=/trex-secrets /usr/local/bin/trex-init || echo "[dx] trex-init failed; DevX REST may 401"
           set -a; . /trex-secrets/derived.env 2>/dev/null || true; set +a
         fi
-        exec /usr/src/entrypoint.sh
+        # This command replaces the image's own CMD, so the --enable-otel flag
+        # from Dockerfile.v2 never runs here; it must be re-added to this exec.
+        exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
     build:
       context: ./services/trex
       dockerfile: ./Dockerfile.v2
@@ -88,6 +90,11 @@ services:
       DEVX_ENCRYPTION_KEY: ${DEVX_ENCRYPTION_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}
       RUST_BACKTRACE: ${RUST_BACKTRACE:-full}
+      # Local dev defaults to exporting traces to the jaeger service below.
+      TREX_OTEL_ENABLED: ${TREX_OTEL_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://jaeger:4318}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-trex}
       LOCAL_DEBUG: "true"
       DATABASE_CREDENTIALS: ${DATABASE_CREDENTIALS:-{}}
       # Supabase Studio sidecar (LOCAL ONLY) — trex proxies /plugins/trex/studio/** to it.
@@ -294,6 +301,20 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # Jaeger UI for local trace inspection, on http://localhost:16686. Starts with
+  # the local stack because trex defaults to exporting traces here; gating it
+  # behind a profile would leave those exports pointing at nothing.
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    networks:
+      alp:
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
 
   # trex studio sidecar — LOCAL ONLY (intentionally not in docker-compose.yml).
   # Internal-only: no host port. trex proxies /plugins/trex/studio/** to it and
