@@ -19,7 +19,7 @@ describe("Step3ConceptMapping", () => {
 
   test("renders the mapping table toolbar", () => {
     renderWithProviders(<Step3ConceptMapping selectedDatasetId="ds-1" />);
-    expect(screen.getByText(/Populate concepts/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recommend concept/i)).toBeInTheDocument();
   });
 
   test("fires populate once when autoPopulate is true and rows are available", async () => {
@@ -34,7 +34,7 @@ describe("Step3ConceptMapping", () => {
           {
             code: "1",
             name: "foo",
-            status: "pending",
+            status: "unchecked" as const,
             conceptId: 0,
             conceptName: "",
             domainId: "",
@@ -69,7 +69,7 @@ describe("Step3ConceptMapping", () => {
   test("does not fire populate when autoPopulate is false", async () => {
     renderWithProviders(<Step3ConceptMapping selectedDatasetId="ds-1" />);
 
-    await screen.findByText(/Populate concepts/i);
+    await screen.findByText(/Recommend concept/i);
     expect(getStandardConcepts).toHaveBeenCalledTimes(0);
   });
 
@@ -81,7 +81,7 @@ describe("Step3ConceptMapping", () => {
 
     renderWithProviders(<Step3ConceptMapping selectedDatasetId="ds-1" />, { state });
 
-    await screen.findByText(/Populate concepts/i);
+    await screen.findByText(/Recommend concept/i);
     expect(getStandardConcepts).toHaveBeenCalledTimes(0);
   });
 });

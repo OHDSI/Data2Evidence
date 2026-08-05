@@ -5,15 +5,17 @@ import { MappingDrawer } from "../components/MappingDrawer/MappingDrawer";
 
 interface Step3Props {
   selectedDatasetId: string;
+  datasetName?: string;
 }
 
-export const Step3ConceptMapping: FC<Step3Props> = ({ selectedDatasetId }) => {
+export const Step3ConceptMapping: FC<Step3Props> = ({ selectedDatasetId, datasetName }) => {
   const state = useContext(ConceptMappingContext);
   return (
     <div className="concept-mapping__step3">
       <MappingTable
         selectedDatasetId={selectedDatasetId}
         autoPopulate={state.wizard.loadRecommendationByDefault}
+        datasetName={datasetName}
       />
       <MappingDrawer selectedDatasetId={selectedDatasetId} />
     </div>

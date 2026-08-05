@@ -2,8 +2,11 @@ import { ReactNode } from "react";
 import { FeedbackState, TranslationState } from "../Context/state";
 import { WizardState } from "./source";
 
+export type MappingStatus = "unchecked" | "suggested" | "approved";
+
 export type mappingData = conceptData & {
-  status: string;
+  status: MappingStatus;
+  flagged?: boolean;
   [key: string]: any; // columnn mapping keys
 };
 

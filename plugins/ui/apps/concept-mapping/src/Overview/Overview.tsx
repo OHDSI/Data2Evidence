@@ -84,6 +84,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
         sourceNode={sourceNode}
         datasets={datasets ?? []}
         selectedDatasetId={selectedDatasetId ?? ""}
+        datasetName={selectedDataset?.studyDetail?.name}
         onDisconnectSource={onDisconnectSource}
       />
     </div>
