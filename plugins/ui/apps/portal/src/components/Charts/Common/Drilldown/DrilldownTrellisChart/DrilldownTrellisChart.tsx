@@ -56,8 +56,9 @@ const DrilldownTrellisChart: FC<DrilldownTrellisChartProps> = ({
   const TITLE_OFFSET = 6 / numRows; // Dynamic offset for grid titles
   const ROW_LABEL_OFFSET = 9 / numRows; // Dynamic offset for row labels
 
-  // Get keys from trellisData sorted
-  const sortedTrellisNames = Object.keys(trellisData).sort();
+  // Get keys from trellisData sorted naturally, so numeric ranges are ordered by value
+  // instead of lexicographically
+  const sortedTrellisNames = Object.keys(trellisData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
   // Calculate global y-axis range for harmonization across all plots
   const allYValues = data.map((obj: any) => Number(obj[trellisXAxisKey])).filter((v: number) => !isNaN(v));
