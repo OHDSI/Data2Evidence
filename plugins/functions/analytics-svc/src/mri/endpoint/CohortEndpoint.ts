@@ -192,15 +192,14 @@ export class CohortEndpoint {
         ) {
             // Special case for webapi, only needs to execute on source database and treats source database as default instead of cache
             if (this.datasetType === "webapi") {
-                query.queryString = query.queryString.replaceAll(
-                    this.schemaName,
-                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                query.queryString = query.queryString.replace(
+                    new RegExp(`${this.schemaName}.COHORT\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.schemaName}.COHORT`
                 );
-                query.queryString = query.queryString.replaceAll(
-                    "$$RESULT_SCHEMA$$",
-                    `${this.databaseCode}__srcdb.${this.schemaName}`
+                query.queryString = query.queryString.replace(
+                    new RegExp(`${this.schemaName}.COHORT_DEFINITION\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.schemaName}.COHORT_DEFINITION`
                 );
-
                 // Return early
                 return await query.executeQueryOnWriteConnection(
                     this.connection
@@ -210,6 +209,7 @@ export class CohortEndpoint {
             if (isWriteAction) {
                 // Additionally execute query on sourcedb
                 // Clone and manipulate query to execute on srcdb so that original query is unaffected
+                // Read from cache and insert into source in the same query execution
                 const queryClone = Object.create(Object.getPrototypeOf(query));
                 Object.assign(queryClone, structuredClone(query));
 
@@ -219,9 +219,14 @@ export class CohortEndpoint {
                     );
                 }
 
-                queryClone.queryString = queryClone.queryString.replaceAll(
-                    this.schemaName,
-                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}`
+                // Point COHORT and COHORT_DEFINITION schema relation to source database, so sql query reads from cache, and inserts into source.
+                queryClone.queryString = queryClone.queryString.replace(
+                    new RegExp(`${this.schemaName}.COHORT\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT`
+                );
+                queryClone.queryString = queryClone.queryString.replace(
+                    new RegExp(`${this.schemaName}.COHORT_DEFINITION\\b`, "gi"),
+                    `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT_DEFINITION`
                 );
                 await queryClone.executeQueryOnWriteConnection(this.connection);
             }
@@ -232,6 +237,7 @@ export class CohortEndpoint {
     }
 
     private replaceSchemaAliasWithCohortSchema(sql: string) {
+        // Replace $$SCHEMA$$
         sql = sql.replace(
             /\$\$SCHEMA\$\$.COHORT/g,
             `${this.schemaName}.COHORT`
@@ -240,6 +246,9 @@ export class CohortEndpoint {
             /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
             `${this.schemaName}.COHORT_DEFINITION`
         );
+
+        // Replace $$RESULT_SCHEMA$$
+        sql = sql.replace(/\$\$RESULT_SCHEMA\$\$/g, `${this.schemaName}`);
 
         return sql;
     }
@@ -600,13 +609,11 @@ export class CohortEndpoint {
             // shared DuckDB database; reach it via a memory connection. %s = VARCHAR
             // params (sent as bind params), %f = the BIGINT cohort id (inlined as a
             // numeric literal so DuckDB parses it as BIGINT, not a coerced DOUBLE).
-            const memConn = (Trex as any).databaseManager().getConnection(
-                "memory",
-                "",
-                "",
-                "",
-                { duckdb: (sql: string) => sql }
-            );
+            const memConn = (Trex as any)
+                .databaseManager()
+                .getConnection("memory", "", "", "", {
+                    duckdb: (sql: string) => sql,
+                });
             try {
                 const materializeQuery = QueryObject.format(
                     "SELECT trex_hana_materialize_cohort(%s, %s, %s, %s, %f, %s) AS processed_rows",
