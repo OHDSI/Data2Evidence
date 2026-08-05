@@ -19,6 +19,8 @@ export interface MappingMetadataParams {
   // Persists this node and closes the drawer, then prompts the user to save the dataflow
   // canvas. Wired up by the flow app's ConceptMappingDrawer to open the shared SaveFlowDialog.
   onSaveAndClose?: () => void;
+  dataflowId?: string;
+  nodeId?: string;
 }
 
 const mockMetadata: SystemAdminPageMetadata<MappingMetadataParams> = {

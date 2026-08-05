@@ -19,6 +19,9 @@ interface MappingTableProps {
   selectedDatasetId: string;
   autoPopulate?: boolean;
   datasetName?: string;
+  // Not yet consumed here; scopes the concept-recommendation backend calls in a later task.
+  dataflowId?: string;
+  nodeId?: string;
 }
 
 export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPopulate, datasetName }) => {

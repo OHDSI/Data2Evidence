@@ -22,6 +22,8 @@ interface StepFlowProps {
   datasetName?: string;
   onDisconnectSource?: () => void;
   onSaveAndClose?: () => void;
+  dataflowId?: string;
+  nodeId?: string;
 }
 
 export const StepFlow: FC<StepFlowProps> = ({
@@ -31,6 +33,8 @@ export const StepFlow: FC<StepFlowProps> = ({
   datasetName,
   onDisconnectSource,
   onSaveAndClose,
+  dataflowId,
+  nodeId,
 }) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
@@ -112,7 +116,14 @@ export const StepFlow: FC<StepFlowProps> = ({
           />
         )}
         {step === 1 && <Step2ColumnMapping selectedDatasetId={selectedDatasetId} />}
-        {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} datasetName={datasetName} />}
+        {step === 2 && (
+          <Step3ConceptMapping
+            selectedDatasetId={selectedDatasetId}
+            datasetName={datasetName}
+            dataflowId={dataflowId}
+            nodeId={nodeId}
+          />
+        )}
       </div>
 
       <div className="concept-mapping__steps-footer">

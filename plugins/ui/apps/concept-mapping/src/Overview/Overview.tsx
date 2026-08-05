@@ -16,6 +16,8 @@ interface OverviewProps {
   sourceNode?: SourceNodeDTO;
   onDisconnectSource?: () => void;
   onSaveAndClose?: () => void;
+  dataflowId?: string;
+  nodeId?: string;
 }
 
 export const Overview: FC<OverviewProps> = ({
@@ -25,6 +27,8 @@ export const Overview: FC<OverviewProps> = ({
   sourceNode,
   onDisconnectSource,
   onSaveAndClose,
+  dataflowId,
+  nodeId,
 }) => {
   const { changeLocale } = useTranslation();
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
@@ -95,6 +99,8 @@ export const Overview: FC<OverviewProps> = ({
         datasetName={selectedDataset?.studyDetail?.name}
         onDisconnectSource={onDisconnectSource}
         onSaveAndClose={onSaveAndClose}
+        dataflowId={dataflowId}
+        nodeId={nodeId}
       />
     </div>
   );

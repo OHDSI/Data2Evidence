@@ -118,6 +118,8 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
       onChange: (data: any) => onFormDataChange({ data }),
       onDisconnectSource,
       onSaveAndClose: saveAndClose,
+      dataflowId,
+      nodeId: node.id,
     };
   }, [
     node.data.data,
@@ -125,6 +127,8 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     upstream,
     onDisconnectSource,
     saveAndClose,
+    dataflowId,
+    node.id,
   ]);
 
   return (
