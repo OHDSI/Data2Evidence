@@ -121,4 +121,4 @@ EXPOSE 8080 33001 33000 5433 5432 4200 8094
 # Write the internal TLS cert from env, then run the engine. ENTRYPOINT is
 # cleared because the base one gates on TREX_ROOT_KEY, which d2e doesn't use.
 ENTRYPOINT []
-CMD ["sh", "-c", "mkdir -p /usr/src/cert && printf '%s' \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && printf '%s' \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && exec trex"]
+CMD ["sh", "-c", "mkdir -p /usr/src/cert && printf '%s' \"$TLS__INTERNAL__CRT\" > /usr/src/cert/cert.pem && printf '%s' \"$TLS__INTERNAL__KEY\" > /usr/src/cert/key.pem && exec trex ${TREX_OTEL_ENABLED:+--enable-otel}"]

@@ -114,7 +114,9 @@ services:
         mkdir -p /usr/src/cert
         printf '%s' "$$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
         printf '%s' "$$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
-        exec /usr/src/entrypoint.sh
+        # This command replaces the image's own CMD, so the --enable-otel flag
+        # from Dockerfile.v2 never runs here; it must be re-added to this exec.
+        exec /usr/src/entrypoint.sh $${TREX_OTEL_ENABLED:+--enable-otel}
     restart: ${DOCKER__RESTART_POLICY:-unless-stopped}
     environment:
       <<:
@@ -463,6 +465,14 @@ services:
       SCHEMA_DIR: /usr/src/core/schema
       PLUGINS_DEV_PATH: "/usr/src/plugins-dev:/usr/src/bundled-plugins"
       D2E_COMPAT: "true"
+      # OpenTelemetry is off by default: deno_telemetry is only turned on when
+      # trex is started with --enable-otel (see the command above), not by
+      # these OTEL_EXPORTER_* vars alone.
+      TREX_OTEL_ENABLED: ${TREX_OTEL_ENABLED:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-}
 
   alp-minerva-pg-mgmt-init:
     container_name: &c15 ${PROJECT_NAME:-d2e}-minerva-pg-mgmt-init-1
