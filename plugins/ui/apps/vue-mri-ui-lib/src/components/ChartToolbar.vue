@@ -111,6 +111,8 @@
     <CompleteRequiredFiltersModal
       :is-open="dashboardFlow.showRequiredFiltersModal"
       :all-fields="dashboardFlow.allWizardFields"
+      :sections="dashboardFlow.selectedWizardDefinition?.sections"
+      :form-note="dashboardFlow.selectedWizardDefinition?.formNote"
       :initial-values="dashboardFlow.initialFormValues"
       :initial-display-values="dashboardFlow.initialDisplayValues"
       :loading="dashboardFlow.applyingRequiredFilters"
