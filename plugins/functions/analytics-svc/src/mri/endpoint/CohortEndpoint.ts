@@ -56,8 +56,6 @@ function extractSessionVars(dbCredential: any): Record<string, string> {
 /**
  * trex_hana_materialize_cohort's source_params_json is a JSON array of bare bind
  * values, not the {key, type, value} placeholder objects _prepareQuery() returns.
- * Handing it the objects binds them as JSON text, so every `?` comparison silently
- * fails to match and the cohort materializes to 0 rows with no error.
  */
 function flattenBindParameters(placeholders: any[]): any[] {
     return (placeholders ?? []).map((placeholder: any) =>
