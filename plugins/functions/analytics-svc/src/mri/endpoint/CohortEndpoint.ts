@@ -193,11 +193,14 @@ export class CohortEndpoint {
             // Special case for webapi, only needs to execute on source database and treats source database as default instead of cache
             if (this.datasetType === "webapi") {
                 query.queryString = query.queryString.replace(
-                    new RegExp(`${this.schemaName}.COHORT\\b`, "gi"),
+                    new RegExp(`${this.schemaName}\\.COHORT\\b`, "gi"),
                     `${this.databaseCode}__srcdb.${this.schemaName}.COHORT`
                 );
                 query.queryString = query.queryString.replace(
-                    new RegExp(`${this.schemaName}.COHORT_DEFINITION\\b`, "gi"),
+                    new RegExp(
+                        `${this.schemaName}\\.COHORT_DEFINITION\\b`,
+                        "gi"
+                    ),
                     `${this.databaseCode}__srcdb.${this.schemaName}.COHORT_DEFINITION`
                 );
                 // Return early
@@ -221,11 +224,14 @@ export class CohortEndpoint {
 
                 // Point COHORT and COHORT_DEFINITION schema relation to source database, so sql query reads from cache, and inserts into source.
                 queryClone.queryString = queryClone.queryString.replace(
-                    new RegExp(`${this.schemaName}.COHORT\\b`, "gi"),
+                    new RegExp(`${this.schemaName}\\.COHORT\\b`, "gi"),
                     `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT`
                 );
                 queryClone.queryString = queryClone.queryString.replace(
-                    new RegExp(`${this.schemaName}.COHORT_DEFINITION\\b`, "gi"),
+                    new RegExp(
+                        `${this.schemaName}\\.COHORT_DEFINITION\\b`,
+                        "gi"
+                    ),
                     `${this.databaseCode}__srcdb.${this.sourceResultsSchemaName}.COHORT_DEFINITION`
                 );
                 await queryClone.executeQueryOnWriteConnection(this.connection);
@@ -237,13 +243,14 @@ export class CohortEndpoint {
     }
 
     private replaceSchemaAliasWithCohortSchema(sql: string) {
-        // Replace $$SCHEMA$$
+        // Replace $$SCHEMA$$.COHORT
         sql = sql.replace(
-            /\$\$SCHEMA\$\$.COHORT/g,
+            /\$\$SCHEMA\$\$\.COHORT/g,
             `${this.schemaName}.COHORT`
         );
+        // Replace $$SCHEMA$$.COHORT_DEFINITION
         sql = sql.replace(
-            /\$\$SCHEMA\$\$.COHORT_DEFINITION/g,
+            /\$\$SCHEMA\$\$\.COHORT_DEFINITION/g,
             `${this.schemaName}.COHORT_DEFINITION`
         );
 
