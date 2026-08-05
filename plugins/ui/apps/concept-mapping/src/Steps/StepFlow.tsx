@@ -8,6 +8,7 @@ import { useTranslation, useFeedback } from "../hooks";
 import { i18nKeys } from "../Context/state";
 import { Study } from "../types";
 import { SourceNodeDTO } from "../types/source";
+import { buildApprovedConceptMappingCsv, downloadFile, DownloadColumn } from "../utils/Export";
 import { Step1Source } from "./Step1Source";
 import { Step2ColumnMapping } from "./Step2ColumnMapping";
 import { Step3ConceptMapping } from "./Step3ConceptMapping";
@@ -20,6 +21,7 @@ interface StepFlowProps {
   selectedDatasetId: string;
   datasetName?: string;
   onDisconnectSource?: () => void;
+  onSaveAndClose?: () => void;
 }
 
 export const StepFlow: FC<StepFlowProps> = ({
@@ -28,6 +30,7 @@ export const StepFlow: FC<StepFlowProps> = ({
   selectedDatasetId,
   datasetName,
   onDisconnectSource,
+  onSaveAndClose,
 }) => {
   const { getText } = useTranslation();
   const { setFeedback } = useFeedback();
@@ -54,6 +57,27 @@ export const StepFlow: FC<StepFlowProps> = ({
 
   const canNext = step === 0 ? canProceedStep1(state) : step === 1 ? canProceedStep2(state) : false;
   const goTo = (n: number) => dispatch({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: n });
+
+  // Same column set as the (now removed) MappingTable download button: source columns via
+  // the columnMapping accessors, plus the resolved concept fields.
+  const { sourceCode, sourceName, sourceFrequency, description } = state.columnMapping;
+  const downloadColumns: DownloadColumn[] = [
+    { header: getText(i18nKeys.OVERVIEW__SOURCE), accessor: sourceCode },
+    { header: getText(i18nKeys.OVERVIEW__NAME), accessor: sourceName },
+    { header: getText(i18nKeys.OVERVIEW__FREQUENCY), accessor: sourceFrequency },
+    { header: getText(i18nKeys.OVERVIEW__DESCRIPTION), accessor: description },
+    { header: getText(i18nKeys.OVERVIEW__CONCEPT_ID), accessor: "conceptId" },
+    { header: getText(i18nKeys.OVERVIEW__CONCEPT_NAME), accessor: "conceptName" },
+    { header: getText(i18nKeys.OVERVIEW__DOMAIN), accessor: "domainId" },
+  ];
+  const hasApprovedRows = state.csvData.data.some((row) => row.status === "approved" && !row.flagged);
+  const handleDownloadCsv = () => {
+    downloadFile({
+      data: buildApprovedConceptMappingCsv(state.csvData.data, downloadColumns),
+      fileName: "concept_mappings",
+      fileType: "text/csv",
+    });
+  };
 
   // Leaving Step 1 for the first time locks the dataset selection in (see mappingStarted on
   // WizardState) - mapping work from here on depends on the chosen dataset staying fixed.
@@ -93,6 +117,17 @@ export const StepFlow: FC<StepFlowProps> = ({
 
       <div className="concept-mapping__steps-footer">
         {step < 2 && <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={handleNext} />}
+        {step === 2 && (
+          <>
+            <Button
+              text={getText(i18nKeys.WIZARD__DOWNLOAD_CSV)}
+              variant="outlined"
+              disabled={!hasApprovedRows}
+              onClick={handleDownloadCsv}
+            />
+            <Button text={getText(i18nKeys.WIZARD__SAVE)} onClick={() => onSaveAndClose?.()} />
+          </>
+        )}
       </div>
     </div>
   );

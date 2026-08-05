@@ -36,6 +36,16 @@ export interface TerminologyProps {
     id: string;
     value: string[];
   }[];
+  // Only populated for mode === "CONCEPT_MAPPING": the source row being mapped,
+  // shown by the terminology drawer's header. Mirrors the shared type in
+  // concept-sets/src/Terminology/Terminology.tsx.
+  sourceRow?: {
+    code?: string;
+    name?: string;
+    frequency?: string;
+    description?: string;
+    status?: string;
+  };
 }
 
 export type FilterOptions = {

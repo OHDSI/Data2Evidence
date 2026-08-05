@@ -12,6 +12,7 @@ import {
   selectEdges,
   selectNodeById,
   setNode,
+  setSaveFlowDialog,
 } from "~/features/flow/reducers";
 import { NodeDrawer, NodeDrawerProps } from "../../NodeDrawer/NodeDrawer";
 import { PluginRenderer } from "../../../Plugin/PluginRenderer";
@@ -49,6 +50,7 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
   );
   const upstream = sourceNodes[0];
   const edges = useSelector(selectEdges);
+  const dataflowId = useSelector((state: RootState) => state.flow.dataflowId);
 
   // Disconnects this Concept Mapping node from its upstream source by removing every edge
   // whose target is this node (its incoming connection) - triggered from the plugin's
@@ -86,6 +88,19 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     typeof onClose === "function" && onClose();
   }, [formData]);
 
+  // Persists the node, closes the drawer, and prompts the user to save the dataflow
+  // canvas by opening the shared SaveFlowDialog (same dialog RunFlowButton/ExportFlowButton use).
+  const saveAndClose = useCallback(() => {
+    const updated: NodeState<ConceptMappingNodeData> = {
+      ...nodeState,
+      data: formData,
+    };
+    dispatch(setNode(updated));
+    dispatch(markStatusAsDraft());
+    typeof onClose === "function" && onClose();
+    dispatch(setSaveFlowDialog({ visible: true, dataflowId }));
+  }, [formData, nodeState, onClose, dataflowId]);
+
   const pluginData = useMemo(() => {
     const sourceNode = upstream
       ? {
@@ -102,8 +117,15 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
       sourceNode,
       onChange: (data: any) => onFormDataChange({ data }),
       onDisconnectSource,
+      onSaveAndClose: saveAndClose,
     };
-  }, [node.data.data, pluginMetadata.data.mappingSuggestion, upstream, onDisconnectSource]);
+  }, [
+    node.data.data,
+    pluginMetadata.data.mappingSuggestion,
+    upstream,
+    onDisconnectSource,
+    saveAndClose,
+  ]);
 
   return (
     <NodeDrawer

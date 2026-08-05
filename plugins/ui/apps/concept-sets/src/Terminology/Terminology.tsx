@@ -13,7 +13,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import { Button } from "@portal/components";
+import { Button, Chip } from "@portal/components";
 import TerminologyList from "./components/TerminologyList/TerminologyList";
 import TerminologyDetail from "./components/TerminologyDetail/TerminologyDetail";
 import {
@@ -59,6 +59,15 @@ export interface TerminologyProps {
   }[];
   initialSelectedConcepts?: FhirValueSetExpansionContainsWithExt[];
   isAtlas: boolean;
+  // Only populated for mode === "CONCEPT_MAPPING": the source row being mapped,
+  // shown in the drawer header so the user knows what they're suggesting a concept for.
+  sourceRow?: {
+    code?: string;
+    name?: string;
+    frequency?: string;
+    description?: string;
+    status?: string;
+  };
 }
 
 const WithDrawer = ({
@@ -66,13 +75,16 @@ const WithDrawer = ({
   children,
   open,
   isDrawer,
+  mode,
 }: {
   onClose?: (values: OnCloseReturnValues) => void;
   children: JSX.Element;
   open?: boolean;
   isDrawer: boolean;
-}) =>
-  isDrawer ? (
+  mode?: TerminologyProps["mode"];
+}) => {
+  const isConceptMapping = mode === "CONCEPT_MAPPING";
+  return isDrawer ? (
     <Drawer
       variant="temporary"
       open={open}
@@ -80,7 +92,17 @@ const WithDrawer = ({
       anchor="right"
       sx={{ zIndex: 11000 }}
       PaperProps={{
-        sx: { width: "85%", overflowY: "hidden", zIndex: 11001 },
+        // CONCEPT_MAPPING gets its width from the `.terminology-concept-mapping-drawer`
+        // class (see Terminology.scss) so it matches the mapping node drawer. All other
+        // modes keep the existing inline 85% width.
+        className: isConceptMapping
+          ? "terminology-concept-mapping-drawer"
+          : undefined,
+        sx: {
+          ...(!isConceptMapping && { width: "85%" }),
+          overflowY: "hidden",
+          zIndex: 11001,
+        },
       }}
     >
       {children}
@@ -88,6 +110,7 @@ const WithDrawer = ({
   ) : (
     children
   );
+};
 
 const NameSection = ({
   conceptSetName,
@@ -341,9 +364,14 @@ export const Terminology: FC<TerminologyProps> = ({
   defaultFilters,
   initialSelectedConcepts,
   isAtlas,
+  sourceRow,
 }: TerminologyProps) => {
   const { getText } = useTranslation();
   const [conceptId, setConceptId] = useState<null | number>(null);
+  // CONCEPT_MAPPING only: the single concept currently picked via the radio,
+  // pending confirmation via the "Suggest" button.
+  const [mappingSelectedConcept, setMappingSelectedConcept] =
+    useState<FhirValueSetExpansionContainsWithExt | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedConcepts, setSelectedConcepts] = useState<
     FhirValueSetExpansionContainsWithExt[]
@@ -363,6 +391,7 @@ export const Terminology: FC<TerminologyProps> = ({
   const { datasetId, userName, features, featuresLoading } = usePortal();
   const activeDatasetId = selectedDatasetId || datasetId;
   const isConceptSet = mode === "CONCEPT_SET";
+  const isConceptMapping = mode === "CONCEPT_MAPPING";
 
   // Check if user can share based on adminOnlySharing feature flag
   const adminOnlySharingEnabled =
@@ -406,6 +435,7 @@ export const Terminology: FC<TerminologyProps> = ({
     setConceptSetShared(false);
     setIsUserConceptSet(false);
     setConceptsResult(null);
+    setMappingSelectedConcept(null);
   }, []);
 
   const changeTab = useCallback((tabName: TabName) => {
@@ -594,13 +624,18 @@ export const Terminology: FC<TerminologyProps> = ({
   );
   const isDrawer = !!onClose;
 
-  const terminologyHeaderHeightPx = 40;
+  // CONCEPT_MAPPING renders an extra source-info line under the title, so its
+  // header is taller than the plain 40px header used by every other mode.
+  const terminologyHeaderHeightPx = isConceptMapping ? 64 : 40;
   const portalHeaderHeightPx = 56;
   const conceptSetNameHeightPx = 60;
   const mainBodyPadding = 2 * 32;
   const mainContentPadding = 2 * 10;
   const conceptSearchAndSetsTabs = 48;
   const datasetSelectorHeightPx = 38;
+  // CONCEPT_MAPPING adds a bottom "Suggest" footer; reserve its height so the search/table
+  // region doesn't push it below the viewport (the drawer paper is overflowY:hidden).
+  const suggestFooterHeightPx = 56;
   const searchAndDetailsHeightOffsetPx =
     (isDrawer
       ? terminologyHeaderHeightPx
@@ -609,6 +644,7 @@ export const Terminology: FC<TerminologyProps> = ({
         conceptSearchAndSetsTabs +
         mainContentPadding) +
     (isConceptSet ? conceptSetNameHeightPx : 0) +
+    (isConceptMapping ? suggestFooterHeightPx : 0) +
     (!activeDatasetId ? datasetSelectorHeightPx : 0);
 
   const onSelectConceptId = useCallback(
@@ -638,6 +674,12 @@ export const Terminology: FC<TerminologyProps> = ({
         return;
       }
       if (onConceptIdSelect) {
+        // CONCEPT_MAPPING: don't fire/close on pick — just record the radio
+        // selection. The user confirms via the "Suggest" footer button.
+        if (mode === "CONCEPT_MAPPING") {
+          setMappingSelectedConcept(concept);
+          return;
+        }
         onConceptIdSelect(concept);
         resetState();
         return;
@@ -646,6 +688,7 @@ export const Terminology: FC<TerminologyProps> = ({
     [
       isConceptSet,
       isConceptMultiSelect,
+      mode,
       onConceptIdSelect,
       resetState,
       selectedConcepts,
@@ -746,7 +789,7 @@ export const Terminology: FC<TerminologyProps> = ({
     return null;
   }
   return (
-    <WithDrawer onClose={onClickClose} isDrawer={isDrawer} open={open}>
+    <WithDrawer onClose={onClickClose} isDrawer={isDrawer} open={open} mode={mode}>
       <div
         className="terminology__container"
         data-testid="terminology-container"
@@ -754,26 +797,62 @@ export const Terminology: FC<TerminologyProps> = ({
         {isDrawer && (
           <div
             style={{
-              height: "40px",
+              minHeight: isConceptMapping ? "64px" : "40px",
               width: "100%",
               backgroundColor: "var(--color-table-row-bg, #edf2f7)",
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              padding: isConceptMapping ? "8px 0" : undefined,
             }}
           >
             <div
               style={{
-                color: "var(--color-primary, #000080)",
                 marginLeft: 10,
-                fontWeight: 500,
+                display: "flex",
+                flexDirection: "column",
+                gap: isConceptMapping ? 4 : 0,
               }}
             >
-              {isConceptSet
-                ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
-                : isConceptMultiSelect
-                ? getText(i18nKeys.TERMINOLOGY__SELECT_CONCEPTS)
-                : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
+              <div
+                style={{
+                  color: "var(--color-primary, #000080)",
+                  fontWeight: 500,
+                }}
+              >
+                {isConceptMapping
+                  ? getText(i18nKeys.TERMINOLOGY__SUGGEST_CONCEPTS)
+                  : isConceptSet
+                  ? getText(i18nKeys.TERMINOLOGY__CONCEPT_SETS)
+                  : isConceptMultiSelect
+                  ? getText(i18nKeys.TERMINOLOGY__SELECT_CONCEPTS)
+                  : getText(i18nKeys.TERMINOLOGY__CONCEPTS)}
+              </div>
+              {isConceptMapping && sourceRow ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    color: "var(--color-text-secondary, #555)",
+                  }}
+                >
+                  <span>
+                    {getText(i18nKeys.TERMINOLOGY__SOURCE)}:{" "}
+                    {sourceRow.code ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__NAME)}:{" "}
+                    {sourceRow.name ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__FREQUENCY)}:{" "}
+                    {sourceRow.frequency ?? ""} |{" "}
+                    {getText(i18nKeys.TERMINOLOGY__DESCRIPTION)}:{" "}
+                    {sourceRow.description ?? ""}
+                  </span>
+                  {sourceRow.status ? (
+                    <Chip label={sourceRow.status} size="small" />
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             <div
@@ -864,6 +943,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   mode={mode}
                   isAtlas={isAtlas}
                   showConceptRecordCounts={showConceptRecordCounts}
+                  mappingSelectedConcept={mappingSelectedConcept}
                 />
               )}
             </div>
@@ -883,6 +963,27 @@ export const Terminology: FC<TerminologyProps> = ({
             </div>
           </div>
         </div>
+        {isConceptMapping && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              padding: "10px 20px",
+              borderTop: "1px solid #d4d4d4",
+            }}
+          >
+            <Button
+              text={getText(i18nKeys.TERMINOLOGY__SUGGEST)}
+              disabled={!mappingSelectedConcept}
+              onClick={() => {
+                if (mappingSelectedConcept) {
+                  onConceptIdSelect?.(mappingSelectedConcept);
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
     </WithDrawer>
   );

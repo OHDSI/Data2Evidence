@@ -11,7 +11,8 @@ export const MappingDrawer: FC<MappingDrawerProps> = ({ selectedDatasetId }) => 
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
   const selectedData = conceptMappingState.selectedData;
-  const { sourceName, domainId } = conceptMappingState.columnMapping;
+  const { sourceCode, sourceName, sourceFrequency, description, domainId } =
+    conceptMappingState.columnMapping;
 
   // get data from terminology
   // passes data to reducer to update list
@@ -56,12 +57,29 @@ export const MappingDrawer: FC<MappingDrawerProps> = ({ selectedDatasetId }) => 
             mode: "CONCEPT_MAPPING",
             selectedDatasetId: selectedDatasetId,
             defaultFilters: getDefaultFilters(),
+            sourceRow: {
+              code: selectedData[sourceCode],
+              name: selectedData[sourceName],
+              frequency: selectedData[sourceFrequency],
+              description: selectedData[description],
+              status: selectedData.status,
+            },
           },
         },
       });
       window.dispatchEvent(event);
     }
-  }, [selectedData, sourceName, dispatch, handleTerminologySelect, selectedDatasetId, getDefaultFilters]);
+  }, [
+    selectedData,
+    sourceCode,
+    sourceName,
+    sourceFrequency,
+    description,
+    dispatch,
+    handleTerminologySelect,
+    selectedDatasetId,
+    getDefaultFilters,
+  ]);
 
   return null;
 };

@@ -64,6 +64,8 @@
   "WIZARD__STEP3_TITLE": "概念映射",
   "WIZARD__NEXT": "下一步",
   "WIZARD__BACK": "上一步",
+  "WIZARD__SAVE": "保存",
+  "WIZARD__DOWNLOAD_CSV": "下载为 CSV",
   "WIZARD__CONFIGURATION_TAB": "配置",
   "WIZARD__RESET_CONFIRM_MESSAGE": "由于数据源已更改，列映射和概念已被清除。",
   "STEP1__DATA_SOURCE_TITLE": "1. 数据源",

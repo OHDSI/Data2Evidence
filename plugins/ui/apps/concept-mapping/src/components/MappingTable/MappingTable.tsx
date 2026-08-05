@@ -9,7 +9,6 @@ import FlagOutlinedIcon from "@mui/icons-material/FlagOutlined";
 import FlagIcon from "@mui/icons-material/Flag";
 import { useTranslation } from "../../hooks";
 import { RowObject, MappingStatus } from "../../types";
-import { parseToCsv, downloadFile, DownloadColumn } from "../../utils/Export";
 import { ConceptMappingContext, ConceptMappingDispatchContext } from "../../Context/ConceptMappingContext";
 import { DispatchType, ACTION_TYPES } from "../../Context/reducers";
 import { i18nKeys } from "../../Context/state";
@@ -29,16 +28,6 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
   const { sourceCode, sourceName, sourceFrequency, description, domainId } = conceptMappingState.columnMapping;
   const csvData = conceptMappingState.csvData.data;
   const [isLoading, setIsLoading] = useState(false);
-
-  const downloadColumns: DownloadColumn[] = [
-    { header: getText(i18nKeys.OVERVIEW__SOURCE), accessor: sourceCode },
-    { header: getText(i18nKeys.OVERVIEW__NAME), accessor: sourceName },
-    { header: getText(i18nKeys.OVERVIEW__FREQUENCY), accessor: sourceFrequency },
-    { header: getText(i18nKeys.OVERVIEW__DESCRIPTION), accessor: description },
-    { header: getText(i18nKeys.OVERVIEW__CONCEPT_ID), accessor: "conceptId" },
-    { header: getText(i18nKeys.OVERVIEW__CONCEPT_NAME), accessor: "conceptName" },
-    { header: getText(i18nKeys.OVERVIEW__DOMAIN), accessor: "domainId" },
-  ];
 
   // Status is displayed as a chip (unchecked/suggested/approved) plus an optional flag
   // indicator. Colors/icons are intentionally simple - no external design tokens exist for
@@ -260,23 +249,6 @@ export const MappingTable: FC<MappingTableProps> = ({ selectedDatasetId, autoPop
             text={getText(i18nKeys.MAPPING_TABLE__RECOMMEND_CONCEPT)}
             loading={isLoading}
             disabled={getAvailableRows().length === 0}
-          />
-
-          <Button
-            onClick={() =>
-              downloadFile({
-                data: parseToCsv(conceptMappingState.csvData.data, downloadColumns),
-                fileName: "concept_mappings",
-                fileType: "text/csv",
-              })
-            }
-            text={getText(i18nKeys.OVERVIEW__DOWNLOAD_CSV)}
-            variant="outlined"
-          />
-          <Button
-            onClick={() => dispatch({ type: ACTION_TYPES.CLEAR_DATA })}
-            text={getText(i18nKeys.OVERVIEW__CLEAR_AND_IMPORT)}
-            variant="outlined"
           />
         </Box>
       </Box>

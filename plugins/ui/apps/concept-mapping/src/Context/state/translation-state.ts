@@ -68,6 +68,8 @@ export const i18nDefault = {
     WIZARD__STEP3_TITLE: "Concept mapping",
     WIZARD__NEXT: "Next",
     WIZARD__BACK: "Back",
+    WIZARD__SAVE: "Save",
+    WIZARD__DOWNLOAD_CSV: "Download as CSV",
     WIZARD__CONFIGURATION_TAB: "Configuration",
     WIZARD__RESET_CONFIRM_MESSAGE: "Column mapping and concepts were cleared because the data source changed.",
     STEP1__DATA_SOURCE_TITLE: "1. Data source",

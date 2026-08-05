@@ -104,4 +104,67 @@ describe("StepFlow", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.SET_MAPPING_STARTED, payload: true });
     expect(dispatch).toHaveBeenCalledWith({ type: ACTION_TYPES.SET_WIZARD_STEP, payload: 1 });
   });
+
+  test("step 2 (last step) shows a Save button (not Next) that calls onSaveAndClose", () => {
+    const onSaveAndClose = vi.fn();
+    const state = { ...initialState, wizard: { ...initialState.wizard, currentStep: 2 } };
+    renderWithProviders(
+      <StepFlow datasets={datasets} selectedDatasetId="ds-1" onSaveAndClose={onSaveAndClose} />,
+      { state }
+    );
+
+    expect(screen.queryByRole("button", { name: /^Next$/i })).not.toBeInTheDocument();
+    const save = screen.getByRole("button", { name: /Save/i });
+    fireEvent.click(save);
+    expect(onSaveAndClose).toHaveBeenCalledTimes(1);
+  });
+
+  test("step 2 shows a Download as CSV button next to Save, disabled when there are no approved rows", () => {
+    const state = { ...initialState, wizard: { ...initialState.wizard, currentStep: 2 } };
+    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state });
+
+    expect(screen.getByRole("button", { name: /Save/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Download as CSV/i })).toBeDisabled();
+  });
+
+  test("step 2's Download as CSV button is enabled when an approved, unflagged row exists", () => {
+    const state = {
+      ...initialState,
+      wizard: { ...initialState.wizard, currentStep: 2 },
+      columnMapping: { sourceCode: "code", sourceName: "name", sourceFrequency: "", description: "" },
+      csvData: {
+        name: "x",
+        columns: ["code", "name"],
+        data: [
+          {
+            status: "approved" as const,
+            conceptId: 1,
+            conceptName: "Aspirin",
+            domainId: "Drug",
+            system: "",
+            validStartDate: "",
+            validEndDate: "",
+            validity: null,
+            code: "A1",
+            name: "Aspirin",
+          },
+        ],
+      },
+    };
+    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state });
+
+    expect(screen.getByRole("button", { name: /Download as CSV/i })).toBeEnabled();
+  });
+
+  test("steps 0 and 1 still show Next (not Save)", () => {
+    for (const currentStep of [0, 1]) {
+      const state = { ...initialState, wizard: { ...initialState.wizard, currentStep } };
+      const { unmount } = renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, {
+        state,
+      });
+      expect(screen.getByRole("button", { name: /^Next$/i })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Save$/i })).not.toBeInTheDocument();
+      unmount();
+    }
+  });
 });

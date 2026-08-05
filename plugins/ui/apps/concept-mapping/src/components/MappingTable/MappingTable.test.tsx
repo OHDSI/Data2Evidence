@@ -101,6 +101,13 @@ describe("MappingTable", () => {
     expect(screen.getByText(/My Dataset/)).toBeInTheDocument();
   });
 
+  test("the toolbar no longer has Download CSV or Clear and import another file buttons", () => {
+    renderWithProviders(<MappingTable selectedDatasetId="ds-1" />, { state });
+
+    expect(screen.queryByText("Download CSV")).not.toBeInTheDocument();
+    expect(screen.queryByText("Clear and import another file")).not.toBeInTheDocument();
+  });
+
   test("Recommend concept button is disabled when there are no rows without a concept", () => {
     const allMapped = {
       ...state,

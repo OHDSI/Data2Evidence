@@ -56,6 +56,7 @@ export const TerminologyWithEventListener = ({
       defaultFilters={props?.defaultFilters}
       initialSelectedConcepts={props?.initialSelectedConcepts}
       isAtlas={isAtlas}
+      sourceRow={props?.sourceRow}
     />
   );
 };

@@ -15,9 +15,17 @@ interface OverviewProps {
   onChange?: (data: Partial<ConceptMappingState>) => void;
   sourceNode?: SourceNodeDTO;
   onDisconnectSource?: () => void;
+  onSaveAndClose?: () => void;
 }
 
-export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sourceNode, onDisconnectSource }) => {
+export const Overview: FC<OverviewProps> = ({
+  locale = "en",
+  data,
+  onChange,
+  sourceNode,
+  onDisconnectSource,
+  onSaveAndClose,
+}) => {
   const { changeLocale } = useTranslation();
   const dispatch: React.Dispatch<DispatchType> = useContext(ConceptMappingDispatchContext);
   const conceptMappingState = useContext(ConceptMappingContext);
@@ -86,6 +94,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
         selectedDatasetId={selectedDatasetId ?? ""}
         datasetName={selectedDataset?.studyDetail?.name}
         onDisconnectSource={onDisconnectSource}
+        onSaveAndClose={onSaveAndClose}
       />
     </div>
   );

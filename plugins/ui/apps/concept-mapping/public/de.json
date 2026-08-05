@@ -66,6 +66,8 @@
   "WIZARD__STEP3_TITLE": "Konzeptzuordnung",
   "WIZARD__NEXT": "Weiter",
   "WIZARD__BACK": "Zurück",
+  "WIZARD__SAVE": "Speichern",
+  "WIZARD__DOWNLOAD_CSV": "Als CSV herunterladen",
   "WIZARD__CONFIGURATION_TAB": "Konfiguration",
   "WIZARD__RESET_CONFIRM_MESSAGE": "Spaltenzuordnung und Konzepte wurden gelöscht, da sich die Datenquelle geändert hat.",
   "STEP1__DATA_SOURCE_TITLE": "1. Datenquelle",

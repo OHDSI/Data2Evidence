@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import Checkbox from "@mui/material/Checkbox";
+import Radio from "@mui/material/Radio";
 import TablePagination from "@mui/material/TablePagination";
 import {
   MaterialReactTable,
@@ -69,6 +70,9 @@ interface TerminologyListProps {
     | "CONCEPT_MULTI_SELECT";
   isAtlas: boolean;
   showConceptRecordCounts?: boolean;
+  // CONCEPT_MAPPING only: the single concept currently picked via the radio in
+  // the addButton column. Ignored by every other mode.
+  mappingSelectedConcept?: FhirValueSetExpansionContainsWithExt | null;
 }
 
 const mapFilterOptions = (options: {
@@ -135,6 +139,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   mode = "CONCEPT_SEARCH",
   isAtlas,
   showConceptRecordCounts = true,
+  mappingSelectedConcept = null,
 }) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -820,6 +825,28 @@ const TerminologyList: FC<TerminologyListProps> = ({
         Cell: ({ row }: { row: any }) => {
           const terminology =
             row.original as FhirValueSetExpansionContainsWithExt;
+          if (mode === "CONCEPT_MAPPING") {
+            const isChecked =
+              mappingSelectedConcept?.conceptId === terminology.conceptId;
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Radio
+                  checked={isChecked}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onClickAddRemoveButton(terminology);
+                  }}
+                  sx={{ padding: 0 }}
+                />
+              </div>
+            );
+          }
           const isSelected = selectedConcepts.find(
             (concept) => concept.conceptId === terminology.conceptId,
           );
@@ -984,6 +1011,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
     isAtlas,
     searchText,
     JSON.stringify(columnFilters),
+    mappingSelectedConcept,
   ]);
 
   const table = useMaterialReactTable({
