@@ -77,6 +77,9 @@ services:
         required: false
     environment:
       TREX_DX_ENABLED: "true"
+      # Enable trex's native email/password IDP for local dev (off by default in
+      # the engine). Production d2e authenticates via Logto and leaves it unset.
+      TREX_IDP_ENABLED: "true"
       IS_SANDBOX: "1"
       BETTER_AUTH_URL: "https://localhost:${CADDY_PORT:-${PORT:-443}}/trex"
       PGRST_DB_URI: postgres://authenticator:authenticator_pass@${PG_HOST:-${PROJECT_NAME:-d2e}-minerva-postgres-1}:${PG_PORT:-5432}/alp
