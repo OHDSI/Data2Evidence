@@ -4,6 +4,8 @@ import { DataSource, DataSourceOptions, LogLevel } from "typeorm";
 import { env } from "../env.ts";
 import { Canvas } from "../entities/canvas.ts";
 import { Graph } from "../entities/graph.ts";
+import { ConceptMappingSuggestion } from "../entities/ConceptMappingSuggestion.ts";
+import { ConceptMappingRowFlag } from "../entities/ConceptMappingRowFlag.ts";
 
 export const getLogLevels = (): LogLevel[] => {
   if (env.NODE_ENV === "production") {
@@ -30,7 +32,7 @@ export const dataSourceOptions: DataSourceOptions = {
   schema: env.PG_SCHEMA,
   ssl,
   logging: getLogLevels(),
-  entities: [Canvas, Graph],
+  entities: [Canvas, Graph, ConceptMappingSuggestion, ConceptMappingRowFlag],
   synchronize: true,
   extra: {
     max: parseInt(Deno.env.get("PG__MAX_POOL") || "") || 10,
