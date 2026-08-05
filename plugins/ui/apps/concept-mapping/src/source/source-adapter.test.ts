@@ -113,6 +113,8 @@ describe("buildSourceData", () => {
   });
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 describe("sourceDataToCsvData", () => {
   test("csv source with rows becomes csvData with every row tagged status 'unchecked'", () => {
     const source: SourceData = {
@@ -124,14 +126,50 @@ describe("sourceDataToCsvData", () => {
         { code: "B2", name: "Bacitracin" },
       ],
     };
-    expect(sourceDataToCsvData(source)).toEqual({
+    const result = sourceDataToCsvData(source);
+    // Assert the fields we control exactly, and check sourceRowId shape separately below -
+    // a full-object toEqual would be brittle against the freshly-generated UUID value.
+    expect(result.data).toEqual([
+      { code: "A1", name: "Aspirin", status: "unchecked", sourceRowId: result.data[0].sourceRowId },
+      { code: "B2", name: "Bacitracin", status: "unchecked", sourceRowId: result.data[1].sourceRowId },
+    ]);
+    expect(result.name).toBe("codes.csv");
+    expect(result.columns).toEqual(["code", "name"]);
+  });
+
+  test("every row gets a non-empty, unique sourceRowId", () => {
+    const source: SourceData = {
+      type: "csv",
       name: "codes.csv",
       columns: ["code", "name"],
-      data: [
-        { code: "A1", name: "Aspirin", status: "unchecked" },
-        { code: "B2", name: "Bacitracin", status: "unchecked" },
+      rows: [
+        { code: "A1", name: "Aspirin" },
+        { code: "A1", name: "Aspirin" }, // identical content - must still get a distinct id
       ],
+    };
+    const result = sourceDataToCsvData(source);
+    const ids = result.data.map((r) => r.sourceRowId);
+    ids.forEach((id) => {
+      expect(id).toMatch(UUID_RE);
     });
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test("a row that already carries a sourceRowId keeps it (no regeneration on reload)", () => {
+    const existingId = "11111111-1111-1111-1111-111111111111";
+    const source: SourceData = {
+      type: "csv",
+      name: "codes.csv",
+      columns: ["code", "name"],
+      rows: [
+        { code: "A1", name: "Aspirin", sourceRowId: existingId },
+        { code: "B2", name: "Bacitracin" },
+      ],
+    };
+    const result = sourceDataToCsvData(source);
+    expect(result.data[0].sourceRowId).toBe(existingId);
+    expect(result.data[1].sourceRowId).toMatch(UUID_RE);
+    expect(result.data[1].sourceRowId).not.toBe(existingId);
   });
 
   test("node source (no rows client-side) yields an empty data array - a known, accepted limitation", () => {

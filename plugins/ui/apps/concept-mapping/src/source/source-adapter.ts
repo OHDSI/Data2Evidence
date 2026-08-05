@@ -56,10 +56,19 @@ export function buildCsvSourceData(
 // old ImportDialog.handleImport semantics. NOTE: only CSV sources carry rows client-side;
 // node sources expose columns only (their actual output rows require backend execution,
 // which is out of scope), so `data` is legitimately empty for a node source.
+//
+// Every row also gets a stable `sourceRowId` (UUID), generated once here so backend
+// suggestions (Task 10) can attach to a row across reopen. If the incoming row already
+// carries a `sourceRowId` (e.g. this SourceData was rehydrated from previously-persisted
+// data), that id is preserved rather than regenerated.
 export function sourceDataToCsvData(source: SourceData): csvDataType {
   return {
     name: source.name ?? "",
     columns: source.columns,
-    data: (source.rows ?? []).map((r) => ({ ...r, status: "unchecked" })) as mappingData[],
+    data: (source.rows ?? []).map((r) => ({
+      ...r,
+      sourceRowId: typeof r.sourceRowId === "string" && r.sourceRowId ? r.sourceRowId : crypto.randomUUID(),
+      status: "unchecked",
+    })) as mappingData[],
   };
 }

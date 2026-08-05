@@ -75,15 +75,28 @@ describe("Step1Source", () => {
       payload: { type: "csv", name: "codes.csv", size: 2048, columns: ["code", "name"], rows: [{ code: "A1", name: "Aspirin" }] },
     });
     // ...and the rows are bridged into csvData (what Step 3's MappingTable/Save read),
-    // each tagged status: "unchecked".
-    expect(actions).toContainEqual({
+    // each tagged status: "unchecked" and given a stable sourceRowId (task 7). The id is
+    // freshly generated here, so assert its shape separately rather than baking the exact
+    // UUID into a brittle full-object match.
+    const initialDataAction = actions.find((a: any) => a.type === ACTION_TYPES.SET_INITAL_DATA);
+    expect(initialDataAction).toEqual({
       type: ACTION_TYPES.SET_INITAL_DATA,
       payload: {
         name: "codes.csv",
         columns: ["code", "name"],
-        data: [{ code: "A1", name: "Aspirin", status: "unchecked" }],
+        data: [
+          {
+            code: "A1",
+            name: "Aspirin",
+            status: "unchecked",
+            sourceRowId: initialDataAction.payload.data[0].sourceRowId,
+          },
+        ],
       },
     });
+    expect(initialDataAction.payload.data[0].sourceRowId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
   });
 
   test("selecting a file shows the uploading card (filename + size + 'Uploading...') before it resolves", () => {

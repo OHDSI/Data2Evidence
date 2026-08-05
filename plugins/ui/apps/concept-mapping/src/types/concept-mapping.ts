@@ -7,6 +7,9 @@ export type MappingStatus = "unchecked" | "suggested" | "approved";
 export type mappingData = conceptData & {
   status: MappingStatus;
   flagged?: boolean;
+  // Stable per-row id (UUID), assigned once at ingestion (source-adapter.ts) and preserved
+  // across reopen, so backend suggestions (Task 10) can attach to a row reliably.
+  sourceRowId?: string;
   [key: string]: any; // columnn mapping keys
 };
 
