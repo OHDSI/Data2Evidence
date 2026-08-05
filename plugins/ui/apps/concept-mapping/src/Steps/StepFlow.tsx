@@ -49,7 +49,7 @@ export const StepFlow: FC<StepFlowProps> = ({
     if (hasDownstream) {
       setFeedback({
         type: "success",
-        message: getText(i18nKeys.WIZARD__RESET_CONFIRM_MESSAGE),
+        message: getText(i18nKeys.STEPS__RESET_CONFIRM_MESSAGE),
         autoClose: 4000,
       });
     }
@@ -92,7 +92,7 @@ export const StepFlow: FC<StepFlowProps> = ({
     <div className="concept-mapping__steps">
       {step > 0 && (
         <IconButton
-          aria-label={getText(i18nKeys.WIZARD__BACK)}
+          aria-label={getText(i18nKeys.STEPS__BACK)}
           onClick={() => goTo(step - 1)}
           // Pin top-left; without alignSelf the flex column's stretch makes the button span
           // full width and its icon renders centered.
@@ -116,16 +116,16 @@ export const StepFlow: FC<StepFlowProps> = ({
       </div>
 
       <div className="concept-mapping__steps-footer">
-        {step < 2 && <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={handleNext} />}
+        {step < 2 && <Button text={getText(i18nKeys.STEPS__NEXT)} disabled={!canNext} onClick={handleNext} />}
         {step === 2 && (
           <>
             <Button
-              text={getText(i18nKeys.WIZARD__DOWNLOAD_CSV)}
+              text={getText(i18nKeys.STEPS__DOWNLOAD_CSV)}
               variant="outlined"
               disabled={!hasApprovedRows}
               onClick={handleDownloadCsv}
             />
-            <Button text={getText(i18nKeys.WIZARD__SAVE)} onClick={() => onSaveAndClose?.()} />
+            <Button text={getText(i18nKeys.STEPS__SAVE)} onClick={() => onSaveAndClose?.()} />
           </>
         )}
       </div>
