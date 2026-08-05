@@ -72,7 +72,7 @@ describe("Step1Source", () => {
     // Source data is stored on the wizard slice (with the file name threaded through)...
     expect(actions).toContainEqual({
       type: ACTION_TYPES.SET_SOURCE_DATA,
-      payload: { type: "csv", name: "codes.csv", columns: ["code", "name"], rows: [{ code: "A1", name: "Aspirin" }] },
+      payload: { type: "csv", name: "codes.csv", size: 2048, columns: ["code", "name"], rows: [{ code: "A1", name: "Aspirin" }] },
     });
     // ...and the rows are bridged into csvData (what Step 3's MappingTable/Save read),
     // each tagged status: "unchecked".

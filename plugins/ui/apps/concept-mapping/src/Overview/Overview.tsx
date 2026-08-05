@@ -6,7 +6,7 @@ import { useTranslation } from "../hooks/use-translation";
 import { ConceptMappingState } from "../types";
 import { SourceNodeDTO } from "../types/source";
 import { DispatchType, ACTION_TYPES } from "../Context/reducers";
-import { WizardStepper } from "../Wizard/WizardStepper";
+import { StepFlow } from "../Steps/StepFlow";
 import "./Overview.scss";
 
 interface OverviewProps {
@@ -80,7 +80,7 @@ export const Overview: FC<OverviewProps> = ({ locale = "en", data, onChange, sou
         description={feedback?.description}
         visible={feedback?.message != null}
       />
-      <WizardStepper
+      <StepFlow
         sourceNode={sourceNode}
         datasets={datasets ?? []}
         selectedDatasetId={selectedDatasetId ?? ""}

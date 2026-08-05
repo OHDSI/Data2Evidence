@@ -1,5 +1,5 @@
 .concept-mapping__step1 {
-  // Fills whatever height the wizard body hands it (see WizardStepper.scss), so the columns
+  // Fills whatever height the steps body hands it (see StepFlow.scss), so the columns
   // row below can, in turn, use flex: 1 to occupy all of that space rather than just
   // sizing to its own content.
   height: 100%;

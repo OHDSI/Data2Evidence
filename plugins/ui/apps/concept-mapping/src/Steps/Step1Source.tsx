@@ -198,15 +198,29 @@ export const Step1Source: FC<Step1SourceProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sourceNode, nodeColumns, manualColumns]);
 
-  // Rehydrate the CSV upload card on a drawer reopen for an already-uploaded CSV source, so
-  // it doesn't fall back to the empty dropzone. The original file size isn't persisted on
-  // SourceData (only columns/rows are), so it's shown as 0kb here - an accepted, cosmetic-only
-  // limitation of a reopen.
+  // Rehydrate the CSV upload card for an already-uploaded CSV source so it doesn't fall back
+  // to the empty dropzone. The lazy init covers a back-nav remount (sourceData already present,
+  // no flash); the effect below covers a fresh drawer open, where Step 1 mounts BEFORE the
+  // parent's rehydrate populates wizard.sourceData - without it, the card only appeared after
+  // navigating away and back. `name`/`size` come from the persisted SourceData.
   const [csvUpload, setCsvUpload] = useState<CsvUploadState | null>(() =>
     state.wizard.sourceData?.type === "csv"
-      ? { name: state.wizard.sourceData.name ?? "", size: 0, status: "success" }
+      ? {
+          name: state.wizard.sourceData.name ?? "",
+          size: state.wizard.sourceData.size ?? 0,
+          status: "success",
+        }
       : null
   );
+
+  useEffect(() => {
+    const sd = state.wizard.sourceData;
+    if (sd?.type === "csv") {
+      // Functional update + `prev ??` so a rehydrate never clobbers an in-flight
+      // uploading/failed card or a just-uploaded one.
+      setCsvUpload((prev) => prev ?? { name: sd.name ?? "", size: sd.size ?? 0, status: "success" });
+    }
+  }, [state.wizard.sourceData]);
 
   const handleCsvFileSelected = (fileInfo: CsvFileInfo) => {
     setCsvUpload({ name: fileInfo.name, size: fileInfo.size, status: "uploading" });
@@ -215,7 +229,7 @@ export const Step1Source: FC<Step1SourceProps> = ({
   const handleCsvLoaded = (loaded: csvData) => {
     onResetDownstream();
     const columns = loaded.data.meta.fields ?? [];
-    applySource(buildCsvSourceData(loaded.name, columns, loaded.data.data));
+    applySource(buildCsvSourceData(loaded.name, columns, loaded.data.data, loaded.size));
     setCsvUpload({ name: loaded.name, size: loaded.size ?? 0, status: "success" });
   };
 

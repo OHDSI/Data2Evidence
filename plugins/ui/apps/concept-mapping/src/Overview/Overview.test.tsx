@@ -17,7 +17,7 @@ vi.mock("../axios/api", () => ({
   },
 }));
 
-vi.mock("../Wizard/WizardStepper", () => ({ WizardStepper: () => <div data-testid="wizard-stepper" /> }));
+vi.mock("../Steps/StepFlow", () => ({ StepFlow: () => <div data-testid="wizard-stepper" /> }));
 
 import { Overview } from "./Overview";
 import { api } from "../axios/api";

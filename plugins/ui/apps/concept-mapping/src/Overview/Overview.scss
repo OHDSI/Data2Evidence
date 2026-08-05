@@ -15,7 +15,7 @@
 
   // The wizard (Step 1/2/3 shell) is the only tab body that needs to grow and fill the
   // remaining vertical space below the save-button row and tabs above it.
-  .concept-mapping__wizard {
+  .concept-mapping__steps {
     flex: 1;
     min-height: 0;
   }

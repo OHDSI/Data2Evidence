@@ -109,7 +109,8 @@ export const ConceptMappingDrawer: FC<ConceptMappingDrawerProps> = ({
     <NodeDrawer
       {...props}
       disableEnforceFocus
-      width="90%"
+      // Width/positioning are fully controlled by SCSS now (see .concept-mapping-drawer
+      // .MuiDrawer-paper in ConceptMappingNode.scss) - no `width` prop here.
       hideFooter
       onClose={persistAndClose}
     >

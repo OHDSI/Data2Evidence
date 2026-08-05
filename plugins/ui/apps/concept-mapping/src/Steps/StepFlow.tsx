@@ -12,16 +12,16 @@ import { Step1Source } from "./Step1Source";
 import { Step2ColumnMapping } from "./Step2ColumnMapping";
 import { Step3ConceptMapping } from "./Step3ConceptMapping";
 import { canProceedStep1, canProceedStep2 } from "./gating";
-import "./WizardStepper.scss";
+import "./StepFlow.scss";
 
-interface WizardStepperProps {
+interface StepFlowProps {
   sourceNode?: SourceNodeDTO;
   datasets: Study[];
   selectedDatasetId: string;
   onDisconnectSource?: () => void;
 }
 
-export const WizardStepper: FC<WizardStepperProps> = ({
+export const StepFlow: FC<StepFlowProps> = ({
   sourceNode,
   datasets,
   selectedDatasetId,
@@ -63,7 +63,7 @@ export const WizardStepper: FC<WizardStepperProps> = ({
   };
 
   return (
-    <div className="concept-mapping__wizard">
+    <div className="concept-mapping__steps">
       {step > 0 && (
         <IconButton
           aria-label={getText(i18nKeys.WIZARD__BACK)}
@@ -76,7 +76,7 @@ export const WizardStepper: FC<WizardStepperProps> = ({
         </IconButton>
       )}
 
-      <div className="concept-mapping__wizard-body">
+      <div className="concept-mapping__steps-body">
         {step === 0 && (
           <Step1Source
             sourceNode={sourceNode}
@@ -89,7 +89,7 @@ export const WizardStepper: FC<WizardStepperProps> = ({
         {step === 2 && <Step3ConceptMapping selectedDatasetId={selectedDatasetId} />}
       </div>
 
-      <div className="concept-mapping__wizard-footer">
+      <div className="concept-mapping__steps-footer">
         {step < 2 && <Button text={getText(i18nKeys.WIZARD__NEXT)} disabled={!canNext} onClick={handleNext} />}
       </div>
     </div>

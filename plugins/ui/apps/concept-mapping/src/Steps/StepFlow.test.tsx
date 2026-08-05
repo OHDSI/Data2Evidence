@@ -3,7 +3,7 @@ import { fireEvent, screen } from "@testing-library/react";
 import { renderWithProviders } from "../test/render";
 import { initialState } from "../Context/ConceptMappingContext";
 import { ACTION_TYPES } from "../Context/reducers";
-import { WizardStepper } from "./WizardStepper";
+import { StepFlow } from "./StepFlow";
 
 vi.mock("../axios/api", () => ({
   api: { terminology: { getStandardConcepts: vi.fn().mockResolvedValue([]), getAllFilterOptions: vi.fn() } },
@@ -12,9 +12,9 @@ import { vi } from "vitest";
 
 const datasets = [{ id: "ds-1", studyDetail: { name: "Demo" }, databaseCode: "db", schemaName: "s" } as any];
 
-describe("WizardStepper", () => {
+describe("StepFlow", () => {
   test("Next is disabled on step 1 until source + dataset chosen", () => {
-    renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
+    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
     const next = screen.getByRole("button", { name: /Next/i });
     expect(next).toBeDisabled();
   });
@@ -24,7 +24,7 @@ describe("WizardStepper", () => {
       ...initialState,
       wizard: { ...initialState.wizard, datasetId: "ds-1", sourceData: { type: "csv" as const, columns: ["a"] } },
     };
-    renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, { state });
+    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state });
     expect(screen.getByRole("button", { name: /Next/i })).toBeEnabled();
   });
 
@@ -38,7 +38,7 @@ describe("WizardStepper", () => {
       columnMapping: { ...initialState.columnMapping, sourceCode: "code" },
     };
     const { dispatch } = renderWithProviders(
-      <WizardStepper sourceNode={sourceNode} datasets={datasets} selectedDatasetId="ds-1" />,
+      <StepFlow sourceNode={sourceNode} datasets={datasets} selectedDatasetId="ds-1" />,
       { state }
     );
 
@@ -53,7 +53,7 @@ describe("WizardStepper", () => {
   test("a no-op source population (no prior downstream work) resets silently without a feedback notice", () => {
     const sourceNode = { name: "SQL Node", type: "sql_node", description: "" };
     const { dispatch } = renderWithProviders(
-      <WizardStepper sourceNode={sourceNode} datasets={datasets} selectedDatasetId="ds-1" />,
+      <StepFlow sourceNode={sourceNode} datasets={datasets} selectedDatasetId="ds-1" />,
       { state: initialState }
     );
 
@@ -64,7 +64,7 @@ describe("WizardStepper", () => {
   test("no MUI Stepper is rendered on any step (the 3-step stepper was removed)", () => {
     for (const currentStep of [0, 1, 2]) {
       const state = { ...initialState, wizard: { ...initialState.wizard, currentStep } };
-      const { unmount } = renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, {
+      const { unmount } = renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, {
         state,
       });
       expect(document.querySelector(".MuiStepper-root")).not.toBeInTheDocument();
@@ -73,13 +73,13 @@ describe("WizardStepper", () => {
   });
 
   test("the back icon button is hidden on step 0", () => {
-    renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
+    renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, { state: initialState });
     expect(screen.queryByRole("button", { name: /Back/i })).not.toBeInTheDocument();
   });
 
   test("the back icon button is shown on step 1 and step 2 and navigates back one step", () => {
     const state = { ...initialState, wizard: { ...initialState.wizard, currentStep: 1 } };
-    const { dispatch } = renderWithProviders(<WizardStepper datasets={datasets} selectedDatasetId="ds-1" />, {
+    const { dispatch } = renderWithProviders(<StepFlow datasets={datasets} selectedDatasetId="ds-1" />, {
       state,
     });
     const back = screen.getByRole("button", { name: /Back/i });
@@ -95,7 +95,7 @@ describe("WizardStepper", () => {
       wizard: { ...initialState.wizard, datasetId: "ds-1", sourceData: { type: "csv" as const, columns: ["a"] } },
     };
     const { dispatch } = renderWithProviders(
-      <WizardStepper datasets={datasets} selectedDatasetId="ds-1" />,
+      <StepFlow datasets={datasets} selectedDatasetId="ds-1" />,
       { state }
     );
 

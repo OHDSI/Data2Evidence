@@ -45,9 +45,10 @@ export function buildNodeSourceData(node: SourceNodeDTO): SourceData {
 export function buildCsvSourceData(
   name: string,
   columns: string[],
-  rows: Array<Record<string, any>>
+  rows: Array<Record<string, any>>,
+  size?: number
 ): SourceData {
-  return { type: "csv", name, columns, rows };
+  return { type: "csv", name, size, columns, rows };
 }
 
 // Bridge a SourceData into the mapping-table csvData that Step 3 (MappingTable,
