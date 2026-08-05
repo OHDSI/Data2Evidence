@@ -120,7 +120,7 @@ test(TEST_NAME, async ({ page }) => {
 
   // Create first cohort with MALE filter
   await page.getByRole('button', { name: 'D2E' }).click()
-  await page.getByText('All').click()
+  await page.getByTitle('Basic Data - Gender').getByText('All').click()
   await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('MALE')
   await page.getByText('MALE - MALE').click()
   await expect(page.getByRole('combobox').filter({ hasText: 'MALE' }).first()).toBeVisible()

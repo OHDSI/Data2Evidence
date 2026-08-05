@@ -58,7 +58,7 @@ test(TEST_NAME, async ({ page }) => {
   })
   //Add Gender filter
   await test.step('Add Gender - Male filter', async () => {
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByPlaceholder('Enter search term').fill('Male')
     await page.getByText('MALE - MALE').click()
     await expect(page.getByText('1,096 / 2,694')).toBeVisible()
@@ -257,7 +257,7 @@ test(TEST_NAME, async ({ page }) => {
     await page.getByRole('cell', { name: 'Age ' }).locator('span').nth(1).click()
     await page.locator('.dropdownmenu-container .menuWrapper:not(.closed)').getByText('Sort Descending').click()
     //Add basic filters
-    await page.getByText('All').click()
+    await page.getByTitle('Basic Data - Gender').getByText('All').click()
     await page.getByRole('textbox', { name: 'multiselect-searchbox' }).fill('FEMALE')
     await page.getByText('FEMALE - FEMALE').click()
     //Add filter card
