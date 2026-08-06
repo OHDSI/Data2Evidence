@@ -73,6 +73,15 @@ interface TerminologyListProps {
   // CONCEPT_MAPPING only: the single concept currently picked via the radio in
   // the addButton column. Ignored by every other mode.
   mappingSelectedConcept?: FhirValueSetExpansionContainsWithExt | null;
+  // CONCEPT_MAPPING only: the row's existing suggestions, rendered as a "Suggested concepts"
+  // section between the search bar and the "All concepts" results.
+  suggestedConcepts?: {
+    conceptId: number;
+    conceptName: string;
+    conceptCode: string;
+    domainId: string;
+    vocabularyId: string;
+  }[];
 }
 
 const mapFilterOptions = (options: {
@@ -140,6 +149,7 @@ const TerminologyList: FC<TerminologyListProps> = ({
   isAtlas,
   showConceptRecordCounts = true,
   mappingSelectedConcept = null,
+  suggestedConcepts,
 }) => {
   const { getText } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
@@ -1117,6 +1127,46 @@ const TerminologyList: FC<TerminologyListProps> = ({
           />
         </div>
       ) : null}
+      {mode === "CONCEPT_MAPPING" && (suggestedConcepts?.length ?? 0) > 0 && (
+        <div style={{ flexShrink: 0, marginBottom: 8 }}>
+          <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px" }}>
+            {getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS)}
+          </div>
+          {suggestedConcepts!.map((concept) => {
+            const isSelected = mappingSelectedConcept?.conceptId === concept.conceptId;
+            return (
+              <div
+                key={concept.conceptId}
+                onClick={() => onSelectConceptId?.(concept as unknown as FhirValueSetExpansionContainsWithExt)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "4px 8px",
+                  fontSize: 14,
+                  color: "#000080",
+                  cursor: "pointer",
+                  backgroundColor: isSelected ? "#E5E6F2" : "transparent",
+                }}
+              >
+                <Radio
+                  size="small"
+                  checked={isSelected}
+                  onChange={() => onSelectConceptId?.(concept as unknown as FhirValueSetExpansionContainsWithExt)}
+                />
+                <div style={{ width: 90 }}>{concept.conceptId}</div>
+                <div style={{ width: 90 }}>{concept.conceptCode}</div>
+                <div style={{ flex: 1, minWidth: 120 }}>{concept.conceptName}</div>
+                <div style={{ width: 120 }}>{concept.vocabularyId}</div>
+                <div style={{ width: 120 }}>{concept.domainId}</div>
+              </div>
+            );
+          })}
+          <div style={{ fontWeight: 600, color: "#000080", padding: "4px 8px", marginTop: 8 }}>
+            {getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS)}
+          </div>
+        </div>
+      )}
       <MaterialReactTable table={table} />
       {terminologiesCount ? (
         <TablePagination

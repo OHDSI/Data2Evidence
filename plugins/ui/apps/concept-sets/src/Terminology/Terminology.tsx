@@ -9,7 +9,6 @@ import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Drawer from "@mui/material/Drawer";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import TextField from "@mui/material/TextField";
@@ -938,49 +937,6 @@ export const Terminology: FC<TerminologyProps> = ({
               {!userId && (
                 <div>{getText(i18nKeys.TERMINOLOGY__MISSING_USER_ID)}</div>
               )}
-              {isConceptMapping && (suggestedConcepts?.length ?? 0) > 0 && (
-                <Box sx={{ flexShrink: 0, mb: 1 }}>
-                  <Typography sx={{ fontWeight: 600, color: "#000080", px: 1, py: 0.5 }}>
-                    {getText(i18nKeys.TERMINOLOGY__SUGGESTED_CONCEPTS)}
-                  </Typography>
-                  {suggestedConcepts!.map((concept) => (
-                    <Box
-                      key={concept.conceptId}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        px: 1,
-                        py: 0.5,
-                        fontSize: "14px",
-                        color: "#000080",
-                        cursor: "pointer",
-                        backgroundColor:
-                          mappingSelectedConcept?.conceptId === concept.conceptId ? "#E5E6F2" : "transparent",
-                      }}
-                      onClick={() =>
-                        setMappingSelectedConcept(concept as unknown as FhirValueSetExpansionContainsWithExt)
-                      }
-                    >
-                      <Radio
-                        size="small"
-                        checked={mappingSelectedConcept?.conceptId === concept.conceptId}
-                        onChange={() =>
-                          setMappingSelectedConcept(concept as unknown as FhirValueSetExpansionContainsWithExt)
-                        }
-                      />
-                      <Box sx={{ width: 90 }}>{concept.conceptId}</Box>
-                      <Box sx={{ width: 90 }}>{concept.conceptCode}</Box>
-                      <Box sx={{ flex: 1, minWidth: 120 }}>{concept.conceptName}</Box>
-                      <Box sx={{ width: 120 }}>{concept.vocabularyId}</Box>
-                      <Box sx={{ width: 120 }}>{concept.domainId}</Box>
-                    </Box>
-                  ))}
-                  <Typography sx={{ fontWeight: 600, color: "#000080", px: 1, py: 0.5, mt: 1 }}>
-                    {getText(i18nKeys.TERMINOLOGY__ALL_CONCEPTS)}
-                  </Typography>
-                </Box>
-              )}
               {userId && (
                 <TerminologyList
                   userId={userId}
@@ -1001,6 +957,7 @@ export const Terminology: FC<TerminologyProps> = ({
                   isAtlas={isAtlas}
                   showConceptRecordCounts={showConceptRecordCounts}
                   mappingSelectedConcept={mappingSelectedConcept}
+                  suggestedConcepts={suggestedConcepts}
                 />
               )}
             </div>
