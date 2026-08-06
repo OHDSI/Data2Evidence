@@ -3,6 +3,8 @@
 See ``copy_source.py`` for why these are parsed rather than executed.
 """
 
+import ast
+
 from .copy_source import (
     COPY_SOURCE_PATH,
     calls_to,
@@ -70,3 +72,58 @@ def test_only_the_reconciliation_handler_clears_the_resume_point():
             f"the 'except {'/'.join(sorted(names))}' handler must keep the resume point: "
             "it is what makes a retried chunk copy resume instead of restarting"
         )
+
+
+# ---------------------------------------------------------------------------
+# A dry run must be non-destructive and must not stop at the first bad table
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_status_tables_is_told_about_the_dry_run():
+    """It ran before the dryRun check and DROPped a legacy status table."""
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    calls = calls_to(func, "ensure_status_tables")
+    assert calls, "create_schema_tables must still create the bookkeeping tables"
+    assert all(
+        any(keyword.arg == "dry_run" for keyword in call.keywords) for call in calls
+    ), "ensure_status_tables must be passed dry_run, or a dry run destroys real state"
+
+
+def test_a_planner_error_under_dry_run_does_not_abort_the_schema():
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    handlers = handlers_for(func, "PlannerError")
+    assert handlers, (
+        "a dry run exists to list every unplannable table; without a handler the "
+        "operator only ever learns about the first one"
+    )
+
+
+def test_outside_a_dry_run_a_planner_error_still_fails_fast():
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    handler = handlers_for(func, "PlannerError")[0]
+    reraises = [
+        node
+        for node in ast.walk(handler)
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.UnaryOp)
+        and isinstance(node.test.op, ast.Not)
+        and isinstance(node.test.operand, ast.Attribute)
+        and node.test.operand.attr == "dry_run"
+        and any(isinstance(inner, ast.Raise) for stmt in node.body for inner in ast.walk(stmt))
+    ]
+    assert reraises, "a real run must still fail fast on an unplannable table"
+
+
+def test_the_dry_run_reports_a_summary():
+    func = function_node(COPY_SOURCE_PATH, "create_schema_tables")
+    assert calls_to(func, "describe_dry_run_summary"), (
+        "the operator needs to be told how many tables planned cleanly and how many "
+        "did not, not just a stream of per-table errors"
+    )
+
+
+def test_mark_failed_is_not_written_during_a_dry_run():
+    """A dry run may not have a status table to write to, and must not create one."""
+    func = function_node(COPY_SOURCE_PATH, "copy_table_task")
+    assert calls_to(func, "mark_failed"), "a real failure must still be recorded"
+    assert dry_run_guarded_branch(func, "mark_failed") is not None

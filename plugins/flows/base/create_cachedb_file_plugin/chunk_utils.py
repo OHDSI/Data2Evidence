@@ -375,6 +375,24 @@ def describe_plan(plan: ChunkPlan, schema: str, table: str) -> str:
     )
 
 
+def describe_dry_run_summary(schema: str, planned: int, unplannable: Sequence[str]) -> str:
+    """Closing line of a dry run: how much of the schema is actually copyable.
+
+    A dry run that aborted on the first ``PlannerError`` told the operator
+    about one table and nothing else, which is the opposite of what the mode is
+    for. The count of clean tables is as load-bearing as the list of broken
+    ones: it is what says the rest of the schema is fine.
+    """
+    total = planned + len(unplannable)
+    line = (
+        f"[dry run] {schema}: {planned}/{total} table(s) planned cleanly, "
+        f"{len(unplannable)} could not be planned"
+    )
+    if unplannable:
+        line += f": {sorted(unplannable)}"
+    return line + ". Nothing was created, copied or dropped."
+
+
 def find_column_case_insensitive(columns: list[str], target: str) -> str | None:
     if not target:
         return None

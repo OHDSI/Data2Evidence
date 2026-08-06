@@ -17,6 +17,7 @@ from create_cachedb_file_plugin.checkpoint import (
     COPY_STATUS_TABLE_NAME,
     REQUIRED_STATUS_COLUMNS,
     TableCheckpoint,
+    apply_fresh_copy,
     clear_resume_point,
     drop_status_tables,
     ensure_status_tables,
@@ -26,6 +27,7 @@ from create_cachedb_file_plugin.checkpoint import (
     read_checkpoint,
     record_chunk_progress,
 )
+from create_cachedb_file_plugin.errors import FreshCopyResetError
 
 DATABASE = "cachedb"
 SCHEMA = "cdmdefault"
@@ -289,3 +291,71 @@ def test_checkpoint_module_does_not_drag_in_prefect():
     import create_cachedb_file_plugin.checkpoint  # noqa: F401
 
     assert "prefect" not in sys.modules
+
+
+# ---------------------------------------------------------------------------
+# A dry run has to change nothing, including the bookkeeping tables
+# ---------------------------------------------------------------------------
+#
+# ensure_status_tables ran before the dryRun check and unconditionally DROPped
+# a legacy pre-3033 table_copy_status -- destroying real state in a mode
+# documented as changing nothing.
+
+
+def test_dry_run_creates_neither_bookkeeping_table(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger, dry_run=True)
+
+    assert _columns(conn, COPY_STATUS_TABLE_NAME) == set()
+    assert _columns(conn, COPY_RUN_TABLE_NAME) == set()
+
+
+def test_dry_run_does_not_drop_a_legacy_status_table(conn, caplog, logger):
+    conn.execute(
+        f'CREATE TABLE "{DATABASE}"."{SCHEMA}"."{COPY_STATUS_TABLE_NAME}" ('
+        "table_name TEXT PRIMARY KEY, status TEXT, "
+        "started_at TIMESTAMP, completed_at TIMESTAMP)"
+    )
+    conn.execute(
+        f'INSERT INTO "{DATABASE}"."{SCHEMA}"."{COPY_STATUS_TABLE_NAME}" '
+        "VALUES ('person', 'COMPLETE', NULL, NULL)"
+    )
+
+    with caplog.at_level(logging.INFO):
+        ensure_status_tables(conn, DATABASE, SCHEMA, logger, dry_run=True)
+
+    assert _columns(conn, COPY_STATUS_TABLE_NAME) == {
+        "table_name",
+        "status",
+        "started_at",
+        "completed_at",
+    }, "the legacy shape must survive untouched"
+    conn.execute(f'SELECT COUNT(*) FROM "{DATABASE}"."{SCHEMA}"."{COPY_STATUS_TABLE_NAME}"')
+    assert conn.fetchone()[0] == 1, "and so must its rows"
+
+    logged = "\n".join(r.getMessage() for r in caplog.records).lower()
+    assert "dry run" in logged
+    assert "would" in logged, "the operator still has to be told what a real run would do"
+
+
+def test_dry_run_leaves_a_current_status_table_and_its_rows_alone(conn, logger):
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger)
+    mark_in_progress(conn, DATABASE, SCHEMA, "measurement", "plan-xyz", 180, 900_000_000)
+    record_chunk_progress(conn, DATABASE, SCHEMA, "measurement", 42)
+
+    ensure_status_tables(conn, DATABASE, SCHEMA, logger, dry_run=True)
+
+    checkpoint = read_checkpoint(conn, DATABASE, SCHEMA, "measurement")
+    assert checkpoint.plan_id == "plan-xyz"
+    assert checkpoint.chunks_completed == 42
+
+
+def test_fresh_copy_dry_run_tolerates_a_missing_status_table(conn, logger):
+    """Nothing created the table, because a dry run creates nothing."""
+    assert apply_fresh_copy(conn, DATABASE, SCHEMA, "flow-run-1", True, logger) == []
+
+
+def test_a_real_fresh_copy_still_fails_loudly_on_a_missing_status_table(conn, logger):
+    """Only the dry run is allowed to shrug; a real reset that cannot read the
+    checkpoints has no idea what it is meant to discard."""
+    with pytest.raises(FreshCopyResetError):
+        apply_fresh_copy(conn, DATABASE, SCHEMA, "flow-run-1", False, logger)

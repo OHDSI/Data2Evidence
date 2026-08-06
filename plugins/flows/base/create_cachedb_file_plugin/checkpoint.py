@@ -113,7 +113,7 @@ def _existing_columns(conn, database: str, schema: str, table: str) -> set[str]:
     return {row[0] for row in conn.fetchall()}
 
 
-def ensure_status_tables(conn, database: str, schema: str, logger) -> None:
+def ensure_status_tables(conn, database: str, schema: str, logger, dry_run: bool = False) -> None:
     """Create both bookkeeping tables, migrating a legacy status table first.
 
     Releases before the chunk-level rewrite created ``table_copy_status`` with
@@ -121,12 +121,39 @@ def ensure_status_tables(conn, database: str, schema: str, logger) -> None:
     worth salvaging in those rows -- they record table-level completion under a
     chunk plan that did not exist -- so the table is dropped and recreated, and
     every table is treated as not-started.
+
+    Under ``dry_run`` that migration is described and not performed, and
+    neither table is created. This used to run before the dryRun check, so a
+    mode documented as changing nothing DROPped a real, populated legacy status
+    table -- destroying the record of what a previous run had completed. The
+    cost is that callers which then read a status table have to tolerate its
+    absence; ``apply_fresh_copy`` and ``copy.create_schema_tables`` both do.
     """
     _check_identifier(database, "database")
     _check_identifier(schema, "schema")
 
     existing = _existing_columns(conn, database, schema, COPY_STATUS_TABLE_NAME)
-    if existing and not REQUIRED_STATUS_COLUMNS.issubset(existing):
+    legacy = bool(existing) and not REQUIRED_STATUS_COLUMNS.issubset(existing)
+
+    if dry_run:
+        if legacy:
+            missing = ", ".join(sorted(REQUIRED_STATUS_COLUMNS - existing))
+            logger.warning(
+                f"[dry run] Found a legacy '{COPY_STATUS_TABLE_NAME}' in "
+                f'"{database}"."{schema}" with columns '
+                f'({", ".join(sorted(existing))}) and no ({missing}). A real run '
+                "would drop and recreate it, and copy every table in this schema "
+                "again from the beginning. Nothing was changed."
+            )
+        else:
+            logger.info(
+                f"[dry run] would create '{COPY_STATUS_TABLE_NAME}' and "
+                f"'{COPY_RUN_TABLE_NAME}' in \"{database}\".\"{schema}\" if absent. "
+                "Nothing was changed."
+            )
+        return
+
+    if legacy:
         missing = ", ".join(sorted(REQUIRED_STATUS_COLUMNS - existing))
         logger.warning(
             f"Found a legacy '{COPY_STATUS_TABLE_NAME}' in "
@@ -382,6 +409,19 @@ def apply_fresh_copy(
     try:
         _check_identifier(database, "database")
         _check_identifier(schema, "schema")
+
+        if dry_run and not _existing_columns(
+            conn, database, schema, COPY_STATUS_TABLE_NAME
+        ):
+            # A dry run creates no bookkeeping tables, so on a clean schema
+            # there is nothing to read and nothing that would be discarded.
+            # Only the dry run may shrug at this: a real reset that cannot read
+            # the checkpoints has no idea what it is meant to destroy.
+            logger.info(
+                f"freshCopy dry run for schema '{schema}': no "
+                f"'{COPY_STATUS_TABLE_NAME}' exists, so nothing would be discarded."
+            )
+            return []
 
         if not dry_run and _fresh_copy_already_applied(conn, database, schema, flow_run_id):
             logger.info(

@@ -14,6 +14,7 @@ from create_cachedb_file_plugin.chunk_utils import (
     _thin_boundaries,
     build_predicates,
     compute_plan_id,
+    describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
     normalise_boundaries,
@@ -700,3 +701,29 @@ def test_a_single_interval_plan_still_gets_the_low_cardinality_message():
         plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, (1, 9)), config)
     with pytest.raises(PlannerError, match="low-cardinality"):
         plan_chunks("bigquery", "cdm", "measurement", _stats(600_000, (1, 9)), config)
+
+
+# ---------------------------------------------------------------------------
+# The dry-run summary line
+# ---------------------------------------------------------------------------
+
+
+def test_dry_run_summary_reports_both_totals():
+    line = describe_dry_run_summary("cdm", planned=12, unplannable=["fact_relationship"])
+    assert "cdm" in line
+    assert "12" in line
+    assert "1" in line
+    assert "fact_relationship" in line
+
+
+def test_dry_run_summary_says_so_when_everything_planned():
+    line = describe_dry_run_summary("cdm", planned=13, unplannable=[])
+    assert "13" in line
+    assert "0" in line
+
+
+def test_dry_run_summary_lists_every_failure_not_just_the_first():
+    """The whole point of not aborting on the first PlannerError."""
+    line = describe_dry_run_summary("cdm", planned=1, unplannable=["a", "b", "c"])
+    for table in ("a", "b", "c"):
+        assert table in line

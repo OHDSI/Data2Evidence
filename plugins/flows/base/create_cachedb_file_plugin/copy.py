@@ -15,6 +15,7 @@ from .types import CopyParameters, QueryColumns
 from .filter import filter_tables, CDM_COLUMN_FILTER_MAP
 from .utils import execute_statement, set_bigquery_global_settings, VOCAB_TABLES
 from .chunk_utils import (
+    describe_dry_run_summary,
     describe_plan,
     find_column_case_insensitive,
     plan_chunks,
@@ -33,7 +34,7 @@ from .checkpoint import (
     record_chunk_progress,
     reset_table,
 )
-from .errors import ChunkCopyError, ReconciliationError
+from .errors import ChunkCopyError, PlannerError, ReconciliationError
 from .planner_types import ChunkConfig, ChunkStrategy
 from .source_stats import build_source_adapter
 
@@ -140,8 +141,16 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     source_schema = copy_params.source_schema
 
     # Create both bookkeeping tables if they don't exist, migrating a
-    # pre-chunking status table first.
-    ensure_status_tables(write_conn, copy_params.target_database, copy_params.target_schema, logger)
+    # pre-chunking status table first. Under dryRun this only reports what it
+    # would do: it used to run before the dryRun check and DROP a real legacy
+    # status table in a mode documented as changing nothing.
+    ensure_status_tables(
+        write_conn,
+        copy_params.target_database,
+        copy_params.target_schema,
+        logger,
+        dry_run=copy_params.dry_run,
+    )
 
     if copy_params.fresh_copy:
         # Keyed on (flow_run_id, target_schema): that is what makes this safe
@@ -197,15 +206,7 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     original_count = len(tables_to_copy)
 
     # Check for already completed tables
-    completed_tables = [
-        row[0]
-        for row in _fetchall_rows(
-            write_conn,
-            f'SELECT table_name FROM "{copy_params.target_database}"'
-            f'."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" '
-            "WHERE status = 'COMPLETE'",
-        )
-    ]
+    completed_tables = _completed_tables(write_conn, copy_params, logger)
     logger.info(f"Found {len(completed_tables)} already completed tables: {completed_tables}")
 
     # Filter out already completed tables
@@ -223,6 +224,8 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
     if has_separate_vocab_schema:
         msg += f" with separate vocab schema '{copy_params.vocab_schema}'"
     logger.info(msg)
+
+    unplannable_tables = []
 
     for idx, table in enumerate(tables_left_to_copy, start=1):
         # Determine which schema this table should be copied from
@@ -247,7 +250,21 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
         )
 
         # Call copy_table directly
-        copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
+        try:
+            copy_table_task(write_conn, read_conn, copy_params, query_columns, source_schema_for_table)
+        except PlannerError as exc:
+            if not copy_params.dry_run:
+                # A real run still fails fast: an unplannable table is either
+                # copied unbounded or not copied at all, and neither may be
+                # papered over.
+                raise
+            # A dry run exists to tell the operator about every unplannable
+            # table in the schema, not just the first one it hits.
+            unplannable_tables.append(table)
+            logger.error(
+                f"[dry run] '{table}' cannot be planned and would fail a real copy: {exc}"
+            )
+            continue
 
         # Call copy_indexes directly. Not under dryRun: copy_table returns
         # before the target is created, so CREATE INDEX ... ON <target> would
@@ -262,11 +279,47 @@ def create_schema_tables(write_conn: Any, read_conn: Any, copy_params: CopyParam
                 "was not created, so there is nothing to index."
             )
 
+    if copy_params.dry_run:
+        logger.info(
+            describe_dry_run_summary(
+                copy_params.source_schema,
+                len(tables_left_to_copy) - len(unplannable_tables),
+                unplannable_tables,
+            )
+        )
+        # Nothing was written, so there is nothing to clean up -- and dropping
+        # the bookkeeping tables would destroy the checkpoints a real run needs
+        # to resume from.
+        return
+
     # All tables copied successfully, drop the ephemeral bookkeeping tables.
-    # Under dryRun nothing was written, so there is nothing to clean up -- and
-    # dropping them would destroy the checkpoints a real run needs to resume.
+    drop_status_tables(write_conn, copy_params.target_database, copy_params.target_schema)
+
+
+def _completed_tables(write_conn: Any, copy_params: CopyParameters, logger) -> list[str]:
+    """Tables this schema has already finished copying.
+
+    Tolerates a missing status table, but only under dryRun: that is the mode
+    in which ``ensure_status_tables`` deliberately creates nothing, so on a
+    clean schema there is no table to read and no table has completed. A real
+    run always has one, and a failure to read it there is a real failure.
+    """
+    statement = (
+        f'SELECT table_name FROM "{copy_params.target_database}"'
+        f'."{copy_params.target_schema}"."{COPY_STATUS_TABLE_NAME}" '
+        "WHERE status = 'COMPLETE'"
+    )
     if not copy_params.dry_run:
-        drop_status_tables(write_conn, copy_params.target_database, copy_params.target_schema)
+        return [row[0] for row in _fetchall_rows(write_conn, statement)]
+    try:
+        return [row[0] for row in _fetchall_rows(write_conn, statement)]
+    except Exception as exc:
+        logger.info(
+            f"[dry run] no '{COPY_STATUS_TABLE_NAME}' to read in "
+            f'"{copy_params.target_database}"."{copy_params.target_schema}" ({exc}); '
+            "treating every table as not yet copied."
+        )
+        return []
 
 
 def create_empty_target_table_if_absent(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str):
@@ -368,7 +421,8 @@ def copy_table_task(write_conn: Any, read_conn: Any, copy_params: CopyParameters
         # target on the way out, which is precisely what made a retry restart a
         # large table from chunk 0 and never converge (issue 3033). Never
         # reintroduce a DROP on this path.
-        mark_failed(write_conn, database, schema, table)
+        if not copy_params.dry_run:
+            mark_failed(write_conn, database, schema, table)
         raise
 
 
