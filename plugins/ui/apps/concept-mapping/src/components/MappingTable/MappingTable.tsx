@@ -618,6 +618,7 @@ export const MappingTable: FC<MappingTableProps> = ({
               disabled={approveDisabled}
             />
             <Button
+              variant="outlined"
               onClick={() => bulkUncheck(selectedRows).then(() => table.resetRowSelection())}
               text={getText(i18nKeys.ACTION__UNCHECK)}
               disabled={uncheckDisabled}
@@ -626,19 +627,18 @@ export const MappingTable: FC<MappingTableProps> = ({
         );
       }
       return (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", p: "4px" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "1rem", width: "100%", p: "4px" }}>
           <Box sx={{ fontWeight: 500 }}>
             {getText(i18nKeys.MAPPING_TABLE__DATASET_REFERENCE)}
             {datasetName ? `: ${datasetName}` : ""}
           </Box>
-          <Box sx={{ display: "flex", gap: "1rem" }}>
-            <Button
-              onClick={() => recommendConcepts()}
-              text={getText(i18nKeys.MAPPING_TABLE__RECOMMEND_CONCEPT)}
-              loading={isLoading}
-              disabled={getAvailableRows().length === 0}
-            />
-          </Box>
+          <Button
+            variant="outlined"
+            onClick={() => recommendConcepts()}
+            text={getText(i18nKeys.MAPPING_TABLE__RECOMMEND_CONCEPT)}
+            loading={isLoading}
+            disabled={getAvailableRows().length === 0}
+          />
         </Box>
       );
     },
