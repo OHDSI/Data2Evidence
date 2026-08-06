@@ -300,21 +300,26 @@ export const MappingTable: FC<MappingTableProps> = ({
       const status: MappingStatus = original.status ?? "unchecked";
       const config = statusChipConfig[status] ?? statusChipConfig.unchecked;
       const count = original._suggestions?.length ?? 0;
-      // "Suggested (N)" surfaces how many competing suggestions the row has (each is shown on
-      // its own line in the concept columns). Approved/Unchecked show no count.
-      const label = status === "suggested" ? `${config.label} (${count})` : config.label;
-      // Flagged state is shown only by the Flag action button (filled orange), not by a
-      // separate indicator in front of the row.
-      return (
-        <Chip
-          size="small"
-          label={label}
-          color={config.color}
-          icon={status === "approved" ? <TaskAltIcon fontSize="small" /> : undefined}
-        />
-      );
+
+      // "Suggested (N)" is plain navy text (no chip background); N = number of competing
+      // suggestions, each shown on its own line in the concept columns.
+      if (status === "suggested") {
+        return <Box sx={{ color: "#000080", fontWeight: 500 }}>{`${config.label} (${count})`}</Box>;
+      }
+      // Approved: mint chip with a check icon.
+      if (status === "approved") {
+        return (
+          <Chip
+            size="small"
+            label={config.label}
+            icon={<TaskAltIcon fontSize="small" />}
+            sx={{ backgroundColor: "#E1FFF6", color: "#00875A", "& .MuiChip-icon": { color: "#00875A" } }}
+          />
+        );
+      }
+      return <Chip size="small" label={config.label} color="default" />;
     },
-    [getText, statusChipConfig]
+    [statusChipConfig]
   );
 
   // Concept columns render one line per suggestion (stacked), so a multi-suggestion row grows
@@ -360,7 +365,7 @@ export const MappingTable: FC<MappingTableProps> = ({
         <Tooltip title={getText(i18nKeys.ACTION__FLAG)}>
           <IconButton
             size="small"
-            sx={{ color: original.flagged ? "#ed6c02" : "#000080" }}
+            sx={{ color: original.flagged ? "#CD6000" : "#000080" }}
             aria-label={getText(i18nKeys.ACTION__FLAG)}
             onClick={() => handleFlag(original)}
           >
