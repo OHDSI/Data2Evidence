@@ -83,7 +83,9 @@ def create_cache_flow(options: CreateCacheOptions):
         fts_tables=options.tables_to_create_duckdb_fts_index,
         limit_statement="",  # Limit 0 only applied to CDW config
         vocab_schema=options.vocab_schema_name,
-        chunk_size=options.chunk_size
+        chunk_size=options.chunk_size,
+        fresh_copy=bool(options.fresh_copy),
+        dry_run=bool(options.dry_run)
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
@@ -182,7 +184,10 @@ def create_cdw_validation_config_plugin(options: CreateCDWValidationConfig):
         timestamp_filter=None,
         patient_filter=None,
         fts_tables=[],
-        limit_statement="LIMIT 0"  # Limit 0 only applied to CDW config
+        limit_statement="LIMIT 0",  # Limit 0 only applied to CDW config
+        chunk_size=None,
+        fresh_copy=False,
+        dry_run=False
     )
 
     duckdb_file_path = resolve_duckdb_file_path(
