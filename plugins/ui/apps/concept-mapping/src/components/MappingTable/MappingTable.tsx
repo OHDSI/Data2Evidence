@@ -301,10 +301,12 @@ export const MappingTable: FC<MappingTableProps> = ({
       const config = statusChipConfig[status] ?? statusChipConfig.unchecked;
       const count = original._suggestions?.length ?? 0;
 
-      // "Suggested (N)" is plain navy text (no chip background); N = number of competing
-      // suggestions, each shown on its own line in the concept columns.
+      // "Suggested (N)": lavender chip with navy text; N = number of competing suggestions,
+      // each shown on its own line in the concept columns.
       if (status === "suggested") {
-        return <Box sx={{ color: "#000080", fontWeight: 500 }}>{`${config.label} (${count})`}</Box>;
+        return (
+          <Chip size="small" label={`${config.label} (${count})`} sx={{ backgroundColor: "#E5E6F2", color: "#000080" }} />
+        );
       }
       // Approved: mint chip with a check icon.
       if (status === "approved") {
