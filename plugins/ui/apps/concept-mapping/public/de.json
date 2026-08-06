@@ -34,7 +34,6 @@
   "STATUS__SUGGESTED": "Vorgeschlagen",
   "STATUS__APPROVED": "Freigegeben",
   "MAPPING_TABLE__SELECTED": "ausgewählt",
-  "MAPPING_TABLE__SUGGESTED_BY": "Vorgeschlagen von",
   "ACTION__APPROVE": "Freigeben",
   "ACTION__UNCHECK": "Freigabe aufheben",
   "ACTION__SUGGEST": "Vorschlagen",

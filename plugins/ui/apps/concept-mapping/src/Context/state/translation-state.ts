@@ -36,7 +36,6 @@ export const i18nDefault = {
     STATUS__SUGGESTED: "Suggested",
     STATUS__APPROVED: "Approved",
     MAPPING_TABLE__SELECTED: "selected",
-    MAPPING_TABLE__SUGGESTED_BY: "Suggested by",
     ACTION__APPROVE: "Approve",
     ACTION__UNCHECK: "Uncheck",
     ACTION__SUGGEST: "Suggest",

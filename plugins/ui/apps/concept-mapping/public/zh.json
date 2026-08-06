@@ -32,7 +32,6 @@
   "STATUS__SUGGESTED": "建议",
   "STATUS__APPROVED": "已批准",
   "MAPPING_TABLE__SELECTED": "已选择",
-  "MAPPING_TABLE__SUGGESTED_BY": "建议者",
   "ACTION__APPROVE": "批准",
   "ACTION__UNCHECK": "取消批准",
   "ACTION__SUGGEST": "建议",

@@ -269,7 +269,7 @@ describe("MappingTable", () => {
     await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (3)")).toBeInTheDocument());
   });
 
-  test("expanding a row reveals each suggestion; approving one calls approve with its id", async () => {
+  test("renders one concept line per suggestion inline (no expand panel); approving a line approves that suggestion", async () => {
     getSuggestions.mockResolvedValue([
       backendRow({
         sourceRowId: "r2",
@@ -283,12 +283,13 @@ describe("MappingTable", () => {
     renderWithProviders(<MappingTable selectedDatasetId="ds-1" dataflowId="df-1" nodeId="node-1" />, { state });
     await waitFor(() => expect(within(rowFor("B2")).getByText("Suggested (2)")).toBeInTheDocument());
 
-    within(rowFor("B2")).getByRole("button", { name: "Expand" }).click();
+    // Both suggestions render inline in the same row - no expand toggle, no detail panel.
+    expect(within(rowFor("B2")).getByText("First concept")).toBeInTheDocument();
+    expect(within(rowFor("B2")).getByText("Second concept")).toBeInTheDocument();
+    expect(within(rowFor("B2")).queryByRole("button", { name: "Expand" })).not.toBeInTheDocument();
 
-    const firstSub = (await screen.findByText("First concept")).parentElement as HTMLElement;
-    expect(screen.getByText("Second concept")).toBeInTheDocument();
-
-    within(firstSub).getByRole("button", { name: "Approve" }).click();
+    // Each line has its own Approve; approving the first targets that specific suggestion.
+    within(rowFor("B2")).getAllByRole("button", { name: "Approve" })[0].click();
 
     await waitFor(() => expect(approve).toHaveBeenCalledWith("s1"));
     await waitFor(() => expect(getSuggestions).toHaveBeenCalledTimes(2));

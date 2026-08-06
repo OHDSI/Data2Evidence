@@ -40,6 +40,58 @@ interface MappingTableProps {
   onSuggestionsChange?: (suggestionsByRowId: Record<string, NodeSuggestionsRow>) => void;
 }
 
+// Fixed height of a single concept line, so the stacked concept columns and the stacked
+// action column line up row-for-row.
+const SUGGESTION_LINE_HEIGHT = 36;
+
+interface ConceptLine {
+  key: string;
+  // Present when this line is a persisted backend suggestion; absent for a client-only
+  // Recommend concept that hasn't been suggested yet.
+  suggestionId?: string;
+  isApproved: boolean;
+  conceptId: any;
+  conceptName: any;
+  conceptCode: any;
+  domainId: any;
+  vocabularyId: any;
+}
+
+// A source row can carry several competing suggestions. We render one line per suggestion
+// stacked inside the row's concept columns (and its action column) so a multi-suggestion row
+// is simply taller - matching the design's inline layout (no expand/detail panel). A row with
+// no backend suggestion but a client-side Recommend concept shows that single concept; a row
+// with neither shows no concept line.
+function conceptLines(original: { [key: string]: any }): ConceptLine[] {
+  const suggestions: SuggestionDto[] = original._suggestions ?? [];
+  if (suggestions.length > 0) {
+    return suggestions.map((s) => ({
+      key: s.id,
+      suggestionId: s.id,
+      isApproved: !!s.isApproved,
+      conceptId: s.conceptId,
+      conceptName: s.conceptName,
+      conceptCode: s.conceptCode,
+      domainId: s.domainId,
+      vocabularyId: s.vocabularyId,
+    }));
+  }
+  if (original.conceptId) {
+    return [
+      {
+        key: "client",
+        isApproved: false,
+        conceptId: original.conceptId,
+        conceptName: original.conceptName,
+        conceptCode: original.conceptCode,
+        domainId: original.domainId,
+        vocabularyId: original.vocabularyId,
+      },
+    ];
+  }
+  return [];
+}
+
 export const MappingTable: FC<MappingTableProps> = ({
   selectedDatasetId,
   autoPopulate,
@@ -201,6 +253,14 @@ export const MappingTable: FC<MappingTableProps> = ({
     [loadSuggestions]
   );
 
+  const handleUnapproveSuggestion = useCallback(
+    async (suggestionId: string) => {
+      await api.conceptMappingSuggestions.unapprove(suggestionId);
+      await loadSuggestions();
+    },
+    [loadSuggestions]
+  );
+
   // Bulk actions: batch the cores over the selected rows, refetch once, then clear selection.
   const bulkApprove = useCallback(
     async (rows: MRT_Row<{ [key: string]: any }>[]) => {
@@ -240,8 +300,8 @@ export const MappingTable: FC<MappingTableProps> = ({
       const status: MappingStatus = original.status ?? "unchecked";
       const config = statusChipConfig[status] ?? statusChipConfig.unchecked;
       const count = original._suggestions?.length ?? 0;
-      // "Suggested (N)" surfaces how many competing suggestions the row has (expand the row
-      // to see them). Approved/Unchecked show no count.
+      // "Suggested (N)" surfaces how many competing suggestions the row has (each is shown on
+      // its own line in the concept columns). Approved/Unchecked show no count.
       const label = status === "suggested" ? `${config.label} (${count})` : config.label;
       // Flagged state is shown only by the Flag action button (filled orange), not by a
       // separate indicator in front of the row.
@@ -257,117 +317,117 @@ export const MappingTable: FC<MappingTableProps> = ({
     [getText, statusChipConfig]
   );
 
-  // Expanded sub-table: one row per suggestion for a source row, each with an Approve action.
-  // Approving deletes the row's other suggestions (backend rule) - the way to resolve a
-  // row with multiple competing suggestions.
-  const renderSuggestionsPanel = useCallback(
-    (row: MRT_Row<{ [key: string]: any }>) => {
-      const suggestions: SuggestionDto[] = row.original._suggestions ?? [];
-      if (suggestions.length === 0) {
-        return null;
+  // Concept columns render one line per suggestion (stacked), so a multi-suggestion row grows
+  // taller with each suggestion's value on its own line, aligned with the action column.
+  const renderConceptCell = useCallback((original: { [key: string]: any }, field: keyof ConceptLine) => {
+    const lines = conceptLines(original);
+    if (lines.length === 0) {
+      return null;
+    }
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
+        {lines.map((line) => (
+          <Box
+            key={line.key}
+            sx={{ height: `${SUGGESTION_LINE_HEIGHT}px`, display: "flex", alignItems: "center" }}
+          >
+            {line[field] as React.ReactNode}
+          </Box>
+        ))}
+      </Box>
+    );
+  }, []);
+
+  const renderActionsCell = useCallback(
+    (original: { [key: string]: any }) => {
+      const lines = conceptLines(original);
+
+      // Suggest (open the terminology search to add another concept) and Flag (toggle the row
+      // flag) are per-row actions, repeated on each line to match the design.
+      const suggestButton = (
+        <Tooltip title={getText(i18nKeys.ACTION__SUGGEST)}>
+          <IconButton
+            size="small"
+            sx={{ color: "#000080" }}
+            aria-label={getText(i18nKeys.ACTION__SUGGEST)}
+            onClick={() => dispatch({ type: ACTION_TYPES.SET_SELECTED_DATA, payload: original })}
+          >
+            <TungstenOutlinedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      );
+      const flagButton = (
+        <Tooltip title={getText(i18nKeys.ACTION__FLAG)}>
+          <IconButton
+            size="small"
+            sx={{ color: original.flagged ? "#ed6c02" : "#000080" }}
+            aria-label={getText(i18nKeys.ACTION__FLAG)}
+            onClick={() => handleFlag(original)}
+          >
+            {original.flagged ? <FlagIcon fontSize="small" /> : <FlagOutlinedIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+      );
+
+      // No concept yet: a single line with a disabled Approve plus Suggest/Flag.
+      if (lines.length === 0) {
+        return (
+          <Box sx={{ height: `${SUGGESTION_LINE_HEIGHT}px`, display: "flex", alignItems: "center", gap: "2px" }}>
+            <Tooltip title={getText(i18nKeys.ACTION__APPROVE)}>
+              <span>
+                <IconButton size="small" sx={{ color: "#000080" }} aria-label={getText(i18nKeys.ACTION__APPROVE)} disabled>
+                  <TaskAltIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {suggestButton}
+            {flagButton}
+          </Box>
+        );
       }
+
       return (
-        <Box sx={{ pl: 6, py: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
-          {suggestions.map((s) => (
+        <Box sx={{ display: "flex", flexDirection: "column" }}>
+          {lines.map((line) => (
             <Box
-              key={s.id}
-              sx={{ display: "flex", alignItems: "center", gap: 2, fontSize: "14px", color: "#000080" }}
+              key={line.key}
+              sx={{ height: `${SUGGESTION_LINE_HEIGHT}px`, display: "flex", alignItems: "center", gap: "2px" }}
             >
-              <Box sx={{ width: 90 }}>{s.conceptId}</Box>
-              <Box sx={{ flex: 1, minWidth: 120 }}>{s.conceptName}</Box>
-              <Box sx={{ width: 120 }}>{s.conceptCode}</Box>
-              <Box sx={{ width: 120 }}>{s.domainId}</Box>
-              <Box sx={{ width: 120 }}>{s.vocabularyId}</Box>
-              <Box sx={{ width: 200, opacity: 0.7 }}>
-                {getText(i18nKeys.MAPPING_TABLE__SUGGESTED_BY)}: {s.suggestedBy}
-              </Box>
-              {s.isApproved ? (
-                <Chip
-                  size="small"
-                  color="success"
-                  label={getText(i18nKeys.STATUS__APPROVED)}
-                  icon={<TaskAltIcon fontSize="small" />}
-                />
+              {line.isApproved ? (
+                <Tooltip title={getText(i18nKeys.ACTION__UNCHECK)}>
+                  <IconButton
+                    size="small"
+                    sx={{ color: "#000080" }}
+                    aria-label={getText(i18nKeys.ACTION__UNCHECK)}
+                    onClick={() =>
+                      line.suggestionId ? handleUnapproveSuggestion(line.suggestionId) : handleUncheck(original)
+                    }
+                  >
+                    <BackspaceOutlinedIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               ) : (
                 <Tooltip title={getText(i18nKeys.ACTION__APPROVE)}>
                   <IconButton
                     size="small"
                     sx={{ color: "#000080" }}
                     aria-label={getText(i18nKeys.ACTION__APPROVE)}
-                    onClick={() => handleApproveSuggestion(s.id)}
+                    onClick={() =>
+                      line.suggestionId ? handleApproveSuggestion(line.suggestionId) : handleApprove(original)
+                    }
                   >
                     <TaskAltIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
+              {suggestButton}
+              {flagButton}
             </Box>
           ))}
         </Box>
       );
     },
-    [getText, handleApproveSuggestion]
-  );
-
-  const renderActionsCell = useCallback(
-    (original: { [key: string]: any }) => {
-      const isApproved = original.status === "approved";
-      // Enabled once there's *something* to approve: a concept filled in client-side by
-      // Recommend, or a suggestion already persisted on the backend (e.g. via Suggest).
-      const canApprove = !!original.conceptId || (original._suggestions?.length ?? 0) > 0;
-      return (
-        <Box sx={{ display: "flex", gap: "2px" }}>
-          {isApproved ? (
-            <Tooltip title={getText(i18nKeys.ACTION__UNCHECK)}>
-              <IconButton
-                size="small"
-                sx={{ color: "#000080" }}
-                aria-label={getText(i18nKeys.ACTION__UNCHECK)}
-                onClick={() => handleUncheck(original)}
-              >
-                <BackspaceOutlinedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            // span wrapper so the tooltip still shows when the button is disabled (no concept)
-            <Tooltip title={getText(i18nKeys.ACTION__APPROVE)}>
-              <span>
-                <IconButton
-                  size="small"
-                  sx={{ color: "#000080" }}
-                  aria-label={getText(i18nKeys.ACTION__APPROVE)}
-                  disabled={!canApprove}
-                  onClick={() => handleApprove(original)}
-                >
-                  <TaskAltIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-          <Tooltip title={getText(i18nKeys.ACTION__SUGGEST)}>
-            <IconButton
-              size="small"
-              sx={{ color: "#000080" }}
-              aria-label={getText(i18nKeys.ACTION__SUGGEST)}
-              onClick={() => dispatch({ type: ACTION_TYPES.SET_SELECTED_DATA, payload: original })}
-            >
-              <TungstenOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          {/* Flag button carries the flagged state: navy when off, filled orange when on. */}
-          <Tooltip title={getText(i18nKeys.ACTION__FLAG)}>
-            <IconButton
-              size="small"
-              sx={{ color: original.flagged ? "#ed6c02" : "#000080" }}
-              aria-label={getText(i18nKeys.ACTION__FLAG)}
-              onClick={() => handleFlag(original)}
-            >
-              {original.flagged ? <FlagIcon fontSize="small" /> : <FlagOutlinedIcon fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      );
-    },
-    [dispatch, getText, handleApprove, handleUncheck, handleFlag]
+    [dispatch, getText, handleApprove, handleUncheck, handleFlag, handleApproveSuggestion, handleUnapproveSuggestion]
   );
 
   const columns = useMemo<MRT_ColumnDef<{ [key: string]: any }>[]>(
@@ -408,30 +468,35 @@ export const MappingTable: FC<MappingTableProps> = ({
         accessorKey: "conceptId",
         header: getText(i18nKeys.MAPPING_TABLE__CONCEPT_ID),
         size: 150,
+        Cell: ({ row }) => renderConceptCell(row.original, "conceptId"),
       },
       {
         id: "6",
         accessorKey: "conceptName",
         header: getText(i18nKeys.MAPPING_TABLE__CONCEPT_NAME),
         size: 150,
+        Cell: ({ row }) => renderConceptCell(row.original, "conceptName"),
       },
       {
         id: "7",
         accessorKey: "conceptCode",
         header: getText(i18nKeys.MAPPING_TABLE__CONCEPT_CODE),
         size: 150,
+        Cell: ({ row }) => renderConceptCell(row.original, "conceptCode"),
       },
       {
         id: "8",
         accessorKey: "domainId",
         header: getText(i18nKeys.MAPPING_TABLE__DOMAIN_ID),
         size: 150,
+        Cell: ({ row }) => renderConceptCell(row.original, "domainId"),
       },
       {
         id: "9",
         accessorKey: "vocabularyId",
         header: getText(i18nKeys.MAPPING_TABLE__VOCABULARY),
         size: 150,
+        Cell: ({ row }) => renderConceptCell(row.original, "vocabularyId"),
       },
       {
         id: "actions",
@@ -443,7 +508,7 @@ export const MappingTable: FC<MappingTableProps> = ({
         Cell: ({ row }) => renderActionsCell(row.original),
       },
     ],
-    [sourceCode, sourceName, sourceFrequency, description, getText, renderStatusCell, renderActionsCell]
+    [sourceCode, sourceName, sourceFrequency, description, getText, renderStatusCell, renderActionsCell, renderConceptCell]
   );
 
   // Whole-row click used to open the terminology search drawer; that's now an explicit
@@ -477,11 +542,6 @@ export const MappingTable: FC<MappingTableProps> = ({
     positionToolbarAlertBanner: "none",
     // Stable per-row id (the source row's UUID) so selection survives the post-action refetch.
     getRowId: (originalRow: { [key: string]: any }, index: number) => originalRow.sourceRowId ?? String(index),
-    renderDetailPanel: ({ row }) => renderSuggestionsPanel(row),
-    // Only rows that actually have suggestions can expand; hide the toggle for the rest.
-    muiExpandButtonProps: ({ row }) => ({
-      sx: { visibility: (row.original._suggestions?.length ?? 0) > 0 ? "visible" : "hidden" },
-    }),
     enableColumnResizing: true,
     layoutMode: "grid",
     muiTableHeadCellProps: {
@@ -491,6 +551,9 @@ export const MappingTable: FC<MappingTableProps> = ({
       },
     },
     muiTableBodyCellProps: {
+      // Top-align so a single-value cell (status/source/…) lines up with the first stacked
+      // concept line in a multi-suggestion row.
+      sx: { alignItems: "flex-start" },
       style: {
         fontSize: "14px",
         color: "#000080",
