@@ -471,7 +471,7 @@ test(TEST_NAME, async ({ page }) => {
       await page.getByRole('button', { name: 'Delete' }).click()
       await expect(page.getByText(NAME.patientListFilters)).not.toBeVisible()
     })
-    await expect(page.getByText('You have not yet saved any filters')).toBeVisible()
+    await expect(page.getByText('You have not yet saved any cohort definitions')).toBeVisible()
   })
 
   //Delete concept sets

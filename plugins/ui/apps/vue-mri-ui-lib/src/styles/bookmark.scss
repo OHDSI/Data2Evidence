@@ -262,13 +262,88 @@
         }
       }
     }
-    .bookmark-noContent {
-      color: var(--color-ui-dark-text);
-      font-size: 14px;
-      font-weight: normal;
-      margin: 10px;
+    .bookmark-empty-state {
+      // Figma frame width of the text block: 408px for the empty state,
+      // 480px for the error state (node 1810-68493 / 1810-69308).
+      --bookmark-empty-state-text-width: 408px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       padding: 30px;
-      white-space: normal;
+      text-align: center;
+      .bookmark-empty-state__icon {
+        width: 140px;
+        margin-bottom: 16px;
+      }
+      .bookmark-empty-state__icon--users {
+        height: 140px;
+      }
+      // 140x140 icon box; the illustration leaf is wider than the box and is
+      // positioned exactly as designed (inset -23.53% left, 22.73% top).
+      .bookmark-empty-state__illustration {
+        position: relative;
+        height: 140px;
+        svg {
+          position: absolute;
+          left: -32.941px;
+          top: 31.818px;
+          width: 205.882px;
+          height: 79.546px;
+        }
+      }
+      .bookmark-empty-state__title {
+        font-size: 16px;
+        line-height: 1.5;
+        font-weight: 600;
+        color: var(--color-ui-light-text);
+        max-width: var(--bookmark-empty-state-text-width);
+        margin-bottom: 4px;
+      }
+      .bookmark-empty-state__body {
+        font-size: 16px;
+        line-height: 1.5;
+        font-weight: normal;
+        color: var(--color-ui-light-text);
+        max-width: var(--bookmark-empty-state-text-width);
+      }
+      .bookmark-empty-state__refresh {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 8px 22px;
+        height: 44px;
+        border: 1px solid var(--color-primary-lightest);
+        border-radius: 8px;
+        background: transparent;
+        color: var(--color-text-button-secondary-default);
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 16px;
+        cursor: pointer;
+      }
+      .bookmark-empty-state__refresh:hover {
+        background: var(--color-background-button-secondary-hover);
+      }
+      .bookmark-empty-state__refresh-icon {
+        position: relative;
+        display: block;
+        width: 22px;
+        height: 22px;
+        svg {
+          position: absolute;
+          left: -0.084px;
+          top: 1.753px;
+          width: 22.166px;
+          height: 18.495px;
+        }
+      }
+    }
+    .bookmark-empty-state--error {
+      --bookmark-empty-state-text-width: 480px;
     }
     .bookmark-list {
       display: flex;
