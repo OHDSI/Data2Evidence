@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from create_cachedb_file_plugin.chunk_utils import (
+    MAX_CHUNK_SIZE_MULTIPLE,
     MAX_NULL_CHUNK_MULTIPLE,
     _thin_boundaries,
     build_predicates,
@@ -222,13 +223,18 @@ def test_plan_id_changes_when_the_null_chunk_appears():
 
 
 def test_plan_id_ignores_boundaries_that_do_not_reach_the_predicates():
-    """Appending rows past the table max must not invalidate the checkpoints."""
+    """Appending rows past the table max must not invalidate the checkpoints.
+
+    15M rows, not 900M: four boundaries make three chunks, and three chunks of
+    a 900M-row table are each 60x the target, which MAX_CHUNK_SIZE_MULTIPLE now
+    rejects. The row count is incidental to what this test is about.
+    """
     config = ChunkConfig(target_chunk_rows=5_000_000)
     first = plan_chunks(
-        "bigquery", "cdm", "measurement", _stats(900_000_000, (0, 10, 20, 30)), config
+        "bigquery", "cdm", "measurement", _stats(15_000_000, (0, 10, 20, 30)), config
     )
     grown = plan_chunks(
-        "bigquery", "cdm", "measurement", _stats(900_000_000, (-100, 10, 20, 9_999)), config
+        "bigquery", "cdm", "measurement", _stats(15_000_000, (-100, 10, 20, 9_999)), config
     )
     assert first.predicates == grown.predicates
     assert first.plan_id == grown.plan_id
@@ -611,3 +617,86 @@ def test_a_small_table_is_never_failed_by_its_null_count():
     stats = _nullable_stats(499_999, (), null_count=499_999)
     plan = plan_chunks("bigquery", "cdm", "person", stats, config)
     assert plan.strategy is ChunkStrategy.SINGLE_STATEMENT
+
+
+# ---------------------------------------------------------------------------
+# A plan with two or three enormous chunks is not a chunked plan
+# ---------------------------------------------------------------------------
+#
+# The interval_count < 2 guard only catches a plan that collapsed all the way
+# to one predicate. Three distinct values give two chunks, one of them holding
+# most of the table, and that passed every guard and was logged as CHUNKED.
+# CHUNK_COLUMN_MAP has real examples -- fact_relationship -> domain_concept_id_1
+# (2-4 distinct values), drug_strength -> drug_concept_id -- and on BigQuery
+# pick_bq_candidate actively *prefers* the partition column, so a table
+# partitioned on a handful of dates has exactly this shape.
+
+
+def test_a_three_valued_chunk_column_is_rejected():
+    """fact_relationship.domain_concept_id_1: 3 distinct values, 2 chunks."""
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _stats(900_000_000, (10, 20, 30))
+    with pytest.raises(PlannerError) as excinfo:
+        plan_chunks("bigquery", "cdm", "fact_relationship", stats, config)
+
+    message = str(excinfo.value)
+    assert "measurement_id" in message, "the message must name the column"
+    assert "3 distinct" in message, "and the distinct boundary count"
+    assert "450,000,000" in message, "and the per-chunk estimate"
+    assert "5,000,000" in message, "and the target it is measured against"
+
+
+def test_a_handful_of_partition_dates_is_rejected():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    stats = _stats(900_000_000, (1, 2, 3, 4))
+    with pytest.raises(PlannerError, match="4 distinct"):
+        plan_chunks("bigquery", "cdm", "measurement", stats, config)
+
+
+def test_the_size_limit_is_a_multiple_of_what_the_planner_asked_for():
+    config = ChunkConfig(target_chunk_rows=5_000_000, min_chunk_rows=1)
+    # Four boundaries -> three intervals, so row_count / 3 is the chunk size.
+    at_the_limit = _stats(3 * MAX_CHUNK_SIZE_MULTIPLE * 5_000_000, (1, 2, 3, 4))
+    assert len(plan_chunks("bigquery", "cdm", "t", at_the_limit, config).predicates) == 3
+
+    over_the_limit = _stats(3 * MAX_CHUNK_SIZE_MULTIPLE * 5_000_000 + 3, (1, 2, 3, 4))
+    with pytest.raises(PlannerError):
+        plan_chunks("bigquery", "cdm", "t", over_the_limit, config)
+
+
+def test_a_well_spread_chunk_column_is_unaffected():
+    config = ChunkConfig(target_chunk_rows=5_000_000)
+    plan = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, range(181)), config
+    )
+    assert plan.estimated_rows_per_chunk == 5_000_000
+
+
+def test_chunks_forced_large_by_the_max_chunks_cap_are_not_rejected():
+    """The cap deliberately trades chunk size for a bounded predicate list.
+
+    Failing here would leave the operator no recourse: raising chunkSize makes
+    the chunks bigger, not smaller, and max_chunks is not a flow option. So the
+    limit is measured against what the planner asked for after its own caps,
+    not against target_chunk_rows alone.
+    """
+    config = ChunkConfig(target_chunk_rows=5_000_000, max_chunks=10)
+    plan = plan_chunks(
+        "bigquery", "cdm", "measurement", _stats(900_000_000, range(20_000)), config
+    )
+    assert len(plan.predicates) == 10
+    assert plan.estimated_rows_per_chunk == 90_000_000
+
+
+def test_a_single_interval_plan_still_gets_the_low_cardinality_message():
+    """The two guards overlap; the more specific one has to win.
+
+    interval_count < 2 is not redundant either way round: a 600k-row table with
+    one interval and a 5M-row target is well inside the size limit, so only the
+    degenerate-plan guard catches it.
+    """
+    config = ChunkConfig(target_chunk_rows=5_000_000, small_table_threshold=500_000)
+    with pytest.raises(PlannerError, match="low-cardinality"):
+        plan_chunks("bigquery", "cdm", "measurement", _stats(900_000_000, (1, 9)), config)
+    with pytest.raises(PlannerError, match="low-cardinality"):
+        plan_chunks("bigquery", "cdm", "measurement", _stats(600_000, (1, 9)), config)

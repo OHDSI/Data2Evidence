@@ -34,6 +34,26 @@ FALLBACK_TARGET_CHUNK_ROWS = 1_000_000
 #: million-row table, straight through the one-hour ``cache_chunk_timeout``.
 MAX_NULL_CHUNK_MULTIPLE = 3
 
+#: A plan is rejected when its chunks are this many times larger than the size
+#: the planner asked for.
+#:
+#: ``interval_count < 2`` only catches a plan that collapsed all the way to one
+#: predicate. Three distinct values give two chunks, one of them holding most
+#: of the table, and that passed every other guard while being logged as
+#: CHUNKED. ``CHUNK_COLUMN_MAP`` has real examples -- ``fact_relationship`` ->
+#: ``domain_concept_id_1`` (2-4 distinct values), ``drug_strength`` ->
+#: ``drug_concept_id`` -- and ``pick_bq_candidate`` prefers a BigQuery
+#: partition column, so a table partitioned on a handful of dates has the same
+#: shape.
+#:
+#: The comparison is against ``_planned_chunk_rows``, not ``target_chunk_rows``
+#: alone: when ``max_chunks`` (or ``min_chunk_rows``) binds, the planner has
+#: already chosen chunks larger than the target on purpose, to keep the
+#: predicate list bounded. Failing there would leave the operator no recourse,
+#: since raising ``chunkSize`` makes chunks bigger and ``max_chunks`` is not a
+#: flow option.
+MAX_CHUNK_SIZE_MULTIPLE = 5
+
 
 def resolve_target_chunk_rows(dialect: str, override: int | None) -> int:
     """Rows per chunk. An explicit chunkSize from the caller always wins.
@@ -202,6 +222,18 @@ def _thin_boundaries(values: Sequence, max_values: int) -> list:
     return seen
 
 
+def planned_chunk_rows(row_count: int, chunk_count: int, config: ChunkConfig) -> int:
+    """Rows per chunk the planner asked for, after its own caps.
+
+    Normally this is ``target_chunk_rows``. When ``max_chunks`` or
+    ``min_chunk_rows`` binds, ``resolve_chunk_count`` has deliberately chosen
+    fewer, larger chunks than the target, and that larger size is the honest
+    yardstick for :data:`MAX_CHUNK_SIZE_MULTIPLE`.
+    """
+    per_chunk = -(-row_count // max(1, chunk_count))  # ceil division
+    return max(config.target_chunk_rows, per_chunk)
+
+
 def compute_plan_id(
     dialect: str,
     schema: str,
@@ -295,6 +327,28 @@ def plan_chunks(
             "threshold above this row count."
         )
 
+    # Not redundant with the guard above, in either direction. A 600k-row table
+    # that collapses to one interval is well inside this size limit and only
+    # the degenerate-plan guard catches it; a 900M-row table cut into two
+    # 450M-row chunks passes the degenerate-plan guard and only this one
+    # catches it. The degenerate case is checked first because "too
+    # low-cardinality to chunk on" says more than a size ratio does.
+    estimated_rows_per_chunk = max(1, stats.row_count // interval_count)
+    size_limit = MAX_CHUNK_SIZE_MULTIPLE * planned_chunk_rows(
+        stats.row_count, chunk_count, config
+    )
+    if estimated_rows_per_chunk > size_limit:
+        raise PlannerError(
+            f"{schema}.{table} has {stats.row_count:,} rows but chunking on "
+            f"{stats.column.name} yields only {interval_count} chunks of about "
+            f"{estimated_rows_per_chunk:,} rows each, more than "
+            f"{MAX_CHUNK_SIZE_MULTIPLE}x the {config.target_chunk_rows:,}-row target: "
+            f"the source returned {len(boundaries)} distinct boundary value(s), so the "
+            "column has too few distinct values to cut this table evenly. Chunks that "
+            "size blow the per-chunk timeout and risk exhausting the worker (issue "
+            "3033). Pick a higher-cardinality chunk column."
+        )
+
     return ChunkPlan(
         plan_id=compute_plan_id(
             dialect, schema, table, stats.column.name, ChunkStrategy.CHUNKED, predicates
@@ -303,7 +357,7 @@ def plan_chunks(
         column_name=stats.column.name,
         column_kind=stats.column.kind,
         predicates=predicates,
-        estimated_rows_per_chunk=max(1, stats.row_count // interval_count),
+        estimated_rows_per_chunk=estimated_rows_per_chunk,
         includes_null_chunk=stats.column.nullable,
     )
 
