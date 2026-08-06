@@ -55,11 +55,20 @@ function extractSessionVars(dbCredential: any): Record<string, string> {
 
 /**
  * trex_hana_materialize_cohort's source_params_json is a JSON array of bare bind
- * values, not the {key, type, value} placeholder objects _prepareQuery() returns.
+ * values, not the {type, value} objects _prepareQuery() returns in `placeholders`
+ 
+ * Accepts either shape: a {type, value} wrapper is unwrapped, an already-bare
+ * value is passed through. Absent values become null (SQL NULL). Keep this a
+ * 1:1 map — element order must stay aligned with the `?` markers in the SQL, and
+ * _prepareQuery() has already dropped the numeric placeholders it inlined.
  */
 function flattenBindParameters(placeholders: any[]): any[] {
     return (placeholders ?? []).map((placeholder: any) =>
-        placeholder?.value === undefined ? null : placeholder.value
+        placeholder !== null &&
+        typeof placeholder === "object" &&
+        "value" in placeholder
+            ? (placeholder.value ?? null)
+            : (placeholder ?? null)
     );
 }
 
