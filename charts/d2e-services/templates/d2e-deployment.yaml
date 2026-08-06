@@ -417,6 +417,8 @@ spec:
               value: "1"
             - name: CACHE_TASK_TIMEOUT
               value: "10800"
+            - name: CACHE_CHUNK_TIMEOUT
+              value: "3600"
             - name: DATABASE_CREDENTIALS
               value: "{}"
             - name: DB_CREDENTIALS_MGR__API_URL

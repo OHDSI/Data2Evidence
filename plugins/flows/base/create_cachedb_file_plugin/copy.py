@@ -55,7 +55,7 @@ def get_trex_connection(database_code: str):
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True, 
       task_run_name="create_schema_if_not_exists_{copy_params.target_schema}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")))
+      timeout_seconds=int(Variable.get("cache_task_timeout", default="10800")))
 def create_schema_if_not_exists_task(use_trex_conn: bool, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
 
@@ -99,7 +99,11 @@ def create_schema_if_not_exists(write_conn: Any, copy_params: CopyParameters, lo
       tags=["flow-level-concurrency"],
       log_prints=True, 
       task_run_name="create_schema_tables_from_{copy_params.source_schema}",
-      timeout_seconds=int(Variable.get("cache_task_timeout")),
+      # Deliberately no timeout_seconds. The copy budget now lives on
+      # copy_table_chunk, one hour per chunk, so a slow schema is bounded chunk
+      # by chunk instead of by a single envelope covering every table in it.
+      # A schema-wide 3h cap is what killed a large copy mid-table and threw
+      # away the partial target on the way out (issue 3033).
       cache_policy=NONE)
 def create_schema_tables_task(use_trex_conn: bool, read_conn: Any, copy_params: CopyParameters, duckdb_file_path: str):
     logger = get_run_logger()
@@ -278,7 +282,11 @@ def create_empty_target_table_if_absent(write_conn: Any, copy_params: CopyParame
       retry_delay_seconds=exponential_backoff(backoff_factor=2),
       log_prints=True,
       task_run_name="copy_chunk_{query_columns.table}_{chunk_index}",
-      timeout_seconds=int(Variable.get("cache_chunk_timeout")),
+      # default= matters: these lookups run at import time, and a deployment
+      # that has not been re-initialised since this variable was added has no
+      # value for it. Without the default, Variable.get returns None and int()
+      # raises, so the whole plugin fails to import on the worker.
+      timeout_seconds=int(Variable.get("cache_chunk_timeout", default="3600")),
       cache_policy=NONE)
 def copy_table_chunk(write_conn: Any, copy_params: CopyParameters, query_columns: QueryColumns,
                      source_schema: str, predicate: str, chunk_index: int, total_chunks: int):
