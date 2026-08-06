@@ -391,7 +391,7 @@ spec:
               mkdir -p /usr/src/cert
               printf '%s' "$TLS__INTERNAL__CRT" > /usr/src/cert/cert.pem
               printf '%s' "$TLS__INTERNAL__KEY" > /usr/src/cert/key.pem
-              exec /usr/src/entrypoint.sh
+              exec /usr/src/entrypoint.sh ${TREX_OTEL_ENABLED:+--enable-otel}
           env:
             - name: RUST_BACKTRACE
               value: "full"
@@ -986,6 +986,10 @@ spec:
               value: "false"
             - name: USE_TREX_DB_CONN
               value: "false"
+            - name: IS_CDM_SQL_AUDIT_LOG_ENABLED
+              value: {{ .Values.features.cdmSqlAuditLog | quote }}
+            - name: AUDIT_LOG_TO_CONSOLE
+              value: {{ .Values.features.auditLogToConsole | quote }}
             - name: ANALYTICS_HANA_STREAMING_ENABLED
               value: {{ .Values.features.materializeCohorts | quote }}
             - name: DATABASE_URL
@@ -1010,6 +1014,16 @@ spec:
               value: "/usr/src/plugins-dev:/usr/src/bundled-plugins"
             - name: D2E_COMPAT
               value: "true"
+            - name: TREX_OTEL_ENABLED
+              value: {{ (.Values.global.otel).enabled | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ (.Values.global.otel).exporterOtlpEndpoint | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: {{ (.Values.global.otel).exporterOtlpProtocol | default "" | quote }}
+            - name: OTEL_EXPORTER_OTLP_HEADERS
+              value: {{ (.Values.global.otel).exporterOtlpHeaders | default "" | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ (.Values.global.otel).serviceName | default "" | quote }}
             - name: ANALYTICS_STREAMING_CHUNK_SIZE_BY_DIALECT
               value: '{"hana": 10000}'
             - name: IS_SELF_MANAGED_ROLES

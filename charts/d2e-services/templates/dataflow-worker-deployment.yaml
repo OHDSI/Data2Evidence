@@ -274,13 +274,6 @@ spec:
                 secretKeyRef:
                   name: "{{ .Release.Name }}-{{ .Chart.Name }}"
                   key: TLS__INTERNAL__CA_CRT
-          command:
-            - pixi
-            - run
-            - --manifest-path
-            - /opt/worker/pyproject.toml
-            - sh
-            - -c
             # cohort_discovery: Hutch Relay Task API connection, shared across
             # every dataset's poller runs
             - name: TASK_API_BASE_URL
@@ -306,6 +299,13 @@ spec:
               value: "10"
             - name: ROUNDING_TARGET
               value: "10"
+          command:
+            - pixi
+            - run
+            - --manifest-path
+            - /opt/worker/pyproject.toml
+            - sh
+            - -c
           args:
             - >-
               rm -rf /root/.prefect/storage/run_cache.db /root/.prefect/storage/events.db;

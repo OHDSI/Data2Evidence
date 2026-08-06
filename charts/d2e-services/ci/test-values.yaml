@@ -132,6 +132,12 @@ d2e-core:
     serviceType: ClusterIP
 
 global:
+  otel:
+    enabled: ""            # non-empty (e.g. "true") adds --enable-otel to trex
+    exporterOtlpEndpoint: ""
+    exporterOtlpProtocol: ""
+    exporterOtlpHeaders: ""
+    serviceName: ""
   tenantId: "00000000-0000-0000-0000-000000000000"
   pgSSLMode: disable
   disableVolumeName: true
