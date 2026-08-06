@@ -2495,6 +2495,7 @@ git commit -m "feat(cache): apply freshCopy and dryRun in the schema copy loop"
 
 **Files:**
 - Modify: `plugins/flows/base/create_cachedb_file_plugin/copy.py:362-408` (`create_select_query`)
+- Test: `plugins/flows/base/create_cachedb_file_plugin/tests/test_select_query.py`
 
 Two dead branches sit inside a function this change rewrites. The `LIMIT/OFFSET` tuple branch is
 unreachable — `plan_chunks` only ever returned strings — and it is also wrong as written (no
