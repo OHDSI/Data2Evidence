@@ -1,8 +1,10 @@
 """Unit tests for the pure chunk planner."""
 
+import ast
 import sys
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 
 import pytest
 
@@ -496,3 +498,38 @@ def test_find_column_case_insensitive(target, expected):
 
 def test_find_column_case_insensitive_returns_the_source_spelling():
     assert find_column_case_insensitive(["PersonId"], "personid") == "PersonId"
+
+
+# ---------------------------------------------------------------------------
+# copy.create_select_query, read as source text
+# ---------------------------------------------------------------------------
+
+COPY_SOURCE_PATH = Path(__file__).resolve().parent.parent / "copy.py"
+
+
+def _function_source(path: Path, name: str) -> str:
+    """The source text of one top-level function in ``path``.
+
+    Read rather than imported on purpose: ``copy.py`` imports prefect, which
+    this suite's virtualenv does not have. ``ast`` scopes the assertion to the
+    one function instead of grepping the whole file, so an unrelated ``OFFSET``
+    elsewhere in the module cannot make the test pass or fail by accident.
+    """
+    source = path.read_text()
+    tree = ast.parse(source)
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return ast.get_source_segment(source, node)
+    raise AssertionError(f"{path.name} has no top-level function named {name!r}")
+
+
+def test_create_select_query_has_no_limit_offset_branch():
+    """The LIMIT/OFFSET chunk branch is gone and must not come back.
+
+    It was unreachable -- every caller passes a predicate string or None -- and
+    it paged with no ORDER BY, so successive pages could overlap or skip rows
+    depending on the source's scan order.
+    """
+    body = _function_source(COPY_SOURCE_PATH, "create_select_query")
+    assert "OFFSET" not in body
+    assert "isinstance(where_sql, tuple)" not in body

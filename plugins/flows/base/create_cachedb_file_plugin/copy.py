@@ -475,7 +475,16 @@ def _fetchall_rows(conn: Any, statement: str):
     return conn.fetchall()
 
 
-def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | tuple = None) -> str:
+def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns, source_schema: str, where_sql: str | None = None) -> str:
+    """Build the source SELECT, optionally narrowed by one chunk predicate.
+
+    ``where_sql`` is a predicate string or nothing -- never a row range. An
+    earlier version also accepted a ``(start, end)`` pair and turned it into a
+    paged query, which was unreachable (every caller passes a predicate or
+    None) and wrong anyway: it paged with no ORDER BY, so two pages could
+    overlap or skip rows depending on the source's scan order. Chunking is the
+    planner's job, and it partitions on a column, not on row position.
+    """
     columns_to_copy = query_columns.columns_to_copy
     table = query_columns.table
     database = copy_params.source_database
@@ -489,25 +498,9 @@ def create_select_query(copy_params: CopyParameters, query_columns: QueryColumns
     base_query = f'SELECT {columns_sql} FROM "{database}"."{schema}"."{table}"'
 
     has_where = False
-
-    # Handle where_sql for chunking
     if where_sql:
         has_where = True
-        if isinstance(where_sql, str):
-            # Column-based chunk: e.g., "person_id BETWEEN 1 AND 1000"
-            base_query += f" WHERE {where_sql}"
-        elif isinstance(where_sql, tuple) and len(where_sql) == 2:
-            # Offset-based chunk: Use LIMIT/OFFSET for better pushdown
-            start, end = where_sql
-            limit = end - start + 1
-            offset = start - 1
-            base_query = f"""
-            SELECT {columns_sql} FROM (
-                SELECT {columns_sql} FROM "{database}"."{schema}"."{table}"
-                LIMIT {limit} OFFSET {offset}
-            ) t
-            """
-            has_where = False
+        base_query += f" WHERE {where_sql}"
 
     # Add patient and timestamp filters
     filters = []
