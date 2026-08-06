@@ -32,8 +32,8 @@ access token d2e mints.
 | `connectorId` (for `POST /api/connectors`) | `physionet-oidc` |
 
 When registering the connector via `LOGTO__CONNECTOR_CONFIG`, set
-`connectorId: "physionet-oidc"` (NOT `"oidc"`) and `metadata.target` to
-`"physionet"`.
+`connectorId: "physionet-oidc"` (NOT `"oidc"`), and set
+`LOGTO__SOCIAL_SIGNIN_TARGETS=physionet` so the sign-in button renders.
 
 ## Diff from upstream `@logto/connector-oidc`
 
@@ -46,13 +46,10 @@ right before returning the user info. Search this directory for
 
 ## Build
 
-This package mirrors upstream's tsup build. The compiled `lib/` is
-mounted into the alp-logto container via the volume override in
-`docker-compose-local.yml`:
-
-```yaml
-- ./services/alp-logto/connector-physionet-oidc/lib:/etc/logto/packages/connectors/connector-physionet-oidc/lib
-```
+This package mirrors upstream's tsup build. The compiled `lib/` ships
+baked into the `logto` image — there is **no** bind mount for it in
+`docker-compose-local.yml`, so editing `lib/` here changes nothing until
+the image is rebuilt, and the two can drift apart silently.
 
 To rebuild after editing `src/`:
 
@@ -62,9 +59,8 @@ pnpm install
 pnpm build      # emits to ./lib
 ```
 
-For the running dev stack the `lib/` is checked into the repo
-alongside `src/` so the volume mount works without a build step on
-every clone.
+The compiled `lib/` is checked into the repo alongside `src/`, so commit
+it with any `src/` change and rebuild the image to pick it up.
 
 ## License
 
