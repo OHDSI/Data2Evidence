@@ -12,6 +12,9 @@ secrets:
   ROOT__PKI__CA_KEY: ""
   SERVER__CRT: ""
   SERVER__KEY: ""
+  TASK_API_BASE_URL: ""
+  TASK_API_USERNAME: ""
+  TASK_API_PASSWORD: ""
 
 idp:
   IDP__RELYING_PARTY: logto
