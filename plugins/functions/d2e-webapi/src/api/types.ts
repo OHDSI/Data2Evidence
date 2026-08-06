@@ -269,6 +269,7 @@ export interface IDataset {
     summary: string;
     showRequestAccess: boolean;
   };
+  sourceStudyId?: string | null;
 }
 
 export interface IFilterValue {

@@ -27,7 +27,7 @@
     "allowSyntheticDefaultImports": true
   },
   "files": ["src/lifecycles.tsx"],
-  "include": ["src/**/*", "vite.config.ts"],
+  "include": ["src/**/*"],
   "exclude": ["src/**/*.test*", "dist", "node_modules"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

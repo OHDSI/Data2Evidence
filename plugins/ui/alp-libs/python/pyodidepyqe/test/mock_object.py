@@ -6,5 +6,5 @@ class MockResponse:
         self.status_code = status_code
         self.text = json.dumps(payload)
 
-    def json(self):
+    async def json(self):
         return json.loads(self.text)

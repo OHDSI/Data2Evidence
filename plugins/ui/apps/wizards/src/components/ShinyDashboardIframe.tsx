@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { buildShinyDashboardAuthMessage, buildShinyDashboardIframeUrl } from "../utils/shinyDashboardContext";
+import {
+  buildShinyDashboardAuthMessage,
+  buildShinyDashboardIframeUrl,
+  resolveShinyDashboardMessageSource,
+} from "../utils/shinyDashboardContext";
 import styles from "./ShinyDashboardIframe.module.css";
 
 interface ShinyDashboardIframeProps {
@@ -19,6 +23,7 @@ export function ShinyDashboardIframe({
 }: ShinyDashboardIframeProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const fallbackTimerRef = useRef<number | null>(null);
+  const messageTargetRef = useRef<Window | null>(null);
   const [token, setToken] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +37,10 @@ export function ShinyDashboardIframe({
     }
   }, [iframeUrl]);
 
-  const sendContext = useCallback(() => {
-    if (!iframeRef.current?.contentWindow || !token) return;
-    iframeRef.current.contentWindow.postMessage(
+  const sendContext = useCallback((targetWindow?: Window | null) => {
+    const iframeWindow = targetWindow ?? messageTargetRef.current ?? iframeRef.current?.contentWindow;
+    if (!iframeWindow || !token) return;
+    iframeWindow.postMessage(
       buildShinyDashboardAuthMessage({
         token,
         datasetId,
@@ -71,10 +77,16 @@ export function ShinyDashboardIframe({
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (event.source !== iframeRef.current?.contentWindow || event.origin !== iframeOrigin) return;
+      const sourceWindow = resolveShinyDashboardMessageSource(event.source, iframeRef.current?.contentWindow);
+      if (!sourceWindow || event.origin !== iframeOrigin) return;
       if (event.data?.type === "SHINYLIVE_READY") {
+        messageTargetRef.current = sourceWindow;
+        if (fallbackTimerRef.current !== null) {
+          window.clearTimeout(fallbackTimerRef.current);
+          fallbackTimerRef.current = null;
+        }
         setIsReady(true);
-        sendContext();
+        sendContext(sourceWindow);
       } else if (event.data?.type === "SHINYLIVE_ERROR") {
         setError("The dashboard reported an error. Please try opening it again.");
       }
@@ -94,6 +106,10 @@ export function ShinyDashboardIframe({
     []
   );
 
+  useEffect(() => {
+    messageTargetRef.current = null;
+  }, [iframeUrl, reloadKey]);
+
   const handleLoad = () => {
     if (fallbackTimerRef.current !== null) window.clearTimeout(fallbackTimerRef.current);
     fallbackTimerRef.current = window.setTimeout(() => setIsReady(true), 5000);
@@ -103,6 +119,7 @@ export function ShinyDashboardIframe({
     if (fallbackTimerRef.current !== null) window.clearTimeout(fallbackTimerRef.current);
     setError(null);
     setIsReady(false);
+    messageTargetRef.current = null;
     setReloadKey((key) => key + 1);
   };
 

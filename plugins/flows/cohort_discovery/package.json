@@ -1,0 +1,45 @@
+{
+  "name": "@data2evidence/cohort-discovery-flow",
+  "version": "0.0.1",
+  "scripts": {
+    "build": "docker build ../../.. -f ../../../services/alp-dataflow-gen-worker/Dockerfile -t d2e-dataflow-gen-worker:local --build-arg GITHUB_PAT=${GITHUB_PAT}",
+    "prepack": "bash ../build/stage_package.sh",
+    "postpack": "bash ../build/stage_package.sh clean"
+  },
+  "license": "Apache-2.0",
+  "trex": {
+    "flow": {
+      "image": "ghcr.io/ohdsi/d2e/flow-cohort-discovery",
+      "flows": [
+        {
+          "name": "cohort_discovery_plugin",
+          "entrypoint": "flows.cohort_discovery_plugin.flow.cohort_discovery_plugin",
+          "command": "/app/run-flow.sh cohort-discovery-flow",
+          "type": "cohort_discovery",
+          "parameter_openapi_schema": {
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "options": { "$ref": "#/definitions/CohortDiscoveryOptions", "position": 0, "title": "options" }
+            },
+            "required": ["options"],
+            "definitions": {
+              "CohortDiscoveryOptions": {
+                "type": "object",
+                "title": "CohortDiscoveryOptions",
+                "properties": {
+                  "datasetId": { "type": "string", "title": "Dataset Id" },
+                  "databaseCode": { "type": "string", "title": "Database Code" },
+                  "cacheId": { "anyOf": [{ "type": "string" }, { "type": "null" }], "default": null, "title": "Cache Id" },
+                  "schemaName": { "type": "string", "title": "Schema Name" }
+                },
+                "required": ["datasetId", "databaseCode", "schemaName"]
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "files": ["flows", "_shared_flow_utils", "__init__.py", "pyproject.toml", "pixi.lock", "setup_assets.sh"]
+}

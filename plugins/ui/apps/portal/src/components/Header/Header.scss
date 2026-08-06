@@ -1,12 +1,13 @@
 header.portal__header {
   width: 100%;
+  min-height: 56px;
   background-color: #fbfbfd;
   box-shadow: 0 0.5px 8px 0 #acaba8;
   position: sticky;
   top: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  align-items: stretch;
+  justify-content: flex-start;
   z-index: 3;
 
   .active-dataset-container {
@@ -19,33 +20,55 @@ header.portal__header {
 }
 
 .header__logo-group {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+
   .logo {
     display: block;
-    padding: 8px 0;
+    height: 24px;
+    width: auto;
+    // Matches the asset's 3495x404 so the box is reserved before the image decodes.
+    aspect-ratio: 3495 / 404;
     margin-left: 2.5rem;
+    margin-right: 2rem;
     cursor: pointer;
   }
 }
 
 .header__menu-group {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
   padding-right: 32px;
 
   ul {
+    display: flex;
+    // Wraps rather than clipping when a portal has more nav items than the viewport fits,
+    // which is how the previous inline-block layout degraded.
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+    list-style: none;
     padding-left: 0;
     margin: 0;
 
     li {
-      display: inline-block;
+      display: flex;
+      align-items: center;
       position: relative;
 
       > a {
-        display: inline-block;
-        padding: 16px 16px;
+        // Stretch so the active-tab indicator sits on the header's bottom edge.
+        align-self: stretch;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
       }
 
       > p {
-        display: inline-block;
-        padding: 10px 8px;
+        margin: 0;
+        padding: 0 8px;
       }
     }
   }
@@ -57,18 +80,22 @@ header.portal__header {
 
 .header__menu-group ul {
   li {
-    display: inline-block;
+    display: flex;
+    align-items: center;
     position: relative;
+
+    // Pushes the right-most item (Account, or Login on the public portal) to the far right,
+    // leaving every other item left-aligned after the logo.
+    &.header__menu-item--pin-right {
+      margin-left: auto;
+    }
 
     &.header__menu-overview {
       svg {
-        position: relative;
-        top: 6px;
-        right: 16px;
-
-        // Avoid overwritten by Job UI css which apply on svg { display: block; vertical-align: middle; }
-        display: inline;
-        vertical-align: baseline;
+        position: static;
+        flex: none;
+        // Tucks the chevron into the link's 16px right padding.
+        margin-left: -12px;
       }
     }
 

@@ -38,6 +38,11 @@ const Env = z.object({
   GOOGLE_API_KEY: optionalSecret,
   OLLAMA_BASE_URL: optionalSecret,
   OLLAMA_API_KEY: optionalSecret,
+  COHORT_HISTORY_MAX_TOKENS: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(4000),
 });
 
 export const env = Env.parse(_env);

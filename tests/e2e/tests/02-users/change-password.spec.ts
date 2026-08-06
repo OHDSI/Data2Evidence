@@ -19,9 +19,9 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('row', { name: 'admin Viewer Admin User Admin' }).getByRole('button').nth(2).click()
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Newpassword12345')
-  await page.getByRole('button', { name: 'Update' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('Password updated')
-  await page.getByTestId('dialog-close').click()
+  await page.getByRole('button', { name: 'Change' }).click()
+  await expect(page.getByTestId('alert-message')).toContainText('Your password has been updated successfully')
+  await expect(page.getByTestId('dialog-title')).toBeHidden()
 
   // Verify by login with new password
   await page.getByRole('link', { name: 'Account' }).click()
@@ -36,7 +36,7 @@ test(TEST_NAME, async ({ page }) => {
   await page.getByRole('row', { name: 'admin Viewer Admin User Admin' }).getByRole('button').nth(2).click()
   await page.getByRole('menuitem', { name: 'Change password' }).click()
   await page.getByRole('textbox', { name: 'Password' }).fill('Updatepassword12345')
-  await page.getByRole('button', { name: 'Update' }).click()
-  await expect(page.getByTestId('alert-message')).toContainText('Password updated')
-  await page.getByTestId('dialog-close').click()
+  await page.getByRole('button', { name: 'Change' }).click()
+  await expect(page.getByTestId('alert-message')).toContainText('Your password has been updated successfully')
+  await expect(page.getByTestId('dialog-title')).toBeHidden()
 })
