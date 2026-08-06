@@ -1,80 +1,36 @@
-import sqlalchemy as sql
+"""Pure chunk planning. This module must never import prefect or touch a database."""
 
-from typing import Any
-from _shared_flow_utils.types import SupportedDatabaseDialects
+from .planner_types import ChunkConfig
 
-COPY_STATUS_TABLE_NAME = "table_copy_status"
+PLANNER_VERSION = 2
 
-
-def determine_chunk_size(dialect: str, row_count: int | None, chunk_size: int | None = None) -> int:
-    if chunk_size is not None:
-        return chunk_size
-    if dialect == SupportedDatabaseDialects.BIGQUERY.value:
-        return 5_000_000
-    if row_count and row_count > 100_000_000:
-        return 1_000_000
-    return 1_000_000
+DEFAULT_TARGET_CHUNK_ROWS = {
+    "bigquery": 5_000_000,
+    "postgres": 1_000_000,
+}
+FALLBACK_TARGET_CHUNK_ROWS = 1_000_000
 
 
-def plan_chunks(read_conn: Any, database: str, schema: str, table: str, chunk_col: str, chunk_size: int, row_count: int | None, logger=None):
-    logger.info(f"Planning chunks for table '{table}' using column '{chunk_col}' with target chunk size {chunk_size} rows.")
-    min_val = None
-    max_val = None
+def resolve_target_chunk_rows(dialect: str, override: int | None) -> int:
+    """Rows per chunk. An explicit chunkSize from the caller always wins."""
+    if override is not None:
+        return override
+    return DEFAULT_TARGET_CHUNK_ROWS.get(dialect, FALLBACK_TARGET_CHUNK_ROWS)
 
-    try:
-        # Determine table path and column quoting based on dialect
-        dialect = read_conn.tenant_configs.dialect
-        if dialect == SupportedDatabaseDialects.BIGQUERY.value:
-            table_path = f'`{schema}.{table}`'
-            col_quote = ''
-        else:
-            table_path = f'"{schema}"."{table}"'
-            col_quote = '"'
-        with read_conn.engine.connect() as connection:
-            query = sql.text(f'SELECT MIN({col_quote}{chunk_col}{col_quote}), MAX({col_quote}{chunk_col}{col_quote}) FROM {table_path}')
-            logger.info(f"Executing query to get min/max values: {query}")
-            result = connection.execute(query).fetchone()
-            if result:
-                min_val, max_val = result
-        
-    except Exception as e:
-        logger.warning(f"Failed to get min/max for '{table}' from source: {e}")
-        min_val = None
 
-    if min_val is None or max_val is None:
-        logger.error(f"Chunk column '{chunk_col}' has no valid values. Cannot chunk.")
-        return None
+def resolve_chunk_count(row_count: int, config: ChunkConfig) -> int:
+    """Number of chunks, derived from row count and hard-capped.
 
-    # Try to convert to int; if fails (e.g., for dates), don't chunk
-    try:
-        min_val = int(min_val)
-        max_val = int(max_val)
-    except (ValueError, TypeError):
-        logger.error(f"Chunk column '{chunk_col}' is not numeric. Cannot chunk.")
-        return None
-
-    chunks = []
-    current = min_val
-    while current <= max_val:
-        end = min(current + chunk_size - 1, max_val)
-        chunks.append(f'"{chunk_col}" BETWEEN {current} AND {end}')
-        current = end + 1
-    
-    # Log chunking strategy details: min/max values, range span, and resulting chunk count
-    range_span = max_val - min_val + 1
-    logger.info(f"Chunking strategy for '{table}.{chunk_col}': min={min_val}, max={max_val}, range_span={range_span:,}, target_chunk_size={chunk_size:,}, resulting_chunks={len(chunks)}")
-    
-    if row_count and len(chunks) > 0:
-        avg_rows_per_chunk = row_count / len(chunks)
-        if avg_rows_per_chunk > (chunk_size * 2):
-            logger.info(f"Data is too dense for range chunking (avg {int(avg_rows_per_chunk)} rows/chunk vs target {chunk_size}). Cannot chunk efficiently.")
-            return None
-        else:
-            logger.info(f"Chunk validation: {row_count:,} total rows / {len(chunks)} chunks = ~{int(avg_rows_per_chunk):,} rows per chunk (target: {chunk_size:,})")
-            return chunks
-    else:
-         logger.info(f"Planned {len(chunks)} chunks for table '{table}' (row count not available for validation)")
-         return chunks
+    Deliberately independent of the chunk column's min/max span: deriving the
+    count from the span is what made the planner allocate an unbounded list for
+    hash-distributed keys (issue 3033).
+    """
+    if row_count <= 0:
+        return 1
+    n = -(-row_count // config.target_chunk_rows)  # ceil division
+    n = min(n, config.max_chunks)
+    n = min(n, max(1, row_count // config.min_chunk_rows))
+    return max(1, n)
 
 
 def find_column_case_insensitive(columns: list[str], target: str) -> str | None:
