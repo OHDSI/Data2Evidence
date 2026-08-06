@@ -74,16 +74,13 @@ export class ConceptMappingSuggestionController {
       }
       const { conceptId, conceptName, conceptCode, domainId, vocabularyId } =
         concept as ConceptInput;
-      if (
-        conceptId === undefined ||
-        !conceptName ||
-        !conceptCode ||
-        !domainId ||
-        !vocabularyId
-      ) {
+      // conceptName/conceptCode/domainId/vocabularyId are nullable on the
+      // entity (a client-only concept - e.g. one typed in before a
+      // Recommend/StandardConcepts lookup resolves it - may not have them
+      // yet), so only conceptId is required here.
+      if (typeof conceptId !== "number" || !Number.isInteger(conceptId)) {
         return res.status(400).send({
-          message:
-            "concept must include conceptId, conceptName, conceptCode, domainId and vocabularyId",
+          message: "concept must include an integer conceptId",
         });
       }
 

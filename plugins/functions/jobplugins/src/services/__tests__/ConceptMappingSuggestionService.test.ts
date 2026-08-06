@@ -71,19 +71,36 @@ class FakeRepository<T extends Record<string, any>> {
   }
 }
 
-// A simple pass-through transaction runner: it has no real atomicity (this
-// is an in-memory fake, there's nothing to roll back), but it exercises the
-// same call shape the service uses in production
-// (`transactionRunner.transaction(async (manager) => manager.getRepository(Entity))`)
-// so the service code path under test is identical to the real one. The
-// manager here just hands back the same fake repo instance the test seeded.
+// A transaction runner that snapshots every registered repo's rows before
+// running the callback and restores them if the callback throws - modeling
+// the rollback a real DB transaction gives us. This matters for
+// `addSuggestion`: it reverts an existing approval and inserts the new
+// suggestion inside one transaction specifically so a unique-violation on
+// the insert rolls the revert back too. A fake that always committed
+// regardless of the callback outcome (as this used to) would let a test
+// assert that rollback happened even if the service code never actually
+// wired up a real transaction - a false pass. Snapshotting+restoring here
+// makes the rollback assertion in the "duplicate of an approved suggestion"
+// test below meaningful.
 class FakeTransactionRunner {
-  constructor(private repoByEntity: Map<unknown, unknown>) {}
+  constructor(private repoByEntity: Map<unknown, FakeRepository<any>>) {}
 
-  transaction<T>(work: (manager: { getRepository: (entity: unknown) => unknown }) => Promise<T>): Promise<T> {
-    return work({
-      getRepository: (entity: unknown) => this.repoByEntity.get(entity),
-    });
+  async transaction<T>(work: (manager: { getRepository: (entity: unknown) => unknown }) => Promise<T>): Promise<T> {
+    const snapshots = new Map<FakeRepository<any>, any[]>();
+    for (const repo of this.repoByEntity.values()) {
+      snapshots.set(repo, repo.items.map((item) => ({ ...item })));
+    }
+
+    try {
+      return await work({
+        getRepository: (entity: unknown) => this.repoByEntity.get(entity),
+      });
+    } catch (err) {
+      for (const [repo, snapshot] of snapshots) {
+        repo.items = snapshot;
+      }
+      throw err;
+    }
   }
 }
 
@@ -143,7 +160,11 @@ beforeEach(() => {
   );
   flagRepo = new FakeRepository<ConceptMappingRowFlag>();
   const transactionRunner = new FakeTransactionRunner(
-    new Map([[ConceptMappingSuggestion, suggestionRepo]]),
+    // deno-lint-ignore no-explicit-any
+    new Map<unknown, FakeRepository<any>>([
+      [ConceptMappingSuggestion, suggestionRepo],
+      [ConceptMappingRowFlag, flagRepo],
+    ]),
   );
   service = new ConceptMappingSuggestionService(
     // deno-lint-ignore no-explicit-any
@@ -198,6 +219,33 @@ describe("ConceptMappingSuggestionService.addSuggestion", () => {
     const previouslyApproved = suggestionRepo.items.find((s) => s.id === approved.id)!;
     assertEquals(previouslyApproved.isApproved, false);
     assertEquals(suggestionRepo.items.length, 2);
+  });
+
+  it("rejects re-suggesting the row's already-approved concept and leaves that approval untouched", async () => {
+    const approved = await service.addSuggestion(
+      DATAFLOW_ID,
+      NODE_ID,
+      ROW_ID,
+      CONCEPT_A,
+      "user-a",
+    );
+    await service.approve(approved.id, "user-a");
+    assertEquals(suggestionRepo.items[0].isApproved, true);
+
+    // Re-suggesting the SAME concept that is already approved on this row:
+    // addSuggestion's revert-then-insert transaction finds its own target
+    // row (itself, since it's already approved) and would unapprove it
+    // before the insert hits the unique constraint and fails. Both steps
+    // ran inside one transaction, so the revert must roll back with the
+    // failed insert, leaving the pre-existing approval exactly as it was.
+    await assertRejects(
+      () => service.addSuggestion(DATAFLOW_ID, NODE_ID, ROW_ID, CONCEPT_A, "user-b"),
+      ConflictError,
+    );
+
+    assertEquals(suggestionRepo.items.length, 1);
+    assertEquals(suggestionRepo.items[0].id, approved.id);
+    assertEquals(suggestionRepo.items[0].isApproved, true);
   });
 });
 

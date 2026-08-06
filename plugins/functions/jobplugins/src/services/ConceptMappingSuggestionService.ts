@@ -24,10 +24,10 @@ export class ConflictError extends Error {
 
 export interface ConceptInput {
   conceptId: number;
-  conceptName: string;
-  conceptCode: string;
-  domainId: string;
-  vocabularyId: string;
+  conceptName?: string;
+  conceptCode?: string;
+  domainId?: string;
+  vocabularyId?: string;
 }
 
 export interface SuggestionDto {
@@ -73,6 +73,7 @@ function isUniqueViolation(err: unknown): boolean {
 // `EntityManager` both satisfy this structurally.
 interface TransactionalManager {
   getRepository(entity: typeof ConceptMappingSuggestion): Repository<ConceptMappingSuggestion>;
+  getRepository(entity: typeof ConceptMappingRowFlag): Repository<ConceptMappingRowFlag>;
 }
 
 interface TransactionRunner {
@@ -118,6 +119,13 @@ export class ConceptMappingSuggestionService {
     }));
   }
 
+  // Reverting any existing approval and inserting the new suggestion must be
+  // atomic: without a transaction, a unique-violation on the insert (e.g. the
+  // user re-suggests the very concept that was already approved on this row)
+  // would leave the revert committed but the new row missing - silently
+  // dropping the row's only approved suggestion. Wrapping both steps the same
+  // way `approve` does means the revert rolls back together with the failed
+  // insert, leaving the pre-existing approval untouched.
   async addSuggestion(
     dataflowId: string,
     nodeId: string,
@@ -125,14 +133,6 @@ export class ConceptMappingSuggestionService {
     concept: ConceptInput,
     userSub: string,
   ): Promise<SuggestionDto> {
-    const rowSuggestions = await this.suggestionRepo.find({
-      where: { dataflowId, nodeId, sourceRowId },
-    });
-    const approved = rowSuggestions.find((s) => s.isApproved);
-    if (approved) {
-      await this.suggestionRepo.update(approved.id, { isApproved: false, modifiedBy: userSub });
-    }
-
     const entity = {
       id: uuidv4(),
       dataflowId,
@@ -150,7 +150,17 @@ export class ConceptMappingSuggestionService {
     } as ConceptMappingSuggestion;
 
     try {
-      await this.suggestionRepo.insert(entity);
+      await this.transactionRunner.transaction(async (manager) => {
+        const repo = manager.getRepository(ConceptMappingSuggestion);
+
+        const rowSuggestions = await repo.find({ where: { dataflowId, nodeId, sourceRowId } });
+        const approved = rowSuggestions.find((s) => s.isApproved);
+        if (approved) {
+          await repo.update(approved.id, { isApproved: false, modifiedBy: userSub });
+        }
+
+        await repo.insert(entity);
+      });
     } catch (err) {
       if (isUniqueViolation(err)) {
         throw new ConflictError(
@@ -236,8 +246,16 @@ export class ConceptMappingSuggestionService {
     }
   }
 
+  // Deleting suggestions and flags for a node must be atomic: without a
+  // transaction, a failure between the two deletes could leave suggestions
+  // cleared but flags intact (or vice versa) for the same node.
   async clearNode(dataflowId: string, nodeId: string): Promise<void> {
-    await this.suggestionRepo.delete({ dataflowId, nodeId });
-    await this.flagRepo.delete({ dataflowId, nodeId });
+    await this.transactionRunner.transaction(async (manager) => {
+      const suggestionRepo = manager.getRepository(ConceptMappingSuggestion);
+      const flagRepo = manager.getRepository(ConceptMappingRowFlag);
+
+      await suggestionRepo.delete({ dataflowId, nodeId });
+      await flagRepo.delete({ dataflowId, nodeId });
+    });
   }
 }

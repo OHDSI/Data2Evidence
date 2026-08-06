@@ -69,7 +69,20 @@ describe("MappingTable", () => {
 
   const rows: mappingData[] = [
     buildRow({ sourceRowId: "r1", code: "A1", name: "Aspirin", conceptId: 0 }),
-    buildRow({ sourceRowId: "r2", code: "B2", name: "Ibuprofen", conceptId: 222, conceptName: "Ibuprofen" }),
+    buildRow({
+      sourceRowId: "r2",
+      code: "B2",
+      name: "Ibuprofen",
+      conceptId: 222,
+      conceptName: "Ibuprofen",
+      // Recommend/StandardConcepts populates conceptCode and vocabularyId
+      // client-side (see MappingTable.tsx's Recommend handler), so a
+      // realistic "client-only concept, no backend suggestion yet" row has
+      // both set - unlike a plain unchecked row (e.g. r1) that never went
+      // through Recommend.
+      conceptCode: "5640",
+      vocabularyId: "RxNorm",
+    }),
     buildRow({ sourceRowId: "r3", code: "C3", name: "Paracetamol", conceptId: 333, conceptName: "Paracetamol" }),
     buildRow({ sourceRowId: "r4", code: "D4", name: "Codeine", conceptId: 0 }),
   ];
@@ -158,9 +171,9 @@ describe("MappingTable", () => {
       expect(addSuggestion).toHaveBeenCalledWith("df-1", "node-1", "r2", {
         conceptId: 222,
         conceptName: "Ibuprofen",
-        conceptCode: undefined,
+        conceptCode: "5640",
         domainId: "",
-        vocabularyId: undefined,
+        vocabularyId: "RxNorm",
       })
     );
     await waitFor(() => expect(approve).toHaveBeenCalledWith("new-id"));
