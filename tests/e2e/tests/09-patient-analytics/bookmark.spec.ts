@@ -183,7 +183,11 @@ test(TEST_NAME, async ({ page }) => {
     // Confirm that the 'Enter name' textbox is not visible before proceeding
     await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
     await page.getByRole('button', { name: 'Save' }).click()
-    await page.locator('footer').getByRole('button', { name: 'Save' }).click()
+    // Re-saving an already-saved cohort owned by the current user no longer opens the
+    // naming dialog - FiltersFooter.openSaveBookmark() only does that when
+    // needsSaveDialog (isNewCohort || isNotUserSharedBookmark) is true.
+    await expect(page.getByRole('textbox', { name: 'Enter name' })).not.toBeVisible()
+    await expect(page.getByText('Saved filter updated.')).toBeVisible()
   })
   //Verify the saved filter
   await test.step('Verify the saved filter', async () => {
